@@ -1,0 +1,116 @@
+'\" "
+'\" ASCI Visualization Project  "
+'\" "
+'\" Lawrence Livermore National Laboratory "
+'\" Information Management and Graphics Group "
+'\" P.O. Box 808, Mail Stop L-561 "
+'\" Livermore, CA 94551-0808 "
+'\" "
+'\" For information about this project see: "
+'\" 	http://www.llnl.gov/sccd/lc/img/  "
+'\" "
+'\" 	or contact: asciviz@llnl.gov "
+'\" "
+'\" For copyright and disclaimer information see: "
+'\"     man llnl_copyright "	
+'\" "
+'\" $Id: pt_rw_intro.3,v 1.1 2007/06/13 18:59:33 wealthychef Exp $ "
+'\" $Name:  $ "
+'\" "
+'LINK pt_rw_init.3 pt_rw_destroy.3 pt_rw_read_lock.3 pt_rw_read_unlock.3 
+'LINK pt_rw_write_lock.3 pt_rw_write_unlock.3
+.TH pt_rw_init 3
+.SH NAME
+pt_rw_init, pt_rw_destroy, pt_rw_read_lock, pt_rw_read_unlock, pt_rw_write_lock, pt_rw_write_unlock - a one-writer many readers sync primitive for pthreads
+.SH SYNOPSIS
+.HP
+.B
+#include <pt/pt.h>
+.HP
+.B
+void pt_rw_init(pt_rw_t *rdwrp)
+.HP
+.B
+void pt_rw_destroy(pt_rw_t *rdwrp)
+.HP
+.B
+int pt_rw_read_lock(pt_rw_t *rdwrp)
+.HP
+.B
+int pt_rw_read_unlock(pt_rw_t *rdwrp)
+.HP
+.B
+int pt_rw_write_lock(pt_rw_t *rdwrp)
+.HP
+.B
+int pt_rw_write_unlock(pt_rw_t *rdwrp)
+.SH DESCRIPTION
+An rw object allows for one active "write" thread and many
+active "read" threads.  Threads can ask this object for
+read or write access.  If the object has a writer or
+pending writers, any read access requests will block.
+If the object has one or more readers, any write requests
+will block.  Write requests have priority over read
+requests.  Multiple simultaneous "readers" are allowed
+or only a single writer.
+On destroy, the calling thread will block until all
+granted accesses have been completed.  New and pending
+accesses will fail.
+.PP
+.I
+pt_rw_init()
+initializes the access object passed by the caller.  Subsequent threads call
+.I
+pt_rw_read_lock()
+or
+.I
+pt_rw_write_lock()
+to request access.  These calls will return 0 if the
+access is granted or -1 if the access has failed 
+(due to 
+.I
+pt_rw_destroy()
+being called).  The lock calls will block until the
+access can be granted.  Each process that obtains a
+lock, must call either
+.I
+pt_rw_read_unlock()
+or
+.I
+pt_rw_write_unlock()
+to release the granted access and allow other waiting
+threads read or write access.  Writers are given 
+priority over readers.
+.I
+pt_rw_destroy()
+will destroy the access object and cause all
+pending accesses to fail.  Note: threads that
+have granted access must still "unlock" their
+granted access before this function will
+return. No futher access will be granted.
+.PP
+To allow for "reasonable" access, threads should
+not keep the object locked for long periods of
+time. Write accesses are not serialized, so if
+multiple threads all request write access, there
+is no guarantee that they will be given that
+access in the order in which they requested access.
+They will each be given exclusive access however
+before any new readers or pending readers are
+given access.
+.SH SEE ALSO
+.BR pthread_create (1)
+.SH ORIGIN
+.RS
+"Using POSIX Threads: Programming with Pthreads"
+.RE
+Modified and corrected by:
+.RS
+ASCI Visualization Project 
+.RE
+.RS
+Lawrence Livermore National Laboratory
+.RE
+.RS
+Information Management and Graphics Group
+.RE

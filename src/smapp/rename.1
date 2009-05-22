@@ -1,0 +1,83 @@
+'\" "
+'\" ASCI Visualization Project  "
+'\" "
+'\" Lawrence Livermore National Laboratory "
+'\" Information Management and Graphics Group "
+'\" P.O. Box 808, Mail Stop L-561 "
+'\" Livermore, CA 94551-0808 "
+'\" "
+'\" For information about this project see: "
+'\" 	http://www.llnl.gov/sccd/lc/img/  "
+'\" "
+'\" 	or contact: asciviz@llnl.gov "
+'\" "
+'\" For copyright and disclaimer information see: "
+'\"     man llnl_copyright "	
+'\" "
+'\" $Id: rename.1,v 1.1 2007/06/13 18:59:34 wealthychef Exp $ "
+'\" $Name:  $ "
+'\" "
+.TH rename 1
+.SH NAME
+rename - program for applying commands to numbered lists of files.
+.SH SYNOPSIS
+rename [options] intemp outtemp
+.SH DESCRIPTION
+rename is a general program for renumbering a list of files.
+The program takes two templates as parameters.  These templates
+take the form of sprintf() format strings that take a single
+integer as a parameter.  The program works by generating two
+filenames from the templates and a pair of indicies.  It then
+runs a unix command using the two filenames as parameters
+(mv by default).  The indicies are incremented and the process
+repeated.  Initial indicies and increments are available as
+options.
+.PP
+The classic use for the program is to rename/renumber a list of
+files.  For example, to rename a set of files named:
+x_01.txt x_5.txt x_9.txt to y0.pic y1.pic y2.pic, use the following
+command:
+rename -l9 -i4 -F0 -I1 x_%02d.txt y_%d.pic
+.PP
+.SH OPTIONS
+.TP
+-f(istart) 
+Set the initial input file number.  The default is 1.
+.TP
+-l(iend) 
+Set the final input file number.  The default is 124.
+.TP
+-i(istep) 
+Set the input file increment.  The default is 1.
+.TP
+-F(ostart) 
+Set the initial ouptut file number.  The default is the same
+as the -f option (istart).
+.TP
+-I(ostep) 
+Set the ouptut file increment.  The default is the same
+as the -i option (istep).
+.TP
+-t 
+Select test mode. Print the commands to stdout, but do not
+execute them.
+.TP
+-c(cmd) 
+Select the unix command to be issued with each filename pair.
+The default: mv.
+.TP
+-v
+Enable verbose mode.
+.PP
+.SH EXAMPLE
+rename -l10 -cpnm2tiff junk_%03d.pnm out_%03d.tif
+.SH ORIGIN
+.RS
+ASCI Visualization Project 
+.RE
+.RS
+Lawrence Livermore National Laboratory
+.RE
+.RS
+Information Management and Graphics Group
+.RE

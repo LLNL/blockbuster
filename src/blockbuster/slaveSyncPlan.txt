@@ -1,0 +1,71 @@
+Launching blockbuster for MPI use.  Use one of the following two options:
+ -mpi:  Instead of connecting to each backend node and running blockbuster, connect to one backend node and launch "$BLOCKBUSTER_MPI_SCRIPT $BLOCKBUSTER_MPI_SCRIPT_ARGS $path_to_blockbuster $args_for_blockbuster" on the remote host. 
+ -mpiscript script argstring:  Same as -mpi, but use \"script\" instead of  $BLOCKBUSTER_MPI_SCRIPT, and \"argstring\" instead of $BLOCKBUSTER_MPI_SCRIPT_ARGS.  Note that if there are spaces in argstring, it will be passed as multiple arguments to script.
+
+ The script is run on the remote host.  It will be good to put code to snarf the SLURM_JOBID from squeue for LLNL hosts in the LLNL MPI_SCRIPT. 
+
+ At LLNL, the wrapper script will look at the blockbuster args, and if -mpi is gven, then it will use squeue to set BLOCKBUSTER_MPI_SCRIPT_ARGS to the SLURM_JOBID for this user.  This will be very very site-specific!  E.g., grep for username and "vertex" from squeue output! 
+
+There will be two methods for DMX frame synchronizing, an MPI method and a TCP sockets method.  
+
+Both methods will be based solely on two functions in the slaves: 
+API:  
+      Sync_Barrier() function will do the right thing before swapping. 
+      Sync_Init() function initializes whatever is needed to start up the synchronization needed.  For MPI, this will just be MPI_init(), but for sockets, more complicated process of handshaking occurs.  
+
+==================================================================
+PREAMBLE FOR MPI slave method: (requires slaves to be compiled with MPI, of course)
+==================================================================
+
+DONE The slave is compiled with MPI.  I now know how to do this. 
+
+User launches blockbuster -r dmx -srun [-mpiscript <name>] blah blah
+
+Meaning of new master flags:
+        -srun : rsh to the remote host and srun blockbuster slaves 
+        -mpiscript name : run the remote script given instead of the default mpiblockbuster.sh
+
+DONE Each slave is launched with a -ports flag that tells it to synchronize with MPI and tells it which port the server is listening to for each slave (since only one command line is used). 
+
+Sync_Init(): MPI_init()
+Sync_Barrier():  MPI_Barrier()
+
+OOPS!  SwapBuffers is only sent to the slaves that have active parts of the frame, so a blind Barrier call is not good.  I think I maybe need a comm group to join and drop out of, or more simply, could just send a "fake swap" command to inactive slaves.  
+ 
+===================================================================
+PREAMBLE FOR TCP slave sync method (default dmx mode): (works everywhere but MAY not be as good performance)
+===================================================================
+
+User launches blockbuster -r dmx OR blockbuster -r dmx -manual (not implemented)
+
+Blockbuster launches each remote slave separately from its own thread using rsh or passwordless equivalent.  The first slave is the "syncmaster slave" (SMS).  Each slave is launched with a flag telling it the name and port for the master, and the name and port for the SMS, and the number of backend slaves. Like this:
+blockbuster 
+
+
+Sync_Init(): the syncmaster waits until the other slaves connect to it.  
+Sync_Barrier():  syncmaster receives "ready" signal from all slaves, then broadcasts "go" to all 
+
+===================================================================
+BOTH TCP AND MPI METHODS: 
+===================================================================
+
+Every call to swapbuffers() is preceded by Sync_Barrier(), and every slave calls Sync_Init() early on.  The meaning is different between MPI and Sockets cases, of course.  
+
+Each slave connects to the server on the port number given to it by the master, which is usually 7466, unless the user changes it.
+
+DONE The master figures out which slave goes with which hostname and socket.  
+
+
+===================================================================
+// how to get an ip address from a domain name, in blocking fashion:
+    QHostInfo info = QHostInfo::fromName("www.trolltech.com");
+    if (!info.addresses.isEmpty()) {
+        QHostAddress dmxAddress = info.addresses().first();
+        // use the first IP address
+    } 
+
+// how to get an ip address from a socket (I hope): 
+    QHostAddress socketAddress = mSlaveSocket.peerAddress();
+
+// are they the same?  I hope this works too
+   socketAddress == dmxAddress

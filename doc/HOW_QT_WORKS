@@ -1,0 +1,14 @@
+This is not the instructions for building the code.  For that, please refer to install.html.  
+
+For the uninitiated, here is a sketch of how Qt works and why things are so weird in this directory.  Qt is a powerful framework and build environment that enables RAD for GUI's and other nice features, so we use it for blockbuster.  The main tool in Qt is "qmake."  To use qmake, you basically do a 3 step dance: 
+
+1) qmake -project
+2) qmake
+3) make
+
+Step 1 creates a qmake project file named by default after the current working directory.  So in the "blockbuster" subdirectory, it createst "blockbuster.pro."  So there is a makefile target for blockbuster.pro.  
+Step 2 creates a Unix makefile.  
+Step 3 obviously builds the sources and executable.  
+
+Qt (qmake, specifically) does not know about how to link other libraries into its projects normally.  You have to give this information as args to qmake -project.  Also, qmake will normally assuming every source file in the current directory and its subdirectories need to be build together in one big glob to make your program.  The idea of independently acting subdirectories is not part of the Qt world view.  So I give a list of SOURCES to qmake.  
+

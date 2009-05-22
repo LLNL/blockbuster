@@ -1,0 +1,25 @@
+             libpnmrw.c - PBMPLUS read/write library
+                       version of 11jan93
+                    previous version 19may92
+
+This library is a subset of the full PBMPLUS libraries.  All it does
+is read and write PBM/PGM/PPM files.  The interface is almost identical
+to the real libraries - the two differences are that pnm_init() turned
+into pnm_init2 with different args, and that all the routines that can
+fail return error statuses instead of exitting.
+
+The intended use of this library is to make it easier for programs
+to make use of PBMPLUS.  For instance, if you want to be able to
+read in any type of image that PBMPLUS can handle, you could do a
+popen("anytopnm file","r") and then read from the resulting file
+pointer using these routines.
+
+Most of the configuration options in full PBMPLUS have been removed.
+There is still one in each of libpnmrw.h and libpnmrw.c, so you have
+to edit both files before you compile.
+
+Feedback is welcome; send bug reports, enhancements, etc. to:
+
+    jef@acme.com  http://www.acme.com/jef/
+
+PBMPLUS itself is available from http://www.acme.com/software/pbmplus/

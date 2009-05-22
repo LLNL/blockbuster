@@ -1,0 +1,71 @@
+'\" "
+'\" ASCI Visualization Project  "
+'\" "
+'\" Lawrence Livermore National Laboratory "
+'\" Information Management and Graphics Group "
+'\" P.O. Box 808, Mail Stop L-561 "
+'\" Livermore, CA 94551-0808 "
+'\" "
+'\" For information about this project see: "
+'\" 	http://www.llnl.gov/sccd/lc/img/  "
+'\" "
+'\" 	or contact: asciviz@llnl.gov "
+'\" "
+'\" For copyright and disclaimer information see: "
+'\"     man llnl_copyright "	
+'\" "
+'\" $Id: smevo.1,v 1.1 2007/06/13 18:59:35 wealthychef Exp $ "
+'\" $Name:  $ "
+'\" "
+.TH smevo 1
+.SH NAME
+smevo - create a CEI EVO movie file from an sm file and vice versa.
+.SH SYNOPSIS
+smevo [options] infile outfile
+.SH DESCRIPTION
+smevo reads the movie in INFILE and writes it out to OUTFILE.
+If INFILE is in EVO format, the output will be in sm format.
+If INFILE is in sm format, the output will be in EVO format.
+All frames of the movie are copied.  There are a number
+of options that can be used to select the output encoding
+scheme.
+.PP
+.SH OPTIONS
+.TP
+-rle 
+Selects RLE compression for an sm output file.  Default: no compression.
+.TP
+-gz 
+Selects gzip compression for an sm output file.  Default: no compression.
+.TP
+-lzo 
+Selects LZO compression for an sm output file.  Default: no compression.
+.TP
+-jpg 
+Selects JPG compression for an sm output file.  Default: no compression.
+.TP
+-jpeg 
+Selects JPEG compression for an evo output file.  Default: RLE compression.
+.TP
+-stereo
+Specify that the sm file should be treated as a stereo movie file.  Default: 
+non-stereo sm file.
+.TP
+-v
+Enable verbose mode.
+.PP
+.SH SEE ALSO
+xmovie(1), ifl2sm(1), img2sm(1), sm2img(1), sm(4)
+.SH ORIGIN
+The EVO file format is defined by CEI.  This tool uses their I/O
+library to read and write EVO files.
+.PP
+.RS
+ASCI Visualization Project 
+.RE
+.RS
+Lawrence Livermore National Laboratory
+.RE
+.RS
+Information Management and Graphics Group
+.RE

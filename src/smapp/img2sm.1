@@ -1,0 +1,150 @@
+'\" "
+'\" ASCI Visualization Project  "
+'\" "
+'\" Lawrence Livermore National Laboratory "
+'\" Information Management and Graphics Group "
+'\" P.O. Box 808, Mail Stop L-561 "
+'\" Livermore, CA 94551-0808 "
+'\" "
+'\" For information about this project see: "
+'\" 	http://www.llnl.gov/sccd/lc/img/  "
+'\" "
+'\" 	or contact: asciviz@llnl.gov "
+'\" "
+'\" For copyright and disclaimer information see: "
+'\"     man llnl_copyright "	
+'\" "
+'\" $Id: img2sm.1,v 1.2 2008/08/19 14:20:40 ahern Exp $ "
+'\" $Name:  $ "
+'\" "
+.TH img2sm 1
+.SH NAME
+img2sm - merge images into a streaming movie (sm) file
+.SH SYNOPSIS
+img2sm [options] template outputfile
+.SH DESCRIPTION
+img2sm concatenates a sequence of images into a "streaming movie"
+file for use with xmovie and other applications which understand
+the sm format.  TEMPLATE is a string containing a legal sprintf()
+string that will store a long int.  img2sm generates the input
+filenames by printing the index into this template.  OUTPUTFILE
+is the name of the .sm file to be generated.
+.SH OPTIONS
+.TP
+-rle
+Selects RLE compression for .sm files.  The default .sm file contains
+uncompressed images.
+.TP
+-gz
+Selects gzip compression for .sm files.  The default .sm file contains
+uncompressed images.
+.TP
+-lzo
+Selects LZO compression for .sm files.  The default .sm file contains
+uncompressed images.
+.TP
+-jpg
+Selects JPG compression for .sm files.  The default .sm file contains
+uncompressed images.
+.TP
+-jqual quality
+Selects the JPG compression quality.  The default is 75 (0 to 100).
+.TP
+-form ["tiff"|"raw"|"sgi"|"pnm"|"png"|"jpg"]
+Select the format of the input file.  TIFF, raw binary, PNM, PNG, JPEG and SGI
+libimage formats are supported.  If this option is not specified,
+the application attempts to guess the format by reading the first
+file for TIFF or SGI magic.  Gzip compressed raw binary files are
+read as well.
+.TP
+-planar
+If this flag is set, the "raw" format is considered to be planar
+interleaved.  By default, it is pixel interleaved.  This option
+only applies to the "raw" format with a 'dz' value of 3.
+.TP
+-size dx dy dz header
+For raw binary input files, specify the x and y sizes in pixels,
+the image depth in bytes (1 or 3) and the size of the image header
+(bytes to skip).  Images of depth 3 are assumed to be pixel interleaved
+RGBRGB.
+.TP
+-minmax min max
+For 16bit TIFF files, use the provided min and max values to map
+that portion of the 16bit range to 8bits.  By default, the app
+uses the values stored in the TIFF file itself.
+.TP
+-fps fps
+Sets the preferred frames per second for the movie playback.
+The default is 30.0 fps.  Maximum for sm versions 1 and 2 is 50.
+.TP
+-FPS fps
+Deprecated.  Please use -fps.
+.TP
+-flipx
+Flip the output image over its x axis.
+.TP
+-flipy
+Flip the output image over its y axis.
+.TP
+-rotate ang
+Rotate the source image by ang degrees before placing in the
+SM file.  The default is 0, and only 0, 90, 180 and 270 degree
+rotations are allowed.
+.TP
+-stereo
+Specify the output movie is left/right stereo (alternate frames).
+.TP
+-v
+Enable verbose mode.
+.TP
+-first start
+Set the initial image index number.  The default is to search for
+this starting at 0.
+.TP
+-last end
+Set the final image index number.  The default is to search for
+this starting at "first" and stepping by the stepsize.
+.TP
+-step step
+Set the image index number step.  The default value is 1.
+.TP
+-mipmaps num
+Set the number of mipmip (resolutions) to be stored in the file. The 
+default is 1.
+.TP
+-tilesizes sizestring
+This option is used to select the size of the tiles used to
+store the images in the sm file.  The parameter takes the form of
+a comma separated number or pair of numbers, one for each mipmap
+level (see -mipmap).  The tile size for each level can take the
+form XxY or Z, where X is the size of the tile in the x axis
+and Y is the size in the y axis, or Z which specifies square tiles
+of size Z by Z.  An example would be -tilesize 256x128,256 which
+specifies the tiling at the first mipmap level to be 256 by 128 
+pixels and the next level to be 256 by 256.  The default is
+a single tile, the same size as the image frame.
+.TP
+-threads num
+Set the number of parallel threads to use during compression.  The
+default is 1.
+.TP
+-ignore
+Allows the user to specify a template that is not a valid printf 
+string.  It can be used to create a movie by repeating a single image.
+.PP
+.SH EXAMPLES
+img2sm  prefix%04d.tiff myfile.sm
+.PP
+img2sm  -mipmap 2 -tilesizes 256x256,256x256 -threads 2 prefix%04d.tiff myfile.sm
+.SH SEE ALSO
+xmovie(1), ifl2sm(1), sm2img(1), smcat(1), sm(4)
+.SH ORIGIN
+.RS
+ASCI Visualization Project 
+.RE
+.RS
+Lawrence Livermore National Laboratory
+.RE
+.RS
+Information Management and Graphics Group
+.RE

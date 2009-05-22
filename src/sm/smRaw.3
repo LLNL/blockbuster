@@ -1,0 +1,89 @@
+'\" "
+'\" ASCI Visualization Project  "
+'\" "
+'\" Lawrence Livermore National Laboratory "
+'\" Information Management and Graphics Group "
+'\" P.O. Box 808, Mail Stop L-561 "
+'\" Livermore, CA 94551-0808 "
+'\" "
+'\" For information about this project see: "
+'\" 	http://www.llnl.gov/sccd/lc/img/  "
+'\" "
+'\" 	or contact: asciviz@llnl.gov "
+'\" "
+'\" For copyright and disclaimer information see: "
+'\"     man llnl_copyright "	
+'\" "
+'\" $Id: smRaw.3,v 1.3 2007/06/13 18:59:34 wealthychef Exp $ "
+'\" $Name:  $ "
+'\" "
+.TH smRaw 3
+.SH NAME
+smRaw - class for raw RGB movies
+.SH INHERITS FROM
+smBase > smRLE
+.SH SYNOPSIS
+.HP
+.B
+#include <sm/smRaw.h>
+.PP
+Methods from class smRaw:
+.HP
+.B
+static smRaw *newFile(const char *fname, u_int nframes, u_int width, u_int height)
+.PP
+Methods from class smBase:
+.HP
+.B
+static void init()
+.HP
+.B
+u_int getWidth()
+.HP
+.B
+u_int getHeight()
+.HP
+.B
+u_int getNumFrames()
+.HP
+.B
+static smBase *openFile(const char *fname, int _winsize=10, int _nwin=3)
+.HP
+.B
+void closeFile()
+.HP
+.B
+virtual void getFrame(int num, void *data, void *work)
+.HP
+.B
+virtual void setFrame(int num, void *data)
+.HP
+.B
+virtual void setCompFrame(int num, void *cdata, int size)
+.HP
+.B
+virtual void compFrame(int num, void *data, void *cdata, int &size)
+.SH DESCRIPTION
+smRaw provides services for streaming of uncompressed (raw) RGB image
+sequences.
+.SH METHODS
+.HP
+.B
+static smRaw *newFile(const char *fname, u_int nframes, u_int width, u_int height)
+.RS
+Create a new smRaw file.  After creating a new file, it is expected that
+the frames will be added to the file sequentially using calls to setFrame().
+.RE
+.SH SEE ALSO
+.BR smBase (3),
+.BR smRLE (3)
+.SH ORIGIN
+.RS
+ASCI Visualization Project 
+.RE
+.RS
+Lawrence Livermore National Laboratory
+.RE
+.RS
+Information Management and Graphics Group
+.RE

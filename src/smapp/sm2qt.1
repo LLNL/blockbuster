@@ -1,0 +1,47 @@
+'\" "
+'\" ASCI Visualization Project  "
+'\" "
+'\" Lawrence Livermore National Laboratory "
+'\" Information Management and Graphics Group "
+'\" P.O. Box 808, Mail Stop L-561 "
+'\" Livermore, CA 94551-0808 "
+'\" "
+'\" For information about this project see: "
+'\" 	http://www.llnl.gov/sccd/lc/img/  "
+'\" "
+'\" 	or contact: asciviz@llnl.gov "
+'\" "
+'\" For copyright and disclaimer information see: "
+'\"     man llnl_copyright "	
+'\" "
+'\" $Id: sm2qt.1,v 1.1 2007/06/13 18:59:34 wealthychef Exp $ "
+'\" $Name:  $ "
+'\" "
+.TH sm2qt 1
+.SH NAME
+sm2qt - convert a streaming movie (sm)  file into a quicktime movie.
+.SH SYNOPSIS
+sm2qt sminfile qtoutfile fps
+.SH DESCRIPTION
+sm2qt reads the frames from the input sm file and converts
+them into a single QuickTime file.  The framerate of the
+QuickTime file is set by the FPS parameter.
+The motion JPEG codec is used to encode the movie.
+.PP
+This command is based on the sm2img and dmconvert programs.
+It requires enough disk space for all the sm frames to be
+stored as individual files.  This command is only available
+under Irix (where the dmconvert program is available).
+.SH SEE ALSO
+sm2img(1), sm(4), dmconvert(1)
+.SH ORIGIN
+.PP
+.RS
+ASCI Visualization Project 
+.RE
+.RS
+Lawrence Livermore National Laboratory
+.RE
+.RS
+Information Management and Graphics Group
+.RE

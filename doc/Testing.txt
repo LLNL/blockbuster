@@ -1,0 +1,54 @@
+testing procedure requires about a half an hour to complete successfully.  Entering bugs into the tracker is the slowest step. 
+
+Use Testing.cues for a good suite of tests.  
+LLNL Note:  Be sure to test against actual cuefiles on both OCF and SCF, as some bugs do crop up on SCF that don't appear on OCF.  
+
+Before installing, but after confirming functionality with the below tests, build the development version with debug turned off and test to make sure it's quiet.  
+
+Before testing, go to the Blockbuster sourceforge site and open the bug tracker.  You will need it.  :-)  Don't bother with private notes if you can avoid it.  The tracker is there for a reason;  use it!  Similarly, do not fix bugs while testing, unless they are catastrophic and testing cannot continue without them.  To do so diffuses focus and results in testing not getting completed.  Also, the bug you rush off to fix is probably not as important as others that are waiting to be fixed, so might as well stay in there!  
+
+# Cuefiles 
+Run sidecar without loading a cuefile.  Next, load a cuefile both from the command line and from the "Load from file..." button.  Save it as a new cue file and then reload it. Run all cues.  Test every button in the interface that operates on cues.  Duplicate a cue, then test every button and checkbox in the new cue.  Try to close the window and quit the application to make sure it prompts for saves. Save the cue file, then reload it.  Make sure they were saved and restored properly.   
+
+# Movie Cues and Snapshots
+Execute a cue and create a new server in the resulting dialog.  Create a new cue, adjust the zoom, position and size of the window and of the image and take a snapshot of the result.  Click "Apply Changes" and then execute the cue again and make sure it is the same as it was.  
+Select multiple cues and execute them all with the "Execute" button.  Interrupt in the middle once.  Now execute them with the "Loop" button.  Also interrupt that.  
+
+# Remote Control:
+Test -movie and -play options to sidecar. 
+The "-movie movie@host" flags work, but what is the actual use case for that?  In my tests, either DISPLAY is not set correctly or else the wrong blockbuster launches, so it's pretty useless at LLNL. Why did I make this possible?  
+Check every button in the remote control interface to make sure it works correctly.  Enable and disable keystroke capture.   Test the following keystrokes: 
+Right/Left arrow - advance/backup by one frame.
+Shift + Right/Left arrow - advance/backup by 20 frames.
+Control + Right/Left arrow - advance/backup by 1/4 of movie length.
+Home - jump to the first frame
+End - jump to the last frame in the movie
+Spacebar - play/pause
+c -   center the image in the window
+f -   zoom image to fit the window (minify only)
+m -   hide/unhide the mouse cursor over the movie window
+l/L - increase/decrease the current level of detail displayed
+q --  quit
+r -   play in reverse
+z/Z - zoom in or out
+1 -  (the number 1) set zoom to 1.0
++/- - increase or decrease the frame rate
+i - display the GUI panel (interface) if it was hidden
+? or h -- print this menu
+Esc - exit Blockbuster
+
+
+Take a screen capture using the "Save Image" button. 
+
+Confirm proper looping behaviors, and pingpong. 
+Confirm that the file history is working in the blockbuster launch dialog.  
+
+# connections:
+Repeatedly connect and disconnect from the server, then test the controls.  Terminate it and restart it.  Execute cues with a connection in place and out of place.  Do this several times and make sure the right buttons are enabled and disabled and all functionality is available.  Connect with cues shown and hidden.  Quit blockbuster from within blockbuster and make sure sidecar handles that. 
+
+# Performance:
+Check rendering speed under MPI and without MPI and confirm that synchronization is occurring reliably.  
+
+# DMX 
+Test launch and behavior of blockbuster and sidecar with and without DMX and MPI framesync. Test "Fill" (fullscreen) button with DMX. 
+
