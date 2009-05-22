@@ -1,0 +1,258 @@
+'\" "
+'\" ASCI Visualization Project  "
+'\" "
+'\" Lawrence Livermore National Laboratory "
+'\" Information Management and Graphics Group "
+'\" P.O. Box 808, Mail Stop L-561 "
+'\" Livermore, CA 94551-0808 "
+'\" "
+'\" For information about this project see: "
+'\" 	http://www.llnl.gov/sccd/lc/img/  "
+'\" "
+'\" 	or contact: asciviz@llnl.gov "
+'\" "
+'\" For copyright and disclaimer information see: "
+'\"     man llnl_copyright "	
+'\" "
+'\" $Id: smBase.3,v 1.3 2007/06/13 18:59:33 wealthychef Exp $ "
+'\" $Name:  $ "
+'\" "
+.TH smBase 3
+.SH NAME
+smBase - base class for sm format movie files
+.SH INHERITS FROM
+smBase
+.SH SYNOPSIS
+.HP
+.B
+#include <sm/smBase.h>
+.PP
+Public Methods from class smBase:
+.HP
+.B
+static void init()
+.HP
+.B
+u_int getWidth()
+.HP
+.B
+u_int getHeight()
+.HP
+.B
+float getFPS()
+.HP
+.B
+void setFPS(float fps)
+.HP
+.B
+u_int getFlags()
+.HP
+.B
+void setFlags(u_int flags)
+.HP
+.B
+u_int getNumFrames()
+.HP
+.B
+static smBase *openFile(const char *fname, int _winsize=10, int _nwin=3)
+.HP
+.B
+void closeFile()
+.HP
+.B
+virtual void getFrame(int num, void *data)
+.HP
+.B
+virtual void getCompFrame(int num, void *data, int &size)
+.HP
+.B
+virtual void setFrame(int num, void *data)
+.HP
+.B
+virtual void setCompFrame(int num, void *cdata, int size)
+.HP
+.B
+virtual void compFrame(int num, void *data, void *cdata, int &size)
+.PP
+Protected Methods from class smBase:
+.HP
+.B
+virtual void compBlock(void *in, void *out, int &outsize, int *dim)
+.HP
+.B
+virtual void decompBlock(u_char *in,u_char *out,int insize, int *dim)
+.HP
+.B
+int newFile(const char *fname, u_int nframes, u_int w, u_int h)
+.SH DESCRIPTION
+smBase provides a base class for storage and parallel I/O of movies.
+.SH PUBLIC METHODS
+.HP
+.B
+static void init()
+.RS
+Initialize the sm library.  All built-in sm formats are initialized
+and need not be initialized again.
+.RE
+.HP
+.B
+u_int getFlags()
+.HP
+.B
+void setFlags(u_int f)
+.RS
+Get and set the current movie flags.  If the 
+.B SM_FLAGS_STEREO
+bit is set, the movie is to be played as a stereo movie with every
+other frame targeting the right and left eyes.
+Other bits in the flags are accessed via 
+.B getType() 
+and 
+.B getFPS()/setFPS().
+.RE
+.HP
+.B
+float getFPS()
+.HP
+.B
+void setFPS(float fps)
+.RS
+Get and set the desired framerate for the movie in frames per second.
+.RE
+.HP
+.B
+u_int getWidth()
+.RS
+Get the width of the images.
+.RE
+.HP
+.B
+u_int getHeight()
+.RS
+Get the height of the images.
+.RE
+.HP
+.B
+u_int getNumFrames()
+.RS
+Get the number of images in the movie.
+.RE
+.HP
+.B
+static smBase *openFile(const char *fname, int _winsize=10, int _nwin=3)
+.RS
+Open an sm movie for reading.  The caller can optionally set the
+I/O parameters at this time.  The
+.B _winsize
+parameter specifies how many frames are read at one time, while
+.B _nwin
+determines the number of buffers of this size.
+.RE
+.HP
+.B
+void closeFile()
+.RS
+Close the sm file.
+.RE
+.HP
+.B
+virtual void getFrame(int num, void *data)
+.RS
+Read the given frame into the memory pointed to by
+.BR data .
+This call is fully thread-safe.  For optimal
+performance, multiple threads should request frames which are
+numbered consecutively, and there should not be more than
+.B _winsize * 
+.B _nwin
+threads calling this function simultaneously.
+.RE
+.HP
+.B
+virtual void getCompFrame(int num, void *data, int &size)
+.RS
+Read the uncompressed image data for the given frame into the memory
+pointed to by
+.BR data .
+The size of the data is returned in
+.BR size .
+If data is NULL, the data is not returned, but the necessary
+size of the buffer that must be passed as data is returned in
+.BR size .
+.RE
+.HP
+.B
+virtual void setFrame(int num, void *data)
+.RS
+.RE
+.B
+virtual void setCompFrame(int num, void *cdata, int size)
+.RS
+Set the given frame given the full image data or the compressed
+image data.  These methods should only be used when the sm object
+was created for writing.  Files opened for reading are read-only.
+These calls are NOT thread-safe.
+.RE
+.HP
+.B
+virtual void compFrame(void *data, void *cdata, int &size)
+.RS
+Compute a compressed frame from the given image data.  The size
+of the compressed frame data is returned in 
+.B size.  
+If the function is called with 
+.B cdata 
+set to
+NULL, the function will return in 
+.B size 
+a not to exceed number of bytes
+for 
+.B cdata 
+without actually compressing.
+.RE
+.SH PROTECTED METHODS
+.PP
+These are the key methods that need to be supplied to implement
+a new compression scheme within the sm framework.
+.HP
+.B
+int newFile(const char *fname, u_int nframes, u_int w, u_int h)
+.RS
+The function is called to create a new file of the specific
+subclass type.
+.RE
+.HP
+.B
+virtual void compBlock(void *in, void *out, int &outsize, int *dim)
+.HP
+.B
+virtual void decompBlock(u_char *in,u_char *out,int insize, int *dim)
+.RS
+The block compression and decompression are the core routines that
+need to be implemented for any subclass.  They compress a block
+of pixels, the size given by 
+.B dim[0] 
+and 
+.B dim[1]. 
+If 
+.B out 
+is set to
+NULL for
+.B compBlock()
+, the retured 
+.B outsize 
+is not to exceed size of the output buffer.
+.RE
+.SH SEE ALSO
+.BR smRLE (3),
+.BR smRaw (3)
+.SH ORIGIN
+.RS
+ASCI Visualization Project 
+.RE
+.RS
+Lawrence Livermore National Laboratory
+.RE
+.RS
+Information Management and Graphics Group
+.RE

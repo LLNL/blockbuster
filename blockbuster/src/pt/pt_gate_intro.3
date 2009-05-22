@@ -1,0 +1,65 @@
+'\" "
+'\" ASCI Visualization Project  "
+'\" "
+'\" Lawrence Livermore National Laboratory "
+'\" Information Management and Graphics Group "
+'\" P.O. Box 808, Mail Stop L-561 "
+'\" Livermore, CA 94551-0808 "
+'\" "
+'\" For information about this project see: "
+'\" 	http://www.llnl.gov/sccd/lc/img/  "
+'\" "
+'\" 	or contact: asciviz@llnl.gov "
+'\" "
+'\" For copyright and disclaimer information see: "
+'\"     man llnl_copyright "	
+'\" "
+'\" $Id: pt_gate_intro.3,v 1.1 2007/06/13 18:59:32 wealthychef Exp $ "
+'\" $Name:  $ "
+'\" "
+'LINK pt_gate_init.3 pt_gate_destroy.3 pt_gate_sync.3
+.TH pt_gate_init 3
+.SH NAME
+pt_gate_init, pt_gate_destroy, pt_gate_sync - a synchronization "gate" for pthreads
+.SH SYNOPSIS
+.HP
+.B
+#include <pt/pt.h>
+.HP
+.B
+void pt_gate_init(pt_gate_t *g, int nthreads)
+.HP
+.B
+void pt_gate_destroy(pt_gate_t *g)
+.HP
+.B
+void pt_gate_sync(pt_gate_t *g)
+.SH DESCRIPTION
+A gate allows the synchronization of any number of threads.  At
+creation time,
+.I
+pt_gate_init()
+allows the user to specify the number
+of threads to be synchronized and returns the gate identifier.
+Each thread calling
+.I
+pt_gate_sync()
+on the gate will will either block (if
+not enough threads have reached the gate) or unblock all waiting threads (if
+it is the last thread to reach the gate).  A call by any thread to
+.I
+pt_gate_destroy()
+will release all blocked threads and free the
+associated gate information.
+.SH SEE ALSO
+.BR pthread_create (1)
+.SH ORIGIN
+.RS
+ASCI Visualization Project 
+.RE
+.RS
+Lawrence Livermore National Laboratory
+.RE
+.RS
+Information Management and Graphics Group
+.RE

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# The repeated series of simple images ensures that image data isn't already
+# in the cache when a new frame is request.  We could use a movie here, but
+# none are currently checked in.
+MOVIES="../data/shapes ../data/shapes ../data/shapes ../data/shapes ../data/shapes ../data/shapes ../data/shapes ../data/shapes ../data/shapes"
+
+# This is the number of frames that is run and timed.
+COUNT=200
+
+# For every combination of these parameters, a test of
+# $COUNT frames is executed.
+THREADS="0 1 2 3 4 5"
+PRELOADS="0 1 2 3 4 5 6 7 8 9 10"
+
+for threads in $THREADS ; do
+    for preload in $PRELOADS ; do
+	./blockbuster -minfo -p$preload -t$threads -l$COUNT $MOVIES 2>&1 | sed "s/^/t=$threads;p=$preload;/"
+    done
+done | tee perf.out

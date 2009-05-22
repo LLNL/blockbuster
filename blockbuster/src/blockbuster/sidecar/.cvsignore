@@ -1,0 +1,12 @@
+Makefile.qt.include
+MovieCueWidget.ui
+MovieCues.cpp
+MovieCues.h
+events.cpp
+events.h
+moc_MovieCues.cpp
+moc_sidecar.cpp
+sidecar
+sidecar.pro
+ui_MovieCueWidget.h
+ui_sidecar.h

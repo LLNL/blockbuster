@@ -1,0 +1,225 @@
+Introduction
+------------
+
+This document describes how to read and write CEI Inc. EVO video files
+using the EVO library.
+
+The EVO movie format is meant to be a simple video format with
+characteristics desirable for engineering and scientific animation:
+easy to use, compact file format, portable file format, and stereo
+capable.
+
+Associated with the EVO format is CEI Inc.'s EnVideo movie player.
+It is available in two versions: a simple free version and a feature
+rich version for a nominal price.  Both versions run on all Unix and
+MS Windows platforms.  See http://www.ceintl.com/ for additional
+information.
+
+
+JPEG library
+------------
+
+In addition to this library you will need to have a copy of the jpeg
+library and header files.  These need to be at least version 62 (6b)
+or greater.  You can find the version number in jpeglib.h as the
+defined value JPEG_LIB_VERSION.  Please note that SGI Irix 6.5 and
+earlier systems have an older version of the jpeg library; be sure to
+compile and link with the proper version.
+
+You can find the library at this web site: http://www.ijg.org/
+
+
+Writing EVO files
+-----------------
+
+Use the file test_writer.c as a template.  This example creates an EVO
+file from a sequence of raw rgb images.
+
+Writing an EVO file consists of allocating an EVO image structure,
+initializing the EVO movie file, writing the images, closing the file,
+and releasing the EVO image structure.
+
+1. Allocation of the EVO image structure:
+
+   #include "evomovie.h"
+   EVOImagePtrType img;
+   int pixels_across, pixels_down;
+   img = evo_movie_alloc_image(pixels_across, pixels_down);
+
+   evo_movie_alloc_image() returns NULL if an error occurs.
+
+2. Initialization of the movie file:
+
+   EVOMoviePtrType movie;
+   unsigned int stereo, pixels_across, pixel_down, number_of_images;
+   EVOMovieFormatType movie_format;
+   unsigned int quality;
+   movie = evo_movie_new_file(fileName, stereo, pixels_across,
+              pixels_down, number_of_images, movie_format, quality);
+
+   evo_movie_new_file() returns NULL if an error occurs.  stereo is a
+   boolean flag indicating whether or not left/right images will be
+   stored.  movie_format is either MOVIERLE or MOVIEJPEG.  If it is
+   MOVIERLE, then the images will be written as run length encoded
+   compressed images.  This is a loss-less compression method.  If the
+   format is MOVIEJPEG, then the images will be stored as JPEG
+   compressed images.  This is a lossy compression method.  If the
+   format is MOVIEJPEG, then the value for quality determines the
+   amount of compression.  This is a value between 0 and 100.
+
+3. Writing the images:
+
+   evo_movie_add_image(movie, img);
+
+   evo_movie_add_image() returns MOVIEERR if an error occurs.  The
+   image data contained in img->image is compressed and added to the
+   movie file.  img->image is an unsigned char array of dimension
+   [xdim*ydim*3] and contains the RGB image data to store.  The data
+   is pixel interlace going across and then down.
+
+   Call this function (number_of_images) times for non-stereo movies
+   and (number_of_images*2) times for stereo movies.  If the movie is
+   stereo, call the function alternating between left and right
+   images.
+
+4. Closing the movie file:
+
+   evo_movie_close_file(movie);
+
+   evo_movie_close_file() returns MOVIEERR if an error occurs.
+   This function closes the movie file after flushing additional data
+   to the file.
+
+5. Freeing of the EVO image structure:
+
+   evo_movie_free_image(img);
+
+
+Reading EVO files
+-----------------
+
+Use the file test_reader.c as a template.  This example creates a
+sequence of raw rgb images from an EVO movie file.
+
+Reading an EVO file consists of opening the EVO movie file, allocating
+an EVO image structure, reading the images, closing the file, and
+releasing the EVO image structure.
+
+1. Opening the EVO movie file:
+
+   #include "evomovie.h"
+   EVOMoviePtrType movie;
+   char *fileName;
+   movie = evo_movie_open_file(fileName);
+
+   evo_movie_open_file() returns NULL if an error occurs.
+
+2. Allocating an EVO image structure:
+
+   unsigned int xdim, ydim;
+   EVOImagePtrType img;
+   pixels_across = movie->xdim;
+   pixels_down = movie->ydim;
+   img=evo_movie_alloc_image(pixels_across, pixels_down);
+
+   evo_movie_alloc_image() returns NULL if an error occurs.
+
+3. Reading an image:
+
+   unsigned int frame_number;
+   evo_movie_get_image(movie, img, frame_number, RIGHTEYE);
+
+   evo_movie_get_image() returns MOVIEERR if an error occurs.
+   frameNumber is the particular frame number to get.  This value
+   ranges from 0 to (movie->nFrames)-1, inclusive.  If the movie is
+   stereo (i.e. contains left & right eye images) as indicated by the
+   boolean flag movie->stereo, then the fourth argument can be either
+   RIGHTEYE or LEFTEYE; otherwise, the fourth argument should be
+   RIGHTEYE.
+
+4. Closing the file:
+
+   evo_movie_close_file(movie);
+
+   evo_movie_close_file() returns MOVIEERR if an error occurs.
+
+5. Freeing of the EVO image structure:
+
+   evo_movie_free_image(img);
+
+
+Error Handling
+--------------
+
+EVO library functions can return a value, typically MOVIEERR or NULL,
+indicating an error.  The following variable will contain a error
+message:
+
+   extern char EVOMovieErrorString[256];
+
+
+Multiple Movie Files
+--------------------
+
+Four functions are available for opening and reading images from
+multiple EVO files for back-to-back playback:
+
+1. Opening the files:
+
+   EVOMovieListPtrType movies;
+   int number_of_files;
+   char *file_names[];
+   movies = evo_movie_open_files(number_of_files, file_names); 
+
+   evo_movie_open_files() returns NULL if an error occurs.  All
+   specified movie files must have the same image dimension and same
+   stereo format.
+
+2. To reading the images:
+
+   EVOImagePtrType img;
+   unsigned int frame_number;
+   evo_movies_get_image(movies, img, frame_number, RIGHTEYE);
+
+   evo_movie_get_images() returns MOVIEERR if an error occurs.  Its
+   arguments and operation are similar to evo_movie_get_image()
+   previously described.
+
+3. Closing the files:
+
+   evo_movie_close_files(movies);
+
+   evo_movie_close_files() returns MOVIEERR if an error occurs.
+
+4. Additional EVO movie files can be opened and appended to the list
+   of currently open movie files:
+
+   char *file_name;
+   evo_movie_add_file(movies, file_name);
+
+   evo_movie_add_file() returns MOVIEERR if an error occurs.
+
+
+EVO Data Structures
+-------------------
+
+EVO Structures, such as EVOMovieType, EVOMovieListType, and
+EVOImageType are divided into public and private members.
+Applications using the EVO library can safely access the the public
+members but should not access the private members.
+
+
+EVO Image Order
+---------------
+
+Image data is ordered with the origin in the upper left corner
+proceeding across the screen to the right and then down the screen.
+The data is stored in RGB pixel interlace (e.g. RGBRGBRGB....).  If
+the particular movie is stereo, then the frames are interleaved
+(e.g. left#1, right#1, left#2, right#2, ...).
+
+
+Feedback
+--------
+
+Please send comments regarding this library to 'support@ceintl.com'.

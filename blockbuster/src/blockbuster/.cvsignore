@@ -1,0 +1,6 @@
+Makefile.qt.include
+blockbuster
+blockbuster.pro
+moc_EventServer.cpp
+moc_MovieCues.cpp
+ui_MovieCueWidget.h

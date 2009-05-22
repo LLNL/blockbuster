@@ -1,0 +1,85 @@
+#!/bin/csh -f
+#
+#       Convert an sm file into an MPEG file...
+#
+if ($#argv != 3) then
+        echo Usage: $0 smfile mpegfilename fps
+        exit
+endif
+
+#
+#       nframes/Stereo?
+#
+set ninput = `sm2img $1 | grep Frames | cut "-d " -f2`
+set stereo = `sm2img $1 | grep Stereo`
+set skip = 1
+if ("$stereo" != "" ) then
+        set skip = 2
+        @ ninput = $ninput / 2
+endif
+#
+#	Grab frame sizes
+#
+set tmp = `sminfo $1`
+set sizes = `echo $tmp | cut -f5 -d":"`
+@ xsize1 = `echo $sizes | cut -f1 -d" "`
+@ ysize1 = `echo $sizes | cut -f2 -d" "`
+
+#
+#       Size to the lower factor of 2...
+#
+@ xsize = $xsize1 / 2
+@ xsize = $xsize * 2
+@ ysize = $ysize1 / 2
+@ ysize = $ysize * 2
+
+#
+#       Frames/fps/time...
+#
+set outfps = $3
+set outspf = `echo "scale=10; 1.0/${outfps} " | bc -l`
+set tlen = `echo "scale=10; ${ninput}*${outspf} " | bc -l`
+set noutput = `echo "scale=10; ${tlen}*30.0 " | bc -l`
+set noutput = ${noutput:r}
+if (${noutput:r} == "") set noutput = 1
+
+#
+#       Extract the frames in YUV format
+#
+sm2img -form YUV -step $skip $1 $2_junk_%d
+
+#
+#       walk the movie duration, linking to the proper
+#       source frame to approximate the desired framerate
+#
+set img = 0
+set t = `echo "scale=10; ${img}/30.0 " | bc -l`
+while ($img < $noutput)
+
+        set n = `echo "scale=10; ${t}/${outspf} " | bc -l`
+        set n = ${n:r}
+        if (${n} == "") set n = 0
+        @ n *= $skip
+ 
+        ln -s $2_junk_${n}.Y $2_junk_ln_${img}.Y
+        ln -s $2_junk_${n}.U $2_junk_ln_${img}.U
+        ln -s $2_junk_${n}.V $2_junk_ln_${img}.V
+ 
+        @ img += 1
+        set t = `echo "scale=10; ${img}/30.0 " | bc -l`
+end
+ 
+#
+#       convert to mpeg using LibGen mpeg command
+#
+@ last = $noutput - 1
+mpeg -a 0 -b $last -h $xsize -v $ysize $2_junk_ln_ -s $2 -PF > /dev/null
+ 
+#
+#       clean up...
+#
+find . -name "$2_junk_*.[YUV]" -exec rm -f {} \;
+
+#
+#	Done!
+#
