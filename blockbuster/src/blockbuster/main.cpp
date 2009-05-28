@@ -139,7 +139,7 @@ void usage(void) {
   fprintf(stderr, "\t(supports gl, gltexture, x11, gl_stereo, dmx renderers)\n");
   fprintf(stderr, "\tx11: Simple X11 user interface using keypresses and mouse movements\n");
   fprintf(stderr, "\t(supports gl, gltexture, x11, gl_stereo, dmx renderers)\n");  
-  fprintf(stderr, "-verbose num: sets verbosity, 0=quiet, 1=SYSTEM, 2=ERROR, 3=WARNING, 4=INFO, 5=DEBUG\n");
+  fprintf(stderr, "-verbose num: sets verbosity, with 0=quiet, 1=system, 2=error, 3=warning, 4=info, 5=debug.  Same behavior as -messageLevel but with numbers, basically.\n");
   fprintf(stderr, "-version prints the current blockbuster version\n");
   fprintf(stderr, "-zoom <zoom> sets the initial zoom ['auto' tracks window size,\n");
   fprintf(stderr, "                          0 is 'use default'] ['auto']\n");
