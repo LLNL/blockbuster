@@ -113,6 +113,7 @@ void usage(void) {
   fprintf(stderr, "-geometry <geometrystring> specifies X window geometry\n");
   fprintf(stderr, "-help displays this help message\n");
   fprintf(stderr, "-keyhelp:  display list of keyboard controls\n");
+  fprintf(stderr, "-lod num: specifies a starting level of detail for the given movie\n");
   fprintf(stderr, "-loops <loops> specifies how many times to loop (number or 'forever')\n");
   fprintf(stderr, "-messageLevel sets the message level, in order of chattiness:  quiet, syserr, error, warning, info, debug\n"); 
   fprintf(stderr, "-no-controls (or -withoutControls) turns off the control window (if defined for the user interface)\n");
@@ -293,6 +294,13 @@ static void ParseOptions(int &argc, char *argv[], ProgramOptions *opt)
       PrintKeyboardControls(); 
 	  exit(MOVIE_HELP);	   	
 	}
+	else if (CHECK_ATOI_ARG("-lod", argc, argv,  opt->LOD)){
+      if (opt->LOD > 0) {
+        // user thinks LOD 1 is lowest level... 
+        opt->LOD--; 
+      }
+    continue;
+    }
 	else if (CHECK_STRING_ARG("-loops", argc, argv,  opt->loopCountName)) continue;
 	else if (CHECK_STRING_ARG("-messageLevel", argc, argv, opt->messageLevelName))  {
       if ((opt->messageLevel = FindMessageLevel(opt->messageLevelName)) == NULL) {

@@ -166,7 +166,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   int zooming = 0, zoomStartY = 0, zoomDelta = 0;  // integer zoom for mouse
   /*int izoom = 0*/  // for mouse zoom
   float currentZoom = 1.0, newZoom, startZoom, oldZoom; // actual zoom factor
-  int lod = 0, maxLOD, baseLOD = 0, lodBias = 0;
+  int lod = 0, maxLOD, baseLOD = 0, lodBias = options->LOD;
 
   /* Region Of Interest of the image */
   Rectangle roi;
@@ -216,6 +216,8 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   //  canvas->ReportRateRangeChange(0.01, 1000);
   canvas->ReportDetailRangeChange(-maxLOD, maxLOD);
   canvas->ShowInterface(options->drawInterface);
+  canvas->ReportDetailChange(lodBias);
+  canvas->ReportLoopBehaviorChange(loopCount); 
 
   /* Compute a starting zoom factor.  We won't do a full 
    * Zoom to Fit, but we will do a Shrink to Fit (i.e.
@@ -693,7 +695,11 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
 	      panStartX = panStartY = 0; 
 	      panDeltaX = panDeltaY = 0;
 	      zoomStartY = 0; zoomDelta = 0;
-	      lodBias = 0;
+          if (options->LOD) {
+            lodBias = options->LOD;
+          } else {
+            lodBias = 0;
+          }
 	      play = 0;
 	      panning = 0; 
 	      zoomOne = fullScreen = false; 

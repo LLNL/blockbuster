@@ -170,8 +170,8 @@ void BlockbusterInterface::setZoom(double zoom){
 void BlockbusterInterface::setLoopBehavior (int behavior){
   // avoid spurious signals: 
   mLoop = behavior; 
-  loopCheckBox->setChecked(behavior != 0 && behavior != 1); 
   foreverCheckBox->setChecked (behavior == -1);   
+  loopCheckBox->setChecked(behavior != 0 && behavior != 1); 
   return; 
 }
 
@@ -386,7 +386,7 @@ void BlockbusterInterface::on_loopCheckBox_stateChanged(int state) {
   if (state && pingpongCheckBox->isChecked()){
     pingpongCheckBox->setChecked(false); 
   }
-  if (state == mLoop) return; 
+  if (state && mLoop || !state && !mLoop) return; 
   mEventQueue.push_back(MovieEvent(MOVIE_SET_LOOP, state)); 
   return; 
 }

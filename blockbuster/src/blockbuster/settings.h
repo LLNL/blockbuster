@@ -34,7 +34,7 @@ struct ProgramOptions {
 #endif
     messageLevel(NULL), userInterface(NULL), rendererIndex(0), 
     frameCacheSize(8), readerThreads(0), loopCountName("1"), 
-    startFrame(0), endFrame(-1), loopCount(1), 
+    startFrame(0), endFrame(-1), loopCount(1), LOD(0),
     slaveLaunchMethod("rsh"), useMPI(0), 
     play(0), speedTest(0), frameRate(0.0), 
     zoom(1.0), zoomFit(1), slaveMode(0), masterPort(0), 
@@ -61,6 +61,7 @@ struct ProgramOptions {
   QString loopCountName;
   int32_t startFrame, endFrame; 
   int loopCount;
+  int LOD; 
   QString slaveLaunchMethod; 
   int useMPI; 
   QString mpiScript; 
