@@ -176,8 +176,8 @@ class DMXSlave: public QObject {
 	uint64_t usecs=0;
 	QueueNetworkEvents(); 
     while (mLastSwapID < swapID && usecs/1000000 < timeout) {	  
-      usleep(10000);
-      usecs += 10000; 	  
+      usleep(1000);
+      usecs += 1000; 	  
       QueueNetworkEvents(); 
     } 	
     if (mLastSwapID < swapID) {
