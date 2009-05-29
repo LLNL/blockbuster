@@ -154,7 +154,7 @@ int DMXSlave::EventFromMessage(const QString &, MovieEvent &) {
 */ 
 int DMXSlave::QueueNetworkEvents(void) {
   int numqueued = 0;   
-  gCoreApp->processEvents(); 
+  gCoreApp->processEvents(QEventLoop::ExcludeUserInputEvents); 
   while(mSlaveSocket && mSlaveSocket->state() == QAbstractSocket::ConnectedState 
         && mSlaveSocket->bytesAvailable()) {	
     QString msg; 
@@ -235,6 +235,7 @@ void DMXSlave::SendMessage(QString msg) {
   /*!
 	Has something evil happened?  
   */ 
+  DEBUGMSG(QString("checking for valid socket to host %1").arg(mRemoteHostname.c_str())); 
   if (!mSlaveSocket->isValid()) {
 	ERROR("Bad socket in SendQueuedMessages"); 
 	return;
@@ -243,7 +244,8 @@ void DMXSlave::SendMessage(QString msg) {
   DEBUGMSG(QString("Sending message to host %1 : \"%2\"").arg(mRemoteHostname.c_str()).arg(msg)); 
   
   outstream << msg; // data sent as a QString arrives as a QString, no terminating token necessary
-  mSlaveSocket->waitForBytesWritten(-1); 
+  //  mSlaveSocket->waitForBytesWritten(-1); 
+  DEBUGMSG(QString("Completed sending message to host %1 : \"%2\"").arg(mRemoteHostname.c_str()).arg(msg)); 
   
   return; 
 }
@@ -1048,7 +1050,7 @@ static void dmx_SwapBuffers(Canvas *){
     //DEBUGMSG("Sending swap to slave %s", gRenderInfo->mSlaveServer.mActiveSlaves[slaveNum]->GetHost().c_str()); 
     
 	gRenderInfo->mSlaveServer.mActiveSlaves[slaveNum]->SwapBuffers(swapID);
-	//gCoreApp->processEvents(); 
+	//gCoreApp->processEvents(QEventLoop::ExcludeUserInputEvents); 
   }
   swapID ++; 
   return; 
@@ -1058,7 +1060,7 @@ static void dmx_SwapBuffers(Canvas *){
 dmx_Preload(Canvas *, uint32_t frameNumber, const Rectangle *imageRegion,
             uint32_t levelOfDetail)
 {
-    
+
   if (!gRenderInfo->numValidWindowInfos) return; 
     int i;
     for (i = 0; i < gRenderInfo->numValidWindowInfos; i++) {
@@ -1076,12 +1078,13 @@ dmx_Preload(Canvas *, uint32_t frameNumber, const Rectangle *imageRegion,
                 ClipImageRegion(destX, destY, imageRegion, vis, zoom,
                                 &newDestX, &newDestY, &newRegion);
 				
-				gRenderInfo->mSlaveServer.mActiveSlaves[scrn]->
+                gRenderInfo->mSlaveServer.mActiveSlaves[scrn]->
 				  SendMessage( QString("Preload %1 %2 %3 %4 %5 %6")
 							   .arg(frameNumber)
 							   .arg(newRegion.x).arg(newRegion.y)
 							   .arg(newRegion.width).arg(newRegion.height)
 							   .arg(levelOfDetail));
+                
             }
         }
     }
@@ -1212,6 +1215,7 @@ void dmx_SpeedTest(void) {
     */ 
     uint64_t msecs = 0;
     while (!gRenderInfo->mSlaveServer.slavesReady() && msecs < 30000) {// 30 secs
+      //gCoreApp->processEvents(QEventLoop::ExcludeUserInputEvents);
       gCoreApp->processEvents();
       gRenderInfo->mSlaveServer.QueueSlaveMessages(); 
       msecs += 10; 
