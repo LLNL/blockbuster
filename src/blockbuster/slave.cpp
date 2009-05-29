@@ -158,7 +158,7 @@ int SlaveInitialize(ProgramOptions *options) {
   QDataStream masterStream(&gMasterSocket);
   QString message, token; 
   while (1) {
-    gCoreApp->processEvents(); 
+    gCoreApp->processEvents(QEventLoop::ExcludeUserInputEvents); 
     if (gMasterSocket.bytesAvailable()) {
       masterStream >> message; 
       QStringList messageList = message.split(" "); 
@@ -480,7 +480,7 @@ int SlaveLoop(ProgramOptions *options)
         /* no bytes available, be nice to the OS and sleep 2 milliseconds
            unless you are going 100 fps, this should not hurt frame rate...
         */
-        gCoreApp->processEvents(); 
+        gCoreApp->processEvents(QEventLoop::ExcludeUserInputEvents); 
         usleep(2*1000); 
       }
 
