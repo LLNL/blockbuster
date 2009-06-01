@@ -45,7 +45,6 @@ using namespace std;
 #define DMX_NAME "dmx"
 #define DMX_DESCRIPTION "Directly render to back-end DMX servers: Use -R to specify\n         backend renderer"
 MovieStatus dmx_Initialize(Canvas *canvas, const ProgramOptions *options);
-void dmx_InterruptBufferSwap(void); 
 
 /* This file details the structure that the DMX Renderer requires
  * in order to render.  It is used by the DMX Renderer itself
@@ -170,16 +169,11 @@ class DMXSlave: public QObject {
 
 	
   /*! 
-	Wait until the slave completes its swap or dies trying. 
+	Check to see if the slave completed its swap.  
+    Note that this does not call ProcessEvents.  
   */ 
-  bool WaitForSwapComplete(uint timeout, int32_t swapID) {
-	uint64_t usecs=0;
+  bool CheckSwapComplete(int32_t swapID) {
 	QueueNetworkEvents(); 
-    while (mLastSwapID < swapID && usecs/1000000 < timeout) {	  
-      usleep(1000);
-      usecs += 1000; 	  
-      QueueNetworkEvents(); 
-    } 	
     if (mLastSwapID < swapID) {
       cerr << "Timeout for swap exceeded for slave on host " << mRemoteHostname << endl;
       return false; 
