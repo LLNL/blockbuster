@@ -33,8 +33,9 @@ class Slave: public QWidget {
 
  private:
   ProgramOptions *mOptions; 
-  int mSocketFD; 
+  int mSocketFD; // another view of the socket
   QTcpSocket mMasterSocket; // connection to the master blockbuster
+  QDataStream *mMasterStream;  // still another view of the socket
   Canvas *mCanvas; 
   MPI_Comm workers;
 }; 
