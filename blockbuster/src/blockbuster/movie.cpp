@@ -1119,11 +1119,16 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
        */
       if (canvas->Preload != NULL) {
         int32_t i;
-        for (i = 1; i <= preloadFrames; i++) {
+        for (i = 0; i < preloadFrames; i++) {
           int offset = (play == -1) ? -i : i;
           int frame = (frameNumber + offset);
-          if (frame > endFrame) frame = startFrame; 
-          if (frame < startFrame) frame = endFrame; 
+          if (frame > endFrame) {
+            frame = startFrame + (frame - endFrame);// preload for loops
+          } 
+          if (frame < startFrame) {
+            frame = endFrame - (startFrame - frame); // for loops
+          } 
+          DEBUGMSG("Preload frame %d", frame); 
           canvas->Preload(canvas, frame, &roi, lod);
         }
       }
