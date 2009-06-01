@@ -38,22 +38,127 @@
 #include <fstream>
 #include "xwindow.h"
 
-#ifdef USE_MPI
-#include "mpi.h"
-
-MPI_Comm workers;
-
-#endif
 
 using namespace std; 
 
-QTcpSocket gMasterSocket; 
 
-/* RDC: 
-   Here the slave attempts to load some frames from a list of files.  
-   return 0 on failure, 1 on success */
-static int
-LoadFrames(Canvas *canvas, const char *files)
+/*
+  Initializing the Slave: 
+  Start the slave socket and get a display.  It's necessary to do this early
+  because the master sends the DISPLAY and we want it to be set before
+  GTK snarfs it up. 
+*/
+Slave::Slave(ProgramOptions *options):
+  mOptions(options), mSocketFD(0), mCanvas(NULL) {
+  SuppressMessageDialogs(); 
+  DEBUGMSG("Slave() called"); 
+  DEBUGMSG("useMPI is %d\n", mOptions->useMPI); 
+
+  return; 
+}
+
+
+/*!
+  destructor
+*/
+Slave::~Slave() {
+  /* Done with the canvas */
+  if (mCanvas) {
+    delete mCanvas;
+  }
+  return;
+}
+
+/*!
+  initialize the connection to the master blockbuster instance. 
+*/
+bool Slave::InitNetwork(void) {
+  mMasterSocket.connectToHost(mOptions->masterHost, mOptions->masterPort); 
+  if (!mMasterSocket.waitForConnected(5000)) {
+    QString err = mMasterSocket.errorString(); 
+    cerr << err.toStdString() << endl; 
+    ERROR("Connection to master FAILED."); 
+    return false; 
+  } else {
+    INFO("Connection to master succeeded."); 
+    SendMessage(QString("Slave awake")); 
+  }
+    
+  QObject::connect(&mMasterSocket, 
+                   SIGNAL(stateChanged(QAbstractSocket::SocketState)), 
+                   this, 
+                   SLOT(SocketStateChanged(QAbstractSocket::SocketState ))); 
+  QObject::connect(&mMasterSocket, 
+                   SIGNAL(error(QAbstractSocket::SocketError)), 
+                   this, 
+                   SLOT(SocketError(QAbstractSocket::SocketError ))); 
+  mSocketFD = mMasterSocket.socketDescriptor(); 
+    
+  
+  DEBUGMSG("Slave ready for messages, mMasterSocket in state %d", mMasterSocket.state());
+
+  return true; 
+
+}
+
+/*! 
+  Explicitly break this out for clarity
+*/
+bool Slave::GetDisplayName(void) {
+  DEBUGMSG("GetDisplayName()"); 
+  // the next thing that happens is the master sends the display info
+  QDataStream masterStream(&mMasterSocket);
+  QString message, token; 
+  while (1) {
+    
+    gCoreApp->processEvents(QEventLoop::ExcludeUserInputEvents); 
+    if (mMasterSocket.bytesAvailable()) {
+      masterStream >> message; 
+    
+      //if (GetNextMessage(message)) {
+      QStringList messageList = message.split(" "); 
+      token = messageList[0]; 
+      DEBUGMSG((QString("Slave got message: \"") + message + "\"")); 
+      if (token != "DISPLAY") {
+        QString msg("Expected DISPLAY command but got something else!"); 
+        ERROR(msg); 
+        SendError(msg); 
+        return false; 
+      } 
+      mOptions->displayName = messageList[1]; 
+      DEBUGMSG(QString("set display to %1").arg(messageList[1])); 
+      break; 
+    } else {
+      DEBUGMSG("Waiting for DISPLAY message from server"); 
+      usleep (500*1000); 
+    }
+  }
+  DEBUGMSG("END SlaveInitialize"); 
+  return true; 
+}
+
+/*! 
+  Provide a standard message format:
+*/ 
+void Slave::SendMessage(QString msg) {
+  QDataStream stream(&mMasterSocket); 
+  DEBUGMSG((QString("Slave Sending message: ")+msg));
+  stream << msg;
+  mMasterSocket.waitForBytesWritten(-1);
+  mMasterSocket.flush(); 
+  DEBUGMSG("Message sent");
+}
+
+/*! 
+  Provide a standard error message format:
+*/ 
+void Slave::SendError(QString msg) {
+  ERROR(msg); 
+  SendMessage(QString("ERROR: ")+msg);  
+  return; 
+}
+
+bool Slave::LoadFrames(const char *files)
 {
   DEBUGMSG("LoadFrames"); 
     FrameList *frames;
@@ -80,7 +185,7 @@ LoadFrames(Canvas *canvas, const char *files)
             if (end == lastChar)
                 break;
             start = end + 1;
-        }
+         }
         else {
             break;
         }
@@ -102,103 +207,26 @@ LoadFrames(Canvas *canvas, const char *files)
       frames = new FrameList; 
       frames->LoadFrames(fileList);
     }
-    canvas->SetFrameList(canvas, frames);
-	if (!canvas->frameList) {
-	  return 0;
+    mCanvas->SetFrameList(mCanvas, frames);
+	if (!mCanvas->frameList) {
+	  return false;
 	}
-	return 1;
+	return true;
 }
 
-/*! 
-  Provide a standard message format:
-*/ 
-void SendMessage(QString msg) {
-  static string filename = string("/g/g0/rcook/bb_debug-")+GetLocalHostname() + ".txt"; 
-  //static ofstream *dbfile = new ofstream(filename.c_str()); 
-  QDataStream stream(&gMasterSocket); 
-  DEBUGMSG((QString("Slave Sending message: ")+msg));
-  //*dbfile << "Sending message: " << msg.toStdString() << endl; 
-  stream << msg;
-  gMasterSocket.waitForBytesWritten(-1);
-  DEBUGMSG("Message sent");
-}
 
-/*! 
-  Provide a standard error message format:
-*/ 
-void SendError(QString msg) {
-  ERROR(msg); 
-  SendMessage(QString("ERROR: ")+msg);  
-  return; 
+bool Slave::GetMasterMessage(QString &outMessage) {
+  return false; 
 }
-
-/*
-  An interface for main() to call to enable the slave to start 
-  the slave socket and get a display.  It's necessary to do this early
-  because the master sends the DISPLAY and we want it to be set before
-  GTK snarfs it up. 
-*/
-int SlaveInitialize(ProgramOptions *options) {
-  SuppressMessageDialogs(); 
-  DEBUGMSG("SlaveInitialize() called"); 
-  cerr << "useMPI is " << options->useMPI << endl; 
-  gMasterSocket.connectToHost(options->masterHost, options->masterPort); 
-  if (!gMasterSocket.waitForConnected(5000)) {
-    QString err = gMasterSocket.errorString(); 
-    cerr << err.toStdString() << endl; 
-    ERROR("Connection to master FAILED."); 
-    return 0; 
-  } else {
-    INFO("Connection to master succeeded."); 
-    SendMessage(QString("Slave awake")); 
-  }
-    
-  DEBUGMSG("Slave ready for messages, gMasterSocket in state %d", gMasterSocket.state());
-  // the next thing that happens is the master sends the display info
-  QDataStream masterStream(&gMasterSocket);
-  QString message, token; 
-  while (1) {
-    gCoreApp->processEvents(QEventLoop::ExcludeUserInputEvents); 
-    if (gMasterSocket.bytesAvailable()) {
-      masterStream >> message; 
-      QStringList messageList = message.split(" "); 
-      token = messageList[0]; 
-      DEBUGMSG((QString("Slave got message: \"") + message + "\"")); 
-      if (token != "DISPLAY") {
-        QString msg("Expected DISPLAY command but got something else!"); 
-        ERROR(msg); 
-        SendError(msg); 
-        return 0; 
-      } 
-      options->displayName = messageList[1]; 
-      DEBUGMSG(QString("set display to %1").arg(messageList[1])); 
-      break; 
-    } else {
-      DEBUGMSG("Waiting for DISPLAY message from server"); 
-      usleep (500000); 
-    }
-  }
-  DEBUGMSG("END SlaveInitialize"); 
-  return 1; 
-}
-
 //=========================================================
-// ERRORGRABBER is a debugging tool for slave socket errors... 
-ErrorGrabber::~ErrorGrabber(){ return; }
-ErrorGrabber::ErrorGrabber(QObject *){ return; }
-void ErrorGrabber::SocketStateChanged(QAbstractSocket::SocketState state) {
+void Slave::SocketStateChanged(QAbstractSocket::SocketState state) {
   DEBUGMSG("Socket state changed to %d", state); 
   return; 
 }
 
-void ErrorGrabber::SocketError(QAbstractSocket::SocketError ) {
-  DEBUGMSG(QString("Socket error: %1").arg(gMasterSocket.errorString())); 
+void Slave::SocketError(QAbstractSocket::SocketError ) {
+  DEBUGMSG(QString("Socket error: %1").arg(mMasterSocket.errorString())); 
   return; 
-}
-//=========================================================
-/* Try direct socket manipulation for speed */
-bool GetNextMessage(QString &msg) {
-  
 }
 
 //=========================================================
@@ -207,21 +235,15 @@ bool GetNextMessage(QString &msg) {
  * our commands from the master instance of the player, rather than
  * the keyboard/mouse.
  */
-int SlaveLoop(ProgramOptions *options)
+int Slave::Loop(void)
 {
-  DEBUGMSG("SlaveLoop (thread %p), gMasterSocket state %d", QThread::currentThread(), gMasterSocket.state()); 
-  ErrorGrabber errorGrabber(NULL); 
-  QObject::connect(&gMasterSocket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), 
-                   &errorGrabber, SLOT(SocketStateChanged(QAbstractSocket::SocketState ))); 
-  QObject::connect(&gMasterSocket, SIGNAL(error(QAbstractSocket::SocketError)), 
-                   &errorGrabber, SLOT(SocketError(QAbstractSocket::SocketError ))); 
+  DEBUGMSG("SlaveLoop (thread %p), mMasterSocket state %d", QThread::currentThread(), mMasterSocket.state()); 
   int argc = 0;
   double fps = 0, recentEndTime, recentStartTime, elapsedTime;
   long recentFrameCount = 0; 
   int32_t lastImageRendered = -1; 
   gCoreApp = new QApplication(argc, NULL); 
-  Canvas *canvas = NULL;
-  UserInterface *userInterface = options->userInterface;
+  UserInterface *userInterface = mOptions->userInterface;
   bool idle = false; 
   Rectangle currentRegion; 
   qint32 destX = 0,  destY = 0,  lod = 0;
@@ -232,7 +254,7 @@ int SlaveLoop(ProgramOptions *options)
     int32_t  playFrame = 0, playFirstFrame = 0, playLastFrame = 0; 
     int32_t playStep = 0;  // how much to advance the next frame by
 	QString message, token;
-	QDataStream masterStream(&gMasterSocket);
+	QDataStream masterStream(&mMasterSocket);
     time_t lastheartbeat=time(NULL), now; 
     while (1) {
       now = time(NULL); 
@@ -240,20 +262,21 @@ int SlaveLoop(ProgramOptions *options)
         ERROR("It's been more than 5 minutes since the server checked in -- exiting."); 
         exit(1); 
       }
-      DEBUGMSG("About to process events. gMasterSocket state is %d", gMasterSocket.state()); 
+      //      DEBUGMSG("About to process events. mMasterSocket state is %d", mMasterSocket.state()); 
       /*!
         if (GetNextMessage(message) ) {
-        if (message == "disconnected") {
-        ERROR("Error:  lost connection to the master server (state is %d).  Exiting.\n", gMasterSocket.state());
-        break; 
-        }
       */ 
-      if (gMasterSocket.state() != QAbstractSocket::ConnectedState) {
-        ERROR("Error:  lost connection to the master server (state is %d).  Exiting.\n", gMasterSocket.state());
+      if (mMasterSocket.state() != QAbstractSocket::ConnectedState) {
+        ERROR("Error:  lost connection to the master server (state is %d).  Exiting.\n", mMasterSocket.state());
         break; 
       }
-      if (gMasterSocket.bytesAvailable()) {      
+      if (mMasterSocket.bytesAvailable()) {      
         masterStream >> message;         
+        
+        if (message == "disconnected") {
+          ERROR("Error:  lost connection to the master server (state is %d).  Exiting.\n", mMasterSocket.state());
+          break; 
+        }
         
 		QStringList messageList = message.split(" "); 
         token = messageList[0]; 
@@ -302,8 +325,8 @@ int SlaveLoop(ProgramOptions *options)
             lod = messageList[9].toLong();
             zoom = messageList[8].toFloat();
             
-            if (canvas->frameList) {
-              canvas->Render(canvas, imageNum, &currentRegion, 
+            if (mCanvas->frameList) {
+              mCanvas->Render(mCanvas, imageNum, &currentRegion, 
                              destX, destY, zoom, lod);
               lastImageRendered = imageNum; 
             }
@@ -325,29 +348,29 @@ int SlaveLoop(ProgramOptions *options)
                         + message); 
               continue; 
             }
-            if (! gMasterSocket.bytesAvailable()) {
+            if (! mMasterSocket.bytesAvailable()) {
               INFO("Waiting for incoming data for DrawString"); 
-              while (!gMasterSocket.bytesAvailable()) {
+              while (!mMasterSocket.bytesAvailable()) {
                 usleep (1000); 
               }
             }
             masterStream >> message; 
             DEBUGMSG((QString("string to draw is: ")+message)); 
-            canvas->DrawString(canvas, row, col, message.toAscii());          
+            mCanvas->DrawString(mCanvas, row, col, message.toAscii());          
           }// "DrawString"
           else if (token == "SwapBuffers") {
 #ifdef USE_MPI
-            DEBUGMSG("frame %d, canvas %d: MPI_Barrier", lastImageRendered, canvas); 
+            DEBUGMSG("frame %d, mCanvas %d: MPI_Barrier", lastImageRendered, mCanvas); 
             /*!
               TOXIC:  disable MPI for right now during testing
             */ 
             //if (0 && useMPI) MPI_Barrier(workers); 
-            if (options->useMPI) MPI_Barrier(workers); 
+            if (mOptions->useMPI) MPI_Barrier(workers); 
 #endif
-            if (canvas && canvas->frameList) { 
+            if (mCanvas && mCanvas->frameList) { 
               // only swap if there is a valid frame  
-              DEBUGMSG("frame %d: canvas->SwapBuffers", lastImageRendered); 
-              canvas->SwapBuffers(canvas);
+              DEBUGMSG("frame %d: mCanvas->SwapBuffers", lastImageRendered); 
+              mCanvas->SwapBuffers(mCanvas);
             }
 #ifdef USE_MPI
             DEBUGMSG("frame %d: Finished MPI_Barrier", lastImageRendered); 
@@ -360,7 +383,7 @@ int SlaveLoop(ProgramOptions *options)
               SendError("Bad Preload message: "+message); 
               continue; 
             }
-            if (canvas->frameList) {			   
+            if (mCanvas->frameList) {			   
               //Rectangle region;
               qint32 frame;
               bool ok = false; 
@@ -374,7 +397,7 @@ int SlaveLoop(ProgramOptions *options)
                 SendError("Bad Preload argument in message: "+message); 
                 continue; 
               }
-              canvas->Preload(canvas, frame, &currentRegion, lod);
+              mCanvas->Preload(mCanvas, frame, &currentRegion, lod);
             }
             /* else {
                SendError("Slave has no frames to preload.");
@@ -412,13 +435,13 @@ int SlaveLoop(ProgramOptions *options)
             createOptions->geometry.height = h;
             createOptions->displayName = displayName;
             createOptions->suggestedTitle = "Blockbuster Slave";
-            canvas = new Canvas(userInterface, options->rendererIndex, 
+            mCanvas = new Canvas(userInterface, mOptions->rendererIndex, 
                                 createOptions, parentWin);
-            GetXEvent(canvas, 0, &junkEvent); 
-            //canvas->GetEvent(canvas, 0, &junkEvent); 
+            GetXEvent(mCanvas, 0, &junkEvent); 
+            //canvas->GetEvent(mCanvas, 0, &junkEvent); 
             delete createOptions; 
             
-            if (canvas == NULL) {
+            if (mCanvas == NULL) {
               ERROR("Could not create a canvas");
               SendError( "Error Could not create a canvas");
               return -1;
@@ -443,28 +466,28 @@ int SlaveLoop(ProgramOptions *options)
               continue; 
             }
             
-            if (!canvas || !canvas->Resize) {
+            if (!mCanvas || !mCanvas->Resize) {
               SendError("ResizeCanvas requested, but canvas is not ready"); 
             } else {
-              canvas->Resize(canvas, w, h, 0);
-              canvas->Move(canvas, x, y, 0); // the zero means "force this" 
+              mCanvas->Resize(mCanvas, w, h, 0);
+              mCanvas->Move(mCanvas, x, y, 0); // the zero means "force this" 
             }
           }// end "MoveResizeCanvas"
           else if (token == "SetFrameList") {
             /* This is the "file load" part of the code, rather misleading */
             /*we need to destroy image cache/reader threads etc before smBase destructor */
-            DestroyImageCache(canvas);
-            if (canvas->frameList) {
-              canvas->frameList->DeleteFrames(); 
-              delete canvas->frameList; 
+            DestroyImageCache(mCanvas);
+            if (mCanvas->frameList) {
+              mCanvas->frameList->DeleteFrames(); 
+              delete mCanvas->frameList; 
             }
            message.remove(0, 13); //strip "SetFrameList " from front
             DEBUGMSG((QString("File list is: ")+message)); 
-            if (!LoadFrames(canvas, message.toAscii())) {			
+            if (!LoadFrames( message.toAscii())) {			
               SendError("No frames could be loaded."); 
             }
             playFirstFrame = 0; 
-            playLastFrame = canvas->frameList->numStereoFrames()-1; 
+            playLastFrame = mCanvas->frameList->numStereoFrames()-1; 
           }// end "SetFrameList"
           else if (token == "PlayForward") {
             playStep = 1; 
@@ -488,8 +511,8 @@ int SlaveLoop(ProgramOptions *options)
         NEW CODE:  Behave like DisplayLoop, in that you do not need explicit master control of when to swap the next frame.  Hopefully, this eliminates delays inherent in that model.  
       */ 
       if (playStep) {
-        if (canvas && canvas->frameList) {
-          canvas->Render(canvas, playFrame, &currentRegion, 
+        if (mCanvas && mCanvas->frameList) {
+          mCanvas->Render(mCanvas, playFrame, &currentRegion, 
                          destX, destY, zoom, lod);
         }
         lastImageRendered = playFrame; 
@@ -498,15 +521,15 @@ int SlaveLoop(ProgramOptions *options)
           playStep = 0; 
         }
 #ifdef USE_MPI
-        if (options->useMPI) { 
-          DEBUGMSG("frame %d, %d:  MPI_Barrier",lastImageRendered, canvas); 
+        if (mOptions->useMPI) { 
+          DEBUGMSG("frame %d, %d:  MPI_Barrier",lastImageRendered, mCanvas); 
           MPI_Barrier(workers); 
         }
 #endif
-        if (canvas && canvas->frameList) { 
+        if (mCanvas && mCanvas->frameList) { 
           // only swap if there is a valid frame  
-          DEBUGMSG( "frame %d: canvas->SwapBuffers\n", lastImageRendered); 
-          canvas->SwapBuffers(canvas);
+          DEBUGMSG( "frame %d: mCanvas->SwapBuffers\n", lastImageRendered); 
+          mCanvas->SwapBuffers(mCanvas);
         }
 #ifdef USE_MPI
         DEBUGMSG( "frame %d: Finished MPI_Barrier\n", lastImageRendered); 
@@ -520,8 +543,8 @@ int SlaveLoop(ProgramOptions *options)
         while (1) {
           
           /* render the next frame and advance the counter */
-          if (canvas && canvas->frameList) {
-            canvas->Render(canvas, playFrame, &currentRegion, 
+          if (mCanvas && mCanvas->frameList) {
+            mCanvas->Render(mCanvas, playFrame, &currentRegion, 
                            destX, destY, zoom, lod);
           }
           lastImageRendered = playFrame; 
@@ -530,15 +553,15 @@ int SlaveLoop(ProgramOptions *options)
             playFrame = 0; 
           }
 #ifdef USE_MPI
-          if (options->useMPI) { 
-            DEBUGMSG("speedTest: frame %d, %d:  MPI_Barrier",lastImageRendered, canvas); 
+          if (mOptions->useMPI) { 
+            DEBUGMSG("speedTest: frame %d, %d:  MPI_Barrier",lastImageRendered, mCanvas); 
             MPI_Barrier(workers); 
           }
 #endif
-          if (canvas && canvas->frameList) { 
+          if (mCanvas && mCanvas->frameList) { 
             // only swap if there is a valid frame  
-            DEBUGMSG( "speedTest: frame %d: canvas->SwapBuffers\n", lastImageRendered); 
-            canvas->SwapBuffers(canvas);
+            DEBUGMSG( "speedTest: frame %d: mCanvas->SwapBuffers\n", lastImageRendered); 
+            mCanvas->SwapBuffers(mCanvas);
           }
 #ifdef USE_MPI
           DEBUGMSG( "speedTest: frame %d: Finished MPI_Barrier\n", lastImageRendered); 
@@ -569,10 +592,6 @@ int SlaveLoop(ProgramOptions *options)
   }
   
   SendMessage(QString("Slave exiting"));
-  /* Done with the canvas */
-  if (canvas) {
-    delete canvas;
-  }
   
   return 0;
 }
