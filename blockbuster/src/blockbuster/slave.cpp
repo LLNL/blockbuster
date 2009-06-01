@@ -19,7 +19,6 @@
  */
 
 #include <QWidget>
-#include <QTcpSocket>
 #include <QStringList>
 #include "errmsg.h"
 #include <stdio.h>
@@ -27,7 +26,6 @@
 #include <string.h>
 #include <iostream>
 #include "slave.h"
-#include "canvas.h"
 #include "errmsg.h"
 #include "splash.h"
 #include "frames.h"
@@ -137,6 +135,21 @@ bool Slave::GetDisplayName(void) {
   return true; 
 }
 
+/*!
+  receiving a message -- placed here to enable tinkering
+*/ 
+bool Slave::GetMasterMessage(QString &outMessage) {
+  if (mMasterSocket.state() != QAbstractSocket::ConnectedState) {
+    ERROR("Error:  lost connection to the master server (state is %d).  Exiting.\n", mMasterSocket.state());
+    break; 
+  }
+  if (mMasterSocket.bytesAvailable()) {      
+    masterStream >> message;         
+    return true; 
+  }
+  return false; 
+}
+
 /*! 
   Provide a standard message format:
 */ 
@@ -215,9 +228,6 @@ bool Slave::LoadFrames(const char *files)
 }
 
 
-bool Slave::GetMasterMessage(QString &outMessage) {
-  return false; 
-}
 //=========================================================
 void Slave::SocketStateChanged(QAbstractSocket::SocketState state) {
   DEBUGMSG("Socket state changed to %d", state); 
@@ -263,15 +273,7 @@ int Slave::Loop(void)
         exit(1); 
       }
       //      DEBUGMSG("About to process events. mMasterSocket state is %d", mMasterSocket.state()); 
-      /*!
-        if (GetNextMessage(message) ) {
-      */ 
-      if (mMasterSocket.state() != QAbstractSocket::ConnectedState) {
-        ERROR("Error:  lost connection to the master server (state is %d).  Exiting.\n", mMasterSocket.state());
-        break; 
-      }
-      if (mMasterSocket.bytesAvailable()) {      
-        masterStream >> message;         
+      if (GetMasterMessage(message) ) {
         
         if (message == "disconnected") {
           ERROR("Error:  lost connection to the master server (state is %d).  Exiting.\n", mMasterSocket.state());

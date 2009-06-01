@@ -21,10 +21,10 @@ class Slave: public QWidget {
 
   bool InitNetwork(void); 
   bool GetDisplayName(void); 
+  bool GetMasterMessage(QString &outMessage);
   void SendMessage(QString msg);
   void SendError(QString msg);
   bool LoadFrames(const char *files); 
-  bool GetMasterMessage(QString &outMessage);
   int Loop(void);
 
   public slots:
