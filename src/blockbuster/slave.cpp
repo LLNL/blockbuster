@@ -40,6 +40,7 @@
 using namespace std; 
 
 
+//=========================================================
 /*
   Initializing the Slave: 
   Start the slave socket and get a display.  It's necessary to do this early
@@ -56,6 +57,7 @@ Slave::Slave(ProgramOptions *options):
 }
 
 
+//=========================================================
 /*!
   destructor
 */
@@ -67,6 +69,7 @@ Slave::~Slave() {
   return;
 }
 
+//=========================================================
 /*!
   initialize the connection to the master blockbuster instance. 
 */
@@ -100,6 +103,7 @@ bool Slave::InitNetwork(void) {
 
 }
 
+//=========================================================
 /*! 
   Explicitly break this out for clarity
 */
@@ -135,6 +139,7 @@ bool Slave::GetDisplayName(void) {
   return true; 
 }
 
+//=========================================================
 /*!
   receiving a message -- placed here to enable tinkering
 */ 
@@ -151,6 +156,7 @@ bool Slave::GetMasterMessage(QString &outMessage) {
   return false; 
 }
 
+//=========================================================
 /*! 
   Provide a standard message format:
 */ 
@@ -163,6 +169,7 @@ void Slave::SendMessage(QString msg) {
   DEBUGMSG("Message sent");
 }
 
+//=========================================================
 /*! 
   Provide a standard error message format:
 */ 
@@ -235,6 +242,7 @@ void Slave::SocketStateChanged(QAbstractSocket::SocketState state) {
   return; 
 }
 
+//=========================================================
 void Slave::SocketError(QAbstractSocket::SocketError ) {
   DEBUGMSG(QString("Socket error: %1").arg(mMasterSocket.errorString())); 
   return; 
@@ -264,6 +272,8 @@ int Slave::Loop(void)
     bool speedTest=false; 
     int32_t  playFrame = 0, playFirstFrame = 0, playLastFrame = 0; 
     int32_t playStep = 0;  // how much to advance the next frame by
+    int32_t preload = 0; // number of frames to preload
+    int32_t lastPreloadedFrame = 0; // if zero, none have been preloaded, else last preloaded frame.  We preload until the last one is preload greater than the current frame. 
 	QString message, token;
     time_t lastheartbeat=time(NULL), now; 
     while (1) {
@@ -381,6 +391,18 @@ int Slave::Loop(void)
             SendMessage(QString("SwapBuffers complete %1 %2").arg(messageList[1]).arg(messageList[2])); 
           } // end "SwapBuffers"
           else if (token == "Preload") {
+            if (messageList.size() != 2) {
+              SendError("Bad Preload message: "+message); 
+              continue; 
+            }
+            bool ok = false; 
+             preload = messageList[1].toLong(&ok); 
+             if (!ok) {
+               SendError(QString("Bad Preload argument ")+messageList[1]); 
+               continue; 
+             }
+          }
+          else if (token == "delete me") {
             if (messageList.size() != 7) {
               SendError("Bad Preload message: "+message); 
               continue; 
@@ -401,10 +423,6 @@ int Slave::Loop(void)
               }
               mCanvas->Preload(mCanvas, frame, &currentRegion, lod);
             }
-            /* else {
-               SendError("Slave has no frames to preload.");
-               }
-            */ 
           }// end "Preload"
           else if (token == "CreateCanvas") {
             if (messageList.size() != 8) {
