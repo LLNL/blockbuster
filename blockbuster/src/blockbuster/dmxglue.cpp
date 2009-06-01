@@ -153,8 +153,8 @@ int DMXSlave::EventFromMessage(const QString &, MovieEvent &) {
   return number of events queued. 
 */ 
 int DMXSlave::QueueNetworkEvents(void) {
+  DEBUGMSG(QString("QueueNetworkEvents() for host %1").arg(mRemoteHostname.c_str())); 
   int numqueued = 0;   
-  gCoreApp->processEvents(QEventLoop::ExcludeUserInputEvents); 
   while(mSlaveSocket && mSlaveSocket->state() == QAbstractSocket::ConnectedState 
         && mSlaveSocket->bytesAvailable()) {	
     QString msg; 
@@ -244,6 +244,7 @@ void DMXSlave::SendMessage(QString msg) {
   DEBUGMSG(QString("Sending message to host %1 : \"%2\"").arg(mRemoteHostname.c_str()).arg(msg)); 
   
   outstream << msg; // data sent as a QString arrives as a QString, no terminating token necessary
+  mSlaveSocket->flush(); 
   //  mSlaveSocket->waitForBytesWritten(-1); 
   DEBUGMSG(QString("Completed sending message to host %1 : \"%2\"").arg(mRemoteHostname.c_str()).arg(msg)); 
   
@@ -1006,51 +1007,42 @@ dmx_DrawString(Canvas *canvas, int row, int column, const char *str)
     }
 }
 
-void dmx_InterruptBufferSwap(void) {
-  /* int i;
-     
-  if (!gRenderInfo->numValidWindowInfos) return; 
-  
-  // Interrupt any pending SwapBuffer command... 
-  for (i = 0; i < gRenderInfo->numValidWindowInfos; i++) {
-  DMXSlave *theSlave = 
-  gRenderInfo->mSlaveServer.mActiveSlaves[gRenderInfo->dmxWindowInfos[i].screen];
-  //theSlave->AbortSwap(); 
-  }
-  */
-  
- 
-}
 
 static void dmx_SwapBuffers(Canvas *){
   static int32_t swapID = 0; 
   if (!gRenderInfo->numValidWindowInfos) return; 
 
   /* Only check the first slave and the hell with the rest , to ensure we stay roughly in sync */ 
-  int slavenum = gRenderInfo->numValidWindowInfos;
-  while (slavenum--) {
-    DMXSlave *theSlave = 
-      gRenderInfo->mSlaveServer.
-      mActiveSlaves[gRenderInfo->dmxWindowInfos[slavenum].screen];
-    DEBUGMSG("Checking for pending swap on slave %s", theSlave->GetHost().c_str()); 
-    if (!theSlave->WaitForSwapComplete(60, swapID-1)) {
-      cerr << "Something is wrong. Slave has not swapped buffers after 60 seconds." << endl;
+  bool incomplete[4] = {true};  
+  uint32_t usecs = 0; 
+  while (incomplete[0] || incomplete[1] || incomplete[2] || incomplete[3]) {
+    gCoreApp->processEvents(QEventLoop::ExcludeUserInputEvents); 
+    int slavenum = gRenderInfo->numValidWindowInfos;
+    while (slavenum--) {
+      DMXSlave *theSlave = 
+        gRenderInfo->mSlaveServer.
+        mActiveSlaves[gRenderInfo->dmxWindowInfos[slavenum].screen];
+      DEBUGMSG("Checking for pending swap on slave %s", theSlave->GetHost().c_str()); 
+      if (incomplete[slavenum]) {
+        incomplete[slavenum] = !theSlave->CheckSwapComplete(swapID-1); 
+      }
+    }
+    if (usecs > 10*1000*1000) {
+      cerr << "Something is wrong. Slave has not swapped buffers after 10 seconds." << endl;
       if (gSidecarServer) {
         MovieEvent event(MOVIE_STOP_ERROR);
         gSidecarServer->AddEvent(event);
       }
       return; 
-    }  
-  }
+    }
+    usecs += 500; 
+    usleep (500);     
+  }  
   
-  //}
   uint16_t slaveNum = 0; 
   for (slaveNum=0; slaveNum< gRenderInfo->mSlaveServer.mActiveSlaves.size(); slaveNum++ ) {
-    /* Not all slaves have valid buffers to swap, but they will figure this out, and if MPI is involved, it's important they all get to call MPI_Barrer(), so send swapbuffers to everybody */ 
-    //DEBUGMSG("Sending swap to slave %s", gRenderInfo->mSlaveServer.mActiveSlaves[slaveNum]->GetHost().c_str()); 
-    
+    /* Not all slaves have valid buffers to swap, but they will figure this out, and if MPI is involved, it's important they all get to call MPI_Barrer(), so send swapbuffers to everybody */    
 	gRenderInfo->mSlaveServer.mActiveSlaves[slaveNum]->SwapBuffers(swapID);
-	//gCoreApp->processEvents(QEventLoop::ExcludeUserInputEvents); 
   }
   swapID ++; 
   return; 
