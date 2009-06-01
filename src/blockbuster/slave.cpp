@@ -91,6 +91,7 @@ bool Slave::InitNetwork(void) {
                    this, 
                    SLOT(SocketError(QAbstractSocket::SocketError ))); 
   mSocketFD = mMasterSocket.socketDescriptor(); 
+  mMasterStream = new QDataStream (&mMasterSocket);
     
   
   DEBUGMSG("Slave ready for messages, mMasterSocket in state %d", mMasterSocket.state());
@@ -105,13 +106,12 @@ bool Slave::InitNetwork(void) {
 bool Slave::GetDisplayName(void) {
   DEBUGMSG("GetDisplayName()"); 
   // the next thing that happens is the master sends the display info
-  QDataStream masterStream(&mMasterSocket);
   QString message, token; 
   while (1) {
     
     gCoreApp->processEvents(QEventLoop::ExcludeUserInputEvents); 
     if (mMasterSocket.bytesAvailable()) {
-      masterStream >> message; 
+      (*mMasterStream) >> message; 
     
       //if (GetNextMessage(message)) {
       QStringList messageList = message.split(" "); 
@@ -141,10 +141,11 @@ bool Slave::GetDisplayName(void) {
 bool Slave::GetMasterMessage(QString &outMessage) {
   if (mMasterSocket.state() != QAbstractSocket::ConnectedState) {
     ERROR("Error:  lost connection to the master server (state is %d).  Exiting.\n", mMasterSocket.state());
-    break; 
+    outMessage = "disconnected"; 
+    return true; 
   }
   if (mMasterSocket.bytesAvailable()) {      
-    masterStream >> message;         
+    (*mMasterStream) >> outMessage;         
     return true; 
   }
   return false; 
@@ -264,7 +265,6 @@ int Slave::Loop(void)
     int32_t  playFrame = 0, playFirstFrame = 0, playLastFrame = 0; 
     int32_t playStep = 0;  // how much to advance the next frame by
 	QString message, token;
-	QDataStream masterStream(&mMasterSocket);
     time_t lastheartbeat=time(NULL), now; 
     while (1) {
       now = time(NULL); 
@@ -356,7 +356,7 @@ int Slave::Loop(void)
                 usleep (1000); 
               }
             }
-            masterStream >> message; 
+            (*mMasterStream) >> message; 
             DEBUGMSG((QString("string to draw is: ")+message)); 
             mCanvas->DrawString(mCanvas, row, col, message.toAscii());          
           }// "DrawString"
