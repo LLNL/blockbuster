@@ -514,6 +514,7 @@ int main(int argc, char *argv[])
 {
    
   ProgramOptions opt;
+  Slave *theSlave; 
   Renderer *renderer;
   char localSettingsFilename[BLOCKBUSTER_PATH_MAX];
   char homeSettingsFilename[BLOCKBUSTER_PATH_MAX];
@@ -580,7 +581,8 @@ int main(int argc, char *argv[])
 
   /* initialize the slave portion if we are a slave */
   if (opt.slaveMode != 0) {
-    if (!SlaveInitialize(&opt)) { // sets options->displayName
+    theSlave = new Slave(&opt); 
+    if (!theSlave || !theSlave->InitNetwork() || !theSlave->GetDisplayName()) {
       printf("Initialization failed. Slave will now exit.\n"); 
       exit(1); 
     }
@@ -672,7 +674,7 @@ int main(int argc, char *argv[])
     } else {
       DEBUGMSG("No frames to delete"); 
     }
-    SlaveLoop(&opt);
+    theSlave->Loop();
     INFO("Done with slave loop.\n"); 
   }
   else {
