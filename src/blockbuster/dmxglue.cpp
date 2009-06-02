@@ -60,7 +60,9 @@ typedef DMXWindowAttributes DMXWindowInfo;
 #endif
 
 struct RenderInfo {
-  RenderInfo(): haveDMX(0),mBackendRenderer("gl"), dmxWindowInfos(NULL){}
+  RenderInfo(const ProgramOptions *options): 
+    haveDMX(0), mBackendRenderer("gl"), 
+    dmxWindowInfos(NULL), mSlaveServer(options) {}
     int haveDMX;
 
   QString mBackendRenderer; 
@@ -79,13 +81,13 @@ struct RenderInfo {
   
 static RenderInfo *gRenderInfo; 
 
-
 //  ============================================================================
 //  DMXSlave
 //  ============================================================================
 
-DMXSlave::DMXSlave(QString hostname, QTcpSocket *mSocket):
-  mRemoteHostname(hostname.toStdString()), mHaveCanvas(false), 
+DMXSlave::DMXSlave(QString hostname, QTcpSocket *mSocket, int preloadFrames):
+  mPreloadFrames(preloadFrames), mRemoteHostname(hostname.toStdString()), 
+  mHaveCanvas(false), 
   mCurrentFrame(0),  mLastSwapID(-1), 
   mSlaveAwake(false), 
   mSlaveSocket(mSocket), mSlaveProcess(NULL) {
@@ -338,7 +340,7 @@ void SlaveServer::SlaveConnected() {
   QHostAddress hostAddress = theSocket->peerAddress(); 
   QString newAddressString = hostAddress.toString(), 
     dmxAddressString; 
-  DMXSlave *theSlave =  new DMXSlave(newAddressString, theSocket);
+  DMXSlave *theSlave =  new DMXSlave(newAddressString, theSocket, mOptions->preloadFrames);
   int screenNum = gRenderInfo->dmxScreenInfos.size();
   DEBUGMSG(QString("SlaveConnect from host %1").arg( hostAddress.toString())); 
   bool matched = false; 
@@ -632,7 +634,19 @@ IsDMXDisplay(Display *dpy)
     }
  }
  
- 
+void dmx_SetupPlay(int play, int preload, 
+                   uint32_t startFrame, uint32_t endFrame) {
+  uint32_t i = 0; 
+  for (i = 0; i < gRenderInfo->dmxScreenInfos.size(); i++) {
+    if (gRenderInfo->dmxWindowInfos[i].window) {
+      gRenderInfo->mSlaveServer.mActiveSlaves
+        [gRenderInfo->dmxWindowInfos[i].screen]->
+        SendMessage(QString("SetPlayDirection %1 %2 %3 %4")
+                    .arg(play).arg(preload).arg(startFrame).arg(endFrame));
+    }
+  }
+  return; 
+}
  
  static void
    dmx_DestroyRenderer(Canvas *canvas){
@@ -1008,7 +1022,7 @@ dmx_DrawString(Canvas *canvas, int row, int column, const char *str)
 }
 
 
-static void dmx_SwapBuffers(Canvas *){
+static void dmx_SwapBuffers(Canvas *canvas){
   static int32_t swapID = 0; 
   if (!gRenderInfo->numValidWindowInfos) return; 
 
@@ -1022,8 +1036,8 @@ static void dmx_SwapBuffers(Canvas *){
       DMXSlave *theSlave = 
         gRenderInfo->mSlaveServer.
         mActiveSlaves[gRenderInfo->dmxWindowInfos[slavenum].screen];
-      DEBUGMSG("Checking for pending swap on slave %s", theSlave->GetHost().c_str()); 
       if (incomplete[slavenum]) {
+        DEBUGMSG("Checking for pending swap ID %d on slave %s", swapID-1, theSlave->GetHost().c_str()); 
         incomplete[slavenum] = !theSlave->CheckSwapComplete(swapID-1); 
       }
     }
@@ -1042,7 +1056,7 @@ static void dmx_SwapBuffers(Canvas *){
   uint16_t slaveNum = 0; 
   for (slaveNum=0; slaveNum< gRenderInfo->mSlaveServer.mActiveSlaves.size(); slaveNum++ ) {
     /* Not all slaves have valid buffers to swap, but they will figure this out, and if MPI is involved, it's important they all get to call MPI_Barrer(), so send swapbuffers to everybody */    
-	gRenderInfo->mSlaveServer.mActiveSlaves[slaveNum]->SwapBuffers(swapID);
+	gRenderInfo->mSlaveServer.mActiveSlaves[slaveNum]->SwapBuffers(swapID, canvas->playDirection, canvas->preloadFrames, canvas->startFrame, canvas->endFrame);
   }
   swapID ++; 
   return; 
@@ -1052,34 +1066,36 @@ static void dmx_SwapBuffers(Canvas *){
 dmx_Preload(Canvas *, uint32_t frameNumber, const Rectangle *imageRegion,
             uint32_t levelOfDetail)
 {
-
-  if (!gRenderInfo->numValidWindowInfos) return; 
+  return; 
+  /*
+    if (!gRenderInfo->numValidWindowInfos) return; 
     int i;
     for (i = 0; i < gRenderInfo->numValidWindowInfos; i++) {
-        if (gRenderInfo->dmxWindowInfos[i].window) {
-            const int scrn = gRenderInfo->dmxWindowInfos[i].screen;
-            if (gRenderInfo->mSlaveServer.mActiveSlaves[scrn]->HaveCanvas()) {
-                const XRectangle *vis = &gRenderInfo->dmxWindowInfos[i].vis;
-                int destX = PrevDestX;
-                int destY = PrevDestY;
-                float zoom = PrevZoom;
-                Rectangle newRegion;
-                int newDestX, newDestY;
-
-                /* clip the region of interest against this screen */
-                ClipImageRegion(destX, destY, imageRegion, vis, zoom,
-                                &newDestX, &newDestY, &newRegion);
-				
-                gRenderInfo->mSlaveServer.mActiveSlaves[scrn]->
-				  SendMessage( QString("Preload %1 %2 %3 %4 %5 %6")
-							   .arg(frameNumber)
-							   .arg(newRegion.x).arg(newRegion.y)
-							   .arg(newRegion.width).arg(newRegion.height)
-							   .arg(levelOfDetail));
-                
-            }
-        }
+    if (gRenderInfo->dmxWindowInfos[i].window) {
+    const int scrn = gRenderInfo->dmxWindowInfos[i].screen;
+    if (gRenderInfo->mSlaveServer.mActiveSlaves[scrn]->HaveCanvas()) {
+    const XRectangle *vis = &gRenderInfo->dmxWindowInfos[i].vis;
+    int destX = PrevDestX;
+    int destY = PrevDestY;
+    float zoom = PrevZoom;
+    Rectangle newRegion;
+    int newDestX, newDestY;
+    
+    // clip the region of interest against this screen 
+    ClipImageRegion(destX, destY, imageRegion, vis, zoom,
+    &newDestX, &newDestY, &newRegion);
+    
+    gRenderInfo->mSlaveServer.mActiveSlaves[scrn]->
+    SendMessage( QString("Preload %1 %2 %3 %4 %5 %6")
+    .arg(frameNumber)
+    .arg(newRegion.x).arg(newRegion.y)
+    .arg(newRegion.width).arg(newRegion.height)
+    .arg(levelOfDetail));
+    
     }
+    }
+    }
+  */
 }
 
 //============================================================
@@ -1119,7 +1135,7 @@ void dmx_SpeedTest(void) {
     uint16_t i;
     int port;
     DEBUGMSG("dmx_Initialize()"); 
-    gRenderInfo = new RenderInfo; 
+    gRenderInfo = new RenderInfo(options); 
 
     if(options->backendRendererName != "") {
       gRenderInfo->mBackendRenderer = options->backendRendererName;

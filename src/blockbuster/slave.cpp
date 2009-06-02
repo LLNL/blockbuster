@@ -273,7 +273,6 @@ int Slave::Loop(void)
     int32_t  playFrame = 0, playFirstFrame = 0, playLastFrame = 0; 
     int32_t playStep = 0;  // how much to advance the next frame by
     int32_t preload = 0; // number of frames to preload
-    int32_t lastPreloadedFrame = 0; // if zero, none have been preloaded, else last preloaded frame.  We preload until the last one is preload greater than the current frame. 
 	QString message, token;
     time_t lastheartbeat=time(NULL), now; 
     while (1) {
@@ -371,6 +370,24 @@ int Slave::Loop(void)
             mCanvas->DrawString(mCanvas, row, col, message.toAscii());          
           }// "DrawString"
           else if (token == "SwapBuffers") {
+            if (messageList.size() != 7) {
+              SendError(QString("Bad SwapBuffers message: ")+message); 
+              continue; 
+            }
+            bool ok = false; 
+            qint32 currentFrame, swapID, 
+              playDirection, preload, startFrame, endFrame; 
+            int argnum = 1; 
+            currentFrame = messageList[argnum++].toLong(&ok);
+            if (ok) swapID = messageList[argnum++].toLong(&ok);
+            if (ok) playDirection = messageList[argnum++].toLong(&ok); 
+            if (ok) preload = messageList[argnum++].toLong(&ok); 
+            if (ok) startFrame = messageList[argnum++].toLong(&ok); 
+            if (ok) endFrame = messageList[argnum++].toLong(&ok); 
+            if (!ok) {
+              SendError(QString("Bad SetPlayDirection message: ")+message); 
+              continue; 
+            }
 #ifdef USE_MPI
             DEBUGMSG("frame %d, mCanvas %d: MPI_Barrier", lastImageRendered, mCanvas); 
             /*!
@@ -389,6 +406,22 @@ int Slave::Loop(void)
 #endif
             /* send ack */
             SendMessage(QString("SwapBuffers complete %1 %2").arg(messageList[1]).arg(messageList[2])); 
+            if (preload && mCanvas && mCanvas->frameList) {
+              int32_t i;
+              for (i = 1; i <= preload; i++) {
+                int offset = (playDirection == -1) ? -i : i;
+                int frame = (lastImageRendered + offset);
+                if (frame > endFrame) {
+                  frame = startFrame + (frame - endFrame);// preload for loops
+                } 
+                if (frame < startFrame) {
+                  frame = endFrame - (startFrame - frame); // for loops
+                } 
+                DEBUGMSG("Preload frame %d", frame); 
+                mCanvas->Preload(mCanvas, frame, &currentRegion, lod);
+              }
+               
+            } 
           } // end "SwapBuffers"
           else if (token == "Preload") {
             if (messageList.size() != 2) {
@@ -402,12 +435,12 @@ int Slave::Loop(void)
                continue; 
              }
           }
-          else if (token == "delete me") {
-            if (messageList.size() != 7) {
+          /*  else if (token == "Preload") {
+              if (messageList.size() != 7) {
               SendError("Bad Preload message: "+message); 
               continue; 
-            }
-            if (mCanvas->frameList) {			   
+              }
+              if (mCanvas->frameList) {			   
               //Rectangle region;
               qint32 frame;
               bool ok = false; 
@@ -418,12 +451,14 @@ int Slave::Loop(void)
               if (ok) currentRegion.height=messageList[5].toLong(&ok);
               if (ok) lod=messageList[6].toLong(&ok); 
               if (!ok) {
-                SendError("Bad Preload argument in message: "+message); 
-                continue; 
+              SendError("Bad Preload argument in message: "+message); 
+              continue; 
               }
               mCanvas->Preload(mCanvas, frame, &currentRegion, lod);
-            }
-          }// end "Preload"
+              }
+
+              }// end "Preload"
+          */ 
           else if (token == "CreateCanvas") {
             if (messageList.size() != 8) {
               SendError("Bad CreateCanvas message: "+message); 
@@ -502,16 +537,17 @@ int Slave::Loop(void)
               delete mCanvas->frameList; 
             }
            message.remove(0, 13); //strip "SetFrameList " from front
-            DEBUGMSG((QString("File list is: ")+message)); 
-            if (!LoadFrames( message.toAscii())) {			
+           DEBUGMSG((QString("File list is: ")+message)); 
+           if (!LoadFrames( message.toAscii())) {			
               SendError("No frames could be loaded."); 
             }
             playFirstFrame = 0; 
             playLastFrame = mCanvas->frameList->numStereoFrames()-1; 
           }// end "SetFrameList"
-          else if (token == "PlayForward") {
-            playStep = 1; 
-          }
+          /* else if (token == "PlayForward") {
+             playStep = 1; 
+             }
+          */ 
           else {
             QString msg = QString("Bad message: ")+ message;
             SendError(msg);
@@ -530,7 +566,7 @@ int Slave::Loop(void)
       /*!
         NEW CODE:  Behave like DisplayLoop, in that you do not need explicit master control of when to swap the next frame.  Hopefully, this eliminates delays inherent in that model.  
       */ 
-      if (playStep) {
+      if (0 && playStep) {
         if (mCanvas && mCanvas->frameList) {
           mCanvas->Render(mCanvas, playFrame, &currentRegion, 
                          destX, destY, zoom, lod);
