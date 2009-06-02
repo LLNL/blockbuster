@@ -78,6 +78,7 @@ MovieStatus dmx_Initialize(Canvas *canvas, const ProgramOptions *options);
 /* kind of bogus, but gets me by for now */  
 void dmx_SetFrameList(Canvas *canvas, FrameList *frameList);
 
+
 /* thump-thump */
 void dmx_SendHeartbeatToSlaves(void); 
 
@@ -85,6 +86,7 @@ void dmx_SendHeartbeatToSlaves(void);
    this makes the slaves just start playing and ignore Render commands 
 */ 
 void dmx_SpeedTest(void); 
+
 
 //========================================================================
 /*! 
@@ -95,7 +97,7 @@ class DMXSlave: public QObject {
   /* Q_OBJECT enables Qt's signals and slots to work */ 
   Q_OBJECT
  public:
-  DMXSlave(QString hostname, QTcpSocket *mSocket);
+  DMXSlave(QString hostname, QTcpSocket *mSocket, int preloadFrames);
   ~DMXSlave();
 
   string GetHost(void) { return mRemoteHostname; }
@@ -140,6 +142,7 @@ class DMXSlave: public QObject {
 	  ++pos;
 	}  
 	SendMessage(filestring);
+    SendMessage(QString("Preload %1").arg(mPreloadFrames)); 
 	return; 
   }
 
@@ -153,18 +156,17 @@ class DMXSlave: public QObject {
 	mCurrentFrame = frameNum; 
   }
 
-  void SwapBuffers(int32_t swapID) {
+  void SwapBuffers(int32_t swapID, int play, int preload, 
+                   uint32_t startFrame, uint32_t endFrame) {
     DEBUGMSG(QString("Slave %1: SwapBuffers(%2), lastSwap=%3\n").arg(GetHost().c_str()).arg(swapID).arg(mLastSwapID)); 
-	SendMessage(QString("SwapBuffers %1 %2").arg(mCurrentFrame).arg(swapID));
+	SendMessage(QString("SwapBuffers %1 %2 %3 %4 %5 %6")
+                .arg(mCurrentFrame).arg(swapID)
+                .arg(play).arg(preload).arg(startFrame).arg(endFrame));
 	return; 
   } 
 
   bool SlaveActive(void) {
-	return mSlaveSocket && mSlaveSocket->isValid() && mSlaveAwake;
-     // if (mRemoteHostName == "") {
-    //  QHostAddress a = mSlaveSocket.peerAddress();
-        
-        
+	return mSlaveSocket && mSlaveSocket->isValid() && mSlaveAwake;        
   }
 
 	
@@ -174,11 +176,7 @@ class DMXSlave: public QObject {
   */ 
   bool CheckSwapComplete(int32_t swapID) {
 	QueueNetworkEvents(); 
-    if (mLastSwapID < swapID) {
-      cerr << "Timeout for swap exceeded for slave on host " << mRemoteHostname << endl;
-      return false; 
-    }
-	return true; 
+    return (mLastSwapID >= swapID);
   }
    
   // +================================================+
@@ -190,6 +188,9 @@ class DMXSlave: public QObject {
   void SlaveSocketDisconnected(); 
   void SlaveSocketError(QAbstractSocket::SocketError err);
   void SlaveSocketStateChanged(QAbstractSocket::SocketState state);
+
+  //=============-==================================
+  // public data:
 
   //==============================================================
  protected:
@@ -204,7 +205,8 @@ class DMXSlave: public QObject {
      B --  "rsh" : blockbuster launches each slave using rsh or ssh, based on hostnames given by DMX 
      C --  "mpi" : blockbuster launches all processes using MPI
   */
-     
+
+  int mPreloadFrames; 
   string mRemoteHostname; // remote host to launch the slave on 
   QHostInfo mRemoteHostInfo; // as extracted from socket
   
@@ -228,8 +230,8 @@ class DMXSlave: public QObject {
 class SlaveServer: public QObject {
   Q_OBJECT
     public:
-  SlaveServer(QObject *parent = NULL): 
-    QObject(parent), mAllowIdleSlaves(true), 
+  SlaveServer(const ProgramOptions *options, QObject *parent = NULL): 
+    QObject(parent), mOptions(options), mAllowIdleSlaves(true), 
     mNumActiveSlaves(0), mSlavesReady(false) {
     connect(&mSlaveServer, SIGNAL(newConnection()), this, SLOT(SlaveConnected()));  
     mSlaveServer.listen(QHostAddress::Any);  //QTcpServer will choose a port for us.
@@ -256,6 +258,7 @@ class SlaveServer: public QObject {
   }
 
  public:
+  const ProgramOptions *mOptions;
   QTcpServer mSlaveServer;
   int mPort; 
   bool mAllowIdleSlaves; 

@@ -143,10 +143,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   Canvas *canvas;
   int maxWidth, maxHeight, maxDepth;
   int loopCount = options->loopCount; 
-  int preloadFrames = options->preloadFrames;
   int drawInterface = options->drawInterface;
-  int32_t startFrame = options->startFrame; 
-  int32_t endFrame = options->endFrame; 
   int skippedDelayCount = 0, usedDelayCount = 0;
   int done =0;
   /* Timing information */
@@ -160,7 +157,6 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   bool pingpong = false; // play forward, then backward, then forward, etc
   bool lockStatus = false;  // when true, status will not change. 
   /* UI / events */
-  int play = 0;
   int xOffset = 0, yOffset = 0, oldXOffset = 0, oldYOffset = 0; // image position relative to center of canvas
   int32_t panning = 0, panStartX = 0, panStartY = 0, panDeltaX = 0, panDeltaY = 0;
   int zooming = 0, zoomStartY = 0, zoomDelta = 0;  // integer zoom for mouse
@@ -172,7 +168,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   Rectangle roi;
   int destX, destY;
 
-  /* We'll need this for timing */
+ /* We'll need this for timing */
   Hertz = sysconf(_SC_CLK_TCK);
 
 
@@ -198,7 +194,12 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
     ERROR("Could not create a canvas");
     return;
   }
+  int32_t preloadFrames= options->preloadFrames,
+    playDirection = 0, 
+    startFrame= options->startFrame, 
+    endFrame = options->endFrame; 
 
+ 
   /* Tell the messaging function that we have a Canvas
    * to report messages through.
    */
@@ -236,7 +237,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   recentStartTime = GetCurrentTime();
  
   if ( options->play != 0 )
-    play = options->play;
+    playDirection = options->play;
 
   if ( options->zoom != 1.0 )
     newZoom =options->zoom;
@@ -254,7 +255,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
     TIMER_PRINT("loop start"); 
     vector<MovieEvent> events;
     MovieEvent newEvent; 
-    int oldPlay = play;
+    int oldPlay = playDirection;
 
     /* Get an event from the canvas or network and process it.
      */   
@@ -273,8 +274,8 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       events.push_back(newEvent); 
     } 
     GetXEvent(canvas, 0, &newEvent); 
-    if (play && newEvent.eventType == MOVIE_GOTO_FRAME && 
-        newEvent.number == frameNumber+play) {
+    if (playDirection && newEvent.eventType == MOVIE_GOTO_FRAME && 
+        newEvent.number == frameNumber+playDirection) {
       newEvent.eventType = MOVIE_NONE; 
     }   
     events.push_back(newEvent); 
@@ -305,7 +306,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         gSidecarServer->connectToSidecar(QString(event.mString)); 
         break; 
       case   MOVIE_CUE_PLAY_ON_LOAD: 
-        play = event.height; 
+        playDirection = event.height; 
         break;
       case   MOVIE_CUE_BEGIN: 
         cueEndFrame = event.number;  // for now, a cue will be defined to be "executing" until the end frame is reached, then the cue is complete
@@ -469,15 +470,15 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         canvas->ReportLoopBehaviorChange(loopCount); 
         break;
       case MOVIE_PLAY_FORWARD: 
-        play = 1; loopCount = options->loopCount; 
+        playDirection = 1; loopCount = options->loopCount; 
         break;
       case MOVIE_PLAY_BACKWARD: 
-        play = -1; loopCount = options->loopCount; 
+        playDirection = -1; loopCount = options->loopCount; 
         break;
-      case MOVIE_STOP: play = 0; break;
-      case MOVIE_STOP_ERROR: play = 0; continue;
+      case MOVIE_STOP: playDirection = 0; break;
+      case MOVIE_STOP_ERROR: playDirection = 0; continue;
       case MOVIE_PAUSE: 
-        play = !play;
+        playDirection = !playDirection;
         break;
       case MOVIE_STEP_FORWARD: frameNumber++; break;
       case MOVIE_STEP_BACKWARD: frameNumber--; break;
@@ -669,7 +670,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
 	  QStringList filenames; 
 	  filenames.append(event.mString);
 	  FrameList *newFrameList = new FrameList; 
-	  if (newFrameList->LoadFrames(filenames)) {
+ 	  if (newFrameList->LoadFrames(filenames)) {
 	    DestroyImageCache(canvas);
 	    canvas->imageCache = NULL; 
 	    allFrames->DeleteFrames(); 
@@ -700,7 +701,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
           } else {
             lodBias = 0;
           }
-	      play = 0;
+	      playDirection = 0;
 	      panning = 0; 
 	      zoomOne = fullScreen = false; 
 	      
@@ -765,7 +766,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       //===================================================================
       TIMER_PRINT("end switch"); 
 
-      if (event.eventType == MOVIE_NONE && !play) {
+      if (event.eventType == MOVIE_NONE && !playDirection) {
         /* start back up at outer loop */
         continue;
       }
@@ -775,7 +776,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       }
       
 
-      if (!oldPlay && play) {
+      if (!oldPlay && playDirection) {
         /* We're starting playback now so reset counters and timers */
         recentStartTime = GetCurrentTime();
         recentFrameCount = 0;
@@ -787,12 +788,12 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       
       if ( ! lockStatus && cueEndFrame && 
            ( 
-            ! play  ||  
+            ! playDirection  ||  
             (cueEndFrame > 0 && frameNumber >= cueEndFrame) ||
             (cueEndFrame < 0 && frameNumber <= -cueEndFrame)
             )
            ) {
-        dbprintf(2, QString("Ending cue with play=%1, cueEnd=%2, frameNumber=%3\n").arg(play).arg(cueEndFrame).arg(frameNumber)); 
+        dbprintf(2, QString("Ending cue with playDirection=%1, cueEnd=%2, frameNumber=%3\n").arg(playDirection).arg(cueEndFrame).arg(frameNumber)); 
         cueEndFrame = 0; 
         canvas->reportMovieCueComplete();
         gSidecarServer->SendEvent(MovieEvent(MOVIE_CUE_COMPLETE)); 
@@ -801,9 +802,9 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       // The frame number manipulations above may have advanced
       // or recessed the frame number beyond bounds.  We do the right thing here.
       if (frameNumber > endFrame) {    
-        if (play > 0) { // we're playing forward and reached the end of movie
+        if (playDirection > 0) { // we're playing forward and reached the end of movie
           if (pingpong) {
-            play = -play; 
+            playDirection = -playDirection; 
             frameNumber = endFrame; 
           } 
           else {
@@ -815,7 +816,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
               frameNumber = startFrame; 
             } else {
               frameNumber = endFrame; 
-              play = 0; 
+              playDirection = 0; 
             } 
           }// if not pingpong
         } else { // we are stopped, or are playing backward, either way, it's not the end of a loop, so just fix the issue, which is probably that the user asked to skip beyond the end of the movie
@@ -823,9 +824,9 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         }
       }    
       if (frameNumber < startFrame) {
-        if (play < 0) { // we're playing backward and reached the end of movie
+        if (playDirection < 0) { // we're playing backward and reached the end of movie
           if (pingpong) {
-            play = -play; 
+            playDirection = -playDirection; 
             frameNumber = 0; 
           } 
           else {
@@ -837,7 +838,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
               frameNumber = endFrame; 
             } else { // time to stop, just stick at the end and don't render
               frameNumber = startFrame; 
-              play = 0; 
+              playDirection = 0; 
             } 
           }// end ! pingpong
         } else { // we are stopped, or are playing forward, either way, it's not the end of a loop, so just fix the issue, which is probably that the user asked to skip beyond the start of the movie
@@ -869,7 +870,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       }
       
       { 
-        MovieSnapshot newSnapshot(event.eventType, filename, fps, targetFPS, currentZoom, lodBias, play, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, loopmsg, pingpong, fullScreen, zoomOne, canvas->height, canvas->width, canvas->XPos, canvas->YPos, imageHeight, imageWidth, -xOffset, yOffset); 
+        MovieSnapshot newSnapshot(event.eventType, filename, fps, targetFPS, currentZoom, lodBias, playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, loopmsg, pingpong, fullScreen, zoomOne, canvas->height, canvas->width, canvas->XPos, canvas->YPos, imageHeight, imageWidth, -xOffset, yOffset); 
         if (sendSnapshot || newSnapshot != oldSnapshot) {
           
           canvas->reportWindowMoved(canvas->XPos, canvas->YPos); 
@@ -977,7 +978,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       
 #if 0
       /* Compute LOD and clamp to what's available in the file */
-      if (play) {
+      if (playDirection) {
         baseLOD = LODFromZoom(currentZoom);
         lod = baseLOD + lodBias;
         if (lod > frameInfo->maxLOD) {
@@ -1052,7 +1053,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         canvas->AfterRender(canvas);
       }
 
-      if (play) {
+      if (playDirection) {
         /* See if we need to introduce a pause to prevent exceeding
          * the target frame rate.
          */
@@ -1073,11 +1074,15 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
           currentZoom != oldZoom ||
           oldXOffset != xOffset ||
           oldYOffset != yOffset) {
+        canvas->preloadFrames = preloadFrames; 
+        canvas->playDirection = playDirection;
+        canvas->startFrame = startFrame; 
+        canvas->endFrame = endFrame; 
         canvas->SwapBuffers(canvas);
-        if (play && options->speedTest) {
+        if (playDirection && options->speedTest) {
           cerr << "requesting speedTest of slaves" << endl; 
           dmx_SpeedTest(); 
-          play = 0; 
+          playDirection = 0; 
         }
       }
       previousFrame = frameNumber; 
@@ -1087,9 +1092,9 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
 
       TIMER_PRINT("after swap"); 
       /* Advance to the next frame */
-      if (play) {
+      if (playDirection) {
         /* Compute next frame number (+/- 1) */
-        frameNumber = frameNumber + play; // let this wrap around, do not fix
+        frameNumber = frameNumber + playDirection; // let this wrap around, do not fix
         /* Update timing info */
         totalFrameCount++;
         recentFrameCount++;
@@ -1120,7 +1125,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       if (canvas->Preload != NULL) {
         int32_t i;
         for (i = 0; i < preloadFrames; i++) {
-          int offset = (play == -1) ? -i : i;
+          int offset = (playDirection == -1) ? -i : i;
           int frame = (frameNumber + offset);
           if (frame > endFrame) {
             frame = startFrame + (frame - endFrame);// preload for loops
