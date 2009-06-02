@@ -4,6 +4,8 @@ SEDFILES = sed '$1' $2 > $(2).new; cp $(2) $(2).bak; mv $(2).new $(2)
 ifndef NO_MPI
 ifeq ($(shell if uname | grep -v Darwin >/dev/null && type mpiCC>/dev/null 2>&1; then echo yes; else echo no; fi),no)
 	NO_MPI = 1
+else
+export LDFLAGS +=  -Wl,-rpath -Wl,$(INSTALL_DIR)/lib
 endif
 endif
 
@@ -12,7 +14,7 @@ export RANLIB=ranlib
 export CXX = g++
 export CC = gcc
 export CPPFLAGS += -I$(INSTALL_DIR)/include -I$(INSTALL_DIR)/include/lzo $(OPT)
-export LDFLAGS += -L$(INSTALL_DIR)/lib -Wl,-rpath -Wl,$(INSTALL_DIR)/lib
+export LDFLAGS += -L$(INSTALL_DIR)/lib
 export X11_INCLUDES += -I/usr/X11R6/include
 ifeq ($(shell uname),Darwin)
 export CPPFLAGS += -I/sw/include -I/usr/X11R6/include
