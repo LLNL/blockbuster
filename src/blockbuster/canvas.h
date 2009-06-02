@@ -74,7 +74,7 @@
      */
     FrameList *frameList;
     struct ImageCache *imageCache;
-
+     
     void (*SetFrameList)(struct Canvas *canvas, FrameList *frameList);
     void (*Preload)(struct Canvas *canvas, uint32_t frameNumber,
         const Rectangle *imageRegion, uint32_t levelOfDetail);
@@ -197,6 +197,7 @@
 
     void *gluePrivateData;
 
+     int32_t playDirection, startFrame, endFrame, preloadFrames; 
   } ;
 
 /* Canvas creator from canvas.c */
