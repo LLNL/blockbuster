@@ -68,7 +68,9 @@ lcheck: mpeg.ln codec.ln marker.ln huffman.ln io.ln chendct.ln lexer.ln mem.ln m
 #
 #  Caution: Sometimes -ll is required.
 #
-#lexer.c:lexer.l
-#	lex lexer.l
+# fix problems with OS X flex, I don't know why it screws up but it does
+lexer.c:lexer.l
+	$(LEX) lexer.l
+	sed -e 's/PLStack\[PCStack\[i+1;/PLStack[PCStack[i+1]]);/' -e 's/^]])$//' lex.yy.c > lexer.c
 #	mv lex.yy.c lexer.c
-#
+
