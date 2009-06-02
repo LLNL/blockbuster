@@ -37,7 +37,9 @@ class Slave: public QWidget {
   QTcpSocket mMasterSocket; // connection to the master blockbuster
   QDataStream *mMasterStream;  // still another view of the socket
   Canvas *mCanvas; 
+#ifdef USE_MPI
   MPI_Comm workers;
+#endif
 }; 
 
 #endif
