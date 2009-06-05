@@ -18,6 +18,9 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 #include <QWidget>
 #include <QStringList>
 #include "errmsg.h"
@@ -96,6 +99,14 @@ bool Slave::InitNetwork(void) {
   mSocketFD = mMasterSocket.socketDescriptor(); 
   mMasterStream = new QDataStream (&mMasterSocket);
     
+ 
+#define TCP_NODELAY  1
+  int option = 1; 
+  if (setsockopt(mSocketFD, IPPROTO_TCP, TCP_NODELAY,
+                 &option, sizeof(option)) < 0) {
+    DEBUGMSG("TCP_NODELAY setsockopt error");
+  }
+  
   
   DEBUGMSG("Slave ready for messages, mMasterSocket in state %d", mMasterSocket.state());
 

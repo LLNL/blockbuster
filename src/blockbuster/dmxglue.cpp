@@ -18,6 +18,9 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 #ifdef USE_DMX
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 #include <QTimer>
 #include <QHostInfo>
 #include "MovieCues.h"
@@ -100,6 +103,16 @@ DMXSlave::DMXSlave(QString hostname, QTcpSocket *mSocket, int preloadFrames):
   QObject::connect(mSocket, SIGNAL(error(QAbstractSocket::SocketError)), 
                    this, SLOT(SlaveSocketError(QAbstractSocket::SocketError ))); 
   mRemoteHostInfo = QHostInfo::fromName(hostname);
+
+  int fd = mSocket->socketDescriptor(); 
+
+#define TCP_NODELAY  1
+  int option = 1; 
+  if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
+                 &option, sizeof(option)) < 0) {
+    DEBUGMSG("TCP_NODELAY setsockopt error");
+  }
+  
   return; 
 
 }
@@ -1027,18 +1040,29 @@ static void dmx_SwapBuffers(Canvas *canvas){
   if (!gRenderInfo->numValidWindowInfos) return; 
 
   /* Only check the first slave and the hell with the rest , to ensure we stay roughly in sync */ 
-  bool incomplete[4] = {true};  
-  uint32_t usecs = 0; 
-  while (incomplete[0] || incomplete[1] || incomplete[2] || incomplete[3]) {
+  int numslaves = gRenderInfo->numValidWindowInfos;
+  vector<bool> incomplete; 
+  incomplete.assign(numslaves, true); 
+ int numcomplete = 0; 
+  uint32_t usecs = 0, lastusecs = 0; 
+  DEBUGMSG("Checking for pending swaps"); 
+  while (numcomplete < numslaves) {
     gCoreApp->processEvents(QEventLoop::ExcludeUserInputEvents); 
-    int slavenum = gRenderInfo->numValidWindowInfos;
+    int slavenum = numslaves;
     while (slavenum--) {
       DMXSlave *theSlave = 
         gRenderInfo->mSlaveServer.
         mActiveSlaves[gRenderInfo->dmxWindowInfos[slavenum].screen];
       if (incomplete[slavenum]) {
-        DEBUGMSG("Checking for pending swap ID %d on slave %s", swapID-1, theSlave->GetHost().c_str()); 
         incomplete[slavenum] = !theSlave->CheckSwapComplete(swapID-1); 
+        if (!incomplete[slavenum]) {
+          DEBUGMSG("Marking slave %d complete", slavenum); 
+          numcomplete ++; 
+        }
+      }
+      if (usecs - lastusecs > 10000) {
+        DEBUGMSG("still checking swaps after %d usecs", usecs); 
+        lastusecs = usecs;
       }
     }
     if (usecs > 10*1000*1000) {
@@ -1062,41 +1086,6 @@ static void dmx_SwapBuffers(Canvas *canvas){
   return; 
 }
  
- static void
-dmx_Preload(Canvas *, uint32_t frameNumber, const Rectangle *imageRegion,
-            uint32_t levelOfDetail)
-{
-  return; 
-  /*
-    if (!gRenderInfo->numValidWindowInfos) return; 
-    int i;
-    for (i = 0; i < gRenderInfo->numValidWindowInfos; i++) {
-    if (gRenderInfo->dmxWindowInfos[i].window) {
-    const int scrn = gRenderInfo->dmxWindowInfos[i].screen;
-    if (gRenderInfo->mSlaveServer.mActiveSlaves[scrn]->HaveCanvas()) {
-    const XRectangle *vis = &gRenderInfo->dmxWindowInfos[i].vis;
-    int destX = PrevDestX;
-    int destY = PrevDestY;
-    float zoom = PrevZoom;
-    Rectangle newRegion;
-    int newDestX, newDestY;
-    
-    // clip the region of interest against this screen 
-    ClipImageRegion(destX, destY, imageRegion, vis, zoom,
-    &newDestX, &newDestY, &newRegion);
-    
-    gRenderInfo->mSlaveServer.mActiveSlaves[scrn]->
-    SendMessage( QString("Preload %1 %2 %3 %4 %5 %6")
-    .arg(frameNumber)
-    .arg(newRegion.x).arg(newRegion.y)
-    .arg(newRegion.width).arg(newRegion.height)
-    .arg(levelOfDetail));
-    
-    }
-    }
-    }
-  */
-}
 
 //============================================================
 
@@ -1154,7 +1143,6 @@ void dmx_SpeedTest(void) {
     canvas->ImageDataAllocator = DefaultImageDataAllocator;
     canvas->ImageDataDeallocator = DefaultImageDataDeallocator;
     canvas->SetFrameList = dmx_SetFrameList;
-    canvas->Preload = dmx_Preload;
     canvas->Render = dmx_Render;
     canvas->Resize = dmx_Resize;
     canvas->Move = dmx_Move;
