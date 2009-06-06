@@ -381,6 +381,10 @@ void MoveXWindow(Canvas *canvas, int newX, int newY, int cameFromX) {
                     movieEvent->eventType = MOVIE_GOTO_START;
                     return;
                 }
+                else if (code == XK_Escape) {
+                  movieEvent->eventType = MOVIE_QUIT;
+                  return;
+                }  
                 else if (code == XK_End) {
                     movieEvent->eventType = MOVIE_GOTO_END;
                     return;
