@@ -105,7 +105,9 @@ DMXSlave::DMXSlave(QString hostname, QTcpSocket *mSocket, int preloadFrames):
   mRemoteHostInfo = QHostInfo::fromName(hostname);
 
   int fd = mSocket->socketDescriptor(); 
-
+  /*
+    We require lower latency on every packet sent so enable TCP_NODELAY.
+  */ 
 #define TCP_NODELAY  1
   int option = 1; 
   if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,

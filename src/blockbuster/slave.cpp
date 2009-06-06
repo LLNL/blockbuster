@@ -100,6 +100,9 @@ bool Slave::InitNetwork(void) {
   mMasterStream = new QDataStream (&mMasterSocket);
     
  
+  /*
+    We require lower latency on every packet sent so enable TCP_NODELAY.
+  */ 
 #define TCP_NODELAY  1
   int option = 1; 
   if (setsockopt(mSocketFD, IPPROTO_TCP, TCP_NODELAY,
