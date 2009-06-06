@@ -502,7 +502,7 @@ void MovieCueManager::setupMovieCueEditor(MovieCue *iCue) {
 void MovieCueManager::setCurrentCue(MovieCue *iCue) {
   mCurrentCue = iCue; 
   if (iCue) {
-    movieCueList->setCurrentItem(mCurrentCue); 
+    movieCueList->setCurrentItem(mCurrentCue, QItemSelectionModel::ClearAndSelect); 
   }
   setupMovieCueEditor(mCurrentCue); 
   emit currentCueChanged(mCurrentCue); 
