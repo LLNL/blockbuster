@@ -31,6 +31,7 @@ MovieCue::MovieCue(MovieCue *other, QListWidget *parent): QListWidgetItem(other-
   mWindowYPos = other->mWindowYPos;
   mImageXPos = other->mImageXPos;
   mImageYPos = other->mImageYPos;
+  mLOD = other->mLOD;
   mFrameRate = other->mFrameRate;
   mZoom = other->mZoom;
   isValid = other->isValid;
@@ -102,6 +103,9 @@ void MovieCue::ReadScript(const MovieScript &iScript) {
       mImageXPos = pos->x; 
       mImageYPos = pos->y; 
       break; 
+    case MOVIE_SET_LOD:
+      mLOD = pos->x; 
+      break; 
     default:
       cerr << "Warning:  unknown event in Cue script: " << pos->eventType << endl; 
       break; 
@@ -127,7 +131,6 @@ void MovieCue::GenerateScript(MovieScript &oScript) const{
   oScript.push_back(MovieEvent(MOVIE_SET_PINGPONG, mPingPong));
   oScript.push_back(MovieEvent(MOVIE_CUE_PLAY_BACKWARD, mPlayBackward)); 
   oScript.push_back(MovieEvent(MOVIE_START_END_FRAMES, mStartFrame, mEndFrame, 0,0)); 
-  oScript.push_back(MovieEvent(MOVIE_SET_RATE, mFrameRate)); 
   /* now store the events that actually make BlockBuster do things */
   if (mLoadMovie && mMovieName != "") {    
     oScript.push_back(MovieEvent(MOVIE_OPEN_FILE_NOCHANGE, mMovieName, mCurrentFrame));
@@ -145,6 +148,8 @@ void MovieCue::GenerateScript(MovieScript &oScript) const{
   if (!mFullScreen && !mZoomOne) {
     oScript.push_back(MovieEvent(MOVIE_ZOOM_SET, mZoom)); 
   }
+  oScript.push_back(MovieEvent(MOVIE_SET_RATE, mFrameRate)); 
+  oScript.push_back(MovieEvent(MOVIE_SET_LOD, mLOD)); 
   oScript.push_back(MovieEvent(MOVIE_IMAGE_MOVE, 0,0, mImageXPos, mImageYPos));
   if (mPlayMovie) {
     if (mPlayBackward){
@@ -435,7 +440,10 @@ void MovieCueManager::EnableDisableFields(bool enable) {
   imageYPosLabel->setEnabled(enable); 
   imageXPosField->setEnabled(enable); 
   imageYPosField->setEnabled(enable); 
-  
+
+  LODLabel ->setEnabled(enable); 
+  LODField ->setEnabled(enable); 
+    
   frameRateField->setEnabled(enable); 
   frameRateLabel->setEnabled(enable); 
   zoomLabel->setEnabled(enable); 
@@ -472,6 +480,7 @@ void MovieCueManager::setupMovieCueEditor(MovieCue *iCue) {
   windowYPosField->setText(nums.setNum(tmp->mWindowYPos)); 
   imageXPosField->setText(nums.setNum(tmp->mImageXPos)); 
   imageYPosField->setText(nums.setNum(tmp->mImageYPos)); 
+  LODField->setText(nums.setNum(tmp->mLOD)); 
   frameRateField->setText(nums.setNum(tmp->mFrameRate)); 
   zoomField->setText(nums.setNum(tmp->mZoom)); 
 
@@ -609,6 +618,7 @@ void MovieCueManager::on_applyChangesButton_clicked(){
   mCurrentCue->mWindowYPos = windowYPosField->text().toInt(); 
   mCurrentCue->mImageXPos = imageXPosField->text().toInt(); 
   mCurrentCue->mImageYPos = imageYPosField->text().toInt(); 
+  mCurrentCue->mLOD = LODField->text().toInt(); 
   mCurrentCue->mFullScreen = fullScreenCheckBox->isChecked(); 
   mCurrentCue->mZoomOne = zoomOneCheckBox->isChecked(); 
   mCurrentCue->mFrameRate = frameRateField->text().toFloat(); 
@@ -801,6 +811,7 @@ void MovieCueManager::SetCurrentCue(MovieSnapshot &snapshot) {
     windowYPosField->setText(QString("%1").arg(snapshot.mScreenYpos)); 
     imageXPosField->setText(QString("%1").arg(snapshot.mImageXpos)); 
     imageYPosField->setText(QString("%1").arg(snapshot.mImageYpos)); 
+    LODField->setText(QString("%1").arg(snapshot.mLOD)); 
   }
   return; 
 }
@@ -1020,6 +1031,13 @@ void MovieCueManager::on_imageYPosField_textChanged(){
 } 
 
 //======================================================================
+void MovieCueManager::on_LODField_textChanged(){
+  if (mCurrentCue)  mLODChanged = mCurrentCue->mLOD != LODField->text().toLong();
+  applyChangesButton->setEnabled(cueChanged()); 
+  return; 
+} 
+
+//======================================================================
 void MovieCueManager::on_frameRateField_textChanged(){
   if (mCurrentCue)  mFrameRateChanged = mCurrentCue->mFrameRate != frameRateField->text().toLong();
   applyChangesButton->setEnabled(cueChanged()); 
@@ -1098,7 +1116,7 @@ QFile &operator << (QFile &iFile, const MovieCue &iCue){
     iFile.write(QString("LoadMovie=%1 ") 
                 .arg(iCue.mMovieName).toAscii());
   }
-  iFile.write(QString("Play=%1 Loop=%2 Backward=%3 Controls=%4 CurrentFrame=%5 StartFrame=%6 EndFrame=%7 WindowWidth=%8 WindowHeight=%9 WindowX=%10 WindowY=%11 FullScreen=%12 ZoomOne=%13 ImageX=%14 ImageY=%15 Rate=%16 Zoom=%17 PingPong=%18 ENDCUE\n")
+  iFile.write(QString("Play=%1 Loop=%2 Backward=%3 Controls=%4 CurrentFrame=%5 StartFrame=%6 EndFrame=%7 WindowWidth=%8 WindowHeight=%9 WindowX=%10 WindowY=%11 FullScreen=%12 ZoomOne=%13 ImageX=%14 ImageY=%15 LOD=%16 Rate=%17 Zoom=%18 PingPong=%19 ENDCUE\n")
               .arg(iCue.mPlayMovie)
               .arg(iCue.mLoopFrames)
               .arg(iCue.mPlayBackward)
@@ -1114,6 +1132,7 @@ QFile &operator << (QFile &iFile, const MovieCue &iCue){
               .arg(iCue.mZoomOne)
               .arg(iCue.mImageXPos)
               .arg(iCue.mImageYPos)
+              .arg(iCue.mLOD)
               .arg(iCue.mFrameRate)
               .arg(iCue.mZoom)
               .arg(iCue.mPingPong)
@@ -1253,6 +1272,8 @@ QFile  &operator >> (QFile &iFile,  MovieCue &iCue){
         iCue.mImageXPos = tokenpair[1].toInt();
       } else if (tokenpair[0] == "ImageY") {
         iCue.mImageYPos = tokenpair[1].toInt();
+      } else if (tokenpair[0] == "LOD") {
+        iCue.mLOD = tokenpair[1].toInt();
       } else if (tokenpair[0] == "Rate") {
         iCue.mFrameRate = tokenpair[1].toFloat();
       } else if (tokenpair[0] == "Zoom") {
