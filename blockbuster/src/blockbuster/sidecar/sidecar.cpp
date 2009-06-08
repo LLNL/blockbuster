@@ -47,6 +47,10 @@
 #include "events.h"
 #include <iostream> 
 #include "timer.h"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <netinet/tcp.h>
 using namespace std; 
 
 //===============================================================
@@ -270,6 +274,15 @@ void SideCar::setBlockbusterSocket(QTcpSocket *newSocket) {
   } else {
     connect(mBlockbusterSocket, SIGNAL(connected()),  
             this, SLOT(connectedToBlockbuster()));
+  }
+  /*
+    We require lower latency on every packet sent so enable TCP_NODELAY.
+  */ 
+  int fd = mBlockbusterSocket->socketDescriptor(); 
+  int option = 1; 
+  if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
+                 &option, sizeof(option)) < 0) {
+    DEBUGMSG("TCP_NODELAY setsockopt error");
   }
   return; 
 }

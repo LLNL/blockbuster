@@ -43,7 +43,7 @@
 #include <version.h>
 #include "settings.h"
 #include <X11/Xlib.h>
-#include "ipc.h"
+//#include "ipc.h"
 #include <iostream> 
 #include "movie.h"
 #include "ui.h" 
@@ -437,7 +437,8 @@ static void ParseOptions(int &argc, char *argv[], ProgramOptions *opt)
       }   
     }
     else {
-      opt->masterPort = DEFAULT_MASTER_PORT;
+      ERROR("The default master port is no longer used for security reasons"); 
+      exit(2);
     }
     // }
     DEBUGMSG(QString("SlaveHost: %1 Port: %2\n")

@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <netinet/tcp.h>
 #include <QTimer>
 #include <QHostInfo>
 #include "MovieCues.h"
@@ -28,7 +29,6 @@
 #include "errmsg.h"
 #include "xwindow.h"
 #include "dmxglue.h"
-#include "ipc.h"
 #include "frames.h"
 #include "util.h"
 #include "errmsg.h"
@@ -108,7 +108,6 @@ DMXSlave::DMXSlave(QString hostname, QTcpSocket *mSocket, int preloadFrames):
   /*
     We require lower latency on every packet sent so enable TCP_NODELAY.
   */ 
-#define TCP_NODELAY  1
   int option = 1; 
   if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
                  &option, sizeof(option)) < 0) {
