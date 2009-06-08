@@ -4,6 +4,10 @@
 #include "errmsg.h"
 #include "dmxglue.h"
 #include "QMessageBox"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <netinet/tcp.h>
 
 // global variables for network communications.  Can these be not global, somehow?   
 SidecarServer *gSidecarServer = NULL; 
@@ -38,6 +42,15 @@ void SidecarServer::NewSidecarSocket(QTcpSocket *newSocket) {
   connect(mSidecarSocket, SIGNAL(readyRead()), this, SLOT(incomingSidecarData()));
   connect(mSidecarSocket, SIGNAL(error ( QAbstractSocket::SocketError  )), this, SLOT(socketError(QAbstractSocket::SocketError)));
   connect(mSidecarSocket, SIGNAL(disconnected()), this, SLOT(sidecarDisconnected()));
+  /*
+    We require lower latency on every packet sent so enable TCP_NODELAY.
+  */ 
+  int fd = mSidecarSocket->socketDescriptor(); 
+  int option = 1; 
+  if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
+                 &option, sizeof(option)) < 0) {
+    DEBUGMSG("TCP_NODELAY setsockopt error");
+  }
   incomingSidecarData(); 
   return; 
 }

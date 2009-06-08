@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <netinet/tcp.h>
 #include <QWidget>
 #include <QStringList>
 #include "errmsg.h"
@@ -103,7 +104,6 @@ bool Slave::InitNetwork(void) {
   /*
     We require lower latency on every packet sent so enable TCP_NODELAY.
   */ 
-#define TCP_NODELAY  1
   int option = 1; 
   if (setsockopt(mSocketFD, IPPROTO_TCP, TCP_NODELAY,
                  &option, sizeof(option)) < 0) {
