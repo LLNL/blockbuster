@@ -461,6 +461,8 @@ void MovieCueManager::EnableDisableFields(bool enable) {
   zoomField->setEnabled(enable && !fullscreen); 
   return; 
 }
+
+
 //======================================================================
 /* if iCue is NULL, disable and clear the editor */
 void MovieCueManager::setupMovieCueEditor(MovieCue *iCue) {
@@ -584,19 +586,40 @@ void MovieCueManager::on_duplicateCueButton_clicked(){
   return; 
 } 
 
+
+//======================================================================
+/*! 
+  Helper for Validate() function
+*/ 
+void MovieCueManager::fixOrder(QLineEdit *smaller, QString smalltext, 
+                               QLineEdit *greater, QString bigtext) {
+  if (smaller->text().toLong() > greater->text().toLong() ) {
+    QMessageBox mbox (this); 
+    mbox.setText(smalltext + " cannot be greater than " + bigtext); 
+    mbox.setInformativeText("What would you like to do?");  
+    QAbstractButton *fixSmaller =  
+      mbox.addButton(QString("Make %1 equal %2").arg(smalltext).arg(bigtext), QMessageBox::YesRole);
+    mbox.addButton(QString("Make %1 equal %2").arg(bigtext).arg(smalltext), QMessageBox::YesRole); 
+    mbox.exec(); 
+
+    if (mbox.clickedButton() == fixSmaller) {
+      smaller->setText(greater->text()); 
+    } else {
+      greater->setText(smaller->text()); 
+    }
+  }
+  return; 
+}
+
 //======================================================================
 void MovieCueManager::Validate() {
   /*! 
     Validate that current frame is not less than minimum frame
   */
-  if (currentFrameField->text().toLong() <  
-      startFrameField->text().toLong()) {
-    QMessageBox::warning
-      (this, tr("Invalid input"),
-       tr("The current frame cannot be less than the start frame."
-          "  Setting current frame to start frame."));
-    currentFrameField->setText(startFrameField->text());
-  }
+  fixOrder(startFrameField, "start frame", endFrameField, "end frame");
+  fixOrder(startFrameField, "start frame", currentFrameField, "current frame");
+  fixOrder(currentFrameField, "current frame", endFrameField, "end frame");
+  
   return; 
 }
 
