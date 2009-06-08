@@ -1,7 +1,11 @@
 #!/usr/bin/env bash 
 # purpose:  to make sure the blockbuster and sidecar builds are properly up to date, after e.g. removing or adding headers or source files
 set -x
-rm -f src/blockbuster/blockbuster.pro src/blockbuster/sidecar/Makefile.qt.include
+for dir in src/blockbuster/ src/blockbuster/sidecar/; do 
+    pushd $dir; 
+    rm -f blockbuster.pro Makefile.qt.include moc_*{cpp,o} ui_*h
+    popd
+done
 
 make $@
 
