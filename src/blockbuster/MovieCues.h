@@ -45,6 +45,7 @@ class MovieCueManager: public QWidget, Ui::MovieCueWidget {
   bool cueRunning(void); 
   void setCueRunning(bool running); 
 
+
   //=========================================
   // SIGNALS
  signals:
@@ -63,6 +64,9 @@ class MovieCueManager: public QWidget, Ui::MovieCueWidget {
   //=========================================
   // SLOTS 
   public slots: 
+  // not really a signal, it's a helper for Validate()
+  void fixOrder(QLineEdit *smaller, QString smalltext, 
+                QLineEdit *greater, QString bigtext);
   void Validate(); 
   void userDoubleClickedItem(QListWidgetItem*) {
     on_executeCueButton_clicked(); 
