@@ -41,7 +41,7 @@ Esc - exit Blockbuster
 Take a screen capture using the "Save Image" button. 
 
 Confirm proper looping behaviors, and pingpong. 
-Confirm that the file history is working in the blockbuster launch dialog.  
+Confirm that the file history is working in the blockbuster launch dialog.
 
 # connections:
 Repeatedly connect and disconnect from the server, then test the controls.  Terminate it and restart it.  Execute cues with a connection in place and out of place.  Do this several times and make sure the right buttons are enabled and disabled and all functionality is available.  Connect with cues shown and hidden.  Quit blockbuster from within blockbuster and make sure sidecar handles that. 
@@ -50,5 +50,5 @@ Repeatedly connect and disconnect from the server, then test the controls.  Term
 Check rendering speed under MPI and without MPI and confirm that synchronization is occurring reliably.  
 
 # DMX 
-Test launch and behavior of blockbuster and sidecar with and without DMX and MPI framesync. Test "Fill" (fullscreen) button with DMX. 
+Test launch and behavior of blockbuster and sidecar with and without DMX and MPI framesync. Test "Fill" (fullscreen) button with DMX. Ensure a cue or two works properly in DMX. 
 
