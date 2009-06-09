@@ -769,6 +769,17 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       //===================================================================
       TIMER_PRINT("end switch"); 
 
+      /*! check if we have reached the end of a cue */
+      if (cuePlaying && 
+          (!playDirection  || 
+           (playDirection > 0 && cueEndFrame != -1 && frameNumber > cueEndFrame) || 
+           (playDirection < 0 && cueEndFrame != -1 && frameNumber < cueEndFrame)) ) {
+        dbprintf(2, QString("Ending cue with playDirection=%1, cueEnd=%2, frameNumber=%3\n").arg(playDirection).arg(cueEndFrame).arg(frameNumber)); 
+        cuePlaying = false; 
+        canvas->reportMovieCueComplete();
+        gSidecarServer->SendEvent(MovieEvent(MOVIE_CUE_COMPLETE)); 
+      }
+      
       if (event.eventType == MOVIE_NONE && !playDirection) {
         /* start back up at outer loop */
         continue;
@@ -787,17 +798,6 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
           nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
         else
           nextSwapTime = 0.0;
-      }
-      
-      /*! check if we have reached the end of a cue */
-      if (cuePlaying && 
-          (!playDirection  || 
-           (playDirection > 0 && cueEndFrame != -1 && frameNumber > cueEndFrame) || 
-           (playDirection < 0 && cueEndFrame != -1 && frameNumber < cueEndFrame)) ) {
-        dbprintf(2, QString("Ending cue with playDirection=%1, cueEnd=%2, frameNumber=%3\n").arg(playDirection).arg(cueEndFrame).arg(frameNumber)); 
-        cuePlaying = false; 
-        canvas->reportMovieCueComplete();
-        gSidecarServer->SendEvent(MovieEvent(MOVIE_CUE_COMPLETE)); 
       }
       
       //=====================================================================
