@@ -155,7 +155,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   double nextSwapTime = 0.0;
   float targetFPS = 0.0;
   bool pingpong = false; // play forward, then backward, then forward, etc
-  bool lockStatus = false;  // when true, status will not change. 
+  bool cuePlaying = false;  // when true, status will not change. 
   /* UI / events */
   int xOffset = 0, yOffset = 0, oldXOffset = 0, oldYOffset = 0; // image position relative to center of canvas
   int32_t panning = 0, panStartX = 0, panStartY = 0, panDeltaX = 0, panDeltaY = 0;
@@ -310,17 +310,14 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         break;
       case   MOVIE_CUE_BEGIN: 
         cueEndFrame = event.number;  // for now, a cue will be defined to be "executing" until the end frame is reached, then the cue is complete
-        if (cueEndFrame) {
-          canvas->reportMovieCueStart(); 
-          lockStatus = true; 
-        } 
+        canvas->reportMovieCueStart(); 
         break; 
       case   MOVIE_CUE_END: 
         /* it seems like you would report the end of the cue here, but 
            that's not the case -- this event is just the end of the cue 
            description and is pretty useless actually
         */ 
-        lockStatus = false; 
+        cuePlaying = true;
         break; 
       case   MOVIE_CUE_MOVIE_NAME: 
       case   MOVIE_CUE_PLAY_BACKWARD: 
@@ -475,8 +472,14 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       case MOVIE_PLAY_BACKWARD: 
         playDirection = -1; loopCount = options->loopCount; 
         break;
-      case MOVIE_STOP: playDirection = 0; break;
-      case MOVIE_STOP_ERROR: playDirection = 0; continue;
+      case MOVIE_STOP: 
+        DEBUGMSG("Got stop event"); 
+        playDirection = 0; 
+        break;
+      case MOVIE_STOP_ERROR: 
+        DEBUGMSG("Got stop error"); 
+        playDirection = 0; 
+        continue;
       case MOVIE_PAUSE: 
         playDirection = !playDirection;
         break;
@@ -786,18 +789,17 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
           nextSwapTime = 0.0;
       }
       
-      if ( ! lockStatus && cueEndFrame && 
-           ( 
-            ! playDirection  ||  
-            (cueEndFrame > 0 && frameNumber >= cueEndFrame) ||
-            (cueEndFrame < 0 && frameNumber <= -cueEndFrame)
-            )
-           ) {
+      /*! check if we have reached the end of a cue */
+      if (cuePlaying && 
+          (!playDirection  || 
+           (playDirection > 0 && cueEndFrame != -1 && frameNumber > cueEndFrame) || 
+           (playDirection < 0 && cueEndFrame != -1 && frameNumber < cueEndFrame)) ) {
         dbprintf(2, QString("Ending cue with playDirection=%1, cueEnd=%2, frameNumber=%3\n").arg(playDirection).arg(cueEndFrame).arg(frameNumber)); 
-        cueEndFrame = 0; 
+        cuePlaying = false; 
         canvas->reportMovieCueComplete();
         gSidecarServer->SendEvent(MovieEvent(MOVIE_CUE_COMPLETE)); 
       }
+      
       //=====================================================================
       // The frame number manipulations above may have advanced
       // or recessed the frame number beyond bounds.  We do the right thing here.
@@ -1084,6 +1086,27 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
           dmx_SpeedTest(); 
           playDirection = 0; 
         }
+        /* Give the canvas a chance to preload upcoming images
+         * while the display thread is displaying an image.
+         * (It's too late to preload the current image; that one
+         * will either have to be in the cache, or we'll load it
+         * directly.)
+         */
+        if (canvas->Preload != NULL) {
+          int32_t i;
+          for (i = 1; i <= preloadFrames; i++) {
+            int offset = (playDirection == -1) ? -i : i;
+            int frame = (frameNumber + offset);
+            if (frame > endFrame) {
+              frame = startFrame + (frame - endFrame);// preload for loops
+            } 
+            if (frame < startFrame) {
+              frame = endFrame - (startFrame - frame); // for loops
+            } 
+            DEBUGMSG("Preload frame %d", frame); 
+            canvas->Preload(canvas, frame, &roi, lod);
+          }
+        }
       }
       previousFrame = frameNumber; 
       oldZoom = currentZoom; 
@@ -1116,27 +1139,6 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       }
       canvas->reportActualFPS(fps); 
       
-      /* Give the canvas a chance to preload upcoming images
-       * while the display thread is displaying an image.
-       * (It's too late to preload the current image; that one
-       * will either have to be in the cache, or we'll load it
-       * directly.)
-       */
-      if (canvas->Preload != NULL) {
-        int32_t i;
-        for (i = 0; i < preloadFrames; i++) {
-          int offset = (playDirection == -1) ? -i : i;
-          int frame = (frameNumber + offset);
-          if (frame > endFrame) {
-            frame = startFrame + (frame - endFrame);// preload for loops
-          } 
-          if (frame < startFrame) {
-            frame = endFrame - (startFrame - frame); // for loops
-          } 
-          DEBUGMSG("Preload frame %d", frame); 
-          canvas->Preload(canvas, frame, &roi, lod);
-        }
-      }
       
     }
   }

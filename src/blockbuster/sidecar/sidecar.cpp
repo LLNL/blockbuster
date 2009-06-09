@@ -381,12 +381,7 @@ void SideCar::checkBlockbusterData() {
       break; 
     case MOVIE_CUE_COMPLETE:
       { 
-        const MovieCue *executing = mCueManager->getExecutingCue(); 
         mCueExecuting = false;
-        if (executing && executing->mPlayMovie && 
-            mRemoteControl->frameSlider->value() != executing->mEndFrame) { 
-          mCueManager->setCueRunning(false); 
-        }
       }
       break; 
     default:
@@ -493,7 +488,7 @@ void SideCar::blockbusterReadStdErr() {
       dbprintf(5, QString("blockbuster sidecar port detected: \"%1\", tokens = %2\n").arg(line).arg(tokens.size())); 
       setBlockbusterPort(tokens[3]); 
    } else {                             
-      dbprintf(5, "Got blockbuster stderr: %s\n", line.toStdString().c_str()); 
+      dbprintf(1, "Got blockbuster stderr: %s\n", line.toStdString().c_str()); 
       if (line.contains(QRegExp("[Nn]o such file"))) {
         QMessageBox::warning(this, "Error", 
                              "Path to blockbuster is incorrect"); 
@@ -514,7 +509,7 @@ void SideCar::blockbusterReadStdOut(){
       dbprintf(3, "got null line from stdout\n"); 
       return; 
     }
-    dbprintf(5, "Got blockbuster stdout: %s\n", line.toStdString().c_str()); 
+    dbprintf(1, "Got blockbuster stdout: %s\n", line.toStdString().c_str()); 
   }
   return; 
 } 

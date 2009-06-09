@@ -32,7 +32,7 @@ QString getExactSeconds(void) {
 
 //===============================================
 void set_verbose(int level) {
-  gVerbose = level; 
+  maxMessageLevel = gVerbose = level; 
 }
 
 #define DBPRINTF_PREAMBLE QString("<t=%1> %2:%3, %4():  ").arg(getExactSeconds()).arg(theMessage.file).arg(theMessage.line).arg(theMessage.function).toStdString()
