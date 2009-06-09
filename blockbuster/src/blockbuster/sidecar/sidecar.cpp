@@ -878,6 +878,7 @@ void SideCar::reverseButton_clicked(){
 //================================================================
 void SideCar::stopButton_clicked(){   
   SendEvent(MovieEvent (MOVIE_STOP)); 
+  mCueManager->stopLooping();  
 }
 
 //================================================================
