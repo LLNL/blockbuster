@@ -224,7 +224,7 @@ struct MovieSnapshot {
     mFrameNumber(1),  mLoop(0),  mPingPong(false), 
     mFullScreen(false), mZoomOne(false), 
     mScreenHeight(0), mScreenWidth(0), mScreenXpos(0), mScreenYpos(0), 
-    mImageHeight(0), mImageWidth(0), mImageXpos(0),  mImageYpos(0) { return; }
+    mImageHeight(0), mImageWidth(0), mImageXpos(0),  mImageYpos(0){ return; }
     
   MovieSnapshot(int32_t snapshotType, 
                 QString filename, float frameRate, float targetFPS, 

@@ -26,9 +26,10 @@ class MovieCueManager: public QWidget, Ui::MovieCueWidget {
   const MovieCue *getCurrentCue(void) const { 
     return mCurrentCue; 
   }
-  const MovieCue *getExecutingCue(void) const { 
-    return mExecutingCue; 
-  }
+  /*  const MovieCue *getExecutingCue(void) const { 
+      return mExecutingCue; 
+      }
+  */
    void ReadCueFile(std::string filename); 
   int numCues(void) { return movieCueList->count(); }
 
@@ -42,9 +43,9 @@ class MovieCueManager: public QWidget, Ui::MovieCueWidget {
   // Override the widget's closeEvent handler 
   void closeEvent(QCloseEvent *event);
 
-  bool cueRunning(void); 
   void setCueRunning(bool running); 
-
+  void stopLooping(void) { mStopLooping = true; }
+  bool looping(void) { return !mStopLooping; }
 
   //=========================================
   // SIGNALS
@@ -155,7 +156,8 @@ class MovieCueManager: public QWidget, Ui::MovieCueWidget {
   bool mCueFileDirty; // cue file needs saving 
   //std::vector<MovieCue> mCueQueue; // I've always wanted to say that
   QString  mCueFileName; 
-  MovieCue *mCurrentCue, *mExecutingCue; 
+  MovieCue *mCurrentCue; // , *mExecutingCue; 
+  bool mStopLooping; 
 }; 
 //===========================================================
 /* the attributes and data associated with a movie cue, for use by MovieCueManager.

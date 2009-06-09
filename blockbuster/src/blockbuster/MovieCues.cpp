@@ -167,7 +167,7 @@ void MovieCue::GenerateScript(MovieScript &oScript) const{
 
 //======================================================================
 MovieCueManager::MovieCueManager(QWidget *parent ) :
-  QWidget(parent), mCurrentCue(NULL), mExecutingCue(NULL) {
+  QWidget(parent), mCurrentCue(NULL) {
   SetCueUnchanged(); 
   setupUi(this); 
   connect(movieCueList, SIGNAL(itemActivated(QListWidgetItem *)), 
@@ -256,10 +256,6 @@ void MovieCueManager::closeEvent(QCloseEvent *event) {
   return; 
 }
 
-//======================================================================
-bool MovieCueManager::cueRunning(void) {
-  return executeCueButton->text() != "Execute"; 
-}
 
 //======================================================================
 void MovieCueManager::setCueRunning(bool running) {
@@ -613,12 +609,11 @@ void MovieCueManager::fixOrder(QLineEdit *smaller, QString smalltext,
 
 //======================================================================
 void MovieCueManager::Validate() {
-  /*! 
-    Validate that current frame is not less than minimum frame
-  */
-  fixOrder(startFrameField, "start frame", endFrameField, "end frame");
+  if (endFrameField->text().toLong() != 0) {
+    fixOrder(startFrameField, "start frame", endFrameField, "end frame");
+    fixOrder(currentFrameField, "current frame", endFrameField, "end frame");
+  }
   fixOrder(startFrameField, "start frame", currentFrameField, "current frame");
-  fixOrder(currentFrameField, "current frame", endFrameField, "end frame");
   
   return; 
 }
@@ -672,24 +667,33 @@ void MovieCueManager::on_applyChangesButton_clicked(){
 void MovieCueManager::on_executeCueButton_clicked() {
   if (executeCueButton->text() != "Execute") {
     setCueRunning(false); 
+    mStopLooping = true; 
     return; 
   }
 
   setCueRunning(true); 
 
-  int i = 0; 
-  while (i < movieCueList->count() && cueRunning()) {
- 
+  
+  int i = 0, numCues = movieCueList->count(); 
+  if (!numCues) {
+    ERROR("Programming error:  execute button was clicked, but there are no cues..."); 
+    return; 
+  }
+  mStopLooping = false; 
+  while (!mStopLooping && i < movieCueList->count()) {    
     MovieCue *theCue = dynamic_cast<MovieCue *>(movieCueList->item(i)); 
     if (theCue->isSelected()) {
-      mExecutingCue = theCue; 
-      emit executeCue(theCue); // executeCue needs to call ProcessEvents to maintain interactivity, of course
+      DEBUGMSG(QString("Executing cue %1 of %2: %3").arg(i).arg(movieCueList->count()).arg(theCue->text()) ); 
+      //mExecutingCue = theCue; 
+      emit executeCue(theCue); // executeCue needs to be synchronous
     }
     ++i;
-  }
+  } 
 
+  DEBUGMSG("Done executing cues"); 
+  mStopLooping = true; 
   setCueRunning(false); 
-  mExecutingCue = NULL; 
+  //mExecutingCue = NULL; 
   return; 
 }
 
@@ -699,14 +703,14 @@ void MovieCueManager::on_executeCueButton_clicked() {
 void MovieCueManager::on_loopCuesButton_clicked() {
 
   setCueRunning(true); 
-
+  mStopLooping = false; 
   // need to set up a dialog and start looping -- right now this just 
-  while (cueRunning()) {
+  while (!mStopLooping) {
     int i = 0; 
     while (i < movieCueList->count()) {
       MovieCue *theCue = dynamic_cast<MovieCue *>(movieCueList->item(i)); 
       if (theCue->isSelected()) {
-        mExecutingCue = theCue; 
+        //mExecutingCue = theCue; 
         emit executeCue(theCue); // executeCue needs to call ProcessEvents to maintain interactivity, of course, and to allow user to cancel
       }
       ++i;
@@ -714,7 +718,8 @@ void MovieCueManager::on_loopCuesButton_clicked() {
   }
  // re-enable whatever buttons are appropriate for the selection:
   setCueRunning(false); 
-  mExecutingCue = NULL; 
+  mStopLooping = true; 
+  //mExecutingCue = NULL; 
   return; 
 }
 
