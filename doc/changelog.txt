@@ -1,10 +1,18 @@
 CHANGELOG FOR BLOCKBUSTER
+For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ================================================================================
-VERSION 2.6.1b
-??? 2009
+VERSION 2.6.2a
+June ??, 2009
+-- DRAMATIC speed increase due to improved network performance and better threading code.  A test movie that was limited to 13 frames per sec is now playing at over 100 FPS. 
+-- Switched code repository from CVS to Subversion.  
 -- using lzolib 2.03 now to build on new Darwin 9.7.0 kernels (OS X)
--- now add $INSTALL_DIR/lib to rpath, meaning that Qt libs can be shipped with blockbuster for binary releases, greatly reducing difficulty in distributing the code. 
+-- now add $INSTALL_DIR/lib to rpath, meaning that Qt libs can be shipped with blockbuster for binary releases, greatly reducing difficulty in distributing the code.  This is not done on OS X yet as it broke the build there. 
+-- Fixed bug when duplicating cues in sidecar. 
+-- Fixed bug setting frame rate in cues.
+-- Enabled setting level of detail in movie cues. 
+-- Escape key now exits blockbuster, just like the good old days.  'q' still works too!  In sidecar, this has to be shift-Escape because of interface collisions. 
+-- Fixed some problems with looping and executing cue sequences. 
 
 ================================================================================
 VERSION 2.6.1a
