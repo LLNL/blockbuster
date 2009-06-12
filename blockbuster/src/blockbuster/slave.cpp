@@ -359,6 +359,7 @@ int Slave::Loop(void)
               SendError("No frames to render\n");
               lastImageRendered = -1; 
             }
+            DEBUGMSG(QString("Render %1 complete").arg(imageNum)); 
           }// end "Render"
           else if (token == "DrawString") {
             if (messageList.size() != 3) {
