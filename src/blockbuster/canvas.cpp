@@ -90,6 +90,7 @@ Canvas::Canvas(const UserInterface *userInterface,
      * implementations).  If the UserInterface or Glue routines supply
      * their own methods, we refuse to override them.
      */
+    DEBUGMSG(QString("frameCacheSize is %1, preload is %2, setFrameList is %3").arg(options->frameCacheSize).arg((int64_t)Preload).arg((int64_t)SetFrameList)); 
     if (options->frameCacheSize > 0 && this->Preload == NULL && this->SetFrameList == NULL) {
       this->imageCache = CreateImageCache(options->readerThreads,
                                           options->frameCacheSize, this);
