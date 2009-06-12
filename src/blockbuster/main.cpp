@@ -321,7 +321,10 @@ static void ParseOptions(int &argc, char *argv[], ProgramOptions *opt)
              SET_BOOL_ARG("-SplashDisable",  argc, argv, opt->splashScreen, 0)) continue; 
 	else if (SET_BOOL_ARG("-Play", argc, argv, opt->play, 1)||
              SET_BOOL_ARG("-play", argc, argv, opt->play, 1)) continue; 
-	else if (CHECK_ATOI_ARG("-preload", argc, argv,  opt->preloadFrames)) continue;
+	else if (CHECK_ATOI_ARG("-preload", argc, argv,  opt->preloadFrames)) {
+      DEBUGMSG("preload caught"); 
+      continue;
+    }
 	else if (CHECK_STRING_ARG("-renderer", argc, argv, opt->rendererName)) continue;
 	else if (CHECK_STRING_ARG("-sidecar", argc, argv, opt->sidecarHostPort)) {
       gSidecarServer->PromptForConnections(false); 
@@ -446,10 +449,8 @@ static void ParseOptions(int &argc, char *argv[], ProgramOptions *opt)
   }
   
   if (opt->preloadFrames >= opt->frameCacheSize - 1)
-    opt->preloadFrames = opt->frameCacheSize - 2;
+    opt->frameCacheSize = opt->preloadFrames + 2;
 
-  if (opt->preloadFrames < 0)
-    opt->preloadFrames = 0;
 
   /* We've read all the command line options, so everything is set.
    * Pull out some of the information we'll need later.
