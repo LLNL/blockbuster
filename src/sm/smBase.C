@@ -1184,21 +1184,21 @@ void smBase::setCompFrame(int f, void *data, int *sizes, int res)
 
 
 // return the compressed frame (if data==NULL return the size)
-void smBase::getCompFrame(int f, void *data, int &rsize, int res)
+void smBase::getCompFrame(int frame, void *data, int &rsize, int res)
 {
    u_int size;
    void *cdata;
 
-   cdata = lockFrame(f+res*getNumFrames(), size);
+   cdata = lockFrame(frame+res*getNumFrames(), size);
    if (data) memcpy(data, cdata, size);
    rsize = (int)size;
-   unlockFrame(f+res*getNumFrames());
+   unlockFrame(frame+res*getNumFrames());
 
    return;
 }
-int smBase::getCompFrameSize(int f, int res)
+int smBase::getCompFrameSize(int frame, int res)
 {
-	return(flength[f+res*getNumFrames()]);
+	return(flength[frame+res*getNumFrames()]);
 }
 
 void smBase::compFrame(void *in, void *out, int &outsize, int res)
