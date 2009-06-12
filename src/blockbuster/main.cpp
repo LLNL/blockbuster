@@ -448,8 +448,10 @@ static void ParseOptions(int &argc, char *argv[], ProgramOptions *opt)
           .arg(opt->masterHost).arg(opt->masterPort));  
   }
   
-  if (opt->preloadFrames >= opt->frameCacheSize - 1)
-    opt->frameCacheSize = opt->preloadFrames + 2;
+  //if (opt->preloadFrames >= opt->frameCacheSize - 1)
+  //  opt->frameCacheSize = opt->preloadFrames + 2;
+  if (opt->frameCacheSize < opt->preloadFrames * 1.5)
+    opt->frameCacheSize = opt->preloadFrames * opt->frameCacheSize;
 
 
   /* We've read all the command line options, so everything is set.
