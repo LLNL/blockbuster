@@ -69,8 +69,11 @@
 
 class timer; 
 extern timer gTimer; 
-#define TIMER_PRINT(name)        \
+//#define TIMER_PRINT DEBUGMSG
+
+#define TIMER_PRINT(name)                                               \
   if (0) cerr << name ", line " << __LINE__ << ": " << gTimer << endl;  
+
 
 int Progress(timer &iTimer, double iNum, double iMax, 
 			 double &oPercent, double iPercentDelta, 
