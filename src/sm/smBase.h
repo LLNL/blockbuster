@@ -178,17 +178,17 @@ class smBase {
 
       static void registerType(u_int t, smBase *(*)(const char *, int));
 
-      void *lockFrame(u_int, u_int &);
-      void *lockFrame(u_int, u_int &,int*, int*, int);
-      void unlockFrame(u_int);
+      void *lockFrame(u_int frame, u_int &);
+      void *lockFrame(u_int frame, u_int &,int*, int*, int);
+      void unlockFrame(u_int frame);
 
      
 
    private:
       void readHeader(void);
       void initWin(void);
-      void readWin(u_int);
-      void readWin(u_int , int*, int*, int);
+      void readWin(u_int frame);
+      void readWin(u_int frame, int*dimensions, int*position, int resolution);
 
       // Flags on top of the filetype...
       u_int flags;
