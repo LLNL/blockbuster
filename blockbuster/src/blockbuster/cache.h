@@ -12,9 +12,9 @@ struct ImageCache;
 
 
 
-#define CACHEDEBUG if (0) DEBUGMSG
+//#define CACHEDEBUG if (0) DEBUGMSG
 
-//#define CACHEDEBUG DEBUGMSG
+#define CACHEDEBUG DEBUGMSG
 
 class CacheThread: public QThread {
   Q_OBJECT

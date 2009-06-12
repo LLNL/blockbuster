@@ -392,6 +392,7 @@ void CacheThread::run() {
 	 * NULL image comes back, we have to record it, so that the 
 	 * boss thread can return.
 	 */
+    CACHEDEBUG("Worker thread calling LoadAndConvertImage"); 
 	image = LoadAndConvertImage(&job->frameInfo,
 	    job->frameNumber, this->cache->canvas, &job->region, job->levelOfDetail);
 
@@ -507,7 +508,7 @@ ImageCache *CreateImageCache(int numReaderThreads, int maxCachedImages, Canvas *
 {
     ImageCache *newCache;
     register int i;
-    CACHEDEBUG("CreateImageCache(numReaderThreads = %d, maxCachedImages = %d, canvas)", numReaderThreads, maxCachedImages);
+    DEBUGMSG("CreateImageCache(numReaderThreads = %d, maxCachedImages = %d, canvas)", numReaderThreads, maxCachedImages);
     newCache = new ImageCache; //(ImageCache *)calloc(1, sizeof(ImageCache));
     if (newCache == NULL) {
 	SYSERROR("cannot allocate image cache");
