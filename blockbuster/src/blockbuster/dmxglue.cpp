@@ -169,7 +169,7 @@ int DMXSlave::EventFromMessage(const QString &, MovieEvent &) {
   return number of events queued. 
 */ 
 int DMXSlave::QueueNetworkEvents(void) {
-  DEBUGMSG(QString("QueueNetworkEvents() for host %1").arg(mRemoteHostname.c_str())); 
+  //  DEBUGMSG(QString("QueueNetworkEvents() for host %1").arg(mRemoteHostname.c_str())); 
   int numqueued = 0;   
   while(mSlaveSocket && mSlaveSocket->state() == QAbstractSocket::ConnectedState 
         && mSlaveSocket->bytesAvailable()) {	
@@ -303,6 +303,13 @@ QProcess *DMXSlave::LaunchSlave(QString hostname, int port,
     if (options->readerThreads > 0) {
       args << QString(" -threads %1 ").arg(options->readerThreads);
     } 
+    if (options->frameCacheSize > 0) {
+      args << QString(" -cache %1 ").arg(options->frameCacheSize);
+    } 
+    if (options->preloadFrames > 0) {
+      args << QString(" -preload %1 ").arg(options->preloadFrames);
+    } 
+      
     args  <<  " -slave " <<  QString("%1:%2:mpi").arg(localHostname).arg(port)              
           << "-u" <<  "x11"  // no reason to have GTK up and it screws up stereo
           << "-r" << gRenderInfo->mBackendRenderer ;
