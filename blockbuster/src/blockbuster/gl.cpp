@@ -130,9 +130,9 @@ static void gl_Render(Canvas *canvas, int frameNumber,
   zoom *= (float) lodScale;
 
 
-  /* Pull the image from our cache */
+  TIMER_PRINT("Pull the image from our cache "); 
   image = GetImageFromCache(canvas->imageCache, localFrameNumber, &region, lod);
-  TIMER_PRINT("have image"); 
+  TIMER_PRINT("Got image"); 
   if (image == NULL) {
     /* error has already been reported */
     return;
