@@ -276,24 +276,16 @@ static CachedImage *GetCachedImageSlot(ImageCache *cache,
 }
 
 /* This is the work function, which is used by child threads to 
- * "asynchronously" load images from disk.  These functions are not
- * used in the single-threaded case.
+ * "asynchronously" load images from disk.  Not used in single-threaded case. 
  */
 
-//#define POP_AND_EXECUTE 1
-
 void CacheThread::run() {
-  //static void *DoReaderThreadWork(void *data)
-  //ImageCacheThreadInfo *threadInfo = (ImageCacheThreadInfo *)data;
-  //    register ImageCache *cache = threadInfo->imageCache;
     Image *image;
-    //    int rv;
     ImageCacheJob *job =NULL;
     CachedImage *imageSlot;
     CACHEDEBUG("CacheThread::run() (thread = %p)", QThread::currentThread()); 
 
-    //pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
-
+ 
     /* Repeat forever, until the thread is cancelled by the main thread */
     while (1) {
 
@@ -302,13 +294,7 @@ void CacheThread::run() {
        * momemt, so grab the mutex.
        */
       cache->lock(__FILE__, __LINE__);
-      
-      /* We could be cancelled at any time; we wouldn't want to be
-       * cancelled while holding the mutex, so install a cancellation
-       * cleanup function.
-       */
-      //	pthread_cleanup_push(&ReaderCleanup, (void *) cache);
-      
+            
       /* Wait for a job to appear on the work queue (which we can do
        * because we currently hold the mutex for the queue).  This is
        * in a "while" loop because sometimes a thread can be woken up
@@ -317,7 +303,6 @@ void CacheThread::run() {
        * work).
        */
       while (! this->cache->jobQueue.size()) {
-        //	while ((job = GetJobFromQueue(&this->cache->jobQueue)) == NULL) {
 	    /* Wait for work ready condition to come in. */
         this->cache->WaitForJobReady(__FILE__, __LINE__); 
         if (mStop) {
@@ -325,9 +310,6 @@ void CacheThread::run() {
           cache->unlock(__FILE__, __LINE__); 
           return; 
         }
-        // rv = pthread_cond_wait(&cache->jobReady, &cache->imageCacheLock);
-        //  if (rv != 0) WARNING("pthread_cond_wait returned %d (%s)",
-        //	rv, ERROR_STRING(rv));
       }
       // take the job from head of the queue: 
       job = this->cache->jobQueue.at(0); 
@@ -337,13 +319,11 @@ void CacheThread::run() {
 	 * so that the main thread can tell the job is in progress.
 	 */
       this->cache->pendingQueue.push_back(job); 
-      //AddJobToQueue(&this->cache->pendingQueue, job);
 
 	/* We don't need the mutex (or the cancellation function) any more;
 	 * this call will both clear the cancellation function, and cause
 	 * it to be called to unlock the mutex, more or less simultaneously.
 	 */
-	// pthread_cleanup_pop(POP_AND_EXECUTE);
     cache->unlock(__FILE__, __LINE__); 
 
 	/* Do the work.  Note that this function could cause warning and
@@ -385,7 +365,6 @@ void CacheThread::run() {
 	     * check) and signal that the job is done.
 	     */
       this->cache->errorQueue.push_back(job); 
-      // AddJobToQueue(&this->cache->errorQueue, job);
 
        this->cache->unlock(__FILE__, __LINE__); 
        this->cache->WakeAllJobDone(__FILE__, __LINE__); 
@@ -398,7 +377,7 @@ void CacheThread::run() {
 	     * have to report another one.
 	     */
       this->cache->errorQueue.push_back(job); 
-      // AddJobToQueue(&this->cache->errorQueue, job);
+
       this->cache->unlock(__FILE__, __LINE__); 
       this->cache->WakeAllJobDone(__FILE__, __LINE__); 
       (*image->ImageDeallocator)(this->cache->canvas, image);
@@ -618,9 +597,6 @@ void DestroyImageCache(Canvas *canvas)
 	}
     cache->mThreads.clear(); 
     
-    //    usleep(999); // sleep a millisecond
-
-
 	/* Clear the remaining queues */
     cache->ClearPendingQueue();
 	cache->ClearErrorQueue();
@@ -1116,7 +1092,7 @@ void PreloadImageIntoCache(ImageCache *cache, uint32_t frameNumber,
     /* Add the job to the back of the work queue */
     cache->lock(__FILE__, __LINE__);
     cache->jobQueue.push_back(newJob); 
-    //AddJobToQueue(&cache->jobQueue, newJob);
+
     cache->unlock(__FILE__, __LINE__); 
     
     /* If there's a worker thread that's snoozing, this will
