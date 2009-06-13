@@ -7,10 +7,28 @@
 #include "QMutex"
 #include "QWaitCondition"
 #include "errmsg.h"
+//#include "queue.h"
+#include <deque>
+using namespace std; 
 
 struct ImageCache; 
 
 
+struct ImageCacheJob {
+  ImageCacheJob(): frameNumber(0), levelOfDetail(0), requestNumber(0) {}
+  ImageCacheJob(uint32_t frame, const Rectangle *reg, 
+                uint32_t  lod, uint32_t reqnum): 
+    frameNumber(frame),  levelOfDetail(lod), requestNumber(reqnum)
+  { region = *reg; }
+    
+  ~ImageCacheJob() {}
+
+  FrameInfo frameInfo; /* needed in case FrameList changes while we're working */
+  uint32_t frameNumber;
+  Rectangle region;
+  uint32_t levelOfDetail;
+  uint32_t requestNumber;
+} ;
 
 //#define CACHEDEBUG if (0) DEBUGMSG
 
@@ -23,8 +41,8 @@ class CacheThread: public QThread {
     threadNumber(threadNum), cache(incache), mStop(false) {
     CACHEDEBUG("CacheThread constructor"); 
   }
-      
-    ~CacheThread(){}
+  ~CacheThread(){}
+  
 
   void run(void); 
   void stop(void) { mStop = true; }
@@ -45,20 +63,6 @@ class CacheThread: public QThread {
    * the ImageCache can also run simply as an abstraction layer.)
    */
 
-   struct ImageCacheJob {
-    FrameInfo frameInfo; /* needed in case FrameList changes while we're working */
-    unsigned int frameNumber;
-    unsigned long requestNumber;
-    Rectangle region;
-    unsigned int levelOfDetail;
-    struct ImageCacheJob *next;
-    struct ImageCacheJob *prev;
-  } ;
-
-   struct ImageCacheQueue{
-    ImageCacheJob *head;
-    ImageCacheJob *tail;
-  } ;
 
    struct CachedImage{
     unsigned long requestNumber;
@@ -87,11 +91,35 @@ class CacheThread: public QThread {
        CACHEDEBUG("ImageCache constructor"); 
      }
      ~ImageCache() {}
-    /* Configuration information */
-    int numReaderThreads;
-    int maxCachedImages;
-    Canvas *canvas;
-    
+     void RemoveJobFromJobQueue(ImageCacheJob *job) {
+       RemoveJobFromQueue(jobQueue, job); 
+     }
+     void RemoveJobFromErrorQueue(ImageCacheJob *job) {
+       RemoveJobFromQueue(errorQueue, job); 
+     }
+     void RemoveJobFromPendingQueue(ImageCacheJob *job) {
+       RemoveJobFromQueue(pendingQueue, job); 
+     }
+     ImageCacheJob *FindJobInJobQueue (unsigned int frameNumber,  const Rectangle *region, unsigned int lod){
+       return FindJobInQueue(jobQueue, frameNumber, region, lod); 
+     }
+     
+     ImageCacheJob *FindJobInErrorQueue(unsigned int frameNumber,  const Rectangle *region, unsigned int lod){
+       return FindJobInQueue(errorQueue, frameNumber, region, lod); 
+     }
+     ImageCacheJob *FindJobInPendingQueue(unsigned int frameNumber,  const Rectangle *region, unsigned int lod){
+       return FindJobInQueue(pendingQueue, frameNumber, region, lod); 
+     }
+     void ClearJobQueue(void) { ClearQueue(jobQueue); }
+     void ClearErrorQueue(void) { ClearQueue(errorQueue); }
+     void ClearPendingQueue(void) { ClearQueue(pendingQueue); }
+     
+     void ClearImages(void); 
+     /* Configuration information */
+     int numReaderThreads;
+     int maxCachedImages;
+     Canvas *canvas;
+     
     void  lock(char *file="unknown file", int line=0) {
       CACHEDEBUG("%s: %d: locking image cache", file, line); 
       imageCacheLock.lock(); 
@@ -139,11 +167,17 @@ class CacheThread: public QThread {
      std::vector<CacheThread *> mThreads;
      QMutex imageCacheLock; 
      QWaitCondition jobReady, jobDone; 
-     ImageCacheQueue jobQueue;
-    ImageCacheQueue pendingQueue;
-    ImageCacheQueue errorQueue;
-
-  } ;
+     deque<ImageCacheJob *> jobQueue;
+     deque<ImageCacheJob *> pendingQueue;
+     deque<ImageCacheJob *> errorQueue;
+   private:
+     void RemoveJobFromQueue(deque<ImageCacheJob*> &queue, ImageCacheJob *job);
+     
+     ImageCacheJob *FindJobInQueue
+       (deque<ImageCacheJob*> &queue,  unsigned int frameNumber, 
+        const Rectangle *region, unsigned int levelOfDetail); 
+     void ClearQueue(deque<ImageCacheJob*> &queue); 
+   } ;
 
   /* Image Cache management from cache.c.  These utilities are expected to be
    * used by Renderer modules to manage their images (because each renderer

@@ -52,39 +52,6 @@
 
 // debugging pthread mutex deadlock:
 
-#ifdef DEBUG
-#define pthread_message(call,description) \
-  CACHEDEBUG("starting %s...", description);                     \
-  call;                                                          \
-  CACHEDEBUG("done with %s", description);                     
-
-#define pthread_mutex_init(arg1,arg2) \
-  pthread_message(rv=pthread_mutex_init(arg1, arg2), "pthread_mutex_init");
-
-#define pthread_mutex_lock(mutex)                                \
-  pthread_message(rv=pthread_mutex_lock(mutex), "pthread_mutex_lock");
-
-#define pthread_mutex_unlock(mutex) \
-  pthread_message(rv=pthread_mutex_unlock(mutex), "pthread_mutex_unlock");
-
-#define pthread_mutex_destroy(mutex)                                \
-  pthread_message(rv=pthread_mutex_destroy(mutex), "pthread_mutex_destroy");
-
-#define pthread_cond_init(arg1,arg2) \
-  pthread_message(rv=pthread_cond_init(arg1, arg2), "pthread_cond_init");
-
-#define pthread_cond_wait(arg1,arg2) \
-  pthread_message(rv=pthread_cond_wait(arg1, arg2), "pthread_cond_wait");
-
-#define pthread_cond_signal(arg1) \
-  pthread_message(rv=pthread_cond_signal(arg1), "pthread_cond_signal");
-
-#define pthread_cond_destroy(cond)                                \
-  pthread_message(rv=pthread_cond_destroy(cond), "pthread_cond_destroy");
-
-
-
-#endif
 
 #define ERROR_STRING(x) (                       \
     (x==EINVAL)?"EINVAL":\
@@ -320,13 +287,12 @@ static CachedImage *GetCachedImageSlot(ImageCache *cache,
     return imageSlot;
 }
 
-
 /* This is the work function, which is used by child threads to 
  * "asynchronously" load images from disk.  These functions are not
  * used in the single-threaded case.
  */
 
-#define POP_AND_EXECUTE 1
+//#define POP_AND_EXECUTE 1
 
 void CacheThread::run() {
   //static void *DoReaderThreadWork(void *data)
@@ -334,7 +300,7 @@ void CacheThread::run() {
   //    register ImageCache *cache = threadInfo->imageCache;
     Image *image;
     //    int rv;
-    ImageCacheJob *job;
+    ImageCacheJob *job =NULL;
     CachedImage *imageSlot;
     CACHEDEBUG("CacheThread::run() (thread = %p)", QThread::currentThread()); 
 
@@ -343,42 +309,47 @@ void CacheThread::run() {
     /* Repeat forever, until the thread is cancelled by the main thread */
     while (1) {
 
-	/* Try to get a job off the work queue.  We want to make sure
-	 * we're the only ones trying to do so at this particular
-	 * momemt, so grab the mutex.
-	 */
+      /* Try to get a job off the work queue.  We want to make sure
+       * we're the only ones trying to do so at this particular
+       * momemt, so grab the mutex.
+       */
       cache->lock(__FILE__, __LINE__);
- 
-	/* We could be cancelled at any time; we wouldn't want to be
-	 * cancelled while holding the mutex, so install a cancellation
-	 * cleanup function.
-	 */
-    //	pthread_cleanup_push(&ReaderCleanup, (void *) cache);
-
-	/* Wait for a job to appear on the work queue (which we can do
-	 * because we currently hold the mutex for the queue).  This is
-	 * in a "while" loop because sometimes a thread can be woken up
-	 * spuriously (by signal) or unwittingly (if all threads are woken
-	 * up on the work ready condition, but one has already grabbed the
-	 * work).
-	 */
-	while ((job = GetJobFromQueue(&this->cache->jobQueue)) == NULL) {
+      
+      /* We could be cancelled at any time; we wouldn't want to be
+       * cancelled while holding the mutex, so install a cancellation
+       * cleanup function.
+       */
+      //	pthread_cleanup_push(&ReaderCleanup, (void *) cache);
+      
+      /* Wait for a job to appear on the work queue (which we can do
+       * because we currently hold the mutex for the queue).  This is
+       * in a "while" loop because sometimes a thread can be woken up
+       * spuriously (by signal) or unwittingly (if all threads are woken
+       * up on the work ready condition, but one has already grabbed the
+       * work).
+       */
+      while (! this->cache->jobQueue.size()) {
+        //	while ((job = GetJobFromQueue(&this->cache->jobQueue)) == NULL) {
 	    /* Wait for work ready condition to come in. */
-      this->cache->WaitForJobReady(__FILE__, __LINE__); 
-      if (mStop) {
-        CACHEDEBUG("Thread %p terminating", QThread::currentThread()); 
-        cache->unlock(__FILE__, __LINE__); 
-        return; 
+        this->cache->WaitForJobReady(__FILE__, __LINE__); 
+        if (mStop) {
+          CACHEDEBUG("Thread %p terminating", QThread::currentThread()); 
+          cache->unlock(__FILE__, __LINE__); 
+          return; 
+        }
+        // rv = pthread_cond_wait(&cache->jobReady, &cache->imageCacheLock);
+        //  if (rv != 0) WARNING("pthread_cond_wait returned %d (%s)",
+        //	rv, ERROR_STRING(rv));
       }
-      // rv = pthread_cond_wait(&cache->jobReady, &cache->imageCacheLock);
-	  //  if (rv != 0) WARNING("pthread_cond_wait returned %d (%s)",
-      //	rv, ERROR_STRING(rv));
-	}
+      // take the job from head of the queue: 
+      job = this->cache->jobQueue.at(0); 
+      this->cache->jobQueue.pop_front(); 
 
-	/* Link the job removed from the job queue to the pending queue,
-	 * so that the main thread can tell the job exists.
+	/* Add the job removed from the job queue to the pending queue,
+	 * so that the main thread can tell the job is in progress.
 	 */
-	AddJobToQueue(&this->cache->pendingQueue, job);
+      this->cache->pendingQueue.push_back(job); 
+      //AddJobToQueue(&this->cache->pendingQueue, job);
 
 	/* We don't need the mutex (or the cancellation function) any more;
 	 * this call will both clear the cancellation function, and cause
@@ -400,12 +371,8 @@ void CacheThread::run() {
 	 * modifying caches and queues.  We always will have to remove
 	 * the job from the pendingQueue.
 	 */
-	/* rv = pthread_mutex_lock(&cache->imageCacheLock);
-       if (rv != 0) WARNING("pthread_mutex_lock returned %d (%s)",
-       rv, ERROR_STRING(rv));
-    */ 
     this->cache->lock(__FILE__, __LINE__); // this should already be locked here
-	RemoveJobFromQueue(&this->cache->pendingQueue, job);
+	this->cache->RemoveJobFromPendingQueue(job);
 
 	/* First see if this request has been invalidated (because the
 	 * main thread changed the frame list while we were working).
@@ -416,10 +383,6 @@ void CacheThread::run() {
 	     * and go home.  We don't need to send an indicator to
 	     * anyone; the main thread doesn't care.
 	     */
-      /* rv = pthread_mutex_unlock(&cache->imageCacheLock);
-         if (rv != 0) WARNING("pthread_mutex_unlock returned %d (%s)",
-         rv, ERROR_STRING(rv));
-      */ 
       this->cache->unlock(__FILE__, __LINE__); 
 	    if (image) {
 		(*image->ImageDeallocator)(this->cache->canvas, image);
@@ -433,17 +396,11 @@ void CacheThread::run() {
 	     * the error queue (which the main thread will
 	     * check) and signal that the job is done.
 	     */
-	    AddJobToQueue(&this->cache->errorQueue, job);
-        /*
-          rv = pthread_mutex_unlock(&cache->imageCacheLock);
-          if (rv != 0) WARNING("pthread_mutex_unlock returned %d (%s)",
-          rv, ERROR_STRING(rv));
-          rv = pthread_cond_signal(&cache->jobDone);
-          if (rv != 0) WARNING("pthread_cond_signal returned %d (%s)",
-          rv, ERROR_STRING(rv));
-        */ 
-        this->cache->unlock(__FILE__, __LINE__); 
-        this->cache->WakeAllJobDone(__FILE__, __LINE__); 
+      this->cache->errorQueue.push_back(job); 
+      // AddJobToQueue(&this->cache->errorQueue, job);
+
+       this->cache->unlock(__FILE__, __LINE__); 
+       this->cache->WakeAllJobDone(__FILE__, __LINE__); 
 	}
 	else if ((imageSlot = GetCachedImageSlot(this->cache, job->frameNumber)) == NULL) {
 	    /* We have an image, but no place to put it.  This
@@ -452,19 +409,12 @@ void CacheThread::run() {
 	     * already been reported by here, so we don't
 	     * have to report another one.
 	     */
-	    AddJobToQueue(&this->cache->errorQueue, job);
-        /*
-          rv = pthread_mutex_unlock(&cache->imageCacheLock);
-          if (rv != 0) WARNING("pthread_mutex_unlock returned %d (%s)",
-          rv, ERROR_STRING(rv));
-          rv = pthread_cond_signal(&cache->jobDone);
-          if (rv != 0) WARNING("pthread_cond_signal returned %d (%s)",
-          rv, ERROR_STRING(rv));
-        */ 
-        this->cache->unlock(__FILE__, __LINE__); 
-        this->cache->WakeAllJobDone(__FILE__, __LINE__); 
-	    (*image->ImageDeallocator)(this->cache->canvas, image);
-            image = NULL;
+      this->cache->errorQueue.push_back(job); 
+      // AddJobToQueue(&this->cache->errorQueue, job);
+      this->cache->unlock(__FILE__, __LINE__); 
+      this->cache->WakeAllJobDone(__FILE__, __LINE__); 
+      (*image->ImageDeallocator)(this->cache->canvas, image);
+      image = NULL;
 	}
 	else {
 	    /* Hey, things actually went okay; we have an image
@@ -477,17 +427,10 @@ void CacheThread::run() {
 	    imageSlot->loaded = 1;
 	    imageSlot->requestNumber = job->requestNumber;
 	    imageSlot->lockCount = 0;
-        /*
-          rv = pthread_mutex_unlock(&cache->imageCacheLock);
-          if (rv != 0) WARNING("pthread_mutex_unlock returned %d (%s)",
-          rv, ERROR_STRING(rv));
-          rv = pthread_cond_signal(&cache->jobDone);
-          if (rv != 0) WARNING("pthread_cond_signal returned %d (%s)",
-          rv, ERROR_STRING(rv));
-        */ 
+
         this->cache->unlock(__FILE__, __LINE__);
         this->cache->WakeAllJobDone(__FILE__, __LINE__); 
-	    free(job);
+	    delete (job);
 
             /* Fairness among threads is greatly improved by yielding here.
              * Without this, threads can frequently starve for a while and
@@ -522,90 +465,25 @@ ImageCache *CreateImageCache(int numReaderThreads, int maxCachedImages, Canvas *
 	return NULL;
     }
     for (i = 0; i < maxCachedImages; i++) {
-	newCache->cachedImages[i].requestNumber = 0;
-	newCache->cachedImages[i].lockCount = 0;
-	newCache->cachedImages[i].loaded = 0;
-	newCache->cachedImages[i].image = NULL;
+      newCache->cachedImages[i].requestNumber = 0;
+      newCache->cachedImages[i].lockCount = 0;
+      newCache->cachedImages[i].loaded = 0;
+      newCache->cachedImages[i].image = NULL;
     }
     newCache->maxCachedImages = maxCachedImages;
 
     if (numReaderThreads > 0) {
-      //      int rv;
-      
-      /* Lots of thread-specific initialization.  Start off with the queues,
-       * which must be empty initially.
-       */
-      InitializeQueue(&newCache->jobQueue);
-      InitializeQueue(&newCache->pendingQueue);
-      InitializeQueue(&newCache->errorQueue);
-      
-      /* The mutexes (mutices? :-) and condition variables are next;
-       * they must be initialized before the threads that need them
-       * are created.
-       */
-      /*
-        rv = pthread_mutex_init(&newCache->imageCacheLock, NULL);
-        if (rv != 0) WARNING("pthread_mutex_init returned %d (%s)",
-        rv, ERROR_STRING(rv));
-        rv = pthread_cond_init(&newCache->jobReady, NULL);
-        if (rv != 0) WARNING("pthread_cond_init returned %d (%s)",
-        rv, ERROR_STRING(rv));
-        rv = pthread_cond_init(&newCache->jobDone, NULL);
-        if (rv != 0) WARNING("pthread_cond_init returned %d (%s)",
-        rv, ERROR_STRING(rv));
-      */
+
       /* Now create the threads.  If we fail to create a thread, we can still
        * continue with fewer threads or with none (in the single-threaded case).
        */
-      /*
-        newCache->mThreads = (ImageCacheThreadInfo *)calloc(1, numReaderThreads * sizeof(ImageCacheThreadInfo));
-        if (newCache->mThreads == NULL) {
-	    WARNING("cannot allocate %d thread info structures - reverting to single-threaded case", numReaderThreads);
-	    numReaderThreads = 0;
-        }
-        else {
-      */ 
-      //        int rv;
         for (i = 0; i < numReaderThreads; i++) {
           newCache->mThreads.push_back( new CacheThread(i, newCache)); 
           newCache->mThreads[i]->start(); 
-          /* newCache->threads[i].threadNumber = i;
-             newCache->threads[i].imageCache = newCache;
-             rv = pthread_create(&newCache->threads[i].threadId, NULL, 
-             &DoReaderThreadWork, &newCache->threads[i]);
-             CACHEDEBUG("Created thread %d with ID %d and rv=%d", i, newCache->threads[i].threadId, rv); 
-             if (rv != 0) {
-             SYSERROR("pthread_create returned %d", rv);
-             if (i == 0) {
-             // First thread failed - lose them all 
-             WARNING("reverting to single-threaded case");
-             free(newCache->threads);
-             newCache->threads = NULL;
-             pthread_mutex_destroy(&newCache->imageCacheLock);
-             pthread_cond_destroy(&newCache->jobReady);
-             pthread_cond_destroy(&newCache->jobDone);
-             numReaderThreads = 0;
-             }
-             else {
-             // We at least got some threads.  Keep the ones we have. 
-             WARNING("only using %d threads (%d requested",
-             i, numReaderThreads);
-             numReaderThreads = i;
-             }
-             // In any case, on error stop trying to create more. 
-             break;
-             }
-          */ 
         }
-        //      }
     }
-    /* else {
-       newCache->threads = NULL;
-       }
-    */
     newCache->numReaderThreads = numReaderThreads;
     
-    /* Compared to the above, these are easy to set */
     newCache->canvas = canvas;
     newCache->frameList = NULL;
     /* The validRequestThreshold is the number of the last request that
@@ -622,6 +500,83 @@ ImageCache *CreateImageCache(int numReaderThreads, int maxCachedImages, Canvas *
     return newCache;
 }
 
+//=============================================================
+void ImageCache::ClearQueue(deque<ImageCacheJob *> &queue) {
+  deque<ImageCacheJob *>::iterator pos = queue.begin(), endpos = queue.end(); 
+  while (pos != endpos) {
+    delete (*pos); 
+    ++pos; 
+  }
+  queue.clear(); 
+}
+
+//=============================================================
+ImageCacheJob *ImageCache::
+FindJobInQueue(deque<ImageCacheJob*> &queue,  unsigned int frameNumber,
+               const Rectangle *region,  unsigned int levelOfDetail) {
+  deque<ImageCacheJob *>::iterator pos = queue.begin(), endpos = queue.end(); 
+  while (pos != endpos) {
+    if ((*pos)->frameNumber == frameNumber &&
+        (*pos)->levelOfDetail == levelOfDetail) {
+      if (region == NULL || RectContainsRect(&(*pos)->region, region)) {
+        return *pos;
+      } 
+    }
+    ++pos; 
+  }
+  return NULL;  
+}
+
+//=============================================================
+void ImageCache::
+RemoveJobFromQueue(deque<ImageCacheJob *> &queue, ImageCacheJob *job) {
+  deque<ImageCacheJob *>::iterator pos = queue.begin(), endpos = queue.end(); 
+  while (pos != endpos) {
+    if (*pos == job) {
+      queue.erase(pos); 
+      return; 
+    }
+    ++pos; 
+  }
+  ERROR("Attempted to remove nonexistent job from queue!"); 
+  return; 
+}
+//=============================================================
+
+/* This function clears out all images still residing in the image
+ * cache.  It is used when the cache is destroyed, or when its
+ * intrinsic FrameList is changed (thus invalidating all frame
+ * numbers and potentially the images as well).
+ */
+void ImageCache::ClearImages(void)
+{
+    register int i;
+
+    CACHEDEBUG("ImageCache::ClearImages"); 
+    /* Any images in the cache must be released */
+    for (i = 0; i < this->maxCachedImages; i++) {
+	/* There shouldn't be any locked images.  If there are,
+	 * override the lock, but give a warning.
+	 */
+	if (this->cachedImages[i].lockCount > 0) {
+	    WARNING(
+		"cached image %d forcibly unlocked while clearing cache",
+		i);
+	}
+	if (this->cachedImages[i].loaded) {
+	    (this->cachedImages[i].image->ImageDeallocator)(
+		this->canvas,
+		this->cachedImages[i].image
+	    );
+	    this->cachedImages[i].image = NULL;
+	    this->cachedImages[i].loaded = 0;
+	}
+    }
+    this->highestFrameNumber = 0;
+}
+
+//=============================================================
+
 void GetCacheConfiguration(ImageCache *cache, int *numReaderThreads, int *maxCachedImages)
 {
     if (numReaderThreads != NULL) 
@@ -630,71 +585,27 @@ void GetCacheConfiguration(ImageCache *cache, int *numReaderThreads, int *maxCac
 	*maxCachedImages = cache!=NULL?cache->maxCachedImages:0;
 }
 
-/* This function clears out all images still residing in the image
- * cache.  It is used when the cache is destroyed, or when its
- * intrinsic FrameList is changed (thus invalidating all frame
- * numbers and potentially the images as well).
- */
-void ClearImageCache(ImageCache *cache)
-{
-    register int i;
-
-    CACHEDEBUG("ClearImageCache"); 
-    /* Any images in the cache must be released */
-    for (i = 0; i < cache->maxCachedImages; i++) {
-	/* There shouldn't be any locked images.  If there are,
-	 * override the lock, but give a warning.
-	 */
-	if (cache->cachedImages[i].lockCount > 0) {
-	    WARNING(
-		"cached image %d forcibly unlocked while clearing cache",
-		i);
-	}
-	if (cache->cachedImages[i].loaded) {
-	    (cache->cachedImages[i].image->ImageDeallocator)(
-		cache->canvas,
-		cache->cachedImages[i].image
-	    );
-	    cache->cachedImages[i].image = NULL;
-	    cache->cachedImages[i].loaded = 0;
-	}
-    }
-    cache->highestFrameNumber = 0;
-}
-
 void ClearCacheWorkQueue(ImageCache *cache)
 {
-  //    int rv;
-  CACHEDEBUG("ClearCacheWorkQueue"); 
-    /* All pending work jobs must be cancelled */
-    /*
-      rv = pthread_mutex_lock(&cache->imageCacheLock);
-      if (rv != 0) WARNING("pthread_mutex_lock returned %d (%s)",
-      rv, ERROR_STRING(rv));
-    */
-    cache->lock(__FILE__, __LINE__); 
-    ClearQueue(&cache->jobQueue);
-    /* All pending requests that have a request number below or equal
-     * to the threshold will be discarded when complete.
-     */
-    cache->validRequestThreshold = cache->requestNumber;
-    /*
-      rv = pthread_mutex_unlock(&cache->imageCacheLock);
-      if (rv != 0) WARNING("pthread_mutex_unlock returned %d (%s)",
-      rv, ERROR_STRING(rv));
-    */ 
-    cache->unlock(__FILE__, __LINE__); 
+  /* All pending work jobs must be cancelled */
+  cache->lock(__FILE__, __LINE__); 
+  cache->ClearJobQueue(); 
+  /* All pending requests that have a request number below or equal
+   * to the threshold will be discarded when complete.
+   */
+  cache->validRequestThreshold = cache->requestNumber;
+  cache->unlock(__FILE__, __LINE__); 
+  return; 
 }
 
 void DestroyImageCache(Canvas *canvas)
 {
   ImageCache *cache = canvas->imageCache; 
-  //    int rv;
 
-    /* If we have reader threads, we have to clear the cache
-     * work queue and cancel all the reader threads.
-     */
-    if(cache == NULL)
+  /* If we have reader threads, we have to clear the cache
+   * work queue and cancel all the reader threads.
+   */
+  if(cache == NULL)
       return;
 
     CACHEDEBUG("DestroyImageCache");
@@ -703,20 +614,12 @@ void DestroyImageCache(Canvas *canvas)
 
 	/* Clear the work queue so no more work is taken up */
 
-	ClearCacheWorkQueue(cache);
+	cache->ClearJobQueue();
 
 	/* Cancel all the threads, stopping all the work being done */
     CACHEDEBUG("Canceling %d threads", cache->numReaderThreads);
     for (i = 0; i < cache->numReaderThreads; i++) {
       CACHEDEBUG("terminating thread %d", i);
-      /*
-        int rv = pthread_cancel(cache->threads[i].threadId);
-        if (rv != 0) WARNING("pthread_cancel returned %d (%s)",
-        rv, ERROR_STRING(rv));
-        rv = pthread_join(cache->threads[i].threadId, NULL);
-        if (rv != 0) WARNING("pthread_cancel returned %d (%s)",
-        rv, ERROR_STRING(rv));
-      */ 
       // cache->mThreads[i]->terminate(); 
       cache->mThreads[i]->stop();  // more gentle;  give up mutexes, etc. 
     }
@@ -726,31 +629,18 @@ void DestroyImageCache(Canvas *canvas)
       delete cache->mThreads[i]; 
 	}
     cache->mThreads.clear(); 
-    //	free(cache->threads);
     
     //    usleep(999); // sleep a millisecond
 
 
 	/* Clear the remaining queues */
-	ClearQueue(&cache->pendingQueue);
-	ClearQueue(&cache->errorQueue);
+    cache->ClearPendingQueue();
+	cache->ClearErrorQueue();
 
-	/* Destroy the mutex and condition variables as well. */
-    /*
-      rv = pthread_mutex_destroy(&cache->imageCacheLock);
-      if (rv != 0) WARNING("pthread_mutex_destroy returned %d (%s)",
-      rv, ERROR_STRING(rv));
-      rv = pthread_cond_destroy(&cache->jobReady);
-      if (rv != 0) WARNING("pthread_cond_destroy returned %d (%s)",
-      rv, ERROR_STRING(rv));
-      rv = pthread_cond_destroy(&cache->jobDone);
-      if (rv != 0) WARNING("pthread_cond_destroy returned %d (%s)",
-      rv, ERROR_STRING(rv));
-    */ 
-    }
+   }
     
     /* Any images in the cache must be released */
-    ClearImageCache(cache);
+    cache->ClearImages();
 
     /* Free the slots that have been holding the cached images */
     CACHEDEBUG("free(cache->cachedImages)");
@@ -785,13 +675,13 @@ void ManageFrameListInCache(ImageCache *cache, FrameList *frameList)
      * in progress will not enter the image cache.
      */
     if (cache->numReaderThreads > 0) {
-	ClearCacheWorkQueue(cache);
+      cache->ClearJobQueue();
     }
 
     /* If we've already cached images, they are now all out-of-date.
      * Free them.
      */
-    ClearImageCache(cache);
+    cache->ClearImages();
 
     /* Put the new frame list in place. */
     cache->frameList = frameList;
@@ -890,11 +780,6 @@ Image *GetImageFromCache(ImageCache *cache, uint32_t frameNumber,
      */
 
     if (cache->numReaderThreads > 0) {
-      /*
-        rv = pthread_mutex_lock(&cache->imageCacheLock);
-        if (rv != 0) WARNING("pthread_mutex_lock returned %d (%s)",
-		rv, ERROR_STRING(rv));
-      */ 
       cache->lock(__FILE__, __LINE__);
     }
 
@@ -929,38 +814,13 @@ Image *GetImageFromCache(ImageCache *cache, uint32_t frameNumber,
 		cachedImage->requestNumber = cache->requestNumber;
 		cachedImage->lockCount++;
 		if (cache->numReaderThreads > 0) {
-          /*
-            rv = pthread_mutex_unlock(&cache->imageCacheLock);
-		    if (rv != 0)
-            WARNING("pthread_mutex_unlock returned %d (%s)",
-            rv, ERROR_STRING(rv));
-          */ 
-          cache->unlock(__FILE__, __LINE__); 
+           cache->unlock(__FILE__, __LINE__); 
 		}
 		return cachedImage->image;
 	    }
 	    else {
-		/* load union of what's cached and what's requested */
-               /*
-		printf("  old loaded = %d, %d .. %d, %d\n",
-		       cachedImage->image->loadedRegion.x,
-		       cachedImage->image->loadedRegion.y,
-		       cachedImage->image->loadedRegion.x +
-		       cachedImage->image->loadedRegion.width,
-		       cachedImage->image->loadedRegion.y +
-		       cachedImage->image->loadedRegion.height);
-		printf("  new request = %d, %d .. %d, %d\n", region.x,
-		       region.y, region.x + region.width,
-		       region.y + region.height);
-               */
-		region = RectUnionRect(&cachedImage->image->loadedRegion, &region);
+          region = RectUnionRect(&cachedImage->image->loadedRegion, &region);
 		
-		/*
-		printf("  new region = %d, %d .. %d, %d\n",
-		region.x, region.y,
-		region.x + region.width, region.y + region.height);
-		
-		*/
 	    }
 	}
 
@@ -970,14 +830,15 @@ Image *GetImageFromCache(ImageCache *cache, uint32_t frameNumber,
 	 * threaded case.
 	 */
 	if (cache->numReaderThreads > 0) {
-	    ImageCacheJob *job;
 
 	    /* Remember that we still have the imageCacheLock from above.
 	     * Look for a pending job (one that is being worked on) that
 	     * matches our requirements.
 	     */
-	    job = FindJobInQueue(&cache->pendingQueue, frameNumber, &region,
-				 levelOfDetail);
+        
+	    ImageCacheJob *job = 
+          cache->FindJobInPendingQueue(frameNumber, &region,levelOfDetail);
+
 	    if (job != NULL) {
 		/* We've got a job coming soon that will give us this image.
 		 * Just wait for the reader thread to complete.  This should
@@ -998,8 +859,7 @@ Image *GetImageFromCache(ImageCache *cache, uint32_t frameNumber,
 		 * to modify the job request, if necessary, to include the
 		 * desired region.
 		 */
-		job = FindJobInQueue(&cache->jobQueue, frameNumber, NULL,
-				     levelOfDetail);
+		job = cache->FindJobInJobQueue(frameNumber, NULL, levelOfDetail);
 		if (job != NULL) {
 		    /* Add our region of interest to the job; if a request had
 		     * been made earlier for a different region of the same
@@ -1013,7 +873,8 @@ Image *GetImageFromCache(ImageCache *cache, uint32_t frameNumber,
 		     * it was behind a few other preload jobs; it's more important
 		     * now because the main thread is waiting on it.
 		     */
-		    MoveJobToHeadOfQueue(&cache->jobQueue, job);
+            cache->RemoveJobFromJobQueue(job); 
+            cache->jobQueue.push_front(job); 
 
 		    /* Now wait for an image to appear. */
             /*
@@ -1024,24 +885,18 @@ Image *GetImageFromCache(ImageCache *cache, uint32_t frameNumber,
             cache->WaitForJobDone(__FILE__, __LINE__); 
 		}
 		else {
-		    /* No job in the pending queue nor in the work queue.  Check
-		     * the error queue to make sure the job hasn't been attempted
-		     * but has failed.
-		     */
-		    job = FindJobInQueue(&cache->errorQueue, frameNumber,
-					 &region, levelOfDetail);
-		    if (job != NULL) {
+          /* No job in the pending queue nor in the work queue.  Check
+           * the error queue to make sure the job hasn't been attempted
+           * but has failed.
+           */
+          job = cache->FindJobInErrorQueue(frameNumber,&region,levelOfDetail);
+          if (job != NULL) {
 			/* The error, hopefully, has already been reported.  We
 			 * have to remove the job from the queue and return to
 			 * the caller with an error.
 			 */
-			RemoveJobFromQueue(&cache->errorQueue, job);
-            /*
-              rv = pthread_mutex_unlock(&cache->imageCacheLock);
-              if (rv != 0) WARNING(
-              "pthread_mutex_unlock returned %d (%s)",
-              rv, ERROR_STRING(rv));
-            */
+			cache->RemoveJobFromErrorQueue(job);
+
             cache->unlock(__FILE__, __LINE__);
 			return NULL;
 		    }
@@ -1050,11 +905,6 @@ Image *GetImageFromCache(ImageCache *cache, uint32_t frameNumber,
 			 * variable loop so the main thread can load the
 			 * image itself.
 			 */
-              /*
-                rv = pthread_mutex_unlock(&cache->imageCacheLock);
-                if (rv != 0) WARNING("pthread_mutex_unlock returned %d (%s)",
-				rv, ERROR_STRING(rv));
-              */
               cache->unlock(__FILE__, __LINE__); 
               break;
  		    }
@@ -1103,12 +953,7 @@ Image *GetImageFromCache(ImageCache *cache, uint32_t frameNumber,
      * a slot we can stick it in.
      */
     if (cache->numReaderThreads > 0) {
-      /*
-        rv = pthread_mutex_lock(&cache->imageCacheLock);
-        if (rv != 0) WARNING("pthread_mutex_lock returned %d (%s)",
-		rv, ERROR_STRING(rv));
-      */
-      cache->lock(__FILE__, __LINE__);
+     cache->lock(__FILE__, __LINE__);
     }
 
     /* Either update the current image slot or find a new one */
@@ -1136,11 +981,6 @@ Image *GetImageFromCache(ImageCache *cache, uint32_t frameNumber,
 	 * and return NULL.
 	 */
 	if (cache->numReaderThreads > 0) {
-      /*
-	    rv = pthread_mutex_unlock(&cache->imageCacheLock);
-	    if (rv != 0) WARNING("pthread_mutex_unlock returned %d (%s)",
-        rv, ERROR_STRING(rv));
-      */ 
       cache->unlock(__FILE__, __LINE__); 
 	}
 	(*image->ImageDeallocator)(cache->canvas, image);
@@ -1162,12 +1002,7 @@ Image *GetImageFromCache(ImageCache *cache, uint32_t frameNumber,
     imageSlot->lockCount = 1;
     imageSlot->requestNumber = cache->requestNumber;
     if (cache->numReaderThreads > 0) {
-      /*
-        rv = pthread_mutex_unlock(&cache->imageCacheLock);
-        if (rv != 0) WARNING("pthread_mutex_unlock returned %d (%s)",
-		rv, ERROR_STRING(rv));
-      */ 
-      cache->unlock(__FILE__, __LINE__); 
+     cache->unlock(__FILE__, __LINE__); 
     }
     return image;
 }
@@ -1186,11 +1021,6 @@ void ReleaseImageFromCache(ImageCache *cache, Image *image)
 
     /* Look for the given image in the cache. */
     if (cache->numReaderThreads > 0) {
-      /*
-        rv = pthread_mutex_lock(&cache->imageCacheLock);
-        if (rv != 0) WARNING("pthread_mutex_lock returned %d (%s)",
-		rv, ERROR_STRING(rv));
-      */
       cache->lock(__FILE__, __LINE__);
     }
     cachedImage = cache->cachedImages;
@@ -1209,11 +1039,6 @@ void ReleaseImageFromCache(ImageCache *cache, Image *image)
 		cachedImage->lockCount--;
 	    }
 	    if (cache->numReaderThreads > 0) {
-          /*
-            rv = pthread_mutex_unlock(&cache->imageCacheLock);
-            if (rv != 0) WARNING("pthread_mutex_unlock returned %d (%s)",
-			rv, ERROR_STRING(rv));
-          */
           cache->unlock(__FILE__, __LINE__); 
 	    }
 	    return;
@@ -1221,20 +1046,13 @@ void ReleaseImageFromCache(ImageCache *cache, Image *image)
     }
 
     /* If we get here, we couldn't find the image */
-    /*
-      rv = pthread_mutex_unlock(&cache->imageCacheLock);
-      if (rv != 0) WARNING("pthread_mutex_unlock returned %d (%s)",
-      rv, ERROR_STRING(rv));
-      WARNING("tried to release an image not in cache");
-    */
     cache->unlock(__FILE__, __LINE__); 
     return;
 }
 
 /* This routine is informatory; it notifies the cache that a particular frame
  * will likely be of interest soon, so that the cache can start loading the
- * image.  It is of utility once the main program becomes threaded; for now,
- * we can ignore it.
+ * image. 
  *
  * It should only be called from the main thread, since it accesses the
  * frameList field (which is unprotected).
@@ -1242,9 +1060,8 @@ void ReleaseImageFromCache(ImageCache *cache, Image *image)
 void PreloadImageIntoCache(ImageCache *cache, uint32_t frameNumber, 
 	const Rectangle *region, uint32_t levelOfDetail)
 {
-    ImageCacheJob *job, *newJob;
-    CachedImage *cachedImage;
-    //int rv;
+  ImageCacheJob *job = NULL, *newJob = NULL;
+  CachedImage *cachedImage = NULL;
 
     /* Keep track of highest frame number.  We need it for cache
      * replacement.
@@ -1264,38 +1081,23 @@ void PreloadImageIntoCache(ImageCache *cache, uint32_t frameNumber,
     }
 
     /* If the image is already in cache, or if a job to load it already 
-     * exists, don't bother adding a new job.
+     * exists, don't bother adding a new job->
      */
-    /*
-      rv = pthread_mutex_lock(&cache->imageCacheLock);
-      if (rv != 0) WARNING("pthread_mutex_lock returned %d (%s)",
-      rv, ERROR_STRING(rv));
-    */ 
     cache->lock(__FILE__, __LINE__);
     cachedImage = FindImageInCache(cache, frameNumber, levelOfDetail);
     if (cachedImage != NULL
 	&& RectContainsRect(&cachedImage->image->loadedRegion, region)
         && cachedImage->levelOfDetail == levelOfDetail) {
 	/* Image is already in cache - no need to preload again */
-      /*
-        rv = pthread_mutex_unlock(&cache->imageCacheLock);
-        if (rv != 0) WARNING("pthread_mutex_unlock returned %d (%s)",
-	    rv, ERROR_STRING(rv));
-      */
       cache->unlock(__FILE__, __LINE__); 
 	return;
     }
 
     /* Look for the job in the pendingQueue and workQueue */
-    job = FindJobInQueue(&cache->pendingQueue, frameNumber, region, levelOfDetail);
+    job = cache->FindJobInPendingQueue(frameNumber, region, levelOfDetail);
     if (job == NULL) {
-	job = FindJobInQueue(&cache->jobQueue, frameNumber, region, levelOfDetail);
+	job = cache->FindJobInJobQueue(frameNumber, region, levelOfDetail);
     }
-    /*
-      rv = pthread_mutex_unlock(&cache->imageCacheLock);
-      if (rv != 0) WARNING("pthread_mutex_unlock returned %d (%s)",
-      rv, ERROR_STRING(rv));
-    */
     cache->unlock(__FILE__, __LINE__); 
     if (job != NULL) {
 	/* The job exists already - no need to add a new one */
@@ -1305,11 +1107,8 @@ void PreloadImageIntoCache(ImageCache *cache, uint32_t frameNumber,
     /* If we get this far, there is no such image in the cache, and no such
      * job in the queue, so add a new one.
      */
-    newJob = (ImageCacheJob *)calloc(1, sizeof(ImageCacheJob));
-    if (newJob == NULL) {
-	ERROR("cannot allocate new reader job");
-	return;
-    }
+    newJob = 
+      new ImageCacheJob(frameNumber, region, levelOfDetail, cache->requestNumber);
 
     /* This counts as an additional cache request; the job will take
      * on the request number, so we can determine which entries are the
@@ -1318,10 +1117,6 @@ void PreloadImageIntoCache(ImageCache *cache, uint32_t frameNumber,
      */
     cache->requestNumber++;
 
-    newJob->frameNumber = frameNumber;
-    newJob->region = *region;
-    newJob->levelOfDetail = levelOfDetail;
-    newJob->requestNumber = cache->requestNumber;
     /* We save the frameInfo information just in case the FrameList changes
      * while one of the reader threads is trying to read this frame.
      * The results of the image read will be discarded (via the
@@ -1331,28 +1126,14 @@ void PreloadImageIntoCache(ImageCache *cache, uint32_t frameNumber,
     newJob->frameInfo = *(cache->frameList->getFrame(frameNumber));
     
     /* Add the job to the back of the work queue */
-    /*
-      rv = pthread_mutex_lock(&cache->imageCacheLock);
-      if (rv != 0) WARNING("pthread_mutex_lock returned %d (%s)",
-      rv, ERROR_STRING(rv));
-    */ 
     cache->lock(__FILE__, __LINE__);
-    AddJobToQueue(&cache->jobQueue, newJob);
+    cache->jobQueue.push_back(newJob); 
+    //AddJobToQueue(&cache->jobQueue, newJob);
     cache->unlock(__FILE__, __LINE__); 
-    /*
-      rv = pthread_mutex_unlock(&cache->imageCacheLock);
-      if (rv != 0) WARNING("pthread_mutex_unlock returned %d (%s)",
-      rv, ERROR_STRING(rv));
-    */
     
     /* If there's a worker thread that's snoozing, this will
      * wake him up.
      */
-    /*
-      rv = pthread_cond_signal(&cache->jobReady);
-      if (rv != 0) WARNING("pthread_cond_signal returned %d (%s)",
-      rv, ERROR_STRING(rv));
-    */
     cache->WakeAllJobReady(__FILE__, __LINE__); 
 }
 
