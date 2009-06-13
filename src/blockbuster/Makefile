@@ -88,8 +88,7 @@ endif
 
 SOURCES=main.cpp blockbuster_qt.cpp movie.cpp  timer.C \
 	 pure_C.c Renderers.cpp \
-	frames.cpp queue.cpp \
-	ui.cpp  slave.cpp remotecommands.cpp \
+	frames.cpp ui.cpp  slave.cpp remotecommands.cpp \
 	cache.cpp  canvas.cpp gl.cpp common.cpp \
 	sgi-rgb.cpp convert.cpp  \
 	gltexture.cpp sm.cpp dmxglue.cpp png.cpp splash.cpp  \
