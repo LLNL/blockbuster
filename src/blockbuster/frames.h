@@ -91,6 +91,7 @@ typedef int (*LoadImageFunc)
     int levelOfDetail
     );
 
+typedef  void (*DestroyFrameFunc)(struct FrameInfo *frameInfo);
 
 //============================================================
 // base class for storing user information in frame lists, if needed
@@ -101,6 +102,18 @@ class FrameListUserData {
 
 //============================================================
 struct FrameInfo {
+  FrameInfo(): width(0), height(0), depth(0), maxLOD(0), filename(NULL), 
+               frameNumber(0), privateData(NULL), canvasPrivate(NULL), 
+               enable(0), LoadImage(NULL), DestroyFrameInfo(NULL) {}
+  FrameInfo(int w, int h, int d, int lod, char *fname, int fnum, 
+            void *priv, void *cp, int en, 
+            LoadImageFunc lif, DestroyFrameFunc dff):
+    width(w), height(h), depth(d), maxLOD(lod), filename(fname), 
+    frameNumber(fnum), privateData(priv), canvasPrivate(cp), enable(en), 
+    LoadImage(lif), DestroyFrameInfo(dff) {}
+            
+  ~FrameInfo() {}
+
   /* Basic statistics */
   int width, height, depth;
   
