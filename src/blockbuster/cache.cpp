@@ -32,8 +32,6 @@
 #include "util.h"
 #include "errmsg.h"
 #include "canvas.h"
-#include "queue.h"
-
 
 /* This file contains routines for manipulating the Image Cache.
  *
