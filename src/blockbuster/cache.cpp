@@ -167,18 +167,6 @@ static Image *LoadAndConvertImage(FrameInfo *frameInfo, unsigned int frameNumber
     return image;
 }
 
-/* This is a cleanup function which will be called if and when
- * a reader thread is cancelled.  All it has to do is release
- * the mutex it was holding.
- */
-/*void ReaderCleanup(void *)
-{
-    int rv;
-    CACHEDEBUG("ReaderCleanup"); 
-    if (rv != 0) WARNING("pthread_mutex_unlock returned %d (%s)",
-	    rv, ERROR_STRING(rv));
-}
-*/
 
 #define NEW_CACHE 1
 #ifdef NEW_CACHE
