@@ -84,8 +84,7 @@ void WriteImageToFile(Canvas *canvas, int frameNumber)
     region.height = canvas->frameList->getFrame(localFrameNumber)->height;
     region.width = canvas->frameList->getFrame(localFrameNumber)->width;
 
-    image = GetImageFromCache(canvas->imageCache, localFrameNumber,
-	    &region, 0);
+    image = canvas->imageCache->GetImage(localFrameNumber, &region, 0);
 
     if (image == NULL) {
 	WARNING("Cannot write image to file - image is NULL");
@@ -96,7 +95,7 @@ void WriteImageToFile(Canvas *canvas, int frameNumber)
     f = fopen("tmp.c", "w");
     if (f == NULL) {
 	WARNING("Cannot write image to file - cannot open tmp.c");
-	ReleaseImageFromCache(canvas->imageCache, image);
+	canvas->imageCache->ReleaseImage( image);
 	return;
     }
 
@@ -158,7 +157,7 @@ void WriteImageToFile(Canvas *canvas, int frameNumber)
     fprintf(f, "    NullImageDataDeallocator\n");
     fprintf(f, "};\n");
     fclose(f);
-    ReleaseImageFromCache(canvas->imageCache, image);
+    canvas->imageCache->ReleaseImage( image);
     INFO("Saved image in tmp.c");
 }
 

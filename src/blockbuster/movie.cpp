@@ -743,7 +743,8 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
              region.x = region.y = 0; 
              region.width = frameInfo->width; 
              region.height = frameInfo->height; 
-             Image *image = GetImageFromCache(canvas->imageCache, frameNumber, &region, 0); 
+             Image *image = canvas->imageCache->
+               GetImage(frameNumber,&region,0); 
              int size[3] = {region.width, region.height, 3}; 
              int result = 
                write_png_file(filename.toAscii().data(), 

@@ -327,7 +327,7 @@ void CacheSetFrameList(Canvas *canvas, FrameList *frameList)
     /* Tell the cache to manage the new frame list.  This will
      * clear everything out of the cache that's already in there.
      */
-    ManageFrameListInCache(canvas->imageCache, frameList);
+    canvas->imageCache->ManageFrameList(frameList);
     canvas->frameList = frameList;
 }
 

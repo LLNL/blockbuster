@@ -87,40 +87,34 @@ class CacheThread: public QThread {
    */
    class ImageCache {
    public:
-     ImageCache(): numReaderThreads(0), maxCachedImages(0), canvas(NULL) {
-       CACHEDEBUG("ImageCache constructor"); 
-     }
-     ~ImageCache() {}
-     void RemoveJobFromJobQueue(ImageCacheJob *job) {
-       RemoveJobFromQueue(jobQueue, job); 
-     }
-     void RemoveJobFromErrorQueue(ImageCacheJob *job) {
-       RemoveJobFromQueue(errorQueue, job); 
-     }
+     ImageCache(int numthreads, int numimages, Canvas *c);
+     ~ImageCache(); 
+
+     CachedImage *GetCachedImageSlot(uint32_t newFrameNumber);
+
      void RemoveJobFromPendingQueue(ImageCacheJob *job) {
-       RemoveJobFromQueue(pendingQueue, job); 
+       RemoveJobFromQueue(mPendingQueue, job); 
      }
-     ImageCacheJob *FindJobInJobQueue (unsigned int frameNumber,  const Rectangle *region, unsigned int lod){
-       return FindJobInQueue(jobQueue, frameNumber, region, lod); 
-     }
+
+     void RemoveJobFromQueue(deque<ImageCacheJob*> &queue, ImageCacheJob *job);
      
-     ImageCacheJob *FindJobInErrorQueue(unsigned int frameNumber,  const Rectangle *region, unsigned int lod){
-       return FindJobInQueue(errorQueue, frameNumber, region, lod); 
-     }
-     ImageCacheJob *FindJobInPendingQueue(unsigned int frameNumber,  const Rectangle *region, unsigned int lod){
-       return FindJobInQueue(pendingQueue, frameNumber, region, lod); 
-     }
-     void ClearJobQueue(void) { ClearQueue(jobQueue); }
-     void ClearErrorQueue(void) { ClearQueue(errorQueue); }
-     void ClearPendingQueue(void) { ClearQueue(pendingQueue); }
-     
+     ImageCacheJob *FindJobInQueue
+       (deque<ImageCacheJob*> &queue,  unsigned int frameNumber, 
+        const Rectangle *region, unsigned int levelOfDetail); 
+     void ClearQueue(deque<ImageCacheJob*> &queue); 
      void ClearImages(void); 
-     /* Configuration information */
-     int numReaderThreads;
-     int maxCachedImages;
-     Canvas *canvas;
-     
-    void  lock(char *file="unknown file", int line=0) {
+     void GetConfiguration(int &outNumThreads, int &outMaxImages) ;
+     void ClearJobQueue(void);
+     void ManageFrameList(FrameList *frameList);
+     CachedImage *FindImage(uint32_t frame, uint32_t lod);
+     Image *GetImage(uint32_t frameNumber,
+                     const Rectangle *newRegion, uint32_t levelOfDetail);
+     void ReleaseImage(Image *image);
+     void PreloadImage(uint32_t frameNumber, 
+                       const Rectangle *region, uint32_t levelOfDetail);
+     void Print(void); 
+
+   void  lock(char *file="unknown file", int line=0) {
       CACHEDEBUG("%s: %d: locking image cache", file, line); 
       imageCacheLock.lock(); 
     }
@@ -147,53 +141,47 @@ class CacheThread: public QThread {
       CACHEDEBUG("%s: %d: worker thread signaling job done", file, line); 
       jobDone.wakeAll(); 
     }
-
-
+    
+    /* Configuration information */
+    int mNumReaderThreads;
+    int mMaxCachedImages;
+    Canvas *mCanvas;
+    
     /* Cache management details */
-    FrameList *frameList;
-    unsigned long requestNumber;
-    unsigned long validRequestThreshold;
-    CachedImage *cachedImages;
-    unsigned int highestFrameNumber;
-
+    FrameList *mFrameList;
+    unsigned long mRequestNumber;
+    unsigned long mValidRequestThreshold;
+    CachedImage *mCachedImages;
+    unsigned int mHighestFrameNumber;
+    
     /* Thread management; none of these fields are used or examined
      * unless numReaderThreads is greater than 0.
      */
-     /*   ImageCacheThreadInfo *threads; */
-     /* pthread_mutex_t imageCacheLock;
-        pthread_cond_t jobReady;
-        pthread_cond_t jobDone;
-     */ 
-     std::vector<CacheThread *> mThreads;
+    std::vector<CacheThread *> mThreads;
      QMutex imageCacheLock; 
      QWaitCondition jobReady, jobDone; 
-     deque<ImageCacheJob *> jobQueue;
-     deque<ImageCacheJob *> pendingQueue;
-     deque<ImageCacheJob *> errorQueue;
-   private:
-     void RemoveJobFromQueue(deque<ImageCacheJob*> &queue, ImageCacheJob *job);
-     
-     ImageCacheJob *FindJobInQueue
-       (deque<ImageCacheJob*> &queue,  unsigned int frameNumber, 
-        const Rectangle *region, unsigned int levelOfDetail); 
-     void ClearQueue(deque<ImageCacheJob*> &queue); 
+     deque<ImageCacheJob *> mJobQueue;
+     deque<ImageCacheJob *> mPendingQueue;
+     deque<ImageCacheJob *> mErrorQueue;
    } ;
 
   /* Image Cache management from cache.c.  These utilities are expected to be
    * used by Renderer modules to manage their images (because each renderer
    * is responsible for its own image management).
    */
-ImageCache *CreateImageCache(int numReaderThreads, int maxCachedImages, Canvas *canvas);
-   void ClearImageCache(ImageCache *cache);
-   void DestroyImageCache(Canvas *canvas);
-   void ManageFrameListInCache(ImageCache *cache, FrameList *frameList);
-   Image *GetImageFromCache(ImageCache *cache, uint32_t frameNumber,
-          const Rectangle *region, uint32_t levelOfDetail);
-   void ReleaseImageFromCache(ImageCache *cache, Image *image);
-   void PreloadImageIntoCache(ImageCache *cache, uint32_t frameNumber, 
-            const Rectangle *region, uint32_t levelOfDetail);
-   void PrintCache(ImageCache *cache);
-   void GetCacheConfiguration(ImageCache *cache, int *numReaderThreads, int *maxCachedImages);
-   void CachePreload(Canvas *canvas, uint32_t frameNumber, 
-                     const Rectangle *imageRegion, uint32_t levelOfDetail);
+  ImageCache *CreateImageCache(int numReaderThreads, int maxCachedImages, Canvas *canvas);
+  void DestroyImageCache(Canvas *canvas);
+  void CachePreload(Canvas *canvas, uint32_t frameNumber, 
+                    const Rectangle *imageRegion, uint32_t levelOfDetail);
+
+/*
+  void ManageFrameListInCache(ImageCache *cache, FrameList *frameList);
+  Image *GetImageFromCache(ImageCache *cache, uint32_t frameNumber,
+  const Rectangle *region, uint32_t levelOfDetail);
+  void ReleaseImageFromCache(ImageCache *cache, Image *image);
+  void PreloadImageIntoCache(ImageCache *cache, uint32_t frameNumber, 
+  const Rectangle *region, uint32_t levelOfDetail);
+  void PrintCache(ImageCache *cache);
+  void GetCacheConfiguration(ImageCache *cache, int *numReaderThreads, int *maxCachedImages);
+*/ 
 #endif
