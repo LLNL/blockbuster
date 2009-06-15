@@ -178,8 +178,11 @@ class smBase {
 
       static void registerType(u_int t, smBase *(*)(const char *, int));
 
-      void *lockFrame(u_int frame, u_int &);
-      void *lockFrame(u_int frame, u_int &,int*, int*, int);
+      /*! 
+        locking a frame means reading it into memory and keeping it there
+      */
+      void *lockFrame(u_int frame, u_int &size);
+      void *lockFrame(u_int frame, u_int &size,int*dim, int*pos, int res);
       void unlockFrame(u_int frame);
 
      
