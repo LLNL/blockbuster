@@ -1,13 +1,19 @@
 #ifndef BLOCKBUSTER_CACHE_H
 #define BLOCKBUSTER_CACHE_H
 
+//=======================================================
+// if you don't want verbose cache messages, use this:
+#define CACHEDEBUG if (0) DEBUGMSG
+// else use this:
+#define CACHEDEBUG DEBUGMSG
+//=======================================================
+
 #include <vector>
 #include "frames.h"
 #include "QThread"
 #include "QMutex"
 #include "QWaitCondition"
 #include "errmsg.h"
-//#include "queue.h"
 #include <deque>
 using namespace std; 
 
@@ -30,9 +36,6 @@ struct ImageCacheJob {
   uint32_t requestNumber;
 } ;
 
-//#define CACHEDEBUG if (0) DEBUGMSG
-
-#define CACHEDEBUG DEBUGMSG
 
 class CacheThread: public QThread {
   Q_OBJECT
