@@ -13,7 +13,7 @@ CONFIG -= release
 TEMPLATE = app
 TARGET = 
 DEPENDPATH += .
-INCLUDEPATH += .
+INCLUDEPATH += . ../../common
 
 # Input
 HEADERS = sidecar.h  Prefs.h RemoteControl.h \
