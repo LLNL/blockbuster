@@ -92,9 +92,43 @@ const int SM_MAGIC_1=SM_MAGIC_VERSION1;
 const int SM_MAGIC_2=SM_MAGIC_VERSION2;
 const int DIO_DEFAULT_SIZE = 1024L*1024L*4;
 
-//#define SM_VERBOSE 1
-//#undef  SM_VERBOSE
 #define SM_HDR_SIZE 64
+
+
+//===============================================
+// debug print statements
+#define SM_VERBOSE 1
+//#undef  SM_VERBOSE
+
+#ifdef SM_VERBOSE 
+#include <stdarg.h>
+#include "../common/timer.h"
+#include "../common/stringutil.h"
+
+struct smMsgStruct {
+  int line; 
+  string file, function; 
+}; 
+static smMsgStruct gMsgStruct; 
+
+#define SMPREAMBLE 
+#define smdbprintf  \
+  gMsgStruct.line = __LINE__, gMsgStruct.file=__FILE__, gMsgStruct.function=__FUNCTION__, sm_real_dbprintf  
+    
+
+void sm_real_dbprintf(const char *fmt, ...) {  
+  cerr << GetHostname() << " SMDEBUG: ";
+  va_list ap;
+  va_start(ap, fmt);
+  vfprintf(stderr,fmt,ap);
+  va_end(ap);
+  cerr << " [" << gMsgStruct.file << ":"<< gMsgStruct.function << "(), line "<< gMsgStruct.line << ", time=" << GetExactSeconds() << "]" << endl; 
+  return; 
+}
+#else
+#define smdbprintf if(0) fprintf
+#endif
+//===============================================
 
 #define CHECK(v) \
 if(v == NULL) \
@@ -124,6 +158,7 @@ void smBase::init(int _nwin)
   static int initialized = 0; 
   if (initialized) return; 
   initialized = 1;
+  smdbprintf("smBase::init(%d", _nwin); 
 
   smJPG::init();
   smLZO::init();
@@ -152,9 +187,7 @@ smBase::smBase(const char *_fname)
    nresolutions = 1;
 
    //nwin = _nwin;
-#ifdef SM_VERBOSE
-   fprintf(stderr,"smBase constructor : nwin %d\n",nwin);
-#endif
+   smdbprintf("smBase constructor : nwin %d",nwin);
    winlock = (u_int *)calloc(sizeof(u_int) , nwin);
    CHECK(winlock);
    curwin = (int *)calloc(sizeof(int) , nwin);
@@ -214,9 +247,7 @@ smBase::smBase(const char *_fname)
          }
       }
 
-#ifdef SM_VERBOSE
-printf("dio: mem %d min %d max %d\n", dio_mem, dio_min, dio_max);
-#endif
+      smdbprintf("dio: mem %d min %d max %d", dio_mem, dio_min, dio_max);
 
 #else
       for (i=0; i<nwin; i++) fd[i] = OPEN(fname, O_RDONLY);
@@ -243,9 +274,7 @@ smBase::~smBase()
 {
    int i;
 
-#ifdef SM_VERBOSE
-   fprintf(stderr,"smBase destructor : %s\n",fname);
-#endif
+   smdbprintf("smBase destructor : %s",fname);
    if ((bModFile == TRUE) && (fd[0])) CLOSE(fd[0]);
    for(i=0;i<nwin;i++) {
    	if ((bModFile == FALSE) && (fd[i])) CLOSE(fd[i]);
@@ -360,17 +389,15 @@ int smBase::newFile(const char *_fname, u_int _width, u_int _height,
        tileNxNy[i][0] = (u_int) 1;
        tileNxNy[i][1] = (u_int) 1;
      }
-#ifdef SM_VERBOSE
-     fprintf(stderr,"newFile tile %dX%d of [%d,%d]\n",tileNxNy[i][0],tileNxNy[i][1], tilesizes[i][0], tilesizes[i][1]);
-#endif
+     smdbprintf("newFile tile %dX%d of [%d,%d]",
+                tileNxNy[i][0],tileNxNy[i][1], tilesizes[i][0], 
+                tilesizes[i][1]);
    }
    
   
 
-#ifdef SM_VERBOSE
-printf("init: w %d h %d frames %d\n", framesizes[0][0], framesizes[0][1], 
+   smdbprintf("init: w %d h %d frames %d", framesizes[0][0], framesizes[0][1], 
 		nframes);
-#endif
 
    fname = strdup(_fname);
    fd = (int *)malloc(sizeof(int));
@@ -449,9 +476,7 @@ void smBase::readHeader(void)
 
    READ(lfd, &nframes, sizeof(u_int));
    nframes = ntohl(nframes);
-#ifdef SM_VERBOSE
-   printf("open file, nframes = %d\n", nframes);
-#endif
+   smdbprintf("open file, nframes = %d", nframes);
 
    READ(lfd, &i, sizeof(u_int));
    framesizes[0][0] = ntohl(i);
@@ -464,10 +489,8 @@ void smBase::readHeader(void)
    memcpy(tilesizes,framesizes,sizeof(framesizes));
    nresolutions = 1;
 
-#ifdef SM_VERBOSE
-   printf("image size: %d %d\n", framesizes[0][0], framesizes[0][1]);
-   printf("nframes=%d\n",nframes);
-#endif
+   smdbprintf("image size: %d %d", framesizes[0][0], framesizes[0][1]);
+   smdbprintf("nframes=%d",nframes);
 
    // Version 2 header is bigger...
    if (version == 2) {
@@ -478,7 +501,7 @@ void smBase::readHeader(void)
      READ(lfd, arr, sizeof(u_int)*SM_HDR_SIZE);
      byteswap(arr,sizeof(u_int)*SM_HDR_SIZE,sizeof(u_int));
      nresolutions = arr[5];
-     //fprintf(stderr,"nresolutions : %d\n",nresolutions);
+     //smdbprintf("nresolutions : %d",nresolutions);
      for(i=0;i<nresolutions;i++) {
        tilesizes[i][1] = (arr[6+i] & 0xffff0000) >> 16;
        tilesizes[i][0] = (arr[6+i] & 0x0000ffff);
@@ -491,9 +514,9 @@ void smBase::readHeader(void)
        if(maxNumTiles < (tileNxNy[i][0] * tileNxNy[i][1])) {
 	 maxNumTiles = tileNxNy[i][0] * tileNxNy[i][1];
        }
-       //fprintf(stderr,"tileNxNy[%ld,%ld] : maxnumtiles %ld\n", tileNxNy[i][0], tileNxNy[i][1],maxNumTiles);
+       //smdbprintf("tileNxNy[%ld,%ld] : maxnumtiles %ld", tileNxNy[i][0], tileNxNy[i][1],maxNumTiles);
      }
-     //fprintf(stderr,"maxtilesize = %ld, maxnumtiles = %ld\n",maxtilesize,maxNumTiles);
+     //smdbprintf("maxtilesize = %ld, maxnumtiles = %ld",maxtilesize,maxNumTiles);
      
    }
    else {
@@ -530,13 +553,12 @@ void smBase::readHeader(void)
            if (flength[w] > maxwin) maxwin = flength[w];
        }
    }
-
-#ifdef SM_VERBOSE
+#if 0 && SM_VERBOSE
    for (w=0; w<nframes; w++) {
-       printf("window %d: %d size %d\n", w, (int)foffset[w],flength[w]);
+       smdbprintf("window %d: %d size %d", w, (int)foffset[w],flength[w]);
    }
-   printf("maximum window size is %d\n", maxwin);
 #endif
+   smdbprintf("maximum window size is %d", maxwin);
 
    // bump up the size to the next multiple of the DIO requirements
    maxwin += dio_mem + 2*dio_min;
@@ -587,22 +609,18 @@ void smBase::readWin(u_int f)
    u_int winnum;
    off64_t size;
 
-#ifdef SM_VERBOSE
-printf("READWIN %d\n", f);
-#endif
+   smdbprintf("READWIN %d", f);
 
    winnum = f % nwin;
 
    size = flength[f];
    off64_t offset = (foffset[f] | (dio_min-1)) ^ (dio_min-1);
 
-#ifdef SM_VERBOSE
-printf("actual offset is %lld\n", foffset[f]);
-printf("dio offset is %lld\n", offset);
-printf("memory offset is %lld\n", foffset[f] & (dio_min-1));
-#endif
+   smdbprintf("actual offset is %lld", foffset[f]);
+   smdbprintf("dio offset is %lld", offset);
+   smdbprintf("memory offset is %lld", foffset[f] & (dio_min-1));
    if (LSEEK64(fd[winnum], offset, SEEK_SET) < 0)
-      fprintf(stderr, "Error seeking to frame %d\n", f);
+     fprintf(stderr, "Error seeking to frame %d", f);
    win[winnum] = (u_char *)dio_buf[winnum] + (foffset[f] & (dio_min-1));
 
    // increase the size to account for the overhead at beginning of block
@@ -618,9 +636,7 @@ printf("memory offset is %lld\n", foffset[f] & (dio_min-1));
    for (n=size, buf=(u_char *)dio_buf[winnum]; n>0;) {
       int k=(n>dio_max?dio_max:n);
       int r=READ(fd[winnum], buf, k);
-#ifdef SM_VERBOSE
-printf("reading %d bytes\n", k);
-#endif
+      smdbprintf("reading %d bytes", k);
       if (r < 0) {
          if ((errno == EINTR) && (errno == EAGAIN)) {
 	    char	s[40];
@@ -644,6 +660,7 @@ void smBase::readWin(u_int f, int *dim, int* pos, int res )
   u_int readBufferOffset;
   u_char *cdata;
  
+  smdbprintf("readWin version 2"); 
 
   winnum = f % nwin;
   off64_t offset = foffset[f] ;
@@ -693,17 +710,17 @@ void smBase::readWin(u_int f, int *dim, int* pos, int res )
       tinfo[i].compressedSize = (u_int)ntohl(header[i]);
       toffsets[i] = k + sum;
       sum += tinfo[i].compressedSize;
-      //fprintf(stderr,"tile[%d].frame = %d\n",i,tinfo[i].frame);
+      //smdbprintf("tile[%d].frame = %d",i,tinfo[i].frame);
       if(tinfo[i].frame == f) {
 	if(tinfo[i].overlaps) {
 	  tinfo[i].prev_overlaps = 1;
 	  readBufferOffset += tinfo[i].compressedSize;
-	  //fprintf(stderr,"tile[%d] setting prev_overlaps : readBufferOffset = %d\n",i,readBufferOffset);
+	  //smdbprintf("tile[%d] setting prev_overlaps : readBufferOffset = %d",i,readBufferOffset);
 	}
 	else {
 	  if(tinfo[i].prev_overlaps) {
 	    readBufferOffset += tinfo[i].compressedSize;
-	    //fprintf(stderr,"tile[%d] prev_overlaps : readBufferOffset = %d\n",i,readBufferOffset);
+	    //smdbprintf("tile[%d] prev_overlaps : readBufferOffset = %d",i,readBufferOffset);
 	  }
 	}
       }
@@ -718,23 +735,20 @@ void smBase::readWin(u_int f, int *dim, int* pos, int res )
     // Grab data for overlapping tiles
     for(int tile = 0; tile < numTiles; tile++) {
       if(tinfo[tile].overlaps && (!tinfo[tile].prev_overlaps)) {
-#ifdef SM_VERBOSE
-	fprintf(stderr,"tile %d newly overlaps\n",tile);
-#endif
+        //	smdbprintf("tile %d newly overlaps",tile);
 	tinfo[tile].readBufferOffset = readBufferOffset;
 	tinfo[tile].skipCorruptFlag = 0;
 
-    // if (f > 700) 
-    //  fprintf(stderr, "Seeking to frame %d\n", f); 
 	if (LSEEK64(fd[winnum], offset + toffsets[tile] , SEEK_SET) < 0) {
-	      fprintf(stderr, "Error seeking to frame %d at offset %Ld\n", f, offset + toffsets[tile]);
+      fprintf(stderr, "Error seeking to frame %d at offset %Ld\n", f, offset + toffsets[tile]);
 	      exit(1);
 	    }
-	  
+    smdbprintf("Reading %d bytes from file for winnum %d for tile %d", tinfo[tile].compressedSize, winnum, tile); 
 	r=READ(fd[winnum],cdata+readBufferOffset,tinfo[tile].compressedSize);
-	   
+    smdbprintf("Done reading"); 
+
 	if (r != tinfo[tile].compressedSize ) {
-	      fprintf(stderr,"smBase::readWin I/O error : r=%d k=%d : skipping",r,tinfo[tile].compressedSize);
+	      fprintf(stderr,"smBase::readWin I/O error : r=%d k=%d : skipping\n",r,tinfo[tile].compressedSize);
 	      tinfo[tile].skipCorruptFlag = 1;
 	    }
 	
@@ -761,11 +775,9 @@ void smBase::computeTileOverlap(int *blockDim, int* blockPos, int res, tileOverl
   blockEndY = blockStartY + blockDim[1] - 1;
 
 
-#ifdef SM_VERBOSE
-  fprintf(stderr,"Tileinfo pointer %p\n",info);
-  fprintf(stderr,"Tiles %dx%d of %dx%d\n",nx,ny,tileWidth,tileHeight);
-  fprintf(stderr,"Block Dim %dx%d at Position %d,%d\n",blockDim[0],blockDim[1],blockPos[0],blockPos[1]);
-#endif
+  smdbprintf("Tileinfo pointer %p",info);
+  smdbprintf("Tiles %dx%d of %dx%d",nx,ny,tileWidth,tileHeight);
+  smdbprintf("Block Dim %dx%d at Position %d,%d",blockDim[0],blockDim[1],blockPos[0],blockPos[1]);
 
   for(int j = 0 ; j < ny ; j++) {
     for(int i = 0; i < nx; i++) {
@@ -788,7 +800,7 @@ void smBase::computeTileOverlap(int *blockDim, int* blockPos, int res, tileOverl
       t1 = blockStartX - tileStartX;
       if( t1 >= 0) {
 	if (t1 < tileWidth) {
-	  //printf(" t1=%d\n ",t1);
+	  //smdbprintf(" t1=%d ",t1);
 	  overlaps_x = 1;
 	  info[ipIndex].blockOffsetX = 0;
 	  info[ipIndex].tileOffsetX = t1;
@@ -802,7 +814,7 @@ void smBase::computeTileOverlap(int *blockDim, int* blockPos, int res, tileOverl
       }
       else { /* tileStartX could be inside block */
 	if((blockEndX - tileStartX) >= 0) {
-	  //printf(" inside block X \n");
+	  //smdbprintf(" inside block X ");
 	  overlaps_x = 1;
 	  info[ipIndex].blockOffsetX = tileStartX - blockStartX;
 	  info[ipIndex].tileOffsetX = 0;
@@ -816,7 +828,7 @@ void smBase::computeTileOverlap(int *blockDim, int* blockPos, int res, tileOverl
 	t2 = blockStartY - tileStartY;
 	if( t2 >= 0) {
 	  if (t2 < tileHeight) {
-	    //printf(" t2=%d \n",t2);
+	    //smdbprintf(" t2=%d ",t2);
 	    overlaps_y = 1;
 	    info[ipIndex].blockOffsetY = 0;
 	    info[ipIndex].tileOffsetY = t2;
@@ -830,7 +842,7 @@ void smBase::computeTileOverlap(int *blockDim, int* blockPos, int res, tileOverl
 	}
 	else { /* tileStartY could be inside block */
 	  if((blockEndY - tileStartY) >= 0) {
-	    //printf(" inside block Y \n");
+	    //smdbprintf(" inside block Y ");
 	    overlaps_y = 1;
 	    info[ipIndex].blockOffsetY = tileStartY - blockStartY;
 	    info[ipIndex].tileOffsetY = 0;
@@ -841,7 +853,7 @@ void smBase::computeTileOverlap(int *blockDim, int* blockPos, int res, tileOverl
 
       if(overlaps_x && overlaps_y) {
 	info[ipIndex].overlaps = 1;
-	//fprintf(stderr,"boffsetX %d boffsetY %d toffsetX %d toffsetY %d\n",info[ipIndex].blockOffsetX,info[ipIndex].blockOffsetY,info[ipIndex].tileOffsetX,info[ipIndex].tileOffsetY);
+	//smdbprintf("boffsetX %d boffsetY %d toffsetX %d toffsetY %d",info[ipIndex].blockOffsetX,info[ipIndex].blockOffsetY,info[ipIndex].tileOffsetX,info[ipIndex].tileOffsetY);
       }
       else {
 	info[ipIndex].overlaps = 0;
@@ -938,7 +950,7 @@ void smBase::getFrameBlock(int f, void *data,  int destRowStride, int *dim, int 
    if (d[0] < tilesize[0]) d[0] = tilesize[0];
    if (d[1] < tilesize[1]) d[1] = tilesize[1];
 
-   /*fprintf(stderr,"res %d tilesize[%d,%d] step[%d,%d] pos[%d,%d] dim[%d,%d]\n",_res,tilesize[0],tilesize[1],_step[0],_step[1],_pos[0],_pos[1],_dim[0],_dim[1]); */
+   /*smdbprintf("res %d tilesize[%d,%d] step[%d,%d] pos[%d,%d] dim[%d,%d]",_res,tilesize[0],tilesize[1],_step[0],_step[1],_pos[0],_pos[1],_dim[0],_dim[1]); */
 
    // tile support 
    int nx = 0;
@@ -959,7 +971,7 @@ void smBase::getFrameBlock(int f, void *data,  int destRowStride, int *dim, int 
      cdata = (u_char *)lockFrame((int)_f, size, &_dim[0],&_pos[0],(int)_res);
      int winnum = _f % nwin;
 
-     //fprintf(stderr,"winnum %d\n",winnum);
+     //smdbprintf("winnum %d",winnum);
 
      tbuf = (u_char *)tile_buf[winnum];
      tinfo = (tileOverlapInfo_t *)tile_info[winnum];
@@ -968,7 +980,7 @@ void smBase::getFrameBlock(int f, void *data,  int destRowStride, int *dim, int 
       cdata = (u_char *)lockFrame(_f, size);
    }
 
-   //fprintf(stderr,"cdata %p\n",cdata);
+   //smdbprintf("cdata %p",cdata);
    
    if(numTiles < 2) {
      // Special case for "entire frame"
@@ -976,7 +988,7 @@ void smBase::getFrameBlock(int f, void *data,  int destRowStride, int *dim, int 
 	 (_step[0] == 1) && (_step[1] == 1) &&
 	 (_dim[0] == d[0]) && (_dim[1] == d[1])) {
 
-       /*fprintf(stderr,"Calling decomp block for cdata %p out %p size %d dim[%d,%d]\n",cdata,out,size,d[0],d[1]);*/
+       /*smdbprintf("Calling decomp block for cdata %p out %p size %d dim[%d,%d]",cdata,out,size,d[0],d[1]);*/
       
        decompBlock(cdata,out,size,d); 
 
@@ -984,7 +996,7 @@ void smBase::getFrameBlock(int f, void *data,  int destRowStride, int *dim, int 
      } else {
        image = (u_char *)malloc(3*d[0]*d[1]);
        CHECK(image);
-       //fprintf(stderr,"Calling decompBlock since numTiles < 2\n");
+       //smdbprintf("Calling decompBlock since numTiles < 2");
        decompBlock(cdata,image,size,d);
        for(int y=_pos[1];y<_pos[1]+_dim[1];y+=_step[1]) {
 	 u_char *dest = rowPtr;
@@ -1019,7 +1031,7 @@ void smBase::getFrameBlock(int f, void *data,  int destRowStride, int *dim, int 
 #if 1
 	     assert(copied <= (_dim[0]*_dim[1]*3));
 #endif
-	     //fprintf(stderr,"frame %d tile %d\n",f,tile);
+	     //smdbprintf("frame %d tile %d",f,tile);
 	     memcpy(to,from,tileinfo.tileLengthX * 3);
 	    
 	   }
@@ -1057,7 +1069,7 @@ void smBase::setFrame(int f, void *data)
    // Set the zeroth resolution
    if((version == 1) || (numTiles == 1)) {
      compFrame(data,NULL,size,0);
-     //fprintf(stderr,"Frame %d is size %d\n",f,size);
+     //smdbprintf("Frame %d is size %d",f,size);
      cdata=(u_char *)malloc(size);
      CHECK(cdata);
      compFrame(data,cdata,size,0);
@@ -1164,7 +1176,7 @@ void smBase::setCompFrame(int f, void *data, int *sizes, int res)
     for(int i = 0; i < numTiles; i++) {
       tz =  htonl((uint32_t)sizes[i]);
       WRITE(fd[0],&tz,sizeof(uint32_t));
-      //fprintf(stderr,"size tile[%d] = %d\n",i,sizes[i]);
+      //smdbprintf("size tile[%d] = %d\n",i,sizes[i]);
       size += sizes[i];
     } 
     flength[f+res*getNumFrames()] = size + numTiles*sizeof(uint32_t);
@@ -1174,7 +1186,7 @@ void smBase::setCompFrame(int f, void *data, int *sizes, int res)
      size += sizes[0];
      flength[f+res*getNumFrames()] = size;
   }
-  //fprintf(stderr,"write %d bytes\n",size);
+  //smdbprintf("write %d bytes\n",size);
   WRITE(fd[0], data, size);
   pthread_mutex_unlock(&writelock);
 
@@ -1237,7 +1249,7 @@ void smBase::compFrame(void *in, void *out, int *outsizes, int res)
    tilesize[1] = getTileHeight(res);
 
    
-   //fprintf(stderr,"dim[%d,%d] , tilesize[%d,%d]\n",dim[0],dim[1],tilesize[0],tilesize[1]);
+   //smdbprintf("dim[%d,%d] , tilesize[%d,%d]\n",dim[0],dim[1],tilesize[0],tilesize[1]);
    
    char *tilebuf = (char *)malloc(tilesize[0] * tilesize[1] * 3);
    CHECK(tilebuf);
@@ -1250,7 +1262,7 @@ void smBase::compFrame(void *in, void *out, int *outsizes, int res)
     for(int j=0;j<ny;j++) {
      for(int i=0;i<nx;i++) {
        if(out == NULL) {
-	 //fprintf(stderr,"compFrame tile index[%d,%d]\n",i,j);
+	 //smdbprintf("compFrame tile index[%d,%d]\n",i,j);
        }
        base = (char*)in + (((j * tilesize[1] * dim[0]) + (i * tilesize[0]))*3) ;
        if(((i+1) * tilesize[0]) > dim[0]) {
@@ -1287,16 +1299,12 @@ void smBase::compFrame(void *in, void *out, int *outsizes, int res)
     if(out) {
       char *p = (char *)out;
       for(int dd = 0; dd < dim[0]*3*dim[1];dd++)
-	 fprintf(stderr," %d ",p[dd]);
+	 smdbprintf(" %d ",p[dd]);
     }
 #endif 
     free(tilebuf);
     return;
 }
-
-
-
-
 
 
 
@@ -1307,37 +1315,29 @@ void *smBase::lockFrame(u_int f, u_int &size)
 
    pthread_mutex_lock(&winmut[winnum]);
 
-#ifdef SM_VERBOSE
-printf("locking frame %d for curwin[winnum] = %d\n", f,curwin[winnum]);
-fflush(stdout);
-#endif
+   smdbprintf("locking frame %d for curwin[winnum] = %d\n", f,curwin[winnum]);
+
    if (curwin[winnum] != f) {
-#ifdef SM_VERBOSE
-printf("blocking for window %d (%d)\n", winnum, f);
-fflush(stdout);
-#endif
-while (winlock[winnum] > 0) {
+     smdbprintf("blocking for window %d (%d)\n", winnum, f);
+     while (winlock[winnum] > 0) {
 #ifdef DISABLE_PTHREADS
-  usleep(5000);
+       usleep(5000);
 #else
-  pthread_cond_wait(&wincond[winnum], &winmut[winnum]);
+       pthread_cond_wait(&wincond[winnum], &winmut[winnum]);
 #endif
-         // check to see if window index has changed
-         if (curwin[winnum] == f)
-            break;
-      }
-      //fprintf(stderr,"done waiting for winnum %d f %d\n",winnum,f);
+       // check to see if window index has changed
+       if (curwin[winnum] == f)
+         break;
+     }
+     //smdbprintf("done waiting for winnum %d f %d\n",winnum,f);
       // maybe another thread already paged in the window
       if (curwin[winnum] != f) {
          readWin(f);
          curwin[winnum] = f;
       }
    }
-#ifdef SM_VERBOSE
-printf("have lock w=%d\n", f);
-fflush(stdout);
-#endif
-
+   smdbprintf("have lock w=%d\n", f);
+   
    winlock[winnum]++;
 
    frame = (u_char *)win[winnum];
@@ -1357,7 +1357,7 @@ void *smBase::lockFrame(u_int f, u_int &size, int *dim, int* pos, int res)
 
    pthread_mutex_lock(&winmut[winnum]);
 
-   //fprintf(stderr,"lockFrame v2\n");
+   //smdbprintf("lockFrame v2\n");
 
 while (winlock[winnum] > 0) {
 #ifdef DISABLE_PTHREADS
@@ -1365,7 +1365,7 @@ while (winlock[winnum] > 0) {
 #else
   pthread_cond_wait(&wincond[winnum], &winmut[winnum]);
 #endif
-     //fprintf(stderr,"done waiting for lock\n");
+     //smdbprintf("done waiting for lock\n");
    }
       
    winlock[winnum]++;
@@ -1378,10 +1378,7 @@ while (winlock[winnum] > 0) {
    size = flength[f];
 
    pthread_mutex_unlock(&winmut[winnum]);
-#ifdef SM_VERBOSE
-printf("returning frame pointer %p\n", frame);
-fflush(stdout);
-#endif
+   smdbprintf("returning frame pointer %p\n", frame);
    return(frame);
 }
 
@@ -1422,7 +1419,7 @@ void smBase::closeFile(void)
   	arr[3] = framesizes[0][0];
    	arr[4] = framesizes[0][1];
 	arr[5] = nresolutions;
-	//fprintf(stderr,"nresolutions = %d\n",nresolutions);
+	//smdbprintf("nresolutions = %d\n",nresolutions);
 	for(i=0;i<nresolutions;i++) {
 		arr[i+6] = (tilesizes[i][1] << 16) | tilesizes[i][0];
 	}
@@ -1437,7 +1434,7 @@ void smBase::closeFile(void)
    	WRITE(fd[0], flength, sizeof(u_int)*nframes*nresolutions);
    	byteswap(flength,sizeof(u_int)*nframes*nresolutions,sizeof(u_int));
 
-	//fprintf(stderr,"seek header end is %d\n",LSEEK64(fd[0], 0, SEEK_CUR));
+	//smdbprintf("seek header end is %d\n",LSEEK64(fd[0], 0, SEEK_CUR));
 	CLOSE(fd[0]);
    }
 	
