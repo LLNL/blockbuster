@@ -66,16 +66,26 @@
 #include <sys/time.h>
 #include <iostream>
 #include <iomanip>
+#include <string>
+#include "stringutil.h"
 
-class timer; 
-extern timer gTimer; 
-//#define TIMER_PRINT DEBUGMSG
+// Example: 
+//   if (0) cerr << gTimer.mHostname << ": " << name ", line " << __LINE__ << ": " << gTimer << endl;  
+//===============================================
+// Here is a nice quick way to do it, which does not require a global member 
+static std::string GetExactSeconds(void) {
+  struct timeval t; 
+  gettimeofday(&t, NULL); 
+  //return QTime::currentTime().toString("ssss.zzz").toStdString(); 
+  std::string s = doubleToString(t.tv_sec + (double)t.tv_usec/1000000.0, 3);
+  int first = s.size() -8; 
+  if (first<0) first = 0; 
+  return s.substr(first, 8); 
+}
 
-#define TIMER_PRINT(name)                                               \
-  if (0) cerr << gTimer.mHostname << ": " << name ", line " << __LINE__ << ": " << gTimer << endl;  
+// And here is my class-based method, which I stole from someone else.  
 
-
-int Progress(timer &iTimer, double iNum, double iMax, 
+int Progress(class timer &iTimer, double iNum, double iMax, 
 			 double &oPercent, double iPercentDelta, 
 			 double &oTime, double iTimeDelta, char *iMsg);
 
