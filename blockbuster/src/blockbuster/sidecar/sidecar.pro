@@ -23,7 +23,7 @@ HEADERS = sidecar.h  Prefs.h RemoteControl.h \
            ../Lockables.h \
            ../MovieCues.h \
            ../settings.h \
-           ../stringutil.h \
+           ../../common/stringutil.h \
            ../timer.h
            
 FORMS = ../BlockbusterControl.ui \
