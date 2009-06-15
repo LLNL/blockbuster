@@ -79,11 +79,8 @@ SOURCES = main.cpp sidecar.cpp MovieCues.cpp events.cpp Prefs.C RemoteControl.cp
 HEADERS = sidecar.h MovieCues.h events.h common.h settings.h Prefs.h
 FORMS = MovieCueWidget.ui BlockbusterControl.ui InfoWindow.ui sidecar.ui blockbusterLaunchDialog.ui
 UI_HEADERS = ui_MovieCueWidget.h ui_BlockbusterControl.h ui_InfoWindow.h ui_sidecar.h ui_blockbusterLaunchDialog.h
-xxCOPYFILES = MovieCues.cpp InfoWindow.ui events.cpp MovieCues.h events.h common.cpp common.h settings.h stringutil.h MovieCueWidget.ui BlockbusterControl.ui  Lockables.h  timer.h images images.qrc
 
-xxsidecar.pro : $(FORMS)
-		$(QMAKE) -project 'LIBS +=  $(LDFLAGS) -L$(INSTALL_DIR)/lib   -lsmovie $(TIFF_LIBS) $(PNG_LIBS) $(JPEG_LIBS)' "INCLUDEPATH += libdmx  $(INSTALL_DIR)/include" "MAKEFILE = Makefile.qt.include" "$(QT)" "DEFINES += $(DEBUG) NO_BOOST" "FORMS = $(FORMS)" "HEADERS = $(HEADERS)" "$(DEBUG_QT)" "QMAKE_PRE_LINK  = export DYLD_IMAGE_SUFFIX=_debug" "$(RELEASE_QT)" "RESOURCES += images.qrc" $(SOURCES) 
-
+# NOTE:  Modify sidecar.pro by hand, to avoid picking up all of ../blockbuster or something .  
 
 Makefile.qt.include: 
 	$(QMAKE) 
@@ -115,7 +112,6 @@ $(sidecar): Makefile.qt.include FORCE $(UI_HEADERS) $(COPYFILES)
 	$(MAKE)  -f Makefile.qt
 	cp -r $(sidecar) $(INSTALL_DIR)/bin/
 
-project: sidecar.pro 
 
 clean:
 	rm -rf sidecar  ui_*.h Makefile.qt.include moc_*cpp *.o $(xxCOPYFILES)
