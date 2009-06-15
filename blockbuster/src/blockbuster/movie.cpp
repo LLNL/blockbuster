@@ -42,6 +42,9 @@
 #include "dmxglue.h"
 #include "../libpng/pngsimple.h"
 #include <libgen.h>
+
+#define TIMER_PRINT DEBUGMSG
+
 /*********************************************************************/
 /* Modular expandability section.  Here we create references to all
  * the external modules (i.e., UserInterface modules)
@@ -249,7 +252,6 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   bool fullScreen = false, zoomOne = false; 
   MovieSnapshot oldSnapshot; 
 
-  gTimer.start(); 
 
   while(! done) {
     TIMER_PRINT("loop start"); 
