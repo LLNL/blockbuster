@@ -187,7 +187,7 @@ void Message(const char *format,...)
       struct timeval t; 
       gettimeofday(&t, NULL); 
         // TIME EVERYTHING! 
-      QString timestring = QString("%1").arg(t.tv_sec + (double)t.tv_usec/1000000.0, 0, 'f', 3); 
+      QString timestring = QString("%1").arg(t.tv_sec + (double)t.tv_usec/1000000.0, 0, 'f', 3).right(8); 
 #else
       QString timestring = "(not computed)"; 
 #endif 
