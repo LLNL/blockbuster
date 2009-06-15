@@ -131,7 +131,7 @@ static void gl_Render(Canvas *canvas, int frameNumber,
 
 
   TIMER_PRINT("Pull the image from our cache "); 
-  image = GetImageFromCache(canvas->imageCache, localFrameNumber, &region, lod);
+  image = canvas->imageCache->GetImage(localFrameNumber, &region, lod);
   TIMER_PRINT("Got image"); 
   if (image == NULL) {
     /* error has already been reported */
@@ -209,7 +209,7 @@ static void gl_Render(Canvas *canvas, int frameNumber,
   glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
 
   /* Have to release the image, or the cache will fill up */
-  ReleaseImageFromCache(canvas->imageCache, image);
+  canvas->imageCache->ReleaseImage(image);
   TIMER_PRINT("gl_Render end"); 
 }
 
@@ -289,7 +289,7 @@ static void gl_RenderStereo(Canvas *canvas, int frameNumber,
   zoom *= (float) lodScale;
 
   /* Pull the image from our cache */
-  image = GetImageFromCache(canvas->imageCache, localFrameNumber, &region, lod);
+  image = canvas->imageCache->GetImage(localFrameNumber, &region, lod);
 
   if (image == NULL) {
     /* error has already been reported */
@@ -365,7 +365,7 @@ static void gl_RenderStereo(Canvas *canvas, int frameNumber,
   glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
 
   /* Have to release the image, or the cache will fill up */
-  ReleaseImageFromCache(canvas->imageCache, image);
+  canvas->imageCache->ReleaseImage(image);
 
   if(canvas->frameList->stereo) {
 
@@ -373,7 +373,7 @@ static void gl_RenderStereo(Canvas *canvas, int frameNumber,
         localFrameNumber++;
 
         /* Pull the image from our cache */
-        image = GetImageFromCache(canvas->imageCache, localFrameNumber, &region, lod);
+        image = canvas->imageCache->GetImage(localFrameNumber, &region, lod);
         if (image == NULL) {
           /* error has already been reported */
           return;
@@ -431,7 +431,7 @@ static void gl_RenderStereo(Canvas *canvas, int frameNumber,
         glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
 
         /* Have to release the image, or the cache will fill up */
-        ReleaseImageFromCache(canvas->imageCache, image);
+        canvas->imageCache->ReleaseImage(image);
         
   }
 

@@ -309,7 +309,7 @@ static void gltexture_Render(Canvas *canvas,
     zoom *= (float) lodScale;
 
     /* Pull the image from our cache */
-    image = GetImageFromCache(canvas->imageCache, localFrameNumber, &region, lod);
+    image = canvas->imageCache->GetImage( localFrameNumber, &region, lod);
     if (image == NULL) {
 	/* error has already been reported */
 	return;
@@ -623,7 +623,7 @@ static void gltexture_Render(Canvas *canvas,
     }
 
     /* Have to release the image, or the cache will fill up */
-    ReleaseImageFromCache(canvas->imageCache, image);
+    canvas->imageCache->ReleaseImage( image);
 
     glDisable(GL_TEXTURE_2D);
 }
