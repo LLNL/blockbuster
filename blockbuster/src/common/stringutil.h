@@ -11,9 +11,9 @@ using namespace std;
 #define errout if (0) cerr
 #define rcdebug5 if (0) cerr
 // ===========================================
-// and here is a nice utility function 
+// and here is a nice utility function
 // I don't know if it really belongs here, but for now...  
-static string GetHostname(void) {
+inline string GetHostname(void) {
   static string hostname; 
   if (hostname == "") {
     char buf[2048]; 
