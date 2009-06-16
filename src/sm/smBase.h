@@ -50,6 +50,8 @@
 #define off64_t __int64
 #endif
 
+#include <vector>
+
 //#define DISABLE_PTHREADS 1
 #ifndef DISABLE_PTHREADS
 #include <pthread.h>
@@ -92,6 +94,13 @@ typedef struct {
   u_int skipCorruptFlag;
 } tileOverlapInfo_t;
 
+// rethinking the mutex scheme -- we do not need mutexes
+struct smThreadData {
+  std::vector<u_char> tile_buf; // for reading tiles; 
+  std::vector<u_char> io_buf;  // for reading chunks from files
+  std::vector <uint32_t> tile_offsets; 
+}; 
+  
 class smBase {
    public:
       smBase(const char *fname);
@@ -202,7 +211,7 @@ class smBase {
       u_int nresolutions;
 
       // image size
-      u_int framesizes[8][2];
+      u_int framesizes[8][2]; // 8 is the limit on LOD apparently. 
       // size of the tiles...
       u_int tilesizes[8][2];
       u_int tileNxNy[8][2];
@@ -229,24 +238,30 @@ class smBase {
       // number of frames the buffer of compressed frames can store
       static u_int nwin;
 
+      /*!
+        Per-thread data structures, to ensure thread safety.  Every function must now specify a thread number. 
+      */ 
+      std::vector<smThreadData> mThreadData; 
+
+       
       // "windowing" mutex set
       pthread_mutex_t *winmut;
       pthread_cond_t *wincond;
-      int *curwin;
+      int *currentFrame; // WTF?  
       u_int *winlock;
       void **win;
-
+      
       // writelock mutex
       pthread_mutex_t writelock;
-
+      
       // directory of movie types
       static u_int ntypes;
       static u_int *typeID;
       static smBase *(**smcreate)(const char *, int);
 
-      // direct-io
-      void **dio_buf;
-      void **dio_free;
+      // direct-io -- oh, the irony-- not used at all.  ever. 
+        void **dio_buf;
+        void **dio_free;
       int dio_mem;
       int dio_min;
       int dio_max;
