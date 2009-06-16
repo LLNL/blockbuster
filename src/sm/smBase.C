@@ -97,7 +97,7 @@ const int DIO_DEFAULT_SIZE = 1024L*1024L*4;
 
 //===============================================
 // debug print statements
-//#define SM_VERBOSE 1
+#define SM_VERBOSE 1
 //#undef  SM_VERBOSE
 static int smVerbose = 0; 
 void sm_setVerbose(int level) {
@@ -195,8 +195,8 @@ smBase::smBase(const char *_fname)
    smdbprintf(5,"smBase constructor : nwin %d",nwin);
    winlock = (u_int *)calloc(sizeof(u_int) , nwin);
    CHECK(winlock);
-   curwin = (int *)calloc(sizeof(int) , nwin);
-   CHECK(curwin);
+   currentFrame = (int *)calloc(sizeof(int) , nwin);
+   CHECK(currentFrame);
    win = (void **)calloc(sizeof(void *) , nwin);
    CHECK(win);
    dio_buf = (void **)calloc(sizeof(void *) , nwin);
@@ -216,7 +216,7 @@ smBase::smBase(const char *_fname)
    fd = (int *)calloc(sizeof(int) , nwin);
    CHECK(fd);
    for (i=0; i<nwin; i++) {
-      curwin[i] = -1;
+      currentFrame[i] = -1;
       win[i] = NULL;
       dio_buf[i] = NULL;
       dio_free[i] = NULL;
@@ -229,37 +229,10 @@ smBase::smBase(const char *_fname)
 
    if (_fname != NULL) {
       fname = strdup(_fname);
-#ifdef SM_DIO
-      int	use_dio = 1;
-      for (i=0; i<nwin; i++) {
-         fd[i] = OPEN(fname, O_RDONLY | O_DIRECT);
-	 if ((!fd[i]) || (fd[i] == -1)) {
-	    use_dio = 0;
-            fd[i] = OPEN(fname, O_RDONLY);
-	 }
-      }
-      // If the filesystem (e.g. NFS) does not support DIRECT_IO
-      // default to normal I/O modes w/fake direct values
-      dio_mem = 0;
-      dio_min = 1;
-      dio_max = DIO_DEFAULT_SIZE;
-      if (use_dio) {
-         struct dioattr d;
-         if (fcntl(fd[0], F_DIOINFO, &d) == 0) {
-             dio_mem = d.d_mem;
-             dio_min = d.d_miniosz;
-             dio_max = d.d_maxiosz;
-         }
-      }
-
-      smdbprintf(5,"dio: mem %d min %d max %d", dio_mem, dio_min, dio_max);
-
-#else
       for (i=0; i<nwin; i++) fd[i] = OPEN(fname, O_RDONLY);
       dio_mem = 0;
       dio_min = 1;
       dio_max = DIO_DEFAULT_SIZE;
-#endif
       readHeader();
       initWin(); // only does something for version 1.0
    }
@@ -299,7 +272,7 @@ smBase::~smBase()
    free(tile_offsets);
    free(tile_info);
    free(win);
-   free(curwin);
+   free(currentFrame);
    free(winlock);
    free(foffset);
    free(flength);
@@ -601,7 +574,7 @@ void smBase::initWin(void)
    if(getVersion() == 1) {
      for (i=0; i<nwin; i++) {
        readWin(i);
-       curwin[i] = i;
+       currentFrame[i] = i;
      }
    }
 }
@@ -1330,9 +1303,9 @@ void *smBase::lockFrame(u_int f, u_int &size)
 
    pthread_mutex_lock(&winmut[winnum]);
 
-   smdbprintf(5,"locking frame %d for curwin[winnum] = %d\n", f,curwin[winnum]);
+   smdbprintf(5,"locking frame %d for currentFrame[winnum] = %d\n", f,currentFrame[winnum]);
 
-   if (curwin[winnum] != f) {
+   if (currentFrame[winnum] != f) {
      smdbprintf(5,"blocking for window %d (%d)\n", winnum, f);
      while (winlock[winnum] > 0) {
 #ifdef DISABLE_PTHREADS
@@ -1341,14 +1314,14 @@ void *smBase::lockFrame(u_int f, u_int &size)
        pthread_cond_wait(&wincond[winnum], &winmut[winnum]);
 #endif
        // check to see if window index has changed
-       if (curwin[winnum] == f)
+       if (currentFrame[winnum] == f)
          break;
      }
      //smdbprintf(5,"done waiting for winnum %d f %d\n",winnum,f);
       // maybe another thread already paged in the window
-      if (curwin[winnum] != f) {
+      if (currentFrame[winnum] != f) {
          readWin(f);
-         curwin[winnum] = f;
+         currentFrame[winnum] = f;
       }
    }
    smdbprintf(5,"have lock w=%d\n", f);
@@ -1384,8 +1357,8 @@ void *smBase::lockFrame(u_int f, u_int &size, int *dim, int* pos, int res)
    }
    
    winlock[winnum]++;
-   if (curwin[winnum] != f) {
-     curwin[winnum] = f;
+   if (currentFrame[winnum] != f) {
+     currentFrame[winnum] = f;
    }
    readWin(f,dim,pos,res);
    
