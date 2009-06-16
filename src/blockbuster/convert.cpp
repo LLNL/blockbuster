@@ -117,6 +117,7 @@ Image *ConvertImageToFormat(const Image *image, Canvas *canvas)
      * here, we're unoptimized, so now just do as complete a job
      * as possible, without worrying about efficiency.
      */
+  DEBUGMSG("ConvertImageToFormat"); 
     Image *destImage;
     const ImageFormat *srcFormat = &image->imageFormat;
     const ImageFormat *destFormat = &canvas->requiredImageFormat;
@@ -220,6 +221,7 @@ Image *ConvertImageToFormat(const Image *image, Canvas *canvas)
        destImage->imageFormat.rowOrder = image->imageFormat.rowOrder;
     bb_assert(destImage->imageFormat.rowOrder != ROW_ORDER_DONT_CARE);
     destImage->loadedRegion = image->loadedRegion;
+    DEBUGMSG("Done with ConvertImageToFormat"); 
     return destImage;
 }
 
