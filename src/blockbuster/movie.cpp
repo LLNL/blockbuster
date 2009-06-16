@@ -43,7 +43,6 @@
 #include "../libpng/pngsimple.h"
 #include <libgen.h>
 
-#define TIMER_PRINT DEBUGMSG
 
 /*********************************************************************/
 /* Modular expandability section.  Here we create references to all
