@@ -63,6 +63,7 @@
 #endif
 
 //#define SM_VERBOSE
+void sm_setVerbose(int level);  // 0-5, 0 is quiet, 5 is verbose
 
 // On top of the movie "type".  Room for 256 "types".
 #define SM_FLAGS_MASK	0xffffff00
