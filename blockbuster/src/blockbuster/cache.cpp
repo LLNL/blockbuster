@@ -104,6 +104,8 @@ void CachePreload(Canvas *canvas, uint32_t frameNumber, const Rectangle *imageRe
 static Image *LoadAndConvertImage(FrameInfo *frameInfo, unsigned int frameNumber,
 	Canvas *canvas, const Rectangle *region, int levelOfDetail)
 {
+  CACHEDEBUG("LoadAndConvertImage frame %d", frameNumber); 
+
     Image *image, *convertedImage;
     int rv;
     static int conversionCount = 0;
@@ -117,9 +119,11 @@ static Image *LoadAndConvertImage(FrameInfo *frameInfo, unsigned int frameNumber
     }
     image->ImageDeallocator = DefaultImageDeallocator;
 
+    DEBUGMSG("LoadImage being called"); 
     /* Call the file format module to load the image */
     rv = (*frameInfo->LoadImage)(image, frameInfo, canvas,
                                  region, levelOfDetail);
+    DEBUGMSG("LoadImage done"); 
 
     if (!rv) {
 	ERROR("could not load frame %d (frame %d of file name %s) for the cache",
@@ -170,6 +174,7 @@ static Image *LoadAndConvertImage(FrameInfo *frameInfo, unsigned int frameNumber
     }
 
     /* If we have a NULL image, the converter already reported it. */
+    CACHEDEBUG("Done with LoadAndConvertImage, frame %d", frameNumber); 
     return image;
 }
 
@@ -253,7 +258,7 @@ void CacheThread::run() {
 	 * NULL image comes back, we have to record it, so that the 
 	 * boss thread can return.
 	 */
-    CACHEDEBUG("Worker thread calling LoadAndConvertImage"); 
+    CACHEDEBUG("Worker thread calling LoadAndConvertImage for frame %d", job->frameNumber); 
 	image = LoadAndConvertImage(&job->frameInfo,
 	    job->frameNumber, this->cache->mCanvas, &job->region, job->levelOfDetail);
 
@@ -261,7 +266,8 @@ void CacheThread::run() {
 	 * modifying caches and queues.  We always will have to remove
 	 * the job from the PendingQueue.
 	 */
-    this->cache->lock(__FILE__, __LINE__); // this should already be locked here
+    this->cache->lock(__FILE__, __LINE__); 
+
 	this->cache->RemoveJobFromPendingQueue(job);
 
 	/* First see if this request has been invalidated (because the
@@ -321,11 +327,11 @@ void CacheThread::run() {
         this->cache->WakeAllJobDone(__FILE__, __LINE__); 
 	    delete (job);
 
-            /* Fairness among threads is greatly improved by yielding here.
-             * Without this, threads can frequently starve for a while and
-             * that causes prefetching to get out of order.
-             * XXX this probably isn't portable.
-             */
+        /* Fairness among threads is greatly improved by yielding here.
+         * Without this, threads can frequently starve for a while and
+         * that causes prefetching to get out of order.
+         * XXX this probably isn't portable.
+         */
         CACHEDEBUG("sched_yield"); 
         sched_yield();
 	}
@@ -702,7 +708,7 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
   //    int rv;
   Rectangle region = *newRegion;
   
-  CACHEDEBUG("GetImageFromCache %d\n",frameNumber); 
+  CACHEDEBUG("ImageCache::GetImage frame %d\n",frameNumber); 
   
   /* Keep track of highest frame number.  We need it for cache
    * replacement.
@@ -911,7 +917,7 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
        imageSlot = cachedImage;
     }
     else {
-#if DEBUG
+#if 0 && DEBUG
 	/* this image better not already be in the cache! */
 	int i;
 	CachedImage *img;
