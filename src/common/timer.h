@@ -69,11 +69,9 @@
 #include <string>
 #include "stringutil.h"
 
-// Example: 
-//   if (0) cerr << gTimer.mHostname << ": " << name ", line " << __LINE__ << ": " << gTimer << endl;  
 //===============================================
 // Here is a nice quick way to do it, which does not require a global member 
-static std::string GetExactSeconds(void) {
+inline std::string GetExactSeconds(void) {
   struct timeval t; 
   gettimeofday(&t, NULL); 
   //return QTime::currentTime().toString("ssss.zzz").toStdString(); 
@@ -84,6 +82,8 @@ static std::string GetExactSeconds(void) {
 }
 
 // And here is my class-based method, which I stole from someone else.  
+// Example: 
+//  cerr << gTimer.mHostname << ": " << name ", line " << __LINE__ << ": " << gTimer << endl;  
 
 int Progress(class timer &iTimer, double iNum, double iMax, 
 			 double &oPercent, double iPercentDelta, 
