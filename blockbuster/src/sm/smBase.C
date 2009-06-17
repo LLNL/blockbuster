@@ -32,7 +32,7 @@
 
 
 //
-// smBase.C - base class for "streamed movies"
+//! smBase.C - base class for "streamed movies"
 //
 
 #define DMALLOC 1
@@ -69,26 +69,6 @@
 #endif
 
 
-#ifdef DISABLE_PTHREADS
-#warning pthreads disabled
-void fake_mutexer(char *c, int i=0, int j=0) {
-  i=j=*c;
-  return; 
-}
-void fake2(char *, char *) {
-  return; 
-}
-#define pthread_cond_init fake_mutexer
-#define pthread_cond_wait fake2
-#define pthread_cond_destroy fake_mutexer
-#define pthread_cond_broadcast fake_mutexer
-#define pthread_cond_signal fake_mutexer
-#define pthread_mutex_init fake_mutexer
-#define pthread_mutex_lock fake_mutexer
-#define pthread_mutex_unlock fake_mutexer
-#define pthread_mutex_destroy fake_mutexer
-
-#endif // end test for DISABLE_PTHREADS
  
 const int SM_MAGIC_1=SM_MAGIC_VERSION1;
 const int SM_MAGIC_2=SM_MAGIC_VERSION2;
@@ -97,8 +77,12 @@ const int DIO_DEFAULT_SIZE = 1024L*1024L*4;
 #define SM_HDR_SIZE 64
 
 
-//===============================================
-// debug print statements
+/*!
+  ===============================================
+  debug print statements, using smdbprintf, which 
+  output the file, line, time of execution for each statement. 
+  Incredibly useful
+*/ 
 #define SM_VERBOSE 1
 //#undef  SM_VERBOSE
 static int smVerbose = 0; 
@@ -159,7 +143,11 @@ static void  byteswap(void *buffer,off64_t len,int swapsize);
 static void Sample2d(unsigned char *in,int idx,int idy,
 		     unsigned char *out,int odx,int ody,
 		     int s_left,int s_top,int s_dx,int s_dy,int filter);
-
+//!  The init() routine must be called before using the SM library
+/*!
+  init() just gets the subclasses ready, which registers them with the 
+  smcreate() factory function used in openFile()
+*/ 
 void smBase::init(void)
 {
   static int initialized = 0; 
@@ -177,7 +165,11 @@ void smBase::init(void)
 }
 
 //----------------------------------------------------------------------------
-// smBase - constructor initializes the synchronization primitives
+//! smBase - constructor initializes the synchronization primitives
+/*!
+  \param _fname filename of the sm file to read/write
+  \param numthreads number of independent buffers to create for thread safety
+*/
 //
 //----------------------------------------------------------------------------
 smBase::smBase(const char *_fname, int numthreads)
@@ -212,7 +204,10 @@ smBase::smBase(const char *_fname, int numthreads)
 }
 
 //----------------------------------------------------------------------------
-// ~smBase - destructor
+//! ~smBase - destructor
+/*!
+  closes the file and frees the name...
+*/ 
 //
 //----------------------------------------------------------------------------
 smBase::~smBase()
@@ -225,7 +220,13 @@ smBase::~smBase()
 }
 
 //----------------------------------------------------------------------------
-// openFile - open a file of unknown compression type
+//! openFile - open an SM file of unknown compression type
+/*!
+  Looks at the magic cookie in the file, then calls the smcreate() 
+  factory routine to generate the correct class.  
+  \param _fname filename of the sm file to read/write
+  \param numthreads number of independent buffers to create for thread safety
+*/
 //
 //----------------------------------------------------------------------------
 smBase *smBase::openFile(const char *_fname, int numthreads)
@@ -268,6 +269,11 @@ smBase *smBase::openFile(const char *_fname, int numthreads)
    return(base);
 }
 
+//! convenience function
+/*!
+  \param fp FILE * to the file containing the frame
+  \param f frame number
+*/ 
 void smBase::printFrameDetails(FILE *fp,int f)
 {
    if ((f < 0) || (f >= nframes*nresolutions)) {
@@ -282,6 +288,15 @@ void smBase::printFrameDetails(FILE *fp,int f)
    return;
 }
 
+//! Create a new SM File for writing
+/*!
+  \param _fname name of the file
+  \param _width Width of the movie frames
+  \param _height Height of the movie frames
+  \param _nframes number of movie frames
+  \param _tsizes size of tiles for each resolution, laid out as xyxyxy
+  \param _nres  number of resolutions (levels of detail)
+*/
 int smBase::newFile(const char *_fname, u_int _width, u_int _height, 
 	u_int _nframes, u_int *_tsizes, u_int _nres)
 {
@@ -332,13 +347,19 @@ int smBase::newFile(const char *_fname, u_int _width, u_int _height,
 	   nframes*nresolutions*(sizeof(off64_t)+sizeof(u_int));
    flength = (u_int *)calloc(sizeof(u_int),nframes*nresolutions);
    CHECK(flength);
-   seekToFrame(mThreadData[0].fd, 0);
+   if (LSEEK64(mThreadData[0].fd, foffset[0], SEEK_SET) < 0)
+     smdbprintf(0, "Error seeking to frame 0\n");
 
    bModFile = TRUE;
 
    return(0);
 }
-
+//! register a subclass as a possible compression method for SM
+/*!
+  \param id a unique ID for the type which can be used to identify the file type. 
+  \param create  A factory function that returns the subclass 
+  \bug The create function smells funny to me, but it works. 
+*/ 
 void smBase::registerType(u_int id, smBase *(*create)(const char *, int))
 {
    if (ntypes == 0) {
@@ -362,16 +383,11 @@ void smBase::registerType(u_int id, smBase *(*create)(const char *, int))
    ntypes++;
 }
 
-void smBase::seekToFrame(int fd, u_int f)
-{
-  
-  off64_t offset = foffset[f];
-
-  if (LSEEK64(fd, offset, SEEK_SET) < 0)
-    smdbprintf(0, "Error seeking to frame %d\n", f);
-}
-
-
+//! Get the juicy goodness of the header and store the info internally
+/*!
+  Information collected includes frame sizes, tile sizes, file size, 
+  used extensively in reading and decompressing frames later. 
+*/   
 void smBase::readHeader(void)
 {
    int lfd;
@@ -496,6 +512,10 @@ void smBase::readHeader(void)
    return; 
 }
 
+/*!
+  Frankly, this function is a mystery to me.  
+  It's used for SM version 1 files.
+*/
 void smBase::initWin(void)
 {
   u_int i;
@@ -530,6 +550,11 @@ int smBase::readData(int fd, u_char *buf, int bytes) {
   return bytes-remaining; 
 }
 
+/*!
+  Reads a frame.  Poorly named.
+  \param f The frame to read
+  \param threadnum A zero-based thread id.  Threadnum must be less than numthreads.  No other thread should be using this threadnum, as there is one buffer per thread and collisions can happen. 
+*/
 void smBase::readWin(u_int f, int threadnum)
 {
   if (mThreadData[threadnum].currentFrame == f) {
@@ -564,6 +589,14 @@ void smBase::readWin(u_int f, int threadnum)
 
 
 
+//!  Reads a frame.  Poorly named.
+/*!
+  \param f The frame to read
+  \param dim XY dimensions of the region of interest
+  \param pos XY position of the region of interest
+  \param res resolution desired (level of detail)
+  \param threadnum A zero-based thread id.  Threadnum must be less than numthreads.  No other thread should be using this threadnum, as there is one buffer per thread and collisions can happen. 
+*/
 void smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
 {
   // version 2 implied -- reads in only overlapping tiles 
@@ -676,7 +709,13 @@ void smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
   mThreadData[threadnum].currentFrame = f; 
   return; 
 }
-
+//!  Tile overlap tells us which tiles in the frame overlap our region of interest (ROI).
+/*!
+  \param blockDim dimensions of the frame data
+  \param blockPos where in the block data is our ROI
+  \param res the resolution (level of Detail)
+  \param info the output information
+*/ 
 void smBase::computeTileOverlap(int *blockDim, int* blockPos, int res, tileOverlapInfo *info)
 {
   int nx = getTileNx(res);
@@ -786,13 +825,30 @@ void smBase::computeTileOverlap(int *blockDim, int* blockPos, int res, tileOverl
 // Core frame functions
 //-----------------------------------------------------------
 
-/* this is now just a wrapper for getFrameBlock() */
+//! Convenient wrapper for getFrameBlock(), when you want the whole Frame.
+/*!
+  \param f frame number
+  \param data an appropriately allocated pointer to receive the data, based on the size and resolution of the region of interest.
+  \param threadnum A zero-based thread id.  Threadnum must be less than numthreads.  No other thread should be using this threadnum, as there is one buffer per thread and collisions can happen. 
+*/ 
 void smBase::getFrame(int f, void *data, int threadnum)
 {
   getFrameBlock(f,data, threadnum);
 }
 
-/* this function will "autores" the returned block based on "step" */
+//! Read a region of interest from the given frame of the movie. 
+/*!
+  This is where many CPU cycles will be spent when you are CPU bound.  Lots of pointer copies.  
+  This function will "autores" the returned block based on "step" 
+   \param f frame number
+  \param data an appropriately allocated pointer to receive the data, based on the size and resolution of the region of interest.
+  \param threadnum A zero-based thread id.  Threadnum must be less than numthreads.  No other thread should be using this threadnum, as there is one buffer per thread and collisions can happen. 
+  \param destRowStride The X dimension of the output buffer ("data"), to properly locate output stripes 
+  \param dim XY dimensions of the region of interest
+  \param pos XY position of the region of interest
+  \param res resolution desired (level of detail)
+*/
+ 
 void smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStride, int *dim, int *pos, int *step, int res)
 {
   smdbprintf(5,"smBase::getFrameBlock, frame %d, thread %d", f, threadnum); 
@@ -967,7 +1023,12 @@ void smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStride,
    return; 
  }
 
-
+//! Another poorly named function . Should be called "writeFrame", I think.
+/*!
+  Compress the data and calls helpers to write it out to disk. 
+  \param f the frame number
+  \param data frame data to write.
+*/ 
 void smBase::setFrame(int f, void *data)
 {
    int i,tile,size;
@@ -1060,6 +1121,14 @@ void smBase::setFrame(int f, void *data)
    return;
 }
 
+//! Should probably be called "writeCompFrame"
+/*!
+  Writes an already-compressed set of data to the file. 
+  \param f the frame number
+  \param data the compressed data
+  \param size size of the frame in the data buffer to write
+  \param res the resolution of level of detail (determines location in file)
+*/
 void smBase::setCompFrame(int f, void *data, int size, int res)
 {
    foffset[f+res*getNumFrames()] = LSEEK64(mThreadData[0].fd,0,SEEK_CUR);
@@ -1071,6 +1140,14 @@ void smBase::setCompFrame(int f, void *data, int size, int res)
 }
 
 
+//! Should probably be called "writeCompFrameTiles"
+/*!
+  Writes an already-compressed set of frame tiles to the file. The difference is that here the sizes are tile sizes, not frame size.  
+  \param f the frame number
+  \param data the compressed data
+  \param sizes sizes of the tiles in the buffer to write
+  \param res the resolution of level of detail (determines location in file)
+*/
 void smBase::setCompFrame(int f, void *data, int *sizes, int res)
 {
   uint32_t tz;
@@ -1103,8 +1180,15 @@ void smBase::setCompFrame(int f, void *data, int *sizes, int res)
 }
 
 
-// return the compressed frame (if data==NULL return the size)
-void smBase::getCompFrame(int frame, int threadnum, void *data, int &rsize, int res)
+//! return the compressed frame (if data==NULL return the size)
+/*!
+  \param f frame number
+  \param threadnum A zero-based thread id.  Threadnum must be less than numthreads.  No other thread should be using this threadnum, as there is one buffer per thread and collisions can happen. 
+  \param data an appropriately allocated pointer to receive the data, based on the size and resolution of the region of interest.
+  \param rsize output parameter that tells you how much data was read
+  \param res resolution desired (level of detail)
+*/
+void smBase::getCompFrame(int frame, int threadnum, void *data, int &rsize, int res) 
 {
    u_int size;
    void *cdata;
@@ -1118,11 +1202,23 @@ void smBase::getCompFrame(int frame, int threadnum, void *data, int &rsize, int 
 
    return;
 }
+//! Convenience function for external programs
+/*!
+  \param frame frame number
+  \param res resolution (level of Detail)
+*/
 int smBase::getCompFrameSize(int frame, int res)
 {
 	return(flength[frame+res*getNumFrames()]);
 }
 
+//! Wrapper around compBlock, compresses a frame as a single block
+/*!
+  \param in uncompressed data
+  \param out compressed result
+  \param outsize size of compressed data
+  \param res resolution (level of detail)
+*/ 
 void smBase::compFrame(void *in, void *out, int &outsize, int res)
 {
    int dim[2];
@@ -1144,6 +1240,13 @@ void smBase::compFrame(void *in, void *out, int &outsize, int res)
 }
 
 
+//! Wrapper around compBlock, compresses a frame as a set of tiles
+/*!
+  \param in uncompressed data
+  \param out compressed result
+  \param outsizes sizes of compressed tiles in outbuffer
+  \param res resolution (level of detail)
+*/ 
 void smBase::compFrame(void *in, void *out, int *outsizes, int res)
 {
    int dim[2];
@@ -1253,7 +1356,12 @@ void smBase::closeFile(void)
    }
 	
 }
-
+//! convenience function
+/*!
+  \param buffer data to swap
+  \param len length of buffer
+  \param swapsize size of each word in the buffer
+*/
 static void  byteswap(void *buffer,off64_t len,int swapsize)
 {
         off64_t num;
@@ -1299,12 +1407,18 @@ static void  byteswap(void *buffer,off64_t len,int swapsize)
         return;
 }
 
+//! Convolvement (see Google if you don't know what that is)
+/*!
+  smooth along X scanlines using 242 kernel 
+  \param image the data to smooth 
+  \param dx  fineness in X
+  \param dy finness in Y
+*/
 static void smoothx(unsigned char *image, int dx, int dy)
 {
         register int x,y;
 	int	p1[3],p2[3],p3[3];
 
-/* smooth along X scanlines using 242 kernel */
         for(y=0;y<dy;y++) {
                 p1[0] = image[(y*dx)*3+0];
                 p1[1] = image[(y*dx)*3+1];
@@ -1335,6 +1449,13 @@ static void smoothx(unsigned char *image, int dx, int dy)
         return;
 }
 
+//! Convolvement (see Google if you don't know what that is)
+/*!
+  smooth along Y scanlines using 242 kernel 
+  \param image the data to smooth 
+  \param dx  fineness in X
+  \param dy finness in Y
+*/
 static void smoothy(unsigned char *image, int dx, int dy)
 {
         register int x,y;
@@ -1371,6 +1492,20 @@ static void smoothy(unsigned char *image, int dx, int dy)
         return;
 }
 
+//! Subsample the data
+/*!
+  \param in input buffer
+  \param idx subsampling in X
+  \param idy subsampling in Y
+  \param out output 
+  \param odx X subsampling to output ?
+  \param ody Y subsampling to output ?
+  \param s_left location to start
+  \param s_top location to start
+  \param s_dx ?
+  \param s_dy ?
+  \param filter ? 
+*/
 static void Sample2d(unsigned char *in,int idx,int idy,
         unsigned char *out,int odx,int ody,
         int s_left,int s_top,int s_dx,int s_dy,int filter)
