@@ -195,7 +195,8 @@ void Message(const char *format,...)
       errmsg += QString(" [%1:%2() line %3, thread %4, time=%5]")
         .arg(theMessage.file).arg( theMessage.function)
         .arg(QString::number(theMessage.line))
-        .arg((long)QThread::currentThread())
+        //.arg((long)QThread::currentThread())
+        .arg(GetCurrentThreadID())
         .arg(timestring);       
     }
     cerr << errmsg.toStdString() << endl;     

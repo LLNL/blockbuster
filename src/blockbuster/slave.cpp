@@ -53,6 +53,7 @@ using namespace std;
 */
 Slave::Slave(ProgramOptions *options):
   mOptions(options), mSocketFD(0), mCanvas(NULL) {
+  resetFPS(); 
   SuppressMessageDialogs(); 
   DEBUGMSG("Slave() called"); 
   DEBUGMSG("useMPI is %d\n", mOptions->useMPI); 
@@ -246,6 +247,7 @@ bool Slave::LoadFrames(const char *files)
 	if (!mCanvas->frameList) {
 	  return false;
 	}
+    resetFPS(); 
 	return true;
 }
 
@@ -263,6 +265,30 @@ void Slave::SocketError(QAbstractSocket::SocketError ) {
 }
 
 //=========================================================
+void Slave::resetFPS(void) {
+  recentFrameCount = 0; 
+  recentStartTime = GetCurrentTime(); 
+  return; 
+}
+//=========================================================
+/*! 
+  Compute frames per second 
+*/ 
+void Slave::updateAndReportFPS(void) {
+  recentFrameCount++;
+  double currentTime = GetCurrentTime();
+  double elapsedTime = currentTime - recentStartTime;
+  if (elapsedTime >= 1.0) {
+    double fps = (double)recentFrameCount / elapsedTime;
+    DEBUGMSG( "Frame Rate: %g FPS\n", fps); 
+    /* reset timing info so we compute FPS over last 2 seconds */
+    recentStartTime = currentTime;
+    recentFrameCount = 0;
+  }
+  return; 
+}
+  
+  //=========================================================
 /*
  * When the movie player is operating in DMX slave mode, we'll take
  * our commands from the master instance of the player, rather than
@@ -272,8 +298,6 @@ int Slave::Loop(void)
 {
   DEBUGMSG("SlaveLoop (thread %p), mMasterSocket state %d", QThread::currentThread(), mMasterSocket.state()); 
   int argc = 0;
-  double fps = 0, recentEndTime, recentStartTime, elapsedTime;
-  long recentFrameCount = 0; 
   int32_t lastImageRendered = -1; 
   gCoreApp = new QApplication(argc, NULL); 
   bool idle = false; 
@@ -414,6 +438,7 @@ int Slave::Loop(void)
               // only swap if there is a valid frame  
               DEBUGMSG("frame %d: mCanvas->SwapBuffers", lastImageRendered); 
               mCanvas->SwapBuffers(mCanvas);
+              updateAndReportFPS(); 
             }
 #ifdef USE_MPI
             DEBUGMSG("frame %d: Finished MPI_Barrier", lastImageRendered); 
@@ -449,30 +474,6 @@ int Slave::Loop(void)
                continue; 
              }
           }
-          /*  else if (token == "Preload") {
-              if (messageList.size() != 7) {
-              SendError("Bad Preload message: "+message); 
-              continue; 
-              }
-              if (mCanvas->frameList) {			   
-              //Rectangle region;
-              qint32 frame;
-              bool ok = false; 
-              frame=messageList[1].toLong(&ok);
-              if (ok) currentRegion.x=messageList[2].toLong(&ok) ;
-              if (ok) currentRegion.y=messageList[3].toLong(&ok);
-              if (ok) currentRegion.width=messageList[4].toLong(&ok);
-              if (ok) currentRegion.height=messageList[5].toLong(&ok);
-              if (ok) lod=messageList[6].toLong(&ok); 
-              if (!ok) {
-              SendError("Bad Preload argument in message: "+message); 
-              continue; 
-              }
-              mCanvas->Preload(mCanvas, frame, &currentRegion, lod);
-              }
-
-              }// end "Preload"
-          */ 
           else if (token == "CreateCanvas") {
             if (messageList.size() != 8) {
               SendError("Bad CreateCanvas message: "+message); 
@@ -555,11 +556,12 @@ int Slave::Loop(void)
             }
             playFirstFrame = 0; 
             playLastFrame = mCanvas->frameList->numStereoFrames()-1; 
-          }// end "SetFrameList"
-          /* else if (token == "PlayForward") {
-             playStep = 1; 
-             }
-          */ 
+            /*!
+              Initialize frame rate computation
+            */ 
+            recentStartTime = GetCurrentTime(); 
+            recentFrameCount = 0;
+         }// end "SetFrameList"
           else {
             QString msg = QString("Bad message: ")+ message;
             SendError(msg);
@@ -636,19 +638,7 @@ int Slave::Loop(void)
 #endif
           /* send ack */
           // SendMessage(QString("SwapBuffers complete %1 %2").arg(messageList[1]).arg(messageList[2])); 
-          /*! 
-            Compute frames per second 
-          */ 
-          recentFrameCount++;
-          recentEndTime = GetCurrentTime();
-          elapsedTime = recentEndTime - recentStartTime;
-          if (elapsedTime >= 1.0) {
-            fps = (double) recentFrameCount / elapsedTime;
-            DEBUGMSG( "speedTest: Frame Rate: %g\n", fps); 
-            /* reset timing info so we compute FPS over last 2 seconds */
-            recentStartTime = GetCurrentTime();
-            recentFrameCount = 0;
-          }
+          updateAndReportFPS();         
         }
       } 
       /*! 

@@ -110,35 +110,42 @@ class CacheThread: public QThread {
      void PreloadImage(uint32_t frameNumber, 
                        const Rectangle *region, uint32_t levelOfDetail);
      void Print(void); 
-
-   void  lock(char *file="unknown file", int line=0) {
-      CACHEDEBUG("%s: %d: locking image cache", file, line); 
-      imageCacheLock.lock(); 
-    }
-    void unlock(char *file="unknown file", int line=0) {
-      CACHEDEBUG("%s: %d: unlocking image cache", file, line); 
-      imageCacheLock.unlock(); 
-      CACHEDEBUG("%s: %d: unlocked image cache", file, line); 
-    }
-
-    void WaitForJobReady(char *file="unknown file", int line=0) {
-      CACHEDEBUG("%s: %d: worker waiting job ready", file, line); 
-      jobReady.wait(&imageCacheLock, 100); 
-    }
-    
-    void WaitForJobDone(char *file="unknown file", int line=0) {
-      CACHEDEBUG("%s: %d: main thread waiting job done", file, line); 
-      jobDone.wait(&imageCacheLock, 100); 
-    }
-    void WakeAllJobReady(char *file="unknown file", int line=0) {
-      CACHEDEBUG("%s: %d: main thread signaling job ready", file, line); 
-      jobReady.wakeAll(); 
-    }
-    void WakeAllJobDone(char *file="unknown file", int line=0) {
-      CACHEDEBUG("%s: %d: worker thread signaling job done", file, line); 
-      jobDone.wakeAll(); 
-    }
-    
+     
+     void  lock(char *reason, char *file="unknown file", int line=0) {
+       CACHEDEBUG("%s: %d: locking image cache (%s)", 
+                  file, line, reason); 
+       imageCacheLock.lock(); 
+       CACHEDEBUG("%s: %d: locked image cache (%s)", 
+                  file, line, reason); 
+     }
+     void unlock(char *reason, char *file="unknown file", int line=0) {
+       imageCacheLock.unlock(); 
+       CACHEDEBUG("%s: %d: unlocked image cache (%s)", 
+                  file, line, reason); 
+     }
+     
+     void WaitForJobReady(char *reason, char *file="unknown file", int line=0) {
+       CACHEDEBUG("%s: %d: worker waiting job ready (%s)", 
+                  file, line, reason); 
+       jobReady.wait(&imageCacheLock, 100); 
+     }
+     
+     void WaitForJobDone(char *reason, char *file="unknown file", int line=0) {
+       CACHEDEBUG("%s: %d: main thread waiting job done (%s)", 
+                  file, line, reason); 
+       jobDone.wait(&imageCacheLock, 100); 
+     }
+     void WakeAllJobReady(char *reason, char *file="unknown file", int line=0) {
+       CACHEDEBUG("%s: %d: main thread signaling job ready (%s)", 
+                  file, line, reason); 
+       jobReady.wakeAll(); 
+     }
+     void WakeAllJobDone(char *reason, char *file="unknown file", int line=0) {
+       CACHEDEBUG("%s: %d: worker thread signaling job done (%s)", 
+                  file, line, reason); 
+       jobDone.wakeAll(); 
+     }
+     
     /* Configuration information */
     int mNumReaderThreads;
     int mMaxCachedImages;

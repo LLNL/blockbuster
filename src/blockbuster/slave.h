@@ -26,17 +26,20 @@ class Slave: public QWidget {
   void SendError(QString msg);
   bool LoadFrames(const char *files); 
   int Loop(void);
-
   public slots:
   void SocketStateChanged(QAbstractSocket::SocketState state);
   void SocketError(QAbstractSocket::SocketError ) ;
 
  private:
+  void resetFPS(void);
+  void updateAndReportFPS(void);
   ProgramOptions *mOptions; 
   int mSocketFD; // another view of the socket
   QTcpSocket mMasterSocket; // connection to the master blockbuster
   QDataStream *mMasterStream;  // still another view of the socket
   Canvas *mCanvas; 
+  uint32_t recentFrameCount; 
+  double recentStartTime; 
 #ifdef USE_MPI
   MPI_Comm workers;
 #endif

@@ -531,7 +531,7 @@ void smBase::initWin(void)
   Loop until all read
 */ 
 int smBase::readData(int fd, u_char *buf, int bytes) {
-  smdbprintf(5, "readData: %d bytes", bytes); 
+  //smdbprintf(5, "readData: %d bytes", bytes); 
   int remaining = bytes; 
   while  (remaining >0) {
     int r=READ(fd, buf, remaining);
@@ -545,7 +545,7 @@ int smBase::readData(int fd, u_char *buf, int bytes) {
     }
     buf+=r;
     remaining-=r;
-    smdbprintf(5,"read %d, %d remaining",r, remaining);
+    //smdbprintf(5,"read %d, %d remaining",r, remaining);
   }
   return bytes-remaining; 
 }
