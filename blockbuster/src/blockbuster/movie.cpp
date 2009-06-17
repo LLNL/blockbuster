@@ -189,8 +189,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       options->geometry.height = maxHeight;
   }
 
-  canvas = new Canvas(options->userInterface, options->rendererIndex,
-                      options, 0, gMainWindow);
+  canvas = new Canvas(0, gMainWindow);
 
   if (canvas == NULL) {
     ERROR("Could not create a canvas");

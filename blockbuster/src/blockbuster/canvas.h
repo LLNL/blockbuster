@@ -23,10 +23,7 @@
    */
 
    struct Canvas {
-     Canvas(const UserInterface *userInterface,
-            const int rendererIndex,
-            const ProgramOptions *options,
-            qint32 parentWindowID, BlockbusterInterface *gui=NULL);
+     Canvas(qint32 parentWindowID, BlockbusterInterface *gui=NULL);
 
      ~Canvas(); 
 
@@ -203,7 +200,6 @@
 /* Canvas creator from canvas.c */
 Canvas *CreateCanvas(const UserInterface *userInterface,
                      const int rendererIndex,
-                     const ProgramOptions *options,
                      qint32 parentWindowID);
 void DestroyCanvas(Canvas *canvas);
 void DefaultSetFrameList(Canvas *canvas, FrameList *frameList);

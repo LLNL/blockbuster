@@ -44,7 +44,7 @@
 u_int smRaw::typeID = 0;
 
 smRaw::smRaw(const char *_fname, int _nwin)
-      :smBase(_fname)
+  :smBase(_fname, _nwin)
 {
 }
 

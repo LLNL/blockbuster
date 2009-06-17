@@ -33,6 +33,57 @@ using namespace std;
  * modules, both in sidecar and blockbuster.  
  */
 
+/*!
+  Global index of QThreads, used to get a simple 0-based threadID for each thread.  
+*/ 
+static vector<QThread *>gThreads; 
+/*!
+  Get the 0-based thread index for the given QThread. 
+  Return -1 on failure.
+*/
+int GetThreadID(QThread *thread) {
+  int i = 0; 
+  vector<QThread *>::iterator pos = gThreads.begin(), endpos = gThreads.end(); 
+  while (pos != endpos) {
+    if (thread == *pos) return i;
+    ++pos; 
+    ++i; 
+  }
+  return -1; 
+}
+
+/*!
+  Call this from any thread to add it to the index of QThreads.  
+*/
+void RegisterThread(QThread *thread) {
+  if (GetThreadID(thread) == -1) {
+    gThreads.push_back(thread); 
+  }
+  return; 
+}
+
+/*!
+  This must also be done to keep things sane
+*/
+void UnregisterThread(QThread *thread) {
+  vector<QThread *>::iterator pos = gThreads.begin(), endpos = gThreads.end(); 
+  while (pos != endpos) {
+    if (thread == *pos) {
+      gThreads.erase(pos); 
+      return; 
+    }
+    ++pos; 
+  }
+  return ;
+}
+/*!
+  Call this from any thread to get the current 0-based thread index.    
+  Returns -1 if not found. 
+*/
+uint16_t GetCurrentThreadID(void) { 
+  return GetThreadID(QThread::currentThread()); 
+}
+
 void PrintKeyboardControls(void)
 {
   fprintf(stderr, "\n=====================================================\n");

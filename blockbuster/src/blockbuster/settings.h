@@ -3,6 +3,8 @@
 #include <QApplication>
 #include "common.h"
 
+class ProgramOptions *GetGlobalOptions(void); 
+
 void ConsumeArg(int &argc, char *argv[], int position); 
 
 struct Setting {
@@ -48,6 +50,7 @@ struct ProgramOptions {
     geometry.height = DONT_CARE;
     return;
   }
+    
   QString executable; /* path to the backend blockbuster */ 
   QString messageLevelName;
   struct MessageLevel *messageLevel;

@@ -3,9 +3,9 @@
 
 //=======================================================
 // if you don't want verbose cache messages, use this:
-#define CACHEDEBUG if (0) DEBUGMSG
+//#define CACHEDEBUG if (0) DEBUGMSG
 // else use this:
-//#define CACHEDEBUG DEBUGMSG
+#define CACHEDEBUG DEBUGMSG
 //=======================================================
 
 #include <vector>
@@ -40,17 +40,16 @@ struct ImageCacheJob {
 class CacheThread: public QThread {
   Q_OBJECT
     public:
-  CacheThread(int threadNum, ImageCache *incache): 
-    threadNumber(threadNum), cache(incache), mStop(false) {
-    CACHEDEBUG("CacheThread constructor"); 
+  CacheThread(ImageCache *incache): 
+    cache(incache), mStop(false) {
+    CACHEDEBUG("CacheThread constructor");     
+    RegisterThread(this); 
   }
   ~CacheThread(){}
   
 
   void run(void); 
   void stop(void) { mStop = true; }
-  //pthread_t threadId;
-  int threadNumber;
   ImageCache *cache;
   bool mStop; 
     };
@@ -76,12 +75,7 @@ class CacheThread: public QThread {
     Image *image;
   } ;
 
-   struct ImageCacheThreadInfo{
-    pthread_t threadId;
-    int threadNumber;
-    struct ImageCache *imageCache;
-  } ;
-
+ 
   /* Most of the information in here is owned by the "boss" thread,
    * if there's more than one thread.  It should not be accessed
    * or changed by the child threads, except where specifically
@@ -177,14 +171,4 @@ class CacheThread: public QThread {
   void CachePreload(Canvas *canvas, uint32_t frameNumber, 
                     const Rectangle *imageRegion, uint32_t levelOfDetail);
 
-/*
-  void ManageFrameListInCache(ImageCache *cache, FrameList *frameList);
-  Image *GetImageFromCache(ImageCache *cache, uint32_t frameNumber,
-  const Rectangle *region, uint32_t levelOfDetail);
-  void ReleaseImageFromCache(ImageCache *cache, Image *image);
-  void PreloadImageIntoCache(ImageCache *cache, uint32_t frameNumber, 
-  const Rectangle *region, uint32_t levelOfDetail);
-  void PrintCache(ImageCache *cache);
-  void GetCacheConfiguration(ImageCache *cache, int *numReaderThreads, int *maxCachedImages);
-*/ 
 #endif

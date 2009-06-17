@@ -149,14 +149,14 @@ void *readThread(void *data)
             double t0;
             if (!bHaveRect) {
                t0 = get_clock();
-               sm->getFrame(f, frame);
+               sm->getFrame(f, frame, mynum);
             } else {
 	      if(pan == 0) {
                int p[2],d[2],s[2];
                calcrect(f+j*sm->getNumFrames(),p,d,s);
                t0 = get_clock();
 	       //fprintf(stderr," d = [%d,%d], p = [%d,%d], s = [%d,%d]\n",d[0],d[1],p[0],p[1],s[0],s[1]);
-               sm->getFrameBlock(f, frame,rowStride, d, p, s);
+               sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s);
 	      }
 	      else {
 		int xStep,yStep;
@@ -171,7 +171,7 @@ void *readThread(void *data)
 		  for(xStep = 0; xStep < stepsX; xStep++) {
 		    calcrectpan(xStep,yStep,p,d,s);
 		    fprintf(stderr," d = [%d,%d], p = [%d,%d], s = [%d,%d]\n",d[0],d[1],p[0],p[1],s[0],s[1]);
-		    sm->getFrameBlock(f, frame,rowStride, d, p, s);
+		    sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s);
 		  }
 		}
 	      }

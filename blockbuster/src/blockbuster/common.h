@@ -17,6 +17,9 @@ class BlockbusterInterface;
 */
 void PrintKeyboardControls(void); 
 
+uint16_t GetCurrentThreadID(void) ; 
+void RegisterThread(QThread *qthreadptr); 
+void UnregisterThread(QThread *qthreadptr); 
 
   /* Useful macros */
 #define MAX2(a,b) ((a)<(b)?(b):(a))

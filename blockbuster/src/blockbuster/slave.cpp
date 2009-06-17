@@ -56,7 +56,7 @@ Slave::Slave(ProgramOptions *options):
   SuppressMessageDialogs(); 
   DEBUGMSG("Slave() called"); 
   DEBUGMSG("useMPI is %d\n", mOptions->useMPI); 
-
+  
   return; 
 }
 
@@ -276,7 +276,6 @@ int Slave::Loop(void)
   long recentFrameCount = 0; 
   int32_t lastImageRendered = -1; 
   gCoreApp = new QApplication(argc, NULL); 
-  UserInterface *userInterface = mOptions->userInterface;
   bool idle = false; 
   Rectangle currentRegion; 
   qint32 destX = 0,  destY = 0,  lod = 0;
@@ -497,20 +496,18 @@ int Slave::Loop(void)
              * threads associated with it, nor any frames in its
              * imageCache.
              */
-            ProgramOptions *createOptions= new ProgramOptions;
-            createOptions->frameCacheSize = cacheFrames;
-            createOptions->readerThreads = numThreads;
-            createOptions->fontName = DEFAULT_X_FONT;
-            createOptions->geometry.width = w;
-            createOptions->geometry.height = h;
-            createOptions->displayName = displayName;
-            createOptions->suggestedTitle = "Blockbuster Slave";
-            mCanvas = new Canvas(userInterface, mOptions->rendererIndex, 
-                                createOptions, parentWin);
+            ProgramOptions *options=  GetGlobalOptions();
+            options->frameCacheSize = cacheFrames;
+            options->readerThreads = numThreads;
+            options->fontName = DEFAULT_X_FONT;
+            options->geometry.width = w;
+            options->geometry.height = h;
+            options->displayName = displayName;
+            options->suggestedTitle = "Blockbuster Slave";
+            mCanvas = new Canvas(parentWin);
             GetXEvent(mCanvas, 0, &junkEvent); 
             //canvas->GetEvent(mCanvas, 0, &junkEvent); 
-            delete createOptions; 
-            
+             
             if (mCanvas == NULL) {
               ERROR("Could not create a canvas");
               SendError( "Error Could not create a canvas");

@@ -450,13 +450,13 @@ int main(int argc,char **argv)
 		(sm->getNumResolutions() == input[j].sm->getNumResolutions())) {
 				int	size,res;
 				for(res=0;res<sm->getNumResolutions();res++) {
-				    input[j].sm->getCompFrame(k,NULL,size,res);
+                  input[j].sm->getCompFrame(k,0,NULL,size,res);
 				    if (buffer_len < size) {
 					free(buffer);
 					buffer = (void *)malloc(size);
 					buffer_len = size;
 				    }
-				    input[j].sm->getCompFrame(k,buffer,size,res);
+				    input[j].sm->getCompFrame(k,0,buffer,size,res);
 				    sm->setCompFrame(i,buffer,size,res);
 				}
 				i++;
@@ -498,7 +498,7 @@ void workproc(void *arg)
 	int	size;
 	unsigned char *buffer = (unsigned char *)malloc(sizein);
 
-	p->insm->getFrame(p->inframe,buffer);
+	p->insm->getFrame(p->inframe,buffer, 0);
 	if (p->iScale) {
 		unsigned char *pZoom = (unsigned char *)malloc(sizeout);
 		Sample2d(buffer,

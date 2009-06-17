@@ -212,7 +212,8 @@ void CacheThread::run() {
     CachedImage *imageSlot;
     CACHEDEBUG("CacheThread::run() (thread = %p)", QThread::currentThread()); 
 
- 
+    RegisterThread(this); // see common.cpp -- used to create a 0-based index that can be referenced anywhere. 
+
     /* Repeat forever, until the thread is cancelled by the main thread */
     while (1) {
 
@@ -234,6 +235,7 @@ void CacheThread::run() {
         this->cache->WaitForJobReady(__FILE__, __LINE__); 
         if (mStop) {
           CACHEDEBUG("Thread %p terminating", QThread::currentThread()); 
+          UnregisterThread(this); 
           cache->unlock(__FILE__, __LINE__); 
           return; 
         }
@@ -268,6 +270,7 @@ void CacheThread::run() {
 	 */
     this->cache->lock(__FILE__, __LINE__); 
 
+    CACHEDEBUG("RemoveJobFromPendingQueue frame %d", job->frameNumber); 
 	this->cache->RemoveJobFromPendingQueue(job);
 
 	/* First see if this request has been invalidated (because the
@@ -275,6 +278,7 @@ void CacheThread::run() {
 	 * If so, there's nothing to do with the image.
 	 */
 	if (job->requestNumber <= this->cache->mValidRequestThreshold) {
+      CACHEDEBUG("Destroying useless job frame %d, because job request number %d is less than or equal to the cache valid request threshold %d", job->frameNumber, job->requestNumber, this->cache->mValidRequestThreshold); 
 	    /* The job is useless.  Destroy the image, if we got one,
 	     * and go home.  We don't need to send an indicator to
 	     * anyone; the main thread doesn't care.
@@ -286,6 +290,7 @@ void CacheThread::run() {
 	    }
 	}
 	else if (image == NULL) {
+      CACHEDEBUG("Error in job frame %d!", job->frameNumber); 
 	    /* The main thread has to be told that there was
 	     * an error here; otherwise, it may be waiting forever
 	     * for an image that never appears.  So put it on
@@ -298,6 +303,7 @@ void CacheThread::run() {
        this->cache->WakeAllJobDone(__FILE__, __LINE__); 
 	}
 	else if ((imageSlot = cache->GetCachedImageSlot(job->frameNumber)) == NULL) {
+      CACHEDEBUG("No place to put job frame %d!", job->frameNumber); 
 	    /* We have an image, but no place to put it.  This
 	     * is an error as well, that the main thread has
 	     * to be made aware of.  As usual, the error has
@@ -316,6 +322,7 @@ void CacheThread::run() {
 	     * and a place to put it.  We can lose the job,
 	     * and store the image.
 	     */
+      CACHEDEBUG("frameNumber %d marked complete", job->frameNumber); 
 	    imageSlot->frameNumber = job->frameNumber;
 	    imageSlot->levelOfDetail = job->levelOfDetail;
 	    imageSlot->image = image;
@@ -354,7 +361,8 @@ ImageCache *CreateImageCache(int numReaderThreads, int maxCachedImages, Canvas *
 }
 //==================================================================
 ImageCache::ImageCache(int numthreads, int numimages, Canvas *c): 
-  mNumReaderThreads(numthreads), mMaxCachedImages(numimages), mCanvas(c) {
+  mNumReaderThreads(numthreads), mMaxCachedImages(numimages), 
+  mCanvas(c), mRequestNumber(0), mValidRequestThreshold(0) {
   CACHEDEBUG("ImageCache constructor"); 
   
   register int i;
@@ -377,7 +385,7 @@ ImageCache::ImageCache(int numthreads, int numimages, Canvas *c):
      * continue with fewer threads or with none (in the single-threaded case).
      */
     for (i = 0; i < mNumReaderThreads; i++) {
-      mThreads.push_back( new CacheThread(i, this)); 
+      mThreads.push_back( new CacheThread(this)); 
       mThreads[i]->start(); 
     }
   }
@@ -661,7 +669,7 @@ CachedImage *ImageCache::FindImage(uint32_t frame, uint32_t lod)
 {
     register CachedImage *cachedImage;
     register int i;
-
+    CACHEDEBUG("FindImage frame %d", frame); 
     /* Search the cache to see whether an appropriate image already
      * exists within the cache.
      */
@@ -765,86 +773,89 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
         ERROR("cachedImage->frameNumber != frameNumber || cachedImage->levelOfDetail != levelOfDetail"); 
         exit(1); 
       }
-	    if (RectContainsRect(&cachedImage->image->loadedRegion, &region)) {
+      if (RectContainsRect(&cachedImage->image->loadedRegion, &region)) {
 		/* This image is appropriate.  Mark our interest in the frame
 		 * (so that it is not pulled out from under us while we're
 		 * still using it), and return it.
 		 */
 		bb_assert(cachedImage->image->imageFormat.rowOrder != ROW_ORDER_DONT_CARE);
-
+        
 		cachedImage->requestNumber = mRequestNumber;
 		cachedImage->lockCount++;
 		if (mNumReaderThreads > 0) {
-           unlock(__FILE__, __LINE__); 
+          unlock(__FILE__, __LINE__); 
 		}
+        CACHEDEBUG("Returning found image"); 
 		return cachedImage->image;
-	    }
-	    else {
-          region = RectUnionRect(&cachedImage->image->loadedRegion, &region);
+      }
+      else {
+        region = RectUnionRect(&cachedImage->image->loadedRegion, &region);
 		
-	    }
+      }
 	}
-
+    
 	/* It's not in cache already, darn.  We need to check to see if a 
 	 * job for this frame is already in one of the work queues or the
 	 * error queue.  This, of course, can only happen in the multi-
 	 * threaded case.
 	 */
 	if (mNumReaderThreads > 0) {
-
-	    /* Remember that we still have the imageCacheLock from above.
-	     * Look for a pending job (one that is being worked on) that
-	     * matches our requirements.
-	     */
-        
-	    ImageCacheJob *job = 
-          FindJobInQueue(mPendingQueue, frameNumber, &region,levelOfDetail);
-
-	    if (job != NULL) {
+      
+      /* Remember that we still have the imageCacheLock from above.
+       * Look for a pending job (one that is being worked on) that
+       * matches our requirements.
+       */
+      CACHEDEBUG("Looking in pending queue for frame %d", frameNumber); 
+      ImageCacheJob *job = 
+        FindJobInQueue(mPendingQueue, frameNumber, &region,levelOfDetail);
+      
+      if (job != NULL) {
 		/* We've got a job coming soon that will give us this image.
 		 * Just wait for the reader thread to complete.  This should
 		 * kick us back to the top of the loop when we return, with
 		 * the imageCacheLock already re-acquired.
 		 */
-           WaitForJobDone(__FILE__, __LINE__); 
-	    }
-	    else {
+        WaitForJobDone(__FILE__, __LINE__); 
+      }
+      else {
 		/* Look for a matching job in the work queue, one that may
 		 * have been pre-loaded earlier.  We're a little less picky
 		 * here; the job we find can refer to any region.  We're going
 		 * to modify the job request, if necessary, to include the
 		 * desired region.
 		 */
-          job = FindJobInQueue(mJobQueue, frameNumber, NULL, levelOfDetail);
-		if (job != NULL) {
-		    /* Add our region of interest to the job; if a request had
-		     * been made earlier for a different region of the same
-		     * frame, the request will be modified to use the union
-		     * of the two regions.
-		     */
-		 
-		    job->region = RectUnionRect(&job->region, &region);
-		    job->requestNumber = mRequestNumber;
-		    /* Move the job to the head of the work queue, in case
-		     * it was behind a few other preload jobs; it's more important
-		     * now because the main thread is waiting on it.
-		     */
-            RemoveJobFromQueue(mJobQueue, job); 
-            mJobQueue.push_front(job); 
-
-		    /* Now wait for an image to appear. */
-            /*
-              rv = pthread_cond_wait(&jobDone, &imageCacheLock);
-              if (rv != 0) WARNING("pthread_cond_wait returned %d (%s)",
-              rv, ERROR_STRING(rv));
-            */ 
-            WaitForJobDone(__FILE__, __LINE__); 
+        CACHEDEBUG("Looking in job queue for frame %d with other rectangle", frameNumber); 
+        job = FindJobInQueue(mJobQueue, frameNumber, NULL, levelOfDetail);
+        if (job != NULL) {
+          /* Add our region of interest to the job; if a request had
+           * been made earlier for a different region of the same
+           * frame, the request will be modified to use the union
+           * of the two regions.
+           */
+          
+          job->region = RectUnionRect(&job->region, &region);
+          job->requestNumber = mRequestNumber;
+          /* Move the job to the head of the work queue, in case
+           * it was behind a few other preload jobs; it's more important
+           * now because the main thread is waiting on it.
+           */
+          RemoveJobFromQueue(mJobQueue, job); 
+          mJobQueue.push_front(job); 
+          
+          /* Now wait for an image to appear. */
+          /*
+            rv = pthread_cond_wait(&jobDone, &imageCacheLock);
+            if (rv != 0) WARNING("pthread_cond_wait returned %d (%s)",
+            rv, ERROR_STRING(rv));
+          */ 
+          WaitForJobDone(__FILE__, __LINE__); 
 		}
 		else {
           /* No job in the pending queue nor in the work queue.  Check
            * the error queue to make sure the job hasn't been attempted
            * but has failed.
            */
+          CACHEDEBUG("No job in the pending queue nor in the work queue"); 
           job = FindJobInQueue(mErrorQueue, frameNumber,&region,levelOfDetail);
           if (job != NULL) {
 			/* The error, hopefully, has already been reported.  We
@@ -852,44 +863,44 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
 			 * the caller with an error.
 			 */
 			RemoveJobFromQueue(mErrorQueue, job);
-
+            
             unlock(__FILE__, __LINE__);
 			return NULL;
-		    }
-		    else {
+          }
+          else {
 			/* No job anywhere.  Break out of the condition
 			 * variable loop so the main thread can load the
 			 * image itself.
 			 */
-              unlock(__FILE__, __LINE__); 
-              break;
- 		    }
+            unlock(__FILE__, __LINE__); 
+            break;
+          }
 		}
-	    }
+      }
 	} /* searching through queues in the multi-threaded case */
 	else {
-	    /* single-threaded case, with no image in the cache; we need
-	     * to break out and load the image on our own.
-	     */
-	    break;
+      /* single-threaded case, with no image in the cache; we need
+       * to break out and load the image on our own.
+       */
+      break;
 	}
     } /* looping for condition variables */
-
+    
     /* If we get here, no one has asked for the image before us, so we
      * have to load it ourselves.  Before starting a load, do some 
      * basic error checks.  (We don't do these above in order to speed
      * the critical performance case.)
      */
-
+    CACHEDEBUG("Have to load image %d in main thread", frameNumber); 
     if (mFrameList == NULL) {
-	WARNING("frame %d requested from an empty cache",
-		frameNumber);
-	return NULL;
+      WARNING("frame %d requested from an empty cache",
+              frameNumber);
+      return NULL;
     }
-
+    
     if (frameNumber > mFrameList->numActualFrames()) {
-	WARNING("image %d requested from a cache managing %d images",
-		frameNumber, mFrameList->numActualFrames() + 1);
+      WARNING("image %d requested from a cache managing %d images",
+              frameNumber, mFrameList->numActualFrames() + 1);
 	return NULL;
     }
 
@@ -974,7 +985,6 @@ void ImageCache::ReleaseImage(Image *image)
     register int i;
     register CachedImage *cachedImage;
     //int rv;
-
     /* Look for the given image in the cache. */
     if (mNumReaderThreads > 0) {
       lock(__FILE__, __LINE__);
@@ -986,6 +996,7 @@ void ImageCache::ReleaseImage(Image *image)
 	i++, cachedImage++
     ) {
 	if (cachedImage->image == image) {
+      CACHEDEBUG("Releasing frame %d from cache", cachedImage->frameNumber); 
 	    /* Unlock it and return. */
 	    if (cachedImage->lockCount == 0) {
 		WARNING("unlocking an unlocked image, frame %d",
@@ -1016,6 +1027,7 @@ void ImageCache::ReleaseImage(Image *image)
 void ImageCache::PreloadImage(uint32_t frameNumber, 
 	const Rectangle *region, uint32_t levelOfDetail)
 {
+  CACHEDEBUG("PreloadImage() frame %d", frameNumber); 
   ImageCacheJob *job = NULL, *newJob = NULL;
   CachedImage *cachedImage = NULL;
 
@@ -1056,7 +1068,7 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
     }
     unlock(__FILE__, __LINE__); 
     if (job != NULL) {
-	/* The job exists already - no need to add a new one */
+      CACHEDEBUG("The job exists already - no need to add a new one"); 
 	return;
     }
 
@@ -1084,7 +1096,7 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
     /* Add the job to the back of the work queue */
     lock(__FILE__, __LINE__);
     mJobQueue.push_back(newJob); 
-
+    CACHEDEBUG("Added new job for frame %d to job queue", frameNumber); 
     unlock(__FILE__, __LINE__); 
     
     /* If there's a worker thread that's snoozing, this will
