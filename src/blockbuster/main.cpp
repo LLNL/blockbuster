@@ -60,6 +60,7 @@ QApplication *gCoreApp=NULL;
 BlockbusterInterface *gMainWindow = NULL; 
 
 QThread *gMainThread = NULL; 
+ProgramOptions gProgramOptions;
 
 /* This utility is used to get the number of processors
  * available on a system.  If the number of processors is
@@ -231,8 +232,9 @@ bool  SET_BOOL_ARG(const char *flag, int &argc, char *argv[], int &barg, int val
 /*
  * Parse argv[] options and set flags in <opt>.
  */
-static void ParseOptions(int &argc, char *argv[], ProgramOptions *opt)
+static void ParseOptions(int &argc, char *argv[])
 {
+  ProgramOptions *opt = GetGlobalOptions(); 
   int numProcessors;
   MovieStatus status;
   char *value;
@@ -518,8 +520,7 @@ InterruptHandler(int)
 
 int main(int argc, char *argv[])
 {
-   
-  ProgramOptions opt;
+  ProgramOptions *opt = GetGlobalOptions(); 
   Slave *theSlave; 
   Renderer *renderer;
   char localSettingsFilename[BLOCKBUSTER_PATH_MAX];
@@ -530,7 +531,7 @@ int main(int argc, char *argv[])
   int rv;
   char ** args = argv; 
   gMainThread = QThread::currentThread(); 
-
+  RegisterThread(gMainThread); 
  
   /*! 
 	If we are running dmx, then kill the slaves before exiting the program
@@ -550,21 +551,21 @@ int main(int argc, char *argv[])
    * in the user's home directory, and in the current
    * directory.
    */
-  opt.settings = (Settings*)CreateBlankSettings();
+  opt->settings = (Settings*)CreateBlankSettings();
   envHOME = getenv("HOME");
   if (envHOME != NULL) {
     sprintf(homeSettingsFilename, "%s/.blockbusterrc", envHOME);
     rv = stat(homeSettingsFilename, &statBuf);
     if (rv == 0 && S_ISREG(statBuf.st_mode)) {
       homeSettingsFileExists = 1;
-      ReadSettingsFromFile(opt.settings, homeSettingsFilename);
+      ReadSettingsFromFile(opt->settings, homeSettingsFilename);
     }
   }
   sprintf(localSettingsFilename, "./.blockbusterrc");
   rv = stat(localSettingsFilename, &statBuf);
   if (rv == 0 && S_ISREG(statBuf.st_mode)) {
     localSettingsFileExists = 1;
-    ReadSettingsFromFile(opt.settings, localSettingsFilename);
+    ReadSettingsFromFile(opt->settings, localSettingsFilename);
   }
 
   /* The UserInterface gets the next chance to parse options.  For
@@ -582,12 +583,12 @@ int main(int argc, char *argv[])
   gSidecarServer = new SidecarServer;     
 
   /* Grab any options that apply to the whole program */
-  ParseOptions(argc, args, &opt);
+  ParseOptions(argc, args);
   printargs("After ParseOptions", args, argc); 
 
   /* initialize the slave portion if we are a slave */
-  if (opt.slaveMode != 0) {
-    theSlave = new Slave(&opt); 
+  if (opt->slaveMode != 0) {
+    theSlave = new Slave(opt); 
     if (!theSlave || !theSlave->InitNetwork() || !theSlave->GetDisplayName()) {
       printf("Initialization failed. Slave will now exit.\n"); 
       exit(1); 
@@ -597,34 +598,34 @@ int main(int argc, char *argv[])
   }
 
   /* initialize the UI (GTK usually) */
-  if (argc && opt.userInterface->HandleOptions != NULL) {
+  if (argc && opt->userInterface->HandleOptions != NULL) {
     /* put the DISPLAY into the environment for GTK */
-    if (opt.displayName != "") {
+    if (opt->displayName != "") {
       char buf[2048]; 
-      sprintf(buf, QString("DISPLAY=%1").arg(opt.displayName).toStdString().c_str()); 
+      sprintf(buf, QString("DISPLAY=%1").arg(opt->displayName).toStdString().c_str()); 
       putenv(buf);
     }
-    opt.userInterface->HandleOptions(argc, args);
+    opt->userInterface->HandleOptions(argc, args);
     printargs("After UI", args, argc); 
   }
-  renderer = opt.userInterface->supportedRenderers[opt.rendererIndex]->renderer;
+  renderer = opt->userInterface->supportedRenderers[opt->rendererIndex]->renderer;
  
   if (argc && renderer->HandleOptions != NULL) {
     renderer->HandleOptions(argc, args);
     printargs("After renderer", args, argc); 
   }
 
-  INFO("Using %s renderer", opt.userInterface->supportedRenderers[opt.rendererIndex]->renderer->name);
-  INFO("Using %s interface", opt.userInterface->name);
+  INFO("Using %s renderer", opt->userInterface->supportedRenderers[opt->rendererIndex]->renderer->name);
+  INFO("Using %s interface", opt->userInterface->name);
 
   // set up a connection to sidecar if that's what launched us
-  if (opt.sidecarHostPort != "") {
-    gSidecarServer->connectToSidecar(opt.sidecarHostPort); 
+  if (opt->sidecarHostPort != "") {
+    gSidecarServer->connectToSidecar(opt->sidecarHostPort); 
   }
   /* Remaining args are movie filenames, load them (skip args[0]=progname) */
   
   /* initialize the smlibrary with the number of threads */
-  smBase::init(opt.readerThreads); 
+  //   smBase::init(opt->readerThreads); 
 
   /* count the remaining args and treat them as files */ 
   printargs("Before framelist", args, argc); 
@@ -633,7 +634,7 @@ int main(int argc, char *argv[])
   if (count-1) {
     allFrames = new FrameList(count-1, &args[1]);
   }
-  if (opt.sidecarHostPort != "" && allFrames == NULL) {
+  if (opt->sidecarHostPort != "" && allFrames == NULL) {
     ERROR("%s is not a valid movie file - nothing to display", args[1]);
     exit(1);
   } 
@@ -642,10 +643,10 @@ int main(int argc, char *argv[])
    * (i.e. we're not a slave), give the user interface one last
    * chance to supply us with some frames.
    */
-  if (!opt.slaveMode && !allFrames && opt.userInterface->ChooseFile) {
+  if (!opt->slaveMode && !allFrames && opt->userInterface->ChooseFile) {
     QStringList fileList; 
     /* Try to get a filename from the user interface */
-    char *filename = opt.userInterface->ChooseFile(&opt);
+    char *filename = opt->userInterface->ChooseFile(opt);
     if (filename == NULL) {
       WARNING("No frames found - nothing to display");
       exit(MOVIE_OK);
@@ -660,7 +661,7 @@ int main(int argc, char *argv[])
   /* At this point, we should have a full list of frames.  If we don't,
    * we obviously cannot play anything.
    */
-  if (!opt.slaveMode && allFrames == NULL) {
+  if (!opt->slaveMode && allFrames == NULL) {
     ERROR("No frames found - nothing to display");
     exit(1);
   }
@@ -670,7 +671,7 @@ int main(int argc, char *argv[])
    * XImage, matching as closely as we can the height, width, and
    * depth discovered in our list of frames.
    */
-  if (opt.slaveMode) {
+  if (opt->slaveMode) {
     /* The slave doesn't need frames - it will get the list from the master */
     if (allFrames) {
       DEBUGMSG("Deleting frame list..."); 
@@ -687,7 +688,7 @@ int main(int argc, char *argv[])
     /* The display loop will destroy the frames for us (it has to, because it
      * must be able to change the frames too.)
      */
-    DisplayLoop(allFrames, &opt);
+    DisplayLoop(allFrames, opt);
   }
 
   /* If we read settings, write them back out.  Only one of the
@@ -699,7 +700,7 @@ int main(int argc, char *argv[])
     int settingsSources = SETTINGS_FROM_PROGRAM | SETTINGS_FROM_FILE;
 
     if (localSettingsFileExists) {
-      WriteSettingsToFile(opt.settings, localSettingsFilename,
+      WriteSettingsToFile(opt->settings, localSettingsFilename,
                                                   settingsSources);
       settingsSources &= ~SETTINGS_FROM_PROGRAM;
     }
@@ -710,11 +711,11 @@ int main(int argc, char *argv[])
      * be created; but if anything is missing, we'll
      * store it here.
      */
-    WriteSettingsToFile(opt.settings, homeSettingsFilename,
+    WriteSettingsToFile(opt->settings, homeSettingsFilename,
                                                 settingsSources);
   }
-  DestroySettings(opt.settings);
-  opt.settings = NULL;
+  DestroySettings(opt->settings);
+  opt->settings = NULL;
   INFO("Blockbuster is finished.\n"); 
   /* All done.  Go home. */
   return 0;

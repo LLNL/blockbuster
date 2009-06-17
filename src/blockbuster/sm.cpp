@@ -44,7 +44,7 @@ typedef struct {
 } privateData;
 
 int
-smLoadImage(Image *image, struct FrameInfo *frameInfo,
+smLoadImage(Image *image, struct FrameInfo *frameInfo, 
           Canvas *canvas, const Rectangle *desiredSub, int levelOfDetail)
 {
     const privateData *p = (privateData *)frameInfo->privateData;
@@ -98,14 +98,14 @@ smLoadImage(Image *image, struct FrameInfo *frameInfo,
     step[1] = 1;
     dest = (char *) image->imageData + (pos[1] * image->width + pos[0]) * 3;
 
-    /*
-    printf("Getting SM region %d, %d %d x %d  of %d x %d  destStride=%d\n",
-           desiredSub->x, desiredSub->y, size[0], size[1],
-           image->width, image->height, destStride);
-    */
-    p->sm->getFrameBlock(frameInfo->frameNumber, (void *) dest, destStride,
+    DEBUGMSG("Getting SM region %d, %d %d x %d  of %d x %d  destStride=%d",
+             desiredSub->x, desiredSub->y, size[0], size[1],
+             image->width, image->height, destStride);
+    
+    p->sm->getFrameBlock(frameInfo->frameNumber, (void *) dest, 
+                         GetCurrentThreadID(), destStride,
                          size, pos, step, levelOfDetail);
-
+    
     image->loadedRegion.x = desiredSub->x;
     image->loadedRegion.y = desiredSub->y;
     image->loadedRegion.width = desiredSub->width;
@@ -156,8 +156,8 @@ FrameList *smGetFrameList(const char *filename)
     smBase::init();
     //initialized = 1;
     //    }
-    
-    sm = smBase::openFile(filename);
+    ProgramOptions *options = GetGlobalOptions(); 
+    sm = smBase::openFile(filename, options->readerThreads+1);
     if (sm == NULL) {
 	DEBUGMSG("SM cannot open the file '%s'", filename);
 	return NULL;

@@ -134,7 +134,7 @@ int main(int argc,char **argv)
 
 		for(i=0;i<nFrames;i++) {
 			if (iVerb) printf("Working on %d of %d\n",i,nFrames);
-			sm->getFrame(i, img);
+			sm->getFrame(i, img, 0);
 			evo_movie_add_image(evo, evo_img);
 		}
 

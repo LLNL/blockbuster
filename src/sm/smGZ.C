@@ -45,7 +45,7 @@
 u_int smGZ::typeID = 2;
 
 smGZ::smGZ(const char *_fname, int _nwin)
-      :smBase(_fname)
+  :smBase(_fname, _nwin)
 {
 }
 
@@ -132,7 +132,7 @@ void smGZ::compBlock(void *data, void *cdata, int &size,int *dim)
    uLongf dlen,len;
 
    len = dim[0]*dim[1]*sizeof(u_char[3]);
-   dlen = (len * 1.1)+12;
+   dlen = (len * (uLongf)1.1)+12;
    if (cdata) {
        status = compress((Bytef *)cdata,&dlen,(Bytef *)data,len);
        if (status != Z_OK) {

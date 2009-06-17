@@ -80,7 +80,7 @@ static void jpg_term_destination(j_compress_ptr cinfo);
 
 
 smJPG::smJPG(const char *_fname, int _nwin)
-      :smBase(_fname)
+  :smBase(_fname, _nwin)
 {
    setQuality(75);
    if (getenv("JPG_COMPRESSION_QUALITY")) {

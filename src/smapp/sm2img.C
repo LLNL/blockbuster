@@ -353,10 +353,10 @@ int main(int argc,char **argv)
 			iLast - iFirst+1);
 		if(sm->getVersion() > 1) {
 		  int destRowStride = 0;
-		  sm->getFrameBlock(i, img, destRowStride,&blocksize[0],&blockoffset[0],NULL,mipmap);
+		  sm->getFrameBlock(i, img, 0, destRowStride,&blocksize[0],&blockoffset[0],NULL,mipmap);
 		}
 		else {
-		  sm->getFrame(i, img);
+		  sm->getFrame(i, img, 0);
 		}
 
 		sprintf(tstr,sTemplate,i);

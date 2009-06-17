@@ -28,6 +28,12 @@
 #include "settings.h"
 #include "errmsg.h"
 
+static ProgramOptions gProgramOptions ; // global options
+
+ProgramOptions *GetGlobalOptions (void) { 
+  return &gProgramOptions; 
+}
+
 void printargv(int argc, char *argv[]) {
   fprintf(stderr, "argv is: {"); 
   int argnum = 0; 

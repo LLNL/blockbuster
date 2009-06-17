@@ -97,14 +97,14 @@ SOURCES=main.cpp blockbuster_qt.cpp movie.cpp  timer.C \
 	MovieRenderer.cpp util.cpp settings.cpp errmsg.cpp 
 
 HEADERS=Renderers.h errmsg.h events.h remotecommands.h  \
-	dmxglue.h MovieCues.h errmsg.h pure_C.h util.h blockbuster_qt.h timer.h
+	../common/stringutil.h ../common/timer.h\
+	dmxglue.h MovieCues.h errmsg.h pure_C.h util.h blockbuster_qt.h 
 
 FORMS = MovieCueWidget.ui BlockbusterControl.ui InfoWindow.ui
 
 UI_HEADERS = ui_MovieCueWidget.h ui_BlockbusterControl.h ui_InfoWindow.h
 
 LIBDMX = libdmx/libdmx.a 
-
 
 
 libdmx/libdmx.a: libdmx/dmx.cpp
@@ -141,6 +141,7 @@ qmake-force:
 	$(call SEDFILES,s/CC.*=.*gcc/CC = $(CC) /g,Makefile.qt.include)
 	$(call SEDFILES,s/CXX.*=.*g++/CXX = $(CXX) /g,Makefile.qt.include)
 	$(call SEDFILES,s/LINK.*=.*g++/LINK = $(CXX) /g,Makefile.qt.include)
+	echo sm.o: ../sm/smBase.h >> Makefile.qt.include
 
 Makefile.qt.include: blockbuster.pro
 	echo running qmake because $@

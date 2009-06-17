@@ -44,7 +44,7 @@
 u_int smRLE::typeID = 1;
 
 smRLE::smRLE(const char *_fname, int _nwin)
-      :smBase(_fname)
+  :smBase(_fname, _nwin)
 {
 }
 

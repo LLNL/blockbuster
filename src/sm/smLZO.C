@@ -63,7 +63,7 @@ void lzo_fail_check(char *file,int line)
 u_int smLZO::typeID = 3;
 
 smLZO::smLZO(const char *_fname, int _nwin)
-      :smBase(_fname)
+  :smBase(_fname, _nwin)
 {
 	eCompressionOpt = LZO_OPT_1;
 	if (getenv("LZO_COMPRESSION_OPTION")) {

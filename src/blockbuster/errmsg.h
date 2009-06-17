@@ -55,8 +55,8 @@ extern void SuppressMessageDialogs(void);
 #define M_SYSERROR  0
 #define M_ERROR   1
 #define M_WARNING 2
-#define M_INFO    3
-#define M_DEBUG   4
+#define M_INFO    4
+#define M_DEBUG   5
 
   /* To address portability issues with varargs macros, we use
    * this approach.  Basically, one fills out this global struct

@@ -43,10 +43,7 @@
  * UserInterface and Renderer and the appropriate Glue routines.
  */
 
-Canvas::Canvas(const UserInterface *userInterface,
-               const int rendererIndex,
-               const ProgramOptions *options,
-               qint32 parentWindowID, BlockbusterInterface *gui):
+Canvas::Canvas(qint32 parentWindowID, BlockbusterInterface *gui):
   height(0), width(0), screenHeight(0), screenWidth(0), 
   XPos(0), YPos(0), depth(0), threads(0), cachesize(0), 
   mBlockbusterInterface(gui), 
@@ -57,8 +54,9 @@ Canvas::Canvas(const UserInterface *userInterface,
 {
     RendererGlue *glue;
     MovieStatus status;
-
-    glue = userInterface->supportedRenderers[rendererIndex];
+    ProgramOptions *options = GetGlobalOptions(); 
+    UserInterface *userInterface = options->userInterface; 
+    glue = userInterface->supportedRenderers[options->rendererIndex];
 
     /* We've got a UserInterface, a Renderer, and glue.  We're good to go. 
      * The UserInterface gets to go first, because it has to open the window

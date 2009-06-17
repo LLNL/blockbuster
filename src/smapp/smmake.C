@@ -46,7 +46,7 @@ u_int tilesizes[2];
 int blockdim[2] ;
 int blockpos[2];
 
-tileOverlapInfo_t *tileinfo;
+tileOverlapInfo *tileinfo;
 
 int
 main(int argc, char *argv[])
@@ -91,7 +91,7 @@ main(int argc, char *argv[])
    int ny = sm2->getTileNy(0);
    int numTiles =  nx * ny ;
   
-   tileinfo = (tileOverlapInfo_t *)calloc(numTiles,sizeof(tileOverlapInfo_t));
+   tileinfo = (tileOverlapInfo *)calloc(numTiles,sizeof(tileOverlapInfo));
    blockdim[0] = 1; blockdim[1] =1; blockpos[0]=0; blockpos[1]=0;
    sm2->computeTileOverlap( &blockdim[0],&blockpos[0], 0, tileinfo);
 
