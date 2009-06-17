@@ -94,7 +94,6 @@ struct tileOverlapInfo {
   u_int skipCorruptFlag;
 } ;
 
-// rethinking the mutex scheme -- we do not need mutexes
 struct smThreadData {
   smThreadData(): fd(0), windowData(NULL), currentFrame(-1) {}
   ~smThreadData() {}
@@ -152,7 +151,7 @@ class smBase {
   
   int Min(int a,int b) { return((a > b) ? b : a); }
   
-  void printFrameDetails(FILE *fp, int f);
+void printFrameDetails(FILE *fp, int f);
   
   // open a movie
 #ifdef WIN32
@@ -192,18 +191,7 @@ class smBase {
   int newFile(const char *fname, u_int nframes, u_int w, u_int h,
 		      u_int *tilesizes = NULL, u_int nres=1);
   
-  void seekToFrame(int, u_int); 
-  
   static void registerType(u_int t, smBase *(*)(const char *, int));
-  
-  /*! 
-    locking a frame means reading it into memory and keeping it there
-  */
-  /*void *readWinGetFrame(u_int frame, u_int &size, int threadnum);
-    void *readWinGetFrame(u_int frame, u_int &size, int threadnum,int*dim, int*pos, int res);
-    //void unlockFrame(u_int frame);
-    */ 
-  
   
   
  private:
@@ -252,36 +240,11 @@ class smBase {
   std::vector<smThreadData> mThreadData; 
   
   
-  // "windowing" mutex set
-  /* pthread_mutex_t *winmut;
-     pthread_cond_t *wincond;
-     int *currentFrame; // WTF?  
-     u_int *winlock;
-     void **win; // now is char *windowData in smThreadData
-     
-     // writelock mutex
-     pthread_mutex_t writelock;
-  */
-  
   // directory of movie types
   static u_int ntypes;
   static u_int *typeID;
   static smBase *(**smcreate)(const char *, int);
   
-  // direct-io -- oh, the irony-- not used at all.  ever. 
-  /*  void **dio_buf;
-      void **dio_free;
-      int dio_mem;
-      int dio_min;
-      int dio_max;
-  */
-  
-  // tile bufs --- point into dio_buf -- i.e. dio_buf has extra allocation for worst case tile size
-  /* u_char **tile_buf;
-     u_int **tile_sizes;
-     u_int **tile_offsets;
-     tileOverlapInfo_t **tile_info; // used for computing overlap info
-  */
 };
 
 #endif
