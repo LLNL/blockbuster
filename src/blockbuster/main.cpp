@@ -66,7 +66,7 @@ ProgramOptions gProgramOptions;
  * available on a system.  If the number of processors is
  * greater than 1, threads will be enabled by default.
  * If the number cannot be determined with any validity,
- * 0 will be returned.
+ * 0 will be returned.  Only works on Linux. 
  */
 static int GetNumProcessors(void)
 {
@@ -94,7 +94,7 @@ static int GetNumProcessors(void)
 
 
 void version(void) {
-  fprintf(stderr, "Blockbuster version "BLOCKBUSTER_VERSION"  (c) Tungsten Graphics, Inc. with modifications by IMG group at Lawrence Livermore National Laboratory (from movie.cpp rev. $Revision: 1.37 $)\n\n");
+  fprintf(stderr, "Blockbuster version "BLOCKBUSTER_VERSION"  (c) Tungsten Graphics, Inc. with modifications by IMG group at Lawrence Livermore National Laboratory\n\n");
   return; 
 }
 
@@ -250,10 +250,6 @@ static void ParseOptions(int &argc, char *argv[])
    * if they'll steal time from the main thread.
    */
   opt->preloadFrames = 4;
-  numProcessors = GetNumProcessors();
-  if (numProcessors > 1) {
-    opt->readerThreads = 2;
-  }
 
   /* Figure out which user interface and renderer we're
    * using right now (the defaults), so we can give
@@ -416,6 +412,13 @@ static void ParseOptions(int &argc, char *argv[])
     }
   }
 
+  numProcessors = GetNumProcessors();
+  if (!opt->readerThreads) {
+    if (numProcessors > 1) {
+      opt->readerThreads = numProcessors;    
+    }
+  }
+
   if (opt->masterHost != "") {
 	opt->slaveMode = 1;
     QStringList hostTokens=opt->masterHost.split(":"); 
@@ -468,6 +471,7 @@ static void ParseOptions(int &argc, char *argv[])
     opt->loopCount = opt->loopCountName.toInt();
   }
 
+    
   /* Here's a big trick.  Find a nice match between the specified UserInterface
    * (if any) and the specified Renderer (again, if any).  A NULL UserInterface
    * name or Renderer name matches the first available UserInterface and/or
@@ -533,6 +537,7 @@ int main(int argc, char *argv[])
   gMainThread = QThread::currentThread(); 
   RegisterThread(gMainThread); 
  
+  version(); // announce our self
   /*! 
 	If we are running dmx, then kill the slaves before exiting the program
   */ 
