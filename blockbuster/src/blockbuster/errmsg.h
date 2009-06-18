@@ -19,13 +19,16 @@ struct MessageLevel {
   int messageLevel;
 }; 
 extern pthread_mutex_t debug_message_lock; 
-#ifdef DEBUG
+// #ifdef DEBUG
 // #warning turning on dbprintf statements
 #define dbprintf theMessage.file=__FILE__,theMessage.function=__FUNCTION__,theMessage.line=__LINE__,real_dbprintf
-#else
-// this is a noop for most compilers... 
-#define dbprintf if (0) real_dbprintf
-#endif
+/*
+  Not necessary to suppress for normal builds -- very nominal performance hit.
+   #else
+   // this is a noop for most compilers... 
+   #define dbprintf if (0) real_dbprintf
+   #endif
+*/
 void set_verbose(int level); 
 
 //void real_dbprintf(const char *fmt, ...); 
