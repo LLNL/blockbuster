@@ -457,8 +457,10 @@ static void ParseOptions(int &argc, char *argv[])
   
   //if (opt->preloadFrames >= opt->frameCacheSize - 1)
   //  opt->frameCacheSize = opt->preloadFrames + 2;
-  if (opt->frameCacheSize < opt->preloadFrames * 1.5)
-    opt->frameCacheSize = opt->preloadFrames * opt->frameCacheSize;
+  if (opt->frameCacheSize < opt->preloadFrames) {
+    ERROR("Need to adjust the frame cache size to a larger value, from %d to %d", opt->frameCacheSize, opt->preloadFrames * 4); 
+    opt->frameCacheSize = opt->preloadFrames * 4;
+  }
 
 
   /* We've read all the command line options, so everything is set.
