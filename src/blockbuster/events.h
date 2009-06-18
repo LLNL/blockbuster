@@ -110,6 +110,88 @@
 
   uint32_t MovieEventTypeToUint32(MovieEventType iType); 
   MovieEventType Uint32ToMovieEventType (uint32_t iInt);
+inline QString MovieEventTypeToString(MovieEventType iType) {
+  switch (iType) {
+  case MOVIE_NONE: return "MOVIE_NONE"; 
+  case MOVIE_EXPOSE: return "MOVIE_EXPOSE"; 
+  case MOVIE_RESIZE: return "MOVIE_RESIZE"; 
+  case MOVIE_FULLSCREEN: return "MOVIE_FULLSCREEN"; 
+  case MOVIE_IMAGE_MOVE: return "MOVIE_IMAGE_MOVE"; 
+  case MOVIE_MOVE: return "MOVIE_MOVE"; 
+  case MOVIE_MOVE_RESIZE: return "MOVIE_MOVE_RESIZE"; 
+  case MOVIE_CENTER: return "MOVIE_CENTER"; 
+  case MOVIE_TOGGLE_CURSOR: return "MOVIE_TOGGLE_CURSOR"; 
+  case MOVIE_ZOOM_IN: return "MOVIE_ZOOM_IN"; 
+  case MOVIE_ZOOM_OUT: return "MOVIE_ZOOM_OUT"; 
+  case MOVIE_ZOOM_FIT: return "MOVIE_ZOOM_FIT"; 
+  case MOVIE_ZOOM_ONE: return "MOVIE_ZOOM_ONE"; 
+  case MOVIE_ZOOM_SET: return "MOVIE_ZOOM_SET"; 
+  case MOVIE_ZOOM_UP: return "MOVIE_ZOOM_UP"; 
+  case MOVIE_ZOOM_DOWN: return "MOVIE_ZOOM_DOWN"; 
+  case MOVIE_INCREASE_LOD: return "MOVIE_INCREASE_LOD"; 
+  case MOVIE_DECREASE_LOD: return "MOVIE_DECREASE_LOD"; 
+  case MOVIE_SET_LOD: return "MOVIE_SET_LOD"; 
+  case MOVIE_OPEN_FILE: return "MOVIE_OPEN_FILE"; 
+  case MOVIE_OPEN_FILE_NOCHANGE: return "MOVIE_OPEN_FILE_NOCHANGE"; 
+  case MOVIE_PLAY_FORWARD: return "MOVIE_PLAY_FORWARD"; 
+  case MOVIE_PLAY_BACKWARD: return "MOVIE_PLAY_BACKWARD"; 
+  case MOVIE_SET_LOOP: return "MOVIE_SET_LOOP"; 
+  case MOVIE_SET_PINGPONG: return "MOVIE_SET_PINGPONG"; 
+  case MOVIE_CONTINUE: return "MOVIE_CONTINUE"; 
+  case MOVIE_PAUSE: return "MOVIE_PAUSE"; 
+  case MOVIE_STOP: return "MOVIE_STOP"; 
+  case MOVIE_STEP_FORWARD: return "MOVIE_STEP_FORWARD"; 
+  case MOVIE_STEP_BACKWARD: return "MOVIE_STEP_BACKWARD"; 
+  case MOVIE_SKIP_FORWARD: return "MOVIE_SKIP_FORWARD"; 
+  case MOVIE_SKIP_BACKWARD: return "MOVIE_SKIP_BACKWARD"; 
+  case MOVIE_SECTION_FORWARD: return "MOVIE_SECTION_FORWARD"; 
+  case MOVIE_SECTION_BACKWARD: return "MOVIE_SECTION_BACKWARD"; 
+  case MOVIE_SLOWER: return "MOVIE_SLOWER"; 
+  case MOVIE_INCREASE_RATE: return "MOVIE_INCREASE_RATE"; 
+  case MOVIE_DECREASE_RATE: return "MOVIE_DECREASE_RATE"; 
+  case MOVIE_SET_RATE: return "MOVIE_SET_RATE"; 
+  case MOVIE_START_END_FRAMES: return "MOVIE_START_END_FRAMES"; 
+  case MOVIE_GOTO_START: return "MOVIE_GOTO_START"; 
+  case MOVIE_GOTO_END: return "MOVIE_GOTO_END"; 
+  case MOVIE_GOTO_FRAME: return "MOVIE_GOTO_FRAME"; 
+  case MOVIE_SAVE_FRAME: return "MOVIE_SAVE_FRAME"; 
+  case MOVIE_MOUSE_PRESS_1: return "MOVIE_MOUSE_PRESS_1"; 
+  case MOVIE_MOUSE_PRESS_2: return "MOVIE_MOUSE_PRESS_2"; 
+  case MOVIE_MOUSE_PRESS_3: return "MOVIE_MOUSE_PRESS_3"; 
+  case MOVIE_MOUSE_RELEASE_1: return "MOVIE_MOUSE_RELEASE_1"; 
+  case MOVIE_MOUSE_RELEASE_2: return "MOVIE_MOUSE_RELEASE_2"; 
+  case MOVIE_MOUSE_RELEASE_3: return "MOVIE_MOUSE_RELEASE_3"; 
+  case MOVIE_MOUSE_MOVE: return "MOVIE_MOUSE_MOVE"; 
+  case MOVIE_SHOW_INTERFACE: return "MOVIE_SHOW_INTERFACE"; 
+  case MOVIE_HIDE_INTERFACE: return "MOVIE_HIDE_INTERFACE"; 
+  case MOVIE_TOGGLE_INTERFACE: return "MOVIE_TOGGLE_INTERFACE"; 
+  case MOVIE_QUIT: return "MOVIE_QUIT"; 
+  case MOVIE_STOP_ERROR: return "MOVIE_STOP_ERROR"; 
+  case MOVIE_SIDECAR_BACKCHANNEL: return "MOVIE_SIDECAR_BACKCHANNEL"; 
+  case MOVIE_SIDECAR_MESSAGE: return "MOVIE_SIDECAR_MESSAGE"; 
+  case MOVIE_SIDECAR_STATUS: return "MOVIE_SIDECAR_STATUS"; 
+  case MOVIE_SNAPSHOT: return "MOVIE_SNAPSHOT"; 
+  case MOVIE_SNAPSHOT_STARTFRAME: return "MOVIE_SNAPSHOT_STARTFRAME"; 
+  case MOVIE_SNAPSHOT_ENDFRAME: return "MOVIE_SNAPSHOT_ENDFRAME"; 
+  case MOVIE_SNAPSHOT_ALT_ENDFRAME: return "MOVIE_SNAPSHOT_ALT_ENDFRAME"; 
+  case MOVIE_PWD: return "MOVIE_PWD"; 
+  case MOVIE_CUE_BEGIN: return "MOVIE_CUE_BEGIN"; 
+  case MOVIE_CUE_MOVIE_NAME: return "MOVIE_CUE_MOVIE_NAME"; 
+  case MOVIE_CUE_PLAY_ON_LOAD: return "MOVIE_CUE_PLAY_ON_LOAD"; 
+  case MOVIE_CUE_PLAY_BACKWARD: return "MOVIE_CUE_PLAY_BACKWARD"; 
+  case MOVIE_CUE_END: return "MOVIE_CUE_END"; 
+  case MOVIE_CUE_COMPLETE: return "MOVIE_CUE_COMPLETE"; 
+  case MOVIE_SLAVE_SWAP_COMPLETE: return "MOVIE_SLAVE_SWAP_COMPLETE"; 
+  case MOVIE_SLAVE_EXIT: return "MOVIE_SLAVE_EXIT"; 
+  case MOVIE_SLAVE_COMMAND_FAILED: return "MOVIE_SLAVE_COMMAND_FAILED"; 
+  case MOVIE_SLAVE_ERROR: return "MOVIE_SLAVE_ERROR"; 
+  case MOVIE_SAVE_IMAGE: return "MOVIE_SAVE_IMAGE"; 
+  case MOVIE_MESSAGE: return "MOVIE_MESSAGE"; 
+  case MOVIE_DISABLE_CURRENT_FRAME: return "MOVIE_DISABLE_CURRENT_FRAME"; 
+  default: return QString("UNDEFINED TYPE: %1").arg(iType);
+  }
+  return "this is impossible";
+}
   
 #define NO_MOVIE_DATA 0,0,0,0,0,0,""
 
@@ -151,7 +233,8 @@
 	}
     std::string Stringify(void) {
       return QString("Event: type %1, ID %2, number = %3, rate = %4, (width,height) = (%5, %6), (x,y) = (%7, %8), string: \"%9\"")
-        .arg(MovieEventTypeToUint32(eventType)).arg(ID)
+        //.arg(MovieEventTypeToUint32(eventType)).arg(ID)
+        .arg(MovieEventTypeToString(eventType)).arg(ID)
         .arg(number).arg(rate).arg(width).arg(height).arg(x).arg(y)
         .arg(mString).toStdString(); 
     }
