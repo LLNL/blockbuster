@@ -766,7 +766,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       //===============================================================
       /* END SWITCH on type of event */
       //===================================================================
-      TIMER_PRINT("end switch"); 
+      TIMER_PRINT("end switch, frame %d", frameNumber); 
 
       /*! check if we have reached the end of a cue */
       if (cuePlaying && 
