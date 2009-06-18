@@ -83,10 +83,19 @@ class CacheThread: public QThread {
    * mutexes (mutices? :-).
    */
    class ImageCache {
+     friend class CacheThread; 
    public:
      ImageCache(int numthreads, int numimages, Canvas *c);
      ~ImageCache(); 
 
+     Image *GetImage(uint32_t frameNumber,
+                     const Rectangle *newRegion, uint32_t levelOfDetail);
+     void PreloadImage(uint32_t frameNumber, 
+                       const Rectangle *region, uint32_t levelOfDetail);
+     void ManageFrameList(FrameList *frameList);
+
+     void ReleaseImage(Image *image);
+   protected:
      CachedImage *GetCachedImageSlot(uint32_t newFrameNumber);
 
      void RemoveJobFromPendingQueue(ImageCacheJob *job) {
@@ -102,13 +111,7 @@ class CacheThread: public QThread {
      void ClearImages(void); 
      void GetConfiguration(int &outNumThreads, int &outMaxImages) ;
      void ClearJobQueue(void);
-     void ManageFrameList(FrameList *frameList);
      CachedImage *FindImage(uint32_t frame, uint32_t lod);
-     Image *GetImage(uint32_t frameNumber,
-                     const Rectangle *newRegion, uint32_t levelOfDetail);
-     void ReleaseImage(Image *image);
-     void PreloadImage(uint32_t frameNumber, 
-                       const Rectangle *region, uint32_t levelOfDetail);
      void Print(void); 
      
      void  lock(char *reason, char *file="unknown file", int line=0) {
