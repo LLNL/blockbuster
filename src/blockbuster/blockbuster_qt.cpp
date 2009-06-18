@@ -318,7 +318,7 @@ void BlockbusterInterface::on_frameSlider_valueChanged(int value) {
     return;
   }
   frameField->setText(QString("%1").arg(value)); 
-  mEventQueue.push_back(MovieEvent (MOVIE_GOTO_FRAME, value)); 
+  mEventQueue.push_back(MovieEvent (MOVIE_GOTO_FRAME, value-1)); 
 }
 
 //======================================================   
