@@ -289,12 +289,10 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
      MovieEvent event = events[eventNum];
      bool sendSnapshot = false; 
      if (event.eventType != MOVIE_NONE) {
-       // INFO("Got  Event type %d\n", event.eventType); 
-       INFO("Got %s\n", event.Stringify().c_str()); 
+       DEBUGMSG("Got %s\n", event.Stringify().c_str()); 
      }
       eventNum ++; 
       switch(event.eventType) {
-        /* in the future, perhaps movie cues will cause a suspension of drawing until they are finished.  But this will have to be done carefully so you don't get stuck in a "black screen" mode. */ 
       case   MOVIE_SIDECAR_STATUS:   
       case   MOVIE_SNAPSHOT:   
       case   MOVIE_SNAPSHOT_STARTFRAME:   
@@ -313,9 +311,9 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         canvas->reportMovieCueStart(); 
         break; 
       case   MOVIE_CUE_END: 
-        /* it seems like you would report the end of the cue here, but 
-           that's not the case -- this event is just the end of the cue 
-           description and is pretty useless actually
+        /* This event is just the end of the cue data stream, and is
+           not related to when the cue is done executing.  
+           In fact, the cue is not really playing until now.  
         */ 
         cuePlaying = true;
         break; 
@@ -631,10 +629,12 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         break;
       case MOVIE_INCREASE_LOD:
         lodBias++;
+        if (lodBias > maxLOD) lodBias = maxLOD; 
         canvas->ReportDetailChange(lodBias);
         break;
       case MOVIE_DECREASE_LOD:
         lodBias--;
+        if (lodBias < 0) lodBias = 0; 
         canvas->ReportDetailChange(lodBias);
         break;
       case MOVIE_SET_LOD:
@@ -653,8 +653,6 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         break;
       case MOVIE_MOUSE_RELEASE_3:
       case MOVIE_TOGGLE_INTERFACE:
-        //canvas->ShowInterface(canvas, false);
-        //drawInterface = !drawInterface;
         if (!gMainWindow->isVisible()) {
           gMainWindow->show(); 
           gMainWindow->raise(); 
@@ -979,34 +977,19 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         */
       }
       
-#if 0
-      /* Compute LOD and clamp to what's available in the file */
-      if (playDirection) {
-        baseLOD = LODFromZoom(currentZoom);
-        lod = baseLOD + lodBias;
-        if (lod > frameInfo->maxLOD) {
-          lod = frameInfo->maxLOD;
-        }
-        else if (lod < 0) {
-          lod = 0;
-        }
-      }
-      
-      else {
-        /* always show LOD=0 for still frames */
-        lod = 0;
-      }
-#else
+      if (lodBias < 0) {
+        lodBias = 0; 
+        canvas->ReportDetailChange(lodBias);
+      }        
+      if (lodBias > frameInfo->maxLOD) {
+        lodBias = maxLOD; 
+        canvas->ReportDetailChange(lodBias);
+      }        
       baseLOD = LODFromZoom(currentZoom);
-      lod = baseLOD + lodBias;
+      lod = baseLOD > lodBias? baseLOD: lodBias;
       if (lod > frameInfo->maxLOD) {
         lod = frameInfo->maxLOD;
       }
-      else if (lod < 0) {
-        lod = 0;
-      }
-#endif
-      
       /* Call the canvas to render the desired area of the frame.
        * Most canvases will refer to their own image caches to load
        * the image and render it.  Some will just send the
