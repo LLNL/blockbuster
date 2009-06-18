@@ -120,7 +120,6 @@ void MovieCue::GenerateScript(MovieScript &oScript) const{
   oScript.clear();   
   /* store events pertaining to the user interface */
   oScript.push_back(MovieEvent(MOVIE_CUE_BEGIN, text(), mEndFrame)); 
-  oScript.push_back(MovieEvent(MOVIE_CUE_PLAY_ON_LOAD, mPlayMovie));
   if (mShowControls) {
     oScript.push_back(MovieEvent(MOVIE_SHOW_INTERFACE));
   } else {
@@ -130,14 +129,15 @@ void MovieCue::GenerateScript(MovieScript &oScript) const{
   oScript.push_back(MovieEvent(MOVIE_SET_LOOP, mLoopFrames));
   oScript.push_back(MovieEvent(MOVIE_SET_PINGPONG, mPingPong));
   oScript.push_back(MovieEvent(MOVIE_CUE_PLAY_BACKWARD, mPlayBackward)); 
-  oScript.push_back(MovieEvent(MOVIE_START_END_FRAMES, mStartFrame, mEndFrame, 0,0)); 
+  oScript.push_back(MovieEvent(MOVIE_CUE_PLAY_ON_LOAD, mPlayMovie));
   /* now store the events that actually make BlockBuster do things */
   if (mLoadMovie && mMovieName != "") {    
     oScript.push_back(MovieEvent(MOVIE_OPEN_FILE_NOCHANGE, mMovieName, mCurrentFrame));
   }  else {
     oScript.push_back(MovieEvent(MOVIE_GOTO_FRAME,mCurrentFrame-1));
   }
-  if (mFullScreen) {
+   oScript.push_back(MovieEvent(MOVIE_START_END_FRAMES, mStartFrame, mEndFrame, 0,0)); 
+ if (mFullScreen) {
     oScript.push_back(MovieEvent(MOVIE_FULLSCREEN)); 
   } else if (mZoomOne) {
     oScript.push_back(MovieEvent(MOVIE_ZOOM_ONE)); 
