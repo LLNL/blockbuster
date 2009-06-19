@@ -93,12 +93,6 @@ typedef int (*LoadImageFunc)
 
 typedef  void (*DestroyFrameFunc)(struct FrameInfo *frameInfo);
 
-//============================================================
-// base class for storing user information in frame lists, if needed
-class FrameListUserData {
- public:
-  virtual  ~FrameListUserData () = 0; 
-};
 
 //============================================================
 struct FrameInfo {
