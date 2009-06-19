@@ -86,6 +86,7 @@
      */
     void *rendererPrivateData;
 
+
     /**************************************************************/
     /* The following fields are owned and initialized by the UserInterface.
      */
@@ -114,16 +115,6 @@
      */
     void (*Move)(struct Canvas *canvas, int newX, int newY, int cameFromX);
 
-
-    /* This will be called, allowing the main program to respond to
-     * events occurring in the user interface.  The UserInterface
-     * itself is expected to respond appropriately to the event
-     * before returning it (and allowing the Renderer part of the
-     * Canvas to react); for the most part, this is the default 
-     * behavior in known UserInterfaces (although a "slave"
-     * UserInterface might be an exception).
-     */
-    //void (*GetEvent)(struct Canvas *canvas, int block, MovieEvent *event);
 
     /* This is called if any module wishes to report an error,
      * warning, informational, or debug message.  The modules
