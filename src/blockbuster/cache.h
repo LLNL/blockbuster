@@ -29,7 +29,7 @@ struct ImageCacheJob {
     
   ~ImageCacheJob() {}
 
-  FrameInfo frameInfo; /* needed in case FrameList changes while we're working */
+  FrameInfo frameInfo; /* Local copy needed in case FrameList changes while we're working */
   uint32_t frameNumber;
   Rectangle region;
   uint32_t levelOfDetail;
