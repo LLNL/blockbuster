@@ -168,10 +168,17 @@ inline string applyPatternToString(string pattern, string s) {
   return out; 
 }
 
+// operator string() cannot be overloaded for ints
+inline std::string intToString(uint32_t i) {
+  char buf[128] = "";
+  sprintf(buf, "%d", i);    
+  std::string s(buf);
+  return s; 
+}
 // operator string() cannot be overloaded for ints and doubles, so:
-inline std::string doubleToString(double d, int precision=0){
+inline std::string doubleToString(double d, int precision=-1){
   char buf[128] = "", fmt[1024] = "%f";
-  if (precision) 
+  if (precision != -1) 
     sprintf(fmt, "%%.%df", precision); 
   
   sprintf(buf, fmt, d);    
