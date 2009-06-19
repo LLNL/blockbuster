@@ -96,10 +96,14 @@ void real_dbprintf(const char *fmt, ...);
 #define MOVIE_FATAL_ERROR 3
 
 struct Rectangle {
+  QString toString(void) const {
+    return QString("Rectangle {%1, %2, %3, %4}").arg(x).arg(y).arg(width).arg(height); 
+  }
   qint32 x, y;
   qint32 width, height;
 } ;
 
+//! RectContainsRect: Return 1 if r1 contains r2, else return 0.
 int RectContainsRect(const Rectangle *r1, const Rectangle *r2);
 Rectangle RectUnionRect(const Rectangle *r1, const Rectangle *r2);
 
