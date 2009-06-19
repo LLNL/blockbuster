@@ -1164,7 +1164,7 @@ static RendererGlue DMXGlue = {
  * but no renderer, the first one will be chosen.
  */
 
-static RendererGlue *supportedGlue[] = {
+static RendererGlue *x11_supportedRenderers[] = {
     &GLGlue,
     &GLTextureGlue,
     &X11Glue,
@@ -1178,7 +1178,7 @@ static RendererGlue *supportedGlue[] = {
 UserInterface x11UserInterface = {
     NAME,
     DESCRIPTION,
-    supportedGlue,
+    x11_supportedRenderers,
     xwindow_HandleOptions,
     xwindow_Initialize,
     NULL /* no ChooseFile implementation */
