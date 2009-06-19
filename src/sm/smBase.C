@@ -68,6 +68,9 @@
 #include <stdlib.h>
 #endif
 
+#include "stringutil.h"
+
+using namespace std; 
 
  
 const int SM_MAGIC_1=SM_MAGIC_VERSION1;
@@ -76,7 +79,22 @@ const int DIO_DEFAULT_SIZE = 1024L*1024L*4;
 
 #define SM_HDR_SIZE 64
 
-
+string tileOverlapInfo::toString(void) {
+  return string("{{ tileOverlapInfo: frame ") + intToString(frame)
+    + ", tile = "+intToString(tileNum)
+    + ", overlaps="+intToString(overlaps)
+    + ", prev_overlaps="+intToString(prev_overlaps)
+    + ", blockOffsetX="+intToString(blockOffsetX)
+    + ", blockOffsetY="+intToString(blockOffsetY)
+    + ", tileOffsetX = "+intToString(tileOffsetX)
+    + ", tileOffsetY = "+intToString(tileOffsetY)
+    + ", tileLengthX = "+intToString(tileLengthX)
+    + ", tileLengthY = "+ intToString(tileLengthY)
+    + ", readBufferOffset = "+ intToString(readBufferOffset)
+    + ", compressedSize = "+intToString(compressedSize) 
+    + ", skipCorruptFlag = "+intToString(skipCorruptFlag)
+    + "}}"; 
+}
 /*!
   ===============================================
   debug print statements, using smdbprintf, which 
@@ -184,6 +202,7 @@ smBase::smBase(const char *_fname, int numthreads)
    version = 0;
    nresolutions = 1;
    
+   mThreadData.clear(); 
    mThreadData.resize(numthreads); 
    
    if (_fname != NULL) {
@@ -503,9 +522,13 @@ void smBase::readHeader(void)
      unsigned long w;
      if(version == 2) {
        // put preallocated tilebufs and tile info support here as well
+       mThreadData[i].io_buf.clear(); 
        mThreadData[i].io_buf.resize(maxFrameSize);
+       mThreadData[i].tile_buf.clear();
        mThreadData[i].tile_buf.resize(maxtilesize*3);
+       mThreadData[i].tile_offsets.clear(); 
        mThreadData[i].tile_offsets.resize(maxNumTiles);
+       mThreadData[i].tile_info.clear(); 
        mThreadData[i].tile_info.resize(maxNumTiles);
      }
    }
@@ -557,12 +580,7 @@ int smBase::readData(int fd, u_char *buf, int bytes) {
 */
 void smBase::readWin(u_int f, int threadnum)
 {
-  if (mThreadData[threadnum].currentFrame == f) {
-    smdbprintf(0, "readWin returning without reading because already read this frame"); 
-    return; 
-  }
   off64_t size;
-  
   
   size = flength[f];
   int fd = mThreadData[threadnum].fd;
@@ -600,10 +618,6 @@ void smBase::readWin(u_int f, int threadnum)
 void smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
 {
   // version 2 implied -- reads in only overlapping tiles 
-  if (mThreadData[threadnum].currentFrame == f) {
-    smdbprintf(0, "readWin returning without reading because already read this frame"); 
-    return; 
-  }
   
   u_int readBufferOffset;
   smdbprintf(5,"readWin version 2, frame %d, thread %d", f, threadnum); 
@@ -677,7 +691,8 @@ void smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
         tinfo->overlaps = 0;
       }      
     }
-    computeTileOverlap(dim, pos, res, &(mThreadData[threadnum].tile_info[0]));
+    //smdbprintf(5, "thread %d calling computeTileOverlap"); 
+    computeTileOverlap(dim, pos, res, threadnum);
     
     // Grab data for overlapping tiles
     int tile; 
@@ -716,8 +731,10 @@ void smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
   \param res the resolution (level of Detail)
   \param info the output information
 */ 
-void smBase::computeTileOverlap(int *blockDim, int* blockPos, int res, tileOverlapInfo *info)
+void smBase::computeTileOverlap(int *blockDim, int* blockPos, int res, int threadnum)
 {
+  tileOverlapInfo *info = &(mThreadData[threadnum].tile_info[0]);
+
   int nx = getTileNx(res);
   int ny = getTileNy(res);
   int tileWidth = getTileWidth(res);
@@ -732,7 +749,12 @@ void smBase::computeTileOverlap(int *blockDim, int* blockPos, int res, tileOverl
   blockStartY = blockPos[1];
   blockEndY = blockStartY + blockDim[1] - 1;
 
+  /*
+    smdbprintf(5, "computeTileOverlap from <%d, %d> to <%d, %d> at res %d", 
+    blockStartX, blockStartY, blockEndX, blockEndY, res); 
+  */
 
+  ipIndex = 0; 
   for(int j = 0 ; j < ny ; j++) {
     for(int i = 0; i < nx; i++) {
       int overlaps_x = 0;
@@ -749,75 +771,74 @@ void smBase::computeTileOverlap(int *blockDim, int* blockPos, int res, tileOverl
       info[ipIndex].tileOffsetY = 0;
       info[ipIndex].tileLengthX = 0;
       info[ipIndex].tileLengthY = 0;
-
-
+      info[ipIndex].tileNum = ipIndex; 
+      
       t1 = blockStartX - tileStartX;
       if( t1 >= 0) {
-	if (t1 < tileWidth) {
-	  //smdbprintf(5," t1=%d ",t1);
-	  overlaps_x = 1;
-	  info[ipIndex].blockOffsetX = 0;
-	  info[ipIndex].tileOffsetX = t1;
-	  if(blockEndX < tileEndX) {
-	    info[ipIndex].tileLengthX = blockDim[0];
-	  }
-	  else {
-	    info[ipIndex].tileLengthX = tileWidth - t1;
-	  }
-	}
+        if (t1 < tileWidth) {
+          //smdbprintf(5,"have overlap, t1=%d ",t1);
+          overlaps_x = 1;
+          info[ipIndex].blockOffsetX = 0;
+          info[ipIndex].tileOffsetX = t1;
+          if(blockEndX < tileEndX) {
+            info[ipIndex].tileLengthX = blockDim[0];
+          }
+          else {
+            info[ipIndex].tileLengthX = tileWidth - t1;
+          }
+        }
       }
       else { /* tileStartX could be inside block */
-	if((blockEndX - tileStartX) >= 0) {
-	  //smdbprintf(5," inside block X ");
-	  overlaps_x = 1;
-	  info[ipIndex].blockOffsetX = tileStartX - blockStartX;
-	  info[ipIndex].tileOffsetX = 0;
-	  info[ipIndex].tileLengthX = Min(tileWidth,((blockEndX-tileStartX)+1));
-	}
+        if((blockEndX - tileStartX) >= 0) {
+          //smdbprintf(5," inside block X ");
+          overlaps_x = 1;
+          info[ipIndex].blockOffsetX = tileStartX - blockStartX;
+          info[ipIndex].tileOffsetX = 0;
+          info[ipIndex].tileLengthX = Min(tileWidth,((blockEndX-tileStartX)+1));
+        }
       }
-
-     
-
+      
+      
+      
       if(overlaps_x) {
-	t2 = blockStartY - tileStartY;
-	if( t2 >= 0) {
-	  if (t2 < tileHeight) {
-	    //smdbprintf(5," t2=%d ",t2);
-	    overlaps_y = 1;
-	    info[ipIndex].blockOffsetY = 0;
-	    info[ipIndex].tileOffsetY = t2;
-	    if(blockEndY < tileEndY) {
-	      info[ipIndex].tileLengthY = blockDim[1];
-	    }
-	    else {
-	      info[ipIndex].tileLengthY = tileHeight - t2;
-	    }
-	  }
-	}
-	else { /* tileStartY could be inside block */
-	  if((blockEndY - tileStartY) >= 0) {
-	    //smdbprintf(5," inside block Y ");
-	    overlaps_y = 1;
-	    info[ipIndex].blockOffsetY = tileStartY - blockStartY;
-	    info[ipIndex].tileOffsetY = 0;
-	    info[ipIndex].tileLengthY = Min(tileHeight,((blockEndY-tileStartY)+1));
-	  }
-	}
+        t2 = blockStartY - tileStartY;
+        if( t2 >= 0) {
+          if (t2 < tileHeight) {
+            //smdbprintf(5," t2=%d ",t2);
+            overlaps_y = 1;
+            info[ipIndex].blockOffsetY = 0;
+            info[ipIndex].tileOffsetY = t2;
+            if(blockEndY < tileEndY) {
+              info[ipIndex].tileLengthY = blockDim[1];
+            }
+            else {
+              info[ipIndex].tileLengthY = tileHeight - t2;
+            }
+          }
+        }
+        else { /* tileStartY could be inside block */
+          if((blockEndY - tileStartY) >= 0) {
+            //smdbprintf(5," inside block Y ");
+            overlaps_y = 1;
+            info[ipIndex].blockOffsetY = tileStartY - blockStartY;
+            info[ipIndex].tileOffsetY = 0;
+            info[ipIndex].tileLengthY = Min(tileHeight,((blockEndY-tileStartY)+1));
+          }
+        }
       }
-
+      
       if(overlaps_x && overlaps_y) {
-	info[ipIndex].overlaps = 1;
-	//smdbprintf(5,"boffsetX %d boffsetY %d toffsetX %d toffsetY %d",info[ipIndex].blockOffsetX,info[ipIndex].blockOffsetY,info[ipIndex].tileOffsetX,info[ipIndex].tileOffsetY);
+        info[ipIndex].overlaps = 1;
       }
       else {
-	info[ipIndex].overlaps = 0;
+        info[ipIndex].overlaps = 0;
       }
-
+      //smdbprintf(5, "thread %d, info[%d]: %s", threadnum,  ipIndex, info[ipIndex].toString().c_str()); 
       
     } // for i
   } // for j
- 
-
+  
+  return;  
   
 }
 
@@ -851,9 +872,9 @@ void smBase::getFrame(int f, void *data, int threadnum)
  
 void smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStride, int *dim, int *pos, int *step, int res)
 {
-  smdbprintf(5,"smBase::getFrameBlock, frame %d, thread %d", f, threadnum); 
+  smdbprintf(5,"smBase::getFrameBlock, frame %d, thread %d, data %p", f, threadnum, data); 
    u_char *cdata;
-   u_int size;
+   uint32_t size;
    u_char *image;
    u_char *out = (u_char *)data;
    u_char *rowPtr = (u_char *)data;
@@ -978,25 +999,38 @@ void smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStride,
      smdbprintf(5, "Done with single tiled image"); 
    } /* END single tiled simage */ 
    else { 
-     smdbprintf(5,"smBase::getFrameBlock(%d): process across %d overlapping tiles", f, numTiles); 
-     u_int copied=0;
+     smdbprintf(5,"smBase::getFrameBlock(frame %d, thread %d): process across %d overlapping tiles", f, threadnum, numTiles); 
+     uint32_t copied=0;
      for(int tile=0; tile<numTiles; tile++){
-       //smdbprintf(5,"tile %d", tile); 
+       smdbprintf(5,"tile %d", tile); 
        tileOverlapInfo tileinfo = tinfo[tile];
+       smdbprintf(5, "thread %d, Frame %d, tile %s", threadnum, f, tileinfo.toString().c_str());        
        if(tileinfo.overlaps && (tileinfo.skipCorruptFlag == 0)) {
          
          u_char *tdata = (u_char *)(cdata + tileinfo.readBufferOffset);
          decompBlock(tdata,tbuf,tileinfo.compressedSize,tilesize);
-         //smdbprintf(5,"done with decompBlock, tile %d", tile); 
+         smdbprintf(5,"done with decompBlock, tile %d", tile); 
          
          u_char *to = (u_char*)(out + (tileinfo.blockOffsetY * destRowStride) + (tileinfo.blockOffsetX * 3));
          u_char *from = (u_char*)(tbuf + (tileinfo.tileOffsetY * tilesize[0] * 3) + (tileinfo.tileOffsetX * 3));
          int maxX = tileinfo.tileLengthX, maxY = tileinfo.tileLengthY; 
+         uint32_t newBytes = 3*maxX*maxY, maxAllowed = (_dim[0]*_dim[1]*3);
+         uint32_t newTotal = newBytes + copied; 
+         /*!
+           smdbprintf(5, "thread %d, Frame %d, tile %d, copying %d rows %d pixels per row, %d new bytes, %d copied so far, new total will be %d, max allowed is %d x %d x 3 = %d", 
+           threadnum, f, tile, maxY, maxX, newBytes, 
+           copied, newTotal,  
+           _dim[0], _dim[1], maxAllowed ); 
+         */ 
+         if (newTotal > maxAllowed) {
+           smdbprintf(5, "Houston, we have a problem. Dump core here. new total > maxAllowed"); 
+           abort(); 
+         }
          for(int rows = 0; rows < maxY; rows += _step[1]) {
            if(_step[0] == 1) {
              copied += maxX * 3;
 #if 1
-             assert(copied <= (_dim[0]*_dim[1]*3));
+             assert(copied <= maxAllowed);
 #endif
              //smdbprintf(5,"frame %d tile %d",f,tile);
              memcpy(to,from,maxX * 3);
@@ -1015,7 +1049,8 @@ void smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStride,
            to += destRowStride;
            from += tilesize[0] * _step[1] * 3;
          }
-       }
+       } 
+       
      }
    } /* end process across overlapping tiles */
    
