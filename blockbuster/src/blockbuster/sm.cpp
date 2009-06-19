@@ -47,71 +47,72 @@ int
 smLoadImage(Image *image, struct FrameInfo *frameInfo, 
           Canvas *canvas, const Rectangle *desiredSub, int levelOfDetail)
 {
-    const privateData *p = (privateData *)frameInfo->privateData;
-    const uint32_t imgWidth = frameInfo->width >> levelOfDetail;
-    const uint32_t imgHeight = frameInfo->height >> levelOfDetail;
-
-    bb_assert(image);
-    bb_assert(imgWidth > 0);
-    bb_assert(imgHeight > 0);
-
-    if (!image->imageData) {
-        /* The Canvas gets the opportunity to allocate image data first. */
-        image->imageData = (*canvas->ImageDataAllocator)(canvas,
-                                                 imgWidth * imgHeight * 3);
-        if (image->imageData == NULL) {
-            ERROR("could not allocate %dx%dx24 image data with canvas allocator",
-                frameInfo->width, frameInfo->height);
-            return 0;
-        }
-        image->width = imgWidth;
-        image->height = imgHeight;
-	image->imageDataBytes = imgWidth * imgHeight * 3;
-        image->ImageDataDeallocator = canvas->ImageDataDeallocator;
-        image->imageFormat.bytesPerPixel = 3;
-        image->imageFormat.scanlineByteMultiple = 1;
-        image->imageFormat.byteOrder = MSB_FIRST;
-        image->imageFormat.rowOrder = BOTTOM_TO_TOP; /* OpenGL order */
-        image->levelOfDetail = levelOfDetail;
+  DEBUGMSG(QString("smLoadImage(%1").arg(frameInfo->frameNumber)); 
+  const privateData *p = (privateData *)frameInfo->privateData;
+  const uint32_t imgWidth = frameInfo->width >> levelOfDetail;
+  const uint32_t imgHeight = frameInfo->height >> levelOfDetail;
+  bb_assert(image);
+  bb_assert(imgWidth > 0);
+  bb_assert(imgHeight > 0);
+  
+  if (!image->imageData) {
+    /* The Canvas gets the opportunity to allocate image data first. */
+    image->imageData = (*canvas->ImageDataAllocator)(canvas,
+                                                     imgWidth * imgHeight * 3);
+    if (image->imageData == NULL) {
+      ERROR("could not allocate %dx%dx24 image data with canvas allocator",
+            frameInfo->width, frameInfo->height);
+      return 0;
     }
-    else {
+    image->width = imgWidth;
+    image->height = imgHeight;
+	image->imageDataBytes = imgWidth * imgHeight * 3;
+    image->ImageDataDeallocator = canvas->ImageDataDeallocator;
+    image->imageFormat.bytesPerPixel = 3;
+    image->imageFormat.scanlineByteMultiple = 1;
+    image->imageFormat.byteOrder = MSB_FIRST;
+    image->imageFormat.rowOrder = BOTTOM_TO_TOP; /* OpenGL order */
+    image->levelOfDetail = levelOfDetail;
+  }
+  else {
 	/* some sanity checks */
 	bb_assert(image->width > 0);
 	bb_assert(static_cast<int32_t>(image->width) <= frameInfo->width);
 	bb_assert(image->height > 0);
 	bb_assert(static_cast<int32_t>(image->height) <= frameInfo->height);
-        bb_assert(image->imageFormat.rowOrder == BOTTOM_TO_TOP);
-        bb_assert(image->imageDataBytes >= imgWidth * imgHeight * 3);
-        bb_assert(image->width == imgWidth);
-        bb_assert(image->height == imgHeight);
-    }
-
-    /* compute position and size of region in res=levelOfDetail coordinates */
-    const int destStride = image->width * 3;
-    int size[2], pos[2], step[2];
-    char *dest;
-    pos[0] = desiredSub->x;
-    pos[1] = image->height - (desiredSub->y + desiredSub->height);
-    size[0] = desiredSub->width;
-    size[1] = desiredSub->height;
-    step[0] = 1;
-    step[1] = 1;
-    dest = (char *) image->imageData + (pos[1] * image->width + pos[0]) * 3;
-
-    DEBUGMSG("Getting SM region %d, %d %d x %d  of %d x %d  destStride=%d",
-             desiredSub->x, desiredSub->y, size[0], size[1],
-             image->width, image->height, destStride);
-    
-    p->sm->getFrameBlock(frameInfo->frameNumber, (void *) dest, 
-                         GetCurrentThreadID(), destStride,
-                         size, pos, step, levelOfDetail);
-    
-    image->loadedRegion.x = desiredSub->x;
-    image->loadedRegion.y = desiredSub->y;
-    image->loadedRegion.width = desiredSub->width;
-    image->loadedRegion.height = desiredSub->height;
-
-    return 1;
+    bb_assert(image->imageFormat.rowOrder == BOTTOM_TO_TOP);
+    bb_assert(image->imageDataBytes >= imgWidth * imgHeight * 3);
+    bb_assert(image->width == imgWidth);
+    bb_assert(image->height == imgHeight);
+  }
+  
+  /* compute position and size of region in res=levelOfDetail coordinates */
+  const int destStride = image->width * 3;
+  int size[2], pos[2], step[2];
+  char *dest;
+  pos[0] = desiredSub->x;
+  pos[1] = image->height - (desiredSub->y + desiredSub->height);
+  size[0] = desiredSub->width;
+  size[1] = desiredSub->height;
+  step[0] = 1;
+  step[1] = 1;
+  dest = (char *) image->imageData + (pos[1] * image->width + pos[0]) * 3;
+  
+  DEBUGMSG("smLoadImage: Getting frame %d, SM region at (%d, %d), size (%d x %d)  of image sized (%d x %d)  destStride=%d",
+           frameInfo->frameNumber, desiredSub->x, desiredSub->y, 
+           size[0], size[1],
+           image->width, image->height, destStride);
+  
+  p->sm->getFrameBlock(frameInfo->frameNumber, (void *) dest, 
+                       GetCurrentThreadID(), destStride,
+                       size, pos, step, levelOfDetail);
+  
+  image->loadedRegion.x = desiredSub->x;
+  image->loadedRegion.y = desiredSub->y;
+  image->loadedRegion.width = desiredSub->width;
+  image->loadedRegion.height = desiredSub->height;
+  
+  return 1;
 }
 
 /* This routine is called to release all the memory associated with a frame. */
