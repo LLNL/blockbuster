@@ -50,8 +50,8 @@
 #define off64_t __int64
 #endif
 
+#include <string>
 #include <vector>
-
 //#define DISABLE_PTHREADS 1
 #ifndef DISABLE_PTHREADS
 #include <pthread.h>
@@ -79,8 +79,9 @@ void sm_setVerbose(int level);  // 0-5, 0 is quiet, 5 is verbose
 #define SM_MAGIC_VERSION1	0x0f1e2d3c
 #define SM_MAGIC_VERSION2	0x0f1e2d3d
 
-struct tileOverlapInfo {
-  u_int frame;
+struct tileOverlapInfo {  
+  std::string toString(void); 
+  u_int frame, tileNum, threadnum;
   u_int overlaps;  /* newly overlaping data */
   u_int prev_overlaps; /* overlap data from a prior read -- cached */
   u_int blockOffsetX; /* where to start writing row data in uber block */
@@ -178,7 +179,7 @@ void printFrameDetails(FILE *fp, int f);
   };
   int getVersion(void) { return(version); };
   
-  void computeTileOverlap(int *blockDim, int* blockPos, int res, tileOverlapInfo *info);
+  void computeTileOverlap(int *blockDim, int* blockPos, int res, int thread);
   
  protected:
   
