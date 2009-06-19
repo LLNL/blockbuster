@@ -35,7 +35,7 @@ struct ProgramOptions {
     messageLevelName("error"), 
 #endif
     messageLevel(NULL), userInterface(NULL), rendererIndex(0), 
-    frameCacheSize(8), readerThreads(0), loopCountName("1"), 
+    frameCacheSize(8), readerThreads(-1), loopCountName("1"), 
     startFrame(0), endFrame(-1), loopCount(1), LOD(0),
     slaveLaunchMethod("rsh"), useMPI(0), 
     play(0), speedTest(0), frameRate(0.0), 
