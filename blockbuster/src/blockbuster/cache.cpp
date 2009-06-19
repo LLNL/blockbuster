@@ -104,7 +104,7 @@ void CachePreload(Canvas *canvas, uint32_t frameNumber, const Rectangle *imageRe
 static Image *LoadAndConvertImage(FrameInfo *frameInfo, unsigned int frameNumber,
 	Canvas *canvas, const Rectangle *region, int levelOfDetail)
 {
-  CACHEDEBUG("LoadAndConvertImage frame %d", frameNumber); 
+  CACHEDEBUG(QString("LoadAndConvertImage frame %1, region %2, frameInfo %3").arg( frameNumber).arg(region->toString()).arg((uint64_t)frameInfo)); 
 
     Image *image, *convertedImage;
     int rv;
@@ -145,32 +145,29 @@ static Image *LoadAndConvertImage(FrameInfo *frameInfo, unsigned int frameNumber
      * discard the original, and use the conversion instead.
      */
     convertedImage = ConvertImageToFormat(image, canvas);
-    if (convertedImage == image) {
-	/* No conversion!  Great! */
-    }
-    else {
-	/* We either converted, or failed to convert; in either
-	 * case, the old image is useless.
-	 */
-	(*image->ImageDeallocator)(canvas, image);
-
-	image = convertedImage;
-	if (image == NULL) {
+    if (convertedImage != image) {
+      /* We either converted, or failed to convert; in either
+       * case, the old image is useless.
+       */
+      (*image->ImageDeallocator)(canvas, image);
+      
+      image = convertedImage;
+      if (image == NULL) {
 	    ERROR("failed to convert frame %d", frameNumber);
-	}
-	else {
+      }
+      else {
 	    conversionCount++;
 	    if (conversionCount < MAX_CONVERSION_WARNINGS) {
-		/* We'll issue a warning anyway, as conversion is an expensive
-		 * process.
-		 */
-		WARNING("had to convert frame %d", frameNumber);
-
-		if (conversionCount +1 == MAX_CONVERSION_WARNINGS) {
+          /* We'll issue a warning anyway, as conversion is an expensive
+           * process.
+           */
+          WARNING("had to convert frame %d", frameNumber);
+          
+          if (conversionCount +1 == MAX_CONVERSION_WARNINGS) {
 		    WARNING("(suppressing further conversion warnings)");
-		}
+          }
 	    }
-	}
+      }
     }
 
     /* If we have a NULL image, the converter already reported it. */
@@ -665,27 +662,27 @@ void ImageCache::ManageFrameList(FrameList *frameList)
  * the cached image slot itself, or NULL.
  * Note: we don't care about the loaded image region at this point.
  */
-CachedImage *ImageCache::FindImage(uint32_t frame, uint32_t lod)
-{
-    register CachedImage *cachedImage;
-    register int i;
-    CACHEDEBUG("FindImage frame %d", frame); 
-    /* Search the cache to see whether an appropriate image already
-     * exists within the cache.
-     */
-    cachedImage = mCachedImages;
-    for (i = 0, cachedImage = mCachedImages; 
-         i < mMaxCachedImages; 
-         i++, cachedImage++) {
-      if (cachedImage->loaded &&
-          cachedImage->frameNumber == frame &&
-          cachedImage->levelOfDetail == lod) {
-        CACHEDEBUG("Found frame %d", frame); 
-	    return cachedImage;
-      }
+  
+CachedImage *ImageCache::FindImage(uint32_t frame, uint32_t lod) {
+  register CachedImage *cachedImage;
+  register int i;
+  CACHEDEBUG("FindImage frame %d", frame); 
+  /* Search the cache to see whether an appropriate image already
+   * exists within the cache.
+   */
+  cachedImage = mCachedImages;
+  for (i = 0, cachedImage = mCachedImages; 
+       i < mMaxCachedImages; 
+       i++, cachedImage++) {
+    if (cachedImage->loaded &&
+        cachedImage->frameNumber == frame &&
+        cachedImage->levelOfDetail == lod) {
+      CACHEDEBUG("Found frame number %d", frame); 
+      return cachedImage;
     }
-    
-    return NULL;
+  }
+  
+  return NULL;
 }
 
 
@@ -767,13 +764,9 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
 	 * of interest loaded for the frame is a superset of the region this
 	 * caller wishes to see.
 	 */
-	cachedImage = FindImage(frameNumber, levelOfDetail);
+      cachedImage = FindImage(frameNumber, levelOfDetail);
 	
 	if (cachedImage) {
-      if (cachedImage->frameNumber != frameNumber || cachedImage->levelOfDetail != levelOfDetail) {
-        ERROR("cachedImage->frameNumber(%d) != frameNumber(%d) || cachedImage->levelOfDetail(%d) != levelOfDetail(%d)", cachedImage->frameNumber, frameNumber, cachedImage->levelOfDetail, levelOfDetail); 
-        exit(1); 
-      }
       if (RectContainsRect(&cachedImage->image->loadedRegion, &region)) {
 		/* This image is appropriate.  Mark our interest in the frame
 		 * (so that it is not pulled out from under us while we're
@@ -786,15 +779,16 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
 		if (mNumReaderThreads > 0) {
           unlock("found interesting frame", __FILE__, __LINE__); 
 		}
-        CACHEDEBUG("Returning found image %d", cachedImage->frameNumber); 
+        CACHEDEBUG("Returning found image %d", frameNumber); 
 		return cachedImage->image;
       }
       else {
+        CACHEDEBUG("Frame %d does not fully match, so augment rectangle", frameNumber); 
         region = RectUnionRect(&cachedImage->image->loadedRegion, &region);
 		
       }
 	}
-    
+    CACHEDEBUG("Frame %d not found, look for it in queues", frameNumber); 
 	/* It's not in cache already, darn.  We need to check to see if a 
 	 * job for this frame is already in one of the work queues or the
 	 * error queue.  This, of course, can only happen in the multi-
@@ -1028,78 +1022,83 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
   ImageCacheJob *job = NULL, *newJob = NULL;
   CachedImage *cachedImage = NULL;
 
-    /* Keep track of highest frame number.  We need it for cache
-     * replacement.
-     */
-    if (frameNumber > mHighestFrameNumber)
-        mHighestFrameNumber = frameNumber;
-
-    /* This entry point is only useful if there are threads in the system. */
-    if (mNumReaderThreads == 0) {
+  /* Keep track of highest frame number.  We need it for cache
+   * replacement.
+   */
+  if (frameNumber > mHighestFrameNumber)
+    mHighestFrameNumber = frameNumber;
+  
+  /* This entry point is only useful if there are threads in the system. */
+  if (mNumReaderThreads == 0) {
 	return;
-    }
-
-    if (frameNumber >= mFrameList->numActualFrames()) {
+  }
+  
+  if (frameNumber >= mFrameList->numActualFrames()) {
 	ERROR("trying to preload non-existent frame (%d of %d)",
 	      frameNumber, mFrameList->numActualFrames());
 	return;
-    }
-
-    /* If the image is already in cache, or if a job to load it already 
-     * exists, don't bother adding a new job->
-     */
-    lock("checking if image already exists", __FILE__, __LINE__);
-    cachedImage = FindImage(frameNumber, levelOfDetail);
-    if (cachedImage != NULL
-	&& RectContainsRect(&cachedImage->image->loadedRegion, region)
-        && cachedImage->levelOfDetail == levelOfDetail) {
-	/* Image is already in cache - no need to preload again */
+  }
+  
+  /* If the image is already in cache, or if a job to load it already 
+   * exists, don't bother adding a new job->
+   */
+  lock("checking if image already exists", __FILE__, __LINE__);
+  cachedImage = FindImage(frameNumber, levelOfDetail);
+  if (cachedImage != NULL) {
+    CACHEDEBUG("Found match for frame number %d in cache", frameNumber); 
+    if (RectContainsRect(&cachedImage->image->loadedRegion, region)) {
+      /* Image is already in cache - no need to preload again */
       unlock("image already in cache", __FILE__, __LINE__); 
-	return;
+      return;
+    } else {
+      CACHEDEBUG(QString("Hmm, region didn't match.  cached region = %1, region = %2").arg(cachedImage->image->loadedRegion.toString()).arg(region->toString())); 
     }
-
-    /* Look for the job in the PendingQueue and JobQueue */
-    job = FindJobInQueue(mPendingQueue, frameNumber, region, levelOfDetail);
-    if (job == NULL) {
-      job = FindJobInQueue(mJobQueue, frameNumber, region, levelOfDetail);
-    }
+    
+  }
+  
+  /* Look for the job in the PendingQueue and JobQueue */
+  job = FindJobInQueue(mPendingQueue, frameNumber, region, levelOfDetail);
+  if (job == NULL) {
+    job = FindJobInQueue(mJobQueue, frameNumber, region, levelOfDetail);
+  }
+  if (job != NULL) {
     unlock("job already in a queue", __FILE__, __LINE__); 
-    if (job != NULL) {
-      CACHEDEBUG("The job exists already - no need to add a new one"); 
+    CACHEDEBUG("The job exists already - no need to add a new one"); 
 	return;
-    }
-
-    /* If we get this far, there is no such image in the cache, and no such
-     * job in the queue, so add a new one.
-     */
-    newJob = 
-      new ImageCacheJob(frameNumber, region, levelOfDetail, mRequestNumber);
-
-    /* This counts as an additional cache request; the job will take
-     * on the request number, so we can determine which entries are the
-     * oldest.  When the image is taken from the queue, it will be given
-     * a more recent request number.
-     */
-    mRequestNumber++;
-
-    /* We save the frameInfo information just in case the FrameList changes
-     * while one of the reader threads is trying to read this frame.
-     * The results of the image read will be discarded (via the
-     * validRequestThreshold mechanism); this just keeps us from
-     * dumping core on a bad pointer.
-     */
-    newJob->frameInfo = *(mFrameList->getFrame(frameNumber));
-    
-    /* Add the job to the back of the work queue */
-    lock("adding new job to work queue", __FILE__, __LINE__);
-    mJobQueue.push_back(newJob); 
-    CACHEDEBUG("Added new job for frame %d to job queue", frameNumber); 
-    unlock("new job added", __FILE__, __LINE__); 
-    
-    /* If there's a worker thread that's snoozing, this will
-     * wake him up.
-     */
-    WakeAllJobReady("new job added", __FILE__, __LINE__); 
+  }
+  CACHEDEBUG ("Frame %d: no such image in cache and no such job in queue", frameNumber); 
+  /* If we get this far, there is no such image in the cache, and no such
+   * job in the queue, so add a new one.
+   */
+  newJob = 
+    new ImageCacheJob(frameNumber, region, levelOfDetail, mRequestNumber);
+  
+  /* This counts as an additional cache request; the job will take
+   * on the request number, so we can determine which entries are the
+   * oldest.  When the image is taken from the queue, it will be given
+   * a more recent request number.
+   */
+  mRequestNumber++;
+  
+  /* We save the frameInfo information just in case the FrameList changes
+   * while one of the reader threads is trying to read this frame.
+   * The results of the image read will be discarded (via the
+   * validRequestThreshold mechanism); this just keeps us from
+   * dumping core on a bad pointer.
+   */
+  newJob->frameInfo = *(mFrameList->getFrame(frameNumber));
+  
+  /* Add the job to the back of the work queue */
+  //lock("adding new job to work queue", __FILE__, __LINE__);
+  mJobQueue.push_back(newJob); 
+  CACHEDEBUG(QString("Added new job for frame %1 and region %2 to job queue").arg(frameNumber).arg(region->toString())); 
+  unlock("new job added", __FILE__, __LINE__); 
+  
+  /* If there's a worker thread that's snoozing, this will
+   * wake him up.
+   */
+  WakeAllJobReady("new job added", __FILE__, __LINE__); 
+  return; 
 }
 
 
