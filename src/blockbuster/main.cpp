@@ -413,11 +413,12 @@ static void ParseOptions(int &argc, char *argv[])
   }
 
   numProcessors = GetNumProcessors();
-  if (!opt->readerThreads) {
+  if (opt->readerThreads == -1) {
     if (numProcessors > 1) {
       opt->readerThreads = numProcessors;    
     }
   }
+  DEBUGMSG("Using %d threads", opt->readerThreads); 
 
   if (opt->masterHost != "") {
 	opt->slaveMode = 1;
