@@ -25,10 +25,17 @@
 #include "common.h"
 #include "ui.h"
 #include "errmsg.h"
+#include "xwindow.h"
 
 /* UserInterface utilities */
 
-extern UserInterface *userInterfaces[];
+/*********************************************************************/
+/* This used to be a big complicated section about matching user interfaces etc. but it's not needed.  There is only one user interface to match.  
+ */
+UserInterface *userInterfaces[] = {
+  &x11UserInterface,
+  NULL
+};
 
 MovieStatus MatchUserInterfaceToRenderer(
         QString userInterfaceName, QString rendererName, 

@@ -44,29 +44,6 @@
 #include <libgen.h>
 
 
-/*********************************************************************/
-/* Modular expandability section.  Here we create references to all
- * the external modules (i.e., UserInterface modules)
- * that we have available.  The UserInterface modules also include
- * Renderer module references within themselves.
- *
- * The user will be given command-line choices for the user interface
- * and for the renderer, and an appropriate match of the two will
- * be found (or complaints will be made).
- *
- * The main program will search the list of file formats automatically
- * trying to find one that is a match for any particular file specified
- * (so there is no need for the user to be able to specify one).
- */
-
-UserInterface *userInterfaces[] = {
-#ifdef USE_GTK
-  &gtkUserInterface,
-#endif
-  &x11UserInterface,
-  NULL
-};
-
 
 /* ---------------------------------------------*/ 
 
