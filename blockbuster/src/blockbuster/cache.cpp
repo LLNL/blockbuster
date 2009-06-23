@@ -1105,29 +1105,30 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
 /* For debugging */
 void ImageCache::Print(void)
 {
-    register CachedImage *cachedImage;
-    register int i;
-
-    for (
-	i = 0, cachedImage = mCachedImages; 
-	i < mMaxCachedImages; 
-	i++, cachedImage++
-    ) {
-	printf("  Slot %d: locked:%d  frame:%d  lod:%d  req:%d  ", i,
-               cachedImage->lockCount,
-               cachedImage->frameNumber,
-               cachedImage->levelOfDetail,
-	       (int) cachedImage->requestNumber);
-	if (cachedImage->image) {
-	    printf("roi:%d,%d .. %d, %d\n",
-                   cachedImage->image->loadedRegion.x,
-                   cachedImage->image->loadedRegion.y,
-                   cachedImage->image->loadedRegion.x +
-                   cachedImage->image->loadedRegion.width,
-                   cachedImage->image->loadedRegion.y +
-		   cachedImage->image->loadedRegion.height);
-	}
-	else
-	    printf("\n");
+  register CachedImage *cachedImage;
+  register int i;
+  QString msg; 
+  for (
+       i = 0, cachedImage = mCachedImages; 
+       i < mMaxCachedImages; 
+       i++, cachedImage++
+       ) {
+    msg = QString("  Slot %1: locked:%2  frame:%3 lod:%4  req:%5  ")
+      .arg( i)
+      .arg(cachedImage->lockCount)
+      .arg(cachedImage->frameNumber)
+      .arg(cachedImage->levelOfDetail)
+      .arg(cachedImage->requestNumber);
+    if (cachedImage->image) {
+      msg += QString("roi:%1").arg(cachedImage->image->loadedRegion.toString()); 
+      /* cachedImage->image->loadedRegion.y,
+         cachedImage->image->loadedRegion.x +
+         cachedImage->image->loadedRegion.width,
+         cachedImage->image->loadedRegion.y +
+         cachedImage->image->loadedRegion.height);
+      */ 
     }
+    DEBUGMSG(msg); 
+  }
+  DEBUGMSG("mHighest = %d", mHighestFrameNumber); 
 }
