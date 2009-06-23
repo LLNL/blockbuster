@@ -98,7 +98,7 @@ void real_dbprintf(const char *fmt, ...);
 struct Rectangle {
   QString toString(void) const {
     return QString("Rectangle {%1, %2, %3, %4}").arg(x).arg(y).arg(width).arg(height); 
-  }
+  } 
   qint32 x, y;
   qint32 width, height;
 } ;
