@@ -700,9 +700,7 @@ CachedImage *ImageCache::FindImage(uint32_t frame, uint32_t lod) {
 /*!
  * This routine gets an image from the cache, specified by frameNumber,
  * region of interest, and levelOfDetail. 
-
- * This also activates the cache to preload images. 
-
+ * 
  * The region of interest is adjusted to the level of detail.
  * That is, if the original, LOD=0 image is 4K x 4K, then a region
  * within the LOD=2 image will be within a 1K x 1K boundary.
