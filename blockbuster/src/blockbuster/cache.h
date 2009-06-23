@@ -19,7 +19,7 @@ using namespace std;
 
 struct ImageCache; 
 
-
+//! ImageCacheJob:  a request for the workers to get an image
 struct ImageCacheJob {
   ImageCacheJob(): frameNumber(0), levelOfDetail(0), requestNumber(0) {}
   ImageCacheJob(uint32_t frame, const Rectangle *reg, 
@@ -36,6 +36,15 @@ struct ImageCacheJob {
   uint32_t requestNumber;
 } ;
 
+//! CachedImage: a slot in the image cache
+struct CachedImage{
+  unsigned long requestNumber;
+  int loaded;
+  uint32_t lockCount;
+  uint32_t frameNumber;
+  uint32_t levelOfDetail;
+  Image *image;
+} ;
 
 class CacheThread: public QThread {
   Q_OBJECT
@@ -54,15 +63,6 @@ class CacheThread: public QThread {
   bool mStop; 
 };
 
-
-struct CachedImage{
-  unsigned long requestNumber;
-  int loaded;
-  uint32_t lockCount;
-  uint32_t frameNumber;
-  uint32_t levelOfDetail;
-  Image *image;
-} ;
 
  
 /* An Image Cache is a collection of images, both read from the
@@ -117,8 +117,9 @@ class ImageCache {
     CACHEDEBUG("%s: %d: locking image cache (%s)", 
                file, line, reason); 
     imageCacheLock.lock(); 
-    CACHEDEBUG("%s: %d: locked image cache (%s)", 
-               file, line, reason); 
+    /* CACHEDEBUG("%s: %d: locked image cache (%s)", 
+       file, line, reason); 
+    */
   }
   void unlock(char *reason, char *file="unknown file", int line=0) {
     imageCacheLock.unlock(); 
