@@ -250,13 +250,15 @@ void CacheThread::run() {
       }
       // take the job from head of the queue: 
       job = this->cache->mJobQueue.at(0); 
+      CACHEDEBUG("Worker moving job %d from job queue to pending cue", job->frameNumber); 
       this->cache->mJobQueue.pop_front(); 
+      cache->PrintJobQueue(cache->mJobQueue); 
 
 	/* Add the job removed from the job queue to the pending queue,
 	 * so that the main thread can tell the job is in progress.
 	 */
       this->cache->mPendingQueue.push_back(job); 
-      CACHEDEBUG(QString("Worker moved job from job queue (now length %1) to pending cue (now length %2)").arg(cache->mJobQueue.size()).arg(cache->mPendingQueue.size())); 
+      cache->PrintJobQueue(cache->mPendingQueue); 
 	/* We don't need the mutex (or the cancellation function) any more;
 	 * this call will both clear the cancellation function, and cause
 	 * it to be called to unlock the mutex, more or less simultaneously.
@@ -280,6 +282,7 @@ void CacheThread::run() {
 
     CACHEDEBUG("RemoveJobFromPendingQueue frame %d", job->frameNumber); 
 	this->cache->RemoveJobFromPendingQueue(job);
+    cache->PrintJobQueue(cache->mPendingQueue);
 
 	/* First see if this request has been invalidated (because the
 	 * main thread changed the frame list while we were working).
@@ -306,7 +309,7 @@ void CacheThread::run() {
 	     * check) and signal that the job is done.
 	     */
       this->cache->mErrorQueue.push_back(job); 
-      
+      cache->PrintJobQueue(cache->mErrorQueue);
       this->cache->unlock("error in job", __FILE__, __LINE__); 
       this->cache->WakeAllJobDone("error in job",__FILE__, __LINE__); 
 	}
@@ -319,6 +322,7 @@ void CacheThread::run() {
 	     * have to report another one.
 	     */
       this->cache->mErrorQueue.push_back(job); 
+      cache->PrintJobQueue(cache->mErrorQueue);
 
       this->cache->unlock("no place for job", __FILE__, __LINE__); 
       this->cache->WakeAllJobDone("no place for job",__FILE__, __LINE__); 
@@ -1106,11 +1110,10 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
   /* Add the job to the back of the work queue */
   //lock("adding new job to work queue", __FILE__, __LINE__);
   mJobQueue.push_back(newJob); 
-
   sort(mJobQueue.begin(), mJobQueue.end(), jobComparer);
   
   CACHEDEBUG(QString("Added new job for frame %1 and region %2 to job queue").arg(frameNumber).arg(region->toString())); 
-  PrintJobQueue("mJobQueue", mJobQueue); 
+  PrintJobQueue(mJobQueue); 
 
   unlock("new job added", __FILE__, __LINE__); 
   Print(); 
@@ -1148,9 +1151,12 @@ void ImageCache::Print(void)
   DEBUGMSG("mHighest = %d", mHighestFrameNumber); 
 }
 
-void ImageCache::PrintJobQueue(QString name, deque<ImageCacheJob *>&q) {
+/*!
+  You probably want to call the macro, PrintJobQueue(q)
+*/
+void ImageCache::__PrintJobQueue(QString name, deque<ImageCacheJob *>&q) {
   deque<ImageCacheJob *>::iterator pos = q.begin(), endpos = q.end(); 
-  CACHEDEBUG(QString(" deque<ImageCacheJob *>%1: ").arg(name)); 
+  CACHEDEBUG(QString(" deque<ImageCacheJob *>%1 (length %2): ").arg(name).arg(q.size())); 
   while (pos != endpos){
     CACHEDEBUG((*pos)->toString()); 
     ++pos; 
