@@ -60,6 +60,16 @@
     (x==EINTR)?"EINTR":\
     "unknown")
 
+//! returns true if first is MORE important than second, even though this functor implements "less than".  This sorts the queue in reverse order, meaning that most important job is always next in the queue. 
+uint32_t gCurrentFrame, gLastFrame; 
+bool jobComparer(const ImageCacheJob *first, const ImageCacheJob *second){
+  int64_t diff1 = first->frameNumber - gCurrentFrame, 
+    diff2 = second->frameNumber - gCurrentFrame; 
+  if (diff1 < 0) diff1 += gLastFrame; 
+  if (diff2 < 0) diff2 += gLastFrame; 
+  return diff1 > diff2; 
+}
+
 void DestroyImageCache(Canvas *canvas)
 {
   delete canvas->imageCache; 
@@ -645,6 +655,7 @@ void ImageCache::ManageFrameList(FrameList *frameList)
     if (mNumReaderThreads > 0) {
       ClearJobQueue();
     }
+    gLastFrame = frameList->numActualFrames(); 
 
     /* If we've already cached images, they are now all out-of-date.
      * Free them.
@@ -713,6 +724,7 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
   CachedImage *imageSlot = NULL;
   //    int rv;
   Rectangle region = *newRegion;
+  gCurrentFrame = frameNumber; 
   
   CACHEDEBUG("ImageCache::GetImage frame %d\n",frameNumber); 
   
@@ -1091,6 +1103,9 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
   /* Add the job to the back of the work queue */
   //lock("adding new job to work queue", __FILE__, __LINE__);
   mJobQueue.push_back(newJob); 
+
+  sort(mJobQueue.begin(), mJobQueue.end(), jobComparer);
+
   CACHEDEBUG(QString("Added new job for frame %1 and region %2 to job queue").arg(frameNumber).arg(region->toString())); 
   unlock("new job added", __FILE__, __LINE__); 
   
