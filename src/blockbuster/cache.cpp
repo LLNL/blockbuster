@@ -696,10 +696,13 @@ CachedImage *ImageCache::FindImage(uint32_t frame, uint32_t lod) {
   return NULL;
 }
 
+//! GetImage()
+/*!
+ * This routine gets an image from the cache, specified by frameNumber,
+ * region of interest, and levelOfDetail. 
 
+ * This also activates the cache to preload images. 
 
-/* This routine gets an image from the cache, specified by frameNumber
- * and levelOfDetail.
  * The region of interest is adjusted to the level of detail.
  * That is, if the original, LOD=0 image is 4K x 4K, then a region
  * within the LOD=2 image will be within a 1K x 1K boundary.
@@ -715,7 +718,13 @@ CachedImage *ImageCache::FindImage(uint32_t frame, uint32_t lod) {
  * amount of file I/O; but in the expected high-demand case, where a movie is
  * playing, sequential requests will be of different frames.  As such, at this
  * juncture I don't believe such complexity is warranted.
+ * 
+ * Note that one time this theoretical case actually happens is upon startup, when -play 
+ * is in effect.  The frames get subtly resized by DMX and so images are 
+ * off by a pixel or two, resulting in non-overlapping ROI's.  
+ * So it might pay off to play a game of "add two pixels to each edge." 
  */
+
 Image *ImageCache::GetImage(uint32_t frameNumber,
                             const Rectangle *newRegion, uint32_t levelOfDetail)
 {
