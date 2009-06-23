@@ -12,6 +12,16 @@ struct Canvas;
 
 //============================================================
 struct ImageFormat{
+  ImageFormat(): bytesPerPixel(0), scanlineByteMultiple(0), 
+                 byteOrder(0), rowOrder(0), 
+                 redShift(0), greenShift(0), blueShift(0), 
+                 redMask(0), greenMask(0), blueMask(0) {}
+  ImageFormat(int bpp, int sbm, int bo, int ro, 
+              int rs, int gs, int bs, long rm, long gm, long bm):
+    bytesPerPixel(bpp), scanlineByteMultiple(sbm), 
+    byteOrder(bo), rowOrder(ro), 
+    redShift(rs), greenShift(gs), blueShift(bs), 
+    redMask(rm), greenMask(gm), blueMask(bm) {}
   int bytesPerPixel;
   int scanlineByteMultiple;
   /* byteOrder is either LSB_FIRST or MSB_FIRST.
@@ -54,11 +64,25 @@ struct ImageFormat{
   unsigned long redMask, greenMask, blueMask;
 } ;
 
+typedef void (*ImageDeallocatorFunc)(Canvas *, struct Image *);
+typedef void (*ImageDataDeallocatorFunc)(Canvas *, void *);
 struct Image {
+  Image():width(0), height(0),  levelOfDetail(0), 
+          frameNumber(0), imageDataBytes(0), imageData(NULL), 
+    ImageDeallocator(NULL), ImageDataDeallocator(NULL) {}
+  Image(uint32_t w, uint32_t h, 
+        ImageFormat &form, Rectangle &region, int lod, uint32_t frame, 
+        unsigned int idb, void *data, 
+        ImageDeallocatorFunc idf, ImageDataDeallocatorFunc iddf) :
+    width(w), height(h), imageFormat(form), loadedRegion(region), 
+    levelOfDetail(lod), 
+    frameNumber(frame), imageDataBytes(idb), imageData(data), 
+    ImageDeallocator(idf), ImageDataDeallocator(iddf){}
   uint32_t width, height;
   ImageFormat imageFormat;
   Rectangle loadedRegion;
   int levelOfDetail;
+  uint32_t frameNumber; // if appropriate
   unsigned int imageDataBytes;
   void *imageData;      /* the actual image data */
   
@@ -108,6 +132,9 @@ struct FrameInfo {
             
   ~FrameInfo() {}
 
+  QString toString(void) {
+    return QString("{ FrameInfo: frameNumber = %1 }").arg(frameNumber); 
+  }
   /* Basic statistics */
   int width, height, depth;
   
