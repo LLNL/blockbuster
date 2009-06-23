@@ -115,7 +115,8 @@ class ImageCache {
   void ClearJobQueue(void);
   CachedImage *FindImage(uint32_t frame, uint32_t lod);
   void Print(void); 
-  void PrintJobQueue(QString name, deque<ImageCacheJob *>&q); 
+#define PrintJobQueue(q) __PrintJobQueue(#q,q)
+  void __PrintJobQueue(QString name, deque<ImageCacheJob *>&q); 
   void  lock(char *reason, char *file="unknown file", int line=0) {
     CACHEDEBUG("%s: %d: locking image cache (%s)", 
                file, line, reason); 
