@@ -13,17 +13,17 @@ using namespace std;
 // ===========================================
 // and here is a nice utility function
 // I don't know if it really belongs here, but for now...  
+static string _gHostname; 
 inline string GetHostname(void) {
-  static string hostname; 
-  if (hostname == "") {
+  if (_gHostname == "") {
     char buf[2048]; 
     if (gethostname(buf, 2047) == -1) {
-      hostname = "unknown host"; 
+      _gHostname = "unknown host"; 
     }
     else 
-      hostname = buf; 
+      _gHostname = buf; 
   }
-  return  hostname; 
+  return _gHostname; 
 }
 
 //===============================================================
