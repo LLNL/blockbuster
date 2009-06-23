@@ -467,70 +467,63 @@ CachedImage *ImageCache::GetCachedImageSlot(uint32_t newFrameNumber)
 #ifdef NEW_CACHE
     unsigned long maxDist = 0;
 #endif
+    CACHEDEBUG("GetCachedImageSlot(%d)", newFrameNumber); 
 
-    for (
-	i = 0, cachedImage = mCachedImages; 
-	i < mMaxCachedImages; 
-	i++, cachedImage++
-    ) {
+    for (i = 0, cachedImage = mCachedImages; 
+         i < mMaxCachedImages; 
+         i++, cachedImage++) {
 #ifdef NEW_CACHE
-	/* Look for an empty slot, or a slot who's frame number is
-	 * furthest away from the one about to be loaded.
-	 */
-	if (cachedImage->lockCount == 0) {
+      /* Look for an empty slot, or a slot who's frame number is
+       * furthest away from the one about to be loaded.
+       */
+      if (cachedImage->lockCount == 0) {
 	    unsigned long dist;
-
+        
 	    if (cachedImage->requestNumber == 0) {
-		imageSlot = cachedImage;
-		break;
+          imageSlot = cachedImage;
+          break;
 	    }
-
+        
 	    dist = Distance(cachedImage->frameNumber, newFrameNumber,
-                            mHighestFrameNumber);
+                        mHighestFrameNumber);
 	    if (dist > maxDist){
-		maxDist = dist;
-		imageSlot = cachedImage;
+          maxDist = dist;
+          imageSlot = cachedImage;
 	    }
-	}
+      }
 #else
-	/* Look for the best image to replace.  We're allowed to replace any
-	 * image that is not locked; if we have a choice, we'll choose one
-	 * that has not been loaded (and hence has a requestNumber of 0)
-	 * or that has not been used in the longest time (and hence has
-	 * the lowest request number).
-	 */
-	if (
-	    cachedImage->lockCount == 0 &&
-	    (
-		imageSlot == NULL ||
-		cachedImage->requestNumber < imageSlot->requestNumber
-	    )
-	) {
+      /* Look for the best image to replace.  We're allowed to replace any
+       * image that is not locked; if we have a choice, we'll choose one
+       * that has not been loaded (and hence has a requestNumber of 0)
+       * or that has not been used in the longest time (and hence has
+       * the lowest request number).
+       */
+      if (cachedImage->lockCount == 0 &&
+          (imageSlot == NULL ||
+           cachedImage->requestNumber < imageSlot->requestNumber ) ) {
 	    imageSlot = cachedImage;
-	}
+      }
 #endif
     }
-
+    
     /* If we couldn't find an image slot, something's wrong. */
     if (imageSlot == NULL) {
-	ERROR("image cache is full, with all %d images locked",
-		mMaxCachedImages);
-	return NULL;
+      ERROR("image cache is full, with all %d images locked",
+            mMaxCachedImages);
+      return NULL;
     }
-
-#if 0
-    printf("Removing frame %u to make room for %u  max %u\n", 
-           imageSlot->frameNumber, newFrameNumber, mHighestFrameNumber);
-    PrintCache(cache);
-#endif
+    
+    CACHEDEBUG("Removing frame %u to make room for %u  max %u\n", 
+               imageSlot->frameNumber, newFrameNumber, mHighestFrameNumber);
+    Print();
 
     /* Otherwise, if we found a slot that wasn't vacant, clear it out
      * before returning it.
      */
     if (imageSlot->loaded) {
-	(*imageSlot->image->ImageDeallocator)(mCanvas, imageSlot->image);
-        imageSlot->image = NULL;
-	imageSlot->loaded = 0;
+      (*imageSlot->image->ImageDeallocator)(mCanvas, imageSlot->image);
+      imageSlot->image = NULL;
+      imageSlot->loaded = 0;
     }
 
     return imageSlot;
@@ -1115,7 +1108,7 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
 
   CACHEDEBUG(QString("Added new job for frame %1 and region %2 to job queue").arg(frameNumber).arg(region->toString())); 
   unlock("new job added", __FILE__, __LINE__); 
-  
+  Print(); 
   /* If there's a worker thread that's snoozing, this will
    * wake him up.
    */
@@ -1130,6 +1123,7 @@ void ImageCache::Print(void)
   register CachedImage *cachedImage;
   register int i;
   QString msg; 
+  DEBUGMSG("Printing cache state."); 
   for (
        i = 0, cachedImage = mCachedImages; 
        i < mMaxCachedImages; 
