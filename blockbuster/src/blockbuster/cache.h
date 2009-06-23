@@ -28,6 +28,9 @@ struct ImageCacheJob {
   { region = *reg; }
     
   ~ImageCacheJob() {}
+  QString toString(void) {
+    return QString("{ ImageCacheJob: frameNumber = %1, region = %2, LOD = %3, request = %4, frameInfo = %5 }").arg(frameNumber).arg(region.toString()).arg(levelOfDetail).arg(requestNumber).arg(frameInfo.toString());
+  }
 
   FrameInfo frameInfo; /* Local copy needed in case FrameList changes while we're working */
   uint32_t frameNumber;
@@ -112,7 +115,7 @@ class ImageCache {
   void ClearJobQueue(void);
   CachedImage *FindImage(uint32_t frame, uint32_t lod);
   void Print(void); 
-  
+  void PrintJobQueue(QString name, deque<ImageCacheJob *>&q); 
   void  lock(char *reason, char *file="unknown file", int line=0) {
     CACHEDEBUG("%s: %d: locking image cache (%s)", 
                file, line, reason); 

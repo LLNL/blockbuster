@@ -133,6 +133,7 @@ static Image *LoadAndConvertImage(FrameInfo *frameInfo, unsigned int frameNumber
     /* Call the file format module to load the image */
     rv = (*frameInfo->LoadImage)(image, frameInfo, canvas,
                                  region, levelOfDetail);
+    image->frameNumber = frameNumber; 
     DEBUGMSG("LoadImage done"); 
 
     if (!rv) {
@@ -787,7 +788,7 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
 		bb_assert(cachedImage->image->imageFormat.rowOrder != ROW_ORDER_DONT_CARE);
         
 		cachedImage->requestNumber = mRequestNumber;
-		cachedImage->lockCount++;
+		//cachedImage->lockCount++;
 		if (mNumReaderThreads > 0) {
           unlock("found interesting frame", __FILE__, __LINE__); 
 		}
@@ -987,6 +988,7 @@ void ImageCache::ReleaseImage(Image *image)
 {
     register int i;
     register CachedImage *cachedImage;
+    CACHEDEBUG("ReleaseImage %d", image->frameNumber); 
     //int rv;
     /* Look for the given image in the cache. */
     if (mNumReaderThreads > 0) {
@@ -1002,8 +1004,9 @@ void ImageCache::ReleaseImage(Image *image)
       CACHEDEBUG("Releasing frame %d from cache", cachedImage->frameNumber); 
 	    /* Unlock it and return. */
 	    if (cachedImage->lockCount == 0) {
-		WARNING("unlocking an unlocked image, frame %d",
-			cachedImage->frameNumber);
+          CACHEDEBUG("unlocking an unlocked image, frame %d",
+                     cachedImage->frameNumber);
+          
 	    }
 	    else {
 		cachedImage->lockCount--;
@@ -1078,7 +1081,7 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
     CACHEDEBUG("The job exists already - no need to add a new one"); 
 	return;
   }
-  CACHEDEBUG ("Frame %d: no such image in cache and no such job in queue", frameNumber); 
+  CACHEDEBUG ("Frame %d: not in cache or in any queue, creating new job", frameNumber); 
   /* If we get this far, there is no such image in the cache, and no such
    * job in the queue, so add a new one.
    */
@@ -1105,8 +1108,10 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
   mJobQueue.push_back(newJob); 
 
   sort(mJobQueue.begin(), mJobQueue.end(), jobComparer);
-
+  
   CACHEDEBUG(QString("Added new job for frame %1 and region %2 to job queue").arg(frameNumber).arg(region->toString())); 
+  PrintJobQueue("mJobQueue", mJobQueue); 
+
   unlock("new job added", __FILE__, __LINE__); 
   Print(); 
   /* If there's a worker thread that's snoozing, this will
@@ -1137,14 +1142,18 @@ void ImageCache::Print(void)
       .arg(cachedImage->requestNumber);
     if (cachedImage->image) {
       msg += QString("roi:%1").arg(cachedImage->image->loadedRegion.toString()); 
-      /* cachedImage->image->loadedRegion.y,
-         cachedImage->image->loadedRegion.x +
-         cachedImage->image->loadedRegion.width,
-         cachedImage->image->loadedRegion.y +
-         cachedImage->image->loadedRegion.height);
-      */ 
-    }
+   }
     DEBUGMSG(msg); 
   }
   DEBUGMSG("mHighest = %d", mHighestFrameNumber); 
+}
+
+void ImageCache::PrintJobQueue(QString name, deque<ImageCacheJob *>&q) {
+  deque<ImageCacheJob *>::iterator pos = q.begin(), endpos = q.end(); 
+  CACHEDEBUG(QString(" deque<ImageCacheJob *>%1: ").arg(name)); 
+  while (pos != endpos){
+    CACHEDEBUG((*pos)->toString()); 
+    ++pos; 
+  }
+  return; 
 }

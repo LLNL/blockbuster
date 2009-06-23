@@ -193,25 +193,25 @@ static void NullDestroyFrameInfo(FrameInfo *)
     return;
 }
 
-/* Forward declaration */
-static Image splashScreen = {
-    300, 103, /* width, height */
-    {
-        3, /* bytesPerPixel */
-        4, /* scanlineByteMultiple */
-        1, /* byteOrder */
-        2, /* rowOrder */
-        0, 0, 0, /* redShift, greenShift, blueShift */
-        0x0, 0x0, 0x0, /* redMask, greenMask, blueMask */
-    },
-    {0, 0, 300, 103}, /* x, y, width, height */
-    0, /* levelOfDetail */
-    92700, /* imageDataBytes */
-    (void *)imageData,
-    NullImageDeallocator,
-    NullImageDataDeallocator,
-};
-//static Image splashScreen;
+static ImageFormat 
+splashFormat(3, /* bytesPerPixel */
+             4, /* scanlineByteMultiple */
+             1, /* byteOrder */
+             2, /* rowOrder */
+             0, 0, 0, /* redShift, greenShift, blueShift */
+             0x0, 0x0, 0x0); /* redMask, greenMask, blueMask */              
+
+Rectangle splashRect(0, 0, 300, 103); /* x, y, width, height */
+
+static Image splashScreen
+(300, 103, /* width, height */
+ splashFormat, splashRect,
+ 0, 0, 92700, /* levelOfDetail, frameNumber, imageDataBytes */
+ (void *)imageData,
+ NullImageDeallocator,
+ NullImageDataDeallocator); 
+
+
 
 static int LoadSplashScreen(Image *image, FrameInfo *,
 	Canvas *, const Rectangle *, int )

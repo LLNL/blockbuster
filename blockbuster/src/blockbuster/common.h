@@ -96,6 +96,9 @@ void real_dbprintf(const char *fmt, ...);
 #define MOVIE_FATAL_ERROR 3
 
 struct Rectangle {
+  Rectangle():x(0),y(0),width(0), height(0){}
+  Rectangle(qint32 ix, qint32 iy, qint32 w, qint32 h):
+    x(ix),y(iy),width(w),height(h) {}
   QString toString(void) const {
     return QString("Rectangle {%1, %2, %3, %4}").arg(x).arg(y).arg(width).arg(height); 
   } 
