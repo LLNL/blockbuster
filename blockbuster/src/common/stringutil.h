@@ -14,7 +14,7 @@ using namespace std;
 // and here is a nice utility function
 // I don't know if it really belongs here, but for now...  
 static string _gHostname; 
-inline string GetHostname(void) {
+inline string &GetHostname(void) {
   if (_gHostname == "") {
     char buf[2048]; 
     if (gethostname(buf, 2047) == -1) {
