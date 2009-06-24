@@ -114,7 +114,7 @@ void ClampStartEndFrames(FrameList *allFrames,
  * Main UI / image display loop
  * XXX this should get moved to a new file.
  */
-void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
+int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
 {
   int32_t frameNumber = 0, previousFrame = -1, cueEndFrame = 0;
   uint totalFrameCount = 0, recentFrameCount = 0;
@@ -170,7 +170,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
 
   if (canvas == NULL) {
     ERROR("Could not create a canvas");
-    return;
+    return 1;
   }
   int32_t preloadFrames= options->preloadFrames,
     playDirection = 0, 
@@ -1089,7 +1089,7 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         elapsedTime = recentEndTime - recentStartTime;
         if (elapsedTime >= 0.5) {
           fps = (double) recentFrameCount / elapsedTime;
-          DEBUGMSG("fps: %g", fps); 
+          DEBUGMSG("Frame Rate: %g fps", fps); 
           /* reset timing info so we compute FPS over last 2 seconds */
           recentStartTime = GetCurrentTime();
           recentFrameCount = 0;
@@ -1130,5 +1130,6 @@ void DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   /* Done with the frames */
   allFrames->DeleteFrames(); 
   delete allFrames;
+  return 0; 
 }
 

@@ -316,7 +316,7 @@ int Slave::Loop(void)
       now = time(NULL); 
       if (now - lastheartbeat > 300) {
         ERROR("It's been more than 5 minutes since the server checked in -- exiting."); 
-        exit(1); 
+       return 1; 
       }
       //      DEBUGMSG("About to process events. mMasterSocket state is %d", mMasterSocket.state()); 
       if (GetMasterMessage(message) ) {
@@ -354,7 +354,7 @@ int Slave::Loop(void)
         }
         else if (token == "Exit") {
           ERROR("Slave received Exit signal from server.");
-          exit(0);           
+          return 0;           
         } // end "Exit"
         else if (!idle) {
           if (token == "Render")  {

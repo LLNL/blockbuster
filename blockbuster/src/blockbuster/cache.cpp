@@ -802,7 +802,7 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
       else {
         CACHEDEBUG("Frame %d does not fully match, so augment rectangle", frameNumber); 
         region = RectUnionRect(&cachedImage->image->loadedRegion, &region);
-		
+        
       }
 	}
     CACHEDEBUG("Frame %d not found, look for it in queues", frameNumber); 

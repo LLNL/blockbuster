@@ -535,8 +535,9 @@ int main(int argc, char *argv[])
   int homeSettingsFileExists = 0, localSettingsFileExists = 0;
   char *envHOME;
   struct stat statBuf;
-  int rv;
+  int rv, retval = 0;
   char ** args = argv; 
+  
   gMainThread = QThread::currentThread(); 
   RegisterThread(gMainThread); 
  
@@ -689,14 +690,14 @@ int main(int argc, char *argv[])
     } else {
       DEBUGMSG("No frames to delete"); 
     }
-    theSlave->Loop();
-    INFO("Done with slave loop.\n"); 
+    retval = theSlave->Loop();
+    INFO("Done with slave loop.\n");
   }
   else {
     /* The display loop will destroy the frames for us (it has to, because it
      * must be able to change the frames too.)
      */
-    DisplayLoop(allFrames, opt);
+    retval = DisplayLoop(allFrames, opt);
   }
 
   /* If we read settings, write them back out.  Only one of the
@@ -726,5 +727,5 @@ int main(int argc, char *argv[])
   opt->settings = NULL;
   INFO("Blockbuster is finished.\n"); 
   /* All done.  Go home. */
-  return 0;
+  return retval;
 }

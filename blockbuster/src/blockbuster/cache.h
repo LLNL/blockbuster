@@ -141,6 +141,7 @@ class ImageCache {
     CACHEDEBUG("%s: %d: main thread waiting job done (%s)", 
                file, line, reason); 
     jobDone.wait(&imageCacheLock, 100); 
+    CACHEDEBUG("%s: %d: main thread Woke up (%s)", file, line, reason); 
   }
   void WakeAllJobReady(char *reason, char *file="unknown file", int line=0) {
     CACHEDEBUG("%s: %d: main thread signaling job ready (%s)", 
