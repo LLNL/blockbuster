@@ -40,8 +40,7 @@ SM2IMGFILES =  sm2img.o simple_jpeg.o
 SMCATFILES =  smcat.o
 SMEVOFILES = smevo.o
 
-SMLIB = $(INSTALL_DIR)/lib/libsmovie.a
-
+SMLIB = $(INSTALL_DIR)/lib/libsmovie.a $(INSTALL_DIR)/lib/libptutil.a
 SFILES = smmake.C smtest.C ifl2sm.C img2sm.C sm2img.C rename.C smcat.C smevo.C
 OFILES = smmake smtest ifl2sm img2sm sm2img rename smcat smevo
 
