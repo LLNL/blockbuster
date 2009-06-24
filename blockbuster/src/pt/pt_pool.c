@@ -24,11 +24,26 @@
 #include "pt.h"
 
 static void *pt_pool_thread(void *);
+pt_pool_t gPool = NULL; 
+
+/* using the current pthread_self(), return the zero-based thread number */
+int pt_pool_threadnum(void) {
+  pthread_t self = pthread_self(); 
+  int threadnum = gPool->num_threads; 
+  while (threadnum--) {
+    if (gPool->threads[threadnum] == self) {
+      return threadnum; 
+    }
+  }
+  fprintf(stderr, "Error: cannot identify thread ID\n"); 
+  return 0; 
+}
 
 void pt_pool_init(pt_pool_t tpool, int num_worker_threads, 
 		int max_queue_size, int do_not_block_when_full)
 {
   int i, rtn;
+  gPool = tpool; 
   pt_pool_work_t *workp;
    
   /* initialize th fields */
