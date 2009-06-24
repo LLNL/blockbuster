@@ -137,10 +137,11 @@ int main(int argc,char **argv)
 	int             tiled = 0;
 
 	/* parse the command line ... */
-	i = 1;
+	i = 1; 
 	while ((i<argc) && (argv[i][0] == '-')) {
 		if (strcmp(argv[i],"-v")==0) {
 			iVerb = 1;
+            //sm_setVerbose(5); 
 		} else if (strcmp(argv[i],"-stereo")==0) {
 			iStereo = SM_FLAGS_STEREO;
 		} else if (strcmp(argv[i],"-filter")==0) {
@@ -445,7 +446,7 @@ int main(int argc,char **argv)
 			if (iVerb) {
 				printf("Working on %d of %d\n",i+1,count);
 			}
-			if ((input[j].sm->getType() == sm->getType()) && 
+			if (nThreads == 1 && (input[j].sm->getType() == sm->getType()) && 
 					(iScale == 0) && 
 		(sm->getNumResolutions() == input[j].sm->getNumResolutions())) {
 				int	size,res;
@@ -498,7 +499,7 @@ void workproc(void *arg)
 	int	size;
 	unsigned char *buffer = (unsigned char *)malloc(sizein);
 
-	p->insm->getFrame(p->inframe,buffer, 0);
+	p->insm->getFrame(p->inframe,buffer, pt_pool_threadnum());
 	if (p->iScale) {
 		unsigned char *pZoom = (unsigned char *)malloc(sizeout);
 		Sample2d(buffer,
