@@ -43,6 +43,8 @@ SMEVOFILES = smevo.o
 SFILES = smmake.C smtest.C ifl2sm.C img2sm.C sm2img.C rename.C smcat.C smevo.C
 OFILES = smmake smtest ifl2sm img2sm sm2img rename smcat smevo
 
+CPPFLAGS += -g 
+
 default: smmake smtest ifl2sm img2sm rename sm2img smcat smevo sm2qt manpages
 
 manpages:
@@ -93,7 +95,21 @@ clean:
 	rm -rf $(CC_CACHE) *.o core $(OFILES) sminfo
 	makedepend
 
+# use this carefully!  
 depend: $(SFILES)
-	makedepend $(INCLUDES) $(SFILES)
+	makedepend -Y. -Y.. $(INCLUDES) $(SFILES)
 
 # DO NOT DELETE
+
+smmake.o: ../sm/smRaw.h ../sm/smBase.h ../sm/smRLE.h
+smtest.o: ../sm/smBase.h
+img2sm.o: ../sm/smLZO.h ../sm/smBase.h ../sm/smRLE.h ../sm/smGZ.h
+img2sm.o: ../sm/smRaw.h ../sm/smJPG.h ../libimage/sgilib.h
+img2sm.o: ../libpnmrw/libpnmrw.h simple_jpeg.h ../pt/pt.h
+sm2img.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smGZ.h ../sm/smLZO.h
+sm2img.o: ../sm/smRaw.h ../libimage/sgilib.h ../libpnmrw/libpnmrw.h
+sm2img.o: simple_jpeg.h
+smcat.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smGZ.h ../sm/smLZO.h
+smcat.o: ../sm/smRaw.h ../sm/smJPG.h ../pt/pt.h
+smevo.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smGZ.h ../sm/smLZO.h
+smevo.o: ../sm/smRaw.h ../sm/smJPG.h
