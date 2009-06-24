@@ -63,6 +63,11 @@ MANLINKS:
 	date > MANLINKS
 
 depend:
-	makedepend $(INCLUDES) $(SRC_FILES)
+	makedepend -Y. -Y.. $(INCLUDES) $(SRC_FILES)
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
+
+pt_gate.o: pt.h
+pt_oneshot.o: pt.h
+pt_pool.o: pt.h
+pt_rw.o: pt.h
