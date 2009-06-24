@@ -40,6 +40,8 @@ SM2IMGFILES =  sm2img.o simple_jpeg.o
 SMCATFILES =  smcat.o
 SMEVOFILES = smevo.o
 
+SMLIB = $(INSTALL_DIR)/lib/libsmovie.a
+
 SFILES = smmake.C smtest.C ifl2sm.C img2sm.C sm2img.C rename.C smcat.C smevo.C
 OFILES = smmake smtest ifl2sm img2sm sm2img rename smcat smevo
 
@@ -51,43 +53,43 @@ manpages:
 	mkdir -p $(INSTALL_DIR)/man/man1
 	cp *.1 $(INSTALL_DIR)/man/man1
 
-sm2qt: smcat.o
+sm2qt: smcat.o $(SMLIB)
 	touch sm2qt
 	cp ps2sm sm2mpg $@ $(INSTALL_DIR)/bin
 
-smevo: $(SMEVOFILES)
+smevo: $(SMEVOFILES) $(SMLIB)
 	$(CXX)  $(SMEVOFILES) -o $@ -levomovie $(LIBS) $(CXXFLAGS) $(GZIP_LIBS)
 	cp $@ $(INSTALL_DIR)/bin
 
-smmake: $(SMOFILES)
+smmake: $(SMOFILES) $(SMLIB)
 	$(CXX)  $(SMOFILES) -o $@ $(LIBS) $(CXXFLAGS) $(GZIP_LIBS)
 	cp $@ $(INSTALL_DIR)/bin
 
-smtest: $(SMTOFILES)
+smtest: $(SMTOFILES) $(SMLIB)
 	$(CXX)  $(SMTOFILES) -o $@ $(LIBS) $(CXXFLAGS) $(GZIP_LIBS)
 	cp $@ $(INSTALL_DIR)/bin
 
-ifl2sm: $(IFL2SMFILES)
+ifl2sm: $(IFL2SMFILES) $(SMLIB)
 	$(CXX)  $(IFL2SMFILES) -o $@ $(LIBS) $(CXXFLAGS) $(GZIP_LIBS)
 	cp $@ $(INSTALL_DIR)/bin
 
-img2sm: $(IMG2SMFILES)
+img2sm: $(IMG2SMFILES) $(SMLIB)
 	$(CXX)  $(IMG2SMFILES) -o $@ $(LIBS) $(CXXFLAGS) $(GZIP_LIBS) \
 		$(TIFF_LIBS) $(PNM_LIBS) -limage -lm
 	cp $@ $(INSTALL_DIR)/bin
 
-sm2img: $(SM2IMGFILES)
+sm2img: $(SM2IMGFILES) $(SMLIB)
 	$(CXX)  $(SM2IMGFILES) -o $@ $(LIBS) $(CXXFLAGS) $(GZIP_LIBS) \
 		$(TIFF_LIBS) $(PNM_LIBS) -limage -lm
 	cp $@ sminfo
 	cp $@ sminfo $(INSTALL_DIR)/bin
 
-smcat: $(SMCATFILES)
+smcat: $(SMCATFILES) $(SMLIB)
 	$(CXX)  $(SMCATFILES) -o $@ $(LIBS) $(CXXFLAGS) $(GZIP_LIBS) \
 		$(TIFF_LIBS) $(PNM_LIBS) -limage -lm
 	cp $@ $(INSTALL_DIR)/bin
 
-rename: rename.o
+rename: rename.o $(SMLIB)
 	$(CXX)  rename.o -o $@ $(CXXFLAGS) -lm
 	cp $@ $(INSTALL_DIR)/bin
 
