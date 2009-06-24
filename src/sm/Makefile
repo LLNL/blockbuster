@@ -57,7 +57,7 @@ $(INSTALL_DIR)/include/smBase.h: $(HFILES)
 	cp $(HFILES) $(INSTALL_DIR)/include/sm
 
 
-$(OFILES): $(HFILES) $(SRC_FILES)
+#$(OFILES): $(HFILES) $(SRC_FILES)
 
 libsmovie.a: $(OFILES)
 	$(AR) rsc $@ $(OFILES)
