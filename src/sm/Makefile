@@ -74,7 +74,18 @@ clean:
 	cd smdfc; $(MAKE) clean
 	rm -rf $(INSTALL_DIR)/lib/libsmovie.a $(INSTALL_DIR)/sm
 
-depend:
-	makedepend $(INCLUDES) $(SRC_FILES)
+#use with caution:
+depend: 
+	makedepend -Y. -Y.. $(INCLUDES) $(SRC_FILES)
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
+
+smBase.o: smBaseP.h smBase.h smdfc/smdfc.h smRaw.h smRLE.h smGZ.h smLZO.h
+smBase.o: smJPG.h ../common/timer.h ../common/stringutil.h
+smBase.o: ../common/stringutil.h
+smRLE.o: smRLE.h smBase.h
+smRaw.o: smRaw.h smBase.h
+smGZ.o: smGZ.h smBase.h
+smLZO.o: smLZO.h smBase.h
+smJPG.o: smJPG.h smBase.h
+smdfc/smdfc.o: smdfc/smdfcP.h smdfc/smdfc.h
