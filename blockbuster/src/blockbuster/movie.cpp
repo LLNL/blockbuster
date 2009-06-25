@@ -587,22 +587,25 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       case MOVIE_DECREASE_RATE:
         targetFPS -= 1.0;
         if (targetFPS < 0.0) {
-          targetFPS = 0.0;
+          targetFPS = 0.5;
         }
         canvas->ReportRateChange(targetFPS);
-        if (targetFPS > 0.0)
-          nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
-        else
-          nextSwapTime = 0.0;
+        if (targetFPS < 0.2) {
+          targetFPS = 0.2; 
+          canvas->ReportRateChange(targetFPS);
+        }
+        nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
         break;
       case MOVIE_SET_RATE:
         /* User changed the frame rate slider */
-        targetFPS = MAX2(event.rate, 0.0);
-        if (targetFPS > 0.0)
-          nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
-        else
-          nextSwapTime = 0.0;
-          canvas->ReportRateChange(targetFPS);
+        targetFPS = MAX2(event.rate, 0.2);
+        /* if (targetFPS > 0.0)
+           nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
+           else
+           nextSwapTime = 0.0;
+        */
+        nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
+        canvas->ReportRateChange(targetFPS);
         break;
       case MOVIE_INCREASE_LOD:
         lodBias++;
