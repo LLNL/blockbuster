@@ -3,9 +3,12 @@ testing procedure requires about a half an hour to complete successfully.  Enter
 Use Testing.cues for a good suite of tests.  
 LLNL Note:  Be sure to test against actual cuefiles on both OCF and SCF, as some bugs do crop up on SCF that don't appear on OCF.  
 
-Before installing, but after confirming functionality with the below tests, build the development version with debug turned off and test to make sure it's quiet.  
+Before installing, but after confirming functionality with the below tests, build the development version with debug turned off and test to make sure it's quiet.  Don't forget to modify config/version.h. 
 
-Before testing, go to the Blockbuster sourceforge site and open the bug tracker.  You will need it.  :-)  Don't bother with private notes if you can avoid it.  The tracker is there for a reason;  use it!  Similarly, do not fix bugs while testing, unless they are catastrophic and testing cannot continue without them.  To do so diffuses focus and results in testing not getting completed.  Also, the bug you rush off to fix is probably not as important as others that are waiting to be fixed, so might as well stay in there!  
+Before testing, go to the Blockbuster sourceforge site and open the bug tracker.  You will need it.  :-)  Don't bother with private notes if you can avoid it.  The tracker is there for a reason;  use it!  Similarly, do not fix bugs while testing, unless they are catastrophic and testing cannot continue without them.  To do so diffuses focus and results in testing not getting completed.  Also, the bug you rush off to fix is probably not as important as others that are waiting to be fixed, so might as well just add it to the queue instead of fixing it right now.   
+
+# New Features and Fields in the GUI
+If any new fields or features have been added, test to see if the defaults are set up correctly and handled well in blockbuster and sidecar.  Also check if unusual values are used, do they work?  Frame rate was a great example.  FPS = 0.0 caused very bad things to happen.  What happens if you type a word or a negative number for the frame rate?  Etc.  
 
 # Cuefiles 
 Run sidecar without loading a cuefile.  Next, load a cuefile both from the command line and from the "Load from file..." button.  Save it as a new cue file and then reload it. Run all cues.  Test every button in the interface that operates on cues.  Duplicate a cue, then test every button and checkbox in the new cue.  Try to close the window and quit the application to make sure it prompts for saves. Save the cue file, then reload it.  Make sure they were saved and restored properly.   
@@ -52,3 +55,5 @@ Check rendering speed under MPI and without MPI and confirm that synchronization
 # DMX 
 Test launch and behavior of blockbuster and sidecar with and without DMX and MPI framesync. Test "Fill" (fullscreen) button with DMX. Ensure a cue or two works properly in DMX. 
 
+# SMTOOLS.
+If any changes were made in the sm or smapps libraries, or might affect them, then run a few tools from the smlib to test them too.  
