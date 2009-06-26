@@ -84,7 +84,7 @@ void ClampStartEndFrames(FrameList *allFrames,
 						 int32_t &endFrame, 
 						 int32_t &frameNumber, 
 						 bool warn = false) {
-  if (endFrame < 0) {
+  if (endFrame <= 0) {
     endFrame = allFrames->numStereoFrames()-1;
   }
   if (startFrame < 0) {
