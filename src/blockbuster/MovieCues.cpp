@@ -1199,6 +1199,13 @@ QFile  &operator >> (QFile &iFile,  MovieCue &iCue){
       // dbprintf(5, "next token: \"%s\"\n", pos->toStdString().c_str()); 
       if (*pos == "ENDCUE") {
         iCue.isValid = true; 
+        if (iCue.mFrameRate < 0.2) {
+          iCue.mFrameRate = 0.2; 
+          QMessageBox::warning
+            (NULL,  "Warning",
+             QString("Cue \"%1\" has a frame rate less than 0.2.\nAdjusting to 0.2")
+             .arg(iCue.text()));
+        }
         return iFile; 
       }
       tokenpair = pos->split("="); 
