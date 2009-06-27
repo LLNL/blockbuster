@@ -760,6 +760,8 @@ void MovieCueManager::on_readCueFileButton_clicked(){
 
 //======================================================================
 void MovieCueManager::ReadCueFile(std::string filename) {
+  bool cuesDirty = false; // if changes were made while reading
+
   QFile theFile(filename.c_str()); 
   if (!theFile.open( QIODevice::ReadOnly)) {
     QMessageBox::warning(this,  "Error",
@@ -795,6 +797,14 @@ void MovieCueManager::ReadCueFile(std::string filename) {
       }
     }
     if (cue->isValid) {
+      if (cue->mFrameRate < 0.2) {
+        cue->mFrameRate = 0.2; 
+        QMessageBox::warning
+          (NULL,  "Warning",
+           QString("Cue \"%1\" has a frame rate less than 0.2.\nAdjusting to 0.2")
+           .arg(cue->text()));
+        cuesDirty = true; 
+      }
       movieCueList->addItem(cue); 
       cue = new MovieCue;
     } 
@@ -804,7 +814,7 @@ void MovieCueManager::ReadCueFile(std::string filename) {
   
   setWindowTitle(QString("Movie Cue Manager: ")+filename.c_str()); 
   
-  cueFileDirty(false); 
+  cueFileDirty(cuesDirty); 
   return; 
 }
 
@@ -1199,13 +1209,6 @@ QFile  &operator >> (QFile &iFile,  MovieCue &iCue){
       // dbprintf(5, "next token: \"%s\"\n", pos->toStdString().c_str()); 
       if (*pos == "ENDCUE") {
         iCue.isValid = true; 
-        if (iCue.mFrameRate < 0.2) {
-          iCue.mFrameRate = 0.2; 
-          QMessageBox::warning
-            (NULL,  "Warning",
-             QString("Cue \"%1\" has a frame rate less than 0.2.\nAdjusting to 0.2")
-             .arg(iCue.text()));
-        }
         return iFile; 
       }
       tokenpair = pos->split("="); 
