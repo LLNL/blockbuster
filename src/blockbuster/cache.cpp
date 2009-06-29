@@ -917,7 +917,7 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
      * wait for an image to become ready.
      */
     image = LoadAndConvertImage(mFrameList->getFrame(frameNumber),
-	frameNumber, mCanvas, &region, levelOfDetail);
+                                frameNumber, mCanvas, &region, levelOfDetail);
     if (image == NULL) {
 	/* Error has already been reported */
 	return NULL;

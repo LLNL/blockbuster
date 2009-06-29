@@ -132,6 +132,7 @@ void Canvas::ReportFrameListChange(const FrameList *frameList) {
   if (mBlockbusterInterface) {
     mBlockbusterInterface->setFrameRange(1, frameList->numStereoFrames()); 
     mBlockbusterInterface->setFrameNumber(1); 
+    mBlockbusterInterface->setTitle(frameList->getFrame(0)->filename); 
   }
   return; 
 }

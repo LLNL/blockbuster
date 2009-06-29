@@ -130,6 +130,12 @@ void BlockbusterInterface::setFrameRange(int32_t bottom, int32_t top) {
 } 
  
 //=============================================================
+void BlockbusterInterface::setTitle(QString title) {
+  setWindowTitle(title); 
+  return; 
+}
+
+//=============================================================
 void BlockbusterInterface::setLOD(int lod){
   mLOD = lod; 
   lodSpinBox->setValue(lod); 
