@@ -31,6 +31,7 @@
 #include "errmsg.h"
 #include "cache.h"
 #include "blockbuster_qt.h"
+#include "xwindow.h"
 
 /* This file handles the creation and destruction of the dynamic Canvas
  * objects, and encapsulates references to the Renderers, UserInterfaces,
@@ -132,7 +133,10 @@ void Canvas::ReportFrameListChange(const FrameList *frameList) {
   if (mBlockbusterInterface) {
     mBlockbusterInterface->setFrameRange(1, frameList->numStereoFrames()); 
     mBlockbusterInterface->setFrameNumber(1); 
-    mBlockbusterInterface->setTitle(frameList->getFrame(0)->filename); 
+    QString moviename = frameList->getFrame(0)->filename; 
+    if (moviename.size() > 32) moviename = QString("...") + moviename.right(32); 
+    mBlockbusterInterface->setTitle(QString("Blockbuster Control (%1)").arg(moviename)); 
+    XWindow_SetTitle(QString("Blockbuster (%1)").arg(moviename)); 
   }
   return; 
 }
