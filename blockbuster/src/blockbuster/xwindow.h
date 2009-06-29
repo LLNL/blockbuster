@@ -35,6 +35,7 @@
 
 
 extern UserInterface x11UserInterface;
+void XWindow_SetTitle(QString title); 
 void GetXEvent(Canvas *canvas, int block, MovieEvent *movieEvent);
 void CloseXWindow(Canvas *canvas);
 void ResizeXWindow(Canvas *canvas, int newWidth, int newHeight, int cameFromX);
