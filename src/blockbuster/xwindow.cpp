@@ -96,7 +96,6 @@ int ComputeShift(unsigned long mask)
     return shiftCount;
 }
 
-
 /* This structure allows finer control over the UserInterface,
  * based on which renderer will eventually be used.  It can be 
  * customized for exactly the features this particular UserInterface
@@ -568,6 +567,12 @@ static void set_mwm_border( Display *dpy, Window w, unsigned long flags )
                   );
 }
 
+void XWindow_SetTitle(QString title) {
+  XStoreName(sWindowInfo->display, sWindowInfo->window, 
+             title.toAscii().data()); 
+  return; 
+}
+
 /* This function is called to initialize an already-allocated Canvas.
  * The Glue information is already copied into place.
  */
@@ -737,9 +742,10 @@ static MovieStatus xwindow_Initialize(Canvas *canvas, const ProgramOptions *opti
     XSetNormalHints(sWindowInfo->display, sWindowInfo->window, &sizeHints);
         
 
+    XWindow_SetTitle(suggestedName); 
     XSetStandardProperties(sWindowInfo->display, sWindowInfo->window, 
-						   suggestedName.toAscii(),
-						   suggestedName.toAscii(), None, (char **)NULL, 0, &sizeHints);
+						   suggestedName.toAscii(), suggestedName.toAscii(), 
+                           None, (char **)NULL, 0, &sizeHints);
 
 
     if (!decorations) 
