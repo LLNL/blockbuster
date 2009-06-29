@@ -8,6 +8,16 @@ FEATURES: all now tracked on sourceforge website
 BUGS: all are now in sourceforge.net/tracker
 -- 
 
+FILE RELEASE MANAGEMENT: 
+Use rsync over ssh as recommended by sourceforge.  
+https://sourceforge.net/apps/trac/sourceforge/wiki/Release%20files%20for%20download#Uploadafile
+https://sourceforge.net/apps/trac/sourceforge/wiki/File%20management%20service
+
+DOCUMENTATION USING DOXYGEN: 
+I am planning to start to use doxygen for doc generation, so much easier!  Stay tuned. 
+
+-0------------------------------------------------------------
+STRACE: 
 Using strace:  Here is how I captured the network delay bug I was having, where sidecar was several frames behind blockbuster, which was causing weird looping stuff to happen in blockbuster.    
 
 blockbuster -dev -strace-args "-ttt -e trace=desc -e write=15 -e verbose=write" -messageLevel debug ~/dataAndImages/langer.sm >blockbuster.out 2>&1
