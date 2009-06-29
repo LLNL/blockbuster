@@ -84,6 +84,7 @@ void ClampStartEndFrames(FrameList *allFrames,
 						 int32_t &endFrame, 
 						 int32_t &frameNumber, 
 						 bool warn = false) {
+  DEBUGMSG(QString("BEGIN ClampStartEndFrames(%1, %2, %3, %4...").arg(allFrames->getFrame(0)->filename).arg(startFrame).arg(endFrame).arg(frameNumber)); 
   if (endFrame <= 0) {
     endFrame = allFrames->numStereoFrames()-1;
   }
@@ -107,6 +108,7 @@ void ClampStartEndFrames(FrameList *allFrames,
   }
   if (frameNumber > endFrame) frameNumber = endFrame; 
   if (frameNumber < startFrame) frameNumber = startFrame; 
+  DEBUGMSG(QString("END ClampStartEndFrames(%1, %2, %3, %4...").arg(allFrames->getFrame(0)->filename).arg(startFrame).arg(endFrame).arg(frameNumber)); 
   return;
 }
 
@@ -193,6 +195,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
    * off)
    */
   //  canvas->ReportRateRangeChange(0.01, 1000);
+  canvas->ReportFrameChange(frameNumber);
   canvas->ReportDetailRangeChange(-maxLOD, maxLOD);
   canvas->ShowInterface(options->drawInterface);
   canvas->ReportDetailChange(lodBias);
@@ -312,7 +315,8 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         endFrame = options->endFrame;
         // clamp frame values, generate a warning if they are funky
         ClampStartEndFrames(allFrames, startFrame, endFrame, frameNumber, true); 
-        DEBUGMSG("START_END_FRAMES: start %d end %d\n", startFrame, endFrame); 
+        canvas->ReportFrameChange(frameNumber); 
+        DEBUGMSG("START_END_FRAMES: start %d end %d current %d\n", startFrame, endFrame, frameNumber); 
         break; 
       case MOVIE_MESSAGE:
         DEBUGMSG("MOVIE_MESSAGE event: %s\n", event.mString); 
@@ -747,7 +751,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       //===================================================================
       //TIMER_PRINT("end switch, frame %d", frameNumber); 
       if (frameNumber != previousFrame) {
-        DEBUGMSG("frameNumber changed after switch"); 
+        DEBUGMSG("frameNumber changed  to %d after switch", frameNumber); 
       }
       /*! check if we have reached the end of a cue */
       if (cuePlaying && 
@@ -977,8 +981,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
        * request "downstream".
        */
       
-      TIMER_PRINT("before report frame change"); 
-      canvas->ReportFrameChange(frameNumber);
+      TIMER_PRINT("before  BeforeRender"); 
 
       if (canvas->BeforeRender != NULL) {
         canvas->BeforeRender(canvas);
@@ -1074,7 +1077,8 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         }
       }
       if (frameNumber != previousFrame) {
-        DEBUGMSG("frameNumber changed during non-switch logic"); 
+        DEBUGMSG("frameNumber changed to %d during non-switch logic", frameNumber); 
+        canvas->ReportFrameChange(frameNumber);
       }
       previousFrame = frameNumber; 
       oldZoom = currentZoom; 

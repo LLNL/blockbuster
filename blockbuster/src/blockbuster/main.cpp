@@ -310,7 +310,7 @@ static void ParseOptions(int &argc, char *argv[])
       
       maxMessageLevel = opt->messageLevel->messageLevel;
       set_verbose(maxMessageLevel); 
-      sm_setVerbose(maxMessageLevel); 
+      sm_setVerbose(maxMessageLevel-1); 
       //if (maxMessageLevel == 4) enable_dbprintf(); 
       continue;
     }
@@ -342,7 +342,7 @@ static void ParseOptions(int &argc, char *argv[])
 	else if (CHECK_ATOI_ARG("-verbose", argc, argv,maxMessageLevel))  {
       opt->messageLevel = FindMessageLevel(maxMessageLevel);
       set_verbose(maxMessageLevel); 
-      sm_setVerbose(maxMessageLevel); 
+      sm_setVerbose(maxMessageLevel-1); 
       continue;
     }
 	else if (SET_BOOL_ARG("-version", argc, argv, help, 1)) {

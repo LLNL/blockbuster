@@ -129,12 +129,12 @@ static Image *LoadAndConvertImage(FrameInfo *frameInfo, unsigned int frameNumber
     }
     image->ImageDeallocator = DefaultImageDeallocator;
 
-    DEBUGMSG("LoadImage being called"); 
+    CACHEDEBUG("LoadImage being called"); 
     /* Call the file format module to load the image */
     rv = (*frameInfo->LoadImage)(image, frameInfo, canvas,
                                  region, levelOfDetail);
     image->frameNumber = frameNumber; 
-    DEBUGMSG("LoadImage done"); 
+    CACHEDEBUG("LoadImage done"); 
 
     if (!rv) {
 	ERROR("could not load frame %d (frame %d of file name %s) for the cache",
@@ -378,7 +378,7 @@ ImageCache::ImageCache(int numthreads, int numimages, Canvas *c):
   CACHEDEBUG("ImageCache constructor"); 
   
   register int i;
-  DEBUGMSG("CreateImageCache(mNumReaderThreads = %d, mMaxCachedImages = %d, mCanvas)", mNumReaderThreads, mMaxCachedImages);
+  CACHEDEBUG("CreateImageCache(mNumReaderThreads = %d, mMaxCachedImages = %d, mCanvas)", mNumReaderThreads, mMaxCachedImages);
   mCachedImages = (CachedImage *)calloc(1, mMaxCachedImages * sizeof(CachedImage));
   if (mCachedImages == NULL) {
 	ERROR("cannot allocate %d cached images", mMaxCachedImages);
@@ -1131,7 +1131,7 @@ void ImageCache::Print(void)
   register CachedImage *cachedImage;
   register int i;
   QString msg; 
-  DEBUGMSG("Printing cache state."); 
+  CACHEDEBUG("Printing cache state."); 
   for (
        i = 0, cachedImage = mCachedImages; 
        i < mMaxCachedImages; 
@@ -1146,9 +1146,9 @@ void ImageCache::Print(void)
     if (cachedImage->image) {
       msg += QString("roi:%1").arg(cachedImage->image->loadedRegion.toString()); 
    }
-    DEBUGMSG(msg); 
+    CACHEDEBUG(msg); 
   }
-  DEBUGMSG("mHighest = %d", mHighestFrameNumber); 
+  CACHEDEBUG("mHighest = %d", mHighestFrameNumber); 
 }
 
 /*!

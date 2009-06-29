@@ -113,9 +113,12 @@ bool BlockbusterInterface::GetEvent (MovieEvent &event) {
 
 //=============================================================
 void BlockbusterInterface::setFrameNumber(int frameNumber) {
+  //DEBUGMSG("BlockbusterInterface::setFrameNumber", frameNumber); 
   mFrameNumber = frameNumber; 
+  frameSlider->blockSignals(true); 
   frameSlider->setValue(frameNumber); 
   frameField->setText(QString("%1").arg(frameNumber)); 
+  frameSlider->blockSignals(false); 
   //cerr << "setFrameNumber not implemented" << endl; 
   return; 
 }
@@ -124,8 +127,10 @@ void BlockbusterInterface::setFrameNumber(int frameNumber) {
 void BlockbusterInterface::setFrameRange(int32_t bottom, int32_t top) {
   mStartFrame = bottom; 
   mEndFrame = top; 
+  frameSlider->blockSignals(true); 
   mFrameValidator.setRange(bottom, top); 
   frameSlider->setRange(bottom, top); 
+  frameSlider->blockSignals(false); 
   return; 
 } 
  
@@ -316,14 +321,20 @@ void BlockbusterInterface::showCursor(bool show) {
 void BlockbusterInterface::on_frameSlider_valueChanged(int value) {
   if (value == mFrameNumber) return; 
   if (value <mStartFrame) {
-    frameSlider->setValue(mStartFrame); 
+    frameSlider->setValue(mStartFrame);
+    value = mStartFrame; 
     return;
   }
   if (value > mEndFrame) {
     frameSlider->setValue(mEndFrame); 
+    value = mEndFrame; 
     return;
   }
+  mFrameNumber = value; 
+  //DEBUGMSG("on_frameSlider_valueChanged %d", value); 
+  frameField->blockSignals(true); 
   frameField->setText(QString("%1").arg(value)); 
+  frameField->blockSignals(false); 
   mEventQueue.push_back(MovieEvent (MOVIE_GOTO_FRAME, value-1)); 
 }
 
