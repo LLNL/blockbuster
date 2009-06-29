@@ -898,16 +898,17 @@ void SideCar::endButton_clicked(){
 
 
 //================================================================
-void SideCar::frameSlider_valueChanged(int value){     
-  if (value < mRemoteControl->mStartFrame) {
-    mRemoteControl->frameSlider->setValue(mRemoteControl->mStartFrame); 
+void SideCar::frameSlider_valueChanged(int value){   
+  //DEBUGMSG("frameSlider_valueChanged %d", value); 
+  if (value < mRemoteControl->mStartFrame+1) {
+    mRemoteControl->frameSlider->setValue(mRemoteControl->mStartFrame+1); 
     return;
   }
-  if (value > mRemoteControl->mEndFrame) {
-    mRemoteControl->frameSlider->setValue(mRemoteControl->mEndFrame); 
+  if (value > mRemoteControl->mEndFrame+1) {
+    mRemoteControl->frameSlider->setValue(mRemoteControl->mEndFrame+1); 
     return;
   }
-  SendEvent(MovieEvent (MOVIE_GOTO_FRAME, value)); 
+  SendEvent(MovieEvent (MOVIE_GOTO_FRAME, value-1)); 
 }
 
 //================================================================

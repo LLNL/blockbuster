@@ -123,6 +123,7 @@ Canvas::~Canvas()
 
 
 void Canvas::ReportFrameChange(int frameNumber) {
+  DEBUGMSG("Canvas::ReportFrameChange %d", frameNumber); 
   if (mBlockbusterInterface) {
     mBlockbusterInterface->setFrameNumber(frameNumber+1); 
   }
@@ -130,6 +131,7 @@ void Canvas::ReportFrameChange(int frameNumber) {
 }
 
 void Canvas::ReportFrameListChange(const FrameList *frameList) {
+  DEBUGMSG("Canvas::ReportFrameListChange"); 
   if (mBlockbusterInterface) {
     mBlockbusterInterface->setFrameRange(1, frameList->numStereoFrames()); 
     mBlockbusterInterface->setFrameNumber(1); 
