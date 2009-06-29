@@ -99,10 +99,10 @@ void FrameList::DeleteFrames(void) {
   register uint32_t i;
   
   for (i = 0; i < frames.size(); i++) {
-    DEBUGMSG("Deleting frame %d", i); 
+    //DEBUGMSG("Deleting frame %d", i); 
     (frames[i]->DestroyFrameInfo)(frames[i]);
   }
-  DEBUGMSG("Done with DeleteFrames"); 
+  //  DEBUGMSG("Done with DeleteFrames"); 
 }
 
 //===============================================================
