@@ -136,7 +136,10 @@ inline void sm_real_dbprintf(int level, const char *fmt, ...) {
   return; 
 }
 #else
-#define smdbprintf if(0) printf
+inline void sm_real_dbprintf(int level, const char *fmt, ...) {  
+  return; 
+}
+#define smdbprintf if(0) sm_real_dbprintf
 #endif
 //===============================================
 
