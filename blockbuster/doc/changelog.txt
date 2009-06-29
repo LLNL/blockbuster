@@ -2,8 +2,21 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ================================================================================
+VERSION 2.6.3
+June 29, 2009
+-- Rewrote smlib to remove ALL mutexes and Direct IO technology references. 
+-- Fixed a bug causing cache frames to be invalidated inappropriately, so causing very slow playback.  
+-- fixed LOD bug allowing level of detail to go negative
+-- fixed a bug that caused blockbuster to play past the EndFrame in a cue for very short play times. 
+-- fixed a bug that caused blockbuster to start on frame 2 of a movie given on the command line
+-- hopefully fixed a bug causing the spacebar to not stop a movie promptly 
+-- fixed bugs dealing with low frame rates in blockbuster and sidecar.  Now values less than 0.2 are not accepted.  I can imagine for a kiosk you might want slower rates, so add a feature request for "kiosk mode" allowing one frame every n seconds instead of a n frames per second... perhaps some clever notation would work.  
+-- fixed a bug causing blockbuster to incorrectly respond to frame numbers in cues and the frame slider in certain instances
+-- re-added movie title to blockbuster title bars, lost when the change to Qt occurred.  
+
+================================================================================
 VERSION 2.6.2a
-June ??, 2009
+June 8, 2009
 -- DRAMATIC speed increase due to improved network performance and better threading code.  A test movie that was limited to 13 frames per sec is now playing at over 100 FPS. 
 -- Switched code repository from CVS to Subversion.  
 -- using lzolib 2.03 now to build on new Darwin 9.7.0 kernels (OS X)
