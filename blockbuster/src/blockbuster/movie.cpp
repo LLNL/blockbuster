@@ -229,7 +229,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
 
 
   while(! done) {
-    TIMER_PRINT("loop start"); 
+    // TIMER_PRINT("loop start"); 
     vector<MovieEvent> events;
     MovieEvent newEvent; 
     int oldPlay = playDirection;
@@ -659,7 +659,6 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
 	    
 	    allFrames = newFrameList;
 	    allFrames->GetInfo(maxWidth, maxHeight, maxDepth, maxLOD, targetFPS);
-	    /*RDC: I moved this to AFTER GetFrameListInfo to match what is done at the start of this function -- doesn't make sense to be before, but I'm not sure anything bad has happened yet */
 	    ModifyFrameList(canvas, allFrames);
 	    canvas->ReportRateChange(targetFPS); 
 	    
@@ -746,8 +745,10 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       //===============================================================
       /* END SWITCH on type of event */
       //===================================================================
-      TIMER_PRINT("end switch, frame %d", frameNumber); 
-
+      //TIMER_PRINT("end switch, frame %d", frameNumber); 
+      if (frameNumber != previousFrame) {
+        DEBUGMSG("frameNumber changed after switch"); 
+      }
       /*! check if we have reached the end of a cue */
       if (cuePlaying && 
           (!playDirection  || 
@@ -1071,6 +1072,9 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
             canvas->Preload(canvas, frame, &roi, lod);
           }
         }
+      }
+      if (frameNumber != previousFrame) {
+        DEBUGMSG("frameNumber changed during non-switch logic"); 
       }
       previousFrame = frameNumber; 
       oldZoom = currentZoom; 

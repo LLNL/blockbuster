@@ -233,7 +233,7 @@ struct FrameList {
 
   uint32_t numActualFrames(void) const { return frames.size(); }
 
-  FrameInfo * getFrame(uint32_t num) {
+  FrameInfo * getFrame(uint32_t num) const {
     if (num < frames.size()){
       return frames[num];
     }

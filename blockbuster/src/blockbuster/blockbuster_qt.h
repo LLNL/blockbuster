@@ -34,6 +34,7 @@ class BlockbusterInterface: public QWidget, public Ui::BlockbusterControl  {
 
   void setFrameNumber(int frameNumber);   
   void setFrameRange(int32_t bottom, int32_t top);
+  void setTitle(QString title); 
   void setLOD(int lod); 
   void setLODRange(int min, int max); 
   void setFrameRate(double rate); 
