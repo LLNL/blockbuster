@@ -167,7 +167,8 @@ void MovieCue::GenerateScript(MovieScript &oScript) const{
 
 //======================================================================
 MovieCueManager::MovieCueManager(QWidget *parent ) :
-  QWidget(parent), mCurrentCue(NULL) {
+  QWidget(parent), mCurrentCue(NULL), 
+  mBlockExecution(false) {
   SetCueUnchanged(); 
   setupUi(this); 
   connect(movieCueList, SIGNAL(itemActivated(QListWidgetItem *)), 
@@ -206,14 +207,14 @@ bool MovieCueManager::okToQuit(void) {
     return true; 
   } else {
     QMessageBox::StandardButton reply =
-      QMessageBox::critical(this, tr("Save Cue File"),
+      QMessageBox::critical(NULL, tr("Save Cue File"),
                             "The cue file has changed.  Save before quitting?",
                             QMessageBox::Save | 
                             QMessageBox::Discard | QMessageBox::Cancel);
     if (reply == QMessageBox::Save){
       on_saveCuesButton_clicked(); 
       return true;
-    }  else if (reply == QMessageBox::Discard) {
+    }  else if (!reply || reply == QMessageBox::Discard) {
       return true; 
     } else {
       return false; 
@@ -665,6 +666,7 @@ void MovieCueManager::on_applyChangesButton_clicked(){
 //======================================================================
 /* what is means to "execute" a cue depends on our context; let our parent subscribe to this signal and deal with it */
 void MovieCueManager::on_executeCueButton_clicked() {
+  if (mBlockExecution) return; 
   if (executeCueButton->text() != "Execute") {
     setCueRunning(false); 
     mStopLooping = true; 
