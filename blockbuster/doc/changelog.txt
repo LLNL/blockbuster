@@ -13,6 +13,9 @@ June 29, 2009
 -- fixed bugs dealing with low frame rates in blockbuster and sidecar.  Now values less than 0.2 are not accepted.  I can imagine for a kiosk you might want slower rates, so add a feature request for "kiosk mode" allowing one frame every n seconds instead of a n frames per second... perhaps some clever notation would work.  
 -- fixed a bug causing blockbuster to incorrectly respond to frame numbers in cues and the frame slider in certain instances
 -- re-added movie title to blockbuster title bars, lost when the change to Qt occurred.  
+-- fixed a problem where sidecar would not exit after playing a movie 
+-- fixed a but in cue playback preventing blockbuster from stopping a cue while looping
+-- fixed a bug causing a cue to not execute properly if its end frame was 0 and the preceding cue's movie executed past the number of frames than in the current cue's movie (really!)
 
 ================================================================================
 VERSION 2.6.2a

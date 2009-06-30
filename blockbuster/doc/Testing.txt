@@ -5,7 +5,7 @@ LLNL Note:  Be sure to test against actual cuefiles on both OCF and SCF, as some
 
 Before testing, go to the Blockbuster sourceforge site and open the bug tracker.  You will need it.  :-)  Don't bother with private notes if you can avoid it.  The tracker is there for a reason;  use it!  
 
-Similarly, do not fix bugs while testing, unless they are catastrophic and testing cannot continue without them.   Do not stop to fix a tiny little bug here and there.  To do so diffuses focus and results in testing not getting completed.  Also, the bug you rush off to fix is  not any more important as others that are waiting to be fixed.  Just document it and continue.
+Similarly, do not fix bugs while testing, unless they are catastrophic and testing or installation cannot continue without them.   Do not stop to fix a little bug here and there.  To do so diffuses focus and results in testing not getting completed.  Also, the bug you rush off to fix is  not any more important as others that are waiting to be fixed.  Just document it and continue.
 
 Also, a consistent need to deviate from the test procedure could be indicative of a bug in the test procedure itself.  Document that here and continue!  
 
@@ -68,7 +68,7 @@ Test launch and behavior of blockbuster and sidecar with and without DMX and MPI
 
 ==============================================================
 # SM tools
-If any changes were made in the sm or smapps libraries, or might affect them, then run a few tools from the smlib to test them too.  
+If any changes were made in the sm or smapps libraries, or might affect them, then run a few tools from the smlib to test them too.  Especially smcat, sm2img, img2sm.  
 
 ==============================================================
 # Debug vs. Production modes
@@ -77,4 +77,3 @@ Before installing, but after confirming functionality with the below tests, buil
 ==============================================================
 # Version
 Don't forget to modify config/version.h so that blockbuster is announced properly to the world.  Also update the tarball package on sourceforge and create a new SVN tag. 
-
