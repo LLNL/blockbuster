@@ -754,7 +754,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         DEBUGMSG("frameNumber changed  to %d after switch", frameNumber); 
       }
       /*! check if we have reached the end of a cue */
-      if (cuePlaying && 
+      if (cuePlaying && !loopCount && 
           (!playDirection  || 
            (playDirection > 0 && cueEndFrame != -1 && frameNumber > cueEndFrame) || 
            (playDirection < 0 && cueEndFrame != -1 && frameNumber < cueEndFrame)) ) {
