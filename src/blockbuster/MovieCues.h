@@ -18,7 +18,7 @@ class MovieCueManager: public QWidget, Ui::MovieCueWidget {
   Q_OBJECT
     public:
   MovieCueManager(QWidget *parent =NULL);
-
+  void blockExecution(void) {mBlockExecution = true; }
   void enableExecuteButton(bool enable){ executeCueButton->setEnabled(enable); }
   void enableSnapshotButton(bool enable) { 
     takeSnapshotButton->setEnabled(enable); 
@@ -111,7 +111,7 @@ class MovieCueManager: public QWidget, Ui::MovieCueWidget {
     return; 
   }
   void on_resetStartButton_clicked();
-
+  
   void on_setEndCurrentButton_clicked() {
     emit movieSnapshotEndFrame(); 
     return; 
@@ -120,7 +120,7 @@ class MovieCueManager: public QWidget, Ui::MovieCueWidget {
     emit movieSnapshotAltEndFrame(); 
     return; 
   }
-//=======================================================================
+  //===============================================================
   void on_fullScreenCheckBox_clicked();
   void on_zoomOneCheckBox_clicked();
   void on_windowWidthField_textChanged(); 
@@ -147,17 +147,18 @@ class MovieCueManager: public QWidget, Ui::MovieCueWidget {
   bool cueChanged() {
     return mCueNameChanged || mMovieNameChanged || mLoadMovieChanged || mPlayChanged || mLoopOnceChanged || mLoopForeverChanged || mPingPongChanged || mBackwardChanged || mShowChanged || mFullScreenChanged || mZoomOneChanged || mCurrentChanged || mStartChanged || mEndChanged || mWindowWidthChanged || mWindowHeightChanged || mWindowXChanged || mWindowYChanged || mImageXChanged || mImageYChanged || mLODChanged || mFrameRateChanged || mZoomChanged; 
   }
-
+  
   void EnableDisableFields(bool enable); 
   void setupMovieCueEditor(MovieCue *); 
   void setCurrentCue(MovieCue *); 
-
+  
   bool mCueNameChanged, mMovieNameChanged, mLoadMovieChanged, mPlayChanged, mLoopOnceChanged, mLoopForeverChanged, mPingPongChanged, mBackwardChanged, mShowChanged, mFullScreenChanged, mZoomOneChanged, mCurrentChanged, mStartChanged, mEndChanged, mEndChangedmEndChanged, mWindowWidthChanged, mWindowHeightChanged, mWindowXChanged, mWindowYChanged,  mImageXChanged, mImageYChanged, mLODChanged, mFrameRateChanged, mZoomChanged; 
   bool mCueFileDirty; // cue file needs saving 
   //std::vector<MovieCue> mCueQueue; // I've always wanted to say that
   QString  mCueFileName; 
-  MovieCue *mCurrentCue; // , *mExecutingCue; 
-  bool mStopLooping; 
+  MovieCue *mCurrentCue; // *mExecutingCue; 
+  bool mStopLooping, // stop looping
+    mBlockExecution; // block cues from executing during exit
 }; 
 //===========================================================
 /* the attributes and data associated with a movie cue, for use by MovieCueManager.

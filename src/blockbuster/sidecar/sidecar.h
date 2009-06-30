@@ -174,6 +174,7 @@ class SideCar: public QMainWindow, public Ui::SideCarWindow {
     cerr << "sidecar closeEvent" << endl; 
     // give the cues window a say in the matter:
     if (mCueManager->okToQuit()) {
+      mCueManager->blockExecution();  
       QCoreApplication::quit (); 
     } else {
       if (event) {
