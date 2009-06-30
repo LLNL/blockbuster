@@ -1055,7 +1055,8 @@ static void dmx_SwapBuffers(Canvas *canvas){
   uint32_t usecs = 0, lastusecs = 0; 
   DEBUGMSG("Checking for pending swaps"); 
   while (numcomplete < numslaves) {
-    gCoreApp->processEvents(QEventLoop::ExcludeUserInputEvents); 
+    //gCoreApp->processEvents(QEventLoop::ExcludeUserInputEvents); 
+    gCoreApp->processEvents(); 
     int slavenum = numslaves;
     while (slavenum--) {
       DMXSlave *theSlave = 
