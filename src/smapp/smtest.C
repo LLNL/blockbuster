@@ -30,7 +30,7 @@
 **
 */
 
-
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
@@ -38,7 +38,7 @@
 #include <stdint.h>
 
 smBase *sm;
-
+bool gVerbose; 
 #define MAXIMUM_THREADS 128
 
 int nthreads=1; 
@@ -48,10 +48,18 @@ int dim[2] = {0,0};
 int step[2] = {1,1};
 int bHaveRect = 0;
 int pan = 0;
-
 float dpos[2] = {0,0};
 float ddim[2] = {0,0};
 float dstep[2] = {0,0};
+
+void dbprintf(const char *fmt, ...) {  
+  if (!gVerbose) return; 
+  va_list ap;
+  va_start(ap, fmt);
+  vfprintf(stderr,fmt,ap);
+  va_end(ap);
+  return; 
+}
 
 void calcrectpan(int x,int y,int *p,int *d,int *s)
 {
@@ -135,7 +143,6 @@ void *readThread(void *data)
    u_char *frame;
    uint64_t mynum = (uint64_t)data;
    int f,j;
-
    float *mm = (float*)malloc(2*sizeof(float));
    mm[0] = 1e+8;
    mm[1] = -1e+8;
@@ -145,45 +152,47 @@ void *readThread(void *data)
    int rowStride = 0;
    for(j=0;j<nloops;j++) {
       for (f=0; f<sm->getNumFrames(); f++) {
-	 if ((f % nthreads) == mynum) {
-            double t0;
-            if (!bHaveRect) {
-               t0 = get_clock();
-               sm->getFrame(f, frame, mynum);
-            } else {
-	      if(pan == 0) {
-               int p[2],d[2],s[2];
-               calcrect(f+j*sm->getNumFrames(),p,d,s);
-               t0 = get_clock();
-	       //fprintf(stderr," d = [%d,%d], p = [%d,%d], s = [%d,%d]\n",d[0],d[1],p[0],p[1],s[0],s[1]);
-               sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s);
-	      }
-	      else {
-		int xStep,yStep;
-		int p[2],d[2],s[2];
-		int stepsX = (int)floor( (double)sm->getWidth()/dpos[0]);
-		int stepsY = (int)floor((double)sm->getHeight()/dpos[1]);
-		if(stepsX < 1) stepsX = 1;
-		if(stepsY < 1) stepsY = 1;
-		fprintf(stderr,"Position Steps[%d,%d]\n",stepsX,stepsY);
-		t0 = get_clock();
-		for(yStep = 0; yStep < stepsY; yStep++) {
-		  for(xStep = 0; xStep < stepsX; xStep++) {
-		    calcrectpan(xStep,yStep,p,d,s);
-		    fprintf(stderr," d = [%d,%d], p = [%d,%d], s = [%d,%d]\n",d[0],d[1],p[0],p[1],s[0],s[1]);
-		    sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s);
-		  }
-		}
-	      }
+        if ((f % nthreads) == mynum) {
+          double t0;
+          if (!bHaveRect) {
+            t0 = get_clock();
+            sm->getFrame(f, frame, mynum);
+          } else {
+            if(pan == 0) {
+              int p[2],d[2],s[2];
+              calcrect(f+j*sm->getNumFrames(),p,d,s);
+              t0 = get_clock();
+              //fprintf(stderr," d = [%d,%d], p = [%d,%d], s = [%d,%d]\n",d[0],d[1],p[0],p[1],s[0],s[1]);
+              sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s);
             }
-            t0 = get_clock() - t0;
-            if (t0 < mm[0]) mm[0] = t0;
-            if (t0 > mm[1]) mm[1] = t0;
-	 }
-
-      }
+            else {
+              int xStep,yStep;
+              int p[2],d[2],s[2];
+              int stepsX = (int)floor( (double)sm->getWidth()/dpos[0]);
+              int stepsY = (int)floor((double)sm->getHeight()/dpos[1]);
+              if(stepsX < 1) stepsX = 1;
+              if(stepsY < 1) stepsY = 1;
+              fprintf(stderr,"Position Steps[%d,%d]\n",stepsX,stepsY);
+              t0 = get_clock();
+              for(yStep = 0; yStep < stepsY; yStep++) {
+                for(xStep = 0; xStep < stepsX; xStep++) {
+                  calcrectpan(xStep,yStep,p,d,s);
+                  fprintf(stderr," d = [%d,%d], p = [%d,%d], s = [%d,%d]\n",d[0],d[1],p[0],p[1],s[0],s[1]);
+                  sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s);
+                }
+              }
+            }
+          }
+          t0 = get_clock() - t0;
+          if (t0 < mm[0]) mm[0] = t0;
+          if (t0 > mm[1]) mm[1] = t0;
+          
+          dbprintf("Thread %d got frame %d\r", mynum, f);         
+        
+        }
+       }
    }
-
+   
    return(mm);
 }
 
@@ -196,6 +205,7 @@ void usage(char *prg)
    fprintf(stderr,"\t-drect <x y dx dy xinc yinc>  Float rect deltas.  Default: 0. 0. 0. 0. 0. 0.\n");
    fprintf(stderr,"\t-loops <n>  Number of loops to run. Default: 1\n");
    fprintf(stderr,"\t-pan Pan across using drect before advancing to next frame : rect must be provided as well\n");
+   fprintf(stderr, "\t-v Be verbose\n"); 
    exit(1);
 }
 
@@ -211,48 +221,50 @@ int main(int argc, char *argv[])
 
 #ifdef irix
    if (pthread_setconcurrency(24) != 0)
-      fprintf(stderr, "pthread_setconcurrency failed\n");
+     fprintf(stderr, "pthread_setconcurrency failed\n");
    printf("concurrency set to %d\n", pthread_getconcurrency());
 #endif
-
+   
    for (i=1; i<argc && argv[i][0]=='-'; i++) {
-      if (strcmp(argv[i], "-nt") == 0) {
-         if (i+1 >= argc) usage(argv[0]);
-         nthreads=atoi(argv[i+1]);
-	 if (nthreads > MAXIMUM_THREADS) nthreads = MAXIMUM_THREADS;
-         i++;
-      } else if (strcmp(argv[i], "-loops") == 0) {
-         if (i+1 >= argc) usage(argv[0]);
-         nloops=atoi(argv[i+1]);
-         i++;
-      } else if (strcmp(argv[i], "-drect") == 0) {
-         if (i+6 >= argc) usage(argv[0]);
-	 dpos[0] = atof(argv[++i]);
-	 dpos[1] = atof(argv[++i]);
-	 ddim[0] = atof(argv[++i]);
-	 ddim[1] = atof(argv[++i]);
-	 dstep[0] = atof(argv[++i]);
-	 dstep[1] = atof(argv[++i]);
-      } else if (strcmp(argv[i], "-rect") == 0) {
-         if (i+6 >= argc) usage(argv[0]);
-	 pos[0] = atoi(argv[++i]);
-	 pos[1] = atoi(argv[++i]);
-	 dim[0] = atoi(argv[++i]);
-	 dim[1] = atoi(argv[++i]);
-	 step[0] = atoi(argv[++i]);
-	 step[1] = atoi(argv[++i]);
-	 bHaveRect = 1;
-      } else if (strcmp(argv[i],"-pan") == 0) {
-	fprintf(stderr,"Panning selected\n");
-	pan = 1;
-      }
-      else {
-	  fprintf(stderr,"Unknown arg: %s\n",argv[i]);
-	  exit(1);
-      }
+     if (strcmp(argv[i], "-nt") == 0) {
+       if (i+1 >= argc) usage(argv[0]);
+       nthreads=atoi(argv[i+1]);
+       if (nthreads > MAXIMUM_THREADS) nthreads = MAXIMUM_THREADS;
+       i++;
+     } else if (strcmp(argv[i], "-loops") == 0) {
+       if (i+1 >= argc) usage(argv[0]);
+       nloops=atoi(argv[i+1]);
+       i++;
+     } else if (strcmp(argv[i], "-drect") == 0) {
+       if (i+6 >= argc) usage(argv[0]);
+       dpos[0] = atof(argv[++i]);
+       dpos[1] = atof(argv[++i]);
+       ddim[0] = atof(argv[++i]);
+       ddim[1] = atof(argv[++i]);
+       dstep[0] = atof(argv[++i]);
+       dstep[1] = atof(argv[++i]);
+     } else if (strcmp(argv[i], "-rect") == 0) {
+       if (i+6 >= argc) usage(argv[0]);
+       pos[0] = atoi(argv[++i]);
+       pos[1] = atoi(argv[++i]);
+       dim[0] = atoi(argv[++i]);
+       dim[1] = atoi(argv[++i]);
+       step[0] = atoi(argv[++i]);
+       step[1] = atoi(argv[++i]);
+       bHaveRect = 1;
+     } else if (strcmp(argv[i],"-pan") == 0) {
+       fprintf(stderr,"Panning selected\n");
+       pan = 1;
+     } else if (strcmp(argv[i],"-v") == 0) {
+       gVerbose = 1; 
+     }
+     else {
+       fprintf(stderr,"Unknown arg: %s\n",argv[i]);
+       exit(1);
+     }
    }
    if (i != argc-1) usage(argv[0]);
-
+   
    sm = smBase::openFile(argv[i], nthreads);
 
    if (!sm) {
@@ -289,6 +301,13 @@ int main(int argc, char *argv[])
 
    t0 = get_clock();
 
+   float totalMegabytes = 0; 
+   for (f=0; f<sm->getNumFrames(); f++) {
+     totalMegabytes += sm->getCompFrameSize(f, 0); 
+   }
+   totalMegabytes /= (1000.0*1000.0); 
+   fprintf(stderr, "Total size to read: %g MB\n", totalMegabytes); 
+
    for(f=0; f<nthreads; f++) {
       pthread_create(&th[f], NULL, readThread, (void*)f);
    }
@@ -302,8 +321,10 @@ int main(int argc, char *argv[])
 
    t1 = get_clock();
 
-   printf("%d frames %g seconds ", sm->getNumFrames()*nloops, (t1-t0));
-   printf("%g frames/seconds\n", sm->getNumFrames()*nloops/(t1-t0));
+   float totalSecs = t1-t0; 
+   printf("%d frames %g seconds, ", sm->getNumFrames()*nloops, totalSecs);
+   printf("%g frames/second\n", sm->getNumFrames()*nloops/totalSecs);
+   printf("%.2g MB, %.2g MB/sec\n", totalMegabytes, totalMegabytes/totalSecs);  
    printf("min %g max %g\n",mm[0],mm[1]);
 
    exit(0);
