@@ -556,7 +556,7 @@ void smBase::initWin(void)
 /*!
   Loop until all read
 */ 
-int smBase::readData(int fd, u_char *buf, int bytes) {
+uint32_t smBase::readData(int fd, u_char *buf, int bytes) {
   ///smdbprintf(5, "readData: %d bytes", bytes); 
   int remaining = bytes; 
   while  (remaining >0) {
@@ -582,7 +582,7 @@ int smBase::readData(int fd, u_char *buf, int bytes) {
   \param f The frame to read
   \param threadnum A zero-based thread id.  Threadnum must be less than numthreads.  No other thread should be using this threadnum, as there is one buffer per thread and collisions can happen. 
 */
-void smBase::readWin(u_int f, int threadnum)
+uint32_t smBase::readWin(u_int f, int threadnum)
 {
   off64_t size;
   
@@ -606,7 +606,7 @@ void smBase::readWin(u_int f, int threadnum)
     cerr << "Error in readWin for frame " << f << endl; 
   }
   smdbprintf(5, "Done with readWin"); 
-  return; 
+  return r; 
 }
 
 
@@ -619,7 +619,7 @@ void smBase::readWin(u_int f, int threadnum)
   \param res resolution desired (level of detail)
   \param threadnum A zero-based thread id.  Threadnum must be less than numthreads.  No other thread should be using this threadnum, as there is one buffer per thread and collisions can happen. 
 */
-void smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
+uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
 {
   // version 2 implied -- reads in only overlapping tiles 
   
@@ -727,7 +727,7 @@ void smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
   }
   smdbprintf(5,"Done with readWin v2 for frame %d, thread %d, read %d bytes", f, threadnum, bytesRead); 
   mThreadData[threadnum].currentFrame = f; 
-  return; 
+  return bytesRead; 
 }
 //!  Tile overlap tells us which tiles in the frame overlap our region of interest (ROI).
 /*!
@@ -857,9 +857,9 @@ void smBase::computeTileOverlap(int *blockDim, int* blockPos, int res, int threa
   \param data an appropriately allocated pointer to receive the data, based on the size and resolution of the region of interest.
   \param threadnum A zero-based thread id.  Threadnum must be less than numthreads.  No other thread should be using this threadnum, as there is one buffer per thread and collisions can happen. 
 */ 
-void smBase::getFrame(int f, void *data, int threadnum)
+uint32_t smBase::getFrame(int f, void *data, int threadnum)
 {
-  getFrameBlock(f,data, threadnum);
+  return  getFrameBlock(f,data, threadnum);
 }
 
 //! Read a region of interest from the given frame of the movie. 
@@ -875,7 +875,7 @@ void smBase::getFrame(int f, void *data, int threadnum)
   \param res resolution desired (level of detail)
 */
  
-void smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStride, int *dim, int *pos, int *step, int res)
+uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStride, int *dim, int *pos, int *step, int res)
 {
   smdbprintf(5,"smBase::getFrameBlock, frame %d, thread %d, data %p", f, threadnum, data); 
    u_char *cdata;
@@ -883,7 +883,7 @@ void smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStride,
    u_char *image;
    u_char *out = (u_char *)data;
    u_char *rowPtr = (u_char *)data;
-
+   uint32_t bytesRead=0; 
    int d[2],_dim[2],_step[2],_pos[2],tilesize[2];
    int _res,_f;
 
@@ -914,7 +914,7 @@ void smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStride,
    }
 
    if(_dim[0] <= 0 || _dim[1] <= 0)
-     return;
+     return 0;
 
    assert(_dim[0] + _pos[0] <= getWidth(0));
    assert(_dim[1] + _pos[1] <= getHeight(0));
@@ -964,10 +964,10 @@ void smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStride,
    cdata = (u_char *)NULL;
 
    if((version == 2) && (numTiles > 1)) {
-     readWin(_f,&_dim[0],&_pos[0],(int)_res, threadnum);
+     bytesRead = readWin(_f,&_dim[0],&_pos[0],(int)_res, threadnum);
    }
    else {
-     readWin(_f, threadnum);
+     bytesRead = readWin(_f, threadnum);
    }
    cdata = (u_char *)(mThreadData[threadnum].windowData);
    size = flength[_f];
@@ -987,7 +987,7 @@ void smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStride,
        smdbprintf(5, "downsampled or partial frame %d", _f); 
        image = (u_char *)malloc(3*d[0]*d[1]);
        CHECK(image);
-        decompBlock(cdata,image,size,d);
+       decompBlock(cdata,image,size,d);
        for(int y=_pos[1];y<_pos[1]+_dim[1];y+=_step[1]) {
          u_char *dest = rowPtr;
          const u_char *p = image + 3*d[0]*y + _pos[0]*3;
@@ -1059,8 +1059,8 @@ void smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStride,
      }
    } /* end process across overlapping tiles */
    
-   smdbprintf(5,"END smBase::getFrameBlock, frame %d, thread %d", f, threadnum); 
-   return; 
+   smdbprintf(5,"END smBase::getFrameBlock, frame %d, thread %d, bytes read = %d", f, threadnum, bytesRead); 
+   return bytesRead; 
  }
 
 //! Another poorly named function . Should be called "writeFrame", I think.

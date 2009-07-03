@@ -114,9 +114,9 @@ class smBase {
   virtual ~smBase();
   
   // get the decompressed image or return the raw compressed data
-  void getFrame (int frame, void *out, int threadnum); // for threads
+  uint32_t getFrame (int frame, void *out, int threadnum); // for threads
   
-  void getFrameBlock(int frame, void *out, int threadnum, 
+  uint32_t getFrameBlock(int frame, void *out, int threadnum, 
                      int destRowStride=0,
                      int *dim = NULL, 
                      int *pos = NULL, int *step = NULL,int res = 0);
@@ -198,9 +198,9 @@ void printFrameDetails(FILE *fp, int f);
  private:
   void readHeader(void);
   void initWin(void);
-  int readData(int fd, u_char *buf, int bytes);
-  void readWin(u_int frame, int threadnum);
-  void readWin(u_int frame, int*dimensions, int*position, int resolution, int threadnum);
+  uint32_t readData(int fd, u_char *buf, int bytes);
+  uint32_t readWin(u_int frame, int threadnum);
+  uint32_t readWin(u_int frame, int*dimensions, int*position, int resolution, int threadnum);
   
   // Flags on top of the filetype...
   u_int flags;
