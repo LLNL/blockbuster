@@ -36,12 +36,15 @@
 #include <sys/time.h>
 #include "sm/smBase.h"
 #include <stdint.h>
+#include <vector>
 
 smBase *sm;
 bool gVerbose; 
 #define MAXIMUM_THREADS 128
 
-int nthreads=1; 
+int range[2] = {0,0}; 
+std::vector<uint32_t> bytesRead;
+ int nthreads=1; 
 int nloops=1;
 int pos[2] = {0,0};
 int dim[2] = {0,0};
@@ -146,24 +149,24 @@ void *readThread(void *data)
    float *mm = (float*)malloc(2*sizeof(float));
    mm[0] = 1e+8;
    mm[1] = -1e+8;
-
+   bytesRead[mynum] = 0; 
    frame = (u_char *)malloc(sizeof(u_char[4]) * sm->getWidth() *
                             sm->getHeight());
    int rowStride = 0;
    for(j=0;j<nloops;j++) {
-      for (f=0; f<sm->getNumFrames(); f++) {
+      for (f=range[0]; f<=range[1]; f++) {
         if ((f % nthreads) == mynum) {
           double t0;
           if (!bHaveRect) {
             t0 = get_clock();
-            sm->getFrame(f, frame, mynum);
+            bytesRead[mynum] += sm->getFrame(f, frame, mynum);
           } else {
             if(pan == 0) {
               int p[2],d[2],s[2];
               calcrect(f+j*sm->getNumFrames(),p,d,s);
               t0 = get_clock();
               //fprintf(stderr," d = [%d,%d], p = [%d,%d], s = [%d,%d]\n",d[0],d[1],p[0],p[1],s[0],s[1]);
-              sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s);
+              bytesRead[mynum] += sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s);
             }
             else {
               int xStep,yStep;
@@ -178,7 +181,7 @@ void *readThread(void *data)
                 for(xStep = 0; xStep < stepsX; xStep++) {
                   calcrectpan(xStep,yStep,p,d,s);
                   fprintf(stderr," d = [%d,%d], p = [%d,%d], s = [%d,%d]\n",d[0],d[1],p[0],p[1],s[0],s[1]);
-                  sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s);
+                  bytesRead[mynum] += sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s);
                 }
               }
             }
@@ -200,6 +203,7 @@ void usage(char *prg)
 {
    fprintf(stderr, "(%s) usage: %s [options] smfilename\n",__DATE__,prg);
    fprintf(stderr,"Options:\n");
+   fprintf(stderr, "\t -range first last:  first and last frames to run over.  (1-based indexes, inclusive interval)\n"); 
    fprintf(stderr,"\t-nt <num>   Select the number of threads/windows.  Default: 1\n");
    fprintf(stderr,"\t-rect <x y dx dy xinc yinc>  Rect/step to sample.  Default: whole\n");
    fprintf(stderr,"\t-drect <x y dx dy xinc yinc>  Float rect deltas.  Default: 0. 0. 0. 0. 0. 0.\n");
@@ -231,6 +235,7 @@ int main(int argc, char *argv[])
        nthreads=atoi(argv[i+1]);
        if (nthreads > MAXIMUM_THREADS) nthreads = MAXIMUM_THREADS;
        i++;
+       bytesRead.resize(nthreads); 
      } else if (strcmp(argv[i], "-loops") == 0) {
        if (i+1 >= argc) usage(argv[0]);
        nloops=atoi(argv[i+1]);
@@ -255,6 +260,10 @@ int main(int argc, char *argv[])
      } else if (strcmp(argv[i],"-pan") == 0) {
        fprintf(stderr,"Panning selected\n");
        pan = 1;
+    } else if (strcmp(argv[i], "-range") == 0) {
+       if (i+2 >= argc) usage(argv[0]);
+       range[0] = atoi(argv[++i]);
+       range[1] = atoi(argv[++i]);       
      } else if (strcmp(argv[i],"-v") == 0) {
        gVerbose = 1; 
      }
@@ -295,18 +304,34 @@ int main(int argc, char *argv[])
       exit(1);
    }
 
+   // frame range is 1-based
+   if (!range[0]) {
+     range[0] = 1; 
+   } 
+   if (!range[1]) {
+     range[1] = sm->getNumFrames(); 
+   } 
    printf("threads: %d\n",nthreads);
    printf("frame size: %d,%d\n", sm->getWidth(), sm->getHeight());
    printf("rect: %d,%d @ %d,%d step %d,%d\n",dim[0],dim[1],pos[0],pos[1],step[0],step[1]);
-
+   printf("Frame range: %d to %d\n", range[0], range[1]); 
    t0 = get_clock();
 
+   // convert to 0-based frames now: 
+   range[0] -= 1; 
+   range[1] -= 1; 
+
+   // computer estimated movie size to give user something to do while we work
+   float windowFraction = ((float)dim[0]/sm->getWidth())*((float)dim[1]/sm->getHeight());    
+   int numframes = (range[1]-range[0]+1)*nloops; 
    float totalMegabytes = 0; 
-   for (f=0; f<sm->getNumFrames(); f++) {
+   for (f=range[0]; f<=range[1]; f++) {
      totalMegabytes += sm->getCompFrameSize(f, 0); 
    }
+   totalMegabytes *= nloops; 
    totalMegabytes /= (1000.0*1000.0); 
-   fprintf(stderr, "Total size to read: %g MB\n", totalMegabytes); 
+   fprintf(stderr, "Total size to read in %d frames, based on inputs: %f total MB, %f adjusted for given window fraction\n", 
+           numframes, totalMegabytes, windowFraction*totalMegabytes); 
 
    for(f=0; f<nthreads; f++) {
       pthread_create(&th[f], NULL, readThread, (void*)f);
@@ -321,10 +346,14 @@ int main(int argc, char *argv[])
 
    t1 = get_clock();
 
+   totalMegabytes = 0; 
+   for (f = 0; f < nthreads; f++) totalMegabytes += bytesRead[f]; 
+   totalMegabytes /= (1000.0*1000.0);  
+
    float totalSecs = t1-t0; 
-   printf("%d frames %g seconds, ", sm->getNumFrames()*nloops, totalSecs);
-   printf("%g frames/second\n", sm->getNumFrames()*nloops/totalSecs);
-   printf("%.2g MB, %.2g MB/sec\n", totalMegabytes, totalMegabytes/totalSecs);  
+   printf("%d frames %g seconds, ", numframes, totalSecs);
+   printf("%g frames/second\n", (float)numframes/totalSecs);
+   printf("%0.2f MB actually read, %.2g MB/sec\n", totalMegabytes, totalMegabytes/totalSecs);  
    printf("min %g max %g\n",mm[0],mm[1]);
 
    exit(0);
