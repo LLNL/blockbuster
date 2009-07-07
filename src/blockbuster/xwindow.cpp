@@ -848,6 +848,7 @@ static void glSwapBuffers(Canvas *)
 
 static XVisualInfo *glChooseVisual(Display *display, int screenNumber)
 {
+  DEBUGMSG("glChooseVisual (no stereo)"); 
     static int attributes[] = {
         GLX_USE_GL, GLX_RGBA, GLX_DOUBLEBUFFER,
         GLX_RED_SIZE, 1, GLX_GREEN_SIZE, 1, GLX_BLUE_SIZE, 1,
@@ -867,6 +868,7 @@ static XVisualInfo *glChooseVisual(Display *display, int screenNumber)
 
 static XVisualInfo *glStereoChooseVisual(Display *display, int screenNumber)
 {
+  DEBUGMSG("glStereoChooseVisual"); 
     static int attributes[] = {
       GLX_USE_GL, GLX_RGBA, GLX_DOUBLEBUFFER, GLX_STEREO,
         GLX_RED_SIZE, 1, GLX_GREEN_SIZE, 1, GLX_BLUE_SIZE, 1,
