@@ -37,10 +37,10 @@
 #include "sm/smBase.h"
 #include <stdint.h>
 #include <vector>
+#include "../common/timer.h"
 
 smBase *sm;
-bool gVerbose; 
-#define MAXIMUM_THREADS 128
+uint32_t gVerbose; 
 
 int range[2] = {0,0}; 
 std::vector<uint32_t> bytesRead;
@@ -140,12 +140,20 @@ double get_clock(void)
     gettimeofday(&t,NULL);
     return((double)t.tv_sec + (double)t.tv_usec*1E-6);
 }
+struct ThreadData {
+  ThreadData(): threadNum(0), numFramesRead(0), 
+                currentFrame(0), finished(false) {}
+  uint32_t threadNum;
+  uint32_t numFramesRead, currentFrame; 
+  bool finished; 
+};
 
 void *readThread(void *data)
 {
    u_char *frame;
-   uint64_t mynum = (uint64_t)data;
-   int f,j;
+   ThreadData *threadData = (ThreadData*)data; 
+   uint32_t mynum = threadData->threadNum;
+   int32_t loopNum, f;
    float *mm = (float*)malloc(2*sizeof(float));
    mm[0] = 1e+8;
    mm[1] = -1e+8;
@@ -153,49 +161,51 @@ void *readThread(void *data)
    frame = (u_char *)malloc(sizeof(u_char[4]) * sm->getWidth() *
                             sm->getHeight());
    int rowStride = 0;
-   for(j=0;j<nloops;j++) {
-      for (f=range[0]; f<=range[1]; f++) {
-        if ((f % nthreads) == mynum) {
-          double t0;
-          if (!bHaveRect) {
-            t0 = get_clock();
-            bytesRead[mynum] += sm->getFrame(f, frame, mynum);
-          } else {
-            if(pan == 0) {
-              int p[2],d[2],s[2];
-              calcrect(f+j*sm->getNumFrames(),p,d,s);
-              t0 = get_clock();
-              //fprintf(stderr," d = [%d,%d], p = [%d,%d], s = [%d,%d]\n",d[0],d[1],p[0],p[1],s[0],s[1]);
-              bytesRead[mynum] += sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s);
-            }
-            else {
-              int xStep,yStep;
-              int p[2],d[2],s[2];
-              int stepsX = (int)floor( (double)sm->getWidth()/dpos[0]);
-              int stepsY = (int)floor((double)sm->getHeight()/dpos[1]);
-              if(stepsX < 1) stepsX = 1;
-              if(stepsY < 1) stepsY = 1;
-              fprintf(stderr,"Position Steps[%d,%d]\n",stepsX,stepsY);
-              t0 = get_clock();
-              for(yStep = 0; yStep < stepsY; yStep++) {
-                for(xStep = 0; xStep < stepsX; xStep++) {
-                  calcrectpan(xStep,yStep,p,d,s);
-                  fprintf(stderr," d = [%d,%d], p = [%d,%d], s = [%d,%d]\n",d[0],d[1],p[0],p[1],s[0],s[1]);
-                  bytesRead[mynum] += sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s);
-                }
-              }
-            }
-          }
-          t0 = get_clock() - t0;
-          if (t0 < mm[0]) mm[0] = t0;
-          if (t0 > mm[1]) mm[1] = t0;
-          
-          dbprintf("Thread %d got frame %d\r", mynum, f);         
-        
-        }
+   for(loopNum=0;loopNum<nloops;loopNum++) {    
+     for (f=range[0]; f<=range[1]; f++) {
+       if ((f % nthreads) == mynum) {
+         double t0;
+         if (!bHaveRect) {
+           t0 = get_clock();
+           bytesRead[mynum] += sm->getFrame(f, frame, mynum);
+         } else {
+           if(pan == 0) {
+             int p[2],d[2],s[2];
+             calcrect(f+loopNum*sm->getNumFrames(),p,d,s);
+             t0 = get_clock();
+             //fprintf(stderr," d = [%d,%d], p = [%d,%d], s = [%d,%d]\n",d[0],d[1],p[0],p[1],s[0],s[1]);
+             bytesRead[mynum] += sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s);
+           }
+           else {
+             int xStep,yStep;
+             int p[2],d[2],s[2];
+             int stepsX = (int)floor( (double)sm->getWidth()/dpos[0]);
+             int stepsY = (int)floor((double)sm->getHeight()/dpos[1]);
+             if(stepsX < 1) stepsX = 1;
+             if(stepsY < 1) stepsY = 1;
+             fprintf(stderr,"Position Steps[%d,%d]\n",stepsX,stepsY);
+             t0 = get_clock();
+             for(yStep = 0; yStep < stepsY; yStep++) {
+               for(xStep = 0; xStep < stepsX; xStep++) {
+                 calcrectpan(xStep,yStep,p,d,s);
+                 //fprintf(stderr," d = [%d,%d], p = [%d,%d], s = [%d,%d]\n",d[0],d[1],p[0],p[1],s[0],s[1]);
+                 bytesRead[mynum] += sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s);
+               }
+             }
+           }
+           threadData->numFramesRead++; 
+           threadData->currentFrame = f; 
+         }
+         t0 = get_clock() - t0;
+         if (t0 < mm[0]) mm[0] = t0;
+         if (t0 > mm[1]) mm[1] = t0;
+         
+         //dbprintf("Thread %d got frame %d\r", mynum, f);         
+         
        }
+     }
    }
-   
+   threadData->finished = true; 
    return(mm);
 }
 
@@ -217,7 +227,7 @@ int main(int argc, char *argv[])
 {
    int i, f;
    double t0, t1;
-   pthread_t th[MAXIMUM_THREADS];
+   vector<pthread_t> threads;
    float *retval;
    float mm[2] = {1e+8,-1e+8};
 
@@ -233,8 +243,8 @@ int main(int argc, char *argv[])
      if (strcmp(argv[i], "-nt") == 0) {
        if (i+1 >= argc) usage(argv[0]);
        nthreads=atoi(argv[i+1]);
-       if (nthreads > MAXIMUM_THREADS) nthreads = MAXIMUM_THREADS;
        i++;
+       threads.resize(nthreads); 
        bytesRead.resize(nthreads); 
      } else if (strcmp(argv[i], "-loops") == 0) {
        if (i+1 >= argc) usage(argv[0]);
@@ -265,7 +275,8 @@ int main(int argc, char *argv[])
        range[0] = atoi(argv[++i]);
        range[1] = atoi(argv[++i]);       
      } else if (strcmp(argv[i],"-v") == 0) {
-       gVerbose = 1; 
+       gVerbose = atoi(argv[++i]); 
+       sm_setVerbose(gVerbose); 
      }
      else {
        fprintf(stderr,"Unknown arg: %s\n",argv[i]);
@@ -333,12 +344,28 @@ int main(int argc, char *argv[])
    fprintf(stderr, "Total size to read in %d frames, based on inputs: %f total MB, %f adjusted for given window fraction\n", 
            numframes, totalMegabytes, windowFraction*totalMegabytes); 
 
+   double startTime = GetExactSecondsDouble(); 
+   vector<ThreadData> threadData(f); 
    for(f=0; f<nthreads; f++) {
-      pthread_create(&th[f], NULL, readThread, (void*)f);
+     threadData[f].threadNum = f; 
+     pthread_create(&threads[f], NULL, readThread, (void*)&threadData[f]);
+   }
+   bool done = false; 
+   double elapsed, fps; 
+   while (!done) {
+     elapsed = GetExactSecondsDouble() - startTime; 
+     fprintf(stderr, "t = %05.3f: ", elapsed); 
+     for(f=0; f<nthreads; f++) {
+       done = done || threadData[f].finished; 
+       fps = ((double)threadData[f].numFramesRead) / elapsed; 
+       fprintf(stderr, "Thread %02d: frame %05d, fps = %05.3f\t", f, threadData[f].currentFrame, fps); 
+     }
+     fprintf(stderr, "\n"); 
+     usleep(500*1000); // half a second
    }
 
    for(f=0; f<nthreads; f++) {
-	pthread_join(th[f], (void **)&retval);
+	pthread_join(threads[f], (void **)&retval);
         if (retval[0] < mm[0]) mm[0] = retval[0];
         if (retval[1] > mm[1]) mm[1] = retval[1];
 	free(retval);
