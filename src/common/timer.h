@@ -71,11 +71,16 @@
 
 //===============================================
 // Here is a nice quick way to do it, which does not require a global member 
-inline std::string GetExactSeconds(void) {
+
+inline double GetExactSecondsDouble(void) {
   struct timeval t; 
   gettimeofday(&t, NULL); 
+  return t.tv_sec + (double)t.tv_usec/1000000.0; 
+}
+
+inline std::string GetExactSeconds(void) {
   //return QTime::currentTime().toString("ssss.zzz").toStdString(); 
-  std::string s = doubleToString(t.tv_sec + (double)t.tv_usec/1000000.0, 3);
+  std::string s = doubleToString(GetExactSecondsDouble(), 3);
   int first = s.size() -8; 
   if (first<0) first = 0; 
   return s.substr(first, 8); 
@@ -105,6 +110,11 @@ class timer
       mHostname = "unknown host"; 
     return; 
   }
+    static double getExactSeconds(void) {
+      struct timeval t; 
+      gettimeofday(&t, NULL); 
+      return t.tv_sec + (double)t.tv_usec/1000000.0; 
+    }
   double elapsed_time(void);
   double total_time(void);
   void start(const char* msg = 0);
@@ -118,11 +128,6 @@ class timer
   double start_clock;
   double acc_time;
   double time_per_tick; 
-  double getExactSeconds(void) {
-    struct timeval t; 
-    gettimeofday(&t, NULL); 
-    return t.tv_sec + (double)t.tv_usec/1000000.0; 
-  }
 
 }; // class timer
 
