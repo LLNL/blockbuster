@@ -5,6 +5,9 @@ So we appear to be I/O limited right now, or at least impacted by I/O.  Playing 
 After talking with Rich Hedges, it seems likely that with row-order data, we are reading nearly all of every frame, but throwing most away, given the precaching behavior of disk arrays.  
 Solution:  Use column-major tile layout for better access patterns.  (Rotate image?)  
 Solution 2:  Use arbitrary tile sizes for perfect reads.  Even allow overlapping tiles to allow for small changes in window locations.  The idea is for each slave to read one chunk at a time.  
+Solution 3:  read multiple tiles per read? 
+Solution 4:  break IO out from decompression and assign to different threads. 
+Solution 5:  reorder tiles in movie to comply with actual displays ("optimize for display configuration") << -- WOULD BE COOL
 
 Also, remember that the cost of a seek which actually change the disk heads, i.e., is not a seek 0 bytes away from the current location is equal to the disk latency time, which might be perhaps a millisecond.  What is a typical disk seek time in our year 2009?  
 
