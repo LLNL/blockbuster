@@ -262,6 +262,7 @@ FrameList *smGetFrameList(const char *filename)
     frameList->formatName = "SM";
     frameList->formatDescription =
       "Multiple frames in an SM (Streaming Movie) file";
+    DEBUGMSG("Complete with smGetFrameList(), stereo = %d",  frameList->stereo?1:0); 
     return frameList;
 }
 
