@@ -227,19 +227,13 @@ static void gl_RenderStereo(Canvas *canvas, int frameNumber,
   int saveSkip;
   int saveDestX;
   int saveDestY;
-  if (frameNumber == 0) {
-    saveDestX=-42; // just a breakpoint for debugging, you can delete this. 
-  }
  
-
 #if 0
-  DEBUGMSG("gl::Render %d, %d  %d x %d  at %d, %d  zoom=%f  lod=%d",
+  DEBUGMSG("gl_RenderStereo() %d, %d  %d x %d  at %d, %d  zoom=%f  lod=%d, stereo = %d",
            imageRegion->x, imageRegion->y,
            imageRegion->width, imageRegion->height,
-           destX, destY, zoom, lod);
+           destX, destY, zoom, lod, canvas->frameList->stereo?1:0);
 #endif
-
- 
 
   /*
    * Compute possibly reduced-resolution image region to display.
@@ -368,7 +362,6 @@ static void gl_RenderStereo(Canvas *canvas, int frameNumber,
   canvas->imageCache->ReleaseImage(image);
 
   if(canvas->frameList->stereo) {
-
         glDrawBuffer(GL_BACK_RIGHT);
         localFrameNumber++;
 
