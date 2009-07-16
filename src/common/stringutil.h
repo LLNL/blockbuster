@@ -253,8 +253,10 @@ string arrayToString(T *array, int length) {
 }
 //==========================================================================
 
+#define NO_BOOST 1
 
 //==========================================================================
+
 #ifndef NO_BOOST
 #include "boost/tokenizer.hpp"
 #include "boost/format.hpp"
