@@ -111,7 +111,7 @@ void FrameList::append(FrameList *other) {
   while (i < other->frames.size()) {
     frames.push_back(other->frames[i]); 
     ++i; 
-  }
+  }  
   return; 
 }
 
@@ -224,6 +224,7 @@ bool FrameList::LoadFrames(QStringList &files) {
 	 */
 	//allFrames = AppendFrameList(allFrames, frameListFromFile);
 	append(frameListFromFile); 
+    if (i==0) stereo = frameListFromFile->stereo; 
 	delete frameListFromFile; 
       }
       else {
