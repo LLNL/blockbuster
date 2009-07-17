@@ -337,6 +337,7 @@ static void ParseOptions(int &argc, char *argv[])
       opt->rendererName = "dmx"; 
       continue;
     }
+	else if (SET_BOOL_ARG("-stereo", argc, argv, doStereo, 1)) continue;
     else if (CHECK_ATOI_ARG("-threads", argc, argv,  opt->readerThreads)) continue; 
 	else if (CHECK_STRING_ARG("-userInterface", argc, argv, opt->userInterfaceName)) continue;
 	else if (CHECK_ATOI_ARG("-verbose", argc, argv,maxMessageLevel))  {
