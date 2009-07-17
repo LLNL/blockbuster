@@ -193,12 +193,12 @@ void *readThread(void *data)
                }
              }
            }
-           threadData->numFramesRead++; 
-           threadData->currentFrame = f; 
-         }
+        }
          t0 = get_clock() - t0;
          if (t0 < mm[0]) mm[0] = t0;
          if (t0 > mm[1]) mm[1] = t0;
+         threadData->numFramesRead++; 
+         threadData->currentFrame = f; 
          
          //dbprintf("Thread %d got frame %d\r", mynum, f);         
          
@@ -244,8 +244,6 @@ int main(int argc, char *argv[])
        if (i+1 >= argc) usage(argv[0]);
        nthreads=atoi(argv[i+1]);
        i++;
-       threads.resize(nthreads); 
-       bytesRead.resize(nthreads); 
      } else if (strcmp(argv[i], "-loops") == 0) {
        if (i+1 >= argc) usage(argv[0]);
        nloops=atoi(argv[i+1]);
@@ -273,7 +271,7 @@ int main(int argc, char *argv[])
     } else if (strcmp(argv[i], "-range") == 0) {
        if (i+2 >= argc) usage(argv[0]);
        range[0] = atoi(argv[++i]);
-       range[1] = atoi(argv[++i]);       
+       range[1] = atoi(argv[++i]);    
      } else if (strcmp(argv[i],"-v") == 0) {
        gVerbose = atoi(argv[++i]); 
        sm_setVerbose(gVerbose); 
@@ -286,7 +284,9 @@ int main(int argc, char *argv[])
    if (i != argc-1) usage(argv[0]);
    
    sm = smBase::openFile(argv[i], nthreads);
-
+   threads.resize(nthreads); 
+   bytesRead.resize(nthreads); 
+    
    if (!sm) {
       fprintf(stderr, "Unable to open movie: %s\n",argv[i]);
       exit(1);
@@ -319,7 +319,7 @@ int main(int argc, char *argv[])
    if (!range[0]) {
      range[0] = 1; 
    } 
-   if (!range[1]) {
+   if (!range[1] || range[1] > sm->getNumFrames()) {
      range[1] = sm->getNumFrames(); 
    } 
    printf("threads: %d\n",nthreads);
@@ -346,21 +346,25 @@ int main(int argc, char *argv[])
 
    double startTime = GetExactSecondsDouble(); 
    vector<ThreadData> threadData(f); 
-   for(f=0; f<nthreads; f++) {
+   for(f=0; f<nthreads; f++) { 
      threadData[f].threadNum = f; 
-     pthread_create(&threads[f], NULL, readThread, (void*)&threadData[f]);
+     pthread_t *tp = &threads[f]; 
+     void *vp = (void*)(&threadData[f]);
+     pthread_create(tp, NULL, readThread, vp);
    }
    bool done = false; 
    double elapsed, fps; 
    while (!done) {
+     uint32_t numframes = 0; 
      elapsed = GetExactSecondsDouble() - startTime; 
      fprintf(stderr, "t = %05.3f: ", elapsed); 
      for(f=0; f<nthreads; f++) {
        done = done || threadData[f].finished; 
+       numframes += threadData[f].numFramesRead; 
        fps = ((double)threadData[f].numFramesRead) / elapsed; 
        fprintf(stderr, "Thread %02d: frame %05d, fps = %05.3f\t", f, threadData[f].currentFrame, fps); 
      }
-     fprintf(stderr, "\n"); 
+     fprintf(stderr, "total fps = %5.3f\n", (double)numframes/elapsed); 
      usleep(500*1000); // half a second
    }
 
