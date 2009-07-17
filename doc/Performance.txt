@@ -7,7 +7,7 @@ Solution:  Use column-major tile layout for better access patterns.  (Rotate ima
 Solution 2:  Use arbitrary tile sizes for perfect reads.  Even allow overlapping tiles to allow for small changes in window locations.  The idea is for each slave to read one chunk at a time.  
 Solution 3:  read multiple tiles per read? 
 Solution 4:  break IO out from decompression and assign to different threads. 
-Solution 5:  reorder tiles in movie to comply with actual displays ("optimize for display configuration") << -- WOULD BE COOL
+Solution 5:  reorder tiles in movie to comply with actual displays ("optimize for display configuration") << -- WOULD BE COOL, requires new SM format, as it breaks frame layout on disk. In the current spec, there is no requirement that frames be in order, in fact explicitly so.  However, it does seem required that a frame be stored with all its data together. 
 
 Also, remember that the cost of a seek which actually change the disk heads, i.e., is not a seek 0 bytes away from the current location is equal to the disk latency time, which might be perhaps a millisecond.  What is a typical disk seek time in our year 2009?  
 
@@ -15,3 +15,4 @@ Another important idea about disks is that generally for a disk/file system, the
 
 Adam B. ran hdparm and got 200MB/sec.  I ran smtest and got 47MB/sec.   Rich H. comment was that 25% of peak I/O is actually quite respectable, even good.  
 
+Sean Ahern comments that we might have DDN disks and we could then explore their policy somehow.  
