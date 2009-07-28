@@ -213,6 +213,7 @@ void usage(char *prg)
 {
    fprintf(stderr, "(%s) usage: %s [options] smfilename\n",__DATE__,prg);
    fprintf(stderr,"Options:\n");
+   fprintf(stderr, "\t -h or -help:  display this menu\n"); 
    fprintf(stderr, "\t -range first last:  first and last frames to run over.  (1-based indexes, inclusive interval)\n"); 
    fprintf(stderr,"\t-nt <num>   Select the number of threads/windows.  Default: 1\n");
    fprintf(stderr,"\t-rect <x y dx dy xinc yinc>  Rect/step to sample.  Default: whole\n");
@@ -220,7 +221,7 @@ void usage(char *prg)
    fprintf(stderr,"\t-loops <n>  Number of loops to run. Default: 1\n");
    fprintf(stderr,"\t-pan Pan across using drect before advancing to next frame : rect must be provided as well\n");
    fprintf(stderr, "\t-v n Set verbosity to level n (0-5)\n"); 
-   exit(1);
+   return;
 }
 
 int main(int argc, char *argv[])
@@ -240,7 +241,10 @@ int main(int argc, char *argv[])
 #endif
    
    for (i=1; i<argc && argv[i][0]=='-'; i++) {
-     if (strcmp(argv[i], "-nt") == 0) {
+     if (strncmp(argv[i], "-h", 2) == 0) {
+       usage(argv[0]); 
+       exit(0); 
+     } else if (strcmp(argv[i], "-nt") == 0) {
        if (i+1 >= argc) usage(argv[0]);
        nthreads=atoi(argv[i+1]);
        i++;
@@ -277,7 +281,8 @@ int main(int argc, char *argv[])
        sm_setVerbose(gVerbose); 
      }
      else {
-       fprintf(stderr,"Unknown arg: %s\n",argv[i]);
+       fprintf(stderr,"\n******************\nUnknown arg: %s\n******************\n",argv[i]);
+       usage(argv[0]); 
        exit(1);
      }
    }
