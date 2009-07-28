@@ -219,7 +219,7 @@ void usage(char *prg)
    fprintf(stderr,"\t-drect <x y dx dy xinc yinc>  Float rect deltas.  Default: 0. 0. 0. 0. 0. 0.\n");
    fprintf(stderr,"\t-loops <n>  Number of loops to run. Default: 1\n");
    fprintf(stderr,"\t-pan Pan across using drect before advancing to next frame : rect must be provided as well\n");
-   fprintf(stderr, "\t-v Be verbose\n"); 
+   fprintf(stderr, "\t-v n Set verbosity to level n (0-5)\n"); 
    exit(1);
 }
 
