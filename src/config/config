@@ -32,7 +32,7 @@ endif
 ifdef DEBUG
 export OPT ?= -g
 else
-export OPT ?= -O2
+export OPT ?= -g -O2
 endif
 export DEBUG
 
