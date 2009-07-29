@@ -216,13 +216,26 @@ void usage(char *prg)
    fprintf(stderr, "\t -h or -help:  display this menu\n"); 
    fprintf(stderr, "\t -range first last:  first and last frames to run over.  (1-based indexes, inclusive interval)\n"); 
    fprintf(stderr,"\t-nt <num>   Select the number of threads/windows.  Default: 1\n");
-   fprintf(stderr,"\t-rect <x y dx dy xinc yinc>  Rect/step to sample.  Default: whole\n");
-   fprintf(stderr,"\t-drect <x y dx dy xinc yinc>  Float rect deltas.  Default: 0. 0. 0. 0. 0. 0.\n");
+   fprintf(stderr,"\t-rect <xpos ypos xsize ysize xinc yinc>  Rect/step to sample.  Rect values are float.  Either pixels or window fractions between 0.01 and 0.99 are acceptable.  Default: whole\n");
+   fprintf(stderr,"\t-pan <xpos ypos xsize ysize xinc yinc> Pan across using giiven rect before advancing to next frame.  Rect values are floats.  Either pixels or window fractions between 0.01 and 0.99 are acceptable.  Default: no panning.\n");
    fprintf(stderr,"\t-loops <n>  Number of loops to run. Default: 1\n");
-   fprintf(stderr,"\t-pan Pan across using drect before advancing to next frame : rect must be provided as well\n");
    fprintf(stderr, "\t-v n Set verbosity to level n (0-5)\n"); 
    return;
 }
+
+template <class T>
+void ConvertFraction(T &fraction, float refValue) {
+  if (0.0 < fraction && fraction < 1.0) fraction *= refValue; 
+  return; 
+}
+
+#define ConvertFractions(pos,dim,step)          \
+ConvertFraction(pos[0], sm->getWidth());        \
+ConvertFraction(dim[0], sm->getWidth());        \
+ConvertFraction(step[0], sm->getWidth());       \
+ConvertFraction(pos[1], sm->getHeight());       \
+ConvertFraction(dim[1], sm->getHeight());       \
+ConvertFraction(step[1], sm->getHeight())
 
 int main(int argc, char *argv[])
 {
@@ -252,7 +265,8 @@ int main(int argc, char *argv[])
        if (i+1 >= argc) usage(argv[0]);
        nloops=atoi(argv[i+1]);
        i++;
-     } else if (strcmp(argv[i], "-drect") == 0) {
+     } else if (strcmp(argv[i], "-pan") == 0) {
+       fprintf(stderr,"Panning selected\n");
        if (i+6 >= argc) usage(argv[0]);
        dpos[0] = atof(argv[++i]);
        dpos[1] = atof(argv[++i]);
@@ -260,7 +274,8 @@ int main(int argc, char *argv[])
        ddim[1] = atof(argv[++i]);
        dstep[0] = atof(argv[++i]);
        dstep[1] = atof(argv[++i]);
-     } else if (strcmp(argv[i], "-rect") == 0) {
+       ConvertFractions(dpos, ddim, dstep); 
+     } else if (strcmp(argv[i],"-rect") == 0) {
        if (i+6 >= argc) usage(argv[0]);
        pos[0] = atoi(argv[++i]);
        pos[1] = atoi(argv[++i]);
@@ -268,10 +283,8 @@ int main(int argc, char *argv[])
        dim[1] = atoi(argv[++i]);
        step[0] = atoi(argv[++i]);
        step[1] = atoi(argv[++i]);
+       ConvertFractions(pos,dim,step); 
        bHaveRect = 1;
-     } else if (strcmp(argv[i],"-pan") == 0) {
-       fprintf(stderr,"Panning selected\n");
-       pan = 1;
     } else if (strcmp(argv[i], "-range") == 0) {
        if (i+2 >= argc) usage(argv[0]);
        range[0] = atoi(argv[++i]);
@@ -339,17 +352,16 @@ int main(int argc, char *argv[])
 
    // computer estimated movie size to give user something to do while we work
    float windowFraction = ((float)dim[0]/sm->getWidth())*((float)dim[1]/sm->getHeight());    
-   int numframes = (range[1]-range[0]+1)*nloops; 
+   int totalFrames = (range[1]-range[0]+1)*nloops; 
    float totalMegabytes = 0; 
    for (f=range[0]; f<=range[1]; f++) {
      totalMegabytes += sm->getCompFrameSize(f, 0); 
    }
-   totalMegabytes *= nloops; 
    totalMegabytes /= (1000.0*1000.0); 
-   fprintf(stderr, "Total size to read in %d frames, based on inputs: %f total MB, %f adjusted for given window fraction\n", 
-           numframes, totalMegabytes, windowFraction*totalMegabytes); 
-
-   double startTime = GetExactSecondsDouble(); 
+   float mbPerFrameEst = totalMegabytes/(range[1]-range[0]+1); 
+   totalMegabytes *= nloops; 
+   fprintf(stderr, "Total size to read in %d frames, based on inputs: %f total MB, %f adjusted for given window fraction.  Estimate %f MB/frame\n", 
+           totalFrames, totalMegabytes, windowFraction*totalMegabytes, mbPerFrameEst); 
    vector<ThreadData> threadData(f); 
    for(f=0; f<nthreads; f++) { 
      threadData[f].threadNum = f; 
@@ -358,18 +370,26 @@ int main(int argc, char *argv[])
      pthread_create(tp, NULL, readThread, vp);
    }
    bool done = false; 
+   double previousTime = GetExactSecondsDouble(), totalTime = 0; 
    double elapsed, fps; 
+   vector<uint32_t> previousFrames(nthreads+1, 0), numFrames(nthreads+1, 0); 
    while (!done) {
-     uint32_t numframes = 0; 
-     elapsed = GetExactSecondsDouble() - startTime; 
+     previousFrames[nthreads] = numFrames[nthreads]; 
+     numFrames[nthreads] = 0; 
+     elapsed = GetExactSecondsDouble() - previousTime; 
+     totalTime += elapsed; 
+     previousTime = GetExactSecondsDouble(); 
      fprintf(stderr, "t = %05.3f: ", elapsed); 
      for(f=0; f<nthreads; f++) {
+       previousFrames[f] = numFrames[f]; 
        done = done || threadData[f].finished; 
-       numframes += threadData[f].numFramesRead; 
-       fps = ((double)threadData[f].numFramesRead) / elapsed; 
-       fprintf(stderr, "Thread %02d: frame %05d, fps = %05.3f\t", f, threadData[f].currentFrame, fps); 
+       numFrames[f] = threadData[f].numFramesRead; 
+       numFrames[nthreads] += numFrames[f]; 
+       fps = ((double)(numFrames[f]-previousFrames[f])) / elapsed; 
+       fprintf(stderr, "Thread %02d: frame %05d, fps = %05.3f, Estimated MB/sec %f\n", f, threadData[f].currentFrame, fps, mbPerFrameEst*fps); 
      }
-     fprintf(stderr, "total fps = %5.3f\n", (double)numframes/elapsed); 
+     fps = ((double)(numFrames[nthreads]-previousFrames[nthreads]))/elapsed; 
+     fprintf(stderr, "ALL THREADS: fps = %5.3f, Est MB/sec %f\n", fps, mbPerFrameEst*fps); 
      usleep(500*1000); // half a second
    }
 
@@ -387,8 +407,8 @@ int main(int argc, char *argv[])
    totalMegabytes /= (1000.0*1000.0);  
 
    float totalSecs = t1-t0; 
-   printf("%d frames %g seconds, ", numframes, totalSecs);
-   printf("%g frames/second\n", (float)numframes/totalSecs);
+   printf("%d frames %g seconds, ", totalFrames, totalSecs);
+   printf("%g frames/second\n", (float)totalFrames/totalSecs);
    printf("%0.2f MB actually read, %.2g MB/sec\n", totalMegabytes, totalMegabytes/totalSecs);  
    printf("min %g max %g\n",mm[0],mm[1]);
 
