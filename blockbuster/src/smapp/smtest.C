@@ -43,20 +43,22 @@ smBase *sm;
 uint32_t gVerbose; 
 
 int range[2] = {0,0}; 
-std::vector<uint32_t> bytesRead;
+std::vector<double> bytesRead;
  int nthreads=1; 
 int nloops=1;
-int pos[2] = {0,0};
-int dim[2] = {0,0};
-int step[2] = {1,1};
+int pos[2] = {0};
+int dim[2] = {0};
+int step[2] = {1};
+float fltpos[2] = {0}, fltdim[2]={0}, fltstep[2]={0}; 
+
 int bHaveRect = 0;
 int pan = 0;
 float dpos[2] = {0,0};
 float ddim[2] = {0,0};
 float dstep[2] = {0,0};
 
-void dbprintf(const char *fmt, ...) {  
-  if (!gVerbose) return; 
+void dbprintf(int level, const char *fmt, ...) {  
+  if (gVerbose<level) return; 
   va_list ap;
   va_start(ap, fmt);
   vfprintf(stderr,fmt,ap);
@@ -67,14 +69,14 @@ void dbprintf(const char *fmt, ...) {
 void calcrectpan(int x,int y,int *p,int *d,int *s)
 {
 
-   // move the frame 
-   p[0] = pos[0] + (int)(x*dpos[0]);
-   p[1] = pos[1] + (int)(y*dpos[1]);
-   d[0] = dim[0];
-   d[1] = dim[1];
-   s[0] = step[0];
-   s[1] = step[1];
-
+  // move the frame 
+  p[0] = pos[0] + (int)(x*dpos[0]);
+  p[1] = pos[1] + (int)(y*dpos[1]);
+  d[0] = dim[0];
+  d[1] = dim[1];
+  s[0] = step[0];
+  s[1] = step[1];
+  
    // make it valid...
 
    // adjust scales...
@@ -223,19 +225,44 @@ void usage(char *prg)
    return;
 }
 
-template <class T>
-void ConvertFraction(T &fraction, float refValue) {
-  if (0.0 < fraction && fraction < 1.0) fraction *= refValue; 
+void ConvertFraction(float &fraction, float refValue) {
+  if (0.0 < fraction && fraction <= 1.0001) fraction *= refValue; 
   return; 
 }
 
-#define ConvertFractions(pos,dim,step)          \
-ConvertFraction(pos[0], sm->getWidth());        \
-ConvertFraction(dim[0], sm->getWidth());        \
-ConvertFraction(step[0], sm->getWidth());       \
-ConvertFraction(pos[1], sm->getHeight());       \
-ConvertFraction(dim[1], sm->getHeight());       \
-ConvertFraction(step[1], sm->getHeight())
+void ConvertFractions(char *name, float ffpos[2], float ffdim[2], float ffstep[2]) {
+  if (0.0 < ffpos[0]  && ffpos[0]  <= 1.001) 
+    ffpos[0]  = ffpos[0]*sm->getWidth()-1;
+
+  if (0.0 < ffpos[1]  && ffpos[1]  <= 1.001) 
+    ffpos[1]  = ffpos[1]*sm->getHeight()-1; 
+
+  if (0.0 < ffdim[0]  && ffdim[0]  <= 1.001) 
+    ffdim[0]  = ffdim[0]*sm->getWidth()-1;
+
+  if (0.0 < ffdim[1]  && ffdim[1]  <= 1.001) 
+    ffdim[1]  = ffdim[1]*sm->getHeight()-1; 
+
+  if (0.0 < ffstep[0] && ffstep[0] <  0.990) 
+    ffstep[0] = ffstep[0]*sm->getWidth()-1;
+
+  if (0.0 < ffstep[1] && ffstep[1] <  0.990) 
+    ffstep[1] = ffstep[1]*sm->getHeight()-1;
+
+  fprintf(stderr, "After converting from fraction, %s is {%f, %f, %f, %f, %f, %f}\n", name, ffpos[0], ffpos[1], ffdim[0], ffdim[1], ffstep[0], ffstep[1]); 
+  return; 
+} 
+
+void RoundRectToInt(void) {
+  pos[0] = (int)(fltpos[0]+0.5); 
+  pos[1] = (int)(fltpos[1]+0.5); 
+  dim[0] = (int)(fltdim[0]+0.5); 
+  dim[1] = (int)(fltdim[1]+0.5); 
+  step[0] = (int)(fltstep[0]+0.5); 
+  step[1] = (int)(fltstep[1]+0.5); 
+  fprintf(stderr, "After rounding, crop rectangle is {%d, %d, %d, %d, %d, %d}\n", pos[0], pos[1], dim[0], dim[1], step[0], step[1]); 
+  return; 
+}
 
 int main(int argc, char *argv[])
 {
@@ -274,16 +301,14 @@ int main(int argc, char *argv[])
        ddim[1] = atof(argv[++i]);
        dstep[0] = atof(argv[++i]);
        dstep[1] = atof(argv[++i]);
-       ConvertFractions(dpos, ddim, dstep); 
      } else if (strcmp(argv[i],"-rect") == 0) {
        if (i+6 >= argc) usage(argv[0]);
-       pos[0] = atoi(argv[++i]);
-       pos[1] = atoi(argv[++i]);
-       dim[0] = atoi(argv[++i]);
-       dim[1] = atoi(argv[++i]);
-       step[0] = atoi(argv[++i]);
-       step[1] = atoi(argv[++i]);
-       ConvertFractions(pos,dim,step); 
+       fltpos[0] = atof(argv[++i]);
+       fltpos[1] = atof(argv[++i]);
+       fltdim[0] = atof(argv[++i]);
+       fltdim[1] = atof(argv[++i]);
+       fltstep[0] = atof(argv[++i]);
+       fltstep[1] = atof(argv[++i]);
        bHaveRect = 1;
     } else if (strcmp(argv[i], "-range") == 0) {
        if (i+2 >= argc) usage(argv[0]);
@@ -309,7 +334,9 @@ int main(int argc, char *argv[])
       fprintf(stderr, "Unable to open movie: %s\n",argv[i]);
       exit(1);
    }
-
+   dbprintf(3, "movie is %dx%d\n", sm->getWidth(), sm->getHeight()); 
+   ConvertFractions("pan rect", dpos, ddim, dstep); 
+   
    // Default values
    if (!bHaveRect) {
       pos[0] = 0;
@@ -318,6 +345,9 @@ int main(int argc, char *argv[])
       dim[1] = sm->getHeight();
       step[0] = 1;
       step[1] = 1;
+   } else {
+     ConvertFractions("crop rect", fltpos,fltdim,fltstep); 
+     RoundRectToInt(); 
    }
 
    // Double check
@@ -325,7 +355,10 @@ int main(int argc, char *argv[])
    if ((pos[0]<0) || (pos[0]>=sm->getWidth())) i = 1;
    if ((pos[1]<0) || (pos[1]>=sm->getWidth())) i = 2;
    if ((step[0]<0) || (step[1]<0)) i = 3;
-   if ((dim[0]<1) || (dim[0]+pos[0]*step[0]>sm->getWidth())) i = 4;
+   if ((dim[0]<1) || (dim[0]+pos[0]*step[0]>sm->getWidth())) {
+     fprintf(stderr, "LH = %d, RH = %d\n", dim[0]+pos[0]*step[0], sm->getWidth()); 
+     i = 4;
+   }
    if ((dim[1]<1) || (dim[1]+pos[1]*step[1]>sm->getHeight())) i = 5;
     
    if (i) {
@@ -354,13 +387,17 @@ int main(int argc, char *argv[])
    float windowFraction = ((float)dim[0]/sm->getWidth())*((float)dim[1]/sm->getHeight());    
    int totalFrames = (range[1]-range[0]+1)*nloops; 
    float totalMegabytes = 0; 
+   uint32_t cur_size = 0; 
    for (f=range[0]; f<=range[1]; f++) {
-     totalMegabytes += sm->getCompFrameSize(f, 0); 
+     cur_size =      sm->getCompFrameSize(f, 0); 
+     totalMegabytes += cur_size;
+     dbprintf(5, "size of frame %d is %d\n", f, cur_size); 
+
    }
    totalMegabytes /= (1000.0*1000.0); 
-   float mbPerFrameEst = totalMegabytes/(range[1]-range[0]+1); 
+   float mbPerFrameEst = totalMegabytes/(range[1]-range[0]+1)*windowFraction; 
    totalMegabytes *= nloops; 
-   fprintf(stderr, "Total size to read in %d frames, based on inputs: %f total MB, %f adjusted for given window fraction.  Estimate %f MB/frame\n", 
+   fprintf(stderr, "Total size to read in %d frames, based on inputs: %f total MB, %f adjusted for given window fraction.  average MB/frame = %f\n", 
            totalFrames, totalMegabytes, windowFraction*totalMegabytes, mbPerFrameEst); 
    vector<ThreadData> threadData(f); 
    for(f=0; f<nthreads; f++) { 
@@ -371,25 +408,32 @@ int main(int argc, char *argv[])
    }
    bool done = false; 
    double previousTime = GetExactSecondsDouble(), totalTime = 0; 
-   double elapsed, fps; 
-   vector<uint32_t> previousFrames(nthreads+1, 0), numFrames(nthreads+1, 0); 
+   double elapsed, fps, megabytes, totalMB = 0, nframes; 
+   vector<double> previousFrames(nthreads+1, 0), numFrames(nthreads+1, 0), 
+     previousBytes(nthreads+1, 0); 
    while (!done) {
      previousFrames[nthreads] = numFrames[nthreads]; 
      numFrames[nthreads] = 0; 
      elapsed = GetExactSecondsDouble() - previousTime; 
      totalTime += elapsed; 
      previousTime = GetExactSecondsDouble(); 
-     fprintf(stderr, "t = %05.3f: ", elapsed); 
+     fprintf(stderr, "t = %05.3f: ", totalTime); 
+     totalMB = 0; 
      for(f=0; f<nthreads; f++) {
        previousFrames[f] = numFrames[f]; 
        done = done || threadData[f].finished; 
        numFrames[f] = threadData[f].numFramesRead; 
        numFrames[nthreads] += numFrames[f]; 
-       fps = ((double)(numFrames[f]-previousFrames[f])) / elapsed; 
-       fprintf(stderr, "Thread %02d: frame %05d, fps = %05.3f, Estimated MB/sec %f\n", f, threadData[f].currentFrame, fps, mbPerFrameEst*fps); 
+       nframes = numFrames[f]-previousFrames[f];
+       fps = nframes / elapsed; 
+       megabytes = (bytesRead[f] - previousBytes[f])/(1000*1000); 
+       totalMB += megabytes; 
+       previousBytes[f] = bytesRead[f]; 
+       fprintf(stderr, "Thread %02d: frame %05d, %03.2f frames in %f secs =  %05.3f fps, actual MB/sec %f\n", f, threadData[f].currentFrame, nframes, elapsed, fps, megabytes/elapsed); 
      }
-     fps = ((double)(numFrames[nthreads]-previousFrames[nthreads]))/elapsed; 
-     fprintf(stderr, "ALL THREADS: fps = %5.3f, Est MB/sec %f\n", fps, mbPerFrameEst*fps); 
+     fps = (numFrames[nthreads]-previousFrames[nthreads])/elapsed; 
+     float pct = (numFrames[nthreads])/totalFrames*100.0;
+     fprintf(stderr, "ALL THREADS: %4.2f%% complete, fps = %5.3f, actual MB/sec %f\n", pct, fps, totalMB/elapsed); 
      usleep(500*1000); // half a second
    }
 
@@ -408,7 +452,7 @@ int main(int argc, char *argv[])
 
    float totalSecs = t1-t0; 
    printf("%d frames %g seconds, ", totalFrames, totalSecs);
-   printf("%g frames/second\n", (float)totalFrames/totalSecs);
+   printf("%g frames/second\n", totalFrames/totalSecs);
    printf("%0.2f MB actually read, %.2g MB/sec\n", totalMegabytes, totalMegabytes/totalSecs);  
    printf("min %g max %g\n",mm[0],mm[1]);
 
