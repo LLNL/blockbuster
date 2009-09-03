@@ -228,8 +228,8 @@ static void gl_RenderStereo(Canvas *canvas, int frameNumber,
   int saveDestX;
   int saveDestY;
  
-#if 0
-  DEBUGMSG("gl_RenderStereo() %d, %d  %d x %d  at %d, %d  zoom=%f  lod=%d, stereo = %d",
+#if 1
+  DEBUGMSG("gl_RenderStereo(frame %d) %d, %d  %d x %d  at %d, %d  zoom=%f  lod=%d, stereo = %d", frameNumber, 
            imageRegion->x, imageRegion->y,
            imageRegion->width, imageRegion->height,
            destX, destY, zoom, lod, canvas->frameList->stereo?1:0);
@@ -334,13 +334,14 @@ static void gl_RenderStereo(Canvas *canvas, int frameNumber,
     glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 
                                   canvas->requiredImageFormat.scanlineByteMultiple);
+    DEBUGMSG("BOTTOM_TO_TOP: glDrawPixels(%d, %d, GL_RGB, GL_UNSIGNED_BYTE, data)\n", 
+             region.width, region.height); 
     glDrawPixels(region.width, region.height,
                                  GL_RGB, GL_UNSIGNED_BYTE,
                                  image->imageData);
   }
   else {
     bb_assert(image->imageFormat.rowOrder == TOP_TO_BOTTOM);
-
     destY = canvas->height - destY - 1;
     /* RasterPos is (0,0).  Offset it by (destX, destY) */
     glBitmap(0, 0, 0, 0, destX, destY, NULL);
@@ -350,6 +351,8 @@ static void gl_RenderStereo(Canvas *canvas, int frameNumber,
     glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 
                                   canvas->requiredImageFormat.scanlineByteMultiple);
+    DEBUGMSG("TOP_TO_BOTTOM: glDrawPixels(%d, %d, GL_RGB, GL_UNSIGNED_BYTE, data)\n", 
+             region.width, region.height); 
     glDrawPixels(region.width, region.height,
                                  GL_RGB, GL_UNSIGNED_BYTE,
                                  image->imageData);

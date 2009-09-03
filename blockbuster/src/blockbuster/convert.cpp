@@ -117,7 +117,7 @@ Image *ConvertImageToFormat(const Image *image, Canvas *canvas)
      * here, we're unoptimized, so now just do as complete a job
      * as possible, without worrying about efficiency.
      */
-  DEBUGMSG("ConvertImageToFormat"); 
+  DEBUGMSG("ConvertImageToFormat(frame %d)", image->frameNumber); 
     Image *destImage;
     const ImageFormat *srcFormat = &image->imageFormat;
     const ImageFormat *destFormat = &canvas->requiredImageFormat;
