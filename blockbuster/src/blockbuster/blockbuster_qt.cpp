@@ -117,8 +117,10 @@ void BlockbusterInterface::setFrameNumber(int frameNumber) {
   mFrameNumber = frameNumber; 
   frameSlider->blockSignals(true); 
   frameSlider->setValue(frameNumber); 
-  frameField->setText(QString("%1").arg(frameNumber)); 
   frameSlider->blockSignals(false); 
+  frameField->blockSignals(true); 
+  frameField->setText(QString("%1").arg(frameNumber)); 
+  frameField->blockSignals(false); 
   //cerr << "setFrameNumber not implemented" << endl; 
   return; 
 }
@@ -330,11 +332,13 @@ void BlockbusterInterface::on_frameSlider_valueChanged(int value) {
     value = mEndFrame; 
     return;
   }
-  mFrameNumber = value; 
+  setFrameNumber(value); 
+  /*  mFrameNumber = value; 
   //DEBUGMSG("on_frameSlider_valueChanged %d", value); 
   frameField->blockSignals(true); 
   frameField->setText(QString("%1").arg(value)); 
   frameField->blockSignals(false); 
+  */ 
   mEventQueue.push_back(MovieEvent (MOVIE_GOTO_FRAME, value-1)); 
 }
 
