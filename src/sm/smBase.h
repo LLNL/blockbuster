@@ -114,7 +114,7 @@ class smBase {
   virtual ~smBase();
   
   // get the decompressed image or return the raw compressed data
-  uint32_t getFrame (int frame, void *out, int threadnum); // for threads
+  uint32_t getFrame (int frame, void *out, int threadnum, int res=0); // for threads
   
   uint32_t getFrameBlock(int frame, void *out, int threadnum, 
                      int destRowStride=0,
