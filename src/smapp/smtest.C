@@ -44,7 +44,8 @@ uint32_t gVerbose;
 
 int range[2] = {0,0}; 
 std::vector<double> bytesRead;
- int nthreads=1; 
+ int nthreads=1;
+int lod = 1; 
 int nloops=1;
 int pos[2] = {0};
 int dim[2] = {0};
@@ -169,14 +170,15 @@ void *readThread(void *data)
          double t0;
          if (!bHaveRect) {
            t0 = get_clock();
-           bytesRead[mynum] += sm->getFrame(f, frame, mynum);
+           bytesRead[mynum] += sm->getFrame(f, frame, mynum, lod);
          } else {
            if(pan == 0) {
              int p[2],d[2],s[2];
-             calcrect(f+loopNum*sm->getNumFrames(),p,d,s);
+             calcrect(f+loopNum*sm->getNumResolutions()*sm->getNumFrames(),
+                      p,d,s);
              t0 = get_clock();
              //fprintf(stderr," d = [%d,%d], p = [%d,%d], s = [%d,%d]\n",d[0],d[1],p[0],p[1],s[0],s[1]);
-             bytesRead[mynum] += sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s);
+             bytesRead[mynum] += sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s, lod);
            }
            else {
              int xStep,yStep;
@@ -191,7 +193,7 @@ void *readThread(void *data)
                for(xStep = 0; xStep < stepsX; xStep++) {
                  calcrectpan(xStep,yStep,p,d,s);
                  //fprintf(stderr," d = [%d,%d], p = [%d,%d], s = [%d,%d]\n",d[0],d[1],p[0],p[1],s[0],s[1]);
-                 bytesRead[mynum] += sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s);
+                 bytesRead[mynum] += sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s, lod);
                }
              }
            }
@@ -216,6 +218,8 @@ void usage(char *prg)
    fprintf(stderr, "(%s) usage: %s [options] smfilename\n",__DATE__,prg);
    fprintf(stderr,"Options:\n");
    fprintf(stderr, "\t -h or -help:  display this menu\n"); 
+   fprintf(stderr,"\t-lod <num> Level of detail.  default: 0\n");
+   
    fprintf(stderr, "\t -range first last:  first and last frames to run over.  (1-based indexes, inclusive interval)\n"); 
    fprintf(stderr,"\t-nt <num>   Select the number of threads/windows.  Default: 1\n");
    fprintf(stderr,"\t-rect <xpos ypos xsize ysize xinc yinc>  Rect/step to sample.  Rect values are float.  Either pixels or window fractions between 0.01 and 0.99 are acceptable.  Default: whole\n");
@@ -271,7 +275,7 @@ int main(int argc, char *argv[])
    vector<pthread_t> threads;
    float *retval;
    float mm[2] = {1e+8,-1e+8};
-
+   
    smBase::init();
 
 #ifdef irix
@@ -284,6 +288,10 @@ int main(int argc, char *argv[])
      if (strncmp(argv[i], "-h", 2) == 0) {
        usage(argv[0]); 
        exit(0); 
+     } else if (strcmp(argv[i], "-lod") == 0) {
+       if (i+1 >= argc) usage(argv[0]);
+       lod=atoi(argv[i+1]);
+       i++;
      } else if (strcmp(argv[i], "-nt") == 0) {
        if (i+1 >= argc) usage(argv[0]);
        nthreads=atoi(argv[i+1]);
@@ -325,7 +333,6 @@ int main(int argc, char *argv[])
      }
    }
    if (i != argc-1) usage(argv[0]);
-   
    sm = smBase::openFile(argv[i], nthreads);
    threads.resize(nthreads); 
    bytesRead.resize(nthreads); 
@@ -360,19 +367,24 @@ int main(int argc, char *argv[])
      i = 4;
    }
    if ((dim[1]<1) || (dim[1]+pos[1]*step[1]>sm->getHeight())) i = 5;
-    
+   
    if (i) {
       fprintf(stderr,"Error: Invalid frame rectangle : Case %d\n",i);
       exit(1);
    }
 
+   if (lod > sm->getNumResolutions()) {
+     fprintf(stderr, "Error:  lod %d specified, but movie has only %d\n", 
+             lod, sm->getNumResolutions()); 
+     exit(2); 
+   }
    // frame range is 1-based
    if (!range[0]) {
      range[0] = 1; 
    } 
    if (!range[1] || range[1] > sm->getNumFrames()) {
      range[1] = sm->getNumFrames(); 
-   } 
+   }    
    printf("threads: %d\n",nthreads);
    printf("frame size: %d,%d\n", sm->getWidth(), sm->getHeight());
    printf("rect: %d,%d @ %d,%d step %d,%d\n",dim[0],dim[1],pos[0],pos[1],step[0],step[1]);
@@ -382,6 +394,7 @@ int main(int argc, char *argv[])
    // convert to 0-based frames now: 
    range[0] -= 1; 
    range[1] -= 1; 
+
 
    // computer estimated movie size to give user something to do while we work
    float windowFraction = ((float)dim[0]/sm->getWidth())*((float)dim[1]/sm->getHeight());    
