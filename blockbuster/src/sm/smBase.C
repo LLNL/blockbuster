@@ -563,9 +563,10 @@ uint32_t smBase::readData(int fd, u_char *buf, int bytes) {
     int r=READ(fd, buf, remaining);
     if (r < 0) {
       if ((errno != EINTR) && (errno != EAGAIN)) {
-        char	s[80];
+        smdbprintf(0, "smBase::readData() error: read=%d remaining=%d: %s",r, remaining, strerror(errno)); 
+        /* char	s[80];
         sprintf(s,"xmovie I/O error : r=%d k=%d: ",r, remaining);
-        perror(s);
+        perror(s);*/
         return -1;
       }
     } else {
@@ -857,9 +858,9 @@ void smBase::computeTileOverlap(int *blockDim, int* blockPos, int res, int threa
   \param data an appropriately allocated pointer to receive the data, based on the size and resolution of the region of interest.
   \param threadnum A zero-based thread id.  Threadnum must be less than numthreads.  No other thread should be using this threadnum, as there is one buffer per thread and collisions can happen. 
 */ 
-uint32_t smBase::getFrame(int f, void *data, int threadnum)
+uint32_t smBase::getFrame(int f, void *data, int threadnum, int res)
 {
-  return  getFrameBlock(f,data, threadnum);
+  return  getFrameBlock(f,data, threadnum, 0, NULL, NULL, NULL, res);
 }
 
 //! Read a region of interest from the given frame of the movie. 
