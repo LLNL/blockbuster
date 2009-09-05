@@ -1,0 +1,48 @@
+'\" "
+'\" ASCI Visualization Project  "
+'\" "
+'\" Lawrence Livermore National Laboratory "
+'\" Information Management and Graphics Group "
+'\" P.O. Box 808, Mail Stop L-561 "
+'\" Livermore, CA 94551-0808 "
+'\" "
+'\" For information about this project see: "
+'\" 	http://www.llnl.gov/sccd/lc/img/  "
+'\" "
+'\" 	or contact: asciviz@llnl.gov "
+'\" "
+'\" For copyright and disclaimer information see: "
+'\"     man llnl_copyright "	
+'\" "
+'\" $Id: sminfo.1,v 1.1 2007/06/13 18:59:35 wealthychef Exp $ "
+'\" $Name:  $ "
+'\" "
+.TH sminfo 1
+.SH NAME
+sminfo - prints vital statistics about a streaming movie (sm) file.
+.SH SYNOPSIS
+sminfo inputfile
+.SH DESCRIPTION
+sminfo reads the streaming movie file specified by INPUTFILE
+and prints basic file status information to stdout.  It 
+outputs the file name, the compression scheme, the number
+and size of frames and any secondary flags (such as stereo,
+compression ratios and the tiling/mipmap options).
+The command is exactly the same as sm2img run with no output
+template.
+.SH OPTIONS
+None.
+.SH EXAMPLE
+sminfo myfile.sm
+.SH SEE ALSO
+xmovie(1), sm2img(1), sm(4)
+.SH ORIGIN
+.RS
+ASCI Visualization Project 
+.RE
+.RS
+Lawrence Livermore National Laboratory
+.RE
+.RS
+Information Management and Graphics Group
+.RE

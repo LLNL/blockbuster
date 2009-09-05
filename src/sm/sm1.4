@@ -1,0 +1,101 @@
+'\" "
+'\" ASCI Visualization Project  "
+'\" "
+'\" Lawrence Livermore National Laboratory "
+'\" Information Management and Graphics Group "
+'\" P.O. Box 808, Mail Stop L-561 "
+'\" Livermore, CA 94551-0808 "
+'\" "
+'\" For information about this project see: "
+'\"     http://www.llnl.gov/sccd/lc/img/  "
+'\" "
+'\"     or contact: asciviz@llnl.gov "
+'\" "
+'\" For copyright and disclaimer information see: "
+'\"     man llnl_copyright "
+'\" "
+'\" $Id: sm1.4,v 1.1 2007/06/13 18:59:33 wealthychef Exp $ "
+'\" $Name:  $ "
+'\" "
+.TH sm1 4
+.SH NAME
+sm1 - ASCI LLNL streaming movie file format 1.0
+.SH SYNOPSIS
+The sm file format is used by xmovie and related programs to provide
+a simple streaming media layer appropriate for scientific visualization
+movies.  The format is random access and supports a number of compression
+options.
+.PP
+This document describes the 1.0 version of the sm file format.
+The "sm" man page desctibes the current version (2.0).  All
+current sm tools write version 2.0 format but will read version
+1.0 files as well.
+.SH DESCRIPTION
+The format consists of a header, a frameoffset table and image
+data.  The file is to be considered big endian.  The header consists of:
+.PP
+.nf
+	int32	Magic  (0x0f1e2d3c)
+	int32	Flags 
+	int32	Number of frames in the file
+	int32	Frame width
+	int32	Frame height
+.fi
+.PP
+The low order 8 bits of the Flags field specifies the compression
+type: 0=none, 1=RLE, 2=zlib, 3=lzo, 4=jpg.  The upper bits are
+generic flags.  Currently defined flags: 0x00000100 = Stereo.
+.PP
+The upper 12bits (mask 0xffc00000) of the Flags field specifies
+a desired framerate for the movies.  The actual FPS number is
+computed by extracting the 12bit integer and dividing by 20.0.
+.PP
+The header is followed by a table of offsets from the beginning of
+the sm file to the data for a given frame.  These offsets are 64bit
+integers and there is one integer for each frame.  The size of
+the compressed data in bytes is equal to the difference between
+successive offsets and for the last frame, the final offset and
+the end of the file.  Images are stored sequentially
+and contiguously, in version 1.0 of the file format.
+.PP
+Frames are considered to be 24bits/pixel.  A given frame is considered
+to be 3bytes*frame width*frame height in size.  Data are laid out
+in pixel interleaved format (e.g. RGBRGBRGB...) from right to left
+and bottom to top (default glDrawPixels() form). No padding is
+provided.  Each frame is passed to the compressor and the resulting
+output is placed in the file.  Details on the specific data organization
+for a given compression scheme may be found be referencing the 
+appropriate subclass.
+.PP
+.SH COMPRESSION SCHEMES
+The choice of scheme to use depends on the target system.  The
+RAW format is rarely used, but does test a system's ability to
+read data.  The RLE scheme is generally better, but may not
+significantly reduce the file size.  It is also very fast to
+decompress.  Use it when you have very fast I/O systems, such
+as striped Fibre Channel SANS.  The LZO scheme is a nice
+compromise.  It is an extremely fast decompression scheme
+and generally achieves good file reduction on most files.
+The GZ scheme uses the compression in gzip for each frame.
+It produces the smallest files and may be the best choice
+for very low bandwidth disk systems (e.g. NFS).  It does
+require more CPU time to decompress however and can require
+more CPUs (threads) to achive LZO data rates.
+The JPG scheme works by JPEG encoding each frame and
+storing the resulting frames.  It is a lossy scheme.
+.PP
+.SH SEE ALSO
+xmovie(1), img2sm(1), sm2img(1), smcat(1), smRaw(3), smRLE(3), smLZO(3), 
+smJPG(3), smGZ(3), sm(4)
+.SH NOTES
+.SH ORIGIN
+.RS
+ASCI Visualization Project
+.RE
+.RS
+Lawrence Livermore National Laboratory
+.RE
+.RS
+Information Management and Graphics Group
+.RE
+

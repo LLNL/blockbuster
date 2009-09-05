@@ -1,0 +1,89 @@
+'\" "
+'\" ASCI Visualization Project  "
+'\" "
+'\" Lawrence Livermore National Laboratory "
+'\" Information Management and Graphics Group "
+'\" P.O. Box 808, Mail Stop L-561 "
+'\" Livermore, CA 94551-0808 "
+'\" "
+'\" For information about this project see: "
+'\" 	http://www.llnl.gov/sccd/lc/img/  "
+'\" "
+'\" 	or contact: asciviz@llnl.gov "
+'\" "
+'\" For copyright and disclaimer information see: "
+'\"     man llnl_copyright "	
+'\" "
+'\" $Id: sm2img.1,v 1.1 2007/06/13 18:59:34 wealthychef Exp $ "
+'\" $Name:  $ "
+'\" "
+.TH sm2img 1
+.SH NAME
+sm2img - extract individual images from a streaming movie (sm) file.
+.SH SYNOPSIS
+sm2img [options] inputfile [outputtemplate]
+.SH DESCRIPTION
+sm2img extracts the individual images from a streaming movie
+file and saves them into a series of individual images.
+INPUTFILE specifies the name of the input sm file.
+OUTPUTTEMPLATE is a string containing a legal sprintf()
+string that will store a long int.  sm2img generates the output
+filenames by printing the index into this template.  
+If no OUTPUTTEMPLATE is given, the program will output
+the imagesize and number of frames in the movie to stdout.
+.SH OPTIONS
+.TP
+-form ["tiff"|"sgi"|"pnm"|"png"|"jpg"]
+Select the format of the output file.  JPEG, TIFF, PNM, PNG and SGI
+libimage formats are supported.  If this option is not specified,
+the application uses SGI format files 
+.TP
+-v
+Enable verbose mode.
+.TP
+-first firstframenum
+Specify the first frame number to extract.  Default: 0.
+.TP
+-last lastframenum
+Specify the last frame number to extract.  Default: last frame in file.
+.TP
+-step frameinc
+Specify the increment in frame number between frames.  Default: 1.
+.TP
+-quality num
+Use this option to specify the quality of the JPEG compression if
+JPEG output files are selected, from 0 to 100.  The default is 75.
+.TP
+-ignore
+If this option is selected, the formatting of the outputtemplate string
+is ignored.  This can be useful if only a single frame is being extracted
+from the sm file.
+.TP
+-size dx dy
+This option allows the user to select a subregion from the movie for
+output. The region will be the size specified by this option.  The
+position can be selected using -offset.  The default values are the
+entire frame.
+.TP
+-offset x y
+Selects the location of the subregion to be output (see -size).
+The default values is: 0 0.
+.TP
+-mipmap num
+Selects the mipmap level (resolution) from which the pixels are to be taken.
+The defualt value is: 0 (full resolution).
+.PP
+.SH EXAMPLE
+sm2img  -form tiff myfile.sm prefix%.4d.tiff
+.SH SEE ALSO
+xmovie(1), ifl2sm(1), img2sm(1), smcat(1), sm(4)
+.SH ORIGIN
+.RS
+ASCI Visualization Project 
+.RE
+.RS
+Lawrence Livermore National Laboratory
+.RE
+.RS
+Information Management and Graphics Group
+.RE

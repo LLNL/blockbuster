@@ -1,0 +1,63 @@
+'\" "
+'\" ASCI Visualization Project  "
+'\" "
+'\" Lawrence Livermore National Laboratory "
+'\" Information Management and Graphics Group "
+'\" P.O. Box 808, Mail Stop L-561 "
+'\" Livermore, CA 94551-0808 "
+'\" "
+'\" For information about this project see: "
+'\" 	http://www.llnl.gov/sccd/lc/img/  "
+'\" "
+'\" 	or contact: asciviz@llnl.gov "
+'\" "
+'\" For copyright and disclaimer information see: "
+'\"     man llnl_copyright "	
+'\" "
+'\" $Id: ifl2sm.1,v 1.1 2007/06/13 18:59:34 wealthychef Exp $ "
+'\" $Name:  $ "
+'\" "
+.TH ifl2sm 1
+.SH NAME
+ifl2sm - merge images into "sm" movie
+.SH SYNOPSIS
+ifl2sm [options]
+.SH DESCRIPTION
+ifl2sm concatenates a sequence of images into a "streaming movie"
+file for use with xmovie and other applications which understand
+the sm format.  The image format library (IFL) is used to read
+images in many different formats.
+.PP
+.SH OPTIONS
+.TP
+-rle
+Use rle compression in the sm file.  Default is no compression.
+.TP
+-gz
+Use gzip compression in the sm file.  Default is no compression.
+.TP
+-lzo
+Use LZO compression in the sm file.  Default is no compression.
+.TP
+-jpg
+Use JPG compression in the sm file.  Default is no compression.
+.TP
+-f <pattern>
+Merge the sequence of files which match the given pattern.
+Files must be numbered sequentially and are matched by
+substituting numbers for hash characters in the pattern.
+.PP
+.SH EXAMPLE
+ifl2sm -f prefix###.suffix
+.SH SEE ALSO
+xmovie(1), ifl(3), img2sm(1), sm2img(1), smcat(1), sm(4)
+.SH ORIGIN
+.RS
+ASCI Visualization Project 
+.RE
+.RS
+Lawrence Livermore National Laboratory
+.RE
+.RS
+Information Management and Graphics Group
+.RE

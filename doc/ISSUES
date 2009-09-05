@@ -1,0 +1,38 @@
+For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
+
+OLD NOTES:  
+Note by Rich Cook:  Author:  Brian Paul?  (unknown)
+
+1.  Image Format
+    The current code also requires the File Format module to always return
+    a 24-bit RGB stream.  The renderer may prefer a different stream.  Right
+    now the renderer is required to change the format if necessary, which
+    typically requires allocation of a new buffer, and is rather inefficient.
+
+    Again, some file format modules (e.g. PNG) will not be able to efficiently
+    convert to the desired format at runtime.
+
+    Resolution:  Provide conversion utilities outside of either the File Format
+    or Renderer modules.  The main program will ask the File Format module for
+    the Renderer's desired format; if the File Format module returns a different
+    format, the main program will handle the conversion.
+
+
+2.  Varying-sized movies
+    It's possible for multiple image files to be specified as a single movie,
+    where the files have different dimensions.  Should smaller movies be
+    centered?  In the upper-left corner?  Expanded to fill the screen?  Should
+    overly-large movies be shrunk?  Centered?
+
+    Resolution: Punt.  This is considered to be a corner case; any reasonable
+    handling is acceptable.
+
+
+3.  Text display in upper-left corner is always drawn in white.
+    The font is harded coded in movie.h:  DEFAULT_X_FONT
+
+
+4.  The initial window should not always appear at (0,0).  Like any X client,
+    it should be placeable by the user with the mouse.
+    Also, we should add a standard -geometry command line option.
+

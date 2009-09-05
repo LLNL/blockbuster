@@ -1,0 +1,96 @@
+LLNL Note:  Be sure to test against actual cuefiles on both OCF and SCF, as some bugs do crop up on SCF that don't appear on OCF.  
+
+==============================================================
+# Be strict in the test procedure!  Documenting bugs during testing. 
+
+Before testing, go to the Blockbuster sourceforge site and open the bug tracker.  You will need it.  :-)  Don't bother with private notes if you can avoid it.  The tracker is there for a reason;  use it!  
+
+Similarly, do not fix bugs while testing, unless they are catastrophic and testing or installation cannot continue without them.   Do not stop to fix a little bug here and there.  To do so diffuses focus and results in testing not getting completed.  Also, the bug you rush off to fix is  not any more important as others that are waiting to be fixed.  Just document it and continue.
+
+Also, a consistent need to deviate from the test procedure could be indicative of a bug in the test procedure itself.  Document that here and continue!  
+
+==============================================================
+# New Features and Fields in the GUI
+If any new fields or features have been added, test to see if the defaults are set up correctly and handled well in blockbuster and sidecar.  Also check if unusual values are used, do they work?  Frame rate was a great example.  FPS = 0.0 caused very bad things to happen.  What happens if you type a word or a negative number for the frame rate?  Etc.  
+
+==============================================================
+# Cuefiles 
+Use Testing.cues for a good suite of tests.  
+Run sidecar without loading a cuefile.  Next, load a cuefile both from the command line and from the "Load from file..." button.  Save it as a new cue file and then reload it. Run all cues.  Test every button in the interface that operates on cues.  Duplicate a cue, then test every button and checkbox in the new cue.  Try to close the window and quit the application to make sure it prompts for saves. Save the cue file, then reload it.  Make sure they were saved and restored properly.  
+
+==============================================================
+# Movie Cues and Snapshots
+Execute a cue and create a new server in the resulting dialog.  Create a new cue, adjust the zoom, position and size of the window and of the image and take a snapshot of the result.  Click "Apply Changes" and then execute the cue again and make sure it is the same as it was.  
+Select multiple cues and execute them all with the "Execute" button.  Interrupt in the middle once.  Now execute them with the "Loop" button.  Also interrupt that.  
+Be sure to test a "powerpoint slideshow" type movie in there somewhere.  
+
+==============================================================
+# Remote Control:
+Test -movie and -play options to sidecar. 
+The "-movie movie@host" flags work, but what is the actual use case for that?  In my tests, either DISPLAY is not set correctly or else the wrong blockbuster launches, so it's pretty useless at LLNL. Why did I make this possible?  
+Check every button in the remote control interface to make sure it works correctly.  Enable and disable keystroke capture.   Test the following keystrokes: 
+Right/Left arrow - advance/backup by one frame.
+Shift + Right/Left arrow - advance/backup by 20 frames.
+Control + Right/Left arrow - advance/backup by 1/4 of movie length.
+Home - jump to the first frame
+End - jump to the last frame in the movie
+Spacebar - play/pause
+c -   center the image in the window
+f -   zoom image to fit the window (minify only)
+m -   hide/unhide the mouse cursor over the movie window
+l/L - increase/decrease the current level of detail displayed
+q --  quit
+r -   play in reverse
+z/Z - zoom in or out
+1 -  (the number 1) set zoom to 1.0
++/- - increase or decrease the frame rate
+i - display the GUI panel (interface) if it was hidden
+? or h -- print this menu
+Esc - exit Blockbuster
+
+
+Take a screen capture using the "Save Image" button. 
+
+Confirm proper looping behaviors, and pingpong. 
+Confirm that the file history is working in the blockbuster launch dialog.
+
+==============================================================
+# connections:
+Repeatedly connect and disconnect from the server, then test the controls.  Terminate it and restart it.  Execute cues with a connection in place and out of place.  Do this several times and make sure the right buttons are enabled and disabled and all functionality is available.  Connect with cues shown and hidden.  Quit blockbuster from within blockbuster and make sure sidecar handles that. 
+
+==============================================================
+# Performance:
+Check rendering speed under MPI and without MPI and confirm that synchronization is occurring reliably.  
+
+==============================================================
+# DMX 
+Test launch and behavior of blockbuster and sidecar with and without DMX and MPI framesync. Test "Fill" (fullscreen) button with DMX. Ensure a cue or two works properly in DMX. 
+
+==============================================================
+# Stereo 
+Test a stereo movie out with DMX and confirm how nice it all is. 
+
+==============================================================
+# SM tools
+If any changes were made in the sm or smapps libraries, or might affect them, then run a few tools from the smlib to test them too.  Especially smcat, sm2img, img2sm.  
+
+==============================================================
+# Debug vs. Production modes
+Before installing, but after confirming functionality with the below tests, build the development version with debug turned off and test to make sure it's quiet.  
+
+==============================================================
+# Releasing the new version to the world. 
+
+1)  Don't forget to modify config/version.h so that blockbuster is announced properly to the world.  
+
+2)  Create a new SVN tag using svn copy.  Here is what I did to release version 2.6.3 to the world.  Note that "svn copy" does not work from the lab due to some firewall issues.  
+
+svn copy https://blockbuster.svn.sourceforge.net/svnroot/blockbuster/trunk/blockbuster https://blockbuster.svn.sourceforge.net/svnroot/blockbuster/tags/2.6.3a -m 'release 2.6.3a, hopefully' --username wealthychef
+
+3)  Upload the tarball package to sourceforge.  See https://sourceforge.net/apps/trac/sourceforge/wiki/Release%20files%20for%20download
+Example: 
+
+rsync -avP blockbuster-v2*.tgz wealthychef@frs.sourceforge.net:uploads
+
+4)  After uploading the file, go to http://sourceforge.net/projects/blockbuster, go to the package management area, and add a new release.  The newly uploaded file will show up as a choice to attach to the new release. 
+

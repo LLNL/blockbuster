@@ -1,0 +1,18 @@
+2009-07-09
+
+So we appear to be I/O limited right now, or at least impacted by I/O.  Playing a movie results in great frame rates like 25 FPS for 250 frames, then down to 6fps.  There is evidence this is all read/write stuff.  Early calls to readWin execute in a millisecond or less, later calls take much longer.  This single behavior is the weirdest damn thing.  What is happening in the slow regime?  Is there a disk cache at work?  If so, what is the policy?
+  
+After talking with Rich Hedges, it seems likely that with row-order data, we are reading nearly all of every frame, but throwing most away, given the precaching behavior of disk arrays.  
+Solution:  Use column-major tile layout for better access patterns.  (Rotate image?)  
+Solution 2:  Use arbitrary tile sizes for perfect reads.  Even allow overlapping tiles to allow for small changes in window locations.  The idea is for each slave to read one chunk at a time.  
+Solution 3:  read multiple tiles per read? 
+Solution 4:  break IO out from decompression and assign to different threads. 
+Solution 5:  reorder tiles in movie to comply with actual displays ("optimize for display configuration") << -- WOULD BE COOL, requires new SM format, as it breaks frame layout on disk. In the current spec, there is no requirement that frames be in order, in fact explicitly so.  However, it does seem required that a frame be stored with all its data together. 
+
+Also, remember that the cost of a seek which actually change the disk heads, i.e., is not a seek 0 bytes away from the current location is equal to the disk latency time, which might be perhaps a millisecond.  What is a typical disk seek time in our year 2009?  
+
+Another important idea about disks is that generally for a disk/file system, there are a certain number of reads per second max, and each read has a certain bytes per read maximum.  So if you are making many small reads, you could hit this limit.  
+
+Adam B. ran hdparm and got 200MB/sec.  I ran smtest and got 47MB/sec.   Rich H. comment was that 25% of peak I/O is actually quite respectable, even good.  
+
+Sean Ahern comments that we might have DDN disks and we could then explore their policy somehow.  
