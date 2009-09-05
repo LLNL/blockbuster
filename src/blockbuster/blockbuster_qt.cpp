@@ -145,37 +145,47 @@ void BlockbusterInterface::setTitle(QString title) {
 //=============================================================
 void BlockbusterInterface::setLOD(int lod){
   mLOD = lod; 
+  lodSpinBox->blockSignals(true); 
   lodSpinBox->setValue(lod); 
+  lodSpinBox->blockSignals(false); 
   return; 
 }
 
 //=============================================================
 void BlockbusterInterface::setLODRange(int min, int max){
+  lodSpinBox->blockSignals(true); 
   lodSpinBox->setRange(min,max); 
   mLOD = min; 
   lodSpinBox->setValue(min); 
+  lodSpinBox->blockSignals(false); 
   return; 
 }
 
 //=============================================================
 void BlockbusterInterface::setFrameRate(double rate) {
   mFrameRate = rate; 
+  fpsSpinBox->blockSignals(true); 
   fpsSpinBox->setValue(rate); 
+  fpsSpinBox->blockSignals(false); 
   return; 
 }
 
 //=============================================================
 void BlockbusterInterface::setFrameRateRange(double min, double max) {
   mFrameRate = max; 
+  fpsSpinBox->blockSignals(true); 
   fpsSpinBox->setRange(min,max); 
   fpsSpinBox->setValue(max);
+  fpsSpinBox->blockSignals(false); 
   return; 
 }
 
 //=============================================================
 void BlockbusterInterface::setZoom(double zoom){
   mZoom = zoom; 
+  zoomSpinBox->blockSignals(true); 
   zoomSpinBox->setValue(zoom);   
+  zoomSpinBox->blockSignals(false); 
   return; 
 }
 
@@ -322,6 +332,7 @@ void BlockbusterInterface::showCursor(bool show) {
 //======================================================   
 void BlockbusterInterface::on_frameSlider_valueChanged(int value) {
   if (value == mFrameNumber) return; 
+  frameSlider->blockSignals(true); 
   if (value <mStartFrame) {
     frameSlider->setValue(mStartFrame);
     value = mStartFrame; 
@@ -332,6 +343,7 @@ void BlockbusterInterface::on_frameSlider_valueChanged(int value) {
     value = mEndFrame; 
     return;
   }
+  frameSlider->blockSignals(false); 
   setFrameNumber(value); 
   /*  mFrameNumber = value; 
   //DEBUGMSG("on_frameSlider_valueChanged %d", value); 
