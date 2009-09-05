@@ -1,9 +1,11 @@
 CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
-VERSION 2.6.4 
-July 2009
+================================================================================
+VERSION 2.6.3b
+Sep 4, 2009
 -- fixed a regression preventing stereo movies from being stereo
+-- Fixed a bug causing crashes from recursion in Qt widgets.  
 
 ================================================================================
 VERSION 2.6.3
