@@ -685,7 +685,8 @@ CachedImage *ImageCache::FindImage(uint32_t frame, uint32_t lod) {
        i++, cachedImage++) {
     if (cachedImage->loaded &&
         cachedImage->frameNumber == frame &&
-        cachedImage->levelOfDetail == lod && cachedImage->lockCount > 0) {
+        cachedImage->levelOfDetail == lod/* && cachedImage->lockCount > 0*/) {
+      if (cachedImage->lockCount == 0)  cachedImage->lockCount = 1;
       CACHEDEBUG("Found frame number %d", frame); 
       return cachedImage;
     }
