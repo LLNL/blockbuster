@@ -45,6 +45,17 @@ using namespace std;
 #define DMX_NAME "dmx"
 #define DMX_DESCRIPTION "Directly render to back-end DMX servers: Use -R to specify\n         backend renderer"
 MovieStatus dmx_Initialize(Canvas *canvas, const ProgramOptions *options);
+void dmx_Resize(Canvas *canvas, int newWidth, int newHeight, int cameFromX);
+void dmx_Render(Canvas *, int frameNumber,
+           const Rectangle *imageRegion,
+           int destX, int destY, float zoom, int lod);
+void dmx_Move(Canvas *canvas, int newX, int newY, int cameFromX);
+void dmx_DestroyRenderer(Canvas *canvas); 
+void dmx_SwapBuffers(Canvas *canvas);
+void dmx_DrawString(Canvas *canvas, int row, int column, const char *str); 
+int IsDMXDisplay(Display *dpy);
+void GetBackendInfo(Canvas *canvas);
+void UpdateBackendCanvases(Canvas *canvas);
 
 /* This file details the structure that the DMX Renderer requires
  * in order to render.  It is used by the DMX Renderer itself
@@ -108,11 +119,6 @@ class DMXSlave: public QObject {
   */ 
   void SendMessage(QString msg); 
 
-  /*!
-	Launch the slave. 
-  */ 
-  static QProcess *LaunchSlave(QString hostname, int port, 
-                          const ProgramOptions *options); 
 
   bool HaveCanvas(void) { return mHaveCanvas; }
   void HaveCanvas(bool setval) { mHaveCanvas = setval; }
@@ -187,7 +193,10 @@ class DMXSlave: public QObject {
 
   void SlaveSocketDisconnected(); 
   void SlaveSocketError(QAbstractSocket::SocketError err);
-  void SlaveSocketStateChanged(QAbstractSocket::SocketState state);
+  //void SlaveSocketStateChanged(QAbstractSocket::SocketState state);
+
+ signals:
+  void SlaveDisconnect(DMXSlave *); 
 
   //=============-==================================
   // public data:
@@ -214,7 +223,7 @@ class DMXSlave: public QObject {
 
   int32_t mCurrentFrame, mLastSwapID; 
 
-  bool mSlaveAwake; 
+  bool mSlaveAwake, mShouldDisconnect; 
   QTcpSocket *mSlaveSocket; 
   //QTcpServer mSlaveServer; 
   QProcess *mSlaveProcess; 
@@ -239,10 +248,16 @@ class SlaveServer: public QObject {
     
   }
     
+    /*!
+      Launch a slave. 
+    */ 
+    void LaunchSlave(QString hostname); 
     bool slavesReady(void) { return mSlavesReady; }
     
     public slots:
   void SlaveConnected(); 
+  void UnexpectedDisconnect(DMXSlave *); 
+
   void setNumDMXDisplays(int num) {
     mActiveSlaves.resize(num, NULL);     
   }
