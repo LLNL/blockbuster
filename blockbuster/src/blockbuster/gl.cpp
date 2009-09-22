@@ -89,7 +89,10 @@ static void gl_Render(Canvas *canvas, int frameNumber,
   }
 
  
-  bb_assert(lod <= canvas->frameList->getFrame(localFrameNumber)->maxLOD);
+  if (lod > canvas->frameList->getFrame(localFrameNumber)->maxLOD) {
+    ERROR("Error in gl_Render:  lod is greater than max\n"); 
+    abort(); 
+  }
 
   lodScale = 1 << lod;
 
@@ -323,114 +326,87 @@ static void gl_RenderStereo(Canvas *canvas, int frameNumber,
       region.y = 0;
     }
     /* RasterPos is (0,0).  Offset it by (destX, destY) */
-   
-    glBitmap(0, 0, 0, 0, destX, destY, NULL);
+    
+    DEBUGMSG("BOTTOM_TO_TOP: glDrawPixels(%d, %d, GL_RGB, GL_UNSIGNED_BYTE, data)\n",  region.width, region.height); 
     glPixelZoom(zoom, zoom);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, image->width);
-    glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
-    glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 
-                                  canvas->requiredImageFormat.scanlineByteMultiple);
-    DEBUGMSG("BOTTOM_TO_TOP: glDrawPixels(%d, %d, GL_RGB, GL_UNSIGNED_BYTE, data)\n", 
-             region.width, region.height); 
-    glDrawPixels(region.width, region.height,
-                                 GL_RGB, GL_UNSIGNED_BYTE,
-                                 image->imageData);
   }
   else {
-    bb_assert(image->imageFormat.rowOrder == TOP_TO_BOTTOM);
+    DEBUGMSG("TOP_TO_BOTTOM: glDrawPixels(%d, %d, GL_RGB, GL_UNSIGNED_BYTE, data)\n",   region.width, region.height); 
     destY = canvas->height - destY - 1;
     /* RasterPos is (0,0).  Offset it by (destX, destY) */
-    glBitmap(0, 0, 0, 0, destX, destY, NULL);
     glPixelZoom(zoom, -zoom);
+  }
+  glBitmap(0, 0, 0, 0, destX, destY, NULL);
+  glPixelStorei(GL_UNPACK_ROW_LENGTH, image->width);
+  glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
+  glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 
+                canvas->requiredImageFormat.scanlineByteMultiple);
+  glDrawPixels(region.width, region.height,
+               GL_RGB, GL_UNSIGNED_BYTE,
+               image->imageData);
+  
+  /* Offset raster pos by (-destX, -destY) to put it back to (0,0) */
+  glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
+  
+  /* Have to release the image, or the cache will fill up */
+  canvas->imageCache->ReleaseImage(image);
+  
+  if(canvas->frameList->stereo) {
+    glDrawBuffer(GL_BACK_RIGHT);
+    localFrameNumber++;
+    
+    /* Pull the image from our cache */
+    image = canvas->imageCache->GetImage(localFrameNumber, &region, lod);
+    if (image == NULL) {
+      /* error has already been reported */
+      return;
+    }
+    
+    glViewport(0, 0, canvas->width, canvas->height);
+    
+    /* only clear the window if we have to */
+    if (saveDestX > 0 || saveDestY > 0 ||
+        region.width * zoom < canvas->width ||
+        region.height * zoom < canvas->height) {
+      glClearColor(0.0, 0.0, 0.0, 0);
+      glClear(GL_COLOR_BUFFER_BIT);
+    }
+    
+    
+    if (image->imageFormat.rowOrder == BOTTOM_TO_TOP) {
+      
+      glPixelZoom(zoom, zoom);
+      
+    }
+    else {
+      
+      DEBUGMSG("Image order is %d\n", image->imageFormat.rowOrder); 
+      /* RasterPos is (0,0).  Offset it by (destX, destY) */
+      glPixelZoom(zoom, -zoom);
+    }
+    
+    glBitmap(0, 0, 0, 0, destX, destY, NULL);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, image->width);
     glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
     glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 
-                                  canvas->requiredImageFormat.scanlineByteMultiple);
-    DEBUGMSG("TOP_TO_BOTTOM: glDrawPixels(%d, %d, GL_RGB, GL_UNSIGNED_BYTE, data)\n", 
-             region.width, region.height); 
+                  canvas->requiredImageFormat.scanlineByteMultiple);
     glDrawPixels(region.width, region.height,
-                                 GL_RGB, GL_UNSIGNED_BYTE,
-                                 image->imageData);
-  }
-
-  /* Offset raster pos by (-destX, -destY) to put it back to (0,0) */
-  glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
-
-  /* Have to release the image, or the cache will fill up */
-  canvas->imageCache->ReleaseImage(image);
-
-  if(canvas->frameList->stereo) {
-        glDrawBuffer(GL_BACK_RIGHT);
-        localFrameNumber++;
-
-        /* Pull the image from our cache */
-        image = canvas->imageCache->GetImage(localFrameNumber, &region, lod);
-        if (image == NULL) {
-          /* error has already been reported */
-          return;
-        }
-
-
-
-        glViewport(0, 0, canvas->width, canvas->height);
-
-
-
-        /* only clear the window if we have to */
-        if (saveDestX > 0 || saveDestY > 0 ||
-                region.width * zoom < canvas->width ||
-                region.height * zoom < canvas->height) {
-          glClearColor(0.0, 0.0, 0.0, 0);
-          glClear(GL_COLOR_BUFFER_BIT);
-        }
-
-
-        if (image->imageFormat.rowOrder == BOTTOM_TO_TOP) {
-          
-          glBitmap(0, 0, 0, 0, destX, destY, NULL);
-          glPixelZoom(zoom, zoom);
-          
-          glPixelStorei(GL_UNPACK_ROW_LENGTH, image->width);
-          glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
-          glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
-          glPixelStorei(GL_UNPACK_ALIGNMENT, 
-                                        canvas->requiredImageFormat.scanlineByteMultiple);
-          glDrawPixels(region.width, region.height,
-                                   GL_RGB, GL_UNSIGNED_BYTE,
-                                   image->imageData);
-        }
-        else {
-          bb_assert(image->imageFormat.rowOrder == TOP_TO_BOTTOM);
-
-          /*destY = canvas->height - destY - 1;*/
-          /* RasterPos is (0,0).  Offset it by (destX, destY) */
-          glBitmap(0, 0, 0, 0, destX, destY, NULL);
-          glPixelZoom(zoom, -zoom);
-         
-          glPixelStorei(GL_UNPACK_ROW_LENGTH, image->width);
-          glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
-          glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
-          glPixelStorei(GL_UNPACK_ALIGNMENT, 
-                                        canvas->requiredImageFormat.scanlineByteMultiple);
-          glDrawPixels(region.width, region.height,
-                                   GL_RGB, GL_UNSIGNED_BYTE,
-                                   image->imageData);
-        }
-
-
-         /* Offset raster pos by (-destX, -destY) to put it back to (0,0) */
-        glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
-
-        /* Have to release the image, or the cache will fill up */
-        canvas->imageCache->ReleaseImage(image);
-        
-  }
-
- 
- 
+                 GL_RGB, GL_UNSIGNED_BYTE,
+                 image->imageData);
     
+    /* Offset raster pos by (-destX, -destY) to put it back to (0,0) */
+    glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
+    
+    /* Have to release the image, or the cache will fill up */
+    canvas->imageCache->ReleaseImage(image);
+    
+  }
+  
+  
+  
+  
 }
 
 
