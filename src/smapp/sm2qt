@@ -1,0 +1,28 @@
+#!/bin/csh -f
+#
+#       Convert an sm file into an QuickTime file...
+#
+if ($#argv != 3) then
+	echo Usage: $0 smfile qtfilename fps
+	exit
+endif
+
+#
+#       On an SGI, use dmconvert
+#
+set OS = `uname`
+if (( $OS != "IRIX" ) && ( $OS != "IRIX64" )) then
+	echo "Sorry, $0 is only supported under Irix"
+	exit
+endif
+
+sm2img -form sgi $1 $2_junk_%0.5d.rgb
+dmconvert -f qt -n $2_"junk_#####.rgb"  \
+	-p video,squal=0.9,tqual=0.9,comp=qt_anim,inrate=$3,rate=$3 \
+	$2_"junk_#####.rgb" $2
+
+#
+#	Lots of files...
+#
+find . -name "$2_junk_?????.rgb" -exec rm -f {} \;
+

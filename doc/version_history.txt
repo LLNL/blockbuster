@@ -1,0 +1,67 @@
+Version History
+
+===========================================================
+version 2.6.0  Nov 2008
+Qt interface
+Other interface improvements
+Security enhancements
+
+===========================================================
+version 2.5.5 June 2005
+Various improvements to the way sidecar controls and launches blockbuster. 
+User can use keystrokes to control blockbuster.
+Sidecar launches blockbuster with DMX if desired, or without. 
+
+===========================================================
+Version 2.5.4 June 2008
+Support for MPI frame synchronization. 
+Allow image position via sidecar. 
+Nasty hanging bug fixed in pthreads. 
+Cuefiles are now human-readable and modifiable. 
+Simplified network and file operations.
+
+===========================================================
+Version 2.5.3 Aug 30 2007
+Add sm2mpg support.  
+Bugfixes. 
+
+===========================================================
+Versions 2.5.2 and 2.5.2b July 27 2007
+-----------------------------------
+Bugfix releases
+
+===========================================================
+Version 2.5.1 July 2007
+-----------------------------------
+Bugfix release
+
+===========================================================
+Version 2.5.0 June 2007
+-----------------------------------
+Included smtools
+Added Sidecar
+
+===========================================================
+Version 2.2 - April, 2004
+-----------------------------------
+Added gl_stereo rendering path
+Large file (> 2GB) support
+DMX related bug fixes
+GUI Behavior Modifications
+
+===========================================================
+Version 2.0 - August 29, 2003
+-----------------------------------
+Added GTK-based graphical interface
+Dynamic level-of-detail support
+Improved performance (better caching, threading and file reading)
+Many bug fixes
+
+===========================================================
+Version 1.0 - July 31, 2003
+-----------------------------------
+Initial release of Blockbuster
+Supports PNG, PBM, PPM, PGM, TIFF and SM file formats
+Renders to X11, OpenGL and DMX
+Non-GUI interface
+Threaded file cache

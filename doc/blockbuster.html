@@ -1,0 +1,472 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+
+	<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=utf-8">
+	<TITLE>Blockbuster</TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 1.1.0  (Linux)">
+	<META NAME="CREATED" CONTENT="20040406;20041100">
+	<META NAME="CHANGED" CONTENT="20040406;20304100">
+		<style type="text/css" media="screen"><!--
+argoption { font-weight: bold; font-style: italic; }
+--></style>
+	</HEAD>
+
+	<body lang="en-US" dir="LTR">
+		<h1 align=CENTER><b>Blockbuster</b></h1>
+		<h2 align=CENTER>Version 2.6.0 -- April 10, 2009</h2>
+		<p align=LEFT><br>
+			<br>
+		</p>
+		<hr>
+		<h2 align=LEFT>Introduction</h2>
+		<p align=LEFT>At Lawrence Livermore Laboratory and more and more places, very large displays are being used in theatres for scientific visualization. These displays contain thousands of pixels in both X and Y, which is several million pixels. To utilize these displays, very large movies are created.  These very large movies, greater than about 1 million pixels, may play back unevenly due to the inability to move them off disk fast enough to render at the optimal frame rate, usually 30 fps.</p>
+		<p> Blockbuster is an image/movie viewer/player especially designed to solve this problem for very large images and movies (high resolution and many frames) on cluster displays running the <a href="http://dmx.sf.net/">DMX</a> X server. It also displays on ordinary linux or Macintosh machines. Blockbuster reads ordinary image files, but for large movies, you are going to want to create movies using the &quot;streaming movie&quot; format, which usually has the file extension &quot;.sm&quot; associated with it. The movie will be replicated on a separate disk, attached to each backend node driving a DMX or &quot;powerwall&quot; display. Blockbuster launches a separate process on each backend node and reads only the portion needed to display that piece for each node, thus enabling scalable frame sizes.  </p>
+		<p><br>
+			For example, suppose you have a DMX display cluster constructed from a 4 by 3 array of 1280 x 1024 screens for a total of 5120 x 3072 pixels.  Next, suppose you have a scientific visualization movie which is 4000 by 3000 pixels and 10,000 frames in length (i.e. a movie far too large to fit in main memory).  If you copy the movie around to each node of the cluster, so that the nodes do not contend for disk access for the movie, then Blockbuster will let you play this movie efficiently on your display cluster using DMX technology.<br>
+		</p>
+		<p align=LEFT><br>
+			Blockbuster has standard movie playback features such as play, pause, single step, etc.  Furthermore, Blockbuster supports interactive panning and zooming with the mouse for inspecting image details.<br>
+			<br>Blockbuster has no audio support and there is no current plan to include it.<br>
+			<br>
+				The <a href="http://sourceforge.net/projects/blockbuster/">Blockbuster project</a> is hosted on <a href="http://sourceforge.net">SourceForge</a>.  For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
+<br>
+			<br>
+				Why is it called <i>Blockbuster</i>?  This program is meant for playing big movies (get it?).  Also, in DMX playback mode images are effectively broken into chunks or blocks for efficient display.  Finally, a blockbuster is a type of bomb, and the movies made initially for blockbuster had quite a bit to do with bombs.</p>
+		<p align=LEFT>So-called &quot;smtools&quot;, which are utilities for creating and manipulating streaming movies, are provided with blockbuster.  The streaming movie format is described in detail in the sm (4) manpage.  Also included with blockbuster is Sidecar,  a helper application that allows you to launch and fully control an instance of blockbuster from a remote machine, and which allows you to create a predetermined set of &quot;movie cues&quot; that can be saved and executed for a rehearsed presentation. </p>
+		<hr>
+		<h2 align=LEFT>Features</h2>
+		<p align=LEFT><b>Blockbuster</b> has the following major features:</p>
+		<ul>
+			<li>Support for high resolution images (8K x 8K pixels, or larger, for example)
+			<li>Unlimited movie length (large than RAM)
+			<li>Interactive panning and zooming with the mouse
+			<li>Support for multiple level of detail images
+			<li>Adjustable frame rate
+			<li>Supported still image formats:
+			<li>
+				<ul>
+					<li>TIFF
+				</ul>
+			<li>
+				<ul>
+					<li>PNG
+				</ul>
+			<li>
+				<ul>
+					<li>PBM
+				</ul>
+			<li>
+				<ul>
+					<li>PGM
+				</ul>
+			<li>
+				<ul>
+					<li>PPM
+				</ul>
+			<li>
+				<ul>
+					<li>SGI RGB/RGBA
+				</ul>
+			<li>Supported movie formats:
+			<li>
+				<ul>
+					<li>SM - developed by Lawrence Livermore National Labs.  SM supports tiled images, multiple level of detail and several types of intra-frame (but not inter-frame) image compression.  Tools to create sm movies from a set of images are provided with blockbuster. 
+				</ul>
+			<li>Multiple rendering paths:
+			<li>
+				<ul>
+					<li>Xlib
+				</ul>
+			<li>
+				<ul>
+					<li>OpenGL glDrawPixels and also supports stereo visuals as well
+				</ul>
+			<li>
+				<ul>
+					<li>OpenGL texture mapping
+				</ul>
+			<li>
+				<ul>
+					<li>DMX (Distributed Xinerama)
+				</ul>
+			<li>Modular architecture allows programmers to add new file formats, new renderers and new graphical user interfaces
+		</ul>
+		<b>Sidecar</b> has the following major features:
+		<ul>
+			<li type="disc">Remote control of blockbuster via TCP sockets
+			<li type="disc">Creation and playback of movie cues
+		
+			<li type="disc">See the Sidecar web page for more details.  
+		</ul>
+		<b>smtools</b> consists of the following utilities to create and manipulate streaming movies or &quot;sm files,&quot; as they are often called:
+		
+		<ul>
+			<li type="disc">ifl2sm uses the Image Format Library to create streaming movies (SGI only)
+			<li type="disc">img2sm creates streaming movies from sequences of TIFF, RAW, SGI, PNG, PNM or JPG images.
+			<li type="disc">ps2sm convert a PostScript or PDF file into a streaming movie
+			<li type="disc">sm2img creates sequences of TIFF, RAW, SGI, PNG, PNM or JPG images from streaming movies
+			<li type="disc">sm2mpg creates an MPEG movie from a streaming movie (only works if you have the LibGen library installed)
+			<li type="disc">sm2qt creates a QuickTime movie from a streaming movie (uses dmconvert, works only on IRIX machines)
+			<li type="disc">smcat allows you to combine smfiles by &quot;catting them together&quot; end to end
+			<li type="disc">smevo creates a CEI EVO movie file from an sm file and vice versa
+			<li type="disc">smtest reads and decompresses the frames of an sm movie and gives performance results.<br>
+				<br>
+			
+		</ul>
+		<hr>
+		<h2 align=LEFT>USING BLOCKBUSTER</h2>
+		<h2 align=LEFT>Command Line Options</h2>
+		<p align=LEFT>Blockbuster is invoked as follows:</p>
+		<p align=LEFT style="margin-left: 0.42in"><code>blockbuster -</code><i>flags</i> [<code>-- -</code><i>rendererFlags</i>...] <i>matchFilename...</i></p>
+		<p align=LEFT>Possible <i>flags</i> are listed below. The <i>rendererFlags</i> can change the behavior of the renderer that is being used to render each frame of the image; because each renderer has different behaviors, each has its own set of flags.</p>
+		<p align=LEFT>The <i>matchFilename</i> parameters may be either partial file names or complete file names. All <i>matchFilename</i> parameters expand to match all files that begin with the given characters. For example, given a directory <code>samples</code> that contains the image files <code>image1.tiff</code>,<code>image2.png</code>, and <code>picture.tiff</code>, behavior is as follows:</p>
+		<table border=2 cellpadding=2 cellspacing=2>
+			<tr>
+				<td>
+					<p><code>blockbuster samples/image1.tiff</code></p>
+				</td>
+				<td>
+					<p>The single image file <code>image1.tiff</code> will be opened and repeatedly displayed.</p>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<p><code>blockbuster samples/image</code></p>
+				</td>
+				<td>
+					<p>The <code>samples</code> directory will be searched for all files that begin with <code>image</code>. In this case, the files <code>samples/image1.tiff</code> and <code>samples/image2.png</code> will be displayed in succession.</p>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<p><code>blockbuster samples/</code></p>
+				</td>
+				<td>
+					<p>The <code>samples/</code> directory will be searched for all files. In this case, the files <code>samples/image1.tiff</code>, <code>samples/image2.png</code>, and <code>samples/picture.tiff</code> will all be displayed in succession.</p>
+				</td>
+			</tr>
+		</table>
+		<h3 align=LEFT>Supported Flags</h3>
+		<i><b>italics</b></i> == required argument<br>
+		Note that substrings are matched in the order listed below.  So typing -h is the same as typing -help.  Typing -n is ambiguous and undefined.  Internally, the first match found will be used, but you don't know what that will be. 
+		<table border=1 cellpadding=2 cellspacing=3>
+			<col width=300>
+			<col width=300>
+			<col width=800>
+			<tr>
+				<th >
+					<p>Flag</p>
+				</th>
+				<th>Default Value</th>
+				<th >
+					<p>Effect</p>
+				</th>
+			</tr>
+			<tr>
+				<td ><b>-backend-path <i>path</i></b></td>
+				<td>abspath($0)</td>
+				<td>specifies the path to blockbuster on the backend nodes for DMX (default is to use the same path as the front end)</td>
+			</tr>
+			<tr>
+				<td ><b>-BackendPath <i>path</i></b></td>
+				<td>same as front end</td>
+				<td>same as -backend-path &lt;path&gt;</td>
+			</tr>
+			<tr>
+				<td >
+					<p><b>-cache <i>num</i></b></p>
+				</td>
+				<td>8</td>
+				<td>
+					<p>Specify how many frames to cache – use lower values when frame size gets large</p>
+				</td>
+			</tr>
+			<tr>
+				<td >
+					<p><b><code>-d</code> <i>display</i></b></p>
+				</td>
+				<td>$DISPLAY</td>
+				<td>
+					<p>Specify the X display name (such as &quot;foobar:0&quot;)</p>
+				</td>
+			</tr>
+			<tr>
+				<td >
+					<p><b><code>-font</code> <i>fontname</i></b></p>
+				</td>
+				<td>&quot;fixed&quot;</td>
+				<td>
+					<p>Specify the name of the font to use in the rendering window for displaying the current frame, zoom, etc. information.  Default is &quot;fixed&quot;.  Use <i>xlsfonts</i> to list the fonts available on your system.</p>
+				</td>
+			</tr>
+			<tr>
+				<td ><b>-framerate (or -F) <i>rate</i></b></td>
+				<td>30.0</td>
+				<td>Limit the movie to <i>rate</i> frames per second or less.</td>
+			</tr>
+			<tr>
+				<td >
+					<p><b><code>-g</code> <i>geometry</i></b></p>
+				</td>
+				<td>fit to size of movie</td>
+				<td>
+					<p>Specify the window geometry for the X window.  Examples: &quot;+500+200&quot; to set the position, &quot;600x400&quot; to set the size or &quot;600x400+500+200&quot; to set both the size and position.</p>
+				</td>
+			</tr>
+			<tr>
+				<td >
+					<p><code><b>-help</b></code></p>
+				</td>
+				<td>n/a</td>
+				<td>
+					<p>A usage summary will be provided. All available flags will be displayed, as will all supported file formats, all supported renderers, and any additional options supported by each renderer.</p>
+					<p>The default value for any particular flag (if any) will be displayed in square brackets (e.g., &quot;[<i>value</i>]&quot;).</p>
+				</td>
+			</tr>
+			<tr>
+				<td >-loops</td>
+				<td>1</td>
+				<td>How many times to play the movie.   If you specify &quot;forever&quot; or -1, it will loop infinitely many times.  </td>
+			</tr>
+			<tr>
+				<td >
+					<p><b><code>-m</code> <i>messageLevel</i></b></p>
+				</td>
+				<td>&quot;error&quot; (&quot;debug&quot; if compiled  with DEBUG)</td>
+				<td>
+					<p>Change the verbosity of the program by changing the message level. The supported message levels are, in order of chattiness:  quiet, syserr, error, warning, info, debug.</p>
+				</td>
+			</tr>
+			<tr>
+				<td >-no-controls (or -C)</td>
+				<td>show controls</td>
+				<td>Hides the blockbuster controller interface.  Especially useful when using Sidecar.   The GUI can also be hidden or displayed by right-clicking on the movie canvas.  </td>
+			</tr>
+			<tr>
+				<td >
+					<p><b>-no-decorations (or -D)</b></p>
+				</td>
+				<td> show decorations</td>
+				<td>
+					<p>Turns off window decorations</p>
+				</td>
+			</tr>
+			<tr>
+				<td >
+					<p><code><b>-no-splash (or -S)</b></code></p>
+				</td>
+				<td>show splash screen</td>
+				<td>
+					<p>Suppress the startup splash screen.</p>
+				</td>
+			</tr>
+			<tr>
+				<td ><b>-play (or -Play)</b></td>
+				<td>do not play on load</td>
+				<td>Play the movie immediately after loading it.  </td>
+			</tr>
+			<tr>
+				<td >
+					<p><b>-preload <i>numframes</i></b></p>
+				</td>
+				<td>4</td>
+				<td>
+					<p>Specifies how many frames to preload -- use lower values when frame size gets large</p>
+				</td>
+			</tr>
+			<tr>
+				<td >
+					<p><b><code>-renderer</code> <i>name</i></b></p>
+				</td>
+				<td>gl or gltexture if supported</td>
+				<td>
+					<p>Change the method used to render images. The supported renderers (and their options) can be discovered by using the <code>-h</code> option.  Currently, <b>gl, gl_stereo, gltexture, x11</b> and <b>dmx</b> are supported. For <b>dmx</b> use <b>-R</b> to specify back-end renderer. e.g. <b>blockbuster -r dmx -R gl_stereo</b></p>
+				</td>
+			</tr>
+			<tr>
+				<td >
+					<p><b><code>-slave</code> <i>host[:port]</i></b></p>
+				</td>
+				<td>disabled by default</td>
+				<td>
+					<p>In DMX configurations, the back-end instances (one per screen) will be started with the -s option.  This specifies that blockbuster is to operate in slave mode and that the master instance of the player is running on the computer named and can be contacted on port <i>port.  </i>The default port is 7011.  This option is only needed when running DMX in manual mode.  This is rarely needed except for debugging (see &quot;Running Manually on DMX&quot; below). </p>
+				</td>
+			</tr>
+			<tr>
+				<td >
+					<p><b><code>-threads</code> <i>numThreads</i></b></p>
+				</td>
+				<td>2 (or 1 if you do not have  2 processors)</td>
+				<td>
+					<p>Change the number of threads used to preload images in the background. The default value depends on the number of processors available in your system; if your system has more than one processor, 2 threads will (by default) be used to preload images. If your system has only one processor, no threads will be used by default to preload images (i.e., all images will be loaded by the main thread).</p>
+				</td>
+			</tr>
+			<tr>
+				<td >
+					<p><b><code>-userInterface</code> <i>name</i></b></p>
+				</td>
+				<td>gtk</td>
+				<td>
+					<p>Specifies the user interface.  Two are supported:  <b>gtk</b> - a GTK-based GUI, and <b>x11</b> a keypress/mouse-only interface.  The GTK interface is the default.</p>
+				</td>
+			</tr>
+			<tr>
+				<td ><b>-version</b></td>
+				<td>off</td>
+				<td>If given, blockbuster prints the version and exits.   (version is printed anyway on startup)</td>
+			</tr>
+			<tr>
+				<td ><b>-zoom <i>scale</i></b></td>
+				<td>auto</td>
+				<td>Value of 0 or &quot;auto&quot; means set zoom to match window size (image gets bigger if window grows).  A nonzero number means keep the movie at a constant size regardless of window size.  1.0 means keep image at 100%, 1.5 means scale to 150%, etc.  </td>
+			</tr>
+		</table>
+		<p align=LEFT></p>
+		<h2 align=LEFT>Graphical User Interface Controls</h2>
+		<p align=LEFT>By default, Blockbuster uses a GTK-based GUI (this may be overridden with the -u command line option).  This GUI is shown in the image below.<br>
+			<br>
+			<img src="images/blockbuster-movie.png" alt="" border="0"></p>
+		<p align=LEFT>Figure 1:  The movie window for blockbuster on OS X. </p>
+		<p align=LEFT><img src="images/blockbuster-controls.png" alt="" height="261" width="620" border="0"></p>
+		<p align=LEFT>Figure 2:  The blockbuster movie control interface.  </p>
+		<p align=LEFT></p>
+		<p align=LEFT>The blockbuster interface contains the following elements:</p>
+		<ul>
+			<li>
+				<p align=LEFT><b>Playback controls</b> - there are buttons for playing, stopping and stepping in various increments.  If the scrub checkbox is checked, the current frame slider can be dragged to <i>scrub</i> over the movie.  </p>
+			<li>
+				<p align=LEFT><b>Framerate (FPS) control</b> - controls the frame rate.  Blockbuster will play back the movie as quickly as possible, but no faster than the current framerate setting.</p>
+			<li>
+				<p align=LEFT><b>Detail</b> - for files that have multiple levels of detail, this control selects between them.  It's actually a bias added to the automatically computed level of detail (computed from current zoom factor).  0 is the highest level of detail, 1 is half detail, 2 is quarter detail, etc.</p>
+			<li>
+				<p align=LEFT><b>Open</b> - allows you to select a new file through the file browser.</p>
+			<li><p align=LEFT><b>Center</b> - center the image in the window</p>
+			<li><p align=LEFT><b>100%</b> -- zoome to 100%</p>
+			<li><p align=LEFT><b>Fit</b> -- fit the image in the current window</p>
+			<li><p align=LEFT><b>Fill</b> -- resize the window to fit the display</p>
+			<li><p align=LEFT><b>Info</b> -- show movie properties</p>
+			<li>
+				<p align=LEFT><b>Hide</b> - hides the GUI panel.  GUI visibility is also toggled on and off by pressing '<b>i</b>' or right-clicking on the movie image.</p>
+			
+			<li><b>Zoom</b> - This zooms the image. Setting a static zoom will stop the movie from automatically resizing with the window, which is usually not what you want to do.
+		</ul>
+		<p align=LEFT>
+		</p>
+		<h2 align=LEFT>Keyboard and Mouse Controls</h2>
+		<p align=LEFT>Whether or not Blockbuster is used with a GUI, it can be controlled with the mouse and keyboard.<br>
+			<br>
+			The mouse is used to do the following:</p>
+		<ul>
+			<li>
+				<p align=LEFT style="margin-bottom: 0in"><b>Panning</b> - press the left mouse button and drag the mouse to pan over the image.</p>
+			<li>
+				<p align=LEFT><b>Zooming</b> - press the middle mouse button and drag forward/backward to zoom in/out of the image.</p>
+			
+		</ul>
+		<p align=LEFT>The following keyboard commands are recognized:</p>
+		<ul>
+			<li>
+				<p align=LEFT style="margin-bottom: 0in"><b>Right/Left arrow</b> - advance/backup by one frame.</p>
+			<li>
+				<p align=LEFT style="margin-bottom: 0in"><b>Shift + Right/Left arrow</b> - advance/backup by 20 frames.</p>
+			<li>
+				<p align=LEFT style="margin-bottom: 0in"><b>Control + Right/Left arrow</b> - advance/backup by 1/4 of movie length.</p>
+			<li>
+				<p align=LEFT style="margin-bottom: 0in"><b>Home</b> - jump to the first frame, center the image and set zoom to one</p>
+			<li>
+				<p align=LEFT style="margin-bottom: 0in"><b>End</b> - jump to the last frame in the movie</p>
+			<li>
+				<p align=LEFT style="margin-bottom: 0in"><b>Spacebar</b> - play/pause</p>
+			<li>
+				<p align=LEFT style="margin-bottom: 0in"><b>r</b> - play in reverse</p>
+			<li>
+				<p align=LEFT style="margin-bottom: 0in"><b>f </b>- zoom image to fit the window (minify only)</p>
+			<li>
+				<p align=LEFT style="margin-bottom: 0in"><b>1</b> - set zoom to 1.0</p>
+			<li>
+				<p align=LEFT style="margin-bottom: 0in"><b>c</b> - center the image in the window</p>
+			<li>
+				<p align=LEFT style="margin-bottom: 0in"><b>l/L</b> - increase/decrease the current level of detail displayed</p>
+			<li>
+				<p align=LEFT style="margin-bottom: 0in"><b>z/Z</b> - zoom in or out</p>
+			<li>
+				<p align=LEFT style="margin-bottom: 0in"><b>+/-</b> - increase or decrease the frame rate </p>
+			<li>
+				<p align=LEFT style="margin-bottom: 0in"><b>i</b> - display the GUI panel (interface) if it was hidden</p>
+			<li>
+				<p align=LEFT><b>Esc</b> - exit Blockbuster</p>
+			
+		</ul>
+		<p align=LEFT><br>
+			<br>
+		</p>
+		<hr>
+		<h2 align=LEFT>Using Blockbuster with Distributed Multihead X (DMX) Servers</h2>
+		<p align=LEFT>This section describes how to set up and use Blockbuster on a display cluster running DMX.  In this mode, you, the user, run blockbuster on the "frontend" (login) node of DMX, and blockbuster spawns a copy of itself on each "backend" DMX node.  Each backend blockbuster loads only a part of the movie, making movie viewing on large powerwalls very practical at good frame rates. </p>
+			
+	<p>Checklist / setup:</p>
+		<ol>
+			<li>
+				<p align=LEFT>DMX should already be up and running on your display cluster.? Make sure you have a  copy of DMX installed released later than July 2003.</p>
+			<li>
+				<p align=LEFT>The file to view must be accessible on all hosts using the same directory path.  For example, if you wish to view the file <b>/home/data/simulationrun1.sm </b>on your DMX display, the path <b>/home/data/simulationrun1.sm</b> must exist on all nodes.  The optimal way to do this is to copy the file to the local hard drive on each host.  This prevents contention for the same file.  </p>
+				
+		<p align=LEFT>Most cluster systems have a shared filesystem which allows all hosts to access the same files using the same paths. We don't recommend using this method as it misses the point of using blockbuster entirely, which is to avoid disk access bottlenecks by running in parallel over several disks.</p>
+			<li>
+				<p align=LEFT>The <b>BLOCKBUSTER_RSH</b> environment variable specifies the remote shell program used for starting the back-end instances of blockbuster on the cluster.  Typically, <b>BLOCKBUSTER_RSH</b> will be set to either <b>rsh</b> or <b>ssh</b> depending on your site's setup.  You should have thing set up such that either <b>rsh</b> or <b>ssh </b>can be used without entering passwords, and such that blockbuster is in your  PATH on the backend nodes.  To test this, try typing "rsh which blockbuster" and if this fails or you are prompted for a password, consult your system administrator for a workaround. </p>
+			<li>
+				<p align=LEFT>Make sure that your <b>DISPLAY</b> environment variable is set to the DMX X server.  Start an X application like <b>xterm</b> and make sure it appears on the DMX display.</p>
+			
+		</ol>
+		<p align=LEFT><br>
+			At this point, simply start Blockbuster with the <b>dmx</b> renderer:</p>
+		<p align=LEFT style="margin-left: 0.42in; margin-bottom: 0in"><b>blockbuster -r dmx mymovie.sm</b></p>
+		<p align=LEFT><br>
+			If you have compiled blockbuster with MPI support, then do this to enable more accurate MPI-based frame synchronization:</p>
+		<p align=LEFT style="margin-left: 0.42in; margin-bottom: 0in"><b>blockbuster -r dmx -mpi mymovie.sm</b></p>
+			<br>
+			The default renderer used by the back-end instances of Blockbuster is <b>gl </b>(glDrawPixels).  To use the gltexture renderer instead, use the following:
+		<p align=LEFT style="margin-left: 0.42in; margin-bottom: 0in"><b>blockbuster -r dmx  -R gltexture mymovie.sm</b></p>
+		<p align=LEFT><br>
+		</p>
+		<p align=LEFT>Blockbuster can be configured to work with different MPI launching schemes.  If you run with -mpi, blockbuster will connect to one backend node and launch $BLOCKBUSTER_MPI_SCRIPT on that host with args given in the string $BLOCKBUSTER_MPI_SCRIPT_ARGS.  Type blockbuster -help for more options.  </p>
+		<hr>
+		<h2 align=LEFT>Implementation Information</h2>
+		<p align=LEFT>This section describes some of the inner workings of Blockbuster.</p>
+		<h3 align=LEFT>Rendering</h3>
+		<p align=LEFT>There are currently five supported rendering paths (selected with the -r option):</p>
+		<ul>
+			<li>
+				<p align=LEFT style="margin-bottom: 0in"><b>x11</b> - Images are drawn with Xlib using XPutImage().  This path does not support bilinear filtering.</p>
+			<li>
+				<p align=LEFT style="margin-bottom: 0in"><b>gl</b> - Images are drawn with OpenGL's glDrawPixels() command.  Image zooming is supported, but bilinear filtering is not.  When zoomed out (i.e. minification), reduced-resolution images are used if the file format supports them.</p>
+			<li>
+				<p align=LEFT style="margin-bottom: 0in"><b>gl_stereo</b> – Same as the gl rendering path, but adds support for the SM stereo movie file; for non-stereo movies playback is every other frame</p>
+			<li>
+				<p align=LEFT style="margin-bottom: 0in"><b>gltexture</b> - Images are drawn with OpenGL by drawing a texture on a quadrilateral.  Full bilinear/trilinear filtering is supported.  When the image to draw is larger than will fit into a single OpenGL texture, tiling is used (the image is broken into pieces each rendered with a separate quadrilateral).  When zoomed out (i.e. minification), mipmapped textures are used.  Furthermore, if the file format supports multiple image resolutions, reduced resolution images will be read when possible.</p>
+			<li>
+				<p align=LEFT><b>dmx</b> - Intended for cluster displays running the DMX X server.  For each host in the cluster, a <i>back-end</i> instance of Blockbuster is started.  The <i>front-end</i> instance of the player sends commands to the back-end instances which do the actual rendering directly with the back-end servers.</p>
+			
+		</ul>
+		<h3 align=LEFT>Image caching</h3>
+		<p align=LEFT>Since Blockbuster is designed to play images much larger than will fit into main memory, an image cache is used to store and manage a subset of the frames in main memory.<br>
+			<br>
+			The cache can be threaded (if Blockbuster is run with the <b>-t</b> option, or on a multi-processor system); this allows the main Blockbuster thread to render images while the image cache threads can read and decompress upcoming images asynchronously.<br>
+			<br>
+			Even if Blockbuster runs single-threaded, the image cache will maintain recently-loaded images, to improve interactive performance while stepping back and forth through an image or panning and zooming an image.</p>
+		<h3 align=LEFT>Level Of Detail</h3>
+		<p align=LEFT>Some file formats, such as SM, may store images at multiple levels of detail.  For example, the top-most (level 0) image may be 4K x 4K pixels.  The next level of detail may be 2K x 2K pixels, and the next 1K x 1K pixels.<br>
+			<br>
+			When an image is minified (zoom &lt; 1.0) performance improves by reading and rendering a reduced level of detail.<br>
+			<br>
+			Blockbuster automatically chooses the best level of detail according to the current zoom factor and target frame rate.</p>
+		<h3 align=LEFT>DMX</h3>
+		<p align=LEFT>When running in DMX mode the front-end instance of Blockbuster doesn't actually draw anything.  Instead, it sends commands (via unix sockets) to the back-end instances of Blockbuster.  The back-end instances can use either the x11, gl or gltexture renderers to render directly with the back-end servers, selected via the -R flag.  There are no large image transfers going through DMX.  This improves performance.<br>
+			<br>
+			<br>
+		</p>
+		<h2 align=LEFT></h2>
+	</body>
+
+</HTML>

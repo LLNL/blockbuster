@@ -1,0 +1,65 @@
+'\" "
+'\" ASCI Visualization Project  "
+'\" "
+'\" Lawrence Livermore National Laboratory "
+'\" Information Management and Graphics Group "
+'\" P.O. Box 808, Mail Stop L-561 "
+'\" Livermore, CA 94551-0808 "
+'\" "
+'\" For information about this project see: "
+'\" 	http://www.llnl.gov/sccd/lc/img/  "
+'\" "
+'\" 	or contact: asciviz@llnl.gov "
+'\" "
+'\" For copyright and disclaimer information see: "
+'\"     man llnl_copyright "	
+'\" "
+'\" $Id: smtest.1,v 1.1 2007/06/13 18:59:35 wealthychef Exp $ "
+'\" $Name:  $ "
+'\" "
+.TH smtest 1
+.SH NAME
+smtest - test the integrity and performance of an sm movie file
+.SH SYNOPSIS
+smtest [options] smfilename
+.SH DESCRIPTION
+smtest reads and decompresses the frames of an sm movie and
+gives performance results.
+.SH OPTIONS
+.TP
+-nt <num>
+Use num threads for the decompression.  Default is 1.
+.TP
+-loops <num>
+Loop through the movie frames num times.  Default is 1.
+.TP
+-rect <x> <y> <dx> <dy> <xinc> <yinc>
+Select a sub-rect of the frame to be read.  The rectangle 
+is located at x,y and the number of pixels to read is given
+by dx,dy.  The spacing between pixels in the frame to be
+output as contiguous pixels is given by xinc,yinc.  The
+rectangle of the portion of the input frame to be read is 
+given by (x,y)-(x+dx*xinc,y+dy*yinc).  The output pixel
+array will be dx*dy pixels in size.
+The default value is the tuple: 0 0 framex framey 1 1 (the whole
+frame at full resolution).
+.TP
+-drect <x> <y> <dx> <dy> <xinc> <yinc>
+This option allows the user to specify a delta to be added
+to the rect specified by -rect with each frame.  Note that
+these delta numbers can be floats.  If the resulting source
+rectangle falls outside of the frame, it will be warped
+back into the frame.  If the inc and dim values will be
+truncated as needed to keep the rect inside the frame.
+.SH SEE ALSO
+ifl2sm(1), img2sm(1), smcat(1), sm2img(1), sm(4)
+.SH ORIGIN
+.RS
+ASCI Visualization Project 
+.RE
+.RS
+Lawrence Livermore National Laboratory
+.RE
+.RS
+Information Management and Graphics Group
+.RE

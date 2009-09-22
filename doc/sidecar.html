@@ -1,0 +1,182 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+	<head>
+		<meta http-equiv="content-type" content="text/html;charset=utf-8" />
+		<meta name="generator" content="Adobe GoLive" />
+		<title>Sidecar</title>
+	</head>
+
+	<body>
+		<h1 align="CENTER"><b>Sidecar</b></h1>
+		<h2 align="CENTER">Version 2.6.0 – April 10, 2009</h2>
+		<p align="LEFT"><br />
+			<br />
+		</p>
+		<hr />
+		<h2 align="LEFT">Introduction</h2>
+		<p align="LEFT">Suppose you want to present a streaming movie using blockbuster on a power wall, in conjunction with a prepared talk. You plan to start the movie and show the first frame for a few minutes while you introduce your subject. Then you will run the movie on a loop from frame 30 to frame 150 while you speak a while longer. You will then pause and talk some more.... etc. This process can be thought of as a series of cues, and that is what Sidecar does for you. The fact that sidecar talks to blockbuster on any remote node is useful since the blockbuster controls are very tiny on a large powerwall, and even reading, much less clicking those little buttons from a DMX screen can be tricky.</p>
+		<hr />
+		<p><font size="+3"><b>Usage</b></font></p>
+		<p></p>
+		<p>The sidecar interface should be intuitive and straightforward. You can launch sidecar with or without an argument, which is the name of a &quot;cues file&quot; to be opened. (See Cues below). </p>
+		<p>The first window you see if you don't open a cue file is the <b>remote control window,</b> with cues hidden. The hostname and port fields are used to connect to an instance of blockbuster. When blockbustert starts up, it prints out the port number it's listening on.  This is different each time, for security purposes.</p>
+		<p><img src="images/sidecar-remote.png" alt="" border="0" /></p>
+	<p> You can click "Launch" to launch an instance of blockbuster on the localhost or perhaps on a remote host, with or without using DMX.  If you do, you will get the following dialog, which allows you to choose the flavor and location of blockbuster you want: </P>
+		<p><img src="images/sidecar-launch-dialog.png" alt="" border="0" /></p>
+		<p>Note that password prompts are not handled yet, so the rsh command it must <strong>NOT</strong> prompt you for a password or sidecar will just hang there waiting.  This is a known issue. </P>
+		<p>If you launch or connect to an instance of blockbuster, you can see that the remote control buttons are now active and usable. The frame rate (0 in the below image) is displayed next to the FPS setting. </p>
+		<p><img src="images/sidecar-connected.png" alt="" border="0" /></p>
+		<p>If you click the &quot;Connect Keyboard&quot; checkbox, Sidecar recognizes and passes on all &quot;native&quot; blockbuster command keystrokes such as spacebar, +/-, left-right arrows, etc.. See the blockbuster documentation for a list of these and what they do. The various buttons at the top represent sidecar-specific commands that are also sent to blockbuster. Keyboard shortcuts:</p>
+		<table border="1" cellspacing="2" cellpadding="0">
+			<tr>
+				<td>Ctrl-B</td>
+				<td>Go to Beginning</td>
+			</tr>
+			<tr>
+				<td>Ctrl-H</td>
+				<td>Halt play</td>
+			</tr>
+			<tr>
+				<td>Ctrl-P</td>
+				<td>Play movie</td>
+			</tr>
+			<tr>
+				<td>Ctrl-=</td>
+				<td>Advance by one frame (+1)</td>
+			</tr>
+			<tr>
+				<td>Ctrl - -</td>
+				<td>Retreat one frame (-1)</td>
+			</tr>
+			<tr>
+				<td>Ctrl - E</td>
+				<td>Go to final frame (End)</td>
+			</tr>
+			<tr>
+				<td>Ctrl- F</td>
+				<td>Go to frame number...</td>
+			</tr>
+			<tr>
+				<td>Ctrl-O</td>
+				<td>Open cues file...</td>
+			</tr>
+			<tr>
+				<td>Ctrl-S</td>
+				<td>Save cues</td>
+			</tr>
+			<tr>
+				<td>Alt-A</td>
+				<td>Save cues as...</td>
+			</tr>
+		</table>
+		<p>If you click on &quot;Show Movie Cues...&quot; the window expands to show the Movie Cues area of the dialog. You can hide this again with the &quot;Hide Movie Cues&quot; button. </p>
+		<p></p>
+		<hr />
+		<p><font size="+3"><b>Movie Cues</b></font></p>
+		<p>If you have loaded a cuefile, then the Cues window will look something like this: </p>
+		<p><img src="images/sidecar-cues.png" alt="" border="0" /></p>
+		<p>Figure 3: Sidecar Cues window. </p>
+		<p>A movie cue can be thought of as a set of blockbuster commands. For example, you could have a cue that says, &quot;Load mymovie.sm, then move to frame 38 and start playing at 12 fps, and keep looping.&quot;</p>
+		<p>Once you create a new cue and save its state with &quot;Apply Changes,&quot; it becomes part of the list of cues and you can execute it, which makes it apply to the currently connected blockbuster.  If you are not connected to blockbuster and click "Execute", you will be prompted to launch blockbuster. Multiple cues can be selected and executed. The Loop button will loop over the selected cues, playing them over and over in sequence. This can be handy for &quot;standing demos&quot; or kiosk type displays for events. While executing one or more cues, the Execute button turns into a &quot;Stop Cues&quot; button which stops all currently executing cues from being executed and returns sidecar and blockbuster to an idle state. </p>
+		<p>If you click &quot;Save Cues&quot; you will be prompted for a file name to save the cues to.  The file must have the .cues extension to be readable by sidecar.  Sidecar can then load the cues later, say at the beginning of your demo movie, either if you specify the cues file from the command line or by clicking &quot;Load From File&quot; button.  Note that cues files are human-readable and editable and should be self-documenting.  Just follow the same format as in the file and you'll be good to go.</p>
+	<p>You can change the order of the Cues in the list with the &quot;Move&quot; buttons.  </p>
+		<p><font size="+2"><b>Meaning of the cue attributes.</b>  </font></p>
+		<p>When you click on &quot;Execute Cue,&quot; (only enabled if you are connected to blockbuster), then all of its attributes are turned into a sequence of commands to blockbuster.  The attributes are as follows. </p>
+		<table border="1" cellspacing="2" cellpadding="0">
+			<tr>
+				<td><strong><font size="+1"><b>Atribute</b></font></strong></td>
+				<td><strong><font size="+1">Meaning</font></strong></td>
+			</tr>
+			<tr>
+				<td><strong><b>Cue Name</b></strong></td>
+				<td>A handy tag to make browsing cues easier.  </td>
+			</tr>
+			<tr>
+				<td><strong><b>Load Movie</b></strong></td>
+				<td>  If this box is checked, then upon cue execution, the movie given will be loaded before the other attributes are applied.  If not, then executing the cue will apply the cue attributes to the current movie without loading a new one.  </td>
+			</tr>
+			<tr>
+				<td><strong><b>Play Movie: </b></strong></td>
+				<td>Plays the movie.  </td>
+			</tr>
+			<tr>
+				<td><strong><b>Play Backward:</b></strong></td>
+				<td>Play movie backward, when playing. This does NOT cause the movie to actually start playing, you also need to check &quot;Play Movie&quot; to do that.</td>
+			</tr>
+			<tr>
+				<td><strong><b>Show Controls:</b></strong></td>
+				<td>If you would like the blockbuster user interface to be visible when executing this cue, then check this box.  If the box is unchecked, the controls will be hidden.  </td>
+			</tr>
+			<tr>
+				<td><strong><b>Loop Once:</b></strong></td>
+				<td>Keeps playing the movie from start frame to end frame, then repeats once from the beginning to the end.  </td>
+			</tr>
+			<tr>
+				<td><strong><b>Loop Forever:</b></strong></td>
+				<td>Keeps playing the movie from start frame to end frame, then over again beginning at start frame, etc. forever.</td>
+			</tr>
+			<tr>
+				<td><strong><b>Ping Pong:</b></strong></td>
+				<td>Play forward from start to end, then backward from end to start, then forward, then backward... I'm getting dizzy just thinking about it!  </td>
+			</tr>
+			<tr>
+				<td><strong><b>full screen:</b></strong></td>
+				<td>If checked, the size fields are disabled and the movie will take the whole screen.  </td>
+			</tr>
+			<tr>
+				<td><strong><b>Frame Width/Height:</b></strong></td>
+				<td>Height and width of the image canvas (the part of the window that holds the movie images), in pixels.  -1 means to use the whole height or width available, and 0 means fit the canvas height or width to the movie image. </td>
+			</tr>
+			<tr>
+				<td><strong><b>Frame X /Y : </b></strong></td>
+				<td>Position of the window on screen.  -1 means &quot;don't move from where it's at right now.&quot;  (0,0) is the upper left corner of the display screen.  </td>
+			</tr>
+			<tr>
+				<td><strong><b>Image X /Y : </b></strong></td>
+				<td>Position of the image inside the screen relative tothe lower left corner of the window.  Negative numbers are fine.</td>
+			</tr>
+			<tr>
+				<td><strong><b>Frame Rate: </b></strong></td>
+				<td>A floating point number that limits the number of frames per second the movie plays at.  Blockbuster will try to play frames this fast, never faster, but will not skip over frames to meet the framerate, so it might not be possible to reach this number.  -1 means &quot;as fast as possible.&quot;  </td>
+			</tr>
+			<tr>
+				<td><strong><b>Zoom:</b></strong></td>
+				<td>Zoom level for the image.  1.0 is no zoom.  0.5 is half size, 2.0 is twice normal size.  </td>
+			</tr>
+			<tr>
+				<td><b>Frame Rate:</b></td>
+				<td>Sets the play speed in frames per second. </td>
+			</tr>
+			<tr>
+				<td><b>Current Frame:</b></td>
+				<td>Sets which frame the movie will be at after executing the cue. </td>
+			</tr>
+			<tr>
+				<td><strong><b>Start/End Frame: </b></strong></td>
+				<td>Which frame number (starting from 1) to play from or to. -1 means the end frame, -2 means the 2nd to last frame, etc.</td>
+			</tr>
+			<tr>
+				<td><b>Current:</b></td>
+				<td>Use the frame currently displayed in blockbuster for the Start or End frame</td>
+			</tr>
+			<tr>
+				<td><b>Reset:</b></td>
+				<td>For the Start frame, reset to 1. For the end frame, reset to the final frame.</td>
+			</tr>
+			<tr>
+				<td><b>Take Snapshot:</b></td>
+				<td>Fill in movie cue values using the current blockbuster view.  </td>
+			</tr>
+			<tr>
+				<td><strong><b>Apply Changes:</b></strong></td>
+				<td>Saves the cue into the cue list.</td>
+			</tr>
+		</table>
+		<p></p>
+		<p></p>
+		<p>That's it!  You are now ready to use sidecar with blockbuster.  </p>
+	</body>
+
+</html>

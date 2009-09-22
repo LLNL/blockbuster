@@ -1,0 +1,54 @@
+#!/bin/csh
+#
+#	ps2sm in.ps out.sm horiz_pixels  (assumes 11x8.5 "landscape" ps)
+#
+if ($#argv < 3) then
+	echo Usage: $0 "in.ps out.sm N_horiz_pixels [AA] [portrait]"
+	exit
+endif
+
+set scale = 1
+set rotate = 1
+foreach i ($argv[4-$#argv])
+	if ($i == "AA") set scale = 2
+	if ($i == "portrait") set rotate = 0
+end
+
+set x = $3
+
+if ( $scale == 2 ) then
+	set x = `echo "scale=10; ${x}*2.0" | bc -l`
+	set x = $x:r
+endif
+
+if ($rotate == 1) then
+	set r = `echo "scale=10; ${x}/11.0 " | bc -l`
+	set y = `echo "scale=10; ${r}*8.5 " | bc -l`
+else
+	set r = `echo "scale=10; ${x}/8.5 " | bc -l`
+	set y = `echo "scale=10; ${r}*11.0 " | bc -l`
+endif
+
+if ($rotate == 1) then
+	gs -q -sDEVICE=png16m -sOutputFile=$2_junk_%d.png -g${y:r}x${x} -r${r} \
+		-dNOPAUSE -dBATCH $1
+else
+	gs -q -sDEVICE=png16m -sOutputFile=$2_junk_%d.png -g${x}x${y:r} -r${r} \
+		-dNOPAUSE -dBATCH $1
+endif
+
+if ($rotate == 1) then
+	img2sm -gz -form png -rotate 90 $2_junk_%d.png $2
+else
+	img2sm -gz -form png $2_junk_%d.png $2
+endif
+
+if ( $scale == 2 ) then
+	set sx = `echo "scale=10; ${x}/2.0 " | bc -l`
+	set sy = `echo "scale=10; ${y}/2.0 " | bc -l`
+	smcat -gz -filter -dst ${sx} ${sy} $2_junk.sm $2
+	mv -f $2_junk.sm $2
+endif
+
+rm -f $2_junk_*.png
+

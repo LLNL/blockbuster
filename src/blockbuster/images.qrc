@@ -1,0 +1,16 @@
+ <!DOCTYPE RCC><RCC version="1.0">
+ <qresource>
+ 	<file>images/backStep.png</file>
+    	<file>images/center.png</file>
+	<file>images/end.png</file>
+	<file>images/fit.png</file>
+	<file>images/fullSize.png</file>
+	<file>images/open.png</file>
+	<file>images/play.png</file>
+	<file>images/quit.png</file>
+	<file>images/reverse.png</file>
+	<file>images/start.png</file>
+	<file>images/step.png</file>
+	<file>images/stop.png</file>
+ </qresource>
+ </RCC>
