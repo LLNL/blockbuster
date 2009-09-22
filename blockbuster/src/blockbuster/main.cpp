@@ -134,7 +134,7 @@ void usage(void) {
   fprintf(stderr, "\t    (supported in 'gtk', 'x11' user interfaces)\n");
   
   fprintf(stderr, "-stereo: short for -r gl_stereo, unless -dmx is given, in which case it is short for -R gl_stereo.\n");
-  fprintf(stderr, "-dmxstereo: short for -r dmx -R gl_stereo.\n");
+  fprintf(stderr, "-dmxstereo: short for -r dmx -stereo.\n");
   fprintf(stderr, "-threads <num> specifies how many threads to use for reading from disk.\n");
   fprintf(stderr, "-userInterface <name> specifies the user interface to use:\n");
   fprintf(stderr, "\tgtk: Hybrid GTK/X11 user interface using a GTK toolbar and an X11 window\n");
@@ -457,13 +457,11 @@ static void ParseOptions(int &argc, char *argv[])
           .arg(opt->masterHost).arg(opt->masterPort));  
   }
   
-  //if (opt->preloadFrames >= opt->frameCacheSize - 1)
-  //  opt->frameCacheSize = opt->preloadFrames + 2;
-  if (opt->frameCacheSize < opt->preloadFrames) {
+  if (opt->frameCacheSize < opt->preloadFrames+1) {
     DEBUGMSG("Need to adjust the frame cache size to a larger value, from %d to %d", opt->frameCacheSize, opt->preloadFrames * 4); 
     opt->frameCacheSize = opt->preloadFrames * 4;
   }
-
+  DEBUGMSG("Preload is %d and cache size is %d\n", opt->preloadFrames, opt->frameCacheSize); 
 
   /* We've read all the command line options, so everything is set.
    * Pull out some of the information we'll need later.
