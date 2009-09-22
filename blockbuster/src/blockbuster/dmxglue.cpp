@@ -92,12 +92,13 @@ DMXSlave::DMXSlave(QString hostname, QTcpSocket *mSocket, int preloadFrames):
   mPreloadFrames(preloadFrames), mRemoteHostname(hostname.toStdString()), 
   mHaveCanvas(false), 
   mCurrentFrame(0),  mLastSwapID(-1), 
-  mSlaveAwake(false), 
+  mSlaveAwake(false), mShouldDisconnect(false), 
   mSlaveSocket(mSocket), mSlaveProcess(NULL) {
-  QObject::connect(mSocket, 
-                   SIGNAL(stateChanged(QAbstractSocket::SocketState)), 
-                   this, 
-                   SLOT(SlaveSocketStateChanged(QAbstractSocket::SocketState ))); 
+  /* QObject::connect(mSocket, 
+     SIGNAL(stateChanged(QAbstractSocket::SocketState)), 
+     this, 
+     SLOT(SlaveSocketStateChanged(QAbstractSocket::SocketState ))); 
+  */ 
   QObject::connect(mSocket, SIGNAL(disconnected()), 
                    this, SLOT(SlaveSocketDisconnected())); 
   QObject::connect(mSocket, SIGNAL(error(QAbstractSocket::SocketError)), 
@@ -135,9 +136,10 @@ DMXSlave::~DMXSlave() {
 
 //=========================================================================
 void DMXSlave::SlaveSocketDisconnected(){
-  // is this so bad?  I don't know why I need it.   
-  //AddMessageToMovieQueue(MovieEvent(MOVIE_SLAVE_EXIT)); 
   DEBUGMSG("SlaveSocketDisconnected: host %s", mRemoteHostname.c_str());
+  if (!mShouldDisconnect) {
+    emit SlaveDisconnect(this); 
+  }
   return; 
 }
 
@@ -148,15 +150,19 @@ void DMXSlave::SlaveSocketError(QAbstractSocket::SocketError ){
            mRemoteHostname.c_str(), 
            (const char *)mSlaveSocket->errorString().toAscii(), 
            (int)mSlaveSocket->state());
+  if (!mShouldDisconnect) {
+    emit SlaveDisconnect(this); 
+  }
   return; 
 }
 
 
 //=========================================================================
-void DMXSlave::SlaveSocketStateChanged(QAbstractSocket::SocketState state) {
+/*void DMXSlave::SlaveSocketStateChanged(QAbstractSocket::SocketState state) {
   DEBUGMSG("SlaveSocketStateChanged: host %s, state %d", mRemoteHostname.c_str(), (int)state); 
   return; 
-}
+  }
+*/ 
 
 //=========================================================================
 int DMXSlave::EventFromMessage(const QString &, MovieEvent &) {
@@ -267,12 +273,20 @@ void DMXSlave::SendMessage(QString msg) {
   return; 
 }
 
+
+//  =============================================================
+//  End DMXSlave
+//  =============================================================
+
+
+//  =============================================================
+//  SlaveServer -- launch and connect remote slaves at startup
+//  =============================================================
 //====================================================================
-// static member function to launch a slave and give the resulting process to gSlaveServer to shepherd
-QProcess *DMXSlave::LaunchSlave(QString hostname, int port, 
-                                const ProgramOptions *options) {
+// launch a slave and love it forever
+void SlaveServer::LaunchSlave(QString hostname) {
   
-  DEBUGMSG(QString("LaunchSlave(%1, %2, options)").arg(hostname).arg(port)); 
+  DEBUGMSG(QString("LaunchSlave(%1)").arg(hostname)); 
   QProcess *slaveProcess = new QProcess; 
   
   QString rshCommand("rsh"); 
@@ -283,7 +297,7 @@ QProcess *DMXSlave::LaunchSlave(QString hostname, int port,
   QString localHostname = QHostInfo::localHostName(); 
   if (localHostname == "") {
     ERROR("DMXSlave::Launch -- cannot determine local host name"); 
-    return NULL; 
+    return ; 
   }
   
   if (gRenderInfo->mBackendRenderer == "") {
@@ -291,26 +305,26 @@ QProcess *DMXSlave::LaunchSlave(QString hostname, int port,
   }
   
   //===============================================================
-  if (options->slaveLaunchMethod == "mpi") {
+  if (mOptions->slaveLaunchMethod == "mpi") {
     /* rsh to the backend node and run mpiScript with mpiScriptArg as args */ 
     QStringList args; 
     args << hostname  
-         << options->mpiScript << options->mpiScriptArgs
-         << options->executable;
-    if  (options->messageLevel && !strcmp(options->messageLevel->name,"debug")) {
+         << mOptions->mpiScript << mOptions->mpiScriptArgs
+         << mOptions->executable;
+    if  (mOptions->messageLevel && !strcmp(mOptions->messageLevel->name,"debug")) {
       args << " -messageLevel debug";
     } 
-    if (options->readerThreads > 0) {
-      args << QString(" -threads %1 ").arg(options->readerThreads);
+    if (mOptions->readerThreads > 0) {
+      args << QString(" -threads %1 ").arg(mOptions->readerThreads);
     } 
-    if (options->frameCacheSize > 0) {
-      args << QString(" -cache %1 ").arg(options->frameCacheSize);
+    if (mOptions->frameCacheSize > 0) {
+      args << QString(" -cache %1 ").arg(mOptions->frameCacheSize);
     } 
-    if (options->preloadFrames > 0) {
-      args << QString(" -preload %1 ").arg(options->preloadFrames);
+    if (mOptions->preloadFrames > 0) {
+      args << QString(" -preload %1 ").arg(mOptions->preloadFrames);
     } 
       
-    args  <<  " -slave " <<  QString("%1:%2:mpi").arg(localHostname).arg(port)              
+    args  <<  " -slave " <<  QString("%1:%2:mpi").arg(localHostname).arg(mPort)              
           << "-u" <<  "x11"  // no reason to have GTK up and it screws up stereo
           << "-r" << gRenderInfo->mBackendRenderer ;
     
@@ -323,14 +337,14 @@ QProcess *DMXSlave::LaunchSlave(QString hostname, int port,
     slaveProcess->start(rshCommand, args); 
     
   }  
-  else if (options->slaveLaunchMethod == "rsh") {
+  else if (mOptions->slaveLaunchMethod == "rsh") {
 	// Qt book p 289: 
 	QStringList args; 
-	args << hostname  << options->executable
+	args << hostname  << mOptions->executable
          << "-u" <<  "x11" // no reason to have GTK up and it screws up stereo
          << "-r" << gRenderInfo->mBackendRenderer  
          << "-messageLevel debug -slave" 
-         << QString("%1:%2").arg(localHostname).arg(port)
+         << QString("%1:%2").arg(localHostname).arg(mPort)
          << QString(" >~/.blockbuster/slave-%1.out 2>&1").arg(localHostname);
 	INFO(QString("Running command('%1 %2')\n")
          .arg(rshCommand).arg(args.join(" ")));
@@ -338,23 +352,17 @@ QProcess *DMXSlave::LaunchSlave(QString hostname, int port,
 	slaveProcess->start(rshCommand, args);
 	
   }
-  else if (options->slaveLaunchMethod == "manual") {
+  else if (mOptions->slaveLaunchMethod == "manual") {
 	/* give instructions for manual start-up */
-	printf(QString("Here is the command to start blockbuster on host 1:  'blockbuster -s %2:%3 -r %4 -d $DMX_DISPLAY' \n").arg( hostname).arg( localHostname).arg( port).arg( gRenderInfo->mBackendRenderer).toAscii());
+	printf(QString("Here is the command to start blockbuster on host 1:  'blockbuster -s %2:%3 -r %4 -d $DMX_DISPLAY' \n").arg( hostname).arg( localHostname).arg(mPort).arg( gRenderInfo->mBackendRenderer).toAscii());
   }
-  return slaveProcess;
+  return ;
 }
 
-
-//  =============================================================
-//  End DMXSlave
-//  =============================================================
-
-
-//  =============================================================
-//  SlaveServer -- launch and connect remote slaves at startup
-//  =============================================================
 void SlaveServer::SlaveConnected() {
+  /*!
+    Called when a slave launched previously connects to us
+  */ 
   /*  Match the slave to one of the stored DMXDisplays  */ 
   DEBUGMSG("SlaveConnected called"); 
   QTcpSocket *theSocket = mSlaveServer.nextPendingConnection(); 
@@ -401,10 +409,115 @@ void SlaveServer::SlaveConnected() {
   }
 }
 
+void SlaveServer::UnexpectedDisconnect(DMXSlave *theSlave) {
+  ERROR(QString("Slave  host %1 disconnected unexpectedly")
+        .arg(QString::fromStdString(theSlave->GetHost())));
+  exit(1); 
+}
+
 //  =============================================================
 //  END SlaveServer 
 //  =============================================================
  
+
+//============================================================
+
+MovieStatus dmx_Initialize(Canvas *canvas, const ProgramOptions *options) {
+  DMXRendererGlue *glueInfo = (DMXRendererGlue *)canvas->gluePrivateData;
+  uint16_t i;
+  DEBUGMSG("dmx_Initialize()"); 
+  gRenderInfo = new RenderInfo(options); 
+  
+  if(options->backendRendererName != "") {
+    gRenderInfo->mBackendRenderer = options->backendRendererName;
+    QString msg("User specified renderer %1 for the backend\n"); 
+    cerr << msg.toStdString(); 
+    INFO(msg.arg(gRenderInfo->mBackendRenderer));
+  }
+  else {
+    QString msg("No user specified backend renderer.  Using default.\n");
+    INFO(msg);
+  }
+  
+  /* Plug in our special functions for canvas manipulations.
+   * We basically override all the functions set in CreateXWindow.
+   */
+  canvas->ImageDataAllocator = DefaultImageDataAllocator;
+  canvas->ImageDataDeallocator = DefaultImageDataDeallocator;
+  canvas->SetFrameList = dmx_SetFrameList;
+  canvas->Render = dmx_Render;
+  canvas->Resize = dmx_Resize;
+  canvas->Move = dmx_Move;
+  canvas->DestroyRenderer = dmx_DestroyRenderer;
+  canvas->SwapBuffers = dmx_SwapBuffers;
+  /* If the UserInterface implements this routine, we should not use ours */
+  if (canvas->DrawString == NULL) { 
+    canvas->DrawString = dmx_DrawString;
+  }
+  
+  /* Get DMX info */
+  if (IsDMXDisplay(glueInfo->display)) {
+    /* This will reset many of the values in gRenderInfo */
+    GetBackendInfo(canvas);
+  }
+  else {
+#ifdef FAKE_DMX
+    FakeBackendInfo(canvas);
+#else
+    ERROR("'%s' is not a DMX display, exiting.",
+          DisplayString(glueInfo->display));
+    exit(1);
+#endif
+  }
+  for (i = 0; i < gRenderInfo->dmxScreenInfos.size(); i++) {
+    QHostInfo info = QHostInfo::fromName(QString(gRenderInfo->dmxScreenInfos[i]->displayName).split(":")[0]);
+    QHostAddress address = info.addresses().first();
+    DEBUGMSG(QString("initializeing display name from %1 to %2 with result %3").arg(gRenderInfo->dmxScreenInfos[i]->displayName).arg(info.hostName()).arg(address.toString())); 
+    gRenderInfo->dmxHostAddresses.push_back(address); 
+    DEBUGMSG(QString("put on stack as %1").arg(gRenderInfo->dmxHostAddresses[i].toString())); 
+  }
+  /* Get a socket connection for each back-end instance of the player.
+     For each dmxScreenInfo, launch one slave and create one QHostInfo from the name.
+     Note that the slave will not generally match the HostInfo... we don't know
+     what order the slaves will connect back to us.  That's in fact the point of 
+     creating the QHostInfo in the first place.
+  */ 
+  DEBUGMSG("Launching slaves..."); 
+  
+  gRenderInfo->mSlaveServer.setNumDMXDisplays(gRenderInfo->dmxScreenInfos.size());
+  for (i = 0; i < gRenderInfo->dmxScreenInfos.size(); i++) {
+    
+    if (i==0 || options->slaveLaunchMethod != "mpi") {
+      QString host(gRenderInfo->dmxScreenInfos[i]->displayName);
+      /* remove :x.y suffix */
+      if (host.contains(":")) {
+        host.remove(host.indexOf(":"), 100); 
+      }
+      
+      gRenderInfo->mSlaveServer.LaunchSlave(host);
+    }
+  }
+  
+  /*!
+    Wait for all slaves to phone home
+  */ 
+  uint64_t msecs = 0;
+  while (!gRenderInfo->mSlaveServer.slavesReady() && msecs < 30000) {// 30 secs
+    //gCoreApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+    gCoreApp->processEvents();
+    gRenderInfo->mSlaveServer.QueueSlaveMessages(); 
+    msecs += 10; 
+    usleep(10000); 
+  }
+  if (!gRenderInfo->mSlaveServer.slavesReady()) {
+    ERROR("Slaves not responding after 30 seconds");
+    return MovieFailure; 
+  }   
+  
+  UpdateBackendCanvases(canvas);
+  
+  return MovieSuccess; /* OK */
+}
 
 
 /*!
@@ -460,8 +573,7 @@ void ClearScreenInfos(void) {
 /*
  * Get the back-end window information for the given window on a DMX display.
  */
-static void
-GetBackendInfo(Canvas *canvas)
+void GetBackendInfo(Canvas *canvas)
 {
   DMXRendererGlue *glueInfo = (DMXRendererGlue *)canvas->gluePrivateData;
   
@@ -508,8 +620,7 @@ GetBackendInfo(Canvas *canvas)
 
 #ifdef FAKE_DMX
 
-static void
-FakeBackendInfo(Canvas *canvas)
+void FakeBackendInfo(Canvas *canvas)
 {
     
 
@@ -603,8 +714,7 @@ FakeBackendInfo(Canvas *canvas)
 /*
  * Check if display is on a DMX server.  Return 1 if true, 0 if false.
  */
-static int
-IsDMXDisplay(Display *dpy)
+int IsDMXDisplay(Display *dpy)
 {
    Bool b;
    int major, event, error;
@@ -669,8 +779,7 @@ void dmx_SetupPlay(int play, int preload,
   return; 
 }
  
- static void
-   dmx_DestroyRenderer(Canvas *canvas){
+void   dmx_DestroyRenderer(Canvas *canvas){
    if (!gRenderInfo->numValidWindowInfos) return; 
    if (canvas != NULL) {
 	 
@@ -697,8 +806,7 @@ void dmx_SetupPlay(int play, int preload,
  * Also, update the subwindow sizes and positions as needed.
  * This is called when we create a canvas or move/resize it.
  */
-static void
-UpdateBackendCanvases(Canvas *canvas)
+void UpdateBackendCanvases(Canvas *canvas)
 {
     
    if (!gRenderInfo->numValidWindowInfos) return; 
@@ -753,8 +861,7 @@ UpdateBackendCanvases(Canvas *canvas)
 
 
 
-static void
-dmx_Resize(Canvas *canvas, int newWidth, int newHeight, int cameFromX)
+void dmx_Resize(Canvas *canvas, int newWidth, int newHeight, int cameFromX)
 {
     
 
@@ -776,8 +883,7 @@ dmx_Resize(Canvas *canvas, int newWidth, int newHeight, int cameFromX)
 }
 
 
-static void
-dmx_Move(Canvas *canvas, int newX, int newY, int cameFromX)
+void dmx_Move(Canvas *canvas, int newX, int newY, int cameFromX)
 {
   /* OLD command (by BP?) 
      nothing, Resize() should also have been called in response to
@@ -806,10 +912,9 @@ dmx_Move(Canvas *canvas, int newX, int newY, int cameFromX)
  * clip the <imageRegion> according to <vis> (the visible region on a
  * particular screen.
  */
-static void
-ClipImageRegion(int destX, int destY, const Rectangle *imageRegion,
-                const XRectangle *vis, float zoom,
-                int *destXout, int *destYout, Rectangle *regionOut)
+void ClipImageRegion(int destX, int destY, const Rectangle *imageRegion,
+                     const XRectangle *vis, float zoom,
+                     int *destXout, int *destYout, Rectangle *regionOut)
 {
     int dx, dy;
 
@@ -939,10 +1044,9 @@ static int PrevDestX = 0;
 static int PrevDestY = 0;
 static float PrevZoom = 1.0;
 
-static void
-dmx_Render(Canvas *, int frameNumber,
-           const Rectangle *imageRegion,
-           int destX, int destY, float zoom, int lod)
+void dmx_Render(Canvas *, int frameNumber,
+                const Rectangle *imageRegion,
+                int destX, int destY, float zoom, int lod)
 {
     
   if (!gRenderInfo->numValidWindowInfos) return; 
@@ -999,6 +1103,7 @@ dmx_Render(Canvas *, int frameNumber,
             ClipImageRegion(destX, destY, imageRegion, vis, zoom,
                             &newDestX, &newDestY, &newRegion);
 			
+			gRenderInfo->mSlaveServer.mActiveSlaves[scrn]->SetCurrentFrame(frameNumber); 
             gRenderInfo->mSlaveServer.mActiveSlaves[scrn]->
 			  SendMessage(QString("Render %1 %2 %3 %4 %5 %6 %7 %8 %9")
 						  .arg(frameNumber)
@@ -1007,14 +1112,12 @@ dmx_Render(Canvas *, int frameNumber,
 						  .arg(newDestX) .arg(newDestY)
 						  .arg(zoom).arg(lod));
 
-			gRenderInfo->mSlaveServer.mActiveSlaves[scrn]->SetCurrentFrame(frameNumber); 
 
         }
     }
 }
 
-static void 
-dmx_DrawString(Canvas *canvas, int row, int column, const char *str)
+void  dmx_DrawString(Canvas *canvas, int row, int column, const char *str)
 {
   if (!gRenderInfo->numValidWindowInfos) return; 
     DMXRendererGlue *glueInfo = (DMXRendererGlue *) canvas->gluePrivateData;
@@ -1043,7 +1146,7 @@ dmx_DrawString(Canvas *canvas, int row, int column, const char *str)
 }
 
 
-static void dmx_SwapBuffers(Canvas *canvas){
+void dmx_SwapBuffers(Canvas *canvas){
   static int32_t swapID = 0; 
   if (!gRenderInfo->numValidWindowInfos) return; 
 
@@ -1124,116 +1227,6 @@ void dmx_SpeedTest(void) {
     theSlave->SendMessage("SpeedTest"); 
   }
   return; 
-}
-
-//============================================================
-
- MovieStatus dmx_Initialize(Canvas *canvas, const ProgramOptions *options) {
-    DMXRendererGlue *glueInfo = (DMXRendererGlue *)canvas->gluePrivateData;
-    uint16_t i;
-    int port;
-    DEBUGMSG("dmx_Initialize()"); 
-    gRenderInfo = new RenderInfo(options); 
-
-    if(options->backendRendererName != "") {
-      gRenderInfo->mBackendRenderer = options->backendRendererName;
-	  QString msg("User specified renderer %1 for the backend\n"); 
-	  cerr << msg.toStdString(); 
-      INFO(msg.arg(gRenderInfo->mBackendRenderer));
-    }
-    else {
-	  QString msg("No user specified backend renderer.  Using default.\n");
-      INFO(msg);
-    }
-    
-    /* Plug in our special functions for canvas manipulations.
-     * We basically override all the functions set in CreateXWindow.
-     */
-    canvas->ImageDataAllocator = DefaultImageDataAllocator;
-    canvas->ImageDataDeallocator = DefaultImageDataDeallocator;
-    canvas->SetFrameList = dmx_SetFrameList;
-    canvas->Render = dmx_Render;
-    canvas->Resize = dmx_Resize;
-    canvas->Move = dmx_Move;
-    canvas->DestroyRenderer = dmx_DestroyRenderer;
-    canvas->SwapBuffers = dmx_SwapBuffers;
-    /* If the UserInterface implements this routine, we should not use ours */
-    if (canvas->DrawString == NULL) { 
-        canvas->DrawString = dmx_DrawString;
-    }
-
-    /* Get DMX info */
-    if (IsDMXDisplay(glueInfo->display)) {
-        /* This will reset many of the values in gRenderInfo */
-        GetBackendInfo(canvas);
-    }
-    else {
-#ifdef FAKE_DMX
-        FakeBackendInfo(canvas);
-#else
-        ERROR("'%s' is not a DMX display, exiting.",
-                DisplayString(glueInfo->display));
-        exit(1);
-#endif
-    }
-    for (i = 0; i < gRenderInfo->dmxScreenInfos.size(); i++) {
-      QHostInfo info = QHostInfo::fromName(QString(gRenderInfo->dmxScreenInfos[i]->displayName).split(":")[0]);
-      QHostAddress address = info.addresses().first();
-      DEBUGMSG(QString("initializeing display name from %1 to %2 with result %3").arg(gRenderInfo->dmxScreenInfos[i]->displayName).arg(info.hostName()).arg(address.toString())); 
-      gRenderInfo->dmxHostAddresses.push_back(address); 
-      DEBUGMSG(QString("put on stack as %1").arg(gRenderInfo->dmxHostAddresses[i].toString())); 
-    }
-    /* Get a socket connection for each back-end instance of the player.
-     */
-    /* use of port 0 will cause bind to pick one for us, which is fine */
-    port = 0;
-    /* for a fixed port use
-    port = opt->masterPort;
-    */
-    vector <DMXSlave *>tmpSlaveList; 
-    vector <QHostInfo> tmpHostInfos; 
-    QString portList; // ports the slaves are listening on 
-
-    /* for each dmxScreenInfo, launch one slave and create one QHostInfo from the name.
-       Note that the slave will not generally match the HostInfo... we don't know
-       what order the slaves will connect back to us.  That's in fact the point of 
-       creating the QHostInfo in the first place.
-    */ 
-    DEBUGMSG("Launching slaves..."); 
-
-    gRenderInfo->mSlaveServer.setNumDMXDisplays(gRenderInfo->dmxScreenInfos.size());
-    for (i = 0; i < gRenderInfo->dmxScreenInfos.size(); i++) {
-      
-      if (i==0 || options->slaveLaunchMethod != "mpi") {
-        QString host(gRenderInfo->dmxScreenInfos[i]->displayName);
-        /* remove :x.y suffix */
-        if (host.contains(":")) {
-          host.remove(host.indexOf(":"), 100); 
-        }
-        
-        DMXSlave::LaunchSlave(host, gRenderInfo->mSlaveServer.mPort, options);
-      }
-    }
-    
-    /*!
-	  Wait for all slaves to phone home
-    */ 
-    uint64_t msecs = 0;
-    while (!gRenderInfo->mSlaveServer.slavesReady() && msecs < 30000) {// 30 secs
-      //gCoreApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-      gCoreApp->processEvents();
-      gRenderInfo->mSlaveServer.QueueSlaveMessages(); 
-      msecs += 10; 
-      usleep(10000); 
-    }
-    if (!gRenderInfo->mSlaveServer.slavesReady()) {
-      ERROR("Slaves not responding after 30 seconds");
-      return MovieFailure; 
-    }   
-    
-    UpdateBackendCanvases(canvas);
-
-    return MovieSuccess; /* OK */
 }
 
 
