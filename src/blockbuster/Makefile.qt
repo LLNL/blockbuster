@@ -1,5 +1,0 @@
-include ../config/config
-
-include Makefile.qt.include
-
-# DO NOT DELETE
