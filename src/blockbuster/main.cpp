@@ -457,9 +457,11 @@ static void ParseOptions(int &argc, char *argv[])
           .arg(opt->masterHost).arg(opt->masterPort));  
   }
   
-  if (opt->frameCacheSize < opt->preloadFrames+1) {
+  if (opt->frameCacheSize < opt->preloadFrames+1 || 
+      (doStereo && opt->frameCacheSize < 2*opt->preloadFrames+1)) {
     DEBUGMSG("Need to adjust the frame cache size to a larger value, from %d to %d", opt->frameCacheSize, opt->preloadFrames * 4); 
-    opt->frameCacheSize = opt->preloadFrames * 4;
+    if (doStereo) opt->frameCacheSize = opt->preloadFrames * 4 + 1;
+    else opt->frameCacheSize = opt->preloadFrames * 2 + 1;
   }
   DEBUGMSG("Preload is %d and cache size is %d\n", opt->preloadFrames, opt->frameCacheSize); 
 
