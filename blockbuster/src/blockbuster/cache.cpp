@@ -518,7 +518,7 @@ CachedImage *ImageCache::GetCachedImageSlot(uint32_t newFrameNumber)
       return NULL;
     }
     
-    CACHEDEBUG("Removing frame %u to make room for %u  max %u\n", 
+    CACHEDEBUG("Removing frame %u to make room for %u  max %u", 
                imageSlot->frameNumber, newFrameNumber, mHighestFrameNumber);
     Print();
 
@@ -685,7 +685,7 @@ CachedImage *ImageCache::FindImage(uint32_t frame, uint32_t lod) {
        i++, cachedImage++) {
     if (cachedImage->loaded &&
         cachedImage->frameNumber == frame &&
-        cachedImage->levelOfDetail == lod) {
+        cachedImage->levelOfDetail == lod && cachedImage->lockCount > 0) {
       CACHEDEBUG("Found frame number %d", frame); 
       return cachedImage;
     }
@@ -982,11 +982,14 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
     return image;
 }
 
-/* This routine unlocks the specified image, so that its
- * entry can be re-used (if no one else is using it).  The
- * actual image stays around; it will only actually be deleted
+/* This routine is poorly named.  It unlocks the specified image, so that its
+ * entry can be re-used, but only "if no one else is using it", 
+ * whatever that means.  The entire cache needs a rewrite.  
+ * Callers should not need to understand the cache internals to use it.  
+ * Encapsulation is a problem here.  
+ * Unfortunately, the actual image stays around; it will only actually be deleted
  * if the cache is destroyed or if the space is required
- * for another image.
+ * for another image.  This makes it hard to know when an image is actually released.  
  */
 void ImageCache::ReleaseImage(Image *image)
 {
@@ -1014,6 +1017,7 @@ void ImageCache::ReleaseImage(Image *image)
 	    }
 	    else {
 		cachedImage->lockCount--;
+        CACHEDEBUG("Image for frame %d has new lock count %d", cachedImage->frameNumber, cachedImage->lockCount); 
 	    }
 	    if (mNumReaderThreads > 0) {
           unlock("image released", __FILE__, __LINE__); 
