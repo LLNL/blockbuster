@@ -3,12 +3,13 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 
 ================================================================================
 VERSION 2.6.3b
-Sep 4, 2009
+??? 
 -- fixed a regression preventing stereo movies from being stereo
--- Fixed a bug causing crashes from recursion in Qt widgets.  
+-- reduced Qt widget recursion
+-- fixed a crashing bug involving improperly deleting frames before they are used
 
 ================================================================================
-VERSION 2.6.3
+VERSION 2.6.3a
 June 29, 2009
 -- Rewrote smlib to remove ALL mutexes and Direct IO technology references. 
 -- Fixed a bug causing cache frames to be invalidated inappropriately, so causing very slow playback.  
