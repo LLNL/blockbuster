@@ -3,10 +3,10 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 
 ================================================================================
 VERSION 2.6.3b
-??? 
+September 22, 2009
 -- fixed a regression preventing stereo movies from being stereo
 -- reduced Qt widget recursion
--- fixed a crashing bug involving improperly deleting frames before they are used
+-- fixed a couple of bugs in the cache.  One caused crashes when frames were deleted improperly, and one caused hangs when the cache filled with frames that should be deleted.
 
 ================================================================================
 VERSION 2.6.3a
