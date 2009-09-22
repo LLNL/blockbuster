@@ -685,8 +685,7 @@ CachedImage *ImageCache::FindImage(uint32_t frame, uint32_t lod) {
        i++, cachedImage++) {
     if (cachedImage->loaded &&
         cachedImage->frameNumber == frame &&
-        cachedImage->levelOfDetail == lod/* && cachedImage->lockCount > 0*/) {
-      if (cachedImage->lockCount == 0)  cachedImage->lockCount = 1;
+        cachedImage->levelOfDetail == lod) {
       CACHEDEBUG("Found frame number %d", frame); 
       return cachedImage;
     }
@@ -795,15 +794,16 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
 		cachedImage->requestNumber = mRequestNumber;
 		//cachedImage->lockCount++;
 		if (mNumReaderThreads > 0) {
-          unlock("found interesting frame", __FILE__, __LINE__); 
+          cachedImage->lockCount = 1;
+          unlock("found and locked interesting frame", __FILE__, __LINE__); 
 		}
         CACHEDEBUG("Returning found image %d", frameNumber); 
 		return cachedImage->image;
       }
       else {
         CACHEDEBUG("Frame %d does not fully match, so augment rectangle", frameNumber); 
+        if (cachedImage->lockCount) cachedImage->lockCount=0;
         region = RectUnionRect(&cachedImage->image->loadedRegion, &region);
-        
       }
 	}
     CACHEDEBUG("Frame %d not found, look for it in queues", frameNumber); 
@@ -978,7 +978,7 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
     imageSlot->lockCount = 1;
     imageSlot->requestNumber = mRequestNumber;
     if (mNumReaderThreads > 0) {
-      unlock("image stored successfully", __FILE__, __LINE__); 
+      unlock("image stored and locked successfully", __FILE__, __LINE__); 
     }
     return image;
 }
@@ -994,42 +994,42 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
  */
 void ImageCache::ReleaseImage(Image *image)
 {
-    register int i;
-    register CachedImage *cachedImage;
-    CACHEDEBUG("ReleaseImage %d", image->frameNumber); 
-    //int rv;
-    /* Look for the given image in the cache. */
-    if (mNumReaderThreads > 0) {
-      lock("releasing an image", __FILE__, __LINE__);
-    }
-    cachedImage = mCachedImages;
-    for (
-	i = 0, cachedImage = mCachedImages; 
-	i < mMaxCachedImages; 
-	i++, cachedImage++
-    ) {
+  register int i;
+  register CachedImage *cachedImage;
+  CACHEDEBUG("ReleaseImage %d", image->frameNumber); 
+  //int rv;
+  /* Look for the given image in the cache. */
+  if (mNumReaderThreads > 0) {
+    lock("releasing an image", __FILE__, __LINE__);
+  }
+  cachedImage = mCachedImages;
+  for (
+       i = 0, cachedImage = mCachedImages; 
+       i < mMaxCachedImages; 
+       i++, cachedImage++
+       ) {
 	if (cachedImage->image == image) {
       CACHEDEBUG("Releasing frame %d from cache", cachedImage->frameNumber); 
-	    /* Unlock it and return. */
-	    if (cachedImage->lockCount == 0) {
-          CACHEDEBUG("unlocking an unlocked image, frame %d",
-                     cachedImage->frameNumber);
-          
-	    }
-	    else {
+      /* Unlock it and return. */
+      if (cachedImage->lockCount == 0) {
+        CACHEDEBUG("unlocking an unlocked image, frame %d",
+                   cachedImage->frameNumber);
+        
+      }
+      else {
 		cachedImage->lockCount--;
         CACHEDEBUG("Image for frame %d has new lock count %d", cachedImage->frameNumber, cachedImage->lockCount); 
-	    }
-	    if (mNumReaderThreads > 0) {
-          unlock("image released", __FILE__, __LINE__); 
-	    }
-	    return;
+      }
+      if (mNumReaderThreads > 0) {
+        unlock("image released", __FILE__, __LINE__); 
+      }
+      return;
 	}
-    }
-
-    /* If we get here, we couldn't find the image */
-    unlock("no such image", __FILE__, __LINE__); 
-    return;
+  }
+  
+  /* If we get here, we couldn't find the image */
+  unlock("no such image", __FILE__, __LINE__); 
+  return;
 }
 
 /* This routine is informatory; it notifies the cache that a particular frame
@@ -1134,15 +1134,13 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
 void ImageCache::Print(void)
 {
   register CachedImage *cachedImage;
-  register int i;
+  register int i, numlocked=0;
   QString msg; 
   CACHEDEBUG("Printing cache state."); 
-  for (
-       i = 0, cachedImage = mCachedImages; 
+  for (i = 0, cachedImage = mCachedImages; 
        i < mMaxCachedImages; 
-       i++, cachedImage++
-       ) {
-    msg = QString("  Slot %1: locked:%2  frame:%3 lod:%4  req:%5  ")
+       i++, cachedImage++) {
+    msg = QString("  Slot %1: lockCount:%2  frame:%3 lod:%4  req:%5  ")
       .arg( i)
       .arg(cachedImage->lockCount)
       .arg(cachedImage->frameNumber)
@@ -1150,10 +1148,11 @@ void ImageCache::Print(void)
       .arg(cachedImage->requestNumber);
     if (cachedImage->image) {
       msg += QString("roi:%1").arg(cachedImage->image->loadedRegion.toString()); 
-   }
+    }
+    if (cachedImage->lockCount) numlocked++; 
     CACHEDEBUG(msg); 
   }
-  CACHEDEBUG("mHighest = %d", mHighestFrameNumber); 
+  CACHEDEBUG("mHighest = %d, numlocked = %d", mHighestFrameNumber, numlocked); 
 }
 
 /*!
