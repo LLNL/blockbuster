@@ -73,14 +73,10 @@ static void gl_Render(Canvas *canvas, int frameNumber,
   Rectangle region = *imageRegion;
   Image *image;
   int saveSkip;
-  TIMER_PRINT("gl_Render begin"); 
-  
-#if 0
-  DEBUGMSG("gl::Render %d, %d  %d x %d  at %d, %d  zoom=%f  lod=%d",
-        imageRegion->x, imageRegion->y,
-        imageRegion->width, imageRegion->height,
-        destX, destY, zoom, lod);
-#endif
+  DEBUGMSG("gl_Render begin, frame %d, %d x %d  at %d, %d  zoom=%f  lod=%d", 
+           frameNumber,
+           imageRegion->width, imageRegion->height,
+           imageRegion->x, imageRegion->y, zoom, lod);
 
   /*
    * Compute possibly reduced-resolution image region to display.
@@ -157,14 +153,15 @@ static void gl_Render(Canvas *canvas, int frameNumber,
     glClear(GL_COLOR_BUFFER_BIT);
   }
 
+  DEBUGMSG(QString("Frame %d row order is %d\n").arg(frameNumber).arg(image->imageFormat.rowOrder)); 
+  
   if (image->imageFormat.rowOrder == BOTTOM_TO_TOP) {
     /*
      * Do adjustments to flip Y axis.
      * Yes, this is tricky to understand.
      */
-
     destY = canvas->height - static_cast<int32_t>((image->height * zoom) + destY) + static_cast<int32_t>(region.y * zoom);
-   
+    
     if (destY < 0) {
       region.y = static_cast<int32_t>(-destY / zoom);
       destY = 0;
@@ -172,43 +169,43 @@ static void gl_Render(Canvas *canvas, int frameNumber,
     else {
       region.y = 0;
     }
-    TIMER_PRINT("before draw"); 
-    /*fprintf(stderr,"Region %d %d %d %d : LodScale %d : Zoom %f\n",region.x,region.y,region.width,region.height,lodScale,zoom);*/
-
-    /* RasterPos is (0,0).  Offset it by (destX, destY) */
-    glBitmap(0, 0, 0, 0, destX, destY, NULL);
     glPixelZoom(zoom, zoom);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, image->width);
-    glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
-    glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 
-                  canvas->requiredImageFormat.scanlineByteMultiple);
-    glDrawPixels(region.width, region.height,
-                 GL_RGB, GL_UNSIGNED_BYTE,
-                 image->imageData);
   }
-  else {
-    bb_assert(image->imageFormat.rowOrder == TOP_TO_BOTTOM);
-
+  else {    
     destY = canvas->height - destY - 1;
-    /* RasterPos is (0,0).  Offset it by (destX, destY) */
-    glBitmap(0, 0, 0, 0, destX, destY, NULL);
     glPixelZoom(zoom, -zoom);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, image->width);
-    /*glPixelStorei(GL_UNPACK_SKIP_ROWS, region.y);*/
-    glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
-    glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 
-                  canvas->requiredImageFormat.scanlineByteMultiple);
+  }
+  TIMER_PRINT("before draw"); 
+  /*fprintf(stderr,"Region %d %d %d %d : LodScale %d : Zoom %f\n",region.x,region.y,region.width,region.height,lodScale,zoom);*/
+  
+  //glRasterPos2i(destX, destY); 
+  // use glBitMap to set raster position
+  glBitmap(0, 0, 0, 0, destX, destY, NULL);
+  glPixelStorei(GL_UNPACK_ROW_LENGTH, image->width);
+  glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
+  glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 
+                canvas->requiredImageFormat.scanlineByteMultiple);
+
+  DEBUGMSG("Buffer for frame %d is %dw x %dh, region is %dw x %dh, destX = %d, destY = %d\n", frameNumber, image->width, image->height, region.width, region.height, destX, destY); 
+
+  if (region.width > image->width || region.height > image->height ||
+      region.width < 0 || region.height < 0 ||
+      region.width*region.height > image->width*image->height) {
+    DEBUGMSG("Abort before glDrawPixels due to programming error.  Sanity check failed.\n"); 
+    abort(); 
+  } else {    
     glDrawPixels(region.width, region.height,
                  GL_RGB, GL_UNSIGNED_BYTE,
                  image->imageData);
+    DEBUGMSG("Done with glDrawPixels\n"); 
   }
 
-  /* Offset raster pos by (-destX, -destY) to put it back to (0,0) */
+  // move the raster position back to 0,0
   glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
-
-  /* Have to release the image, or the cache will fill up */
+ //  glRasterPos2i(0,0); 
+  
+  /* This is bad, we are managing the cache in the render thread.  Sigh.  Anyhow, have to release the image, or the cache will fill up */
   canvas->imageCache->ReleaseImage(image);
   TIMER_PRINT("gl_Render end"); 
 }
