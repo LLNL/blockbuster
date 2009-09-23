@@ -23,7 +23,7 @@
 #
 #   Author: Rich Cook
 #
-#	Makefile for libtiff 3.8.2
+#	Makefile for libtiff 3.9.1
 #
 #	$Id: Makefile,v 1.2 2009/01/07 19:22:19 wealthychef Exp $
 #
@@ -39,14 +39,14 @@ all: install
 install: $(INSTALL_DIR)/lib/libtiff.a
 
 $(INSTALL_DIR)/lib/libtiff.a:
-	rm -rf tiff-3.8.2
-	tar -xvzf tiff-3.8.2.tar.gz
-	cd tiff-3.8.2 && CC="$(CC)" CFLAGS="$$(echo $(CFLAGS) |sed s/O2/O3/g) -O3" \
+	rm -rf tiff-3.9.1
+	tar -xvzf tiff-3.9.1.tar.gz
+	cd tiff-3.9.1 && CC="$(CC)" CFLAGS="$$(echo $(CFLAGS) |sed s/O2/O3/g) -O3" \
 	 CXXFLAGS="$${CFLAGS}" LDFLAGS="$${LDFLAGS} -L/usr/lib64" \
 	./configure --prefix=$(INSTALL_DIR) --enable-rpath; \
 		$(MAKE) install
 
 
 clean:
-	rm -rf tiff-3.8.2 $(INSTALL_DIR)/lib/libtiff* $(INSTALL_DIR)/include/tiff*.h
+	rm -rf tiff-3.9.1 $(INSTALL_DIR)/lib/libtiff* $(INSTALL_DIR)/include/tiff*.h
 
