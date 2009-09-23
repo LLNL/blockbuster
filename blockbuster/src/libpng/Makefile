@@ -37,8 +37,10 @@ INSTALL_HEADERS = $(INSTALL_DIR)/include/pngsimple.h $(INSTALL_DIR)/include/png.
 
 all: $(LIBTARGET) 
 
-export CPPFLAGS += $(shell if [ $$(uname) == AIX ]; then echo -DPNG_SETJMP_NOT_SUPPORTED; fi) -Ilibpng-1.2.8
-export CFLAGS += $(shell if [ $$(uname) == AIX ]; then echo -DPNG_SETJMP_NOT_SUPPORTED; fi) -Ilibpng-1.2.8
+#export CPPFLAGS += $(shell if [ $$(uname) == AIX ]; then echo -DPNG_SETJMP_NOT_SUPPORTED; fi)
+#export CFLAGS += $(shell if [ $$(uname) == AIX ]; then echo -DPNG_SETJMP_NOT_SUPPORTED; fi)
+export CPPFLAGS += -Ilibpng-1.2.8
+export CFLAGS += -Ilibpng-1.2.8
 
 
 $(LIBTARGET): libsrwpng.a 
