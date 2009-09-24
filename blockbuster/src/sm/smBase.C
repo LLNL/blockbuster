@@ -597,7 +597,6 @@ uint32_t smBase::readWin(u_int f, int threadnum)
   }
 
   mThreadData[threadnum].windowData = &mThreadData[threadnum].io_buf[0];
-
   
   u_char *buf = &mThreadData[threadnum].io_buf[0]; 
   mThreadData[threadnum].currentFrame = f; 
@@ -718,7 +717,7 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
         r = readData(fd, cdata+readBufferOffset, tinfo->compressedSize);
         
         if (r != tinfo->compressedSize ) {
-	      smdbprintf(0,"smBase::readWin I/O error : r=%d k=%d, offset=%Ld : skipping",r,tinfo->compressedSize, offset+ toffsets[tile]);
+	      smdbprintf(0,"smBase::readWin I/O error thread %d, frame %d: r=%d k=%d, offset=%Ld : skipping",threadnum,f, r,tinfo->compressedSize, offset+ toffsets[tile]);
 	      tinfo->skipCorruptFlag = 1;
 	    }
         bytesRead += r; 
@@ -887,7 +886,6 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
    uint32_t bytesRead=0; 
    int d[2],_dim[2],_step[2],_pos[2],tilesize[2];
    int _res,_f;
-
    
    if((res < 0) || (res > (nresolutions - 1))) {
      _res = 0;
@@ -913,42 +911,42 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
    } else {
        _pos[0] = 0; _pos[1] = 0;
    }
-
+   
    if(_dim[0] <= 0 || _dim[1] <= 0)
      return 0;
-
+   
    assert(_dim[0] + _pos[0] <= getWidth(0));
    assert(_dim[1] + _pos[1] <= getHeight(0));
-
+   
    /* move _f into initial resolution */
    if(_res > 0)
      _f += getNumFrames() * _res;
-
+   
    /* pick a resolution based on stepping */
    while((_res+1 < getNumResolutions()) && (_step[0] > 1) && (step[1] > 1)) {
-	   _res++;
-	   _step[0] >>= 1;
-	   _step[1] >>= 1;
-	   _pos[0] >>= 1;
-	   _pos[1] >>= 1;
-	   _dim[0] >>= 1;
-           _dim[1] >>=1;
-	   _f += getNumFrames();
+     _res++;
+     _step[0] >>= 1;
+     _step[1] >>= 1;
+     _pos[0] >>= 1;
+     _pos[1] >>= 1;
+     _dim[0] >>= 1;
+     _dim[1] >>=1;
+     _f += getNumFrames();
    }
-
+   
    d[0] = getWidth(_res);
    d[1] = getHeight(_res);
-
+   
    if (!destRowStride)
-      destRowStride = _dim[0] * 3;
-
+     destRowStride = _dim[0] * 3;
+   
    tilesize[0] = getTileWidth(_res);
    tilesize[1] = getTileHeight(_res);
-
+   
    if (d[0] < tilesize[0]) d[0] = tilesize[0];
    if (d[1] < tilesize[1]) d[1] = tilesize[1];
-
-
+   
+   
    // tile support 
    int nx = 0;
    int ny = 0;
@@ -1014,9 +1012,9 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
        if(tileinfo.overlaps && (tileinfo.skipCorruptFlag == 0)) {
          
          u_char *tdata = (u_char *)(cdata + tileinfo.readBufferOffset);
+         smdbprintf(5,"decompBlock, tile %d", tile); 
          decompBlock(tdata,tbuf,tileinfo.compressedSize,tilesize);
-         //smdbprintf(5,"done with decompBlock, tile %d", tile); 
-         
+         // 
          u_char *to = (u_char*)(out + (tileinfo.blockOffsetY * destRowStride) + (tileinfo.blockOffsetX * 3));
          u_char *from = (u_char*)(tbuf + (tileinfo.tileOffsetY * tilesize[0] * 3) + (tileinfo.tileOffsetX * 3));
          int maxX = tileinfo.tileLengthX, maxY = tileinfo.tileLengthY; 
