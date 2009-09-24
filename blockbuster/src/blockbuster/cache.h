@@ -97,6 +97,7 @@ class ImageCache {
   void ManageFrameList(FrameList *frameList);
   
   void ReleaseImage(Image *image);
+  void ReleaseFrame(int framenum);
  protected:
   CachedImage *GetCachedImageSlot(uint32_t newFrameNumber);
   

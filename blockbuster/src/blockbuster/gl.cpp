@@ -64,9 +64,9 @@ void gl_HandleOptions(int &argc, char *argv[]) {
 }
 
 
-static void gl_Render(Canvas *canvas, int frameNumber,
-                   const Rectangle *imageRegion,
-                   int destX, int destY, float zoom, int lod)
+static void gl_Render(Canvas *canvas, int frameNumber, 
+                      const Rectangle *imageRegion,
+                      int destX, int destY, float zoom, int lod)
 {
   int lodScale;
   int localFrameNumber;
@@ -156,7 +156,7 @@ static void gl_Render(Canvas *canvas, int frameNumber,
     glClear(GL_COLOR_BUFFER_BIT);
   }
 
-  DEBUGMSG(QString("Frame %d row order is %d\n").arg(frameNumber).arg(image->imageFormat.rowOrder)); 
+  DEBUGMSG(QString("Frame %1 row order is %2\n").arg(frameNumber).arg(image->imageFormat.rowOrder)); 
   
   if (image->imageFormat.rowOrder == BOTTOM_TO_TOP) {
     /*
@@ -208,8 +208,8 @@ static void gl_Render(Canvas *canvas, int frameNumber,
   glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
  //  glRasterPos2i(0,0); 
   
-  /* This is bad, we are managing the cache in the render thread.  Sigh.  Anyhow, have to release the image, or the cache will fill up */
-  canvas->imageCache->ReleaseImage(image);
+  /* This is bad, we are managing the cache in the render thread.  Sigh.  Anyhow, have to release the image, or the cache will fill up */  
+  //canvas->imageCache->ReleaseImage(image);
   TIMER_PRINT("gl_Render end"); 
 }
 
@@ -227,14 +227,13 @@ static void gl_RenderStereo(Canvas *canvas, int frameNumber,
   int saveSkip;
   int saveDestX;
   int saveDestY;
- 
-#if 1
-  DEBUGMSG("gl_RenderStereo(frame %d) %d, %d  %d x %d  at %d, %d  zoom=%f  lod=%d, stereo = %d", frameNumber, 
+  
+  DEBUGMSG("gl_RenderStereo(frame %d) region @ (%d, %d) size %d x %d render at %d, %d, with zoom=%f  lod=%d, stereo = %d", frameNumber, 
            imageRegion->x, imageRegion->y,
            imageRegion->width, imageRegion->height,
-           destX, destY, zoom, lod, canvas->frameList->stereo?1:0);
-#endif
-
+           destX, destY, zoom, lod, 
+           (int)(canvas->frameList->stereo));
+  
   /*
    * Compute possibly reduced-resolution image region to display.
    */
@@ -350,7 +349,7 @@ static void gl_RenderStereo(Canvas *canvas, int frameNumber,
   glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
   
   /* Have to release the image, or the cache will fill up */
-  canvas->imageCache->ReleaseImage(image);
+  //canvas->imageCache->ReleaseImage(image);
   
   if(canvas->frameList->stereo) {
     glDrawBuffer(GL_BACK_RIGHT);
@@ -400,7 +399,7 @@ static void gl_RenderStereo(Canvas *canvas, int frameNumber,
     glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
     
     /* Have to release the image, or the cache will fill up */
-    canvas->imageCache->ReleaseImage(image);
+    //canvas->imageCache->ReleaseImage(image);
     
   }
   
