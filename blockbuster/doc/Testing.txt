@@ -1,13 +1,29 @@
 LLNL Note:  Be sure to test against actual cuefiles on both OCF and SCF, as some bugs do crop up on SCF that don't appear on OCF.  
 
 ==============================================================
-# Be strict in the test procedure!  Documenting bugs during testing. 
+# Be strict in the test procedure!  Document bugs during testing. 
 
 Before testing, go to the Blockbuster sourceforge site and open the bug tracker.  You will need it.  :-)  Don't bother with private notes if you can avoid it.  The tracker is there for a reason;  use it!  
 
 Similarly, do not fix bugs while testing, unless they are catastrophic and testing or installation cannot continue without them.   Do not stop to fix a little bug here and there.  To do so diffuses focus and results in testing not getting completed.  Also, the bug you rush off to fix is  not any more important as others that are waiting to be fixed.  Just document it and continue.
 
 Also, a consistent need to deviate from the test procedure could be indicative of a bug in the test procedure itself.  Document that here and continue!  
+
+==============================================================
+# Releasing the new version to the world. 
+
+1)  Don't forget to modify config/version.h so that blockbuster is announced properly to the world.  
+
+2)  Create a new SVN tag using svn copy.  Here is what I did to release version 2.6.3 to the world.  Note that "svn copy" does not work from the lab due to some firewall issues.  
+
+svn copy https://blockbuster.svn.sourceforge.net/svnroot/blockbuster/trunk/blockbuster https://blockbuster.svn.sourceforge.net/svnroot/blockbuster/tags/2.6.3a -m 'release 2.6.3a, hopefully' --username wealthychef
+
+3)  Upload the tarball package to sourceforge.  See https://sourceforge.net/apps/trac/sourceforge/wiki/Release%20files%20for%20download
+Example: 
+
+rsync -avP blockbuster-v2*.tgz wealthychef@frs.sourceforge.net:uploads
+
+4)  After uploading the file, go to http://sourceforge.net/projects/blockbuster, go to the file release management area, and mark the file release as the default for all platforms.  Currently this takes 15 minutes to take effect after upload.  
 
 ==============================================================
 # New Features and Fields in the GUI
@@ -78,19 +94,4 @@ If any changes were made in the sm or smapps libraries, or might affect them, th
 # Debug vs. Production modes
 Before installing, but after confirming functionality with the below tests, build the development version with debug turned off and test to make sure it's quiet.  
 
-==============================================================
-# Releasing the new version to the world. 
-
-1)  Don't forget to modify config/version.h so that blockbuster is announced properly to the world.  
-
-2)  Create a new SVN tag using svn copy.  Here is what I did to release version 2.6.3 to the world.  Note that "svn copy" does not work from the lab due to some firewall issues.  
-
-svn copy https://blockbuster.svn.sourceforge.net/svnroot/blockbuster/trunk/blockbuster https://blockbuster.svn.sourceforge.net/svnroot/blockbuster/tags/2.6.3a -m 'release 2.6.3a, hopefully' --username wealthychef
-
-3)  Upload the tarball package to sourceforge.  See https://sourceforge.net/apps/trac/sourceforge/wiki/Release%20files%20for%20download
-Example: 
-
-rsync -avP blockbuster-v2*.tgz wealthychef@frs.sourceforge.net:uploads
-
-4)  After uploading the file, go to http://sourceforge.net/projects/blockbuster, go to the package management area, and add a new release.  The newly uploaded file will show up as a choice to attach to the new release. 
 
