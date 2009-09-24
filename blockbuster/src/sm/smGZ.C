@@ -84,7 +84,7 @@ void smGZ::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
 
    err = inflateInit(&stream);
    if (err != Z_OK) {
-      gzdbprintf(stderr,"GZ decompression init error: %d\n",err);
+     gzdbprintf(stderr,"GZ decompression init error: %d\n",err);
       return;
    }
 
@@ -92,7 +92,7 @@ void smGZ::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
       err = inflate(&stream, Z_NO_FLUSH);
    }
    if (err != Z_STREAM_END) {
-      gzdbprintf(stderr,"GZ decompression error: %d\n",err);
+     gzdbprintf(stderr,"GZ decompression error: %d\n",err);
    }
 
    err = inflateEnd(&stream);
@@ -101,16 +101,6 @@ void smGZ::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
       return;
    }
 
-#if 0
-   uLongf dlen;
-   int  status;
-
-   dlen = dim[0]*dim[1]*sizeof(u_char[3]);
-   status = uncompress((Bytef *)image,&dlen,(Bytef *)cdata,size);
-   if (status != Z_OK) {
-	gzdbprintf(stderr,"GZ decompression error: %d\n",status);
-   }
-#endif
 
    return;
 }
@@ -138,7 +128,8 @@ void smGZ::compBlock(void *data, void *cdata, int &size,int *dim)
    if (cdata) {
        status = compress((Bytef *)cdata,&dlen,(Bytef *)data,len);
        if (status != Z_OK) {
-	   gzdbprintf(stderr,"GZ compression error: %d\n",status);
+         gzdbprintf(stderr,"GZ compression error: %d\n",status);
+         exit(1); 
        }
    }
    size = dlen;
