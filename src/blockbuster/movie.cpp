@@ -995,6 +995,14 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       
        TIMER_PRINT("before render"); 
        canvas->Render(canvas, frameNumber, &roi, destX, destY, currentZoom, lod);
+       if (frameNumber != previousFrame && previousFrame >= 0) {
+         if (allFrames->stereo) {
+           canvas->imageCache->ReleaseFrame(previousFrame*2); 
+           canvas->imageCache->ReleaseFrame(previousFrame*2+1); 
+         } else {
+           canvas->imageCache->ReleaseFrame(previousFrame); 
+         }
+       }
        TIMER_PRINT("after render"); 
      
       /* Print info in upper-left corner */

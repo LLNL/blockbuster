@@ -592,9 +592,7 @@ void ImageCache::ClearImages(void)
 	 * override the lock, but give a warning.
 	 */
 	if (this->mCachedImages[i].lockCount > 0) {
-	    WARNING(
-		"cached image %d forcibly unlocked while clearing cache",
-		i);
+      CACHEDEBUG("cached image %d forcibly unlocked while clearing cache",	i);
 	}
 	if (this->mCachedImages[i].loaded) {
 	    (this->mCachedImages[i].image->ImageDeallocator)(
@@ -1029,6 +1027,46 @@ void ImageCache::ReleaseImage(Image *image)
   
   /* If we get here, we couldn't find the image */
   unlock("no such image", __FILE__, __LINE__); 
+  return;
+}
+
+/*!
+  Replaces ReleaseImage -- releases all images associated with the given frame number.  Does not know about stereo, uses actual frame numbers, not stereo frame numbers.
+*/ 
+void ImageCache::ReleaseFrame(int frameNumber) {
+  register int i, numreleased = 0;
+  register CachedImage *cachedImage;
+  CACHEDEBUG("ReleaseFrame %d", frameNumber); 
+  //int rv;
+  /* Look for the given image in the cache. */
+  if (mNumReaderThreads > 0) {
+    lock("releasing an image", __FILE__, __LINE__);
+  }
+  cachedImage = mCachedImages;
+  for (
+       i = 0, cachedImage = mCachedImages; 
+       i < mMaxCachedImages; 
+       i++, cachedImage++
+       ) {
+	if (cachedImage->frameNumber == frameNumber) {
+      CACHEDEBUG("Releasing frame slot %d from cache", i); 
+      /* Unlock it and return. */
+      if (cachedImage->lockCount == 0) {
+        CACHEDEBUG("unlocking an unlocked image, slot %d",i);
+        
+      }
+      else {
+		cachedImage->lockCount = 0;
+        numreleased++; 
+        CACHEDEBUG("Image slot %d new lock count %d", i, cachedImage->lockCount); 
+      }
+	}
+  }
+  CACHEDEBUG("Released %d images", numreleased); 
+
+  if (mNumReaderThreads > 0) {
+    unlock("image(s) released", __FILE__, __LINE__); 
+  }
   return;
 }
 

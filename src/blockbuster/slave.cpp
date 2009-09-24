@@ -376,7 +376,15 @@ int Slave::Loop(void)
             if (mCanvas->frameList) {
               mCanvas->Render(mCanvas, imageNum, &currentRegion, 
                              destX, destY, zoom, lod);
-              lastImageRendered = imageNum; 
+              if (imageNum != lastImageRendered && lastImageRendered >= 0) {
+                if (mCanvas->frameList->stereo) {
+                  mCanvas->imageCache->ReleaseFrame(lastImageRendered*2); 
+                  mCanvas->imageCache->ReleaseFrame(lastImageRendered*2+1); 
+                } else {
+                  mCanvas->imageCache->ReleaseFrame(lastImageRendered); 
+                }
+              }
+               lastImageRendered = imageNum; 
             }
             else {
               SendError("No frames to render\n");
