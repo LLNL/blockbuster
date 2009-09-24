@@ -144,6 +144,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   /*int izoom = 0*/  // for mouse zoom
   float currentZoom = 1.0, newZoom, startZoom, oldZoom; // actual zoom factor
   int lod = 0, maxLOD, baseLOD = 0, lodBias = options->LOD;
+  bool usingDmx = (options->rendererName == "dmx"); 
 
   /* Region Of Interest of the image */
   Rectangle roi;
@@ -995,7 +996,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       
        TIMER_PRINT("before render"); 
        canvas->Render(canvas, frameNumber, &roi, destX, destY, currentZoom, lod);
-       if (frameNumber != previousFrame && previousFrame >= 0) {
+       if (!usingDmx && frameNumber != previousFrame && previousFrame >= 0) {
          if (allFrames->stereo) {
            canvas->imageCache->ReleaseFrame(previousFrame*2); 
            canvas->imageCache->ReleaseFrame(previousFrame*2+1); 
