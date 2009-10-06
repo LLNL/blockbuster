@@ -66,8 +66,8 @@ void cmdline(char *app)
 	fprintf(stderr,"Options:\n");
 	fprintf(stderr,"\t-v Verbose mode.\n");
 	fprintf(stderr,"\t-threads [nt] Number of threads to use. Default: 1.\n");
-	fprintf(stderr,"\t-mipmap [n] Number of mipmap levels. Default: 1\n");
-	fprintf(stderr,"\t-tilesizes Specify tile sizes per mipmap level. Comma separated (default: No Tiles).\n");
+	fprintf(stderr,"\t-mipmaps [n] Number of mipmap levels. Default: 1\n");
+	fprintf(stderr,"\t-tilesizes Specify tile sizes per mipmap level. Comma separated.  Non-square tiles can be specified as e.g. 128x256. (default: 512).\n");
 	fprintf(stderr,"\t-rle Select RLE compresssion.\n");
 	fprintf(stderr,"\t-gz Select gzip compresssion.\n");
 	fprintf(stderr,"\t-lzo Select LZO compresssion.\n");
@@ -132,7 +132,7 @@ int main(int argc,char **argv)
 	pt_pool_t	pool = &thepool;
 
 	char	        tstr[1024],tstr2[1024];
-	char            tsizestr[1024] = "";
+	char            tsizestr[1024] = "512";
 	unsigned int    tsizes[8][2];
 	int             tiled = 0;
 
@@ -156,7 +156,7 @@ int main(int argc,char **argv)
 			iRLE = 4;
 		} else if ((strcmp(argv[i],"-threads")==0) && (i+1 < argc))  {
 			i++; nThreads = atoi(argv[i]);
-		} else if ((strcmp(argv[i],"-mipmap")==0) && (i+1 < argc))  {
+		} else if ((strcmp(argv[i],"-mipmaps")==0) && (i+1 < argc))  {
 			i++; nRes = atoi(argv[i]);
 			if (nRes < 1) nRes = 1;
 			if (nRes > 8) nRes = 8;
