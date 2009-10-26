@@ -587,11 +587,6 @@ int main(int argc, char *argv[])
   //gCoreApp = new QCoreApplication(argc, args); 
   gCoreApp = new QApplication(argc, args); 
 
-  gMainWindow = new BlockbusterInterface; 
-
-  /* set up network communications */ 
-  gSidecarServer = new SidecarServer;     
-
   /* Grab any options that apply to the whole program */
   ParseOptions(argc, args);
   printargs("After ParseOptions", args, argc); 
@@ -604,6 +599,11 @@ int main(int argc, char *argv[])
       exit(1); 
     }
   } else {
+    gMainWindow = new BlockbusterInterface; 
+    
+    /* set up network communications */ 
+    gSidecarServer = new SidecarServer;     
+    
     gMainWindow->show(); 
   }
 
