@@ -2,6 +2,12 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ================================================================================
+VERSION ???
+???
+-- fixed segfault in smtest when no args are given
+-- Use tiling by default in img2sm and smcat
+
+================================================================================
 VERSION 2.6.3c
 September 24, 2009
 -- (r245) by not invalidating cache members so aggressively, got nice responsiveness increase.  This warrants its own release. 
