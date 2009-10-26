@@ -127,7 +127,7 @@ void cmdline(char *app)
   fprintf(stderr,"\t-stereo Specify the output file is L/R stereo.\n");
   fprintf(stderr,"\t-form [\"tiff\"|\"raw\"|\"sgi\"|\"pnm\"|\"png\"|\"jpg\"] Selects the input file format\n");
   fprintf(stderr,"\t-planar Raw img is planar interleaved (default: pixel interleave).\n");
-  fprintf(stderr,"\t-tilesizes Specify tile sizes per mipmap level. Comma separated (default: No Tiles).\n");
+  fprintf(stderr,"\t-tilesizes Specify tile sizes per mipmap level. Comma separated.  Non-square tiles can be given as e.g. 128x512. A single value would apply to all mipmaps (default: 512).\n");
   fprintf(stderr,"\t-ignore Allows invalid templates.\n");
   exit(1);
 }
@@ -158,7 +158,7 @@ int main(int argc,char **argv)
   int	i,count;
   FILE		*fp = NULL;
   char		tstr[1024],tstr2[1024];
-  char          tsizestr[1024] = "";
+  char          tsizestr[1024] = "512";
   unsigned int  tsizes[8][2];
   int tiled = 0;
   unsigned char	*buf = NULL;
