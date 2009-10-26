@@ -333,6 +333,11 @@ int main(int argc, char *argv[])
      }
    }
    if (i != argc-1) usage(argv[0]);
+   if (argc < 2) {
+     fprintf(stderr, "Not enough arguments.  Require a filename.\n"); 
+     usage(argv[0]); 
+     exit(1); 
+   }
    sm = smBase::openFile(argv[i], nthreads);
    threads.resize(nthreads); 
    bytesRead.resize(nthreads); 
