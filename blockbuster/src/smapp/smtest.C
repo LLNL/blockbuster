@@ -332,11 +332,15 @@ int main(int argc, char *argv[])
        exit(1);
      }
    }
-   if (i != argc-1) usage(argv[0]);
    if (argc < 2) {
      fprintf(stderr, "Not enough arguments.  Require a filename.\n"); 
      usage(argv[0]); 
-     exit(1); 
+     exit(3); 
+   }
+   if (i != argc-1) {
+     fprintf(stderr, "Error parsing arguments.\n"); 
+     usage(argv[0]);
+     exit(2); 
    }
    sm = smBase::openFile(argv[i], nthreads);
    threads.resize(nthreads); 
@@ -344,7 +348,7 @@ int main(int argc, char *argv[])
     
    if (!sm) {
       fprintf(stderr, "Unable to open movie: %s\n",argv[i]);
-      exit(1);
+      exit(4);
    }
    dbprintf(3, "movie is %dx%d\n", sm->getWidth(), sm->getHeight()); 
    ConvertFractions("pan rect", dpos, ddim, dstep); 
@@ -375,13 +379,13 @@ int main(int argc, char *argv[])
    
    if (i) {
       fprintf(stderr,"Error: Invalid frame rectangle : Case %d\n",i);
-      exit(1);
+      exit(5);
    }
 
    if (lod > sm->getNumResolutions()) {
      fprintf(stderr, "Error:  lod %d specified, but movie has only %d\n", 
              lod, sm->getNumResolutions()); 
-     exit(2); 
+     exit(6); 
    }
    // frame range is 1-based
    if (!range[0]) {
