@@ -54,7 +54,7 @@ using namespace std;
 Slave::Slave(ProgramOptions *options):
   mOptions(options), mSocketFD(0), mCanvas(NULL) {
   resetFPS(); 
-  SuppressMessageDialogs(); 
+  SuppressMessageDialogs(true); 
   DEBUGMSG("Slave() called"); 
   DEBUGMSG("useMPI is %d\n", mOptions->useMPI); 
   

@@ -1109,7 +1109,9 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         elapsedTime = recentEndTime - recentStartTime;
         if (elapsedTime >= 0.5) {
           fps = (double) recentFrameCount / elapsedTime;
-          DEBUGMSG("Frame Rate: %g fps", fps); 
+          SuppressMessageDialogs(true); 
+          WARNING("Frame Rate on frame %d: %g fps", frameNumber, fps);
+          SuppressMessageDialogs(false); 
           /* reset timing info so we compute FPS over last 2 seconds */
           recentStartTime = GetCurrentTime();
           recentFrameCount = 0;

@@ -91,7 +91,7 @@ struct ProgramOptions {
   QString fontName;
   int stereoView;
   Settings *settings; 
-  int allowIdleSlaves;
+  int allowIdleSlaves; 
 } ;
 
 #define SETTINGS_FROM_PROGRAM   0x01

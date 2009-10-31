@@ -58,14 +58,15 @@ void real_dbprintf(int level, const char *fmt, ...) {
 /*!
   The slaves will call this to prevent error messages from popping up on DMX displays from the backends.
 */ 
-void SuppressMessageDialogs(void) {
-  gDoDialogs = false; 
+void SuppressMessageDialogs(bool yn) {
+  gDoDialogs = !yn; 
 }
 
 /*!
   Attempt to display a message in a dialog, unless there is no main window, e.g. we are a slave or just using X11
 */
 int DisplayDialog(const char *message) { 
+  if (!gDoDialogs) return 0; 
     char buffer[4096]; 
     snprintf(buffer, 4096, "%s\n\n(%s:%s():%d)",
              message, theMessage.file, 
