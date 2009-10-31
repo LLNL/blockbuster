@@ -41,7 +41,7 @@ void real_dbprintf(int level, QString msg);
 /*!
   The slaves will call this to prevent error messages from popping up on DMX displays from the backends.
 */ 
-extern void SuppressMessageDialogs(void);
+void SuppressMessageDialogs(bool);
 
 // assertions are kind of sucky.  I prefer an actual error.  This looks uninformative, but ERROR at least tells you a line number.  Later I could add more informative info as well.   
 #define bb_assert(condition)                      \
