@@ -180,8 +180,6 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
     startFrame= options->startFrame, 
     endFrame = options->endFrame; 
 
-  bool playExit = options->playExit; 
- 
   /* Tell the messaging function that we have a Canvas
    * to report messages through.
    */
@@ -191,6 +189,8 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
     Generate a warning if the frames are out of whack */
   ModifyFrameList(canvas, allFrames);
   ClampStartEndFrames(allFrames, startFrame, endFrame, frameNumber, true); 
+  int playExit = options->playExit; 
+  if (playExit < 0) playExit = endFrame; 
   
   /* The Canvas may or may not have an interface to display
    * (or to hide, if we chose to initially have the interface
@@ -1128,7 +1128,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         fps = 0.0;
       }
       canvas->reportActualFPS(fps); 
-      if (frameNumber >= endFrame && options->playExit) {
+      if ( (playExit && frameNumber >= playExit)) { 
         events.push_back(MovieEvent(MOVIE_QUIT)); 
       }
       
