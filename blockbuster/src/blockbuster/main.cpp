@@ -120,7 +120,7 @@ void usage(void) {
   fprintf(stderr, "-no-controls (or -withoutControls) turns off the control window (if defined for the user interface)\n");
   fprintf(stderr, "-no-splash (or -S) suppresses display of splash screen\n");
   fprintf(stderr, "-play (or -Play) automatically starts the movie after loading\n");
-  fprintf(stderr, "-playexit: play one time through, then exit.  Useful for testing\n");
+  fprintf(stderr, "-playexit framenum: play one time until frame given, then exit.  Useful for testing.  If framenum == -1, play all the way to end.\n");
   fprintf(stderr, "-preload <num> specifies how many frames to preload\n");
   fprintf(stderr, "-renderer <name> specifies the method used to render images\n");
   fprintf(stderr, "\tgl: Render using OpenGL glDrawPixels to an X11 window\n");
@@ -323,7 +323,7 @@ static void ParseOptions(int &argc, char *argv[])
              SET_BOOL_ARG("-play", argc, argv, opt->play, 1)){
       continue; 
     }
-	else if (SET_BOOL_ARG("-playexit", argc, argv, opt->playExit, 1)) {
+	else if (CHECK_ATOI_ARG("-playexit", argc, argv,  opt->playExit)) {
       opt->play = 1; 
       continue;
     }
