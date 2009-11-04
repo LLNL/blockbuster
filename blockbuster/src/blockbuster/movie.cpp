@@ -180,6 +180,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
     startFrame= options->startFrame, 
     endFrame = options->endFrame; 
 
+  bool playExit = options->playExit; 
  
   /* Tell the messaging function that we have a Canvas
    * to report messages through.
@@ -221,6 +222,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   if ( options->play != 0 )
     playDirection = options->play;
 
+
   if ( options->zoom != 1.0 )
     newZoom =options->zoom;
 
@@ -228,7 +230,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   canvas->ReportRateChange(options->frameRate);
 					
   time_t lastheartbeat = time(NULL); 
-  bool fullScreen = false, zoomOne = false; 
+  bool fullScreen = options->fullScreen, zoomOne = false; 
   MovieSnapshot oldSnapshot; 
 
 
@@ -240,7 +242,11 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
 
     /* Get an event from the canvas or network and process it.
      */   
-    
+    if (fullScreen) {
+      DEBUGMSG("fullScreen\n"); 
+      events.push_back(MovieEvent(MOVIE_FULLSCREEN)); 
+      options->fullScreen=false; 
+    }
     /* every minute or so, tell any DMX slaves we are alive */ 
     if (time(NULL) - lastheartbeat > 60) {
       dmx_SendHeartbeatToSlaves(); 
@@ -1122,7 +1128,9 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         fps = 0.0;
       }
       canvas->reportActualFPS(fps); 
-      
+      if (frameNumber >= endFrame && options->playExit) {
+        events.push_back(MovieEvent(MOVIE_QUIT)); 
+      }
       
     }
   }
