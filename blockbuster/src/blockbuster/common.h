@@ -110,7 +110,6 @@ struct Rectangle {
 int RectContainsRect(const Rectangle *r1, const Rectangle *r2);
 Rectangle RectUnionRect(const Rectangle *r1, const Rectangle *r2);
 
-int LODFromZoom(float zoom);
 double GetCurrentTime(void);
 
 #endif

@@ -58,6 +58,21 @@ static void ModifyFrameList(Canvas *canvas, FrameList *frameList)
   
 }
 
+
+/*
+ * Given a zoom factor, compute appropriate level of detail.
+ */
+int LODFromZoom(float zoom)
+{
+    /* XXX this may need tuning */
+    int lod = 0;
+    while (zoom <= 0.5) {
+       zoom *= 2.0;
+       lod++;
+    }
+    return lod;
+}
+
 static float ComputeZoomToFit(Canvas *canvas, int width, int height)
 {
   float xZoom, yZoom, zoom;
@@ -971,13 +986,17 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       
       if (lodBias < 0) {
         lodBias = 0; 
-        canvas->ReportDetailChange(lodBias);
       }        
       if (lodBias > frameInfo->maxLOD) {
         lodBias = maxLOD; 
-        canvas->ReportDetailChange(lodBias);
       }        
-      baseLOD = LODFromZoom(currentZoom);
+      canvas->ReportDetailChange(lodBias);
+      
+      if (options->noAutoRes) {
+        baseLOD = 0; 
+      } else {
+        baseLOD = LODFromZoom(currentZoom);
+      }
       lod = baseLOD > lodBias? baseLOD: lodBias;
       if (lod > frameInfo->maxLOD) {
         lod = frameInfo->maxLOD;
