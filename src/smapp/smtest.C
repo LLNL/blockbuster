@@ -463,7 +463,7 @@ int main(int argc, char *argv[])
 	pthread_join(threads[f], (void **)&retval);
         if (retval[0] < mm[0]) mm[0] = retval[0];
         if (retval[1] > mm[1]) mm[1] = retval[1];
-	free(retval);
+        //free(retval);
    }
 
    t1 = get_clock();

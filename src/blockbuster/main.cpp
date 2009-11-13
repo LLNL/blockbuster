@@ -117,6 +117,7 @@ void usage(void) {
   fprintf(stderr, "-lod num: specifies a starting level of detail for the given movie\n");
   fprintf(stderr, "-loops <loops> specifies how many times to loop (number or 'forever')\n");
   fprintf(stderr, "-messageLevel sets the message level, in order of chattiness:  quiet, syserr, error, warning, info, debug\n"); 
+  fprintf(stderr, "-no-autores:  normally, you want blockbuster to decrease resolution when the zoom increases.  This flag suppresses this, for testing.\n");
   fprintf(stderr, "-no-controls (or -withoutControls) turns off the control window (if defined for the user interface)\n");
   fprintf(stderr, "-no-splash (or -S) suppresses display of splash screen\n");
   fprintf(stderr, "-play (or -Play) automatically starts the movie after loading\n");
@@ -314,6 +315,9 @@ static void ParseOptions(int &argc, char *argv[])
       sm_setVerbose(maxMessageLevel); 
       //if (maxMessageLevel == 4) enable_dbprintf(); 
       continue;
+    }
+	else if (SET_BOOL_ARG("-no-autores", argc, argv, opt->noAutoRes, 1)) {
+      continue; 
     }
 	else if (SET_BOOL_ARG("-withoutControls", argc, argv, opt->drawInterface, 0) || 
              SET_BOOL_ARG("-no-controls", argc, argv, opt->drawInterface, 0)) continue;

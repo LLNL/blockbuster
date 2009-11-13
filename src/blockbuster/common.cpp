@@ -148,20 +148,6 @@ Rectangle RectUnionRect(const Rectangle *r1, const Rectangle *r2)
 }
 
 
-/*
- * Given a zoom factor, compute appropriate level of detail.
- */
-int LODFromZoom(float zoom)
-{
-    /* XXX this may need tuning */
-    int lod = 0;
-    while (zoom <= 0.5) {
-       zoom *= 2.0;
-       lod++;
-    }
-    return lod;
-}
-
 
 double GetCurrentTime(void)
 {

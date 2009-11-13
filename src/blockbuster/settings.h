@@ -40,7 +40,7 @@ struct ProgramOptions {
     slaveLaunchMethod("rsh"), useMPI(0), 
     play(0), playExit(0),  speedTest(0), frameRate(0.0), 
     zoom(1.0), zoomFit(1), fullScreen(0), slaveMode(0), masterPort(0), 
-    preloadFrames(4), 
+    preloadFrames(4), noAutoRes(0), 
     drawInterface(1), splashScreen(0), gui(1), decorations(1), 
     suggestedTitle("blockbuster"), fontName(DEFAULT_X_FONT), 
     settings(NULL), allowIdleSlaves(1) {
@@ -81,6 +81,7 @@ struct ProgramOptions {
   int slaveMode;
   int masterPort;
   int preloadFrames;
+  int noAutoRes; 
   int drawInterface;
   int splashScreen;
   int gui;/* if a GUI is available */
