@@ -157,12 +157,13 @@ void smJPG::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
    return;
 }
 
-smJPG *smJPG::newFile(const char *_fname, u_int _nframes, 
-	u_int _width, u_int _height, u_int *_tile, u_int _nres)
+smJPG *smJPG::newFile(const char *_fname, 
+                      u_int _width, u_int _height, 
+                      u_int _nframes, u_int *_tile, u_int _nres)
 {
    smJPG *r = new smJPG(NULL);
 
-   if (r->smBase::newFile(_fname, _nframes, _width, _height, _tile, _nres)) {
+   if (r->smBase::newFile(_fname, _width, _height, _nframes, _tile, _nres)) {
 	delete r;
 	r = NULL;
    }

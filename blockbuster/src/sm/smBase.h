@@ -189,8 +189,8 @@ void printFrameDetails(FILE *fp, int f);
   virtual void decompBlock(u_char *in,u_char *out,int insize, int *dim) = 0;
   
   // create a new movie
-  int newFile(const char *fname, u_int nframes, u_int w, u_int h,
-		      u_int *tilesizes = NULL, u_int nres=1);
+  int newFile(const char *fname, u_int w, u_int h,
+		      u_int nframes, u_int *tilesizes = NULL, u_int nres=1);
   
   static void registerType(u_int t, smBase *(*)(const char *, int));
   

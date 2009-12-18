@@ -52,7 +52,7 @@ class smRLE : public smBase {
       smRLE(const char *fname, int _nwin=1);
       virtual ~smRLE();
 
-      static smRLE *newFile(const char *fname, u_int nframes, u_int w, u_int h,
+      static smRLE *newFile(const char *fname, u_int w, u_int h, u_int nframes,
 		      u_int *tilesizes = NULL, u_int nres=1);
 
       static void init(void);
