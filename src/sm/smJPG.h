@@ -57,7 +57,7 @@ class smJPG : public smBase {
       smJPG(const char *fname, int _nwin=1);
       virtual ~smJPG();
 
-      static smJPG *newFile(const char *fname, u_int nframes, u_int w, u_int h,
+      static smJPG *newFile(const char *fname, u_int w, u_int h, u_int nframes,
 		      u_int *tilesizes = NULL, u_int nres=1);
 
       void setQuality(int qual);

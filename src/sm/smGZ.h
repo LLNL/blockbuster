@@ -54,7 +54,7 @@ class smGZ : public smBase {
       smGZ(const char *fname, int _nwin=1);
       virtual ~smGZ();
 
-      static smGZ *newFile(const char *fname, u_int nframes, u_int w, u_int h,
+      static smGZ *newFile(const char *fname, u_int w, u_int h, u_int nframes,
 		      u_int *tilesizes = NULL, u_int nres=1);
 
       static void init(void);

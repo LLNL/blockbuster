@@ -52,7 +52,7 @@ class smRaw : public smBase {
       smRaw(const char *fname, int _nwin=1);
       virtual ~smRaw();
 
-      static smRaw *newFile(const char *fname, u_int nframes, u_int w, u_int h,
+      static smRaw *newFile(const char *fname, u_int w, u_int h, u_int nframes,
 		      u_int *tilesizes = NULL, u_int nres=1);
 
       static void init(void);

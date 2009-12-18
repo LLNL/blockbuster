@@ -320,7 +320,7 @@ void smBase::printFrameDetails(FILE *fp,int f)
   \param _nres  number of resolutions (levels of detail)
 */
 int smBase::newFile(const char *_fname, u_int _width, u_int _height, 
-	u_int _nframes, u_int *_tsizes, u_int _nres)
+                    u_int _nframes, u_int *_tsizes, u_int _nres)
 {
    int i;
    nframes = _nframes;
