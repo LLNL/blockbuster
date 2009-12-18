@@ -496,9 +496,15 @@ int main(int argc,char **argv)
     iSize[0] = dx;
     iSize[1] = dy;
   } else if (iType == 4) { // PNG
-    check_if_png(tstr,iSize);
+    if (!check_if_png(tstr,iSize)) {
+      fprintf(stderr, "Could not open the first PNG image -- it is either corrupt, nonexistent, or not a PNG file\n"); 
+      exit(1); 
+    }
   } else if (iType == 5) { // JPEG
-    check_if_jpeg(tstr,iSize);
+    if (!check_if_jpeg(tstr,iSize)) {
+      fprintf(stderr, "Could not open the first JPEG image -- it is either corrupt, nonexistent, or not a JPEG file\n"); 
+      exit(1); 
+    }
   }
 
   // count the files
