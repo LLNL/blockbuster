@@ -35,8 +35,6 @@
 
 
 
-#define USE_AGP_ALLOCATOR 0
-
 
 /* How many texure objects we'll allocate */
 #define MAX_TEXTURES 20
@@ -61,59 +59,20 @@ typedef struct {
     GLenum texFormat, texIntFormat;
     TextureObject textures[MAX_TEXTURES];
 
-#if USE_AGP_ALLOCATOR
-    /* These are saved for the Pixel Data Range extension.  As that
-     * extension causes memory to be locked down, we try to save
-     * it between uses.
-     */
-    unsigned int pixelDataSize;
-    void *pixelData;
-#endif
 } RenderInfo;
 
 
-/* These global variables define our behavior.  They are modified by 
- * passing in options.
- */
-static int globalSync = 1;
-#if USE_AGP_ALLOCATOR
-static int globalPixelDataRange = 1;
-#else
-static int globalPixelDataRange = 0;
-#endif
-static float globalPixelDataMemoryPriority = 1.0;
 
 
 void gltexture_HandleOptions(int &argc, char *argv[]) {
   while (argc > 1){
-    if (!strcmp(argv[1], "-s")) {
-      ConsumeArg(argc, argv, 1); 
-      globalSync = !globalSync;
-    } else if (!strcmp(argv[1], "-p")) {
-      ConsumeArg(argc, argv, 1); 
-      globalPixelDataRange = !globalPixelDataRange; 
-    } else if (!strcmp(argv[1], "-P")) {
-      ConsumeArg(argc, argv, 1); 
-      globalPixelDataMemoryPriority = atof(argv[1]); 
-      ConsumeArg(argc, argv, 1); 
-    } else if (!strcmp(argv[1], "-h")) {
+    if (!strcmp(argv[1], "-h")) {
       ConsumeArg(argc, argv, 1); 
       fprintf(stderr, "Renderer: %s\n", GLTEXTURE_NAME);
       fprintf(stderr, "%s\n", GLTEXTURE_DESCRIPTION);
-      fprintf(stderr, "Options:\n"  );
+      fprintf(stderr, "Options: there are no options for this renderer.\n"  );
       fprintf(stderr, "-h gives help\n");
-      fprintf(stderr, "-s toggles XSynchronize [%s]\n",
-              globalSync?"on":"off");
-#if USE_AGP_ALLOCATOR
-      fprintf(stderr, "-p toggles use of PixelDataRange extension [%s]\n",
-              globalPixelDataRange?"on":"off");
-      fprintf(stderr, "-P specifies pixel data memory priority (0.0-1.0) [%f]\n",
-              globalPixelDataMemoryPriority);
-#else
-      fprintf(stderr, "-p toggles use of PixelDataRange extension [unsupported]\n");
-      fprintf(stderr, "-P specifies pixel data memory priority (0.0-1.0) [unused]\n");
-#endif
-      
+     
       exit(MOVIE_HELP);
 	}
     else { 
@@ -136,74 +95,6 @@ static int32_t MinPowerOf2(int x)
     return rv;
 }
 
-
-#if USE_AGP_ALLOCATOR
-/* These are routines that we only use if we're using the PixelDataRange
- * extension.  These allow special image memory to be allocated that
- * is faster for image transfer than host memory.
- *
- * These particular routines count on the behavior that image data
- * allocated for a Canvas will be freed before more image data is
- * allocated.
- */
-static void *AGP_PixelDataRangeAllocate(Canvas *canvas, unsigned int size)
-{
-    RenderInfo *renderInfo = (RenderInfo *) canvas->rendererPrivateData;
-
-    /* See if we can reuse the pixel data we've already got */
-    if (size <= renderInfo->pixelDataSize) {
-	return renderInfo->pixelData;
-    }
-
-    /* If we're not reusing, and we have some image data, free it */
-    if (renderInfo->pixelDataSize != 0) {
-	DEBUGMSG("Freeing pixel data range buffer");
-	glPixelDataRangeNV(GL_WRITE_PIXEL_DATA_RANGE_NV, 0, NULL);
-	glXFreeMemoryNV(renderInfo->pixelData);
-	renderInfo->pixelDataSize = 0;
-	renderInfo->pixelData = NULL;
-    }
-
-    /* Allocate needed memory */
-#define NEVER_READ_MEMORY 0.0
-#define OFTEN_WRITE_MEMORY 1.0
-#define MEMORY_PRIORITY 0.9
-    renderInfo->pixelData = glXAllocateMemoryNV(size,
-	    NEVER_READ_MEMORY,
-	    OFTEN_WRITE_MEMORY,
-	    globalPixelDataMemoryPriority);
-
-    if (renderInfo->pixelData == NULL) {
-	/* Something's very wrong */
-	return NULL;
-    }
-    renderInfo->pixelDataSize = size;
-
-    /* Lock it down */
-    DEBUGMSG("Calling glPixelDataRangeNV");
-    glPixelDataRangeNV(GL_WRITE_PIXEL_DATA_RANGE_NV, size, renderInfo->pixelData);
-
-    return renderInfo->pixelData;
-}
-#endif
-
-
-#if USE_AGP_ALLOCATOR
-/*
- * Free our private data associated with the given image
- */
-static void AGP_DeallocateImageData(Canvas *canvas, void *imageData)
-{
-    /* We don't really free any memory - we just say we do.  That's
-     * because it's expensive to lock down memory for this routine,
-     * so we re-use memory whenever we can.  We'll really free
-     * the memory when we destroy the canvas.
-     */
-    glFlushPixelDataRangeNV(GL_WRITE_PIXEL_DATA_RANGE_NV);
-
-    free(imageData);
-}
-#endif
 
 
 /*
@@ -665,42 +556,14 @@ gltexture_Initialize(Canvas *canvas, const ProgramOptions *)
 	 renderInfo->maxTextureWidth,
 	 renderInfo->maxTextureHeight);
 
-    if (globalPixelDataRange) {
-	/* the PixelDataRange extension requires the following in order
-	 * to accelerate glTexSubImage2D on a little-endian (PC)
-	 * machine.  This may have to change for a big-endian machine.
-	 */
-	renderInfo->texIntFormat = GL_RGB8;
-	renderInfo->texFormat = GL_BGRA;
-    }
-    else {
 	renderInfo->texIntFormat = GL_RGB;
 	renderInfo->texFormat = GL_RGB;
-    }
 
     /* If we're going to try to use the PixelDataRange extension, enable it
      * as well as our custom memory management
      */
-#if USE_AGP_ALLOCATOR
-    if (globalPixelDataRange) {
-	DEBUGMSG("Enabling PixelDataRange extension");
-	canvas->requiredImageFormat.byteOrder = LSB_FIRST; /* BGRA data */
-	canvas->requiredImageFormat.bytesPerPixel = 4;
-	canvas->ImageDataAllocator = AGP_PixelDataRangeAllocate;
-	canvas->ImageDataDeallocator = AGP_DeallocateImageData;
-	glEnableClientState(GL_WRITE_PIXEL_DATA_RANGE_NV);
-    }
-    else {
-	/* Use standard allocation routines */
-	canvas->requiredImageFormat.byteOrder = MSB_FIRST; /* RGB data */
-	canvas->requiredImageFormat.bytesPerPixel = 3;
-	canvas->ImageDataAllocator = DefaultImageDataAllocator;
-	canvas->ImageDataDeallocator = DefaultImageDataDeallocator;
-    }
-#else
     canvas->ImageDataAllocator = DefaultImageDataAllocator;
     canvas->ImageDataDeallocator = DefaultImageDataDeallocator;
-#endif
 
     canvas->rendererPrivateData = renderInfo;
 
