@@ -606,13 +606,6 @@ void ImageCache::ClearImages(void)
     this->mHighestFrameNumber = 0;
 }
 
-//=============================================================
-void ImageCache::GetConfiguration(int &outNumThreads, int &outMaxImages)
-{
-    outNumThreads = mNumReaderThreads;
-    outMaxImages = mMaxCachedImages;
-    return;
-}
 
 //=============================================================
 void ImageCache::ClearJobQueue(void)

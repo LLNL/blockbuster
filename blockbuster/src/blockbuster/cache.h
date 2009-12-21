@@ -112,7 +112,6 @@ class ImageCache {
      const Rectangle *region, unsigned int levelOfDetail); 
   void ClearQueue(deque<ImageCacheJob*> &queue); 
   void ClearImages(void); 
-  void GetConfiguration(int &outNumThreads, int &outMaxImages) ;
   void ClearJobQueue(void);
   CachedImage *FindImage(uint32_t frame, uint32_t lod);
   void Print(void); 
