@@ -39,10 +39,13 @@
      BlockbusterInterface *mBlockbusterInterface; 
 
     /**************************************************************/
-    /* These fields are owned and initialized by the Renderer
+    /* These fields are owned and initialized by the Renderer.  It seems like maybe the Renderer is an idea encapsulated by x11.cpp, gl.cpp, or dmxglue.cpp.  
      */
 
-    /* The fundamental operation of the Renderer is to render. */
+    /* The fundamental operation of the Renderer is to render. So the 
+       question is, what the hell is the Render function doing in the canvas? 
+       This might be assigned gl_Render (gl.cpp, gl_Initialize), x11_Render (x11.cpp: x11_initialize()), or dmx_Render (dmxglue.cpp, dmx_Initialize()).  The assignment is done 
+    */
     void (*Render)(struct Canvas *canvas, int frameNumber,
        const Rectangle *imageRegion,
        int destX, int destY, float zoom, int lod);
@@ -58,6 +61,7 @@
      * These are always DefaultImageDataAllocator and 
      * DefaultImageDataDeallocator, except when using "AGP", 
      * whatever that is (in gltexture.cpp) 
+     * These are assigned in gl.cpp, gltexture.cpp, dmxglue.cpp, or x11.cpp.  There is absolutely no sense in that, since they are actually used in png.cpp, pnm.cpp, sgi-rgb.cpp, sm.cpp, and tiff.cpp, as you might expect. This is the first thing that I can get out of here and move into the actual images.  
      */ 
     void *(*ImageDataAllocator)(struct Canvas *canvas, unsigned int size);
     void (*ImageDataDeallocator)(struct Canvas *canvas, void *imageData);
