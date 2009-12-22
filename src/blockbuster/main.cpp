@@ -652,7 +652,7 @@ int main(int argc, char *argv[])
   printargs("Before framelist", args, argc); 
   int count = 0; 
   while (count < argc && args[count]) count++;  
-  if (count-1) {
+  if (count && count-1) {
     allFrames = new FrameList(count-1, &args[1]);
   }
   if (opt->sidecarHostPort != "" && allFrames == NULL) {
