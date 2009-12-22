@@ -163,7 +163,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
 
   /* Region Of Interest of the image */
   Rectangle roi;
-  int destX, destY;
+  int destX, destY; // position on canvas to render the image
 
  /* We'll need this for timing */
   Hertz = sysconf(_SC_CLK_TCK);
@@ -895,7 +895,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         }
       }
         /*
-      * Compute ROI
+      * Compute ROI: region of the image that's visible in the window 
       */
       {
         const int imgWidth = frameInfo->width;
@@ -918,15 +918,15 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         imgBottom = static_cast<int>(y + (winHeight / 2) / currentZoom);
         
         /* Compute region of the image that's visible in the window and
-         * its position relative to upper-left corner of window.
+         * its position destX,destY relative to upper-left corner of window.
          */
         /* X axis */
         roi.width = imgRight - imgLeft;
         roi.x = imgLeft;
-        if (roi.x < 0) {
+        if (roi.x < 0) { // left edge of the image is off screen
           /* clip left */
           roi.x = 0;
-          roi.width += roi.x;
+          roi.width += roi.x; // this is odd. 
         }
         if (roi.x + roi.width > imgWidth) {
           /* clip right */
@@ -937,6 +937,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
           roi.x = roi.width = 0;
         }
         
+        // placement of image on canvas:  destX
         destX = static_cast<int>(-imgLeft * currentZoom);
         if (destX < 0) {
           /* left clip */
@@ -955,7 +956,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         if (roi.y < 0) {
           /* clip top */
           roi.y = 0;
-          roi.height += roi.y;
+          roi.height += roi.y; // huh?  it's 0! 
         }
         if (roi.y + roi.height > imgHeight) {
           /* clip bottom */
@@ -966,6 +967,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
           roi.y = roi.height = 0;
         }
         
+        // placement of image on canvas:  destY
         destY = static_cast<int>(-imgTop * currentZoom);
         if (destY < 0) {
           /* top clip */
