@@ -64,20 +64,24 @@ struct ImageFormat{
   unsigned long redMask, greenMask, blueMask;
 } ;
 
-typedef void (*ImageDeallocatorFunc)(Canvas *, struct Image *);
-typedef void (*ImageDataDeallocatorFunc)(Canvas *, void *);
 struct Image {
   Image():width(0), height(0),  levelOfDetail(0), 
           frameNumber(0), imageDataBytes(0), imageData(NULL), 
-    ImageDeallocator(NULL), ImageDataDeallocator(NULL) {}
+          mManageData(false){}
   Image(uint32_t w, uint32_t h, 
         ImageFormat &form, Rectangle &region, int lod, uint32_t frame, 
-        unsigned int idb, void *data, 
-        ImageDeallocatorFunc idf, ImageDataDeallocatorFunc iddf) :
+        unsigned int idb, void *data, bool manageData=false) :
     width(w), height(h), imageFormat(form), loadedRegion(region), 
     levelOfDetail(lod), 
     frameNumber(frame), imageDataBytes(idb), imageData(data), 
-    ImageDeallocator(idf), ImageDataDeallocator(iddf){}
+    mManageData(manageData) {}
+
+  ~Image() {
+    if (mManageData && imageData) free(imageData); 
+    return; 
+  }
+  
+    
   uint32_t width, height;
   ImageFormat imageFormat;
   Rectangle loadedRegion;
@@ -85,20 +89,7 @@ struct Image {
   uint32_t frameNumber; // if appropriate
   unsigned int imageDataBytes;
   void *imageData;      /* the actual image data */
-  
-  /* This routine is used to free the image; it is owned by the
-   * FileFormat module that loaded it.  This function should
-   * always invoke the ImageDataDeallocator() function (below),
-   * unless the imageData is NULL or the ImageDataDeallocator()
-   * function is NULL.
-   */
-  void (*ImageDeallocator)(Canvas *canvas, struct Image *image);
-  
-  /* This routine is used to free the image's RGB data;
-   * it is typically owned by the Canvas, but often
-   * is a general allocation routine.
-   */
-  void (*ImageDataDeallocator)(Canvas *canvas, void *imageData);
+  bool mManageData; // if true, then imageData will be free()'d during destructor
   
 } ;
 
@@ -168,16 +159,9 @@ struct FrameInfo {
    * if it can switch to the desired format, it should, but
    * it can return any format it wishes (or can).
    * 
-   * The returned image can be released with the returned
-   * ImageDeallocator() routine.
+   * The returned image can be released with free()
    *
-   * The File Format module may use the ImageDataAllocator() routine
-   * provided by the Canvas to allocate image memory, if the
-   * File Format module is capable of returning the format
-   * required by the Canvas.  In this case, the appropriate
-   * ImageDeallocator() function will be plugged into the
-   * image.
-   */
+  */
   /* int LoadImage(Image *image,
 		struct FrameInfo *frameInfo,
 		struct Canvas *canvas,
@@ -285,9 +269,6 @@ struct FrameList {
   */ 
 
 //FrameList *LoadFrameList(int fileCount, const char **files, void *settings);
-void *DefaultImageDataAllocator(Canvas *canvas, unsigned int size);
-void DefaultImageDataDeallocator(Canvas *canvas, void *imageData);
-void DefaultImageDeallocator(Canvas *canvas, Image *image);
 void DefaultDestroyFrameInfo(FrameInfo *frameInfo);
 
 #endif

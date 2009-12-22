@@ -30,7 +30,7 @@
 #include "splash.h"
 
 
-extern unsigned char imageData[92700];  // defined at the bottom of this file
+extern unsigned char splashImageData[92700];  // defined at the bottom of this file
 
 
 /* This is a utility that saves the specified image to a file as
@@ -153,8 +153,6 @@ void WriteImageToFile(Canvas *canvas, int frameNumber)
     fprintf(f, "    0, /* levelOfDetail */\n");
     fprintf(f, "    %d, /* imageDataBytes */\n", image->imageDataBytes);
     fprintf(f, "    (void *)imageData,\n");
-    fprintf(f, "    NullImageDeallocator,\n");
-    fprintf(f, "    NullImageDataDeallocator\n");
     fprintf(f, "};\n");
     fclose(f);
     canvas->imageCache->ReleaseImage( image);
@@ -175,18 +173,6 @@ FrameList splashScreenFrameList = {
 	{NULL}
 };
 #else 
-/* These functions are required if there is a splash screen present. */
-static void NullImageDeallocator(Canvas *, Image *)
-{
-    /* Splash screen data is static; nothing need be freed */
-    return;
-}
-
-static void NullImageDataDeallocator(Canvas *, void *)
-{
-    /* Image data is static; nothing need be freed */
-    return;
-}
 
 static void NullDestroyFrameInfo(FrameInfo *)
 {
@@ -207,9 +193,7 @@ static Image splashScreen
 (300, 103, /* width, height */
  splashFormat, splashRect,
  0, 0, 92700, /* levelOfDetail, frameNumber, imageDataBytes */
- (void *)imageData,
- NullImageDeallocator,
- NullImageDataDeallocator); 
+ (void *)splashImageData, false); 
 
 
 
@@ -241,7 +225,7 @@ static FrameInfo frameInfo
 
 FrameList splashScreenFrameList(&frameInfo); 
 
- unsigned char imageData[92700] = {
+unsigned char splashImageData[92700] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 

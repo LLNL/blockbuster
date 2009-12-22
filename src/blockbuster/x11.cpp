@@ -303,11 +303,10 @@ static void x11_Render(Canvas *canvas, int frameNumber,
      * case, we need to deallocate the local image.  If we haven't zoomed,
      * we're still using the original image from the cache; we need to
      * release it so that the image cache knows we're done with it.
-     * Note that if we are deallocating the image, the ImageDeallocator
-     * function will call the ImageDataDeallocator function itself.
      */
     if (zoom != 1.0) {
-        (*image->ImageDeallocator)(canvas, image);
+      if (image->imageData) free(image->imageData); 
+      free(image);
     }
     else {
       canvas->imageCache->ReleaseImage( image);
@@ -340,8 +339,6 @@ x11_Initialize(Canvas *canvas, const ProgramOptions *)
     if (canvas->DrawString == NULL) { 
         canvas->DrawString = x11_DrawString;
     }
-    canvas->ImageDataAllocator = DefaultImageDataAllocator;
-    canvas->ImageDataDeallocator = DefaultImageDataDeallocator;
     canvas->DestroyRenderer = NULL;
 
     /* We CAN'T override resize/move functions - DMX needs to use them - BP */

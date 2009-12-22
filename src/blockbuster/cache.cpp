@@ -127,7 +127,6 @@ static Image *LoadAndConvertImage(FrameInfo *frameInfo, unsigned int frameNumber
 	ERROR("Out of memory in LoadAndConvertImage");
 	return NULL;
     }
-    image->ImageDeallocator = DefaultImageDeallocator;
 
     CACHEDEBUG("LoadImage being called"); 
     /* Call the file format module to load the image */
@@ -143,6 +142,7 @@ static Image *LoadAndConvertImage(FrameInfo *frameInfo, unsigned int frameNumber
 	    frameInfo->filename
 	);
 	frameInfo->enable = 0;
+    //if (image->imageData) free (image->imageData);
 	free(image);
 	return NULL;
     }
@@ -160,7 +160,8 @@ static Image *LoadAndConvertImage(FrameInfo *frameInfo, unsigned int frameNumber
       /* We either converted, or failed to convert; in either
        * case, the old image is useless.
        */
-      (*image->ImageDeallocator)(canvas, image);
+      //if (image->imageData) free (image->imageData); 
+      free(image);
       
       image = convertedImage;
       if (image == NULL) {
@@ -296,8 +297,9 @@ void CacheThread::run() {
 	     */
       this->cache->unlock("useless job", __FILE__, __LINE__); 
 	    if (image) {
-		(*image->ImageDeallocator)(this->cache->mCanvas, image);
-                image = NULL;
+          if (image->imageData) free(image->imageData); 
+          free(image);
+          image = NULL;
 	    }
 	}
 	else if (image == NULL) {
@@ -326,7 +328,8 @@ void CacheThread::run() {
 
       this->cache->unlock("no place for job", __FILE__, __LINE__); 
       this->cache->WakeAllJobDone("no place for job",__FILE__, __LINE__); 
-      (*image->ImageDeallocator)(this->cache->mCanvas, image);
+      if (image->imageData) free(image->imageData); 
+      free(image);
       image = NULL;
 	}
 	else {
@@ -526,7 +529,8 @@ CachedImage *ImageCache::GetCachedImageSlot(uint32_t newFrameNumber)
      * before returning it.
      */
     if (imageSlot->loaded) {
-      (*imageSlot->image->ImageDeallocator)(mCanvas, imageSlot->image);
+      if (imageSlot->image->imageData) free (imageSlot->image->imageData); 
+      free(imageSlot->image);
       imageSlot->image = NULL;
       imageSlot->loaded = 0;
     }
@@ -595,13 +599,13 @@ void ImageCache::ClearImages(void)
       CACHEDEBUG("cached image %d forcibly unlocked while clearing cache",	i);
 	}
 	if (this->mCachedImages[i].loaded) {
-	    (this->mCachedImages[i].image->ImageDeallocator)(
-		this->mCanvas,
-		this->mCachedImages[i].image
-	    );
-	    this->mCachedImages[i].image = NULL;
-	    this->mCachedImages[i].loaded = 0;
-	}
+      if (this->mCachedImages[i].image->imageData) {
+        free(this->mCachedImages[i].image->imageData);
+      }
+      free(this->mCachedImages[i].image);
+      this->mCachedImages[i].image = NULL;
+      this->mCachedImages[i].loaded = 0;
+    }
     }
     this->mHighestFrameNumber = 0;
 }
@@ -950,15 +954,17 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
 	if (mNumReaderThreads > 0) {
       unlock("no place for image", __FILE__, __LINE__); 
 	}
-	(*image->ImageDeallocator)(mCanvas, image);
+	if (image->imageData) free(image->imageData);
+	free(image);
         image = NULL;
 	return NULL;
     }
 
     /* if there's an image in this slot, free it! */
     if (imageSlot->image) {
-        (*image->ImageDeallocator)(mCanvas, imageSlot->image);
-        imageSlot->image = NULL;
+      if (imageSlot->image->imageData) free(imageSlot->image->imageData);
+      free(imageSlot->image);
+      imageSlot->image = NULL;
     }
 
     /* Otherwise, we're happy.  Store the image away. */

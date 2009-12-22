@@ -56,31 +56,6 @@ static int matchStartOfName(const struct dirent *entry)
   return (QString(entry->d_name) == matchName); 
 }
 
-/* Image data allocation and deallocation routines, and image
- * deallocation routines, that are used by multiple modules. 
- * In general, it's the responsibility of the image allocator
- * to install the correct deallocation function in the image.
- * (Some modules, like the splash screen or modules that 
- * allocate image data from graphics chip memory, may install
- * their own image deallocation routines.)
- */
-
-void *DefaultImageDataAllocator(Canvas *, unsigned int size)
-{
-    return malloc(size);
-}
-void DefaultImageDataDeallocator(Canvas *, void *imageData)
-{
-    free(imageData);
-}
-
-void DefaultImageDeallocator(Canvas *canvas, Image *image)
-{
-    if (image->imageData != NULL && image->ImageDataDeallocator != NULL) {
-      (*image->ImageDataDeallocator)(canvas, image->imageData);
-    }
-    free(image);
-}
 /* This routine is called to release all the memory associated with a frame. */
 void DefaultDestroyFrameInfo(FrameInfo *frameInfo)
 {

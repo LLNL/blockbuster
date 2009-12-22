@@ -57,18 +57,16 @@ smLoadImage(Image *image, struct FrameInfo *frameInfo,
   
   if (!image->imageData) {
     /* The Canvas gets the opportunity to allocate image data first. */
-    image->imageData = (*canvas->ImageDataAllocator)(canvas,
-                                                     imgWidth * imgHeight * 3);
+    image->imageData = calloc(1, imgWidth * imgHeight * 3);
     if (image->imageData == NULL) {
-      ERROR("could not allocate %dx%dx24 image data with canvas allocator",
+      ERROR("could not allocate %dx%dx24 image data",
             frameInfo->width, frameInfo->height);
       return 0;
     }
     image->width = imgWidth;
     image->height = imgHeight;
 	image->imageDataBytes = imgWidth * imgHeight * 3;
-    image->ImageDataDeallocator = canvas->ImageDataDeallocator;
-    image->imageFormat.bytesPerPixel = 3;
+     image->imageFormat.bytesPerPixel = 3;
     image->imageFormat.scanlineByteMultiple = 1;
     image->imageFormat.byteOrder = MSB_FIRST;
     image->imageFormat.rowOrder = BOTTOM_TO_TOP; /* OpenGL order */

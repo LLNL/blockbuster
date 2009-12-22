@@ -155,26 +155,26 @@ LoadImage(Image *image, struct FrameInfo *frameInfo,
 
     if (!image->imageData) {
         /* The Canvas gets the opportunity to allocate image data first. */
-        image->imageData = (*canvas->ImageDataAllocator)(canvas, frameInfo->height * scanlineBytes);
-        if (image->imageData == NULL) {
-            ERROR("could not allocate %dx%dx%d image data with canvas allocator",
-                frameInfo->width, frameInfo->height, bytesPerPixel);
-            return 0;
-        }
-	image->imageDataBytes = frameInfo->height * scanlineBytes;
-        image->ImageDataDeallocator = canvas->ImageDataDeallocator;
-
-        image->width = frameInfo->width;
-        image->height = frameInfo->height;
-        image->imageFormat.bytesPerPixel = bytesPerPixel;
-        image->imageFormat.scanlineByteMultiple = byteMultiple;
-        image->imageFormat.byteOrder = byteOrder;
-        if (canvas->requiredImageFormat.rowOrder == ROW_ORDER_DONT_CARE)
+      image->imageData = malloc(frameInfo->height * scanlineBytes);
+      if (image->imageData == NULL) {
+        ERROR("could not allocate %dx%dx%d image data",
+              frameInfo->width, frameInfo->height, bytesPerPixel);
+        return 0;
+      }
+      
+      image->imageDataBytes = frameInfo->height * scanlineBytes;
+      
+      image->width = frameInfo->width;
+      image->height = frameInfo->height;
+      image->imageFormat.bytesPerPixel = bytesPerPixel;
+      image->imageFormat.scanlineByteMultiple = byteMultiple;
+      image->imageFormat.byteOrder = byteOrder;
+      if (canvas->requiredImageFormat.rowOrder == ROW_ORDER_DONT_CARE)
 	    image->imageFormat.rowOrder = BOTTOM_TO_TOP; /* Bias for OpenGL */
         else
-            image->imageFormat.rowOrder = canvas->requiredImageFormat.rowOrder;
-
-        image->levelOfDetail = levelOfDetail;
+          image->imageFormat.rowOrder = canvas->requiredImageFormat.rowOrder;
+      
+      image->levelOfDetail = levelOfDetail;
     }
     else {
 	/* some sanity checks */
@@ -190,7 +190,7 @@ LoadImage(Image *image, struct FrameInfo *frameInfo,
     rowPointers = (png_bytep *)malloc(frameInfo->height * sizeof(png_bytep));
     if (rowPointers == NULL) {
 	ERROR("could not allocate row pointers for frame");
-	(*canvas->ImageDataDeallocator)(canvas, image->imageData);
+	if (image->imageData) free (image->imageData);
 	image->imageData = NULL;
 	return 0;
     }
@@ -207,7 +207,7 @@ LoadImage(Image *image, struct FrameInfo *frameInfo,
     if (!PrepPng(frameInfo->filename, &f, &readStruct, &infoStruct)) {
 	/* Error has already been reported */
 	free(rowPointers);
-	(*image->ImageDataDeallocator)(canvas, image->imageData);
+	if (image->imageData) free (image->imageData);
 	image->imageData = NULL;
 	return 0;
     }
@@ -225,8 +225,8 @@ LoadImage(Image *image, struct FrameInfo *frameInfo,
 	ERROR("libpng error: setjmp returned %d", rv);
 	png_destroy_read_struct(&readStruct, &infoStruct, NULL);
 	free(rowPointers);
-	free(image->imageData);
-        image->imageData = NULL;
+	if (image->imageData) free(image->imageData);
+    image->imageData = NULL;
 	fclose(f);
 	return 0;
     }

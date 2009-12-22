@@ -86,14 +86,13 @@ LoadRGBAImage(Image *image, struct FrameInfo *frameInfo,
 	    image->imageFormat.rowOrder = format->rowOrder;
 
 	/* The Canvas gets the opportunity to allocate image data first. */
-	image->imageData = (*canvas->ImageDataAllocator)(canvas, frameInfo->height * scanlineBytes);
+	image->imageData = calloc(1, frameInfo->height * scanlineBytes);
 	if (image->imageData == NULL) {
-	    ERROR("could not allocate %dx%dx%d image data with canvas allocator",
+	    ERROR("could not allocate %dx%dx%d image data",
 		frameInfo->width, frameInfo->height, frameInfo->depth);
 	    return 0;
 	}
 	image->imageDataBytes = frameInfo->height * scanlineBytes;
-	image->ImageDataDeallocator = canvas->ImageDataDeallocator;
 
 	/* We sent only the necessary rows, but all pixels in each row.
 	 * So tell this to the caller.
@@ -109,8 +108,7 @@ LoadRGBAImage(Image *image, struct FrameInfo *frameInfo,
     f = TIFFOpen(frameInfo->filename, "r");
     if (f == NULL) {
 	SYSERROR("cannot open TIFF file %s", frameInfo->filename);
-	bb_assert(image->ImageDataDeallocator);
-	(*image->ImageDataDeallocator)(canvas, image->imageData);
+    if (image->imageData) free(image->imageData);
 	image->imageData = NULL;
 	image->imageDataBytes = 0;
 	return 0;
@@ -234,14 +232,13 @@ LoadColor24Image(Image *image, struct FrameInfo *frameInfo,
 	    image->imageFormat.rowOrder = format->rowOrder;
 
 	/* The Canvas gets the opportunity to allocate image data first. */
-	image->imageData = (*canvas->ImageDataAllocator)(canvas, frameInfo->height * scanlineBytes);
+	image->imageData = calloc(1, frameInfo->height * scanlineBytes);
 	if (image->imageData == NULL) {
-	    ERROR("could not allocate %dx%dx%d image data with canvas allocator",
+	    ERROR("could not allocate %dx%dx%d image data ",
 		frameInfo->width, frameInfo->height, frameInfo->depth);
 	    return 0;
 	}
 	image->imageDataBytes = frameInfo->height * scanlineBytes;
-	image->ImageDataDeallocator = canvas->ImageDataDeallocator;
 
 	/* We sent only the necessary rows, but all pixels in each row.
 	 * So tell this to the caller.
@@ -257,8 +254,7 @@ LoadColor24Image(Image *image, struct FrameInfo *frameInfo,
     f = TIFFOpen(frameInfo->filename, "r");
     if (f == NULL) {
 	SYSERROR("cannot open TIFF file %s", frameInfo->filename);
-	bb_assert(image->ImageDataDeallocator);
-	(*image->ImageDataDeallocator)(canvas, image->imageData);
+	if (image->imageData) free(image->imageData);
 	image->imageData = NULL;
 	image->imageDataBytes = 0;
 	return 0;
@@ -402,7 +398,7 @@ FrameList *tiffGetFrameList(const char *filename)
 	return NULL;
     }
 
-    privateDataPtr = (privateData *)malloc(sizeof(privateData));
+    privateDataPtr = (privateData *)calloc(1, sizeof(privateData));
     if (privateDataPtr == NULL) {
 	ERROR("cannot allocate private data structure");
 	free(frameInfo);

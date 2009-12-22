@@ -421,8 +421,6 @@ gl_Initialize(Canvas *canvas, const ProgramOptions *)
   /* Trivial for gl renderer: */
   /* Plug in our functions into the canvas */
   canvas->Render = gl_Render;
-  canvas->ImageDataAllocator = DefaultImageDataAllocator;
-  canvas->ImageDataDeallocator = DefaultImageDataDeallocator;
   canvas->DestroyRenderer = NULL;
 
   return MovieSuccess;
@@ -435,8 +433,6 @@ gl_InitializeStereo(Canvas *canvas, const ProgramOptions *)
   canvas->rendererPrivateData = NULL; 
   canvas->BeforeRender = NULL;
   canvas->Render = gl_RenderStereo;
-  canvas->ImageDataAllocator = DefaultImageDataAllocator;
-  canvas->ImageDataDeallocator = DefaultImageDataDeallocator;
   canvas->DestroyRenderer = NULL;
 
   return MovieSuccess;

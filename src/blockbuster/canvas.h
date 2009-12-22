@@ -50,23 +50,7 @@
        const Rectangle *imageRegion,
        int destX, int destY, float zoom, int lod);
 
-    /* These are special functions for the canvas; if the performance
-     * of the canvas can benefit from a custom allocation of memory
-     * (say, using extensions to reserve blocks of memory on the
-     * graphics chip), the ImageDataAllocator() function may be used by the
-     * FileFormat module to allocate image memory.  If image memory is
-     * allocated in this way, an appropriate function that calls the
-     * Canvas' ImageDataDeallocator() function must be plugged into the
-     * image.     
-     * These are always DefaultImageDataAllocator and 
-     * DefaultImageDataDeallocator, except when using "AGP", 
-     * whatever that is (in gltexture.cpp) 
-     * These are assigned in gl.cpp, gltexture.cpp, dmxglue.cpp, or x11.cpp.  There is absolutely no sense in that, since they are actually used in png.cpp, pnm.cpp, sgi-rgb.cpp, sm.cpp, and tiff.cpp, as you might expect. This is the first thing that I can get out of here and move into the actual images.  
-     */ 
-    void *(*ImageDataAllocator)(struct Canvas *canvas, unsigned int size);
-    void (*ImageDataDeallocator)(struct Canvas *canvas, void *imageData);
-
-    /* The Canvas must manage the lists of frames and image caches
+   /* The Canvas must manage the lists of frames and image caches
      * filled with frames.  All the Renderers must provide the 
      * methods listed below; typically, they will use the stored
      * FrameList and ImageCache, which is why these two variables

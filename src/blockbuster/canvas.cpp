@@ -48,7 +48,7 @@ Canvas::Canvas(qint32 parentWindowID, BlockbusterInterface *gui):
   height(0), width(0), screenHeight(0), screenWidth(0), 
   XPos(0), YPos(0), depth(0), threads(0), cachesize(0), 
   mBlockbusterInterface(gui), 
-  Render(NULL), ImageDataAllocator(NULL), ImageDataDeallocator(NULL), 
+  Render(NULL), 
   frameList(NULL), imageCache(NULL), SetFrameList(NULL), Preload(NULL), 
   DestroyRenderer(NULL), rendererPrivateData(NULL), Resize(NULL), Move(NULL), 
   DrawString(NULL), SwapBuffers(NULL), BeforeRender(NULL), AfterRender(NULL)
