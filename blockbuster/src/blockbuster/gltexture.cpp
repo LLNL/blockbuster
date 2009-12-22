@@ -562,8 +562,6 @@ gltexture_Initialize(Canvas *canvas, const ProgramOptions *)
     /* If we're going to try to use the PixelDataRange extension, enable it
      * as well as our custom memory management
      */
-    canvas->ImageDataAllocator = DefaultImageDataAllocator;
-    canvas->ImageDataDeallocator = DefaultImageDataDeallocator;
 
     canvas->rendererPrivateData = renderInfo;
 

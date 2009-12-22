@@ -229,14 +229,12 @@ LoadSGIImage(Image *image, struct FrameInfo *frameInfo,
 		 image->imageFormat.scanlineByteMultiple);
 
 	image->imageDataBytes = frameInfo->height * rowWidth;
-	image->imageData = (*canvas->ImageDataAllocator)(canvas,
-						       image->imageDataBytes);
+	image->imageData = malloc(image->imageDataBytes);
 	if (image->imageData == NULL) {
-	    ERROR("could not allocate %dx%dx%d image data with canvas allocator",
+	    ERROR("could not allocate %dx%dx%d image data",
 		frameInfo->width, frameInfo->height, frameInfo->depth);
 	    return 0;
 	}
-	image->ImageDataDeallocator = canvas->ImageDataDeallocator;
     }
     else {
 	rowWidth = ROUND_TO_MULTIPLE(

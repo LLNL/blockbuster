@@ -442,8 +442,6 @@ MovieStatus dmx_Initialize(Canvas *canvas, const ProgramOptions *options) {
   /* Plug in our special functions for canvas manipulations.
    * We basically override all the functions set in CreateXWindow.
    */
-  canvas->ImageDataAllocator = DefaultImageDataAllocator;
-  canvas->ImageDataDeallocator = DefaultImageDataDeallocator;
   canvas->SetFrameList = dmx_SetFrameList;
   canvas->Render = dmx_Render;
   canvas->Resize = dmx_Resize;

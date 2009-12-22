@@ -1388,23 +1388,22 @@ LoadImage(Image *image, struct FrameInfo *frameInfo,
 
     if (!image->imageData) {
         /* The Canvas gets the opportunity to allocate image data first. */
-        image->imageData = (*canvas->ImageDataAllocator)(canvas, frameInfo->height * scanlineBytes);
-        if (image->imageData == NULL) {
-            ERROR("could not allocate %dx%dx%d image data with canvas allocator",
-                frameInfo->width, frameInfo->height, frameInfo->depth);
-            free(image);
-            return 0;
-        }
-	image->imageDataBytes = frameInfo->height * scanlineBytes;
-        image->ImageDataDeallocator = canvas->ImageDataDeallocator;
-
-        image->width = frameInfo->width;
-        image->height = frameInfo->height;
-        image->imageFormat.bytesPerPixel = canvas->requiredImageFormat.bytesPerPixel;
-        image->imageFormat.scanlineByteMultiple = canvas->requiredImageFormat.scanlineByteMultiple;
-        image->imageFormat.byteOrder = byteOrder;
-        image->imageFormat.rowOrder = rowOrder;
-        image->levelOfDetail = levelOfDetail;
+      image->imageData = malloc(frameInfo->height * scanlineBytes);
+      if (image->imageData == NULL) {
+        ERROR("could not allocate %dx%dx%d image data ",
+              frameInfo->width, frameInfo->height, frameInfo->depth);
+        free(image);
+        return 0;
+      }
+      image->imageDataBytes = frameInfo->height * scanlineBytes;
+     
+      image->width = frameInfo->width;
+      image->height = frameInfo->height;
+      image->imageFormat.bytesPerPixel = canvas->requiredImageFormat.bytesPerPixel;
+      image->imageFormat.scanlineByteMultiple = canvas->requiredImageFormat.scanlineByteMultiple;
+      image->imageFormat.byteOrder = byteOrder;
+      image->imageFormat.rowOrder = rowOrder;
+      image->levelOfDetail = levelOfDetail;
     }
 
     /* We're really dumb.  We only know how to return our
@@ -1414,13 +1413,13 @@ LoadImage(Image *image, struct FrameInfo *frameInfo,
     f = pm_openr(frameInfo->filename);
     if (f == NULL) {
 	WARNING("cannot open file %s", frameInfo->filename);
-	(*image->ImageDeallocator)(canvas, image);
+	free(image);
 	return 0;
     }
     if (pnm_readpnminit(f, &width,&height,&value,&fmt) == -1) {
 	SYSERROR("%s is not a PNM file", frameInfo->filename);
 	pm_closer(f);
-	(*image->ImageDeallocator)(canvas, image);
+	free(image);
 	return 0;
     }
     switch(PNM_FORMAT_TYPE(fmt)) {
@@ -1444,8 +1443,8 @@ LoadImage(Image *image, struct FrameInfo *frameInfo,
 		width, height, 8*depth,
 		frameInfo->width, frameInfo->height, frameInfo->depth);
 	pm_closer(f);
-	/* This will call the image's data deallocator */
-	(*image->ImageDeallocator)(canvas, image);
+    if (image->imageData) free(image->imageData); 
+	free(image);
 	return 0;
     }
 

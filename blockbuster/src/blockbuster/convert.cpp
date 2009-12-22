@@ -171,15 +171,12 @@ Image *ConvertImageToFormat(const Image *image, Canvas *canvas)
      * image from scratch.
      */
 
-    destImage = (Image *)malloc(sizeof(Image));
+    destImage = (Image *)calloc(1, sizeof(Image));
     if (destImage == NULL) {
 	ERROR("could not allocate Image structure");
 	return NULL;
     }
-    bb_assert(canvas->ImageDataAllocator);
-    destImage->imageData = 
-      (*canvas->ImageDataAllocator)
-      (canvas, image->height * destBytesPerScanline);
+    destImage->imageData = calloc(1, image->height * destBytesPerScanline);
     if (destImage->imageData == NULL) {
 	ERROR("could not allocate %dx%dx%d image data",
 		image->height, image->width, destBytesPerPixel*8);
@@ -187,8 +184,6 @@ Image *ConvertImageToFormat(const Image *image, Canvas *canvas)
 	return NULL;
     }
     destImage->imageDataBytes = image->height * destBytesPerScanline;
-    destImage->ImageDataDeallocator = canvas->ImageDataDeallocator;
-    destImage->ImageDeallocator = DefaultImageDeallocator;
 
     if ((srcFormat->rowOrder != destFormat->rowOrder) && (destFormat->rowOrder != ROW_ORDER_DONT_CARE))
        srcScanline = (unsigned char *) image->imageData + (image->height - 1) * srcBytesPerScanline;
@@ -250,13 +245,12 @@ Image *ScaleImage(const Image *image, Canvas *canvas,
     register unsigned char *zoomedScanline, *zoomedData, *pixelData;
     Image *zoomedImage;
 
-    zoomedImage = (Image *)malloc(sizeof(Image));
+    zoomedImage = (Image *)calloc(1, sizeof(Image));
     if (zoomedImage == NULL) {
 	ERROR("could not allocate Image structure");
 	return NULL;
     }
-    zoomedImage->imageData = 
-      (*canvas->ImageDataAllocator)(canvas, zoomedHeight * zoomedBytesPerScanline);
+    zoomedImage->imageData = calloc(1, zoomedHeight * zoomedBytesPerScanline);
     if (zoomedImage->imageData == NULL) {
 	ERROR("could not allocate %dx%dx%d zoomed image data",
 		zoomedHeight, zoomedWidth, format->bytesPerPixel*8);
@@ -264,8 +258,6 @@ Image *ScaleImage(const Image *image, Canvas *canvas,
 	return NULL;
     }
     zoomedImage->imageDataBytes = zoomedHeight * zoomedBytesPerScanline;
-    zoomedImage->ImageDataDeallocator = canvas->ImageDataDeallocator;
-    zoomedImage->ImageDeallocator = DefaultImageDeallocator;
 
     zoomedImage->height = zoomedHeight;
     zoomedImage->width = zoomedWidth;
