@@ -1,6 +1,7 @@
 #ifndef BLOCKBUSTER_CANVAS_H
 #define BLOCKBUSTER_CANVAS_H
 
+#include "Renderer.h"
 #include "common.h"
 #include "frames.h"
 #include "settings.h"
@@ -50,9 +51,10 @@
      * have been codified here (rather than require most Renderers
      * to put these variables into privateData).
      */
-    FrameList *frameList;
-    struct ImageCache *imageCache;
-     
+     FrameList *frameList;
+     struct ImageCache *imageCache;
+
+     public:
    /* The fundamental operation of the Renderer is to render.        This might be assigned gl_Render (gl.cpp, gl_Initialize), x11_Render (x11.cpp: x11_initialize()), or dmx_Render (dmxglue.cpp, dmx_Initialize()).  The assignment is done 
     */
     void (*Render)(struct Canvas *canvas, int frameNumber,
@@ -74,7 +76,7 @@
     void *rendererPrivateData;
 
      // this will replaces all the above function pointers. 
-     //NewRenderer *mRenderer; 
+     NewRenderer *mRenderer; 
 
 
 
@@ -88,7 +90,8 @@
      * fail to do so, we'll convert them ourselves (an expensive but
      * functional situation).
      */
-    ImageFormat requiredImageFormat;
+     ImageFormat requiredImageFormat; // only defined and required by xwindow.cpp, strangely.  
+
     /* This renderer function will be called to notify the renderer
      * that a resize has occurred.  Most renderers will not care
      * about such a change, but some that manage subwindows (like
