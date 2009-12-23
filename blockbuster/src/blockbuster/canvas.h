@@ -42,14 +42,7 @@
     /* These fields are owned and initialized by the Renderer.  It seems like maybe the Renderer is an idea encapsulated by x11.cpp, gl.cpp, or dmxglue.cpp.  
      */
 
-    /* The fundamental operation of the Renderer is to render. So the 
-       question is, what the hell is the Render function doing in the canvas? 
-       This might be assigned gl_Render (gl.cpp, gl_Initialize), x11_Render (x11.cpp: x11_initialize()), or dmx_Render (dmxglue.cpp, dmx_Initialize()).  The assignment is done 
-    */
-    void (*Render)(struct Canvas *canvas, int frameNumber,
-       const Rectangle *imageRegion,
-       int destX, int destY, float zoom, int lod);
-
+ 
    /* The Canvas must manage the lists of frames and image caches
      * filled with frames.  All the Renderers must provide the 
      * methods listed below; typically, they will use the stored
@@ -60,12 +53,18 @@
     FrameList *frameList;
     struct ImageCache *imageCache;
      
+   /* The fundamental operation of the Renderer is to render.        This might be assigned gl_Render (gl.cpp, gl_Initialize), x11_Render (x11.cpp: x11_initialize()), or dmx_Render (dmxglue.cpp, dmx_Initialize()).  The assignment is done 
+    */
+    void (*Render)(struct Canvas *canvas, int frameNumber,
+       const Rectangle *imageRegion,
+       int destX, int destY, float zoom, int lod);
+
     void (*SetFrameList)(struct Canvas *canvas, FrameList *frameList);
     void (*Preload)(struct Canvas *canvas, uint32_t frameNumber,
         const Rectangle *imageRegion, uint32_t levelOfDetail);
 
     /* The Renderer will get its own chance to release any resources
-     * it may have allocated.
+     * it may have allocated.  This will be the Renderer's destructor.  
      */
     void (*DestroyRenderer)(struct Canvas *canvas);
 
@@ -73,6 +72,10 @@
      * allocated data, this is the place to do it.
      */
     void *rendererPrivateData;
+
+     // this will replaces all the above function pointers. 
+     //NewRenderer *mRenderer; 
+
 
 
     /**************************************************************/
