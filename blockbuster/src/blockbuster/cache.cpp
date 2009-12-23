@@ -78,6 +78,7 @@ void DestroyImageCache(Canvas *canvas)
 }
 
 /* Default/fallback routine for Canvas->Preload()
+   Will be replaced by NewRenderer::Preload() 
  */
 void CachePreload(Canvas *canvas, uint32_t frameNumber, const Rectangle *imageRegion,
 	uint32_t levelOfDetail)
