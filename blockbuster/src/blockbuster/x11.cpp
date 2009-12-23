@@ -37,45 +37,8 @@
 
 
 
-/* These global variables define our behavior.  They are modified by 
- * passing in options.
- */
-static XdbeSwapAction globalSwapAction = XdbeBackground;
-struct x11SwapAction {
-    char *name;
-    XdbeSwapAction action;
-    char *description;
-} ;
-static x11SwapAction swapActions[] = {
-    {"undefined", XdbeUndefined, "back buffer becomes undefined on swap"},
-    {"background", XdbeBackground, "back buffer is cleared to window background on swap"},
-    {"untouched", XdbeUntouched, "back buffer is contents of front buffer on swap"},
-    {"copied", XdbeCopied, "back buffer is held constant on swap"},
-    {NULL, XdbeUndefined, NULL}
-};
-char *GetSwapActionName(XdbeSwapAction swapAction)
-{
-    register int i;
-    for (i = 0; swapActions[i].name != NULL; i++) {
-        if (swapActions[i].action == swapAction) return swapActions[i].name;
-    }
-    return "unknown";
-}
-
- x11SwapAction *GetSwapAction(char *name)
-{
-    register int i;
-    for (i = 0; swapActions[i].name != NULL; i++) {
-        if (strcmp(swapActions[i].name, name) == 0) return &swapActions[i];
-    }
-    return NULL;
-}
-
-
-
 void x11_HandleOptions(int &argc, char *argv[])
 {
-  x11SwapAction *swapAction;
 
   while (argc > 1) {
     if (!strcmp(argv[1], "-h")) {
@@ -84,27 +47,8 @@ void x11_HandleOptions(int &argc, char *argv[])
       fprintf(stderr, "%s\n", X11_DESCRIPTION);
       fprintf(stderr, "Options:\n");
       fprintf(stderr, "-h gives help\n");
-      fprintf(stderr, "-a specifies swap action [%s]:\n",
-              GetSwapActionName(globalSwapAction));
-      for (i = 0; swapActions[i].name != NULL; i++) {
-        fprintf(stderr, "    %s: %s\n",
-                swapActions[i].name, swapActions[i].description);
-      }
       exit(MOVIE_HELP);
-    } else if (!strcmp(argv[1], "-a")) {
-      ConsumeArg(argc, argv, 1); 
-      swapAction = GetSwapAction(argv[1]);
-      ConsumeArg(argc, argv, 1); 
-      if (swapAction == NULL) {
-        fprintf(stderr, "Renderer %s: no such swap action.  Use -h for help.\n",
-                X11_NAME);
-        exit(MOVIE_BAD_FLAG);
-      }
-      else {
-        globalSwapAction = swapAction->action;
-      }      
-    }
-    else {
+    }     else {
       /* stop consuming args when one does not match */ 
       return; 
     }
