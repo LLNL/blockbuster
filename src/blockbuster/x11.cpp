@@ -40,7 +40,6 @@
 /* These global variables define our behavior.  They are modified by 
  * passing in options.
  */
-static int globalSync = 0;
 static XdbeSwapAction globalSwapAction = XdbeBackground;
 struct x11SwapAction {
     char *name;
@@ -76,7 +75,6 @@ char *GetSwapActionName(XdbeSwapAction swapAction)
 
 void x11_HandleOptions(int &argc, char *argv[])
 {
-
   x11SwapAction *swapAction;
 
   while (argc > 1) {
@@ -86,8 +84,6 @@ void x11_HandleOptions(int &argc, char *argv[])
       fprintf(stderr, "%s\n", X11_DESCRIPTION);
       fprintf(stderr, "Options:\n");
       fprintf(stderr, "-h gives help\n");
-      fprintf(stderr, "-s toggles XSynchronize [%s]\n",
-              globalSync?"on":"off");
       fprintf(stderr, "-a specifies swap action [%s]:\n",
               GetSwapActionName(globalSwapAction));
       for (i = 0; swapActions[i].name != NULL; i++) {
@@ -95,9 +91,6 @@ void x11_HandleOptions(int &argc, char *argv[])
                 swapActions[i].name, swapActions[i].description);
       }
       exit(MOVIE_HELP);
-    } else if (!strcmp(argv[1], "-s")) {
-      ConsumeArg(argc, argv, 1); 
-      globalSync = !globalSync;
     } else if (!strcmp(argv[1], "-a")) {
       ConsumeArg(argc, argv, 1); 
       swapAction = GetSwapAction(argv[1]);
