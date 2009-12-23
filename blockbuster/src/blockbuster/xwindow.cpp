@@ -135,6 +135,12 @@ int ComputeShift(unsigned long mask)
 
 /* These globals can be modified with options */
 static int globalSync = 0;
+/* Possible swap actions: 
+    {"undefined", XdbeUndefined, "back buffer becomes undefined on swap"},
+-    {"background", XdbeBackground, "back buffer is cleared to window background on swap"},
+-    {"untouched", XdbeUntouched, "back buffer is contents of front buffer on swap"},
+-    {"copied", XdbeCopied, "back buffer is held constant on swap"},
+*/ 
 static XdbeSwapAction globalSwapAction = XdbeBackground;
 
  void xwindow_HandleOptions(int &argc, char *argv[])
