@@ -17,7 +17,7 @@
 #include <deque>
 using namespace std; 
 
-struct ImageCache; 
+class ImageCache; 
 
 //! ImageCacheJob:  a request for the workers to get an image
 struct ImageCacheJob {
