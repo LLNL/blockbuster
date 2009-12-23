@@ -26,9 +26,6 @@
 
 include ../config/config
 
-GTK_INCLUDES=$(shell pkg-config --cflags gtk+) -DUSE_GTK
-GTK_LIBS=$(shell pkg-config --libs gtk+)
-
 ifeq ($(shell uname),Darwin)
 	blockbuster = blockbuster.app/Contents/MacOS/blockbuster
 	X11_LIBS += -lXext 
@@ -94,11 +91,13 @@ SOURCES=main.cpp blockbuster_qt.cpp movie.cpp  timer.C \
 	gltexture.cpp sm.cpp dmxglue.cpp png.cpp splash.cpp  \
 	pnm.cpp tiff.cpp \
 	libdmx/dmx.c MovieCues.cpp events.cpp xwindow.cpp x11.cpp \
-	MovieRenderer.cpp util.cpp settings.cpp errmsg.cpp 
+	MovieRenderer.cpp util.cpp settings.cpp errmsg.cpp \
+	Renderer.cpp x11Renderer.cpp glRenderer.cpp dmxRenderer.cpp 
 
 HEADERS=Renderers.h errmsg.h events.h remotecommands.h  \
 	../common/stringutil.h ../common/timer.h\
-	dmxglue.h MovieCues.h errmsg.h pure_C.h util.h blockbuster_qt.h 
+	dmxglue.h MovieCues.h errmsg.h pure_C.h util.h blockbuster_qt.h  \
+	Renderer.h x11Renderer.h glRenderer.h dmxRenderer.h 
 
 FORMS = MovieCueWidget.ui BlockbusterControl.ui InfoWindow.ui
 
