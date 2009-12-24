@@ -542,7 +542,7 @@ int Slave::Loop(void)
               continue; 
             }
             
-            if (!mCanvas || !mCanvas->Resize) {
+            if (!mCanvas) {
               SendError("ResizeCanvas requested, but canvas is not ready"); 
             } else {
               mCanvas->Resize(mCanvas, w, h, 0);

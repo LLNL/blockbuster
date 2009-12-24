@@ -626,14 +626,14 @@ int main(int argc, char *argv[])
       sprintf(buf, QString("DISPLAY=%1").arg(opt->displayName).toStdString().c_str()); 
       putenv(buf);
     }
-    dbprintf("UI handle options:\n"); 
+    dbprintf(2, "UI handle options:\n"); 
     opt->userInterface->HandleOptions(argc, args);
     printargs("After UI", args, argc); 
   }
   renderer = opt->userInterface->supportedRenderers[opt->rendererIndex]->renderer;
  
   if (argc && renderer->HandleOptions != NULL) {
-    dbprintf("renderer handle options:\n")
+    dbprintf(2, "renderer handle options:\n");
     renderer->HandleOptions(argc, args);
     printargs("After renderer", args, argc); 
   }

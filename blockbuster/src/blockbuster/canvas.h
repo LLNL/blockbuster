@@ -57,18 +57,34 @@
      public:
    /* The fundamental operation of the Renderer is to render.        This might be assigned gl_Render (gl.cpp, gl_Initialize), x11_Render (x11.cpp: x11_initialize()), or dmx_Render (dmxglue.cpp, dmx_Initialize()).  The assignment is done 
     */
-    void (*Render)(struct Canvas *canvas, int frameNumber,
-       const Rectangle *imageRegion,
-       int destX, int destY, float zoom, int lod);
-
-    void (*SetFrameList)(struct Canvas *canvas, FrameList *frameList);
-    void (*Preload)(struct Canvas *canvas, uint32_t frameNumber,
-        const Rectangle *imageRegion, uint32_t levelOfDetail);
+     void Render(struct Canvas *canvas, int frameNumber,
+                 const Rectangle *imageRegion,
+                 int destX, int destY, float zoom, int lod) {
+       if (RenderPtr) RenderPtr(canvas, frameNumber, imageRegion, destX, destY, zoom, lod); 
+     } 
+     void (*RenderPtr)(struct Canvas *canvas, int frameNumber,
+                       const Rectangle *imageRegion,
+                       int destX, int destY, float zoom, int lod) ;
+       
+     void SetFrameList(struct Canvas *canvas, FrameList *frameList) {
+       if (SetFrameListPtr) SetFrameListPtr(canvas, frameList); 
+     }
+     void (*SetFrameListPtr)(struct Canvas *canvas, FrameList *frameList);
+     
+     void Preload(struct Canvas *canvas, uint32_t frameNumber,
+                  const Rectangle *imageRegion, uint32_t levelOfDetail){
+       if (PreloadPtr) PreloadPtr(canvas, frameNumber, imageRegion, levelOfDetail); 
+     }
+     void (*PreloadPtr)(struct Canvas *canvas, uint32_t frameNumber,
+                     const Rectangle *imageRegion, uint32_t levelOfDetail);
 
     /* The Renderer will get its own chance to release any resources
      * it may have allocated.  This will be the Renderer's destructor.  
      */
-    void (*DestroyRenderer)(struct Canvas *canvas);
+     void DestroyRenderer(struct Canvas *canvas){
+       if (DestroyRendererPtr) DestroyRendererPtr(canvas); 
+     }
+    void (*DestroyRendererPtr)(struct Canvas *canvas);
 
     /* If the renderer needs a handle on which to hang any privately
      * allocated data, this is the place to do it.
@@ -98,7 +114,14 @@
      * DMX) will.
      */
      //void Resize(int newWidth, int newHeight, int cameFromX); 
-     void (*Resize)(struct Canvas *canvas, int newWidth, int newHeight, int camefromX);
+     void Resize(struct Canvas *canvas, int newWidth, int newHeight, int camefromX) {
+       if (ResizePtr) ResizePtr(canvas, newWidth, newHeight, camefromX); 
+       else {
+          width = screenWidth;
+          height = screenHeight;
+       }
+     }
+     void (*ResizePtr)(struct Canvas *canvas, int newWidth, int newHeight, int camefromX);
 
     /* Only DMX uses this message; it tells a subwindow that it is 
      * supposed to move to a new location relative to its parent
@@ -107,7 +130,11 @@
 	 * redundant and bug-prone generation of XMoveWindow() calls 
 	 * from moves that themselves originated from X. 
      */
-    void (*Move)(struct Canvas *canvas, int newX, int newY, int cameFromX);
+     void Move(struct Canvas *canvas, int newX, int newY, int cameFromX){
+       if (MovePtr) MovePtr(canvas, newX, newY, cameFromX); 
+     }
+
+    void (*MovePtr)(struct Canvas *canvas, int newX, int newY, int cameFromX);
 
 
     /* This is called if any module wishes to report an error,
@@ -157,7 +184,10 @@
      * this value; if it is set, the Renderer's Initialize() method
      * should not override it.
      */
-    void (*DrawString)(struct Canvas *canvas, int row, int column, const char *str);
+     void DrawString(struct Canvas *canvas, int row, int column, const char *str) {
+       if (DrawStringPtr) DrawStringPtr(canvas, row, column, str); 
+     }
+    void (*DrawStringPtr)(struct Canvas *canvas, int row, int column, const char *str);
 
 
     /**************************************************************/
@@ -168,14 +198,23 @@
      */
 
     /* Called to swap front/back buffers */
-    void (*SwapBuffers)(struct Canvas *canvas);
-
+     void SwapBuffers(struct Canvas *canvas) {
+       if (SwapBuffersPtr) SwapBuffersPtr(canvas); 
+     }
+     void (*SwapBuffersPtr)(struct Canvas *canvas);
+     
     /* Called before calling the Render() method, to allow the
      * glue to make sure the surface is ready for rendering (e.g.,
      * by calling glXMakeCurrent(), or a similar widget routine).
      */
-    void (*BeforeRender)(struct Canvas *canvas);
-    void (*AfterRender)(struct Canvas *canvas);
+     void BeforeRender(struct Canvas *canvas){
+       if (BeforeRenderPtr) BeforeRenderPtr(canvas); 
+     }
+     void (*BeforeRenderPtr)(struct Canvas *canvas);
+     void AfterRender(struct Canvas *canvas){
+       if (AfterRenderPtr) AfterRenderPtr(canvas); 
+     }
+    void (*AfterRenderPtr)(struct Canvas *canvas);
 
     void *gluePrivateData;
 

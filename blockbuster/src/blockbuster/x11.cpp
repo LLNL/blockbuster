@@ -275,12 +275,12 @@ x11_Initialize(Canvas *canvas, const ProgramOptions *)
   ECHO_FUNCTION(5);
     /* Trivial for gl renderer: */
     /* Plug in our functions into the canvas */
-    canvas->Render = x11_Render;
+    canvas->RenderPtr = x11_Render;
     /* If the UserInterface implements this routine, we should not use ours */
-    if (canvas->DrawString == NULL) { 
-        canvas->DrawString = x11_DrawString;
+    if (canvas->DrawStringPtr == NULL) { 
+        canvas->DrawStringPtr = x11_DrawString;
     }
-    canvas->DestroyRenderer = NULL;
+    canvas->DestroyRendererPtr = NULL;
 
     /* We CAN'T override resize/move functions - DMX needs to use them - BP */
     /* We don't have anything to do when the UserInterface informs

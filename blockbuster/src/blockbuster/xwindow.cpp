@@ -803,12 +803,12 @@ static MovieStatus xwindow_Initialize(Canvas *canvas, const ProgramOptions *opti
     XXX Perhaps these two should belong to the Renderer, not to the
     UserInterface?
 */
-    canvas->Resize = ResizeXWindow;
-    canvas->Move = MoveXWindow;
-    canvas->DrawString = rendererGlue->DrawString;
-    canvas->BeforeRender = rendererGlue->BeforeRender;
-    canvas->AfterRender = rendererGlue->AfterRender;
-    canvas->SwapBuffers = rendererGlue->SwapBuffers;
+    canvas->ResizePtr = ResizeXWindow;
+    canvas->MovePtr = MoveXWindow;
+    canvas->DrawStringPtr = rendererGlue->DrawString;
+    canvas->BeforeRenderPtr = rendererGlue->BeforeRender;
+    canvas->AfterRenderPtr = rendererGlue->AfterRender;
+    canvas->SwapBuffersPtr = rendererGlue->SwapBuffers;
 
     sWindowInfo->DestroyGlue = rendererGlue->DestroyGlue;
 
