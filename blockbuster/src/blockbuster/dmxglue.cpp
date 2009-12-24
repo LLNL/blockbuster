@@ -425,7 +425,8 @@ void SlaveServer::UnexpectedDisconnect(DMXSlave *theSlave) {
 MovieStatus dmx_Initialize(Canvas *canvas, const ProgramOptions *options) {
   DMXRendererGlue *glueInfo = (DMXRendererGlue *)canvas->gluePrivateData;
   uint16_t i;
-  DEBUGMSG("dmx_Initialize()"); 
+  ECHO_FUNCTION(5);
+  //  DEBUGMSG("dmx_Initialize()"); 
   gRenderInfo = new RenderInfo(options); 
   
   if(options->backendRendererName != "") {
@@ -525,7 +526,8 @@ MovieStatus dmx_Initialize(Canvas *canvas, const ProgramOptions *options) {
 void
 dmx_AtExitCleanup(void)
 {
-    if (!gRenderInfo || !gRenderInfo->numValidWindowInfos)
+   ECHO_FUNCTION(5);
+   if (!gRenderInfo || !gRenderInfo->numValidWindowInfos)
         return;
 
     int     slavenum = gRenderInfo->mSlaveServer.mActiveSlaves.size();
@@ -714,6 +716,7 @@ void FakeBackendInfo(Canvas *canvas)
  */
 int IsDMXDisplay(Display *dpy)
 {
+  ECHO_FUNCTION(5);
    Bool b;
    int major, event, error;
    b = XQueryExtension(dpy, "DMX", &major, &event, &error);
@@ -725,6 +728,7 @@ int IsDMXDisplay(Display *dpy)
  */
  void dmx_SetFrameList(Canvas *canvas, FrameList *frameList){
     
+  ECHO_FUNCTION(5);
     uint32_t framenum;
 	uint32_t i; 
 	QString previousName; 
@@ -765,6 +769,7 @@ int IsDMXDisplay(Display *dpy)
  
 void dmx_SetupPlay(int play, int preload, 
                    uint32_t startFrame, uint32_t endFrame) {
+  ECHO_FUNCTION(5);
   uint32_t i = 0; 
   for (i = 0; i < gRenderInfo->dmxScreenInfos.size(); i++) {
     if (gRenderInfo->dmxWindowInfos[i].window) {
@@ -778,6 +783,7 @@ void dmx_SetupPlay(int play, int preload,
 }
  
 void   dmx_DestroyRenderer(Canvas *canvas){
+  ECHO_FUNCTION(5);
    if (!gRenderInfo->numValidWindowInfos) return; 
    if (canvas != NULL) {
 	 
@@ -863,6 +869,7 @@ void dmx_Resize(Canvas *canvas, int newWidth, int newHeight, int cameFromX)
 {
     
 
+  ECHO_FUNCTION(5);
     bb_assert(canvas);
     bb_assert(newWidth >= 0);
     bb_assert(newHeight >= 0);
@@ -888,6 +895,7 @@ void dmx_Move(Canvas *canvas, int newX, int newY, int cameFromX)
      window move/resize and the DMX stuff will get updated there.
   */
   
+  ECHO_FUNCTION(5);
   /* Rich Cook -- now that we can use sidecar to move a window, we need to 
      tell the backend servers to move the windows appropriately
   */ 
@@ -1047,6 +1055,7 @@ void dmx_Render(Canvas *, int frameNumber,
                 int destX, int destY, float zoom, int lod)
 {
     
+  ECHO_FUNCTION(5);
   if (!gRenderInfo->numValidWindowInfos) return; 
 
     int i;
@@ -1117,7 +1126,8 @@ void dmx_Render(Canvas *, int frameNumber,
 
 void  dmx_DrawString(Canvas *canvas, int row, int column, const char *str)
 {
-  if (!gRenderInfo->numValidWindowInfos) return; 
+   ECHO_FUNCTION(5);
+ if (!gRenderInfo->numValidWindowInfos) return; 
     DMXRendererGlue *glueInfo = (DMXRendererGlue *) canvas->gluePrivateData;
     
     int x = (column + 1) * glueInfo->fontHeight;
@@ -1145,6 +1155,7 @@ void  dmx_DrawString(Canvas *canvas, int row, int column, const char *str)
 
 
 void dmx_SwapBuffers(Canvas *canvas){
+  ECHO_FUNCTION(5);
   static int32_t swapID = 0; 
   if (!gRenderInfo->numValidWindowInfos) return; 
 
@@ -1200,6 +1211,7 @@ void dmx_SwapBuffers(Canvas *canvas){
 //============================================================
 
 void dmx_SendHeartbeatToSlaves(void) {
+  ECHO_FUNCTION(5);
   uint16_t i; 
   if (!gRenderInfo || !gRenderInfo->numValidWindowInfos) return; 
   for (i = 0; i < gRenderInfo->mSlaveServer.mActiveSlaves.size(); i++) {

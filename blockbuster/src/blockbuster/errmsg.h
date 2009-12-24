@@ -5,6 +5,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#define ECHO_FUNCTION(level) dbprintf(level, "BEGIN\n"); 
 #ifdef __cplusplus
 #include <QString>
 struct MessageLevel *FindMessageLevel(QString name);
