@@ -443,15 +443,15 @@ MovieStatus dmx_Initialize(Canvas *canvas, const ProgramOptions *options) {
   /* Plug in our special functions for canvas manipulations.
    * We basically override all the functions set in CreateXWindow.
    */
-  canvas->SetFrameList = dmx_SetFrameList;
-  canvas->Render = dmx_Render;
-  canvas->Resize = dmx_Resize;
-  canvas->Move = dmx_Move;
-  canvas->DestroyRenderer = dmx_DestroyRenderer;
-  canvas->SwapBuffers = dmx_SwapBuffers;
+  canvas->SetFrameListPtr = dmx_SetFrameList;
+  canvas->RenderPtr = dmx_Render;
+  canvas->ResizePtr = dmx_Resize;
+  canvas->MovePtr = dmx_Move;
+  canvas->DestroyRendererPtr = dmx_DestroyRenderer;
+  canvas->SwapBuffersPtr = dmx_SwapBuffers;
   /* If the UserInterface implements this routine, we should not use ours */
-  if (canvas->DrawString == NULL) { 
-    canvas->DrawString = dmx_DrawString;
+  if (canvas->DrawStringPtr == NULL) { 
+    canvas->DrawStringPtr = dmx_DrawString;
   }
   
   /* Get DMX info */

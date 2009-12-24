@@ -48,10 +48,10 @@ Canvas::Canvas(qint32 parentWindowID, BlockbusterInterface *gui):
   height(0), width(0), screenHeight(0), screenWidth(0), 
   XPos(0), YPos(0), depth(0), threads(0), cachesize(0), 
   mBlockbusterInterface(gui), 
-  Render(NULL), 
-  frameList(NULL), imageCache(NULL), SetFrameList(NULL), Preload(NULL), 
-  DestroyRenderer(NULL), rendererPrivateData(NULL), Resize(NULL), Move(NULL), 
-  DrawString(NULL), SwapBuffers(NULL), BeforeRender(NULL), AfterRender(NULL)
+  frameList(NULL), imageCache(NULL), RenderPtr(NULL), 
+  SetFrameListPtr(NULL), PreloadPtr(NULL), 
+  DestroyRendererPtr(NULL), rendererPrivateData(NULL), ResizePtr(NULL), MovePtr(NULL), 
+  DrawStringPtr(NULL), SwapBuffersPtr(NULL), BeforeRenderPtr(NULL), AfterRenderPtr(NULL)
 {
     RendererGlue *glue;
     MovieStatus status;
@@ -89,18 +89,18 @@ Canvas::Canvas(qint32 parentWindowID, BlockbusterInterface *gui):
      * implementations).  If the UserInterface or Glue routines supply
      * their own methods, we refuse to override them.
      */
-    DEBUGMSG(QString("frameCacheSize is %1, preload is %2, setFrameList is %3").arg(options->frameCacheSize).arg((int64_t)Preload).arg((int64_t)SetFrameList)); 
-    if (options->frameCacheSize > 0 && this->Preload == NULL && this->SetFrameList == NULL) {
+    DEBUGMSG(QString("frameCacheSize is %1").arg(options->frameCacheSize)); 
+    if (options->frameCacheSize > 0 && this->PreloadPtr == NULL && this->SetFrameListPtr == NULL) {
       this->imageCache = CreateImageCache(options->readerThreads,
                                           options->frameCacheSize, this);
       if (this->imageCache == NULL) {
 	    WARNING("could not allocate image cache");
-	    this->Preload = NULL;
-	    this->SetFrameList = DefaultSetFrameList;
+	    this->PreloadPtr = NULL;
+	    this->SetFrameListPtr = DefaultSetFrameList;
       }
       else {
-	    this->Preload = CachePreload;
-	    this->SetFrameList = CacheSetFrameList;
+	    this->PreloadPtr = CachePreload;
+	    this->SetFrameListPtr = CacheSetFrameList;
       }
     }
     
@@ -111,13 +111,10 @@ Canvas::Canvas(qint32 parentWindowID, BlockbusterInterface *gui):
 
 Canvas::~Canvas()
 {
-    if (this->DestroyRenderer != NULL) {
-      this->DestroyRenderer(this);
-    }
-    if (this->imageCache != NULL) {
-      DestroyImageCache(this);
-    }
-    return; 
+  this->DestroyRenderer(this);
+  ::DestroyImageCache(this); 
+  
+  return; 
 }
 
 
@@ -320,8 +317,8 @@ void CacheSetFrameList(Canvas *canvas, FrameList *frameList)
     }
     if (canvas->imageCache == NULL) {
 	ERROR("could not recreate image cache when changing frame list");
-	canvas->Preload = NULL;
-	canvas->SetFrameList = DefaultSetFrameList;
+	canvas->PreloadPtr = NULL;
+	canvas->SetFrameListPtr = DefaultSetFrameList;
 
 	/* Invoke the new framelist function, and get out of here. */
 	canvas->SetFrameList(canvas, frameList);

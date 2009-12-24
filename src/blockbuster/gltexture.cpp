@@ -566,8 +566,8 @@ gltexture_Initialize(Canvas *canvas, const ProgramOptions *)
     canvas->rendererPrivateData = renderInfo;
 
     /* plug in our functions into the canvas */
-    canvas->Render = gltexture_Render;
-    canvas->DestroyRenderer = gltexture_DestroyRenderer;
+    canvas->RenderPtr = gltexture_Render;
+    canvas->DestroyRendererPtr = gltexture_DestroyRenderer;
 
     return MovieSuccess;
 }

@@ -352,15 +352,6 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         break; 
       case MOVIE_FULLSCREEN:
         //DEBUGMSG("fullscreen"); 
-        if (canvas->Move) {
-          canvas->Move(canvas, event.x, event.y, event.number);
-        }
-        if (canvas->Resize) {
-          canvas->Resize(canvas, canvas->screenWidth, canvas->screenHeight, event.number);
-        } else {
-          canvas->width = canvas->screenWidth;
-          canvas->height = canvas->screenHeight;
-        }
         if(frameInfo != NULL) {
           newZoom = ComputeZoomToFit(canvas, frameInfo->width,
                                    frameInfo->height);
@@ -385,10 +376,8 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
             event.x = canvas->XPos;
           if (event.y == -1) 
             event.y = canvas->YPos;
-          if (canvas->Move) {
-            canvas->Move(canvas, event.x,
-                         event.y, event.number);            
-          }
+          canvas->Move(canvas, event.x,
+                       event.y, event.number);            
         }
         // END MOVE ===========================
         
@@ -429,10 +418,8 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
             event.height = canvas->screenHeight; 
           }
           
-          if (canvas->Resize) {
-            canvas->Resize(canvas, event.width,
-                           event.height, event.number);
-          }
+          canvas->Resize(canvas, event.width,
+                         event.height, event.number);
           /* Set these in case there is no Resize function */
           canvas->width = event.width;
           canvas->height = event.height;
@@ -529,7 +516,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         zoomOne = true; 
         newZoom = 1.0;
         zooming = 0;
-        if (canvas->Resize) {
+        {
           int width = frameInfo->width, height = frameInfo->height;           
           if (width > canvas->screenWidth) {
             width = canvas->screenWidth; 
@@ -1011,9 +998,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       
       TIMER_PRINT("before  BeforeRender"); 
 
-      if (canvas->BeforeRender != NULL) {
-        canvas->BeforeRender(canvas);
-      }
+      canvas->BeforeRender(canvas);
       
       /* If we're paused or stopped, render the frame at maximum
        * level of detail, regardless of what was requested during
@@ -1055,10 +1040,8 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
              canvas->DrawString(canvas, row++, 0, str);
              }
       */
-      if (canvas->AfterRender != NULL) {
-        canvas->AfterRender(canvas);
-      }
-
+       canvas->AfterRender(canvas);
+ 
       if (playDirection) {
         /* See if we need to introduce a pause to prevent exceeding
          * the target frame rate.
@@ -1095,23 +1078,23 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
          * (It's too late to preload the current image; that one
          * will either have to be in the cache, or we'll load it
          * directly.)
+         * THIS IS ICKY.  But it is going away when I rewrite the cache.  
          */
-        if (canvas->Preload != NULL) {
-          int32_t i;
-          for (i = 1; i <= preloadFrames; i++) {
-            int offset = (playDirection == -1) ? -i : i;
-            int frame = (frameNumber + offset);
-            if (frame > endFrame) {
-              frame = startFrame + (frame - endFrame);// preload for loops
-            } 
-            if (frame < startFrame) {
-              frame = endFrame - (startFrame - frame); // for loops
-            } 
-            DEBUGMSG("Preload frame %d", frame); 
-            canvas->Preload(canvas, frame, &roi, lod);
-          }
+        int32_t i;
+        for (i = 1; i <= preloadFrames; i++) {
+          int offset = (playDirection == -1) ? -i : i;
+          int frame = (frameNumber + offset);
+          if (frame > endFrame) {
+            frame = startFrame + (frame - endFrame);// preload for loops
+          } 
+          if (frame < startFrame) {
+            frame = endFrame - (startFrame - frame); // for loops
+          } 
+          DEBUGMSG("Preload frame %d", frame); 
+          canvas->Preload(canvas, frame, &roi, lod);
         }
       }
+      
       if (frameNumber != previousFrame) {
         DEBUGMSG("frameNumber changed to %d during non-switch logic", frameNumber); 
         canvas->ReportFrameChange(frameNumber);
