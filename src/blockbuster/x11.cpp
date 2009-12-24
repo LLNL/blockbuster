@@ -39,6 +39,7 @@
 
 void x11_HandleOptions(int &argc, char *argv[])
 {
+  ECHO_FUNCTION(5);
 
   while (argc > 1) {
     if (!strcmp(argv[1], "-h")) {
@@ -62,6 +63,7 @@ static void x11_Render(Canvas *canvas, int frameNumber,
                    const Rectangle *imageRegion,
                    int destX, int destY, float zoom, int lod)
 {
+  ECHO_FUNCTION(5);
     X11RendererGlue *glueInfo;
     XImage *xImage;
     Image *image;
@@ -253,7 +255,8 @@ static void x11_Render(Canvas *canvas, int frameNumber,
 static void
 x11_DrawString(Canvas *canvas, int row, int column, const char *str)
 {
-    X11RendererGlue *glueInfo = (X11RendererGlue *)canvas->gluePrivateData;
+   ECHO_FUNCTION(5);
+   X11RendererGlue *glueInfo = (X11RendererGlue *)canvas->gluePrivateData;
     int x = (column + 1) * glueInfo->fontHeight;
     int y = (row + 1) * glueInfo->fontHeight;
     XDrawString(glueInfo->display,
@@ -269,6 +272,7 @@ x11_DrawString(Canvas *canvas, int row, int column, const char *str)
  MovieStatus
 x11_Initialize(Canvas *canvas, const ProgramOptions *)
 {
+  ECHO_FUNCTION(5);
     /* Trivial for gl renderer: */
     /* Plug in our functions into the canvas */
     canvas->Render = x11_Render;

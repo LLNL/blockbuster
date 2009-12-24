@@ -40,6 +40,7 @@
 static int globalSync = 1;
 
 void gl_HandleOptions(int &argc, char *argv[]) {
+  ECHO_FUNCTION(5);
   
   while (argc > 1) {
     if (!strcmp(argv[1], "-h")) {
@@ -68,6 +69,7 @@ static void gl_Render(Canvas *canvas, int frameNumber,
                       const Rectangle *imageRegion,
                       int destX, int destY, float zoom, int lod)
 {
+  ECHO_FUNCTION(5);
   int lodScale;
   int localFrameNumber;
   Rectangle region = *imageRegion;
@@ -220,6 +222,7 @@ static void gl_RenderStereo(Canvas *canvas, int frameNumber,
                                                  const Rectangle *imageRegion,
                                                  int destX, int destY, float zoom, int lod)
 {
+  ECHO_FUNCTION(5);
   int lodScale;
   int localFrameNumber;
   Rectangle region = *imageRegion;
@@ -418,6 +421,7 @@ static void gl_RenderStereo(Canvas *canvas, int frameNumber,
  MovieStatus
 gl_Initialize(Canvas *canvas, const ProgramOptions *)
 {
+  ECHO_FUNCTION(5);
   /* Trivial for gl renderer: */
   /* Plug in our functions into the canvas */
   canvas->Render = gl_Render;
@@ -429,6 +433,7 @@ gl_Initialize(Canvas *canvas, const ProgramOptions *)
  MovieStatus
 gl_InitializeStereo(Canvas *canvas, const ProgramOptions *)
 {
+  ECHO_FUNCTION(5);
   /*canvas->BeforeRender = BeforeRenderStereo;*/
   canvas->rendererPrivateData = NULL; 
   canvas->BeforeRender = NULL;

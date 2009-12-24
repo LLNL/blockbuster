@@ -36,8 +36,8 @@ Renderer glTextureRenderer = {
 
 #ifdef USE_DMX
 Renderer dmxRenderer = {
-  DMX_NAME,
-  DMX_DESCRIPTION,
+  "dmx",
+  "backend renderer",
   NULL,
   dmx_Initialize
 };

@@ -145,6 +145,7 @@ static XdbeSwapAction globalSwapAction = XdbeBackground;
 
  void xwindow_HandleOptions(int &argc, char *argv[])
 {
+  ECHO_FUNCTION(5);
   while (argc > 1) {
     if (!strcmp(argv[1], "-s")) {
       ConsumeArg(argc, argv, 1);       
@@ -201,6 +202,7 @@ void XWindow_ShowCursor(bool show) {
 
 //======================================================   
 void XWindow_ToggleCursor(void) {
+  ECHO_FUNCTION(5);
   XWindow_ShowCursor(!sWindowInfo->mShowCursor); 
   return; 
 }
@@ -210,6 +212,7 @@ void XWindow_ToggleCursor(void) {
  * Resize the Canvas's X window to given 
  */
 void ResizeXWindow(Canvas *canvas, int newWidth, int newHeight, int cameFromX){
+  ECHO_FUNCTION(5);
   if (cameFromX) {
     canvas->height = newHeight; 
     canvas->width = newWidth; 
@@ -249,6 +252,7 @@ void ResizeXWindow(Canvas *canvas, int newWidth, int newHeight, int cameFromX){
  * Generally only used when using DMX.
  */
 void MoveXWindow(Canvas *canvas, int newX, int newY, int cameFromX) {
+  ECHO_FUNCTION(5);
   //cerr << "MoveXWindow"<<endl;
   if (cameFromX) {
     canvas->XPos = newX; 
@@ -507,7 +511,8 @@ void MoveXWindow(Canvas *canvas, int newX, int newY, int cameFromX) {
  void
 CloseXWindow(Canvas *canvas)
 {
-    if (canvas != NULL) {
+  ECHO_FUNCTION(5);
+   if (canvas != NULL) {
 
         /* Give the Glue routines a chance to free themselves */
         if (sWindowInfo != NULL) {
@@ -574,6 +579,7 @@ static void set_mwm_border( Display *dpy, Window w, unsigned long flags )
 }
 
 void XWindow_SetTitle(QString title) {
+  ECHO_FUNCTION(5);
   XStoreName(sWindowInfo->display, sWindowInfo->window, 
              title.toAscii().data()); 
   return; 
@@ -585,7 +591,8 @@ void XWindow_SetTitle(QString title) {
 static MovieStatus xwindow_Initialize(Canvas *canvas, const ProgramOptions *options,
             qint32 uiData, const RendererSpecificGlue *rendererGlue)
 {
-   Window parentWindow = (Window) uiData;
+   ECHO_FUNCTION(5);
+  Window parentWindow = (Window) uiData;
     const Rectangle *geometry = &options->geometry;
     int decorations = options->decorations;
     QString suggestedName = options->suggestedTitle;
