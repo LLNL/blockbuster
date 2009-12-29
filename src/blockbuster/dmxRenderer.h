@@ -8,7 +8,7 @@ class dmxRenderer: public NewRenderer {
   dmxRenderer(ProgramOptions *opt, Canvas *canvas):
     NewRenderer(opt, canvas) {}
   virtual ~dmxRenderer() {}
-  void HandleOptions(int &argc, char *argv[]);
+  //   void HandleOptions(int &argc, char *argv[]);
 
   void Render(int frameNumber,
               const Rectangle *imageRegion,

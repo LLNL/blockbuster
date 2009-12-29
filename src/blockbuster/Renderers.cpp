@@ -7,7 +7,6 @@
 Renderer x11Renderer = {
   X11_NAME,
   X11_DESCRIPTION,
-  x11_HandleOptions,
   x11_Initialize
 };
 
@@ -15,21 +14,18 @@ Renderer x11Renderer = {
 Renderer glRenderer = {
   GL_NAME,
   GL_DESCRIPTION,
-  gl_HandleOptions,
   gl_Initialize
 };
 
 Renderer glRendererStereo = {
   GL_NAME_STEREO,
   GL_DESCRIPTION_STEREO,
-  gl_HandleOptions,
   gl_InitializeStereo
 };
 
 Renderer glTextureRenderer = {
   GLTEXTURE_NAME,
   GLTEXTURE_DESCRIPTION,
-  gltexture_HandleOptions,
   gltexture_Initialize
 };
 
@@ -38,7 +34,6 @@ Renderer glTextureRenderer = {
 Renderer dmxRenderer = {
   "dmx",
   "backend renderer",
-  NULL,
   dmx_Initialize
 };
 

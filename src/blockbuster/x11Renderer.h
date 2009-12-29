@@ -14,7 +14,8 @@ class x11Renderer: public NewRenderer {
   }
 
   virtual ~x11Renderer() {}
-  void HandleOptions(int &argc, char *argv[]);
+  // this is a no-op for x11, no options are handled
+  //  void HandleOptions(int &argc, char *argv[]);
   
   void Render(int frameNumber,
               const Rectangle *imageRegion,

@@ -20,9 +20,6 @@
 #ifdef USE_DMX
 #include "dmxRenderer.h"
 
-void dmxRenderer::HandleOptions(int &argc, char *argv[]){
-  return; 
-}
 
 void dmxRenderer::Render(int frameNumber,
             const Rectangle *imageRegion,

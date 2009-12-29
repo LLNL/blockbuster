@@ -23,7 +23,6 @@ struct Renderer {
   char *name;
   char *description;
   
-  void (*HandleOptions)(int &argc, char *argv[]);
   MovieStatus (*Initialize)(struct Canvas *canvas, const ProgramOptions *options);
 } ;
 
