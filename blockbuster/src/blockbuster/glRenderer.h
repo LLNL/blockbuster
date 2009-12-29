@@ -22,12 +22,13 @@ class glRenderer: public NewRenderer {
 } ;
 
 class glStereoRenderer: public glRenderer {
+ public:
   glStereoRenderer(ProgramOptions *opt, Canvas *canvas):
     glRenderer(opt, canvas) {
     return; 
   }
-  ~glStereoRenderer() {}
-  void Render(int frameNumber,
+  virtual ~glStereoRenderer() {}
+  virtual void Render(int frameNumber,
               const Rectangle *imageRegion,
               int destX, int destY, float zoom, int lod);
 };
@@ -35,14 +36,15 @@ class glStereoRenderer: public glRenderer {
 
 
 class glTextureRenderer: public glRenderer {
+ public:
   glTextureRenderer(ProgramOptions *opt, Canvas *canvas):
     glRenderer(opt, canvas) {
     return; 
   }
-  ~glTextureRenderer() {}
+  virtual ~glTextureRenderer() {}
   
   // this is different for textures: 
-  void HandleOptions(int &argc, char *argv[]);
+  virtual void HandleOptions(int &argc, char *argv[]);
   
 }; 
 

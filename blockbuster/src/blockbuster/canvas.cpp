@@ -32,6 +32,7 @@
 #include "cache.h"
 #include "blockbuster_qt.h"
 #include "xwindow.h"
+#include "Renderer.h"
 
 /* This file handles the creation and destruction of the dynamic Canvas
  * objects, and encapsulates references to the Renderers, UserInterfaces,
@@ -44,20 +45,21 @@
  * UserInterface and Renderer and the appropriate Glue routines.
  */
 
-Canvas::Canvas(qint32 parentWindowID, BlockbusterInterface *gui):
+Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options, 
+               BlockbusterInterface *gui):
   height(0), width(0), screenHeight(0), screenWidth(0), 
   XPos(0), YPos(0), depth(0), threads(0), cachesize(0), 
   mBlockbusterInterface(gui), 
   frameList(NULL), imageCache(NULL), RenderPtr(NULL), 
   SetFrameListPtr(NULL), PreloadPtr(NULL), 
   DestroyRendererPtr(NULL), rendererPrivateData(NULL), ResizePtr(NULL), MovePtr(NULL), 
-  DrawStringPtr(NULL), SwapBuffersPtr(NULL), BeforeRenderPtr(NULL), AfterRenderPtr(NULL)
+  DrawStringPtr(NULL), SwapBuffersPtr(NULL), BeforeRenderPtr(NULL), AfterRenderPtr(NULL), mOptions(options)
 {
+ 
     RendererGlue *glue;
     MovieStatus status;
-    ProgramOptions *options = GetGlobalOptions(); 
-    UserInterface *userInterface = options->userInterface; 
-    glue = userInterface->supportedRenderers[options->rendererIndex];
+    UserInterface *userInterface = mOptions->userInterface; 
+    glue = userInterface->supportedRenderers[mOptions->rendererIndex];
 
     /* We've got a UserInterface, a Renderer, and glue.  We're good to go. 
      * The UserInterface gets to go first, because it has to open the window
@@ -65,8 +67,8 @@ Canvas::Canvas(qint32 parentWindowID, BlockbusterInterface *gui):
      * to prepare the Glue required for the Renderer to function.
      */
 
-	this->threads = options->readerThreads;
-	this->cachesize = options->frameCacheSize;
+	this->threads = mOptions->readerThreads;
+	this->cachesize = mOptions->frameCacheSize;
 
     /* Initialize the UserInterface.  The "wart" uiData parameter is used
      * in the master/remote slave case to pass a parent window ID to the
@@ -74,14 +76,14 @@ Canvas::Canvas(qint32 parentWindowID, BlockbusterInterface *gui):
      * be removed, leaving a UI-specific option.
      */
     
-    status = userInterface->Initialize(this, options, parentWindowID, glue->configurationData);
+    status = userInterface->Initialize(this, mOptions, parentWindowID, glue->configurationData);
     if (status != MovieSuccess) {
       cerr << "Cannot initialize userInterface struct in canvas constructor" << endl; 
       exit (1); 
     }
     
     /* Renderer can initialize now. */
-    status = glue->renderer->Initialize(this, options);
+    status = glue->renderer->Initialize(this, mOptions);
 
     /* If this renderer would like an image cache, we can create one, as
      * a convenience (this is done because most renderers do use an 
@@ -89,10 +91,10 @@ Canvas::Canvas(qint32 parentWindowID, BlockbusterInterface *gui):
      * implementations).  If the UserInterface or Glue routines supply
      * their own methods, we refuse to override them.
      */
-    DEBUGMSG(QString("frameCacheSize is %1").arg(options->frameCacheSize)); 
-    if (options->frameCacheSize > 0 && this->PreloadPtr == NULL && this->SetFrameListPtr == NULL) {
-      this->imageCache = CreateImageCache(options->readerThreads,
-                                          options->frameCacheSize, this);
+    DEBUGMSG(QString("frameCacheSize is %1").arg(mOptions->frameCacheSize)); 
+    if (mOptions->frameCacheSize > 0 && this->PreloadPtr == NULL && this->SetFrameListPtr == NULL) {
+      this->imageCache = CreateImageCache(mOptions->readerThreads,
+                                          mOptions->frameCacheSize, this);
       if (this->imageCache == NULL) {
 	    WARNING("could not allocate image cache");
 	    this->PreloadPtr = NULL;

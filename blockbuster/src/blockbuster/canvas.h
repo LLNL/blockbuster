@@ -24,7 +24,8 @@
    */
 
    struct Canvas {
-     Canvas(qint32 parentWindowID, BlockbusterInterface *gui=NULL);
+     Canvas(qint32 parentWindowID, ProgramOptions *options, 
+            BlockbusterInterface *gui=NULL);
 
      ~Canvas(); 
 
@@ -219,6 +220,7 @@
     void *gluePrivateData;
 
      int32_t playDirection, startFrame, endFrame, preloadFrames; 
+     ProgramOptions *mOptions; 
   } ;
 
 /* Canvas creator from canvas.c */
