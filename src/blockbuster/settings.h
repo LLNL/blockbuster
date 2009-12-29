@@ -3,6 +3,7 @@
 #include <QApplication>
 #include "common.h"
 
+class NewRenderer; 
 class ProgramOptions *GetGlobalOptions(void); 
 
 void ConsumeArg(int &argc, char *argv[], int position); 
@@ -34,7 +35,8 @@ struct ProgramOptions {
 #else
     messageLevelName("error"), 
 #endif
-    messageLevel(NULL), userInterface(NULL), rendererIndex(0), 
+    messageLevel(NULL), userInterface(NULL), 
+    rendererIndex(0), mRenderer(NULL),
     frameCacheSize(8), readerThreads(-1), loopCountName("1"), 
     startFrame(0), endFrame(-1), loopCount(1), LOD(0),
     slaveLaunchMethod("rsh"), useMPI(0), 
@@ -58,6 +60,7 @@ struct ProgramOptions {
   struct UserInterface *userInterface;
   int rendererIndex;
   QString rendererName;
+  NewRenderer *mRenderer; 
   QString backendRendererName;
   int frameCacheSize;
   int readerThreads;

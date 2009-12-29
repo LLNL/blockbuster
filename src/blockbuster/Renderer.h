@@ -4,6 +4,8 @@
 #include "settings.h"
 struct Canvas; 
 /* Base class for all other renderers, defining the API required */ 
+void CreateRenderer(ProgramOptions *opt, Canvas *canvas);
+
 class NewRenderer {
  public:
   NewRenderer(ProgramOptions *opt, Canvas *canvas): 
@@ -45,6 +47,16 @@ class NewRenderer {
    */
   // virtual void DestroyRenderer(struct Canvas *canvas) = 0;
   
+  // from xwindow.cpp: RendererSpecificGlue
+  /* XVisualInfo *ChooseVisual(Display *display, int screenNumber);
+     MovieStatus FinishInitialization(Canvas *canvas, const ProgramOptions *options);
+     void DestroyGlue(Canvas *canvas);
+     void DrawString(Canvas *canvas, int row, int column, const char *str);
+     void BeforeRender(Canvas *canvas);
+     void AfterRender(Canvas *canvas);
+     void SwapBuffers(Canvas *canvas);
+  */
+
  protected:   
   /* If the renderer needs a handle on which to hang any privately
    * allocated data, this is the place to do it.

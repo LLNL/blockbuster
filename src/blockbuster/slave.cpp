@@ -513,7 +513,9 @@ int Slave::Loop(void)
             options->geometry.height = h;
             options->displayName = displayName;
             options->suggestedTitle = "Blockbuster Slave";
-            mCanvas = new Canvas(parentWin);
+            mCanvas = new Canvas(parentWin, options);
+            CreateRenderer(options, mCanvas); 
+
             GetXEvent(mCanvas, 0, &junkEvent); 
             //canvas->GetEvent(mCanvas, 0, &junkEvent); 
              

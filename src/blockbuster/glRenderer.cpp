@@ -405,8 +405,11 @@ void glStereoRenderer::Render(int frameNumber,
   }
   
   
-  
+  return; 
   
 }
 
 
+void glTextureRenderer::HandleOptions(int &argc, char *argv[]){
+  return; 
+}

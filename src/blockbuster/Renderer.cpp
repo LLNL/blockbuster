@@ -1,5 +1,25 @@
 #include "Renderer.h"
 #include "common.h"
+#include "glRenderer.h"
+#include "x11Renderer.h"
+#include "dmxRenderer.h"
+#include "settings.h"
+#include "canvas.h"
+
+void CreateRenderer(ProgramOptions *opt, Canvas *canvas) {
+  QString name = opt->rendererName; 
+  NewRenderer *renderer = NULL; 
+  if (name == "x11") renderer = new x11Renderer(opt, canvas); 
+  if (name == "gl") renderer = new glRenderer(opt, canvas); 
+  if (name == "gl_stereo") renderer = new glStereoRenderer(opt, canvas); 
+  if (name == "gltexture") renderer = new glTextureRenderer(opt, canvas); 
+  if (name == "dmx") renderer = new dmxRenderer(opt, canvas); 
+  
+  opt->mRenderer = renderer;
+  canvas->mRenderer = renderer; 
+  return ;
+  
+}
 
 void NewRenderer::Preload(uint32_t frameNumber,
                      const Rectangle *imageRegion, uint32_t levelOfDetail) {
