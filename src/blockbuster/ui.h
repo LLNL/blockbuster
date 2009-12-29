@@ -21,7 +21,7 @@
 
   /* UserInterface utilities from ui.c */
   extern MovieStatus MatchUserInterfaceToRenderer(
-              QString userInterfaceName, QString rendererName, 
+              QString &userInterfaceName, QString &rendererName, 
               UserInterface **matchedUserInterface, Renderer **matchedRenderer,
               int *matchedRendererIndex);
 

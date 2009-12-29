@@ -8,11 +8,7 @@ void CreateRenderer(ProgramOptions *opt, Canvas *canvas);
 
 class NewRenderer {
  public:
-  NewRenderer(ProgramOptions *opt, Canvas *canvas): 
-    // replaces Initialize() from file module (e.g. gl.cpp)
-    name(NULL), description(NULL), mCanvas(canvas), mOptions(opt) {
-    return; 
-  } 
+  NewRenderer(ProgramOptions *opt, Canvas *canvas);
 
   virtual ~NewRenderer() {
     return; 
