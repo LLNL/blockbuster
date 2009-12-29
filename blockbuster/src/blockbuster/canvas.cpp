@@ -62,12 +62,12 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
           arg(mOptions->rendererName)); 
     exit(1); 
   }
-  mOptions->mRenderer = mRenderer; 
+  mOptions->mNewRenderer = mRenderer; 
 
   RendererGlue *glue;
     MovieStatus status;
     UserInterface *userInterface = mOptions->userInterface; 
-    glue = userInterface->supportedRenderers[mOptions->rendererIndex];
+    glue = userInterface->supportedRendererGlueChoices[mOptions->rendererIndex];
 
     /* We've got a UserInterface, a Renderer, and glue.  We're good to go. 
      * The UserInterface gets to go first, because it has to open the window

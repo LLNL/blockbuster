@@ -630,10 +630,10 @@ int main(int argc, char *argv[])
     opt->userInterface->HandleOptions(argc, args);
     printargs("After UI", args, argc); 
   }
-  renderer = opt->userInterface->supportedRenderers[opt->rendererIndex]->renderer;
+  renderer = opt->userInterface->supportedRendererGlueChoices[opt->rendererIndex]->renderer;
  
 
-  INFO("Using %s renderer", opt->userInterface->supportedRenderers[opt->rendererIndex]->renderer->name);
+  INFO("Using %s renderer", opt->userInterface->supportedRendererGlueChoices[opt->rendererIndex]->renderer->name);
   INFO("Using %s interface", opt->userInterface->name);
 
   // set up a connection to sidecar if that's what launched us

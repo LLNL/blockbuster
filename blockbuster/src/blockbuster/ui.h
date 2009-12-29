@@ -5,7 +5,7 @@
    struct UserInterface {
     char *name;
     char *description;
-    RendererGlue **supportedRenderers;
+    RendererGlue **supportedRendererGlueChoices;
 
     void (*HandleOptions)(int &argc, char *argv[]);
     MovieStatus (*Initialize)(struct Canvas *canvas, const ProgramOptions *options,

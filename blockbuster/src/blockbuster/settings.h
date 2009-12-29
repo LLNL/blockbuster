@@ -4,6 +4,7 @@
 #include "common.h"
 
 class NewRenderer; 
+struct Renderer; 
 class ProgramOptions *GetGlobalOptions(void); 
 
 void ConsumeArg(int &argc, char *argv[], int position); 
@@ -36,7 +37,7 @@ struct ProgramOptions {
     messageLevelName("error"), 
 #endif
     messageLevel(NULL), userInterface(NULL), 
-    rendererIndex(0), mRenderer(NULL),
+    rendererIndex(0), mOldRenderer(NULL), mNewRenderer(NULL),
     frameCacheSize(8), readerThreads(-1), loopCountName("1"), 
     startFrame(0), endFrame(-1), loopCount(1), LOD(0),
     slaveLaunchMethod("rsh"), useMPI(0), 
@@ -60,7 +61,8 @@ struct ProgramOptions {
   struct UserInterface *userInterface;
   int rendererIndex;
   QString rendererName;
-  NewRenderer *mRenderer; 
+  Renderer *mOldRenderer; 
+  NewRenderer *mNewRenderer; 
   QString backendRendererName;
   int frameCacheSize;
   int readerThreads;

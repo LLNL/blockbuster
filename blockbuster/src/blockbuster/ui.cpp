@@ -52,14 +52,14 @@ MovieStatus MatchUserInterfaceToRenderer(
             userInterfaceFound = 1;
             userInterfaceName = userInterfaces[i]->name; 
             /* Matched the user interface; try to match the renderer */
-            for (j = 0; userInterfaces[i]->supportedRenderers[j] != NULL; j++) {
+            for (j = 0; userInterfaces[i]->supportedRendererGlueChoices[j] != NULL; j++) {
                 if (
                     rendererName == "" ||
-                    rendererName == userInterfaces[i]->supportedRenderers[j]->renderer->name
+                    rendererName == userInterfaces[i]->supportedRendererGlueChoices[j]->renderer->name
                 ) {
                     /* Match! */
                   rendererName =
-                    userInterfaces[i]->supportedRenderers[j]->renderer->name; 
+                    userInterfaces[i]->supportedRendererGlueChoices[j]->renderer->name; 
                       if (matchedRendererIndex != NULL) {
                         *matchedRendererIndex = j;
                     }
@@ -67,7 +67,7 @@ MovieStatus MatchUserInterfaceToRenderer(
                         *matchedUserInterface = userInterfaces[i];
                     }
                     if (matchedRenderer != NULL) {
-                        *matchedRenderer = userInterfaces[i]->supportedRenderers[j]->renderer;
+                        *matchedRenderer = userInterfaces[i]->supportedRendererGlueChoices[j]->renderer;
                     }
     dbprintf(1, QString("MatchUserInterfaceToRenderer got UI: %1 and renderer: %2\n").arg(userInterfaceName).arg( rendererName)); 
                     return MovieSuccess;
