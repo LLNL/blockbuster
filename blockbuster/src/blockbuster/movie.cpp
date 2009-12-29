@@ -185,7 +185,6 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   }
 
   canvas = new Canvas(0, options, gMainWindow);
-  CreateRenderer(options, canvas); 
 
   if (canvas == NULL) {
     ERROR("Could not create a canvas");

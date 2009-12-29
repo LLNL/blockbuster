@@ -56,7 +56,15 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
   DrawStringPtr(NULL), SwapBuffersPtr(NULL), BeforeRenderPtr(NULL), AfterRenderPtr(NULL), mOptions(options)
 {
  
-    RendererGlue *glue;
+  mRenderer = NewRenderer::CreateRenderer(mOptions, this); 
+  if (!mRenderer) {
+    ERROR(QString("Badness:  cannot create renderer \"%1\"\n").
+          arg(mOptions->rendererName)); 
+    exit(1); 
+  }
+  mOptions->mRenderer = mRenderer; 
+
+  RendererGlue *glue;
     MovieStatus status;
     UserInterface *userInterface = mOptions->userInterface; 
     glue = userInterface->supportedRenderers[mOptions->rendererIndex];
