@@ -6,14 +6,8 @@
 #include "settings.h"
 #include "canvas.h"
 
-NewRenderer::NewRenderer(ProgramOptions *opt, Canvas *canvas): 
-  // replaces Initialize() from file module (e.g. gl.cpp)
-  name(NULL), description(NULL), mCanvas(canvas), mOptions(opt){  
-  mCache = canvas->imageCache; // this has to be here to avoid header madness
-  return; 
-} 
 
-void CreateRenderer(ProgramOptions *opt, Canvas *canvas) {
+NewRenderer * NewRenderer::CreateRenderer(ProgramOptions *opt, Canvas *canvas) {
   QString name = opt->rendererName; 
   NewRenderer *renderer = NULL; 
   if (name == "x11") renderer = new x11Renderer(opt, canvas); 
@@ -22,11 +16,17 @@ void CreateRenderer(ProgramOptions *opt, Canvas *canvas) {
   if (name == "gltexture") renderer = new glTextureRenderer(opt, canvas); 
   if (name == "dmx") renderer = new dmxRenderer(opt, canvas); 
   
-  opt->mRenderer = renderer;
-  canvas->mRenderer = renderer; 
-  return ;
+  return renderer;
   
 }
+
+NewRenderer::NewRenderer(ProgramOptions *opt, Canvas *canvas): 
+  // replaces Initialize() from file module (e.g. gl.cpp)
+  mCanvas(canvas), mOptions(opt){  
+  mCache = canvas->imageCache; // this has to be here to avoid header madness
+  return; 
+} 
+
 
 void NewRenderer::Preload(uint32_t frameNumber,
                      const Rectangle *imageRegion, uint32_t levelOfDetail) {

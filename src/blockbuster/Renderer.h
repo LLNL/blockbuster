@@ -4,10 +4,11 @@
 #include "settings.h"
 struct Canvas; 
 /* Base class for all other renderers, defining the API required */ 
-void CreateRenderer(ProgramOptions *opt, Canvas *canvas);
+// factory function
 
 class NewRenderer {
  public:
+  static NewRenderer *CreateRenderer(ProgramOptions*, Canvas*);
   NewRenderer(ProgramOptions *opt, Canvas *canvas);
 
   virtual ~NewRenderer() {
@@ -53,11 +54,6 @@ class NewRenderer {
   */
 
  protected:   
-  /* If the renderer needs a handle on which to hang any privately
-   * allocated data, this is the place to do it.
-   */
-  char *name; // from Renderer structs in file module (e.g. gl.cpp)
-  char *description;// from Renderer structs in file module (e.g. gl.cpp)
   
   // these are good to have around to reduce arguments: 
   Canvas *mCanvas; 
