@@ -501,7 +501,7 @@ static void ParseOptions(int &argc, char *argv[])
     ERROR("Use -h for help.");
     exit(MOVIE_BAD_FLAG);
   }
-
+  
   return  ;  /* last unparsed arg */
 }
 

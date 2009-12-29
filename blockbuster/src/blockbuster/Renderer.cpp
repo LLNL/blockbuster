@@ -6,6 +6,13 @@
 #include "settings.h"
 #include "canvas.h"
 
+NewRenderer::NewRenderer(ProgramOptions *opt, Canvas *canvas): 
+  // replaces Initialize() from file module (e.g. gl.cpp)
+  name(NULL), description(NULL), mCanvas(canvas), mOptions(opt){  
+  mCache = canvas->imageCache; // this has to be here to avoid header madness
+  return; 
+} 
+
 void CreateRenderer(ProgramOptions *opt, Canvas *canvas) {
   QString name = opt->rendererName; 
   NewRenderer *renderer = NULL; 
