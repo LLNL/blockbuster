@@ -13,12 +13,14 @@ class glRenderer: public NewRenderer {
   virtual ~glRenderer() {
     return; 
   }
-  virtual void HandleOptions(int &argc, char *argv[]);
+  // this is a no-op for glRenderers: 
+  // virtual void HandleOptions(int &argc, char *argv[]);
 
   virtual void Render(int frameNumber,
                       const Rectangle *imageRegion,
                       int destX, int destY, float zoom, int lod);  
    
+  bool mXSynchronize; // for debugging, presumably. 
 } ;
 
 class glStereoRenderer: public glRenderer {
@@ -37,14 +39,9 @@ class glStereoRenderer: public glRenderer {
 
 class glTextureRenderer: public glRenderer {
  public:
-  glTextureRenderer(ProgramOptions *opt, Canvas *canvas):
-    glRenderer(opt, canvas) {
-    return; 
-  }
+  glTextureRenderer(ProgramOptions *opt, Canvas *canvas);
   virtual ~glTextureRenderer() {}
   
-  // this is different for textures: 
-  virtual void HandleOptions(int &argc, char *argv[]);
   
 }; 
 

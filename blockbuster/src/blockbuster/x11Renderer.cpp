@@ -20,23 +20,6 @@
 
 #include "canvas.h" // POISON -- temporary -- x11Renderer should not know about canvases.
 
-void x11Renderer::HandleOptions(int &argc, char *argv[]){
- 
-  while (argc > 1) {
-    if (!strcmp(argv[1], "-h")) {
-      fprintf(stderr, "Renderer: %s\n", X11_NAME);
-      fprintf(stderr, "%s\n", X11_DESCRIPTION);
-      fprintf(stderr, "Options:\n");
-      fprintf(stderr, "-h gives help\n");
-      exit(MOVIE_HELP);
-    }else {
-      /* stop consuming args when one does not match */ 
-      return; 
-    }
-  }
-  return; 
-}
-
 void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
                          int destX, int destY, float zoom, int lod){
     X11RendererGlue *glueInfo;

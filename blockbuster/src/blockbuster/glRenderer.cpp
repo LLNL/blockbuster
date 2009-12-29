@@ -37,31 +37,6 @@
 
 #include "glRenderer.h"
 
-static int globalSync = 1;
-
-void glRenderer::HandleOptions(int &argc, char *argv[]) {
-  
-  while (argc > 1) {
-    if (!strcmp(argv[1], "-h")) {
-      fprintf(stderr, "Renderer: %s\n", GL_NAME);
-      fprintf(stderr, "%s\n", GL_DESCRIPTION);
-      fprintf(stderr, "Options: ");
-      fprintf(stderr, "-h gives help\n");
-      fprintf(stderr, "-s toggles XSynchronize [%s]\n",
-              globalSync?"on":"off");
-      exit(MOVIE_HELP);
-    } else if (!strcmp(argv[1], "-s")) {
-      ConsumeArg(argc, argv, 1); 
-      globalSync = !globalSync;
-    }
-    else { 
-      return; 
-    }
-  }
-  // never reach here...
-  return ; 
-  
-}
 
 
 void glRenderer::Render(int frameNumber, 
@@ -409,7 +384,11 @@ void glStereoRenderer::Render(int frameNumber,
   
 }
 
+//===========================================================
+// glTextureRenderer
+// ==========================================================
 
-void glTextureRenderer::HandleOptions(int &argc, char *argv[]){
+glTextureRenderer::glTextureRenderer(ProgramOptions *opt, Canvas *canvas):
+  glRenderer(opt, canvas) {
   return; 
 }

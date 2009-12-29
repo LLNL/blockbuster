@@ -632,11 +632,6 @@ int main(int argc, char *argv[])
   }
   renderer = opt->userInterface->supportedRenderers[opt->rendererIndex]->renderer;
  
-  if (argc && renderer->HandleOptions != NULL) {
-    dbprintf(2, "renderer handle options:\n");
-    renderer->HandleOptions(argc, args);
-    printargs("After renderer", args, argc); 
-  }
 
   INFO("Using %s renderer", opt->userInterface->supportedRenderers[opt->rendererIndex]->renderer->name);
   INFO("Using %s interface", opt->userInterface->name);

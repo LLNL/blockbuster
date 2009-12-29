@@ -63,26 +63,6 @@ typedef struct {
 
 
 
-
-void gltexture_HandleOptions(int &argc, char *argv[]) {
-  while (argc > 1){
-    if (!strcmp(argv[1], "-h")) {
-      ConsumeArg(argc, argv, 1); 
-      fprintf(stderr, "Renderer: %s\n", GLTEXTURE_NAME);
-      fprintf(stderr, "%s\n", GLTEXTURE_DESCRIPTION);
-      fprintf(stderr, "Options: there are no options for this renderer.\n"  );
-      fprintf(stderr, "-h gives help\n");
-     
-      exit(MOVIE_HELP);
-	}
-    else { 
-      return ; 
-    }
-  }
-  return; 
-}
-
-
 /* This is used to upscale texture sizes to the nearest power of 2, 
  * which is necessary in OpenGL.
  */

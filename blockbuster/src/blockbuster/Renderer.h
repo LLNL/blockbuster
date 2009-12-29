@@ -14,9 +14,8 @@ class NewRenderer {
     return; 
   } // replaces DestroyRenderer from Canvas
 
-
-  virtual void HandleOptions(int &argc, char *argv[]) = 0; // from Renderer structs in file module (e.g. gl.cpp)
-  
+  // Renderers:  x11, gl, gl_stereo, gltexture, and dmx
+  // NewRenderers:  x11Renderer, glRenderer, glStereoRenderer, glTextureRenderer, dmxRenderer  
   
   /* Functions that are function pointers in the Canvas class right now */ 
   /* The fundamental operation of the Renderer is to render.        This might be assigned gl_Render (gl.cpp, gl_Initialize), x11_Render (x11.cpp: x11_initialize()), or dmx_Render (dmxglue.cpp, dmx_Initialize()).  The assignment is done 

@@ -36,33 +36,7 @@
 
 
 
-
-static int globalSync = 1;
-
-void gl_HandleOptions(int &argc, char *argv[]) {
-  ECHO_FUNCTION(5);
-  
-  while (argc > 1) {
-    if (!strcmp(argv[1], "-h")) {
-      fprintf(stderr, "Renderer: %s\n", GL_NAME);
-      fprintf(stderr, "%s\n", GL_DESCRIPTION);
-      fprintf(stderr, "Options: ");
-      fprintf(stderr, "-h gives help\n");
-      fprintf(stderr, "-s toggles XSynchronize [%s]\n",
-              globalSync?"on":"off");
-      exit(MOVIE_HELP);
-    } else if (!strcmp(argv[1], "-s")) {
-      ConsumeArg(argc, argv, 1); 
-      globalSync = !globalSync;
-    }
-    else { 
-      return; 
-    }
-  }
-  // never reach here...
-  return ; 
-  
-}
+static Canvas *gCanvas = NULL; // temp until all functions are neutered.  
 
 
 static void gl_Render(Canvas *canvas, int frameNumber, 
@@ -421,6 +395,7 @@ static void gl_RenderStereo(Canvas *canvas, int frameNumber,
  MovieStatus
 gl_Initialize(Canvas *canvas, const ProgramOptions *)
 {
+  gCanvas = canvas; 
   ECHO_FUNCTION(5);
   /* Trivial for gl renderer: */
   /* Plug in our functions into the canvas */

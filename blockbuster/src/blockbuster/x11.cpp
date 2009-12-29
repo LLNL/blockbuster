@@ -37,27 +37,6 @@
 
 
 
-void x11_HandleOptions(int &argc, char *argv[])
-{
-  ECHO_FUNCTION(5);
-
-  while (argc > 1) {
-    if (!strcmp(argv[1], "-h")) {
-      int i=0; 
-      fprintf(stderr, "Renderer: %s\n", X11_NAME);
-      fprintf(stderr, "%s\n", X11_DESCRIPTION);
-      fprintf(stderr, "Options:\n");
-      fprintf(stderr, "-h gives help\n");
-      exit(MOVIE_HELP);
-    }     else {
-      /* stop consuming args when one does not match */ 
-      return; 
-    }
-  }
-  return; 
-}
-
-
 
 static void x11_Render(Canvas *canvas, int frameNumber,
                    const Rectangle *imageRegion,
