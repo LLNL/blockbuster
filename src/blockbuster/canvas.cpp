@@ -52,7 +52,7 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
   mBlockbusterInterface(gui), 
   frameList(NULL), imageCache(NULL), RenderPtr(NULL), 
   SetFrameListPtr(NULL), PreloadPtr(NULL), 
-  DestroyRendererPtr(NULL), rendererPrivateData(NULL), ResizePtr(NULL), MovePtr(NULL), 
+  DestroyRendererPtr(NULL), ResizePtr(NULL), MovePtr(NULL), 
   DrawStringPtr(NULL), SwapBuffersPtr(NULL), BeforeRenderPtr(NULL), AfterRenderPtr(NULL), mOptions(options)
 {
 

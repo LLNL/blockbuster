@@ -54,13 +54,14 @@ typedef struct {
 } TextureObject;
 
 
-typedef struct {
-    int maxTextureWidth, maxTextureHeight;
-    GLenum texFormat, texIntFormat;
-    TextureObject textures[MAX_TEXTURES];
+struct TextureRenderInfo {
+  int maxTextureWidth, maxTextureHeight;
+  GLenum texFormat, texIntFormat;
+  TextureObject textures[MAX_TEXTURES];
+  
+} ;
 
-} RenderInfo;
-
+TextureRenderInfo *gTextureRenderInfo = NULL; 
 
 
 /* This is used to upscale texture sizes to the nearest power of 2, 
@@ -95,7 +96,7 @@ static void UpdateProjectionAndViewport(int newWidth, int newHeight)
 
 
 static TextureObject *
-GetTextureObject(RenderInfo *renderInfo, Canvas *canvas, int frameNumber)
+GetTextureObject(Canvas *canvas, int frameNumber)
 {
     static GLuint clock = 1;
     TextureObject *texObj = (TextureObject *) canvas->frameList->getFrame(frameNumber)->canvasPrivate;
@@ -107,8 +108,8 @@ GetTextureObject(RenderInfo *renderInfo, Canvas *canvas, int frameNumber)
 	int i;
 	/* find LRU texture object */
 	for (i = 0; i < MAX_TEXTURES; i++) {
-	    if (renderInfo->textures[i].age < oldestAge) {
-		oldestAge = renderInfo->textures[i].age;
+	    if (gTextureRenderInfo->textures[i].age < oldestAge) {
+		oldestAge = gTextureRenderInfo->textures[i].age;
 		oldestPos = i;
 	    }
 	}
@@ -117,7 +118,7 @@ GetTextureObject(RenderInfo *renderInfo, Canvas *canvas, int frameNumber)
 	bb_assert(oldestPos < MAX_TEXTURES);
 	bb_assert(oldestAge != ~(uint32_t)0);
 
-	texObj = renderInfo->textures + oldestPos;
+	texObj = gTextureRenderInfo->textures + oldestPos;
 
 	/* unlink FrameInfo pointer */
 	if (texObj->frameInfo)
@@ -141,7 +142,6 @@ static void gltexture_Render(Canvas *canvas,
                    const Rectangle *imageRegion,
                    int destX, int destY, float zoom, int lod)
 {
-    RenderInfo *renderInfo = (RenderInfo *) canvas->rendererPrivateData;
     TextureObject *texObj;
     GLfloat s0, t0, s1, t1;
     GLfloat x0, y0, x1, y1;
@@ -187,7 +187,7 @@ static void gltexture_Render(Canvas *canvas,
     }
 
     /* get texture object */
-    texObj = GetTextureObject(renderInfo, canvas, localFrameNumber);
+    texObj = GetTextureObject(canvas, localFrameNumber);
     bb_assert(texObj);
     bb_assert(texObj->frameInfo == canvas->frameList->getFrame(localFrameNumber));
 
@@ -211,14 +211,14 @@ static void gltexture_Render(Canvas *canvas,
     if (!texObj->width) {
 	int w, h, level;
 	/* compute best texture size */
-	texObj->width = MIN2(MinPowerOf2(image->width), renderInfo->maxTextureWidth);
-	texObj->height = MIN2(MinPowerOf2(image->height), renderInfo->maxTextureHeight);
+	texObj->width = MIN2(MinPowerOf2(image->width), gTextureRenderInfo->maxTextureWidth);
+	texObj->height = MIN2(MinPowerOf2(image->height), gTextureRenderInfo->maxTextureHeight);
 	/* make initial image (undefined contents) */
         w = texObj->width;
         h = texObj->height;
 	level = 0;
 	while (w > 1 || h > 1) {
-	    glTexImage2D(GL_TEXTURE_2D, level, renderInfo->texIntFormat, 
+	    glTexImage2D(GL_TEXTURE_2D, level, gTextureRenderInfo->texIntFormat, 
 			 w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	    if (w > 1)
 		w /= 2;
@@ -269,7 +269,7 @@ static void gltexture_Render(Canvas *canvas,
 	    glTexSubImage2D(GL_TEXTURE_2D, lod,
 			    region.x, region.y,
 			    region.width, region.height,
-			    renderInfo->texFormat, GL_UNSIGNED_BYTE,
+			    gTextureRenderInfo->texFormat, GL_UNSIGNED_BYTE,
 			    image->imageData);
 
 	    if (texObj->anyLoaded)
@@ -336,7 +336,7 @@ static void gltexture_Render(Canvas *canvas,
 	glTexSubImage2D(GL_TEXTURE_2D, 0,
 			0, 0, /* pos */
 			region.width, region.height,
-			renderInfo->texFormat, GL_UNSIGNED_BYTE,
+			gTextureRenderInfo->texFormat, GL_UNSIGNED_BYTE,
 			image->imageData);
 	/* invalidate valid region, for sake of first path, above */
 	texObj->valid[lod].x = 0;
@@ -378,8 +378,8 @@ static void gltexture_Render(Canvas *canvas,
 	 * I.e. a _really_ big movie image.
 	 * Draw it in pieces, as a tiling of quadrilaterals.
 	 */
-	const int tileWidth = renderInfo->maxTextureWidth;
-	const int tileHeight = renderInfo->maxTextureHeight;
+	const int tileWidth = gTextureRenderInfo->maxTextureWidth;
+	const int tileHeight = gTextureRenderInfo->maxTextureHeight;
 	int row, col, width, height;
 
 	/* invalidate valid region, for sake of first path, above */
@@ -430,14 +430,14 @@ static void gltexture_Render(Canvas *canvas,
 		glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x + col);
 		glTexSubImage2D(GL_TEXTURE_2D, 0,
 				0, 0, width, height,
-				renderInfo->texFormat, GL_UNSIGNED_BYTE,
+				gTextureRenderInfo->texFormat, GL_UNSIGNED_BYTE,
 				image->imageData);
 
 		/* tex coords */
 		s0 = 0;
 		t0 = 0;
-		s1 = (float) width / renderInfo->maxTextureWidth;
-		t1 = (float) height / renderInfo->maxTextureHeight;
+		s1 = (float) width / gTextureRenderInfo->maxTextureWidth;
+		t1 = (float) height / gTextureRenderInfo->maxTextureHeight;
 		if (image->imageFormat.rowOrder == BOTTOM_TO_TOP) {
 		    /* invert texcoords */
 		    GLfloat temp = t0;
@@ -499,11 +499,6 @@ static void gltexture_Render(Canvas *canvas,
     glDisable(GL_TEXTURE_2D);
 }
 
-static void gltexture_DestroyRenderer(Canvas *canvas)
-{
-    RenderInfo *renderInfo = (RenderInfo *) canvas->rendererPrivateData;
-    free(renderInfo);
-}
 
 /*
  * After the canvas has been created, as well as the corresponding X window,
@@ -512,42 +507,38 @@ static void gltexture_DestroyRenderer(Canvas *canvas)
  MovieStatus
 gltexture_Initialize(Canvas *canvas, const ProgramOptions *)
 {
-    RenderInfo *renderInfo;
-
-    renderInfo = (RenderInfo *)calloc(1, sizeof(RenderInfo));
-    if (!renderInfo) {
+    gTextureRenderInfo = (TextureRenderInfo *)calloc(1, sizeof(TextureRenderInfo));
+    if (!gTextureRenderInfo) {
 	return MovieFailure;
     }
           
     /* Get max texture size (XXX use proxy?) */
-    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &renderInfo->maxTextureWidth);
-    renderInfo->maxTextureHeight = renderInfo->maxTextureWidth;
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &gTextureRenderInfo->maxTextureWidth);
+    gTextureRenderInfo->maxTextureHeight = gTextureRenderInfo->maxTextureWidth;
 
-    if (renderInfo->maxTextureWidth >= 4096 ||
-	renderInfo->maxTextureHeight >= 4096) {
+    if (gTextureRenderInfo->maxTextureWidth >= 4096 ||
+	gTextureRenderInfo->maxTextureHeight >= 4096) {
 	/* XXX NVIDIA's GeForce reports 4Kx4K but that size doesn't
 	 * actually work!
 	 * Furthermore, smaller textures seem to be faster when tiling.
 	 */
-	renderInfo->maxTextureWidth = 2048;
-	renderInfo->maxTextureHeight = 2048;
+	gTextureRenderInfo->maxTextureWidth = 2048;
+	gTextureRenderInfo->maxTextureHeight = 2048;
     }
     INFO("Max Texture Size: %d x %d",
-	 renderInfo->maxTextureWidth,
-	 renderInfo->maxTextureHeight);
+	 gTextureRenderInfo->maxTextureWidth,
+	 gTextureRenderInfo->maxTextureHeight);
 
-	renderInfo->texIntFormat = GL_RGB;
-	renderInfo->texFormat = GL_RGB;
+	gTextureRenderInfo->texIntFormat = GL_RGB;
+	gTextureRenderInfo->texFormat = GL_RGB;
 
     /* If we're going to try to use the PixelDataRange extension, enable it
      * as well as our custom memory management
      */
 
-    canvas->rendererPrivateData = renderInfo;
 
     /* plug in our functions into the canvas */
     canvas->RenderPtr = gltexture_Render;
-    canvas->DestroyRendererPtr = gltexture_DestroyRenderer;
 
     return MovieSuccess;
 }
