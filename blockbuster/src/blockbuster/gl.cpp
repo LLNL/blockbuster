@@ -401,8 +401,6 @@ gl_Initialize(Canvas *canvas, const ProgramOptions *)
   /* Trivial for gl renderer: */
   /* Plug in our functions into the canvas */
   canvas->RenderPtr = gl_Render;
-  canvas->DestroyRendererPtr = NULL;
-
   return MovieSuccess;
 }
 
@@ -412,7 +410,6 @@ gl_InitializeStereo(Canvas *canvas, const ProgramOptions *)
   ECHO_FUNCTION(5);
   canvas->BeforeRenderPtr = NULL;
   canvas->RenderPtr = gl_RenderStereo;
-  canvas->DestroyRendererPtr = NULL;
 
   return MovieSuccess;
 }

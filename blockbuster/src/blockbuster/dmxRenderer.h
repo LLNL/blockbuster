@@ -174,7 +174,7 @@ class dmxRenderer: public QObject, public NewRenderer {
   Q_OBJECT
  public:
   dmxRenderer(ProgramOptions *opt, Canvas *canvas, QObject *parent = NULL);
-  virtual ~dmxRenderer() {}
+  virtual ~dmxRenderer(); 
 
   void Render(int frameNumber,
               const Rectangle *imageRegion,

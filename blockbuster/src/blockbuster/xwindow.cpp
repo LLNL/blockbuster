@@ -1113,17 +1113,10 @@ int xwindow_GetFontHeight(void){
  
 
 
-static void dmxDestroyGlue(Canvas *canvas)
-{
-    DMXRendererGlue *glueInfo = (DMXRendererGlue *)canvas->gluePrivateData;
-
-    free(glueInfo);
-}
-
 RendererSpecificGlue dmxRendererSpecificGlue = {
   pureC_x11ChooseVisual,            /* same as X11 */
   dmxFinishInitialization,
-  dmxDestroyGlue,
+  NULL,
   NULL,                       /* use Renderer's DrawString routine */
   NULL,                       /* no BeforeRender routine necessary */
   NULL,                       /* no AfterRender routine necessary */
