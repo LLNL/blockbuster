@@ -9,7 +9,7 @@
 class x11Renderer: public NewRenderer {
  public:
   x11Renderer(ProgramOptions *opt, Canvas *canvas):
-    NewRenderer(opt, canvas) {
+    NewRenderer(opt, canvas, "x11") {
    return; 
   }
 
