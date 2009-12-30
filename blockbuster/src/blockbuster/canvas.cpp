@@ -31,6 +31,7 @@
 #include "cache.h"
 #include "blockbuster_qt.h"
 #include "xwindow.h"
+#include "dmxRenderer.h"
 #include "Renderer.h"
 
 /* This file handles the creation and destruction of the dynamic Canvas
@@ -268,7 +269,30 @@ void Canvas::reportMovieCueComplete(void){
   }
   return ;
 }
+//============================================
+void Canvas::DMXSendHeartbeat(void) { 
+  // this is probably better done with QTimer. 
+  if (mRenderer->mName == "dmx") {
+    dynamic_cast<dmxRenderer *>(mRenderer)->SendHeartbeatToSlaves(); 
+  }
+  return; 
+}
 
+//============================================
+void Canvas::DMXSpeedTest(void) {
+  if (mRenderer->mName == "dmx") {
+    dynamic_cast<dmxRenderer*>(mRenderer)->SpeedTest(); 
+  }
+  return; 
+}
+
+//============================================
+void Canvas::DMXCheckNetwork(void) {
+  if (mRenderer->mName == "dmx") {
+    dynamic_cast<dmxRenderer*>(mRenderer)->CheckNetwork(); 
+  }
+  return; 
+}
 
 //============================================
 FrameInfo *GetFrameInfoPtr(Canvas *canvas, int frameNumber)

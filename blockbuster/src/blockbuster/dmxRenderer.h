@@ -1,5 +1,5 @@
-#ifndef DMXRENDERER_H
-#define DMXRENDERER_H yes
+#ifndef DMXNEWRENDERER_H
+#define DMXNEWRENDERER_H yes
 
 #include "Renderer.h" // not "Renderers.h"
 #include <QTcpSocket>
@@ -171,6 +171,7 @@ class DMXSlave: public QObject {
 
 
 //========================================================================
+
 class dmxRenderer: public QObject, public NewRenderer {
   Q_OBJECT
  public:
@@ -185,12 +186,20 @@ class dmxRenderer: public QObject, public NewRenderer {
   void Preload(uint32_t frameNumber,
                const Rectangle *imageRegion, uint32_t levelOfDetail);
 
+
   /*! 
     This must be called frequently to catch incoming network messages
   */ 
   void CheckNetwork(void);
   
+  /* Test out a new way to do DMX:
+     this makes the slaves just start playing and ignore Render commands 
+  */ 
+  void SpeedTest(void); 
   
+  /* thump-thump */
+  void SendHeartbeatToSlaves(void); 
+
   // FROM SLAVESERVER: 
   void LaunchSlave(QString hostname); 
   bool slavesReady(void) { return mSlavesReady; }

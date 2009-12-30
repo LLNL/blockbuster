@@ -215,8 +215,13 @@
      void AfterRender(struct Canvas *canvas){
        if (AfterRenderPtr) AfterRenderPtr(canvas); 
      }
-    void (*AfterRenderPtr)(struct Canvas *canvas);
-
+     void (*AfterRenderPtr)(struct Canvas *canvas);
+     
+     // DMX SPECIFIC STUFF: 
+     void DMXSendHeartbeat(void);
+     void DMXSpeedTest(void);
+     void DMXCheckNetwork(void);
+     
     void *gluePrivateData;
 
      int32_t playDirection, startFrame, endFrame, preloadFrames; 

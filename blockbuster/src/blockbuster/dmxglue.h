@@ -86,13 +86,7 @@ void UpdateBackendCanvases(Canvas *canvas);
 void dmx_SetFrameList(Canvas *canvas, FrameList *frameList);
 
 
-/* thump-thump */
-void dmx_SendHeartbeatToSlaves(void); 
 
-/* Test out a new way to do DMX:
-   this makes the slaves just start playing and ignore Render commands 
-*/ 
-void dmx_SpeedTest(void); 
 
 
 

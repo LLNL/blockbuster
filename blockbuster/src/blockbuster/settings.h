@@ -3,7 +3,7 @@
 #include <QApplication>
 #include "common.h"
 class NewRenderer; 
-struct Renderer; 
+struct OldRenderer; 
 struct RendererSpecificGlue; 
 
 class ProgramOptions *GetGlobalOptions(void); 
@@ -63,7 +63,7 @@ struct ProgramOptions {
   int rendererIndex;
   QString rendererName;
   RendererSpecificGlue *mRendererSpecificGlue; 
-  Renderer *mOldRenderer; 
+  OldRenderer *mOldRenderer; 
   NewRenderer *mNewRenderer; 
   QString backendRendererName;
   int frameCacheSize;

@@ -29,8 +29,8 @@ struct EventQueue {
 class SidecarServer : public QObject {
   Q_OBJECT
     public:
-  SidecarServer(ProgramOptions *opt, QObject *parent = 0): 
-    QObject(parent), mOptions(opt), 
+  SidecarServer(QObject *parent = 0): 
+    QObject(parent), mCanvas(NULL), 
     mPromptForConnections(true), mSidecarSocket(NULL) {
     dbprintf(5, "SidecarServer\n"); 
     //mTcpServer.listen(QHostAddress::Any, 5959); 
@@ -57,6 +57,8 @@ class SidecarServer : public QObject {
     }
   }
 
+  void SetCanvas(Canvas *c){mCanvas = c; }
+
   EventQueue mPendingEvents; 
 
 
@@ -68,7 +70,7 @@ class SidecarServer : public QObject {
   void sidecarDisconnected();
  protected: 
   QTcpServer mTcpServer;
-  ProgramOptions *mOptions; 
+  Canvas *mCanvas; 
   bool mPromptForConnections; 
   QTcpSocket *mSidecarSocket;
   uint32_t mLastReceivedCommandID, mLastSentCommandID; 
