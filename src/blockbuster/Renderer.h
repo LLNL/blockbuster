@@ -2,6 +2,7 @@
 #define BB_RENDERER_H
 #include "cache.h"
 #include "settings.h"
+
 struct Canvas; 
 /* Base class for all other renderers, defining the API required */ 
 // factory function
