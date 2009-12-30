@@ -602,7 +602,7 @@ int main(int argc, char *argv[])
     gMainWindow = new BlockbusterInterface; 
     
     /* set up network communications */ 
-    gSidecarServer = new SidecarServer;     
+    gSidecarServer = new SidecarServer(opt);     
     
     gMainWindow->show(); 
   }

@@ -53,6 +53,7 @@ class NewRenderer {
      void SwapBuffers(Canvas *canvas);
   */
  public:
+  virtual void CheckNetwork(void) {}; // only active in dmxRenderer
   QString mName; 
 
  protected:   

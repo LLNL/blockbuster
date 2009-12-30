@@ -185,8 +185,12 @@ class dmxRenderer: public QObject, public NewRenderer {
   void Preload(uint32_t frameNumber,
                const Rectangle *imageRegion, uint32_t levelOfDetail);
 
-
-
+  /*! 
+    This must be called frequently to catch incoming network messages
+  */ 
+  void CheckNetwork(void);
+  
+  
   // FROM SLAVESERVER: 
   void LaunchSlave(QString hostname); 
   bool slavesReady(void) { return mSlavesReady; }

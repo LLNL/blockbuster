@@ -159,18 +159,6 @@ dmx_AtExitCleanup(void)
     return;
 }
 
-/*!
-  Check all slaves for incoming network messages.  This is intended to be called from the main event loop regularly
-*/ 
-void dmx_CheckNetwork(void) {
-  if (!gRenderer || !gRenderer->numValidWindowInfos) return; 
-  int slavenum=0, numslaves = gRenderer->mActiveSlaves.size(); 
-  if (!numslaves || !gRenderer->mActiveSlaves[0]) return; 
-  while (slavenum < numslaves) {
-	gRenderer->mActiveSlaves[slavenum++]->QueueNetworkEvents(); 
-  }
-  return; 
-}
 
 /*!
   just a block of code that gets used a few times when there is an error: 
