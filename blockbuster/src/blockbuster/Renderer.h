@@ -9,14 +9,14 @@ struct Canvas;
 class NewRenderer {
  public:
   static NewRenderer *CreateRenderer(ProgramOptions*, Canvas*);
-  NewRenderer(ProgramOptions *opt, Canvas *canvas);
+  NewRenderer(ProgramOptions *opt, Canvas *canvas, QString name);
 
   virtual ~NewRenderer() {
     return; 
   } // replaces DestroyRenderer from Canvas
 
   // Renderers:  x11, gl, gl_stereo, gltexture, and dmx
-  // NewRenderers:  x11Renderer, glRenderer, glStereoRenderer, glTextureRenderer, dmxRenderer  
+  // NewRenderers: glRenderer, glStereoRenderer, glTextureRenderer, dmxRenderer
   
   /* Functions that are function pointers in the Canvas class right now */ 
   /* The fundamental operation of the Renderer is to render.        This might be assigned gl_Render (gl.cpp, gl_Initialize), x11_Render (x11.cpp: x11_initialize()), or dmx_Render (dmxglue.cpp, dmx_Initialize()).  The assignment is done 
@@ -52,9 +52,10 @@ class NewRenderer {
      void AfterRender(Canvas *canvas);
      void SwapBuffers(Canvas *canvas);
   */
+ public:
+  QString mName; 
 
  protected:   
-  
   // these are good to have around to reduce arguments: 
   Canvas *mCanvas; 
   ProgramOptions *mOptions; 

@@ -28,7 +28,6 @@
 #include "frames.h"
 #include "errmsg.h"
 #include "dmxglue.h"
-#include "ui.h"
 #include "Renderers.h"
 #include "gltexture.h"
 #include "errmsg.h"
@@ -53,6 +52,7 @@
 
 #define DEFAULT_WIDTH 800
 #define DEFAULT_HEIGHT 600
+static int globalSync = 0; // this used to be a user option, now it's just static.
 
 /* X11 window system info, not used outside of xwindow.cpp */
  struct WindowInfo{
@@ -82,19 +82,6 @@
     } glx;
 
 } ;
-
-static WindowInfo *sWindowInfo = NULL; 
-
-/* This utility function converts a raw mask into a mask and shift */
-int ComputeShift(unsigned long mask)
-{
-    register int shiftCount = 0;
-    while (mask != 0) {
-	mask >>= 1;
-	shiftCount++;
-    }
-    return shiftCount;
-}
 
 /* This structure allows finer control over the UserInterface,
  * based on which renderer will eventually be used.  It can be 
@@ -131,10 +118,20 @@ int ComputeShift(unsigned long mask)
     void (*SwapBuffers)(Canvas *canvas);
 } ;
 
+static WindowInfo *sWindowInfo = NULL; 
+
+/* This utility function converts a raw mask into a mask and shift */
+int ComputeShift(unsigned long mask)
+{
+    register int shiftCount = 0;
+    while (mask != 0) {
+	mask >>= 1;
+	shiftCount++;
+    }
+    return shiftCount;
+}
 
 
-/* These globals can be modified with options */
-static int globalSync = 0;
 /* Possible swap actions: 
     {"undefined", XdbeUndefined, "back buffer becomes undefined on swap"},
 -    {"background", XdbeBackground, "back buffer is cleared to window background on swap"},
@@ -143,29 +140,6 @@ static int globalSync = 0;
 */ 
 static XdbeSwapAction globalSwapAction = XdbeBackground;
 
- void xwindow_HandleOptions(int &argc, char *argv[])
-{
-  ECHO_FUNCTION(5);
-  while (argc > 1) {
-    if (!strcmp(argv[1], "-s")) {
-      ConsumeArg(argc, argv, 1);       
-      globalSync = !globalSync;
-    } else if (!strcmp(argv[1], "-h")) {
-      fprintf(stderr, "User Interface: %s\n", NAME);
-      fprintf(stderr, "%s\n", DESCRIPTION);
-      fprintf(stderr, "Options:\n");
-      fprintf(stderr, "-h gives help\n");
-      fprintf(stderr, "-s toggles XSynchronize [%s]\n",
-              globalSync?"on":"off");
-      exit(MOVIE_HELP);
-    }
-    else {
-      return; 
-    }
-  }
-  return ; 
-
-}
 
 //======================================================   
 void XWindow_ShowCursor(bool show) {
@@ -588,10 +562,12 @@ void XWindow_SetTitle(QString title) {
 /* This function is called to initialize an already-allocated Canvas.
  * The Glue information is already copied into place.
  */
-static MovieStatus xwindow_Initialize(Canvas *canvas, const ProgramOptions *options,
-            qint32 uiData, const RendererSpecificGlue *rendererGlue)
+MovieStatus xwindow_Initialize(Canvas *canvas, const ProgramOptions *options,
+                               qint32 uiData)
 {
    ECHO_FUNCTION(5);
+   RendererSpecificGlue *rendererGlue = 
+     GetRendererSpecificGlueByName(options->mOldRenderer->name); 
   Window parentWindow = (Window) uiData;
     const Rectangle *geometry = &options->geometry;
     int decorations = options->decorations;
@@ -966,44 +942,6 @@ static void glDestroyGlue(Canvas *)
     glXDestroyContext(sWindowInfo->display, sWindowInfo->glx.context);
 }
 
-static RendererSpecificGlue GLRendererSpecificGlue = {
-    glChooseVisual,
-    glFinishInitialization,
-    glDestroyGlue,
-    glDrawString,
-    glBeforeRender,
-    NULL,               /* no AfterRender routine necessary */
-    glSwapBuffers
-};
-
-
-static RendererSpecificGlue GLStereoRendererSpecificGlue = {
-    glStereoChooseVisual,
-    glFinishInitialization,
-    glDestroyGlue,
-    glDrawString,
-    glBeforeRender,
-    NULL,               /* no AfterRender routine necessary */
-    glSwapBuffers
-};
-
-
-static RendererGlue GLGlue = {
-    &glRenderer,
-    &GLRendererSpecificGlue
-};
-
-static RendererGlue GLStereoGlue = {
-    &glRendererStereo,
-    &GLStereoRendererSpecificGlue
-};
-
-
-static RendererGlue GLTextureGlue = {
-    &glTextureRenderer,
-    &GLRendererSpecificGlue
-};
-
 /***********************************************************************/
 /* Glue routines and data for the X11 renderer
  */
@@ -1100,7 +1038,8 @@ static void x11DestroyGlue(Canvas *canvas)
     free(glueInfo);
 }
 
-static RendererSpecificGlue X11RendererSpecificGlue = {
+
+RendererSpecificGlue x11RendererSpecificGlue = {
     pureC_x11ChooseVisual,
     x11FinishInitialization,
     x11DestroyGlue,
@@ -1110,11 +1049,45 @@ static RendererSpecificGlue X11RendererSpecificGlue = {
     x11SwapBuffers
 };
 
-static RendererGlue X11Glue = {
-    &x11Renderer,
-    &X11RendererSpecificGlue
+
+RendererSpecificGlue glRendererSpecificGlue = {
+    glChooseVisual,
+    glFinishInitialization,
+    glDestroyGlue,
+    glDrawString,
+    glBeforeRender,
+    NULL,               /* no AfterRender routine necessary */
+    glSwapBuffers
 };
 
+
+RendererSpecificGlue glStereoRendererSpecificGlue = {
+    glStereoChooseVisual,
+    glFinishInitialization,
+    glDestroyGlue,
+    glDrawString,
+    glBeforeRender,
+    NULL,               /* no AfterRender routine necessary */
+    glSwapBuffers
+};
+
+/*
+static RendererGlue GLGlue = {
+    &glRenderer,
+    &GLRendererSpecificGlue
+};
+
+static RendererGlue GLStereoGlue = {
+    &glRendererStereo,
+    &GLStereoRendererSpecificGlue
+};
+
+
+static RendererGlue GLTextureGlue = {
+    &glTextureRenderer,
+    &GLRendererSpecificGlue
+};
+*/ 
 #ifdef USE_DMX
 
 /***********************************************************************/
@@ -1161,20 +1134,16 @@ static void dmxDestroyGlue(Canvas *canvas)
     free(glueInfo);
 }
 
-static RendererSpecificGlue DMXRendererSpecificGlue = {
-    pureC_x11ChooseVisual,            /* same as X11 */
-    dmxFinishInitialization,
-    dmxDestroyGlue,
-    NULL,                       /* use Renderer's DrawString routine */
-    NULL,                       /* no BeforeRender routine necessary */
-    NULL,                       /* no AfterRender routine necessary */
-    NULL,                       /* use Renderer's SwapBuffers routine */
+RendererSpecificGlue dmxRendererSpecificGlue = {
+  pureC_x11ChooseVisual,            /* same as X11 */
+  dmxFinishInitialization,
+  dmxDestroyGlue,
+  NULL,                       /* use Renderer's DrawString routine */
+  NULL,                       /* no BeforeRender routine necessary */
+  NULL,                       /* no AfterRender routine necessary */
+  NULL,                       /* use Renderer's SwapBuffers routine */
 };
 
-static RendererGlue DMXGlue = {
-    &dmxRenderer,
-    &DMXRendererSpecificGlue
-};
 #endif
 
 /***********************************************************************/
@@ -1185,26 +1154,42 @@ static RendererGlue DMXGlue = {
  * but no renderer, the first one will be chosen.
  */
 
-static RendererGlue *x11_supportedRenderers[] = {
-    &GLGlue,
-    &GLTextureGlue,
-    &X11Glue,
-    &GLStereoGlue,
+RendererSpecificGlue *GetRendererSpecificGlueByName(QString name) {
+   if (name == "")  return &glRendererSpecificGlue; 
+
+  if (name == "x11") {
+    fprintf(stderr, "Error:  x11 renderer is no longer supported.\n"); 
+    exit(1); 
+  }
+
+  if (name == "gl") return &glRendererSpecificGlue; 
+  if (name == "gl_stereo") return &glStereoRendererSpecificGlue; 
+  if (name == "gltexture") return &glRendererSpecificGlue; // same as "gl"
 #ifdef USE_DMX
-    &DMXGlue,
+  if (name == "dmx") return &dmxRendererSpecificGlue; 
 #endif
-    NULL
+  return NULL; 
+ 
+}
+/* RendererGlue *x11_supportedRendererGlueChoices[] = {
+  &GLGlue,
+  &GLTextureGlue,
+  &X11Glue,
+  &GLStereoGlue,
+#ifdef USE_DMX
+  &DMXGlue,
+#endif
+  NULL
 };
 
 UserInterface x11UserInterface = {
     NAME,
     DESCRIPTION,
-    x11_supportedRenderers,
-    xwindow_HandleOptions,
+    //x11_supportedRendererGlueChoices,
+    //xwindow_HandleOptions,
     xwindow_Initialize,
-    NULL /* no ChooseFile implementation */
+    NULL // no ChooseFile implementation 
 
 };
-
-
+*/ 
 

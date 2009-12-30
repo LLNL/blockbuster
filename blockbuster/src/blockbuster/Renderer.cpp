@@ -1,7 +1,6 @@
 #include "Renderer.h"
 #include "common.h"
 #include "glRenderer.h"
-#include "x11Renderer.h"
 #include "dmxRenderer.h"
 #include "settings.h"
 #include "canvas.h"
@@ -10,8 +9,7 @@
 NewRenderer * NewRenderer::CreateRenderer(ProgramOptions *opt, Canvas *canvas) {
   QString name = opt->rendererName; 
   NewRenderer *renderer = NULL; 
-  if (name == "x11") renderer = new x11Renderer(opt, canvas); 
-  if (name == "gl") renderer = new glRenderer(opt, canvas); 
+  if (name == "gl" || name == "") renderer = new glRenderer(opt, canvas); 
   if (name == "gl_stereo") renderer = new glStereoRenderer(opt, canvas); 
   if (name == "gltexture") renderer = new glTextureRenderer(opt, canvas); 
   if (name == "dmx") renderer = new dmxRenderer(opt, canvas); 
@@ -20,9 +18,9 @@ NewRenderer * NewRenderer::CreateRenderer(ProgramOptions *opt, Canvas *canvas) {
   
 }
 
-NewRenderer::NewRenderer(ProgramOptions *opt, Canvas *canvas): 
+NewRenderer::NewRenderer(ProgramOptions *opt, Canvas *canvas, QString name): 
   // replaces Initialize() from file module (e.g. gl.cpp)
-  mCanvas(canvas), mOptions(opt){  
+  mName(name), mCanvas(canvas), mOptions(opt){  
   mCache = canvas->imageCache; // this has to be here to avoid header madness
   return; 
 } 

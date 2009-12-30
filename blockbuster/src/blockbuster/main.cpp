@@ -43,12 +43,11 @@
 #include <version.h>
 #include "settings.h"
 #include <X11/Xlib.h>
-//#include "ipc.h"
 #include <iostream> 
 #include "movie.h"
-#include "ui.h" 
 #include <sys/stat.h>
 #include "dmxglue.h"
+#include "xwindow.h"
 #include "frames.h"
 #include "slave.h"
 #include "util.h"
@@ -238,7 +237,6 @@ static void ParseOptions(int &argc, char *argv[])
 {
   ProgramOptions *opt = GetGlobalOptions(); 
   int numProcessors;
-  MovieStatus status;
   char *value;
   /* defaults */
   opt->executable = gCoreApp->applicationFilePath(); 
@@ -350,7 +348,6 @@ static void ParseOptions(int &argc, char *argv[])
     }
 	else if (SET_BOOL_ARG("-stereo", argc, argv, doStereo, 1)) continue;
     else if (CHECK_ATOI_ARG("-threads", argc, argv,  opt->readerThreads)) continue; 
-	else if (CHECK_STRING_ARG("-userInterface", argc, argv, opt->userInterfaceName)) continue;
 	else if (CHECK_ATOI_ARG("-verbose", argc, argv,maxMessageLevel))  {
       opt->messageLevel = FindMessageLevel(maxMessageLevel);
       set_verbose(maxMessageLevel); 
@@ -492,16 +489,8 @@ static void ParseOptions(int &argc, char *argv[])
    * name or Renderer name matches the first available UserInterface and/or
    * first listed Renderer in a UserInterface.
    */
-  status = MatchUserInterfaceToRenderer(opt->userInterfaceName,
-                                        opt->rendererName,
-                                        &opt->userInterface, NULL,
-                                        &opt->rendererIndex);
-  if (status == MovieFailure) {
-    /* The reason why has already been listed; just give the help message */
-    ERROR("Use -h for help.");
-    exit(MOVIE_BAD_FLAG);
-  }
-  
+  opt->mOldRenderer = GetRendererByName(opt->rendererName); 
+  opt->mRendererSpecificGlue = GetRendererSpecificGlueByName(opt->rendererName); 
   return  ;  /* last unparsed arg */
 }
 
@@ -618,8 +607,9 @@ int main(int argc, char *argv[])
     gMainWindow->show(); 
   }
 
+#if 0
   /* initialize the UI (GTK usually) */
-  if (argc && opt->userInterface->HandleOptions != NULL) {
+  if (argc) {
     /* put the DISPLAY into the environment for GTK */
     if (opt->displayName != "") {
       char buf[2048]; 
@@ -627,14 +617,14 @@ int main(int argc, char *argv[])
       putenv(buf);
     }
     dbprintf(2, "UI handle options:\n"); 
-    opt->userInterface->HandleOptions(argc, args);
+    xwindow_HandleOptions(argc, args);
     printargs("After UI", args, argc); 
   }
-  renderer = opt->userInterface->supportedRendererGlueChoices[opt->rendererIndex]->renderer;
+#endif
+  renderer = opt->mOldRenderer;
  
 
-  INFO("Using %s renderer", opt->userInterface->supportedRendererGlueChoices[opt->rendererIndex]->renderer->name);
-  INFO("Using %s interface", opt->userInterface->name);
+  INFO(QString("Using %1 renderer").arg(opt->mOldRenderer->name));
 
   // set up a connection to sidecar if that's what launched us
   if (opt->sidecarHostPort != "") {
@@ -661,12 +651,13 @@ int main(int argc, char *argv[])
    * (i.e. we're not a slave), give the user interface one last
    * chance to supply us with some frames.
    */
-  if (!opt->slaveMode && !allFrames && opt->userInterface->ChooseFile) {
+  if (!opt->slaveMode && !allFrames) {
     QStringList fileList; 
     /* Try to get a filename from the user interface */
-    char *filename = opt->userInterface->ChooseFile(opt);
+    //    char *filename = opt->userInterface->ChooseFile(opt);
+    char *filename = NULL; 
     if (filename == NULL) {
-      WARNING("No frames found - nothing to display");
+      WARNING("Warning: need to implement ChooseFile.  No frames found - nothing to display");
       exit(MOVIE_OK);
     }
     fileList.append(filename);

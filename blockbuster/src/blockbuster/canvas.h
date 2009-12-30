@@ -224,9 +224,9 @@
   } ;
 
 /* Canvas creator from canvas.c */
-Canvas *CreateCanvas(const UserInterface *userInterface,
-                     const int rendererIndex,
-                     qint32 parentWindowID);
+//Canvas *CreateCanvas(/*const UserInterface *userInterface,*/
+//                   const int rendererIndex,
+//                    qint32 parentWindowID);
 void DestroyCanvas(Canvas *canvas);
 void DefaultSetFrameList(Canvas *canvas, FrameList *frameList);
 void CacheSetFrameList(Canvas *canvas, FrameList *frameList);

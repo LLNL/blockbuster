@@ -22,7 +22,6 @@
 #define XWINDOW 1
 
 #include "common.h"
-#include "ui.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,9 +31,12 @@
 #include <X11/extensions/Xdbe.h>
 #include <GL/gl.h>
 #include <GL/glx.h>
+#include "canvas.h"
 
-
-extern UserInterface x11UserInterface;
+struct RendererSpecificGlue *GetRendererSpecificGlueByName(QString name);
+MovieStatus xwindow_Initialize(Canvas *canvas, const ProgramOptions *options,
+                               qint32 uiData);
+void xwindow_HandleOptions(int &argc, char *argv[]); 
 void XWindow_SetTitle(QString title); 
 void GetXEvent(Canvas *canvas, int block, MovieEvent *movieEvent);
 void CloseXWindow(Canvas *canvas);

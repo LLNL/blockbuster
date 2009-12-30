@@ -389,6 +389,6 @@ void glStereoRenderer::Render(int frameNumber,
 // ==========================================================
 
 glTextureRenderer::glTextureRenderer(ProgramOptions *opt, Canvas *canvas):
-  glRenderer(opt, canvas) {
+  glRenderer(opt, canvas, "gltexture") {
   return; 
 }

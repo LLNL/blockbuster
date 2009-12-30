@@ -85,19 +85,19 @@ endif
 
 SOURCES=main.cpp blockbuster_qt.cpp movie.cpp  timer.C \
 	 pure_C.c Renderers.cpp \
-	frames.cpp ui.cpp  slave.cpp remotecommands.cpp \
+	frames.cpp  slave.cpp remotecommands.cpp \
 	cache.cpp  canvas.cpp gl.cpp common.cpp \
 	sgi-rgb.cpp convert.cpp  \
 	gltexture.cpp sm.cpp dmxglue.cpp png.cpp splash.cpp  \
 	pnm.cpp tiff.cpp \
 	libdmx/dmx.c MovieCues.cpp events.cpp xwindow.cpp x11.cpp \
 	MovieRenderer.cpp util.cpp settings.cpp errmsg.cpp \
-	Renderer.cpp x11Renderer.cpp glRenderer.cpp dmxRenderer.cpp 
+	Renderer.cpp glRenderer.cpp dmxRenderer.cpp 
 
 HEADERS=Renderers.h errmsg.h events.h remotecommands.h  \
 	../common/stringutil.h ../common/timer.h\
 	dmxglue.h MovieCues.h errmsg.h pure_C.h util.h blockbuster_qt.h  \
-	Renderer.h x11Renderer.h glRenderer.h dmxRenderer.h 
+	Renderer.h glRenderer.h dmxRenderer.h 
 
 FORMS = MovieCueWidget.ui BlockbusterControl.ui InfoWindow.ui
 

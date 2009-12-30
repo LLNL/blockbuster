@@ -1,5 +1,6 @@
 #ifndef BLOCKBUSTER_RENDERERS_H
 #define BLOCKBUSTER_RENDERERS_H
+
 #include "canvas.h"
 
   /* A Renderer is one of the two static "parents" of the dynamic Canvas
@@ -15,6 +16,7 @@
    * UserInterface object.
    */
 
+Renderer *GetRendererByName(QString name); 
 struct Renderer; 
 
 extern Renderer x11Renderer, glRenderer, glRendererStereo, glTextureRenderer, dmxRenderer; 
@@ -24,18 +26,6 @@ struct Renderer {
   char *description;
   
   MovieStatus (*Initialize)(struct Canvas *canvas, const ProgramOptions *options);
-} ;
-
-/*
-   * The UserInterface also maintains a list of Renderers that it supports,
-   * with appropriate "glue" routines for each renderer; the "glue" routines
-   * are plugged in based on the choice of renderer. 
-*/
-struct RendererSpecificGlue; 
-struct RendererGlue {
-  Renderer *renderer;  
-  RendererSpecificGlue * configurationData; 
-  
 } ;
 
 #endif
