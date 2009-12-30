@@ -29,6 +29,8 @@
 
 /* UserInterface utilities */
 
+#if 0
+
 /*********************************************************************/
 /* This used to be a big complicated section about matching user interfaces etc. but it's not needed.  There is only one user interface to match.  
  */
@@ -102,3 +104,4 @@ MovieStatus MatchUserInterfaceToRenderer(
 
     return MovieFailure;
 }
+#endif
