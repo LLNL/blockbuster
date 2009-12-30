@@ -410,8 +410,6 @@ gl_Initialize(Canvas *canvas, const ProgramOptions *)
 gl_InitializeStereo(Canvas *canvas, const ProgramOptions *)
 {
   ECHO_FUNCTION(5);
-  /*canvas->BeforeRender = BeforeRenderStereo;*/
-  canvas->rendererPrivateData = NULL; 
   canvas->BeforeRenderPtr = NULL;
   canvas->RenderPtr = gl_RenderStereo;
   canvas->DestroyRendererPtr = NULL;

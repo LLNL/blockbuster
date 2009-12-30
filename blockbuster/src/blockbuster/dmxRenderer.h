@@ -11,8 +11,6 @@
 #include <X11/extensions/Xdbe.h>
 #include <dmxext.h>
 
-//struct RenderInfo; 
-
 #ifndef DmxBadXinerama
 #define DMX_API_VERSION 1
 #else

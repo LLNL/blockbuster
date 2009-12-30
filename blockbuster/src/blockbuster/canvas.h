@@ -87,12 +87,7 @@
      }
     void (*DestroyRendererPtr)(struct Canvas *canvas);
 
-    /* If the renderer needs a handle on which to hang any privately
-     * allocated data, this is the place to do it.
-     */
-    void *rendererPrivateData;
-
-     // this will replaces all the above function pointers. 
+      // this will replaces all the above function pointers. 
      NewRenderer *mRenderer; 
 
 
