@@ -81,10 +81,6 @@ void UpdateBackendCanvases(Canvas *canvas);
 */ 
  void dmx_AtExitCleanup(void);
 
-/*! 
-  This must be called frequently to catch incoming network messages
-*/ 
- void dmx_CheckNetwork(void);
 
 /* kind of bogus, but gets me by for now */  
 void dmx_SetFrameList(Canvas *canvas, FrameList *frameList);

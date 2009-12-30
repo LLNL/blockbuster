@@ -12,6 +12,7 @@
 #include "QMutex"
 #include "deque"
 #include "errmsg.h"
+#include "settings.h"
 
 extern class SidecarServer *gSidecarServer;
 
@@ -28,7 +29,8 @@ struct EventQueue {
 class SidecarServer : public QObject {
   Q_OBJECT
     public:
-  SidecarServer(QObject *parent = 0): QObject(parent),
+  SidecarServer(ProgramOptions *opt, QObject *parent = 0): 
+    QObject(parent), mOptions(opt), 
     mPromptForConnections(true), mSidecarSocket(NULL) {
     dbprintf(5, "SidecarServer\n"); 
     //mTcpServer.listen(QHostAddress::Any, 5959); 
@@ -66,6 +68,7 @@ class SidecarServer : public QObject {
   void sidecarDisconnected();
  protected: 
   QTcpServer mTcpServer;
+  ProgramOptions *mOptions; 
   bool mPromptForConnections; 
   QTcpSocket *mSidecarSocket;
   uint32_t mLastReceivedCommandID, mLastSentCommandID; 

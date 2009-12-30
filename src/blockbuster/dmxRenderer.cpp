@@ -30,11 +30,9 @@
 //  dmxRenderer -- launch and connect remote slaves at startup, manage them
 //  =============================================================
 dmxRenderer::dmxRenderer(ProgramOptions *opt, Canvas *canvas, QObject* parent):
-  NewRenderer(opt, canvas, "dmx"),
-  //from SlaveServer:
-  QObject(parent), mOptions(opt), mAllowIdleSlaves(true), 
+  QObject(parent), NewRenderer(opt, canvas, "dmx"),
+  mOptions(opt), mAllowIdleSlaves(true), 
   mNumActiveSlaves(0), mSlavesReady(false),
-  // from RenderInfo:
   haveDMX(0), mBackendRenderer("gl"), 
   dmxWindowInfos(NULL) {
     connect(&mSlaveServer, SIGNAL(newConnection()), this, SLOT(SlaveConnected()));  
@@ -61,6 +59,19 @@ void dmxRenderer::Preload(uint32_t frameNumber,
 }
 
 
+//====================================================================
+/*!
+  Check all slaves for incoming network messages.  This is intended to be called from the main event loop regularly
+*/ 
+void dmxRenderer::CheckNetwork(void) {
+  if (!numValidWindowInfos) return; 
+  int slavenum=0, numslaves = mActiveSlaves.size(); 
+  if (!numslaves || !mActiveSlaves[0]) return; 
+  while (slavenum < numslaves) {
+	mActiveSlaves[slavenum++]->QueueNetworkEvents(); 
+  }
+  return; 
+}
 //====================================================================
 // launch a slave and love it forever
 void dmxRenderer::LaunchSlave(QString hostname) {
