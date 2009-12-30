@@ -4,9 +4,9 @@
 #include "QWidget"
 #include "ui_BlockbusterControl.h"
 #include "ui_InfoWindow.h"
-#include "ui.h"
 #include <deque>
-//extern UserInterface qtUserInterface;
+#include "Renderers.h"
+
 void qt_Resize(Canvas *canvas, int newWidth, int newHeight, int cameFromX);
 void qt_Move(Canvas *canvas, int newX, int newY, int cameFromX);
 

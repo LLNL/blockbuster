@@ -6,8 +6,8 @@
 /* Base GL rendering class for all other GL renderers */ 
 class glRenderer: public NewRenderer {
  public:
-  glRenderer(ProgramOptions *opt, Canvas *canvas):
-    NewRenderer(opt, canvas) {
+  glRenderer(ProgramOptions *opt, Canvas *canvas, QString name="gl"):
+    NewRenderer(opt, canvas, name) {
     return; 
   }
   virtual ~glRenderer() {
@@ -26,7 +26,7 @@ class glRenderer: public NewRenderer {
 class glStereoRenderer: public glRenderer {
  public:
   glStereoRenderer(ProgramOptions *opt, Canvas *canvas):
-    glRenderer(opt, canvas) {
+    glRenderer(opt, canvas, "gl_stereo") {
     return; 
   }
   virtual ~glStereoRenderer() {}

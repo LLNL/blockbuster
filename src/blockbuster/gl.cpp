@@ -22,6 +22,7 @@
 #include "blockbuster_gl.h"
 #include "util.h"
 #include "cache.h"
+#include "canvas.h"
 #include "frames.h"
 #include "errmsg.h"
 #include "errmsg.h"

@@ -6,7 +6,7 @@
 class dmxRenderer: public NewRenderer {
  public:
   dmxRenderer(ProgramOptions *opt, Canvas *canvas):
-    NewRenderer(opt, canvas) {}
+    NewRenderer(opt, canvas, "dmx") {}
   virtual ~dmxRenderer() {}
   //   void HandleOptions(int &argc, char *argv[]);
 

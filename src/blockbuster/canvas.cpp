@@ -27,7 +27,6 @@
 #include <stdarg.h>
 #include <sys/times.h>
 #include "canvas.h"
-#include "ui.h"
 #include "errmsg.h"
 #include "cache.h"
 #include "blockbuster_qt.h"
@@ -55,7 +54,6 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
   DestroyRendererPtr(NULL), rendererPrivateData(NULL), ResizePtr(NULL), MovePtr(NULL), 
   DrawStringPtr(NULL), SwapBuffersPtr(NULL), BeforeRenderPtr(NULL), AfterRenderPtr(NULL), mOptions(options)
 {
- 
   mRenderer = NewRenderer::CreateRenderer(mOptions, this); 
   if (!mRenderer) {
     ERROR(QString("Badness:  cannot create renderer \"%1\"\n").
@@ -64,10 +62,7 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
   }
   mOptions->mNewRenderer = mRenderer; 
 
-  RendererGlue *glue;
     MovieStatus status;
-    UserInterface *userInterface = mOptions->userInterface; 
-    glue = userInterface->supportedRendererGlueChoices[mOptions->rendererIndex];
 
     /* We've got a UserInterface, a Renderer, and glue.  We're good to go. 
      * The UserInterface gets to go first, because it has to open the window
@@ -84,14 +79,14 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
      * be removed, leaving a UI-specific option.
      */
     
-    status = userInterface->Initialize(this, mOptions, parentWindowID, glue->configurationData);
+    status = xwindow_Initialize(this, mOptions, parentWindowID);
     if (status != MovieSuccess) {
       cerr << "Cannot initialize userInterface struct in canvas constructor" << endl; 
       exit (1); 
     }
     
     /* Renderer can initialize now. */
-    status = glue->renderer->Initialize(this, mOptions);
+    status = mOptions->mOldRenderer->Initialize(this, mOptions);
 
     /* If this renderer would like an image cache, we can create one, as
      * a convenience (this is done because most renderers do use an 

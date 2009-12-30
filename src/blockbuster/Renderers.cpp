@@ -11,6 +11,7 @@ Renderer x11Renderer = {
 };
 
 
+
 Renderer glRenderer = {
   GL_NAME,
   GL_DESCRIPTION,
@@ -36,5 +37,20 @@ Renderer dmxRenderer = {
   "backend renderer",
   dmx_Initialize
 };
+
+Renderer *GetRendererByName(QString name) {
+  if (name == "")  return &glRenderer; 
+
+  if (name == "x11") {
+    fprintf(stderr, "Error:  x11 renderer is no longer supported.\n"); 
+    exit(1); 
+  }
+
+  if (name == "gl") return &glRenderer; 
+  if (name == "gl_stereo") return &glRendererStereo; 
+  if (name == "gltexture") return &glTextureRenderer; 
+  if (name == "dmx") return &dmxRenderer; 
+  return NULL; 
+}
 
 #endif
