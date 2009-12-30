@@ -607,20 +607,12 @@ int main(int argc, char *argv[])
     gMainWindow->show(); 
   }
 
-#if 0
-  /* initialize the UI (GTK usually) */
-  if (argc) {
-    /* put the DISPLAY into the environment for GTK */
-    if (opt->displayName != "") {
-      char buf[2048]; 
-      sprintf(buf, QString("DISPLAY=%1").arg(opt->displayName).toStdString().c_str()); 
-      putenv(buf);
-    }
-    dbprintf(2, "UI handle options:\n"); 
-    xwindow_HandleOptions(argc, args);
-    printargs("After UI", args, argc); 
+  /* put the DISPLAY into the environment for Qt */
+  if (opt->displayName != "") {
+    char buf[2048]; 
+    sprintf(buf, QString("DISPLAY=%1").arg(opt->displayName).toStdString().c_str()); 
+    putenv(buf);
   }
-#endif
   renderer = opt->mOldRenderer;
  
 
