@@ -52,8 +52,9 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
   mBlockbusterInterface(gui), 
   frameList(NULL), imageCache(NULL), RenderPtr(NULL), 
   SetFrameListPtr(NULL), PreloadPtr(NULL), 
-  DestroyRendererPtr(NULL), ResizePtr(NULL), MovePtr(NULL), 
-  DrawStringPtr(NULL), SwapBuffersPtr(NULL), BeforeRenderPtr(NULL), AfterRenderPtr(NULL), mOptions(options)
+  ResizePtr(NULL), MovePtr(NULL), 
+  DrawStringPtr(NULL), SwapBuffersPtr(NULL), 
+  BeforeRenderPtr(NULL), AfterRenderPtr(NULL), mOptions(options)
 {
 
     MovieStatus status;
@@ -118,7 +119,7 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
 
 Canvas::~Canvas()
 {
-  this->DestroyRenderer(this);
+  if (mRenderer) delete mRenderer; 
   ::DestroyImageCache(this); 
   
   return; 

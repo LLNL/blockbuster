@@ -259,7 +259,6 @@ x11_Initialize(Canvas *canvas, const ProgramOptions *)
     if (canvas->DrawStringPtr == NULL) { 
         canvas->DrawStringPtr = x11_DrawString;
     }
-    canvas->DestroyRendererPtr = NULL;
 
     /* We CAN'T override resize/move functions - DMX needs to use them - BP */
     /* We don't have anything to do when the UserInterface informs

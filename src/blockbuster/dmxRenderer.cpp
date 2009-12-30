@@ -120,6 +120,23 @@ dmxRenderer::dmxRenderer(ProgramOptions *opt, Canvas *canvas, QObject* parent):
 }
 
 //  =============================================================
+dmxRenderer::~dmxRenderer() {
+  ECHO_FUNCTION(5);
+  if (!numValidWindowInfos) return; 
+  if (mCanvas != NULL) {    
+    int i;
+    for (i = 0; i < numValidWindowInfos; i++) {
+      /* why send this message?  It does nothing in the slave! */ 
+      mActiveSlaves[dmxWindowInfos[i].screen]->
+        SendMessage( QString("Destroy Canvas"));
+    }
+    if (dmxWindowInfos)
+      delete [] dmxWindowInfos;
+  }
+  return; 
+}
+
+//  =============================================================
 int dmxRenderer::IsDMXDisplay(Display *dpy) {
   ECHO_FUNCTION(5);
   Bool b;

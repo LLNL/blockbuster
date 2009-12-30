@@ -79,13 +79,6 @@
      void (*PreloadPtr)(struct Canvas *canvas, uint32_t frameNumber,
                      const Rectangle *imageRegion, uint32_t levelOfDetail);
 
-    /* The Renderer will get its own chance to release any resources
-     * it may have allocated.  This will be the Renderer's destructor.  
-     */
-     void DestroyRenderer(struct Canvas *canvas){
-       if (DestroyRendererPtr) DestroyRendererPtr(canvas); 
-     }
-    void (*DestroyRendererPtr)(struct Canvas *canvas);
 
       // this will replaces all the above function pointers. 
      NewRenderer *mRenderer; 

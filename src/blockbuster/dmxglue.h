@@ -50,12 +50,8 @@ void dmx_Render(Canvas *, int frameNumber,
            const Rectangle *imageRegion,
            int destX, int destY, float zoom, int lod);
 void dmx_Move(Canvas *canvas, int newX, int newY, int cameFromX);
-void dmx_DestroyRenderer(Canvas *canvas); 
 void dmx_SwapBuffers(Canvas *canvas);
 void dmx_DrawString(Canvas *canvas, int row, int column, const char *str); 
-int IsDMXDisplay(Display *dpy);
-void GetBackendInfo(Canvas *canvas);
-void UpdateBackendCanvases(Canvas *canvas);
 
 /* This file details the structure that the DMX Renderer requires
  * in order to render.  It is used by the DMX Renderer itself
@@ -67,14 +63,6 @@ void UpdateBackendCanvases(Canvas *canvas);
  * A structure of this sort must be loaded into the Canvas'
  * gluePrivateData pointer during "glue" initialization.
  */
-// this is for getting info from xwindow.cpp.  Ugly for now.  
- struct DMXRendererGlue {
-    Display *display;
-    Window window;
-    int fontHeight;
-    int frameCacheSize;
-    int readerThreads;
-} ;
 
 /*!
   This shall be set to be called at exit.  It looks at the last known renderInfo and deletes all the slaves that might be running. 

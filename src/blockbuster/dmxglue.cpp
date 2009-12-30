@@ -45,7 +45,6 @@ MovieStatus dmx_Initialize(Canvas *canvas, const ProgramOptions *options) {
   canvas->RenderPtr = dmx_Render;
   canvas->ResizePtr = dmx_Resize;
   canvas->MovePtr = dmx_Move;
-  canvas->DestroyRendererPtr = dmx_DestroyRenderer;
   canvas->SwapBuffersPtr = dmx_SwapBuffers;
   /* If the UserInterface implements this routine, we should not use ours */
   if (canvas->DrawStringPtr == NULL) { 
@@ -142,24 +141,7 @@ void dmx_SetupPlay(int play, int preload,
   return; 
 }
  
-void   dmx_DestroyRenderer(Canvas *canvas){
-  ECHO_FUNCTION(5);
-   if (!gRenderer->numValidWindowInfos) return; 
-   if (canvas != NULL) {
-	 
-     int i;
-     for (i = 0; i < gRenderer->numValidWindowInfos; i++) {
-       /* why send this message?  It does nothing in the slave! */ 
-       gRenderer->mActiveSlaves[gRenderer->dmxWindowInfos[i].screen]->
-         SendMessage( QString("Destroy Canvas"));
-     }
-     if (gRenderer->dmxWindowInfos)
-       delete [] gRenderer->dmxWindowInfos;
-   }
-   
- }
- 
- 
+
 
 
 void dmx_Resize(Canvas *canvas, int newWidth, int newHeight, int cameFromX)
