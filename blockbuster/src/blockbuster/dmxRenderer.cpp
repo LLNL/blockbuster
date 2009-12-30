@@ -534,6 +534,138 @@ void dmxRenderer::ClearScreenInfos(void) {
   return; 
 }
 
+
+/*
+ * If we're about to draw <imageRegion> at destX, destY in mural coordinates,
+ * clip the <imageRegion> according to <vis> (the visible region on a
+ * particular screen.
+ */
+void dmxRenderer::ClipImageRegion(int destX, int destY, 
+                                  const Rectangle *imageRegion,
+                                  const XRectangle *vis, float zoom,
+                                  int *destXout, int *destYout, 
+                                  Rectangle *regionOut) {
+  int dx, dy;
+  
+  /* Compute bounds of the image in mural space */
+  int x0 = destX;
+  int y0 = destY;
+  int x1 = destX + (int)(imageRegion->width * zoom); /* plus epsilon? */
+  int y1 = destY + (int)(imageRegion->height * zoom);
+  
+  /* Bounds of the image that's visible */
+  int ix0 = imageRegion->x;
+  int iy0 = imageRegion->y;
+  int ix1 = imageRegion->x + imageRegion->width;
+  int iy1 = imageRegion->y + imageRegion->height;
+  
+  /* initial dest position for this tile */
+  dx = destX;
+  dy = destY;
+  
+  /* X clipping */
+  if (x1 < vis->x) {
+    /* image is completely left of this tile */
+    ix0 = ix1 = 0;
+  }
+  else if (x0 > vis->x + vis->width) {
+    /* image is completely to right of this tile */
+    ix0 = ix1 = 0;
+  }
+  else if (x1 > vis->x + vis->width) {
+    /* right edge of image is clipped */
+    int d = x1 - (vis->x + vis->width);
+    x1 = vis->x + vis->width;
+    ix1 -= (int)(d / zoom);
+    if (x0 < vis->x) {
+      /* left edge of image is also clipped */
+      int d = vis->x - x0;
+      x0 = vis->x;
+      ix0 += (int)(d / zoom);
+      dx = 0;
+    }
+    else {
+      dx -= vis->x; /* bias by visible tile origin */
+    }
+  }
+  else if (x0 < vis->x) {
+    /* only left edge of image is clipped */
+    int d = vis->x - x0;
+    x0 = vis->x;
+    ix0 += (int)(d / zoom);
+    dx = 0;
+  }
+  else {
+    /* no X clipping */
+    /* bias dest pos by visible tile origin */
+    bb_assert(x0 >= vis->x);
+    bb_assert(x0 < vis->x + vis->width);
+    dx -= vis->x;
+  }
+  
+  /* Y clipping */
+  if (y1 < vis->y) {
+    /* image is completely above this tile */
+    iy0 = iy1 = 0;
+  }
+  else if (y0 > vis->y + vis->height) {
+    /* image is completely below this tile */
+    iy0 = iy1 = 0;
+  }
+  else if (y1 > vis->y + vis->height) {
+    /* bottom edge of image is clipped */
+    int d = y1 - (vis->y + vis->height);
+    y1 = vis->y + vis->height;
+    iy1 -= (int)(d / zoom);
+    if (y0 < vis->y) {
+      /* top edge of image is also clipped */
+      int d = vis->y - y0;
+      y0 = vis->y;
+      iy0 += (int)(d / zoom);
+      dy = 0;
+    }
+    else {
+      dy -= vis->y; /* bias by visible tile origin */
+    }
+  }
+  else if (y0 < vis->y) {
+    /* only top edge of image is clipped */
+    int d = vis->y - y0;
+    y0 = vis->y;
+    iy0 += (int)(d / zoom);
+    dy = 0;
+  }
+  else {
+    /* no Y clipping */
+    /* bias dest pos by visible tile origin */
+    bb_assert(y0 >= vis->y);
+    bb_assert(y0 < vis->y + vis->height);
+    dy -= vis->y;
+  }
+  
+  /* OK, finish up with new sub-image rectangle */
+  regionOut->x = ix0;
+  regionOut->y = iy0;
+  regionOut->width = ix1 - ix0;
+  regionOut->height = iy1 - iy0;
+  *destXout = dx;
+  *destYout = dy;
+  
+  /* make sure our values are good */
+  bb_assert(regionOut->x >= 0);
+  bb_assert(regionOut->y >= 0);
+  bb_assert(regionOut->width >= 0);
+  bb_assert(regionOut->height >= 0);
+  bb_assert(dx >= 0);
+  bb_assert(dy >= 0);
+#if 0
+  printf("  clipped window region: %d, %d .. %d, %d\n", x0, y0, x1, y1);
+  printf("  clipped image region: %d, %d .. %d, %d\n", ix0, iy0, ix1, iy1);
+  printf("  clipped render: %d, %d  %d x %d  at %d, %d  zoom=%f\n",
+         x, y, w, h, dx, dy, zoom);
+#endif
+}
+
 //  =============================================================
 //  END dmxRenderer 
 //  =============================================================

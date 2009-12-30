@@ -230,7 +230,10 @@ class dmxRenderer: public QObject, public NewRenderer {
 #endif
 
   void ClearScreenInfos(void);
-
+  void ClipImageRegion(int destX, int destY, const Rectangle *imageRegion,
+                       const XRectangle *vis, float zoom,
+                       int *destXout, int *destYout, Rectangle *regionOut);
+  
  public:
   QTcpServer mSlaveServer;
   int mPort; 
