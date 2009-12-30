@@ -72,6 +72,38 @@ void dmxRenderer::CheckNetwork(void) {
   }
   return; 
 }
+
+//============================================================
+void dmxRenderer::SpeedTest(void) {
+  uint16_t i; 
+  DEBUGMSG("dmx_SpeedTest() called with %d slaves", mActiveSlaves.size()); 
+  if (!numValidWindowInfos) return; 
+  for (i = 0; i < mActiveSlaves.size(); i++) {
+    DMXSlave *theSlave = mActiveSlaves[i]; 
+    if (!theSlave) {
+      throw string("Tried to send Play message to nonexistent slave");
+    }
+    theSlave->SendMessage("SpeedTest"); 
+  }
+  return; 
+}
+
+
+//============================================================
+void dmxRenderer::SendHeartbeatToSlaves(void) {
+  ECHO_FUNCTION(5);
+  uint16_t i; 
+  if (!numValidWindowInfos) return; 
+  for (i = 0; i < mActiveSlaves.size(); i++) {
+    DMXSlave *theSlave = mActiveSlaves[i]; 
+    if (!theSlave) {
+      throw string("Tried to send heartbeat to nonexistent slave");
+    }
+    theSlave->SendMessage("Heartbeat"); 
+  }
+  return; 
+}
+
 //====================================================================
 // launch a slave and love it forever
 void dmxRenderer::LaunchSlave(QString hostname) {

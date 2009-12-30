@@ -185,6 +185,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   }
 
   canvas = new Canvas(0, options, gMainWindow);
+  gSidecarServer->SetCanvas(canvas); 
 
   if (canvas == NULL) {
     ERROR("Could not create a canvas");
@@ -264,7 +265,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
     }
     /* every minute or so, tell any DMX slaves we are alive */ 
     if (time(NULL) - lastheartbeat > 60) {
-      dmx_SendHeartbeatToSlaves(); 
+      canvas->DMXSendHeartbeat(); 
       lastheartbeat = time(NULL); 
     }
     //gCoreApp->processEvents(QEventLoop::AllEvents, 3); 
@@ -1070,7 +1071,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         canvas->SwapBuffers(canvas);
         if (playDirection && options->speedTest) {
           cerr << "requesting speedTest of slaves" << endl; 
-          dmx_SpeedTest(); 
+          canvas->DMXSpeedTest(); 
           playDirection = 0; 
         }
         /* Give the canvas a chance to preload upcoming images

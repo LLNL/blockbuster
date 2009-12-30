@@ -16,12 +16,12 @@
    * UserInterface object.
    */
 
-Renderer *GetRendererByName(QString name); 
-struct Renderer; 
+struct OldRenderer; 
+OldRenderer *GetRendererByName(QString name); 
 
-extern Renderer x11Renderer, glRenderer, glRendererStereo, glTextureRenderer, dmxRenderer; 
+extern OldRenderer x11Renderer, glRenderer, glRendererStereo, glTextureRenderer, oldDmxRenderer; 
 
-struct Renderer {
+struct OldRenderer {
   char *name;
   char *description;
   

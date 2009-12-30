@@ -530,7 +530,7 @@ int main(int argc, char *argv[])
 {
   ProgramOptions *opt = GetGlobalOptions(); 
   Slave *theSlave; 
-  Renderer *renderer;
+  OldRenderer *renderer;
   char localSettingsFilename[BLOCKBUSTER_PATH_MAX];
   char homeSettingsFilename[BLOCKBUSTER_PATH_MAX];
   int homeSettingsFileExists = 0, localSettingsFileExists = 0;
@@ -602,7 +602,7 @@ int main(int argc, char *argv[])
     gMainWindow = new BlockbusterInterface; 
     
     /* set up network communications */ 
-    gSidecarServer = new SidecarServer(opt);     
+    gSidecarServer = new SidecarServer;     
     
     gMainWindow->show(); 
   }

@@ -4,7 +4,7 @@
 #include "gltexture.h"
 #include "dmxglue.h"
 
-Renderer x11Renderer = {
+OldRenderer x11Renderer = {
   X11_NAME,
   X11_DESCRIPTION,
   x11_Initialize
@@ -12,19 +12,19 @@ Renderer x11Renderer = {
 
 
 
-Renderer glRenderer = {
+OldRenderer glRenderer = {
   GL_NAME,
   GL_DESCRIPTION,
   gl_Initialize
 };
 
-Renderer glRendererStereo = {
+OldRenderer glRendererStereo = {
   GL_NAME_STEREO,
   GL_DESCRIPTION_STEREO,
   gl_InitializeStereo
 };
 
-Renderer glTextureRenderer = {
+OldRenderer glTextureRenderer = {
   GLTEXTURE_NAME,
   GLTEXTURE_DESCRIPTION,
   gltexture_Initialize
@@ -32,13 +32,13 @@ Renderer glTextureRenderer = {
 
 
 #ifdef USE_DMX
-Renderer dmxRenderer = {
+OldRenderer dmxRenderer = {
   "dmx",
   "backend renderer",
   dmx_Initialize
 };
 
-Renderer *GetRendererByName(QString name) {
+OldRenderer *GetRendererByName(QString name) {
   if (name == "")  return &glRenderer; 
 
   if (name == "x11") {

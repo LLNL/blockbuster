@@ -123,7 +123,7 @@ void SidecarServer::AddEvent(MovieEvent &event){
 /* return 0 if an event was NOT gotten, 1 if it WAS */
 int SidecarServer::GetNetworkEvent(MovieEvent *event){
   //gCoreApp->processEvents(); 
-  if (mOptions->mNewRenderer) mOptions->mNewRenderer->CheckNetwork();
+  if (mCanvas) mCanvas->DMXCheckNetwork();
   event->eventType = MOVIE_NONE;
   int result = mPendingEvents.GetEvent(event); 
   return result; 

@@ -809,36 +809,5 @@ void dmx_SwapBuffers(Canvas *canvas){
 }
  
 
-//============================================================
-
-void dmx_SendHeartbeatToSlaves(void) {
-  ECHO_FUNCTION(5);
-  uint16_t i; 
-  if (!gRenderer || !gRenderer->numValidWindowInfos) return; 
-  for (i = 0; i < gRenderer->mActiveSlaves.size(); i++) {
-    DMXSlave *theSlave = gRenderer->mActiveSlaves[i]; 
-    if (!theSlave) {
-      throw string("Tried to send heartbeat to nonexistent slave");
-    }
-    theSlave->SendMessage("Heartbeat"); 
-  }
-  return; 
-}
-
-//============================================================
-void dmx_SpeedTest(void) {
-  uint16_t i; 
-  DEBUGMSG("dmx_SpeedTest() called with %d slaves", gRenderer->mActiveSlaves.size()); 
-  if (!gRenderer || !gRenderer->numValidWindowInfos) return; 
-  for (i = 0; i < gRenderer->mActiveSlaves.size(); i++) {
-    DMXSlave *theSlave = gRenderer->mActiveSlaves[i]; 
-    if (!theSlave) {
-      throw string("Tried to send Play message to nonexistent slave");
-    }
-    theSlave->SendMessage("SpeedTest"); 
-  }
-  return; 
-}
-
 
 #endif
