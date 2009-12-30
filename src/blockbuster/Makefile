@@ -92,7 +92,7 @@ SOURCES=main.cpp blockbuster_qt.cpp movie.cpp  timer.C \
 	pnm.cpp tiff.cpp \
 	libdmx/dmx.c MovieCues.cpp events.cpp xwindow.cpp x11.cpp \
 	MovieRenderer.cpp util.cpp settings.cpp errmsg.cpp \
-	Renderer.cpp glRenderer.cpp dmxRenderer.cpp 
+	Renderer.cpp x11Renderer.cpp glRenderer.cpp dmxRenderer.cpp 
 
 HEADERS=Renderers.h errmsg.h events.h remotecommands.h  \
 	../common/stringutil.h ../common/timer.h\
