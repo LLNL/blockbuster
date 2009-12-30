@@ -200,6 +200,8 @@ class dmxRenderer: public QObject, public NewRenderer {
   /* thump-thump */
   void SendHeartbeatToSlaves(void); 
 
+  int IsDMXDisplay(Display *dpy);
+
   // FROM SLAVESERVER: 
   void LaunchSlave(QString hostname); 
   bool slavesReady(void) { return mSlavesReady; }
@@ -221,9 +223,15 @@ class dmxRenderer: public QObject, public NewRenderer {
     }
     return ;
   }
+  void UpdateBackendCanvases(void);
+  void GetBackendInfo(void);
+#ifdef FAKE_DMX
+  void FakeBackendInfo(void);
+#endif
+
+  void ClearScreenInfos(void);
 
  public:
-  const ProgramOptions *mOptions;
   QTcpServer mSlaveServer;
   int mPort; 
   bool mAllowIdleSlaves; 
@@ -235,7 +243,7 @@ class dmxRenderer: public QObject, public NewRenderer {
   // FROM RENDERINFO: 
   int haveDMX;
   
-  QString mBackendRenderer; 
+  //QString mBackendRenderer; 
   vector<DMXScreenInfo *> dmxScreenInfos;  /* [numScreens] */
   vector<QHostAddress > dmxHostAddresses; // Qt goodness for convenience
   DMXWindowInfo *dmxWindowInfos;  /* up to numScreens */
@@ -247,6 +255,11 @@ class dmxRenderer: public QObject, public NewRenderer {
   vector<string> files;
   int sentSwapBuffers[MAX_SCREENS]; /* is there an outstanding SwapBuffers? */
   
+  // from DXMRendererGlue
+  Display *mDisplay;
+  Window mWindow;
+  int mFontHeight;
+
 } ; // end dmxRenderer
 
   #endif

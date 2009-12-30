@@ -24,37 +24,125 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/tcp.h>
-
+#include "xwindow.h"
 
 //  =============================================================
 //  dmxRenderer -- launch and connect remote slaves at startup, manage them
 //  =============================================================
 dmxRenderer::dmxRenderer(ProgramOptions *opt, Canvas *canvas, QObject* parent):
-  QObject(parent), NewRenderer(opt, canvas, "dmx"),
-  mOptions(opt), mAllowIdleSlaves(true), 
+  QObject(parent), NewRenderer(opt, canvas, "dmx"), mAllowIdleSlaves(true), 
   mNumActiveSlaves(0), mSlavesReady(false),
-  haveDMX(0), mBackendRenderer("gl"), 
+  haveDMX(0), 
   dmxWindowInfos(NULL) {
-    connect(&mSlaveServer, SIGNAL(newConnection()), this, SLOT(SlaveConnected()));  
-    mSlaveServer.listen(QHostAddress::Any);  //QTcpServer will choose a port for us.
-    mPort = mSlaveServer.serverPort();
+  connect(&mSlaveServer, SIGNAL(newConnection()), this, SLOT(SlaveConnected()));  
+  mSlaveServer.listen(QHostAddress::Any);  //QTcpServer will choose a port for us.
+  mPort = mSlaveServer.serverPort();
+  
+  // from dmx_Initialize():  
+  uint16_t i;
+  ECHO_FUNCTION(5);
+  
+  mDisplay = xwindow_GetDisplay(); 
+  mWindow = xwindow_GetWindow(); 
+  mFontHeight = xwindow_GetFontHeight(); 
+  
+  if(mOptions->backendRendererName == "") {
+    mOptions->backendRendererName = "gl"; 
+  } 
+
+  QString msg = QString("Using renderer %1 for the backend\n")
+    .arg(mOptions->backendRendererName); 
+  cerr << msg.toStdString(); 
+  INFO(msg);
+  
+  
+  /* Get DMX info */
+  if (IsDMXDisplay(mDisplay)) {
+    /* This will reset many of the values in gRenderer */
+    GetBackendInfo();
+  }
+  else {
+#ifdef FAKE_DMX
+    FakeBackendInfo();
+#else
+    ERROR("'%s' is not a DMX display, exiting.",
+          DisplayString(mDisplay));
+    exit(1);
+#endif
+  }
+  for (i = 0; i < dmxScreenInfos.size(); i++) {
+    QHostInfo info = QHostInfo::fromName(QString(dmxScreenInfos[i]->displayName).split(":")[0]);
+    QHostAddress address = info.addresses().first();
+    DEBUGMSG(QString("initializeing display name from %1 to %2 with result %3").arg(dmxScreenInfos[i]->displayName).arg(info.hostName()).arg(address.toString())); 
+    dmxHostAddresses.push_back(address); 
+    DEBUGMSG(QString("put on stack as %1").arg(dmxHostAddresses[i].toString())); 
+  }
+  /* Get a socket connection for each back-end instance of the player.
+     For each dmxScreenInfo, launch one slave and create one QHostInfo from the name.
+     Note that the slave will not generally match the HostInfo... we don't know
+     what order the slaves will connect back to us.  That's in fact the point of 
+     creating the QHostInfo in the first place.
+  */ 
+  DEBUGMSG("Launching slaves..."); 
+  
+  setNumDMXDisplays(dmxScreenInfos.size());
+  for (i = 0; i < dmxScreenInfos.size(); i++) {
+    
+    if (i==0 || mOptions->slaveLaunchMethod != "mpi") {
+      QString host(dmxScreenInfos[i]->displayName);
+      /* remove :x.y suffix */
+      if (host.contains(":")) {
+        host.remove(host.indexOf(":"), 100); 
+      }
+      
+      LaunchSlave(host);
+    }
+  }
+  
+  /*!
+    Wait for all slaves to phone home
+  */ 
+  uint64_t msecs = 0;
+  while (!slavesReady() && msecs < 30000) {// 30 secs
+    //gCoreApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+    gCoreApp->processEvents();
+    QueueSlaveMessages(); 
+    msecs += 10; 
+    usleep(10000); 
+  }
+  if (!slavesReady()) {
+    ERROR("Slaves not responding after 30 seconds"); 
+    exit(10); 
+  }   
+  
+  UpdateBackendCanvases();
+  
 }
 
 //  =============================================================
-void dmxRenderer::Render(int frameNumber,
-            const Rectangle *imageRegion,
-                         int destX, int destY, float zoom, int lod) {
+int dmxRenderer::IsDMXDisplay(Display *dpy) {
+  ECHO_FUNCTION(5);
+  Bool b;
+  int major, event, error;
+  b = XQueryExtension(dpy, "DMX", &major, &event, &error);
+  return (int) b;
+}
+
+//  =============================================================
+void dmxRenderer::Render(int ,
+                         const Rectangle *,
+                         int , int , float , int ) {
   return; 
 }
 
 
 //  =============================================================
-void dmxRenderer::SetFrameList(FrameList *frameList) {
+void dmxRenderer::SetFrameList(FrameList *) {
   return; 
 }
 //  =============================================================
-void dmxRenderer::Preload(uint32_t frameNumber,
-                          const Rectangle *imageRegion, uint32_t levelOfDetail) {
+void dmxRenderer::Preload(uint32_t ,
+                          const Rectangle *, uint32_t ) {
   return; 
 }
 
@@ -122,9 +210,6 @@ void dmxRenderer::LaunchSlave(QString hostname) {
     return ; 
   }
   
-  if (mBackendRenderer == "") {
-	mBackendRenderer = "gl"; 
-  }
   
   //===============================================================
   if (mOptions->slaveLaunchMethod == "mpi") {
@@ -148,7 +233,7 @@ void dmxRenderer::LaunchSlave(QString hostname) {
       
     args  <<  " -slave " <<  QString("%1:%2:mpi").arg(localHostname).arg(mPort)              
           << "-u" <<  "x11"  // no reason to have GTK up and it screws up stereo
-          << "-r" << mBackendRenderer ;
+          << "-r" << mOptions->backendRendererName ;
     
     INFO(QString("Running command('%1 %2')\n")
          .arg(rshCommand).arg(args.join(" ")));
@@ -164,7 +249,7 @@ void dmxRenderer::LaunchSlave(QString hostname) {
 	QStringList args; 
 	args << hostname  << mOptions->executable
          << "-u" <<  "x11" // no reason to have GTK up and it screws up stereo
-         << "-r" << mBackendRenderer  
+         << "-r" << mOptions->backendRendererName  
          << "-messageLevel debug -slave" 
          << QString("%1:%2").arg(localHostname).arg(mPort)
          << QString(" >~/.blockbuster/slave-%1.out 2>&1").arg(localHostname);
@@ -176,11 +261,12 @@ void dmxRenderer::LaunchSlave(QString hostname) {
   }
   else if (mOptions->slaveLaunchMethod == "manual") {
 	/* give instructions for manual start-up */
-	printf(QString("Here is the command to start blockbuster on host 1:  'blockbuster -s %2:%3 -r %4 -d $DMX_DISPLAY' \n").arg( hostname).arg( localHostname).arg(mPort).arg( mBackendRenderer).toAscii());
+	printf(QString("Here is the command to start blockbuster on host 1:  'blockbuster -s %2:%3 -r %4 -d $DMX_DISPLAY' \n").arg( hostname).arg( localHostname).arg(mPort).arg( mOptions->backendRendererName).toAscii());
   }
   return ;
 }
 
+//===================================================================
 void dmxRenderer::SlaveConnected() {
   /*!
     Called when a slave launched previously connects to us
@@ -231,10 +317,221 @@ void dmxRenderer::SlaveConnected() {
   }
 }
 
+//===================================================================
 void dmxRenderer::UnexpectedDisconnect(DMXSlave *theSlave) {
   ERROR(QString("Slave  host %1 disconnected unexpectedly")
         .arg(QString::fromStdString(theSlave->GetHost())));
   exit(1); 
+}
+
+//===================================================================
+/*
+ * This function creates the back-end windows/canvases on the back-end hosts.
+ *
+ * The backend canvases should create child windows of the
+ * window created by DMX (to work around NVIDIA memory issues,
+ * and GLX visual compatibility).
+ *
+ * Also, update the subwindow sizes and positions as needed.
+ * This is called when we create a canvas or move/resize it.
+ */
+void dmxRenderer::UpdateBackendCanvases(void)
+{
+    
+   if (!numValidWindowInfos) return; 
+
+    int i;
+
+    for (i = 0; i < numValidWindowInfos; i++) {
+	  const int scrn = dmxWindowInfos[i].screen;
+	  
+	  if (!haveDMX) {
+		ERROR("UpdateBackendCanvases: no not have DMX!"); 
+		abort(); 
+	  }
+	  /*
+	   * Check if we need to create any back-end windows / canvases
+	   */
+	  if (dmxWindowInfos[i].window && !mActiveSlaves[scrn]->HaveCanvas()) {
+		mActiveSlaves[scrn]->
+		  SendMessage(QString("CreateCanvas %1 %2 %3 %4 %5 %6 %7")
+					  .arg( dmxScreenInfos[scrn]->displayName)
+					  .arg((int) dmxWindowInfos[i].window)
+					  .arg(dmxWindowInfos[i].pos.width)
+					  .arg(dmxWindowInfos[i].pos.height)
+					  .arg(mCanvas->depth)
+					  .arg(mOptions->frameCacheSize)
+					  .arg(mOptions->readerThreads));
+
+		mActiveSlaves[scrn]->HaveCanvas(true);
+		if (files.size()) {
+		  /* send list of image files too */
+		  if (dmxWindowInfos[i].window) {
+			mActiveSlaves[scrn]->SendFrameList(files);
+		  }
+		}
+	  }
+	  
+	  /*
+	   * Compute new position/size parameters for the backend subwindow.
+	   * Send message to back-end processes to resize/move the canvases.
+	   */
+	  if (i < numValidWindowInfos && dmxWindowInfos[i].window) {
+		mActiveSlaves[scrn]->
+		  MoveResizeCanvas(dmxWindowInfos[i].vis.x,
+						   dmxWindowInfos[i].vis.y,
+						   dmxWindowInfos[i].vis.width,
+						   dmxWindowInfos[i].vis.height);
+	  }
+    }
+}
+
+/*
+ * Get the back-end window information for the given window on a DMX display.
+ */
+void dmxRenderer::GetBackendInfo(void)
+{
+  
+  int i, numScreens; 
+  haveDMX = 0;
+    
+  DMXGetScreenCount(mDisplay, &numScreens);
+  if ((uint32_t)numScreens != dmxScreenInfos.size()) {
+	ClearScreenInfos(); 
+	for (i = 0; i < numScreens; i++) {
+	  DMXScreenInfo *newScreenInfo = new DMXScreenInfo; 
+	  dmxScreenInfos.push_back(newScreenInfo); 
+	}
+	dmxWindowInfos = new DMXWindowInfo[numScreens]; 
+  }
+  for (i = 0; i < numScreens; i++) {
+	if (!DMXGetScreenInfo(mDisplay, i, dmxScreenInfos[i])) {
+	  ERROR("Could not get screen information for screen %d\n", i);
+	  ClearScreenInfos(); 
+	  return;
+	}
+  }
+  
+
+  /*!
+	Ask DMX how many screens our window is overlapping and by how much.
+	There is one windowInfo info for each screen our window overlaps 
+   */ 
+  if (!DMXGetWindowInfo(mDisplay,
+						mWindow, &numValidWindowInfos,
+						numScreens,
+						dmxWindowInfos)) {
+	ERROR("Could not get window information for 0x%x\n",
+		  (int) mWindow);
+	ClearScreenInfos(); 
+	return;
+  }
+  uint16_t winNum = 0; 
+  for (winNum=numValidWindowInfos; winNum < dmxScreenInfos.size(); winNum++) {
+	dmxWindowInfos[winNum].window = 0;	
+  }
+  haveDMX = 1;
+}
+
+#ifdef FAKE_DMX
+
+void dmxRenderer::FakeBackendInfo(void)
+{
+    
+
+    /* two screens with the window stradling the boundary */
+    const int screenWidth = 1280, screenHeight = 1024;
+    const int w = 1024;
+    const int h = 768;
+    const int x = screenWidth - w / 2;
+    const int y = 100;
+    int i;
+
+    haveDMX = 0;
+
+    numScreens = 2;
+    numWindows = 2;
+
+
+#if DMX_API_VERSION == 1
+    dmxScreenInfo = (DMXScreenInformation *)
+        calloc(1, numScreens * sizeof(DMXScreenInformation));
+#else
+    dmxScreenInfo = (DMXScreenAttributes *)
+        calloc(1, numScreens * sizeof(DMXScreenAttributes));
+#endif
+
+    if (!dmxScreenInfo) {
+        ERROR("FakeBackendDMXWindowInfo failed!\n");
+        numScreens = 0;
+        return;
+    }
+
+
+#if DMX_API_VERSION == 1
+    dmxWindowInfo = (DMXWindowInformation *)
+        calloc(1, numScreens * sizeof(DMXWindowInformation));
+#else
+    dmxWindowInfo = (DMXWindowAttributes *)
+        calloc(1, numScreens * sizeof(DMXWindowAttributes));
+#endif
+
+    if (!dmxWindowInfo) {
+        ERROR("Out of memory in FakeBackendDMXWindowInfo\n");
+        free(dmxScreenInfo);
+        dmxScreenInfo = NULL;
+        numScreens = 0;
+        return;
+    }
+
+    for (i = 0; i < numScreens; i++) {
+       dmxScreenInfo[i].displayName = strdup("localhost:0");
+
+       dmxScreenInfo[i].logicalScreen = 0;
+#if DMX_API_VERSION == 1
+       dmxScreenInfo[i].width = screenWidth;
+       dmxScreenInfo[i].height = screenHeight;
+       dmxScreenInfo[i].xoffset = 0;
+       dmxScreenInfo[i].yoffset = 0;
+       dmxScreenInfo[i].xorigin = i * screenWidth;
+       dmxScreenInfo[i].yorigin = 0;
+#else
+       /* xxx untested */
+       dmxScreenInfo[i].screenWindowWidth = screenWidth;
+       dmxScreenInfo[i].screenWindowHeight = screenHeight;
+       dmxScreenInfo[i].screenWindowXoffset = 0;
+       dmxScreenInfo[i].screenWindowYoffset = 0;
+       dmxScreenInfo[i].rootWindowXorigin = i * screenWidth;
+       dmxScreenInfo[i].rootWindowYorigin = 0;
+#endif
+
+       dmxWindowInfo[i].screen = i;
+       dmxWindowInfo[i].window = 0;
+
+#if DMX_API_VERSION == 1
+       dmxWindowInfo[i].pos.x = x - dmxScreenInfo[i].xorigin;
+       dmxWindowInfo[i].pos.y = y - dmxScreenInfo[i].yorigin;
+#else
+       dmxWindowInfo[i].pos.x = x - dmxScreenInfo[i].rootWindowXorigin;
+       dmxWindowInfo[i].pos.y = y - dmxScreenInfo[i].rootWindowYorigin;
+#endif
+
+       dmxWindowInfo[i].pos.width = w;
+       dmxWindowInfo[i].pos.height = h;
+       dmxWindowInfo[i].vis.x = i * w / 2;
+       dmxWindowInfo[i].vis.y = 0;
+       dmxWindowInfo[i].vis.width = w / 2;
+       dmxWindowInfo[i].vis.height = h;
+    }
+}
+#endif
+
+void dmxRenderer::ClearScreenInfos(void) {
+  uint32_t i=0; 
+  while (i < dmxScreenInfos.size()) delete dmxScreenInfos[i]; 
+  dmxScreenInfos.clear(); 
+  if (dmxWindowInfos) delete [] dmxWindowInfos; 
+  return; 
 }
 
 //  =============================================================

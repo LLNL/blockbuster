@@ -1093,39 +1093,25 @@ static RendererGlue GLTextureGlue = {
 /***********************************************************************/
 /* Glue routines and data for the DMX renderer
  */
-
-
-static MovieStatus dmxFinishInitialization(Canvas *canvas, const ProgramOptions *options)
+// REMOVE ME WHEN POSSIBLE:  
+static MovieStatus dmxFinishInitialization(Canvas *, const ProgramOptions *)
 {
-     DMXRendererGlue *glueInfo;
-
-    /* The DMX Renderer will require this structure to be present in gluePrivateData,
-     * to give it its rendering parameters
-     */
-    glueInfo = (DMXRendererGlue *)calloc(1, sizeof(DMXRendererGlue));
-    if (glueInfo == NULL) {
-        ERROR("Cannot allocate DMX renderer info");
-        return MovieFailure;
-    }
-
-    /* This graphics context and font will be used for rendering status messages,
-     * and as such are owned here, by the UserInterface.
-     */
-    /* copy some fileds form sWindowInfo to glueInfo */
-    glueInfo->display = sWindowInfo->display;
-    glueInfo->window = sWindowInfo->window;
-    glueInfo->fontHeight = sWindowInfo->fontHeight;
-    glueInfo->frameCacheSize = options->frameCacheSize;
-    glueInfo->readerThreads = options->readerThreads;
-
-    canvas->gluePrivateData = glueInfo;
-
-    /* Uniquely, DMX doesn't have any required format; its Render
-     * method doesn't actually load any imagery.
-     */
-
-    return MovieSuccess;
+  return MovieSuccess; 
 }
+
+Display *xwindow_GetDisplay(void){
+  return sWindowInfo->display; 
+}
+
+Window xwindow_GetWindow(void){
+  return sWindowInfo->window; 
+}
+
+int xwindow_GetFontHeight(void){
+  return sWindowInfo->fontHeight; 
+}
+ 
+
 
 static void dmxDestroyGlue(Canvas *canvas)
 {

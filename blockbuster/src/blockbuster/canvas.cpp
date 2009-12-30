@@ -55,13 +55,6 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
   DestroyRendererPtr(NULL), rendererPrivateData(NULL), ResizePtr(NULL), MovePtr(NULL), 
   DrawStringPtr(NULL), SwapBuffersPtr(NULL), BeforeRenderPtr(NULL), AfterRenderPtr(NULL), mOptions(options)
 {
-  mRenderer = NewRenderer::CreateRenderer(mOptions, this); 
-  if (!mRenderer) {
-    ERROR(QString("Badness:  cannot create renderer \"%1\"\n").
-          arg(mOptions->rendererName)); 
-    exit(1); 
-  }
-  mOptions->mNewRenderer = mRenderer; 
 
     MovieStatus status;
 
@@ -87,8 +80,16 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
     }
     
     /* Renderer can initialize now. */
-    status = mOptions->mOldRenderer->Initialize(this, mOptions);
+    mRenderer = NewRenderer::CreateRenderer(mOptions, this); 
+    if (!mRenderer) {
+      ERROR(QString("Badness:  cannot create renderer \"%1\"\n").
+            arg(mOptions->rendererName)); 
+      exit(1); 
+    }
+    mOptions->mNewRenderer = mRenderer; 
 
+   status = mOptions->mOldRenderer->Initialize(this, mOptions);
+ 
     /* If this renderer would like an image cache, we can create one, as
      * a convenience (this is done because most renderers do use an 
      * image cache; putting the cache creation here simplifies their

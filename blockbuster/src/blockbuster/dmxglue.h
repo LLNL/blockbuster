@@ -67,7 +67,7 @@ void UpdateBackendCanvases(Canvas *canvas);
  * A structure of this sort must be loaded into the Canvas'
  * gluePrivateData pointer during "glue" initialization.
  */
-
+// this is for getting info from xwindow.cpp.  Ugly for now.  
  struct DMXRendererGlue {
     Display *display;
     Window window;

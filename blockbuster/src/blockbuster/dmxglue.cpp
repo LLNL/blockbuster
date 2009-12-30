@@ -36,23 +36,8 @@ dmxRenderer *gRenderer = NULL;
 //============================================================
 
 MovieStatus dmx_Initialize(Canvas *canvas, const ProgramOptions *options) {
-  DMXRendererGlue *glueInfo = (DMXRendererGlue *)canvas->gluePrivateData;
-  uint16_t i;
-  ECHO_FUNCTION(5);
-
   gRenderer = dynamic_cast<dmxRenderer *>(options->mNewRenderer); 
-  
-  if(options->backendRendererName != "") {
-    gRenderer->mBackendRenderer = options->backendRendererName;
-    QString msg("User specified renderer %1 for the backend\n"); 
-    cerr << msg.toStdString(); 
-    INFO(msg.arg(gRenderer->mBackendRenderer));
-  }
-  else {
-    QString msg("No user specified backend renderer.  Using default.\n");
-    INFO(msg);
-  }
-  
+
   /* Plug in our special functions for canvas manipulations.
    * We basically override all the functions set in CreateXWindow.
    */
@@ -66,68 +51,6 @@ MovieStatus dmx_Initialize(Canvas *canvas, const ProgramOptions *options) {
   if (canvas->DrawStringPtr == NULL) { 
     canvas->DrawStringPtr = dmx_DrawString;
   }
-  
-  /* Get DMX info */
-  if (IsDMXDisplay(glueInfo->display)) {
-    /* This will reset many of the values in gRenderer */
-    GetBackendInfo(canvas);
-  }
-  else {
-#ifdef FAKE_DMX
-    FakeBackendInfo(canvas);
-#else
-    ERROR("'%s' is not a DMX display, exiting.",
-          DisplayString(glueInfo->display));
-    exit(1);
-#endif
-  }
-  for (i = 0; i < gRenderer->dmxScreenInfos.size(); i++) {
-    QHostInfo info = QHostInfo::fromName(QString(gRenderer->dmxScreenInfos[i]->displayName).split(":")[0]);
-    QHostAddress address = info.addresses().first();
-    DEBUGMSG(QString("initializeing display name from %1 to %2 with result %3").arg(gRenderer->dmxScreenInfos[i]->displayName).arg(info.hostName()).arg(address.toString())); 
-    gRenderer->dmxHostAddresses.push_back(address); 
-    DEBUGMSG(QString("put on stack as %1").arg(gRenderer->dmxHostAddresses[i].toString())); 
-  }
-  /* Get a socket connection for each back-end instance of the player.
-     For each dmxScreenInfo, launch one slave and create one QHostInfo from the name.
-     Note that the slave will not generally match the HostInfo... we don't know
-     what order the slaves will connect back to us.  That's in fact the point of 
-     creating the QHostInfo in the first place.
-  */ 
-  DEBUGMSG("Launching slaves..."); 
-  
-  gRenderer->setNumDMXDisplays(gRenderer->dmxScreenInfos.size());
-  for (i = 0; i < gRenderer->dmxScreenInfos.size(); i++) {
-    
-    if (i==0 || options->slaveLaunchMethod != "mpi") {
-      QString host(gRenderer->dmxScreenInfos[i]->displayName);
-      /* remove :x.y suffix */
-      if (host.contains(":")) {
-        host.remove(host.indexOf(":"), 100); 
-      }
-      
-      gRenderer->LaunchSlave(host);
-    }
-  }
-  
-  /*!
-    Wait for all slaves to phone home
-  */ 
-  uint64_t msecs = 0;
-  while (!gRenderer->slavesReady() && msecs < 30000) {// 30 secs
-    //gCoreApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-    gCoreApp->processEvents();
-    gRenderer->QueueSlaveMessages(); 
-    msecs += 10; 
-    usleep(10000); 
-  }
-  if (!gRenderer->slavesReady()) {
-    ERROR("Slaves not responding after 30 seconds");
-    return MovieFailure; 
-  }   
-  
-  UpdateBackendCanvases(canvas);
-  
   return MovieSuccess; /* OK */
 }
 
@@ -159,170 +82,6 @@ dmx_AtExitCleanup(void)
     return;
 }
 
-
-/*!
-  just a block of code that gets used a few times when there is an error: 
-*/ 
-void ClearScreenInfos(void) {
-  uint32_t i=0; 
-  while (i < gRenderer->dmxScreenInfos.size()) delete gRenderer->dmxScreenInfos[i]; 
-  gRenderer->dmxScreenInfos.clear(); 
-  if (gRenderer->dmxWindowInfos) delete [] gRenderer->dmxWindowInfos; 
-  return; 
-}
-
-/*
- * Get the back-end window information for the given window on a DMX display.
- */
-void GetBackendInfo(Canvas *canvas)
-{
-  DMXRendererGlue *glueInfo = (DMXRendererGlue *)canvas->gluePrivateData;
-  
-  int i, numScreens; 
-  gRenderer->haveDMX = 0;
-    
-  DMXGetScreenCount(glueInfo->display, &numScreens);
-  if ((uint32_t)numScreens != gRenderer->dmxScreenInfos.size()) {
-	ClearScreenInfos(); 
-	for (i = 0; i < numScreens; i++) {
-	  DMXScreenInfo *newScreenInfo = new DMXScreenInfo; 
-	  gRenderer->dmxScreenInfos.push_back(newScreenInfo); 
-	}
-	gRenderer->dmxWindowInfos = new DMXWindowInfo[numScreens]; 
-  }
-  for (i = 0; i < numScreens; i++) {
-	if (!DMXGetScreenInfo(glueInfo->display, i, gRenderer->dmxScreenInfos[i])) {
-	  ERROR("Could not get screen information for screen %d\n", i);
-	  ClearScreenInfos(); 
-	  return;
-	}
-  }
-  
-
-  /*!
-	Ask DMX how many screens our window is overlapping and by how much.
-	There is one windowInfo info for each screen our window overlaps 
-   */ 
-  if (!DMXGetWindowInfo(glueInfo->display,
-						glueInfo->window, &gRenderer->numValidWindowInfos,
-						numScreens,
-						gRenderer->dmxWindowInfos)) {
-	ERROR("Could not get window information for 0x%x\n",
-		  (int) glueInfo->window);
-	ClearScreenInfos(); 
-	return;
-  }
-  uint16_t winNum = 0; 
-  for (winNum=gRenderer->numValidWindowInfos; winNum < gRenderer->dmxScreenInfos.size(); winNum++) {
-	gRenderer->dmxWindowInfos[winNum].window = 0;	
-  }
-  gRenderer->haveDMX = 1;
-}
-
-#ifdef FAKE_DMX
-
-void FakeBackendInfo(Canvas *canvas)
-{
-    
-
-    /* two screens with the window stradling the boundary */
-    const int screenWidth = 1280, screenHeight = 1024;
-    const int w = 1024;
-    const int h = 768;
-    const int x = screenWidth - w / 2;
-    const int y = 100;
-    int i;
-
-    gRenderer->haveDMX = 0;
-
-    gRenderer->numScreens = 2;
-    gRenderer->numWindows = 2;
-
-
-#if DMX_API_VERSION == 1
-    gRenderer->dmxScreenInfo = (DMXScreenInformation *)
-        calloc(1, gRenderer->numScreens * sizeof(DMXScreenInformation));
-#else
-    gRenderer->dmxScreenInfo = (DMXScreenAttributes *)
-        calloc(1, gRenderer->numScreens * sizeof(DMXScreenAttributes));
-#endif
-
-    if (!gRenderer->dmxScreenInfo) {
-        ERROR("FakeBackendDMXWindowInfo failed!\n");
-        gRenderer->numScreens = 0;
-        return;
-    }
-
-
-#if DMX_API_VERSION == 1
-    gRenderer->dmxWindowInfo = (DMXWindowInformation *)
-        calloc(1, gRenderer->numScreens * sizeof(DMXWindowInformation));
-#else
-    gRenderer->dmxWindowInfo = (DMXWindowAttributes *)
-        calloc(1, gRenderer->numScreens * sizeof(DMXWindowAttributes));
-#endif
-
-    if (!gRenderer->dmxWindowInfo) {
-        ERROR("Out of memory in FakeBackendDMXWindowInfo\n");
-        free(gRenderer->dmxScreenInfo);
-        gRenderer->dmxScreenInfo = NULL;
-        gRenderer->numScreens = 0;
-        return;
-    }
-
-    for (i = 0; i < gRenderer->numScreens; i++) {
-       gRenderer->dmxScreenInfo[i].displayName = strdup("localhost:0");
-
-       gRenderer->dmxScreenInfo[i].logicalScreen = 0;
-#if DMX_API_VERSION == 1
-       gRenderer->dmxScreenInfo[i].width = screenWidth;
-       gRenderer->dmxScreenInfo[i].height = screenHeight;
-       gRenderer->dmxScreenInfo[i].xoffset = 0;
-       gRenderer->dmxScreenInfo[i].yoffset = 0;
-       gRenderer->dmxScreenInfo[i].xorigin = i * screenWidth;
-       gRenderer->dmxScreenInfo[i].yorigin = 0;
-#else
-       /* xxx untested */
-       gRenderer->dmxScreenInfo[i].screenWindowWidth = screenWidth;
-       gRenderer->dmxScreenInfo[i].screenWindowHeight = screenHeight;
-       gRenderer->dmxScreenInfo[i].screenWindowXoffset = 0;
-       gRenderer->dmxScreenInfo[i].screenWindowYoffset = 0;
-       gRenderer->dmxScreenInfo[i].rootWindowXorigin = i * screenWidth;
-       gRenderer->dmxScreenInfo[i].rootWindowYorigin = 0;
-#endif
-
-       gRenderer->dmxWindowInfo[i].screen = i;
-       gRenderer->dmxWindowInfo[i].window = 0;
-
-#if DMX_API_VERSION == 1
-       gRenderer->dmxWindowInfo[i].pos.x = x - gRenderer->dmxScreenInfo[i].xorigin;
-       gRenderer->dmxWindowInfo[i].pos.y = y - gRenderer->dmxScreenInfo[i].yorigin;
-#else
-       gRenderer->dmxWindowInfo[i].pos.x = x - gRenderer->dmxScreenInfo[i].rootWindowXorigin;
-       gRenderer->dmxWindowInfo[i].pos.y = y - gRenderer->dmxScreenInfo[i].rootWindowYorigin;
-#endif
-
-       gRenderer->dmxWindowInfo[i].pos.width = w;
-       gRenderer->dmxWindowInfo[i].pos.height = h;
-       gRenderer->dmxWindowInfo[i].vis.x = i * w / 2;
-       gRenderer->dmxWindowInfo[i].vis.y = 0;
-       gRenderer->dmxWindowInfo[i].vis.width = w / 2;
-       gRenderer->dmxWindowInfo[i].vis.height = h;
-    }
-}
-#endif
-
-/*
- * Check if display is on a DMX server.  Return 1 if true, 0 if false.
- */
-int IsDMXDisplay(Display *dpy)
-{
-  ECHO_FUNCTION(5);
-   Bool b;
-   int major, event, error;
-   b = XQueryExtension(dpy, "DMX", &major, &event, &error);
-   return (int) b;
- }
 
 
 /* This SetFrameList method doesn't save a local framelist.
@@ -401,69 +160,6 @@ void   dmx_DestroyRenderer(Canvas *canvas){
  }
  
  
-/*
- * This function creates the back-end windows/canvases on the back-end hosts.
- *
- * The backend canvases should create child windows of the
- * window created by DMX (to work around NVIDIA memory issues,
- * and GLX visual compatibility).
- *
- * Also, update the subwindow sizes and positions as needed.
- * This is called when we create a canvas or move/resize it.
- */
-void UpdateBackendCanvases(Canvas *canvas)
-{
-    
-   if (!gRenderer->numValidWindowInfos) return; 
-
-   DMXRendererGlue *glueInfo = (DMXRendererGlue *)canvas->gluePrivateData;
-    int i;
-
-    for (i = 0; i < gRenderer->numValidWindowInfos; i++) {
-	  const int scrn = gRenderer->dmxWindowInfos[i].screen;
-	  
-	  if (!gRenderer->haveDMX) {
-		ERROR("UpdateBackendCanvases: no not have DMX!"); 
-		abort(); 
-	  }
-	  /*
-	   * Check if we need to create any back-end windows / canvases
-	   */
-	  if (gRenderer->dmxWindowInfos[i].window && !gRenderer->mActiveSlaves[scrn]->HaveCanvas()) {
-		gRenderer->mActiveSlaves[scrn]->
-		  SendMessage(QString("CreateCanvas %1 %2 %3 %4 %5 %6 %7")
-					  .arg( gRenderer->dmxScreenInfos[scrn]->displayName)
-					  .arg((int) gRenderer->dmxWindowInfos[i].window)
-					  .arg(gRenderer->dmxWindowInfos[i].pos.width)
-					  .arg(gRenderer->dmxWindowInfos[i].pos.height)
-					  .arg(canvas->depth)
-					  .arg(glueInfo->frameCacheSize)
-					  .arg(glueInfo->readerThreads));
-
-		gRenderer->mActiveSlaves[scrn]->HaveCanvas(true);
-		if (gRenderer->files.size()) {
-		  /* send list of image files too */
-		  if (gRenderer->dmxWindowInfos[i].window) {
-			gRenderer->mActiveSlaves[scrn]->SendFrameList(gRenderer->files);
-		  }
-		}
-	  }
-	  
-	  /*
-	   * Compute new position/size parameters for the backend subwindow.
-	   * Send message to back-end processes to resize/move the canvases.
-	   */
-	  if (i < gRenderer->numValidWindowInfos && gRenderer->dmxWindowInfos[i].window) {
-		gRenderer->mActiveSlaves[scrn]->
-		  MoveResizeCanvas(gRenderer->dmxWindowInfos[i].vis.x,
-						   gRenderer->dmxWindowInfos[i].vis.y,
-						   gRenderer->dmxWindowInfos[i].vis.width,
-						   gRenderer->dmxWindowInfos[i].vis.height);
-	  }
-    }
-}
-
-
 
 
 void dmx_Resize(Canvas *canvas, int newWidth, int newHeight, int cameFromX)
@@ -482,10 +178,10 @@ void dmx_Resize(Canvas *canvas, int newWidth, int newHeight, int cameFromX)
        canvas->height = newHeight;
     */ 
     if (gRenderer->haveDMX) {
-        GetBackendInfo(canvas);
+        gRenderer->GetBackendInfo();
     }
 
-    UpdateBackendCanvases(canvas);
+    gRenderer->UpdateBackendCanvases();
 }
 
 
@@ -502,10 +198,10 @@ void dmx_Move(Canvas *canvas, int newX, int newY, int cameFromX)
   */ 
   MoveXWindow(canvas, newX, newY, cameFromX); 
   if (gRenderer->haveDMX) {
-    GetBackendInfo(canvas);
+    gRenderer->GetBackendInfo();
   }
   
-  UpdateBackendCanvases(canvas);
+  gRenderer->UpdateBackendCanvases();
   
   /* I think these are redundant, as MoveXWindow sets them
      canvas->XPos = newX;
@@ -725,14 +421,13 @@ void dmx_Render(Canvas *, int frameNumber,
     }
 }
 
-void  dmx_DrawString(Canvas *canvas, int row, int column, const char *str)
+void  dmx_DrawString(Canvas */*canvas*/, int row, int column, const char *str)
 {
    ECHO_FUNCTION(5);
  if (!gRenderer->numValidWindowInfos) return; 
-    DMXRendererGlue *glueInfo = (DMXRendererGlue *) canvas->gluePrivateData;
     
-    int x = (column + 1) * glueInfo->fontHeight;
-    int y = (row + 1) * glueInfo->fontHeight;
+    int x = (column + 1) * gRenderer->mFontHeight;
+    int y = (row + 1) * gRenderer->mFontHeight;
     int i;
 
     /* Send DrawString to back-end renderers, with appropriate offsets */
@@ -742,8 +437,8 @@ void  dmx_DrawString(Canvas *canvas, int row, int column, const char *str)
 
             int tx = x - gRenderer->dmxWindowInfos[i].vis.x;
             int ty = y - gRenderer->dmxWindowInfos[i].vis.y;
-            int tcol = tx / glueInfo->fontHeight - 1;
-            int trow = ty / glueInfo->fontHeight - 1;
+            int tcol = tx / gRenderer->mFontHeight - 1;
+            int trow = ty / gRenderer->mFontHeight - 1;
 
             gRenderer->mActiveSlaves[scrn]->
 			  SendMessage(QString("DrawString %1 %2")

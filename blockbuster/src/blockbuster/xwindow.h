@@ -45,5 +45,12 @@ void MoveXWindow(Canvas *canvas, int newX, int newY, int cameFromX);
 void XWindow_ShowCursor(bool show);
 void XWindow_ToggleCursor(void);
 
+Display *xwindow_GetDisplay(void); 
+Window xwindow_GetWindow(void); 
+int xwindow_GetFontHeight(void); 
+int xwindow_GetFrameCacheSize(void); 
+int xwindow_GetReaderThreads(void); 
+
+
 #endif
 
