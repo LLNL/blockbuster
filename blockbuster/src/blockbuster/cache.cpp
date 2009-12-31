@@ -70,12 +70,6 @@ bool jobComparer(const ImageCacheJob *first, const ImageCacheJob *second){
   return diff1 > diff2; 
 }
 
-void DestroyImageCache(Canvas *canvas)
-{
-  delete canvas->imageCache; 
-  canvas->imageCache = NULL; 
-  return; 
-}
 
 /* Default/fallback routine for Canvas->Preload()
    Will be replaced by NewRenderer::Preload() 
@@ -95,14 +89,14 @@ void CachePreload(Canvas *canvas, uint32_t frameNumber, const Rectangle *imageRe
 	
 	if(canvas->frameList->stereo) {
 	  localFrameNumber = frameNumber * 2;
-	  canvas->imageCache->PreloadImage( localFrameNumber++,
+	  canvas->mRenderer->mCache->PreloadImage( localFrameNumber++,
                                         &lodROI, levelOfDetail);
-	  canvas->imageCache->PreloadImage(localFrameNumber,
+	  canvas->mRenderer->mCache->PreloadImage(localFrameNumber,
                                        &lodROI, levelOfDetail);
 	}
 	else {
 	  localFrameNumber = frameNumber;
-	  canvas->imageCache->PreloadImage(localFrameNumber,
+	  canvas->mRenderer->mCache->PreloadImage(localFrameNumber,
                                        &lodROI, levelOfDetail);
 	}   
     return; 

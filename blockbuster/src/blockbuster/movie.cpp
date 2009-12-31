@@ -50,7 +50,7 @@
 
 static void ModifyFrameList(Canvas *canvas, FrameList *frameList)
 {
-  canvas->SetFrameList(canvas, frameList);
+  canvas->SetFrameList(frameList);
   /* The UserInterface module may want to report on the 
    * various things associated with the frame list.
    */
@@ -667,8 +667,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
 	  filenames.append(event.mString);
 	  FrameList *newFrameList = new FrameList; 
  	  if (newFrameList->LoadFrames(filenames)) {
-	    DestroyImageCache(canvas);
-	    canvas->imageCache = NULL; 
+	    canvas->mRenderer->DestroyImageCache();
 	    allFrames->DeleteFrames(); 
 	    delete allFrames;
 	    
@@ -735,8 +734,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
              region.x = region.y = 0; 
              region.width = frameInfo->width; 
              region.height = frameInfo->height; 
-             Image *image = canvas->imageCache->
-               GetImage(frameNumber,&region,0); 
+             Image *image = canvas->mRenderer->GetImage(frameNumber,&region,0); 
              int size[3] = {region.width, region.height, 3}; 
              int result = 
                write_png_file(filename.toAscii().data(), 
@@ -1012,10 +1010,10 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
        canvas->Render(canvas, frameNumber, &roi, destX, destY, currentZoom, lod);
        if (!usingDmx && frameNumber != previousFrame && previousFrame >= 0) {
          if (allFrames->stereo) {
-           canvas->imageCache->ReleaseFrame(previousFrame*2); 
-           canvas->imageCache->ReleaseFrame(previousFrame*2+1); 
+           canvas->mRenderer->mCache->ReleaseFrame(previousFrame*2); 
+           canvas->mRenderer->mCache->ReleaseFrame(previousFrame*2+1); 
          } else {
-           canvas->imageCache->ReleaseFrame(previousFrame); 
+           canvas->mRenderer->mCache->ReleaseFrame(previousFrame); 
          }
        }
        TIMER_PRINT("after render"); 

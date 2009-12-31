@@ -65,10 +65,6 @@ void WriteImageToFile(Canvas *canvas, int frameNumber)
     /* This particular function only works on renderers that
      * are using the Image Cache utilities.
      */
-    if (canvas->imageCache == NULL) {
-	WARNING("Cannot write image to file - image cache not in use");
-	return;
-    }
     if (canvas->frameList == NULL) {
 	WARNING("Cannot write image to file - frame list is NULL");
 	return;
@@ -84,7 +80,7 @@ void WriteImageToFile(Canvas *canvas, int frameNumber)
     region.height = canvas->frameList->getFrame(localFrameNumber)->height;
     region.width = canvas->frameList->getFrame(localFrameNumber)->width;
 
-    image = canvas->imageCache->GetImage(localFrameNumber, &region, 0);
+    image = canvas->mRenderer->GetImage(localFrameNumber, &region, 0);
 
     if (image == NULL) {
 	WARNING("Cannot write image to file - image is NULL");
@@ -95,7 +91,7 @@ void WriteImageToFile(Canvas *canvas, int frameNumber)
     f = fopen("tmp.c", "w");
     if (f == NULL) {
 	WARNING("Cannot write image to file - cannot open tmp.c");
-	canvas->imageCache->ReleaseImage( image);
+	canvas->mRenderer->ReleaseImage( image);
 	return;
     }
 
@@ -155,7 +151,7 @@ void WriteImageToFile(Canvas *canvas, int frameNumber)
     fprintf(f, "    (void *)imageData,\n");
     fprintf(f, "};\n");
     fclose(f);
-    canvas->imageCache->ReleaseImage( image);
+    canvas->mRenderer->ReleaseImage( image);
     INFO("Saved image in tmp.c");
 }
 

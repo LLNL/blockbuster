@@ -14,9 +14,25 @@ class NewRenderer: public XWindow {
   NewRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QString name);
 
   virtual ~NewRenderer() {
+    DestroyImageCache(); 
     return; 
   } // replaces DestroyRenderer from Canvas
 
+  // the following depend on whether DMX is being used: 
+  virtual void DestroyImageCache(void)
+  {
+    if (mCache) delete mCache; 
+    mCache = NULL; 
+    return; 
+  }
+  virtual Image *GetImage(uint32_t frameNumber,
+                  const Rectangle *newRegion, uint32_t levelOfDetail){
+    return mCache->GetImage(frameNumber, newRegion, levelOfDetail); 
+  }
+
+  virtual void ReleaseImage(Image *image) {
+    mCache->ReleaseImage(image); 
+  }
   // Renderers:  x11, gl, gl_stereo, gltexture, and dmx
   // NewRenderers: glRenderer, glStereoRenderer, glTextureRenderer, dmxRenderer
   
@@ -27,10 +43,8 @@ class NewRenderer: public XWindow {
   virtual void Render(int frameNumber,
                       const Rectangle *imageRegion,
                       int destX, int destY, float zoom, int lod) = 0;
-  // from Canvas class 
-  virtual void SetFrameList(FrameList *frameList) {
-    mFrameList = frameList; 
-  }
+
+  virtual void SetFrameList(FrameList *frameList) ;
     
   // from Canvas class 
   virtual void Preload(uint32_t frameNumber,
@@ -48,6 +62,8 @@ class NewRenderer: public XWindow {
   */
  public:
   QString mName; 
+  FrameList *mFrameList;
+  ImageCache *mCache; // if not using DMX
 
  protected:   
   // these are good to have around to reduce arguments: 
@@ -55,8 +71,6 @@ class NewRenderer: public XWindow {
   ProgramOptions *mOptions; 
 
 
-  FrameList *mFrameList;
-  ImageCache *mCache; // if not using DMX
 } ;
 
 #endif

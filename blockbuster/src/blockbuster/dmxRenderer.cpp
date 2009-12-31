@@ -151,7 +151,43 @@ void dmxRenderer::Render(int ,
 
 
 //  =============================================================
-void dmxRenderer::SetFrameList(FrameList *) {
+void dmxRenderer::SetFrameList(FrameList *frameList) {
+  ECHO_FUNCTION(5);
+  uint32_t framenum;
+  uint32_t i; 
+  QString previousName; 
+  
+  mCanvas->frameList = frameList;
+  
+  /* concatenate filenames.  We want to send only unique filenames 
+   * back down to the slaves (or they'd try to load lots of files);
+   * we cheat a little here and just send a filename if it's not
+   * the same as the previous filename.
+   *
+   * Although this is not quite proper (it's allowable in the design
+   * for the main program to rearrange frames so that frames from
+   * different files are interleaved), it works for now.
+   *
+   * A more complex (but technically correct) solution would be to send
+   * the list of frames as a list of {filename, frame number} pairs,
+   * which is how the main program references frames.  But this would
+   * require a lot more complexity and no more utility, since there's
+   * no way the main program can take advange of such a feature now.
+   */
+  files.clear(); 
+  for (framenum = 0; framenum < frameList->numActualFrames(); framenum++) {
+    if (previousName != frameList->getFrame(framenum)->filename) {
+      files.push_back(frameList->getFrame(framenum)->filename); 
+      previousName = frameList->getFrame(framenum)->filename;        
+    }
+  }
+  
+  /* Tell back-end instances to load the files */
+  for (i = 0; i < dmxScreenInfos.size(); i++) {
+    if (dmxWindowInfos[i].window) {
+      mActiveSlaves[dmxWindowInfos[i].screen]-> SendFrameList(files);
+    }
+  }
   return; 
 }
 //  =============================================================

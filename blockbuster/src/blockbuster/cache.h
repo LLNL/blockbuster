@@ -182,7 +182,6 @@ class ImageCache {
  * is responsible for its own image management).
  */
 ImageCache *CreateImageCache(int numReaderThreads, int maxCachedImages, Canvas *canvas);
-void DestroyImageCache(Canvas *canvas);
 void CachePreload(Canvas *canvas, uint32_t frameNumber, 
                   const Rectangle *imageRegion, uint32_t levelOfDetail);
 

@@ -50,8 +50,8 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
   height(0), width(0), screenHeight(0), screenWidth(0), 
   XPos(0), YPos(0), depth(0), threads(0), cachesize(0), 
   mBlockbusterInterface(gui), 
-  frameList(NULL), imageCache(NULL), RenderPtr(NULL), 
-  SetFrameListPtr(NULL), PreloadPtr(NULL), 
+  frameList(NULL), RenderPtr(NULL), 
+  PreloadPtr(NULL), 
   ResizePtr(NULL), MovePtr(NULL), 
   DrawStringPtr(NULL), SwapBuffersPtr(NULL), 
   BeforeRenderPtr(NULL),  mOptions(options)
@@ -87,19 +87,9 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
      * their own methods, we refuse to override them.
      */
     DEBUGMSG(QString("frameCacheSize is %1").arg(mOptions->frameCacheSize)); 
-    if (mOptions->frameCacheSize > 0 && this->PreloadPtr == NULL && this->SetFrameListPtr == NULL) {
-      this->imageCache = CreateImageCache(mOptions->readerThreads,
-                                          mOptions->frameCacheSize, this);
-      if (this->imageCache == NULL) {
-	    WARNING("could not allocate image cache");
-	    this->PreloadPtr = NULL;
-	    this->SetFrameListPtr = DefaultSetFrameList;
-      }
-      else {
-	    this->PreloadPtr = CachePreload;
-	    this->SetFrameListPtr = CacheSetFrameList;
-      }
-    }
+    if (mOptions->frameCacheSize > 0 && this->PreloadPtr == NULL ) {
+      this->PreloadPtr = CachePreload;
+     }
     
     
     /* All done */
@@ -109,7 +99,6 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
 Canvas::~Canvas()
 {
   if (mRenderer) delete mRenderer; 
-  ::DestroyImageCache(this); 
   
   return; 
 }
@@ -301,62 +290,4 @@ FrameInfo *GetFrameInfoPtr(Canvas *canvas, int frameNumber)
   }
   
   return (FrameInfo*)canvas->frameList->getFrame(localFrameNumber);
-}
-
-/* These routines are typically used by any Canvas that uses the
- * ImageCache utilities.
- */
-void CacheSetFrameList(Canvas *canvas, FrameList *frameList)
-{
-#if 1
-    /* Optional: completely destroy the image cache, and 
-     * recreate it.  This will destroy threads and whatnot,
-     * and may prevent a problem with switching movies
-     * quickly.  (We really should instead discover what
-     * state is causing the breakdown, but this will
-     * allow testing for now.)
-     */
-   
-	
-#if 0
-	/* we disabled the following since we need to destroy cache in an earlier phase */
-	 /* Save the old ImageCache state that we'll need for the
-     * new ImageCache.  
-     */
-    /*tCacheConfiguration(canvas->imageCache, &numReaderThreads, &maxCachedImages); */
-
-    /* Destroy the cache. */
-    /* troyImageCache(canvas->imageCache); */
-
-#endif
-
-    /* Recreate it. */
-	/*fprintf(stderr,"Recreate Image Cache -- Size %d Threads %d\n",canvas->cachesize,canvas->threads); */
-    if (!canvas->imageCache) {
-      canvas->imageCache = CreateImageCache(canvas->threads, canvas->cachesize, canvas);
-    }
-    if (canvas->imageCache == NULL) {
-	ERROR("could not recreate image cache when changing frame list");
-	canvas->PreloadPtr = NULL;
-	canvas->SetFrameListPtr = DefaultSetFrameList;
-
-	/* Invoke the new framelist function, and get out of here. */
-	canvas->SetFrameList(canvas, frameList);
-	return;
-    }
-#endif
-
-    /* Tell the cache to manage the new frame list.  This will
-     * clear everything out of the cache that's already in there.
-     */
-    canvas->imageCache->ManageFrameList(frameList);
-    canvas->frameList = frameList;
-}
-
-/* And this one is typically used by a Canvas that doesn't use
- * the ImageCache utilities.
- */
-void DefaultSetFrameList(Canvas *canvas, FrameList *frameList)
-{
-    canvas->frameList = frameList;
 }

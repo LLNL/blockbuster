@@ -243,7 +243,7 @@ bool Slave::LoadFrames(const char *files)
       frames = new FrameList; 
       frames->LoadFrames(fileList);
     }
-    mCanvas->SetFrameList(mCanvas, frames);
+    mCanvas->SetFrameList(frames);
 	if (!mCanvas->frameList) {
 	  return false;
 	}
@@ -378,10 +378,10 @@ int Slave::Loop(void)
                              destX, destY, zoom, lod);
               if (imageNum != lastImageRendered && lastImageRendered >= 0) {
                 if (mCanvas->frameList->stereo) {
-                  mCanvas->imageCache->ReleaseFrame(lastImageRendered*2); 
-                  mCanvas->imageCache->ReleaseFrame(lastImageRendered*2+1); 
+                  mCanvas->mRenderer->mCache->ReleaseFrame(lastImageRendered*2); 
+                  mCanvas->mRenderer->mCache->ReleaseFrame(lastImageRendered*2+1); 
                 } else {
-                  mCanvas->imageCache->ReleaseFrame(lastImageRendered); 
+                  mCanvas->mRenderer->mCache->ReleaseFrame(lastImageRendered); 
                 }
               }
                lastImageRendered = imageNum; 
@@ -553,7 +553,7 @@ int Slave::Loop(void)
           else if (token == "SetFrameList") {
             /* This is the "file load" part of the code, rather misleading */
             /*we need to destroy image cache/reader threads etc before smBase destructor */
-            DestroyImageCache(mCanvas);
+            mCanvas->mRenderer->DestroyImageCache();
             if (mCanvas->frameList) {
               mCanvas->frameList->DeleteFrames(); 
               delete mCanvas->frameList; 
