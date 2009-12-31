@@ -37,7 +37,54 @@
 
 #include "glRenderer.h"
 
+glRenderer::glRenderer(ProgramOptions *opt, Canvas *canvas, QString name):
+  NewRenderer(opt, canvas, name) {
 
+  // from glFinishInitialization: 
+  Bool rv;
+  Font id = canvas->mXWindow->fontInfo->fid;
+  unsigned int first = canvas->mXWindow->fontInfo->min_char_or_byte2;
+  unsigned int last = canvas->mXWindow->fontInfo->max_char_or_byte2;
+  //  glRenderer *renderer = dynamic_cast<glRenderer*>(canvas->mRenderer); 
+  
+  /* All GL rendering in X11 requires a glX context. */
+  context = glXCreateContext(canvas->mXWindow->display, canvas->mXWindow->visInfo,
+                                       NULL, GL_TRUE);
+  if (!context) {
+    ERROR("couldn't create GLX context");
+    return ;
+  }
+  
+  rv = glXMakeCurrent(canvas->mXWindow->display, canvas->mXWindow->window, context);
+  if (rv == False) {
+    ERROR("couldn't make graphics context current");
+    glXDestroyContext(canvas->mXWindow->display, context);
+    return ;
+  }
+  
+  DEBUGMSG("GL_RENDERER = %s", (char *) glGetString(GL_RENDERER));
+  
+  /* OpenGL display list font bitmaps */
+  fontBase = glGenLists((GLuint) last + 1);
+  if (!fontBase) {
+    ERROR("Unable to allocate display lists for fonts");
+    glXDestroyContext(canvas->mXWindow->display, context);
+    return ;
+  }
+  
+  glXUseXFont(id, first, last - first + 1, fontBase + first);
+  glListBase(fontBase);
+  
+  /* Specify our required format.  For OpenGL, always assume we're
+   * getting 24-bit RGB pixels.
+   */
+  canvas->requiredImageFormat.scanlineByteMultiple = 1;
+  canvas->requiredImageFormat.rowOrder = ROW_ORDER_DONT_CARE;
+  canvas->requiredImageFormat.byteOrder = MSB_FIRST;
+  canvas->requiredImageFormat.bytesPerPixel = 3;
+  
+  return; 
+}
 
 void glRenderer::Render(int frameNumber, 
                         const Rectangle *imageRegion,

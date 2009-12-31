@@ -2,6 +2,9 @@
 #define BLOCKBUSTER_GL_H
 #include "common.h"
 
+struct Canvas; 
+struct ProgramOptions; 
+
 void gl_HandleOptions(int &argc, char *argv[]);
 MovieStatus gl_Initialize(Canvas *canvas, const ProgramOptions *options);
 MovieStatus gl_InitializeStereo(Canvas *canvas, const ProgramOptions *options);

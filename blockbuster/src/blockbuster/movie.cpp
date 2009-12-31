@@ -17,13 +17,13 @@
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+#include "qmetatype.h"
+#include "QInputDialog"
+#include "QDir"
+#include "blockbuster_qt.h"
 #include "timer.h"
 #include "cache.h"
 #include "splash.h"
-#include "blockbuster_qt.h"
-#include "QInputDialog"
-#include "QDir"
-#include "xwindow.h"
 #include "SidecarServer.h"
 #include "util.h"
 #include "remotecommands.h"
@@ -42,6 +42,7 @@
 #include "dmxglue.h"
 #include "../libpng/pngsimple.h"
 #include <libgen.h>
+#include "xwindow.h"
 
 
 
@@ -552,7 +553,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         panning = 0;
         break;
       case MOVIE_TOGGLE_CURSOR:
-        XWindow_ToggleCursor(); 
+        canvas->mXWindow->ToggleCursor(); 
         break; 
       case MOVIE_MOUSE_PRESS_1:
         panning = 1;

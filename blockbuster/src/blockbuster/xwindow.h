@@ -18,8 +18,8 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef XWINDOW
-#define XWINDOW 1
+#ifndef BLOCKBUSTER_XWINDOW
+#define BLOCKBUSTER_XWINDOW 1
 
 #include "common.h"
 #include <stdio.h>
@@ -31,12 +31,13 @@
 #include <X11/extensions/Xdbe.h>
 #include <GL/gl.h>
 #include <GL/glx.h>
-#include "canvas.h"
 
+struct Canvas; 
+struct ProgramOptions; 
+struct MovieEvent; 
 struct RendererSpecificGlue *GetRendererSpecificGlueByName(QString name);
 MovieStatus xwindow_Initialize(Canvas *canvas, const ProgramOptions *options,
                                qint32 uiData);
-void xwindow_HandleOptions(int &argc, char *argv[]); 
 void XWindow_SetTitle(QString title); 
 void GetXEvent(Canvas *canvas, int block, MovieEvent *movieEvent);
 void CloseXWindow(Canvas *canvas);
@@ -45,12 +46,39 @@ void MoveXWindow(Canvas *canvas, int newX, int newY, int cameFromX);
 void XWindow_ShowCursor(bool show);
 void XWindow_ToggleCursor(void);
 
-Display *xwindow_GetDisplay(void); 
-Window xwindow_GetWindow(void); 
-int xwindow_GetFontHeight(void); 
-int xwindow_GetFrameCacheSize(void); 
-int xwindow_GetReaderThreads(void); 
+/*
+  Display *xwindow_GetDisplay(void); 
+  Window xwindow_GetWindow(void); 
+  int xwindow_GetFontHeight(void); 
+  int xwindow_GetFrameCacheSize(void); 
+  int xwindow_GetReaderThreads(void); 
+*/ 
+struct XWindow {
+  XWindow(Canvas *canvas,  ProgramOptions *options, qint32 uiData);
+  ~XWindow(){}
+  void remove_mwm_border(void);
+  void ShowCursor(bool show);
+  void ToggleCursor(void);
+  void SetTitle (QString); 
 
+  // new members: 
+  ProgramOptions *mOptions; 
+  Canvas *mCanvas; 
+
+
+  // from WindowInfo struct:  
+  Display *display;
+  XVisualInfo *visInfo;
+  int screenNumber;
+  Window window;        /* the window we're really drawing into */
+  int isSubWindow;          /* will be true if DMX slave */
+  XFontStruct *fontInfo;
+  int fontHeight;
+  Colormap colormap;
+  void (*DestroyGlue)(Canvas *canvas);
+  bool mShowCursor; 
+
+}; 
 
 #endif
 

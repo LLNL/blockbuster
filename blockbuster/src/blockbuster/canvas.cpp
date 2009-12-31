@@ -18,6 +18,7 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include "blockbuster_qt.h"
 #include "common.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,7 +30,6 @@
 #include "canvas.h"
 #include "errmsg.h"
 #include "cache.h"
-#include "blockbuster_qt.h"
 #include "xwindow.h"
 #include "dmxRenderer.h"
 #include "Renderer.h"
@@ -68,18 +68,10 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
 	this->threads = mOptions->readerThreads;
 	this->cachesize = mOptions->frameCacheSize;
 
-    /* Initialize the UserInterface.  The "wart" uiData parameter is used
-     * in the master/remote slave case to pass a parent window ID to the
-     * slave UI.  Once the "slave" UI is created, the uiData field will
-     * be removed, leaving a UI-specific option.
+    /* Initialize the xwindows side of things
      */
-    
-    status = xwindow_Initialize(this, mOptions, parentWindowID);
-    if (status != MovieSuccess) {
-      cerr << "Cannot initialize userInterface struct in canvas constructor" << endl; 
-      exit (1); 
-    }
-    
+    mXWindow = new XWindow(this, mOptions, parentWindowID); 
+  
     /* Renderer can initialize now. */
     mRenderer = NewRenderer::CreateRenderer(mOptions, this); 
     if (!mRenderer) {
@@ -143,7 +135,7 @@ void Canvas::ReportFrameListChange(const FrameList *frameList) {
     QString moviename = frameList->getFrame(0)->filename; 
     if (moviename.size() > 32) moviename = QString("...") + moviename.right(32); 
     mBlockbusterInterface->setTitle(QString("Blockbuster Control (%1)").arg(moviename)); 
-    XWindow_SetTitle(QString("Blockbuster (%1)").arg(moviename)); 
+    mXWindow->SetTitle(QString("Blockbuster (%1)").arg(moviename)); 
   }
   return; 
 }

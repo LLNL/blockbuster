@@ -1,6 +1,7 @@
 #ifndef BLOCKBUSTER_CANVAS_H
 #define BLOCKBUSTER_CANVAS_H
 
+#include "xwindow.h"
 #include "Renderer.h"
 #include "common.h"
 #include "frames.h"
@@ -83,6 +84,7 @@
       // this will replaces all the above function pointers. 
      NewRenderer *mRenderer; 
 
+     XWindow *mXWindow; 
 
 
     /**************************************************************/
