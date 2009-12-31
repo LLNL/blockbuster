@@ -1,6 +1,6 @@
 #ifndef BLOCKBUSTER_QT_H
 #define BLOCKBUSTER_QT_H
-
+#include "qmetatype.h"
 #include "QWidget"
 #include "ui_BlockbusterControl.h"
 #include "ui_InfoWindow.h"
@@ -30,7 +30,6 @@ class BlockbusterInterface: public QWidget, public Ui::BlockbusterControl  {
   virtual ~BlockbusterInterface() {}
     
   bool GetEvent (MovieEvent &event);
-  void showCursor (bool show); 
 
   void setFrameNumber(int frameNumber);   
   void setFrameRange(int32_t bottom, int32_t top);

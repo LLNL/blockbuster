@@ -2,14 +2,14 @@
 #define GLRENDERER_H yes
 
 #include "Renderer.h" // not "Renderers.h"
+#include <GL/gl.h>
+#include <GL/glx.h>
 
 /* Base GL rendering class for all other GL renderers */ 
 class glRenderer: public NewRenderer {
  public:
-  glRenderer(ProgramOptions *opt, Canvas *canvas, QString name="gl"):
-    NewRenderer(opt, canvas, name) {
-    return; 
-  }
+  glRenderer(ProgramOptions *opt, Canvas *canvas, QString name="gl");
+
   virtual ~glRenderer() {
     return; 
   }
@@ -21,6 +21,10 @@ class glRenderer: public NewRenderer {
                       int destX, int destY, float zoom, int lod);  
    
   bool mXSynchronize; // for debugging, presumably. 
+
+  // from WindowInfo struct in xwindow.cpp  
+  GLXContext context;
+  GLuint fontBase;
 } ;
 
 class glStereoRenderer: public glRenderer {

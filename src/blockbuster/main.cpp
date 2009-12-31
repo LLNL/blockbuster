@@ -30,8 +30,9 @@
   #
 */
 
-#include "blockbuster_qt.h"
 #include "common.h"
+#include "blockbuster_qt.h"
+#include "events.h"
 
 #ifdef USE_MPI
 #include "mpi.h"

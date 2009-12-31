@@ -25,6 +25,7 @@
 #include <netdb.h>
 #include <netinet/tcp.h>
 #include "xwindow.h"
+#include "canvas.h"
 
 //  =============================================================
 //  dmxRenderer -- launch and connect remote slaves at startup, manage them
@@ -42,9 +43,9 @@ dmxRenderer::dmxRenderer(ProgramOptions *opt, Canvas *canvas, QObject* parent):
   uint16_t i;
   ECHO_FUNCTION(5);
   
-  mDisplay = xwindow_GetDisplay(); 
-  mWindow = xwindow_GetWindow(); 
-  mFontHeight = xwindow_GetFontHeight(); 
+  mDisplay = canvas->mXWindow->display; 
+  mWindow = canvas->mXWindow->window; 
+  mFontHeight = canvas->mXWindow->fontHeight; 
   
   if(mOptions->backendRendererName == "") {
     mOptions->backendRendererName = "gl"; 

@@ -29,6 +29,8 @@
 #include "errmsg.h"
 #include "dmxglue.h"
 #include "Renderers.h"
+#include "glRenderer.h"
+#include "x11Renderer.h"
 #include "gltexture.h"
 #include "errmsg.h"
 #include <stdio.h>
@@ -52,36 +54,8 @@
 
 #define DEFAULT_WIDTH 800
 #define DEFAULT_HEIGHT 600
-static int globalSync = 0; // this used to be a user option, now it's just static.
+static int globalSync = 0; // this used to be a user option, now it's  static.
 
-/* X11 window system info, not used outside of xwindow.cpp */
- struct WindowInfo{
-    Display *display;
-    XVisualInfo *visInfo;
-    int screenNumber;
-    Window window;        /* the window we're really drawing into */
-    int isSubWindow;          /* will be true if DMX slave */
-    XFontStruct *fontInfo;
-    int fontHeight;
-    Colormap colormap;
-    void (*DestroyGlue)(Canvas *canvas);
-   bool mShowCursor; 
-    /* These fields are only appropriate to some renderers.
-     * To be completely pure, we should pull them out of this
-     * structure and allow the renderer glue to create and initialize
-     * their own data structures.  For simplicity, they're included
-     * here.
-     */
-    struct {
-        GC gc;
-        XdbeBackBuffer backBuffer;
-    } x11;
-    struct {
-        GLXContext context;
-        GLuint fontBase;
-    } glx;
-
-} ;
 
 /* This structure allows finer control over the UserInterface,
  * based on which renderer will eventually be used.  It can be 
@@ -118,7 +92,288 @@ static int globalSync = 0; // this used to be a user option, now it's just stati
     void (*SwapBuffers)(Canvas *canvas);
 } ;
 
-static WindowInfo *sWindowInfo = NULL; 
+
+
+/* This function is called to initialize an already-allocated Canvas.
+ * The Glue information is already copied into place.
+ */
+XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, qint32 uiData):
+  mOptions(options), mCanvas(canvas), display(NULL), 
+  visInfo(NULL), screenNumber(0), window(0), isSubWindow(0), 
+  fontInfo(NULL), fontHeight(0), DestroyGlue(NULL), mShowCursor(true) {
+  ECHO_FUNCTION(5);
+  RendererSpecificGlue *rendererGlue = 
+    GetRendererSpecificGlueByName(options->mOldRenderer->name); 
+  Window parentWindow = (Window) uiData;
+  const Rectangle *geometry = &options->geometry;
+  int decorations = options->decorations;
+  QString suggestedName = options->suggestedTitle;
+  
+  Screen *screen;
+  XSetWindowAttributes windowAttrs;
+  unsigned long windowAttrsMask;
+  XSizeHints sizeHints;
+  const int winBorder = 0;
+  int x, y, width, height;
+  int required_x_margin, required_y_margin;
+  MovieStatus rv;
+      
+  display = XOpenDisplay(options->displayName.toAscii());
+  if (!display) {
+    QString err("cannot open display '%1'"); 
+    ERROR(err.arg(options->displayName));
+    return ;
+  }
+  
+  /* If the user asked for synchronous behavior, provide it */
+  if (globalSync) {
+    (void) XSynchronize(display, True);
+  }
+  
+  if (parentWindow)
+    isSubWindow = 1;
+  
+  /* Get the screen and do some sanity checks */
+  screenNumber = DefaultScreen(display);
+  screen = ScreenOfDisplay(display, screenNumber);
+  
+  
+  /* if geometry is don't care and decorations flag is off -- then set window to max screen extents */
+  canvas->screenWidth = WidthOfScreen(screen);
+  if (geometry->width != DONT_CARE) 
+    width = geometry->width;
+  else {
+    if(decorations) 
+      width = DEFAULT_WIDTH;
+    else 
+      width =  canvas->screenWidth;
+  }
+  
+  canvas->screenHeight = HeightOfScreen(screen);
+  if (geometry->height != DONT_CARE) 
+    height = geometry->height;
+  else {
+    if(decorations)
+      height = DEFAULT_HEIGHT;
+    else
+      height =  canvas->screenHeight; 
+  }
+  
+  
+  
+  /* if we've turned off the window border (decoration) with the -D flag then set rquired margins to zero
+     otherwise set them to the constants defined in movie.h (SCREEN_X_MARGIN ... ) */
+  if (decorations) {
+    required_x_margin = SCREEN_X_MARGIN;
+    required_y_margin = SCREEN_Y_MARGIN;
+  }
+  else {
+    required_x_margin = 0;
+    required_y_margin = 0;
+  }
+  
+  
+  if (width > WidthOfScreen(screen) - required_x_margin) {
+#if 0
+    WARNING("requested window width %d greater than screen width %d",
+            width, WidthOfScreen(screen));
+#endif
+    width = WidthOfScreen(screen) - required_x_margin;
+  }
+  if (height > HeightOfScreen(screen) - required_y_margin) {
+#if 0
+    WARNING("requested window height %d greater than screen height %d",
+            height, HeightOfScreen(screen));
+#endif
+    height = HeightOfScreen(screen) - required_y_margin;
+  }
+  
+  
+  if (geometry->x == CENTER)
+    x = (WidthOfScreen(screen) - width) / 2;
+  else if (geometry->x != DONT_CARE)
+    x = geometry->x;
+  else
+    x = 0;
+  
+  if (geometry->y == CENTER)
+    y = (HeightOfScreen(screen) - height) / 2;
+  else if (geometry->y != DONT_CARE)
+    y = geometry->y;
+  else
+    y = 0;
+  
+  
+  
+  /* Each renderer has its own way of choosing a visual; pass off the
+   * choice of visual to the glue routine.
+   */
+  visInfo = rendererGlue->ChooseVisual( display, screenNumber );
+  if (visInfo == NULL) {
+    XCloseDisplay(display);
+    ERROR("Could not get visInfo in XWindow constructor.\n"); 
+    return ;
+  }
+  
+  /* Set up desired window attributes */
+  colormap = XCreateColormap(display, RootWindow(display, screenNumber),
+                             visInfo->visual, AllocNone);
+  windowAttrsMask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
+  windowAttrs.background_pixel = 0x0;
+  windowAttrs.border_pixel = 0x0;
+  windowAttrs.colormap = colormap;
+  windowAttrs.event_mask = StructureNotifyMask | ExposureMask;
+  if (parentWindow) {
+    /* propogate mouse/keyboard events to parent */
+  }
+  else {
+    windowAttrs.event_mask |= (KeyPressMask | ButtonPressMask |
+                               ButtonReleaseMask | ButtonMotionMask);
+  }
+  
+  if (!parentWindow)
+    parentWindow = RootWindow(display, screenNumber);
+  
+  window = XCreateWindow(display, parentWindow,
+                                      x, y, width, height,
+                                      winBorder, visInfo->depth, InputOutput,
+                                      visInfo->visual, windowAttrsMask, &windowAttrs);
+  
+  DEBUGMSG("created window 0x%x", window);
+  
+  /* Pass some information along to the window manager to keep it happy */
+  sizeHints.flags = USSize;
+  sizeHints.width = width;
+  sizeHints.height = height;
+  if (geometry->x != DONT_CARE && geometry->y != DONT_CARE) {
+    sizeHints.x = geometry->x;
+    sizeHints.y = geometry->y;
+    sizeHints.flags |= USPosition;
+  }
+  
+  
+  XSetNormalHints(display, window, &sizeHints);
+  
+  
+  SetTitle(suggestedName); 
+  XSetStandardProperties(display, window, 
+                         suggestedName.toAscii(), suggestedName.toAscii(), 
+                         None, (char **)NULL, 0, &sizeHints);
+  
+  
+  if (!decorations) remove_mwm_border();
+  
+  /* Bring it up; then wait for it to actually get here. */
+  XMapWindow(display, window);
+  XSync(display, 0);
+  /*
+    XIfEvent(display, &event, WaitForWindowOpen, (XPointer) sWindowInfo);
+  */
+  
+  /* The font.  All renderers that attach to this user interface will use
+   * this font for rendering status information directly into the rendering
+   * window.
+   */
+  fontInfo = XLoadQueryFont(display, 
+                                         options->fontName.toAscii());
+  if (!fontInfo) {
+    QString warning("Couldn't load font %s, trying %s");
+    WARNING(warning.arg(options->fontName).arg(DEFAULT_X_FONT));
+    
+    fontInfo = XLoadQueryFont(display,
+                                           DEFAULT_X_FONT);
+    if (!fontInfo) {
+      ERROR("Couldn't load DEFAULT FONT %s", DEFAULT_X_FONT);
+      XFree(visInfo);
+      XFreeColormap(display, colormap);
+      XCloseDisplay(display);
+      return ;
+    }
+  }
+  fontHeight = fontInfo->ascent + fontInfo->descent;
+  
+  /* Prepare our Canvas structure that we can return to the caller */
+  canvas->width = width;
+  canvas->height = height;
+  canvas->depth = visInfo->depth;
+  
+  /*
+    XXX Perhaps these two should belong to the Renderer, not to the
+    UserInterface?
+  */
+  canvas->ResizePtr = ResizeXWindow;
+  canvas->MovePtr = MoveXWindow;
+  canvas->DrawStringPtr = rendererGlue->DrawString;
+  canvas->BeforeRenderPtr = rendererGlue->BeforeRender;
+  canvas->AfterRenderPtr = rendererGlue->AfterRender;
+  canvas->SwapBuffersPtr = rendererGlue->SwapBuffers;
+  
+  DestroyGlue = rendererGlue->DestroyGlue;
+  
+  /* The Glue routines will finish initialization here; in particular, they need
+   * to prepare to use the font (above), and to set up the required image format
+   * (as each requires an independent format).
+   */
+  rv = rendererGlue->FinishInitialization(canvas, options);
+  if (rv != MovieSuccess) {
+    ERROR("FinishInitialization of renderer failed\n"); 
+    XFreeFont(display, fontInfo);
+    XFree(visInfo);
+    XFreeColormap(display, colormap);
+    XCloseDisplay(display);
+    return;
+  }
+  
+  return ;
+} // END CONSTRUCTOR for XWindow
+
+ 
+/*
+ * Helper to remove window decorations
+ */
+void XWindow::remove_mwm_border(void )
+{
+#define PROP_MOTIF_WM_HINTS_ELEMENTS    5
+#define MWM_HINTS_FUNCTIONS     (1L << 0)
+#define MWM_HINTS_DECORATIONS   (1L << 1)
+#define MWM_HINTS_INPUT_MODE    (1L << 2)
+#define MWM_HINTS_STATUS        (1L << 3)
+
+   typedef struct
+   {
+       unsigned long    flags;
+       unsigned long    functions;
+       unsigned long    decorations;
+       long             inputMode;
+       unsigned long    status;
+   } PropMotifWmHints;
+
+   PropMotifWmHints motif_hints;
+   Atom prop, proptype;
+
+   /* setup the property */
+   motif_hints.flags = MWM_HINTS_DECORATIONS;
+   motif_hints.decorations = 0;
+
+   /* get the atom for the property */
+   prop = XInternAtom(display, "_MOTIF_WM_HINTS", True );
+   if (!prop) {
+      /* something went wrong! */
+      return;
+   }
+
+   /* not sure this is correct, seems to work, XA_WM_HINTS didn't work */
+   proptype = prop;
+
+   XChangeProperty( display, window,  /* display, window */
+                    prop, proptype,   /* property, type */
+                    32,               /* format: 32-bit datums */
+                    PropModeReplace,  /* mode */
+                    (unsigned char *) &motif_hints, /* data */
+                    PROP_MOTIF_WM_HINTS_ELEMENTS    /* nelements */
+                  );
+   return; 
+}
 
 /* This utility function converts a raw mask into a mask and shift */
 int ComputeShift(unsigned long mask)
@@ -142,46 +397,51 @@ static XdbeSwapAction globalSwapAction = XdbeBackground;
 
 
 //======================================================   
-void XWindow_ShowCursor(bool show) {
+void XWindow::ShowCursor(bool show) {
   DEBUGMSG("Show cursor: %d\n", show); 
   //cerr << "Show cursor: "<< show; 
 
-  if (!sWindowInfo)  return; 
-  
   if (!show) {
     /* make a blank cursor */
     Pixmap blank;
     XColor dummy;
     char data[1] = {0};
     Cursor cursor;
-    Display *dpy = sWindowInfo->display; 
-    Window win = sWindowInfo->window; 
-    
-    blank = XCreateBitmapFromData (dpy, win, data, 1, 1); 
+
+    blank = XCreateBitmapFromData (display, window, data, 1, 1); 
     if(blank == None) fprintf(stderr, "error: out of memory.\n");
-    cursor = XCreatePixmapCursor(dpy, blank, blank, &dummy, &dummy, 0, 0);
-    XFreePixmap (dpy, blank);
+    cursor = XCreatePixmapCursor(display, blank, blank, &dummy, &dummy, 0, 0);
+    XFreePixmap (display, blank);
     
     
     //this makes you the cursor. then set it using this function
-    XDefineCursor(dpy,  win,  cursor);
+    XDefineCursor(display,  window,  cursor);
   } else {
-    if (!sWindowInfo->mShowCursor) {
-      XUndefineCursor(sWindowInfo->display, sWindowInfo->window);
+    if (!mShowCursor) {
+      XUndefineCursor(display, window);
     }
   }
-  sWindowInfo->mShowCursor = show; 
+  mShowCursor = show; 
   return; 
 }
 
 //======================================================   
-void XWindow_ToggleCursor(void) {
+void XWindow::ToggleCursor(void) {
   ECHO_FUNCTION(5);
-  XWindow_ShowCursor(!sWindowInfo->mShowCursor); 
+  ShowCursor(!mShowCursor); 
   return; 
 }
 
+//======================================================   
+void XWindow::SetTitle(QString title) {
+  ECHO_FUNCTION(5);
+  XStoreName(display, window, title.toAscii().data()); 
+  return; 
+}
 
+//======================================================   
+// END XWindow struct
+//======================================================   
 /*
  * Resize the Canvas's X window to given 
  */
@@ -212,12 +472,14 @@ void ResizeXWindow(Canvas *canvas, int newWidth, int newHeight, int cameFromX){
     values.width = newWidth;
     values.height = newHeight;
     mask = CWWidth | CWHeight;
-    XConfigureWindow(sWindowInfo->display, sWindowInfo->window, mask, &values);
+    XConfigureWindow(canvas->mXWindow->display, canvas->mXWindow->window, mask, &values);
     /* Force sync, in case we get no events (dmx) */
-    XSync(sWindowInfo->display, 0);
+    XSync(canvas->mXWindow->display, 0);
 
     canvas->width = newWidth;
     canvas->height = newHeight;
+
+    return; 
 }
 
 
@@ -234,12 +496,12 @@ void MoveXWindow(Canvas *canvas, int newX, int newY, int cameFromX) {
     return; 
   }
    bb_assert(canvas);
-    //bb_assert(sWindowInfo->isSubWindow);
-    XMoveWindow(sWindowInfo->display, sWindowInfo->window, newX, newY);
+    //bb_assert(canvas->mXWindow->isSubWindow);
+    XMoveWindow(canvas->mXWindow->display, canvas->mXWindow->window, newX, newY);
     canvas->XPos = newX;  
     canvas->YPos = newY; 
     /* Force sync, in case we get no events (dmx) */
-    XSync(sWindowInfo->display, 0);
+    XSync(canvas->mXWindow->display, 0);
 }
 
 
@@ -259,11 +521,11 @@ void MoveXWindow(Canvas *canvas, int newX, int newY, int cameFromX) {
  * we aren't supposed to block waiting for input.
  */
  void
- GetXEvent(Canvas */*canvas*/, int block, MovieEvent *movieEvent)
+ GetXEvent(Canvas *canvas, int block, MovieEvent *movieEvent)
 {
   bool resize=false, move=false; 
     XEvent event;
-    Display *dpy = sWindowInfo->display;
+    Display *dpy = canvas->mXWindow->display;
     static  long oldWidth = -1, oldHeight = -1, 
 	  oldX = -1, oldY = -1; 
     if (!block && !XPending(dpy)) {
@@ -426,7 +688,7 @@ void MoveXWindow(Canvas *canvas, int newX, int newY, int cameFromX) {
                             PrintKeyboardControls();
                             break;
                         case 'm':
-                          XWindow_ToggleCursor(); 
+                          canvas->mXWindow->ToggleCursor(); 
                           break; 
                         default:
                             DEBUGMSG("unimplemented character '%c'", buffer[0]);
@@ -489,350 +751,42 @@ CloseXWindow(Canvas *canvas)
    if (canvas != NULL) {
 
         /* Give the Glue routines a chance to free themselves */
-        if (sWindowInfo != NULL) {
+        if (canvas->mXWindow != NULL) {
             /* Give the Glue routines a chance to free themselves */
-            if (sWindowInfo->DestroyGlue != NULL) {
-                sWindowInfo->DestroyGlue(canvas);
+            if (canvas->mXWindow->DestroyGlue != NULL) {
+                canvas->mXWindow->DestroyGlue(canvas);
             }
-            XDestroyWindow(sWindowInfo->display, sWindowInfo->window);
-            XFreeFont(sWindowInfo->display, sWindowInfo->fontInfo);
-            XFree(sWindowInfo->visInfo);
-            XFreeColormap(sWindowInfo->display, sWindowInfo->colormap);
-            XSync(sWindowInfo->display, 0);
-            XCloseDisplay(sWindowInfo->display);
-            free(sWindowInfo);
+            XDestroyWindow(canvas->mXWindow->display, canvas->mXWindow->window);
+            XFreeFont(canvas->mXWindow->display, canvas->mXWindow->fontInfo);
+            XFree(canvas->mXWindow->visInfo);
+            XFreeColormap(canvas->mXWindow->display, canvas->mXWindow->colormap);
+            XSync(canvas->mXWindow->display, 0);
+            XCloseDisplay(canvas->mXWindow->display);
+            free(canvas->mXWindow);
             
         }
     }
 }
- 
-/*
- * Helper to remove window decorations
- */
-static void set_mwm_border( Display *dpy, Window w, unsigned long flags )
-{
-#define PROP_MOTIF_WM_HINTS_ELEMENTS    5
-#define MWM_HINTS_FUNCTIONS     (1L << 0)
-#define MWM_HINTS_DECORATIONS   (1L << 1)
-#define MWM_HINTS_INPUT_MODE    (1L << 2)
-#define MWM_HINTS_STATUS        (1L << 3)
-
-   typedef struct
-   {
-       unsigned long    flags;
-       unsigned long    functions;
-       unsigned long    decorations;
-       long             inputMode;
-       unsigned long    status;
-   } PropMotifWmHints;
-
-   PropMotifWmHints motif_hints;
-   Atom prop, proptype;
-
-   /* setup the property */
-   motif_hints.flags = MWM_HINTS_DECORATIONS;
-   motif_hints.decorations = flags;
-
-   /* get the atom for the property */
-   prop = XInternAtom( dpy, "_MOTIF_WM_HINTS", True );
-   if (!prop) {
-      /* something went wrong! */
-      return;
-   }
-
-   /* not sure this is correct, seems to work, XA_WM_HINTS didn't work */
-   proptype = prop;
-
-   XChangeProperty( dpy, w,                         /* display, window */
-                    prop, proptype,                 /* property, type */
-                    32,                             /* format: 32-bit datums */
-                    PropModeReplace,                /* mode */
-                    (unsigned char *) &motif_hints, /* data */
-                    PROP_MOTIF_WM_HINTS_ELEMENTS    /* nelements */
-                  );
-}
-
-void XWindow_SetTitle(QString title) {
-  ECHO_FUNCTION(5);
-  XStoreName(sWindowInfo->display, sWindowInfo->window, 
-             title.toAscii().data()); 
-  return; 
-}
-
-/* This function is called to initialize an already-allocated Canvas.
- * The Glue information is already copied into place.
- */
-MovieStatus xwindow_Initialize(Canvas *canvas, const ProgramOptions *options,
-                               qint32 uiData)
-{
-   ECHO_FUNCTION(5);
-   RendererSpecificGlue *rendererGlue = 
-     GetRendererSpecificGlueByName(options->mOldRenderer->name); 
-  Window parentWindow = (Window) uiData;
-    const Rectangle *geometry = &options->geometry;
-    int decorations = options->decorations;
-    QString suggestedName = options->suggestedTitle;
-
-    Screen *screen;
-    XSetWindowAttributes windowAttrs;
-    unsigned long windowAttrsMask;
-    XSizeHints sizeHints;
-    const int winBorder = 0;
-    int x, y, width, height;
-    int required_x_margin, required_y_margin;
-    MovieStatus rv;
-
-    if ((sWindowInfo = (WindowInfo *)calloc(1, sizeof(WindowInfo))) == NULL) { 
-        ERROR("could not allocate window-specific info");
-        return MovieFailure;
-    }
-
-    sWindowInfo->mShowCursor = true;  
-
-    sWindowInfo->display = XOpenDisplay(options->displayName.toAscii());
-    if (!sWindowInfo->display) {
-	  QString err("cannot open display '%1'"); 
-	  ERROR(err.arg(options->displayName));
-	  free(sWindowInfo);
-	  return MovieFailure;
-    }
-
-    /* If the user asked for synchronous behavior, provide it */
-    if (globalSync) {
-        (void) XSynchronize(sWindowInfo->display, True);
-    }
-
-    if (parentWindow)
-        sWindowInfo->isSubWindow = 1;
-
-    /* Get the screen and do some sanity checks */
-    sWindowInfo->screenNumber = DefaultScreen(sWindowInfo->display);
-    screen = ScreenOfDisplay(sWindowInfo->display, sWindowInfo->screenNumber);
 
 
-    /* if geometry is don't care and decorations flag is off -- then set window to max screen extents */
-    canvas->screenWidth = WidthOfScreen(screen);
-    if (geometry->width != DONT_CARE) 
-       width = geometry->width;
-    else {
-      if(decorations) 
-        width = DEFAULT_WIDTH;
-      else 
-        width =  canvas->screenWidth;
-    }
-    
-    canvas->screenHeight = HeightOfScreen(screen);
-    if (geometry->height != DONT_CARE) 
-       height = geometry->height;
-    else {
-      if(decorations)
-        height = DEFAULT_HEIGHT;
-      else
-        height =  canvas->screenHeight; 
-    }
-
-   
-
-    /* if we've turned off the window border (decoration) with the -D flag then set rquired margins to zero
-       otherwise set them to the constants defined in movie.h (SCREEN_X_MARGIN ... ) */
-    if (decorations) {
-      required_x_margin = SCREEN_X_MARGIN;
-      required_y_margin = SCREEN_Y_MARGIN;
-    }
-    else {
-      required_x_margin = 0;
-      required_y_margin = 0;
-    }
-
-
-    if (width > WidthOfScreen(screen) - required_x_margin) {
-#if 0
-        WARNING("requested window width %d greater than screen width %d",
-                width, WidthOfScreen(screen));
-#endif
-        width = WidthOfScreen(screen) - required_x_margin;
-    }
-    if (height > HeightOfScreen(screen) - required_y_margin) {
-#if 0
-        WARNING("requested window height %d greater than screen height %d",
-                height, HeightOfScreen(screen));
-#endif
-        height = HeightOfScreen(screen) - required_y_margin;
-    }
-
-   
-    if (geometry->x == CENTER)
-       x = (WidthOfScreen(screen) - width) / 2;
-    else if (geometry->x != DONT_CARE)
-       x = geometry->x;
-    else
-       x = 0;
-
-    if (geometry->y == CENTER)
-       y = (HeightOfScreen(screen) - height) / 2;
-    else if (geometry->y != DONT_CARE)
-       y = geometry->y;
-    else
-       y = 0;
-
-   
-
-    /* Each renderer has its own way of choosing a visual; pass off the
-     * choice of visual to the glue routine.
-     */
-    sWindowInfo->visInfo = rendererGlue->ChooseVisual(
-        sWindowInfo->display,
-        sWindowInfo->screenNumber
-    );
-    if (sWindowInfo->visInfo == NULL) {
-        XCloseDisplay(sWindowInfo->display);
-        free(sWindowInfo);
-        return MovieFailure;
-    }
-
-    /* Set up desired window attributes */
-    sWindowInfo->colormap = XCreateColormap(sWindowInfo->display,
-               RootWindow(sWindowInfo->display, sWindowInfo->screenNumber),
-               sWindowInfo->visInfo->visual, AllocNone);
-    windowAttrsMask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
-    windowAttrs.background_pixel = 0x0;
-    windowAttrs.border_pixel = 0x0;
-    windowAttrs.colormap = sWindowInfo->colormap;
-    windowAttrs.event_mask = StructureNotifyMask | ExposureMask;
-    if (parentWindow) {
-       /* propogate mouse/keyboard events to parent */
-    }
-    else {
-       windowAttrs.event_mask |= (KeyPressMask | ButtonPressMask |
-                                  ButtonReleaseMask | ButtonMotionMask);
-    }
-
-    if (!parentWindow)
-       parentWindow = RootWindow(sWindowInfo->display, sWindowInfo->screenNumber);
-
-    sWindowInfo->window = XCreateWindow(sWindowInfo->display, parentWindow,
-            x, y, width, height,
-            winBorder, sWindowInfo->visInfo->depth, InputOutput,
-            sWindowInfo->visInfo->visual, windowAttrsMask, &windowAttrs);
-
-    DEBUGMSG("created window 0x%x", sWindowInfo->window);
-
-    /* Pass some information along to the window manager to keep it happy */
-    sizeHints.flags = USSize;
-    sizeHints.width = width;
-    sizeHints.height = height;
-    if (geometry->x != DONT_CARE && geometry->y != DONT_CARE) {
-       sizeHints.x = geometry->x;
-       sizeHints.y = geometry->y;
-       sizeHints.flags |= USPosition;
-    }
-
-  
-    XSetNormalHints(sWindowInfo->display, sWindowInfo->window, &sizeHints);
-        
-
-    XWindow_SetTitle(suggestedName); 
-    XSetStandardProperties(sWindowInfo->display, sWindowInfo->window, 
-						   suggestedName.toAscii(), suggestedName.toAscii(), 
-                           None, (char **)NULL, 0, &sizeHints);
-
-
-    if (!decorations) 
-       set_mwm_border(sWindowInfo->display, sWindowInfo->window, 0);
-
-    /* Bring it up; then wait for it to actually get here. */
-    XMapWindow(sWindowInfo->display, sWindowInfo->window);
-    XSync(sWindowInfo->display, 0);
-    /*
-    XIfEvent(sWindowInfo->display, &event, WaitForWindowOpen, (XPointer) sWindowInfo);
-    */
-
-    /* The font.  All renderers that attach to this user interface will use
-     * this font for rendering status information directly into the rendering
-     * window.
-     */
-    sWindowInfo->fontInfo = XLoadQueryFont(sWindowInfo->display, 
-										  options->fontName.toAscii());
-    if (!sWindowInfo->fontInfo) {
-	  QString warning("Couldn't load font %s, trying %s");
-	  WARNING(warning.arg(options->fontName).arg(DEFAULT_X_FONT));
-
-        sWindowInfo->fontInfo = XLoadQueryFont(sWindowInfo->display,
-											  DEFAULT_X_FONT);
-        if (!sWindowInfo->fontInfo) {
-            WARNING("Couldn't load font %s", DEFAULT_X_FONT);
-            XFree(sWindowInfo->visInfo);
-            XFreeColormap(sWindowInfo->display, sWindowInfo->colormap);
-            XCloseDisplay(sWindowInfo->display);
-            free(sWindowInfo);
-            return MovieFailure;
-        }
-    }
-    sWindowInfo->fontHeight = sWindowInfo->fontInfo->ascent + sWindowInfo->fontInfo->descent;
-
-    /* Prepare our Canvas structure that we can return to the caller */
-    canvas->width = width;
-    canvas->height = height;
-    canvas->depth = sWindowInfo->visInfo->depth;
-
- /*
-    XXX Perhaps these two should belong to the Renderer, not to the
-    UserInterface?
-*/
-    canvas->ResizePtr = ResizeXWindow;
-    canvas->MovePtr = MoveXWindow;
-    canvas->DrawStringPtr = rendererGlue->DrawString;
-    canvas->BeforeRenderPtr = rendererGlue->BeforeRender;
-    canvas->AfterRenderPtr = rendererGlue->AfterRender;
-    canvas->SwapBuffersPtr = rendererGlue->SwapBuffers;
-
-    sWindowInfo->DestroyGlue = rendererGlue->DestroyGlue;
-
-    /* The Glue routines will finish initialization here; in particular, they need
-     * to prepare to use the font (above), and to set up the required image format
-     * (as each requires an independent format).
-     */
-    rv = rendererGlue->FinishInitialization(canvas, options);
-    if (rv != MovieSuccess) {
-        XFreeFont(sWindowInfo->display, sWindowInfo->fontInfo);
-        XFree(sWindowInfo->visInfo);
-        XFreeColormap(sWindowInfo->display, sWindowInfo->colormap);
-        XCloseDisplay(sWindowInfo->display);
-        free(sWindowInfo);
-        return rv;
-    }
-
-    return MovieSuccess;
-}
-
-/***********************************************************************/
-/* This is an ugly little routine that gives access to the Window
- * and Display parameters.
- */
-void GetX11UserInterfaceInfo(void */*dataPtr*/, Display **display, Window *window)
-{
-
-    *display = sWindowInfo->display;
-    *window = sWindowInfo->window;
-}
 
 /***********************************************************************/
 /* Glue routines and data for the OpenGL renderers
  */
 
-static void glBeforeRender(Canvas *)
+static void glBeforeRender(Canvas *canvas)
 {
     Bool rv;
-
-    rv = glXMakeCurrent(sWindowInfo->display, sWindowInfo->window, sWindowInfo->glx.context);
+    glRenderer *renderer = dynamic_cast<glRenderer*>(canvas->mRenderer); 
+    rv = glXMakeCurrent(canvas->mXWindow->display, canvas->mXWindow->window, renderer->context);
     if (rv == False) {
         WARNING("couldn't make graphics context current before rendering");
     }
 }
 
-static void glSwapBuffers(Canvas *)
+static void glSwapBuffers(Canvas *canvas)
 {
-     glXSwapBuffers(sWindowInfo->display, sWindowInfo->window);
+     glXSwapBuffers(canvas->mXWindow->display, canvas->mXWindow->window);
 }
 
 static XVisualInfo *glChooseVisual(Display *display, int screenNumber)
@@ -880,214 +834,155 @@ static XVisualInfo *glStereoChooseVisual(Display *display, int screenNumber)
  */
 static void glDrawString(Canvas *canvas, int row, int column, const char *str)
 {
-    const int x = (column + 1) * sWindowInfo->fontHeight;
-    const int y = (row + 1) * sWindowInfo->fontHeight;
+    const int x = (column + 1) * canvas->mXWindow->fontHeight;
+    const int y = (row + 1) * canvas->mXWindow->fontHeight;
     glPushAttrib(GL_CURRENT_BIT);
     glBitmap(0, 0, 0, 0, x, canvas->height - y - 1, NULL);
     glCallLists(strlen(str), GL_UNSIGNED_BYTE, (GLubyte *) str);
     glPopAttrib();
 }
 
-static MovieStatus glFinishInitialization(Canvas *canvas, const ProgramOptions *options)
-{
-    Bool rv;
-    Font id = sWindowInfo->fontInfo->fid;
-    unsigned int first = sWindowInfo->fontInfo->min_char_or_byte2;
-    unsigned int last = sWindowInfo->fontInfo->max_char_or_byte2;
-
-    /* All GL rendering in X11 requires a glX context. */
-    sWindowInfo->glx.context = glXCreateContext(sWindowInfo->display, sWindowInfo->visInfo,
-                                            NULL, GL_TRUE);
-    if (!sWindowInfo->glx.context) {
-        ERROR("couldn't create GLX context");
-        return MovieFailure;
-    }
-
-    rv = glXMakeCurrent(sWindowInfo->display, sWindowInfo->window, sWindowInfo->glx.context);
-    if (rv == False) {
-        ERROR("couldn't make graphics context current");
-        glXDestroyContext(sWindowInfo->display, sWindowInfo->glx.context);
-        return MovieFailure;
-    }
-
-    DEBUGMSG("GL_RENDERER = %s", (char *) glGetString(GL_RENDERER));
-
-    /* OpenGL display list font bitmaps */
-    sWindowInfo->glx.fontBase = glGenLists((GLuint) last + 1);
-    if (!sWindowInfo->glx.fontBase) {
-        ERROR("Unable to allocate display lists for fonts");
-        glXDestroyContext(sWindowInfo->display, sWindowInfo->glx.context);
-        return MovieFailure;
-    }
-
-    glXUseXFont(id, first, last - first + 1, sWindowInfo->glx.fontBase + first);
-    glListBase(sWindowInfo->glx.fontBase);
-
-    /* Specify our required format.  For OpenGL, always assume we're
-     * getting 24-bit RGB pixels.
-     */
-    canvas->requiredImageFormat.scanlineByteMultiple = 1;
-    canvas->requiredImageFormat.rowOrder = ROW_ORDER_DONT_CARE;
-    canvas->requiredImageFormat.byteOrder = MSB_FIRST;
-    canvas->requiredImageFormat.bytesPerPixel = 3;
-
-	options=NULL; //shut up compiler
-    return MovieSuccess;
-}
-
 /* Clean up after anything we did during initialization */
-static void glDestroyGlue(Canvas *)
+static void glDestroyGlue(Canvas *canvas)
 {
- 
-    glXDestroyContext(sWindowInfo->display, sWindowInfo->glx.context);
+  glRenderer *renderer = dynamic_cast<glRenderer*>(canvas->mRenderer);   
+  glXDestroyContext(canvas->mXWindow->display, renderer->context);
+  return; 
 }
 
 /***********************************************************************/
 /* Glue routines and data for the X11 renderer
  */
 
-static void x11SwapBuffers(Canvas *)
+static void x11SwapBuffers(Canvas *canvas)
 {
-    if (sWindowInfo->x11.backBuffer) {
-        /* If we're using DBE */
-        XdbeSwapInfo swapInfo;
-        swapInfo.swap_window = sWindowInfo->window;
-        swapInfo.swap_action = globalSwapAction;
-        XdbeSwapBuffers(sWindowInfo->display, &swapInfo, 1);
-        /* Force sync, in case we get no events (dmx) */
-        XSync(sWindowInfo->display, 0);
-    }
+  x11Renderer *renderer = dynamic_cast<x11Renderer*>(canvas->mRenderer); 
+  
+  if (renderer->backBuffer) {
+    /* If we're using DBE */
+    XdbeSwapInfo swapInfo;
+    swapInfo.swap_window = canvas->mXWindow->window;
+    swapInfo.swap_action = globalSwapAction;
+    XdbeSwapBuffers(canvas->mXWindow->display, &swapInfo, 1);
+    /* Force sync, in case we get no events (dmx) */
+    XSync(canvas->mXWindow->display, 0);
+  }
 }
 
 
 static MovieStatus x11FinishInitialization(Canvas *canvas, const ProgramOptions *)
 {
-    X11RendererGlue *glueInfo;
-
-    /* The X11 Renderer will require this structure to be present in gluePrivateData,
-     * to give it its rendering parameters
-     */
-    glueInfo = (X11RendererGlue *)calloc(1, sizeof(X11RendererGlue));
-    if (glueInfo == NULL) {
-        ERROR("Cannot allocate X11 renderer info");
-        return MovieFailure;
-    }
-
-    /* This graphics context and font will be used for rendering status messages,
-     * and as such are owned here, by the UserInterface.
-     */
-    sWindowInfo->x11.gc = XCreateGC(sWindowInfo->display, sWindowInfo->window, 0, NULL);
-    XSetFont(sWindowInfo->display, sWindowInfo->x11.gc, sWindowInfo->fontInfo->fid);
-    XSetForeground(sWindowInfo->display, sWindowInfo->x11.gc,
-           WhitePixel(sWindowInfo->display, sWindowInfo->screenNumber));
-
-    sWindowInfo->x11.backBuffer = XdbeAllocateBackBufferName(sWindowInfo->display,
-                                        sWindowInfo->window, globalSwapAction);
-
-    glueInfo->display = sWindowInfo->display;
-    glueInfo->visual = sWindowInfo->visInfo->visual;
-    glueInfo->depth = sWindowInfo->visInfo->depth;
-    if (sWindowInfo->x11.backBuffer) {
-        glueInfo->doubleBuffered = 1;
-        glueInfo->drawable = sWindowInfo->x11.backBuffer;
-    }
-    else {
-        glueInfo->doubleBuffered = 0;
-        glueInfo->drawable = sWindowInfo->window;
-    }
-    glueInfo->gc = sWindowInfo->x11.gc;
-    glueInfo->fontHeight = sWindowInfo->fontHeight;
-    canvas->gluePrivateData = glueInfo;
-
-    /* Specify our required format.  Note that 24-bit X11 images require
-     * *4* bytes per pixel, not 3.
-     */
-    if (sWindowInfo->visInfo->depth > 16) {
-        canvas->requiredImageFormat.bytesPerPixel = 4;
-    }
-    else if (sWindowInfo->visInfo->depth > 8) {
-        canvas->requiredImageFormat.bytesPerPixel = 2;
-    }
-    else {
-        canvas->requiredImageFormat.bytesPerPixel = 1;
-    }
-    canvas->requiredImageFormat.scanlineByteMultiple = BitmapPad(sWindowInfo->display)/8;
-
-    /* If the bytesPerPixel value is 3 or 4, we don't need these;
-     * but we'll put them in anyway.
-     */
-    canvas->requiredImageFormat.redShift = ComputeShift(sWindowInfo->visInfo->visual->red_mask) - 8;
-    canvas->requiredImageFormat.greenShift = ComputeShift(sWindowInfo->visInfo->visual->green_mask) - 8;
-    canvas->requiredImageFormat.blueShift = ComputeShift(sWindowInfo->visInfo->visual->blue_mask) - 8;
-    canvas->requiredImageFormat.redMask = sWindowInfo->visInfo->visual->red_mask;
-    canvas->requiredImageFormat.greenMask = sWindowInfo->visInfo->visual->green_mask;
-    canvas->requiredImageFormat.blueMask = sWindowInfo->visInfo->visual->blue_mask;
-    canvas->requiredImageFormat.byteOrder = ImageByteOrder(sWindowInfo->display);
-    canvas->requiredImageFormat.rowOrder = TOP_TO_BOTTOM;
-
-
-    return MovieSuccess;
+  X11RendererGlue *glueInfo;
+  x11Renderer *renderer = dynamic_cast<x11Renderer*>(canvas->mRenderer); 
+  
+  /* The X11 Renderer will require this structure to be present in gluePrivateData,
+   * to give it its rendering parameters
+   */
+  glueInfo = (X11RendererGlue *)calloc(1, sizeof(X11RendererGlue));
+  if (glueInfo == NULL) {
+    ERROR("Cannot allocate X11 renderer info");
+    return MovieFailure;
+  }
+  
+  /* This graphics context and font will be used for rendering status messages,
+   * and as such are owned here, by the UserInterface.
+   */
+  renderer->gc = XCreateGC(canvas->mXWindow->display, canvas->mXWindow->window, 0, NULL);
+  XSetFont(canvas->mXWindow->display, renderer->gc, canvas->mXWindow->fontInfo->fid);
+  XSetForeground(canvas->mXWindow->display, renderer->gc,
+                 WhitePixel(canvas->mXWindow->display, canvas->mXWindow->screenNumber));
+  
+  renderer->backBuffer = 
+    XdbeAllocateBackBufferName(canvas->mXWindow->display,
+                               canvas->mXWindow->window, globalSwapAction);
+  
+  glueInfo->display = canvas->mXWindow->display;
+  glueInfo->visual = canvas->mXWindow->visInfo->visual;
+  glueInfo->depth = canvas->mXWindow->visInfo->depth;
+  if (renderer->backBuffer) {
+    glueInfo->doubleBuffered = 1;
+    glueInfo->drawable = renderer->backBuffer;
+  }
+  else {
+    glueInfo->doubleBuffered = 0;
+    glueInfo->drawable = canvas->mXWindow->window;
+  }
+  glueInfo->gc = renderer->gc;
+  glueInfo->fontHeight = canvas->mXWindow->fontHeight;
+  canvas->gluePrivateData = glueInfo;
+  
+  /* Specify our required format.  Note that 24-bit X11 images require
+   * *4* bytes per pixel, not 3.
+   */
+  if (canvas->mXWindow->visInfo->depth > 16) {
+    canvas->requiredImageFormat.bytesPerPixel = 4;
+  }
+  else if (canvas->mXWindow->visInfo->depth > 8) {
+    canvas->requiredImageFormat.bytesPerPixel = 2;
+  }
+  else {
+    canvas->requiredImageFormat.bytesPerPixel = 1;
+  }
+  canvas->requiredImageFormat.scanlineByteMultiple = BitmapPad(canvas->mXWindow->display)/8;
+  
+  /* If the bytesPerPixel value is 3 or 4, we don't need these;
+   * but we'll put them in anyway.
+   */
+  canvas->requiredImageFormat.redShift = ComputeShift(canvas->mXWindow->visInfo->visual->red_mask) - 8;
+  canvas->requiredImageFormat.greenShift = ComputeShift(canvas->mXWindow->visInfo->visual->green_mask) - 8;
+  canvas->requiredImageFormat.blueShift = ComputeShift(canvas->mXWindow->visInfo->visual->blue_mask) - 8;
+  canvas->requiredImageFormat.redMask = canvas->mXWindow->visInfo->visual->red_mask;
+  canvas->requiredImageFormat.greenMask = canvas->mXWindow->visInfo->visual->green_mask;
+  canvas->requiredImageFormat.blueMask = canvas->mXWindow->visInfo->visual->blue_mask;
+  canvas->requiredImageFormat.byteOrder = ImageByteOrder(canvas->mXWindow->display);
+  canvas->requiredImageFormat.rowOrder = TOP_TO_BOTTOM;
+  
+  
+  return MovieSuccess;
 }
 
 static void x11DestroyGlue(Canvas *canvas)
 {
-    X11RendererGlue *glueInfo = (X11RendererGlue *)canvas->gluePrivateData;
-
-    XFreeGC(sWindowInfo->display, sWindowInfo->x11.gc);
-
-    free(glueInfo);
+  X11RendererGlue *glueInfo = (X11RendererGlue *)canvas->gluePrivateData;
+  
+  XFreeGC(canvas->mXWindow->display, dynamic_cast<x11Renderer*>(canvas->mRenderer)->gc);
+  
+  free(glueInfo);
 }
 
 
 RendererSpecificGlue x11RendererSpecificGlue = {
-    pureC_x11ChooseVisual,
-    x11FinishInitialization,
-    x11DestroyGlue,
-    NULL,               /* use Renderer's DrawString routine */
-    NULL,               /* no BeforeRender routine necessary */
-    NULL,               /* no AfterRender routine necessary */
-    x11SwapBuffers
+  pureC_x11ChooseVisual,
+  x11FinishInitialization,
+  x11DestroyGlue,
+  NULL,               /* use Renderer's DrawString routine */
+  NULL,               /* no BeforeRender routine necessary */
+  NULL,               /* no AfterRender routine necessary */
+  x11SwapBuffers
 };
 
 
 RendererSpecificGlue glRendererSpecificGlue = {
-    glChooseVisual,
-    glFinishInitialization,
-    glDestroyGlue,
-    glDrawString,
-    glBeforeRender,
-    NULL,               /* no AfterRender routine necessary */
-    glSwapBuffers
+  glChooseVisual,
+  NULL,
+  glDestroyGlue,
+  glDrawString,
+  glBeforeRender,
+  NULL,               /* no AfterRender routine necessary */
+  glSwapBuffers
 };
 
 
 RendererSpecificGlue glStereoRendererSpecificGlue = {
-    glStereoChooseVisual,
-    glFinishInitialization,
-    glDestroyGlue,
-    glDrawString,
-    glBeforeRender,
-    NULL,               /* no AfterRender routine necessary */
-    glSwapBuffers
+  glStereoChooseVisual,
+  NULL,
+  glDestroyGlue,
+  glDrawString,
+  glBeforeRender,
+  NULL,               /* no AfterRender routine necessary */
+  glSwapBuffers
 };
 
-/*
-static RendererGlue GLGlue = {
-    &glRenderer,
-    &GLRendererSpecificGlue
-};
-
-static RendererGlue GLStereoGlue = {
-    &glRendererStereo,
-    &GLStereoRendererSpecificGlue
-};
-
-
-static RendererGlue GLTextureGlue = {
-    &glTextureRenderer,
-    &GLRendererSpecificGlue
-};
-*/ 
 #ifdef USE_DMX
 
 /***********************************************************************/
@@ -1099,18 +994,6 @@ static MovieStatus dmxFinishInitialization(Canvas *, const ProgramOptions *)
   return MovieSuccess; 
 }
 
-Display *xwindow_GetDisplay(void){
-  return sWindowInfo->display; 
-}
-
-Window xwindow_GetWindow(void){
-  return sWindowInfo->window; 
-}
-
-int xwindow_GetFontHeight(void){
-  return sWindowInfo->fontHeight; 
-}
- 
 
 
 RendererSpecificGlue dmxRendererSpecificGlue = {
@@ -1150,25 +1033,3 @@ RendererSpecificGlue *GetRendererSpecificGlueByName(QString name) {
   return NULL; 
  
 }
-/* RendererGlue *x11_supportedRendererGlueChoices[] = {
-  &GLGlue,
-  &GLTextureGlue,
-  &X11Glue,
-  &GLStereoGlue,
-#ifdef USE_DMX
-  &DMXGlue,
-#endif
-  NULL
-};
-
-UserInterface x11UserInterface = {
-    NAME,
-    DESCRIPTION,
-    //x11_supportedRendererGlueChoices,
-    //xwindow_HandleOptions,
-    xwindow_Initialize,
-    NULL // no ChooseFile implementation 
-
-};
-*/ 
-
