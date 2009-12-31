@@ -30,8 +30,8 @@
 //  =============================================================
 //  dmxRenderer -- launch and connect remote slaves at startup, manage them
 //  =============================================================
-dmxRenderer::dmxRenderer(ProgramOptions *opt, Canvas *canvas, QObject* parent):
-  QObject(parent), NewRenderer(opt, canvas, "dmx"), mAllowIdleSlaves(true), 
+dmxRenderer::dmxRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QObject* parent):
+  QObject(parent), NewRenderer(opt, canvas, parentWindow, "dmx"), mAllowIdleSlaves(true), 
   mNumActiveSlaves(0), mSlavesReady(false),
   haveDMX(0), 
   dmxWindowInfos(NULL) {
@@ -42,11 +42,7 @@ dmxRenderer::dmxRenderer(ProgramOptions *opt, Canvas *canvas, QObject* parent):
   // from dmx_Initialize():  
   uint16_t i;
   ECHO_FUNCTION(5);
-  
-  mDisplay = canvas->mXWindow->display; 
-  mWindow = canvas->mXWindow->window; 
-  mFontHeight = canvas->mXWindow->fontHeight; 
-  
+   
   if(mOptions->backendRendererName == "") {
     mOptions->backendRendererName = "gl"; 
   } 
@@ -58,7 +54,7 @@ dmxRenderer::dmxRenderer(ProgramOptions *opt, Canvas *canvas, QObject* parent):
   
   
   /* Get DMX info */
-  if (IsDMXDisplay(mDisplay)) {
+  if (IsDMXDisplay(display)) {
     /* This will reset many of the values in gRenderer */
     GetBackendInfo();
   }
@@ -67,7 +63,7 @@ dmxRenderer::dmxRenderer(ProgramOptions *opt, Canvas *canvas, QObject* parent):
     FakeBackendInfo();
 #else
     ERROR("'%s' is not a DMX display, exiting.",
-          DisplayString(mDisplay));
+          DisplayString(display));
     exit(1);
 #endif
   }
@@ -413,7 +409,7 @@ void dmxRenderer::GetBackendInfo(void)
   int i, numScreens; 
   haveDMX = 0;
     
-  DMXGetScreenCount(mDisplay, &numScreens);
+  DMXGetScreenCount(display, &numScreens);
   if ((uint32_t)numScreens != dmxScreenInfos.size()) {
 	ClearScreenInfos(); 
 	for (i = 0; i < numScreens; i++) {
@@ -423,7 +419,7 @@ void dmxRenderer::GetBackendInfo(void)
 	dmxWindowInfos = new DMXWindowInfo[numScreens]; 
   }
   for (i = 0; i < numScreens; i++) {
-	if (!DMXGetScreenInfo(mDisplay, i, dmxScreenInfos[i])) {
+	if (!DMXGetScreenInfo(display, i, dmxScreenInfos[i])) {
 	  ERROR("Could not get screen information for screen %d\n", i);
 	  ClearScreenInfos(); 
 	  return;
@@ -435,12 +431,12 @@ void dmxRenderer::GetBackendInfo(void)
 	Ask DMX how many screens our window is overlapping and by how much.
 	There is one windowInfo info for each screen our window overlaps 
    */ 
-  if (!DMXGetWindowInfo(mDisplay,
-						mWindow, &numValidWindowInfos,
+  if (!DMXGetWindowInfo(display,
+						window, &numValidWindowInfos,
 						numScreens,
 						dmxWindowInfos)) {
 	ERROR("Could not get window information for 0x%x\n",
-		  (int) mWindow);
+		  (int) window);
 	ClearScreenInfos(); 
 	return;
   }

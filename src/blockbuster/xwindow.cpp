@@ -85,14 +85,13 @@ static int globalSync = 0; // this used to be a user option, now it's  static.
 /* This function is called to initialize an already-allocated Canvas.
  * The Glue information is already copied into place.
  */
-XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, qint32 uiData):
+XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, Window parentWin):
   mOptions(options), mCanvas(canvas), display(NULL), 
   visInfo(NULL), screenNumber(0), window(0), isSubWindow(0), 
   fontInfo(NULL), fontHeight(0),  mShowCursor(true) {
   ECHO_FUNCTION(5);
   RendererSpecificGlue *rendererGlue = 
     GetRendererSpecificGlueByName(options->mOldRenderer->name); 
-  Window parentWindow = (Window) uiData;
   const Rectangle *geometry = &options->geometry;
   int decorations = options->decorations;
   QString suggestedName = options->suggestedTitle;
@@ -117,7 +116,7 @@ XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, qint32 uiData):
     (void) XSynchronize(display, True);
   }
   
-  if (parentWindow)
+  if (parentWin)
     isSubWindow = 1;
   
   /* Get the screen and do some sanity checks */
@@ -210,7 +209,7 @@ XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, qint32 uiData):
   windowAttrs.border_pixel = 0x0;
   windowAttrs.colormap = colormap;
   windowAttrs.event_mask = StructureNotifyMask | ExposureMask;
-  if (parentWindow) {
+  if (parentWin) {
     /* propogate mouse/keyboard events to parent */
   }
   else {
@@ -218,10 +217,10 @@ XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, qint32 uiData):
                                ButtonReleaseMask | ButtonMotionMask);
   }
   
-  if (!parentWindow)
-    parentWindow = RootWindow(display, screenNumber);
+  if (!parentWin)
+    parentWin = RootWindow(display, screenNumber);
   
-  window = XCreateWindow(display, parentWindow,
+  window = XCreateWindow(display, parentWin,
                                       x, y, width, height,
                                       winBorder, visInfo->depth, InputOutput,
                                       visInfo->visual, windowAttrsMask, &windowAttrs);
@@ -430,9 +429,9 @@ void ResizeXWindow(Canvas *canvas, int newWidth, int newHeight, int cameFromX){
     values.width = newWidth;
     values.height = newHeight;
     mask = CWWidth | CWHeight;
-    XConfigureWindow(canvas->mXWindow->display, canvas->mXWindow->window, mask, &values);
+    XConfigureWindow(canvas->mRenderer->display, canvas->mRenderer->window, mask, &values);
     /* Force sync, in case we get no events (dmx) */
-    XSync(canvas->mXWindow->display, 0);
+    XSync(canvas->mRenderer->display, 0);
 
     canvas->width = newWidth;
     canvas->height = newHeight;
@@ -454,12 +453,12 @@ void MoveXWindow(Canvas *canvas, int newX, int newY, int cameFromX) {
     return; 
   }
    bb_assert(canvas);
-    //bb_assert(canvas->mXWindow->isSubWindow);
-    XMoveWindow(canvas->mXWindow->display, canvas->mXWindow->window, newX, newY);
+    //bb_assert(canvas->mRenderer->isSubWindow);
+    XMoveWindow(canvas->mRenderer->display, canvas->mRenderer->window, newX, newY);
     canvas->XPos = newX;  
     canvas->YPos = newY; 
     /* Force sync, in case we get no events (dmx) */
-    XSync(canvas->mXWindow->display, 0);
+    XSync(canvas->mRenderer->display, 0);
 }
 
 
@@ -483,7 +482,7 @@ void MoveXWindow(Canvas *canvas, int newX, int newY, int cameFromX) {
 {
   bool resize=false, move=false; 
     XEvent event;
-    Display *dpy = canvas->mXWindow->display;
+    Display *dpy = canvas->mRenderer->display;
     static  long oldWidth = -1, oldHeight = -1, 
 	  oldX = -1, oldY = -1; 
     if (!block && !XPending(dpy)) {
@@ -646,7 +645,7 @@ void MoveXWindow(Canvas *canvas, int newX, int newY, int cameFromX) {
                             PrintKeyboardControls();
                             break;
                         case 'm':
-                          canvas->mXWindow->ToggleCursor(); 
+                          canvas->mRenderer->ToggleCursor(); 
                           break; 
                         default:
                             DEBUGMSG("unimplemented character '%c'", buffer[0]);
@@ -709,15 +708,15 @@ CloseXWindow(Canvas *canvas)
    if (canvas != NULL) {
 
         /* Give the Glue routines a chance to free themselves */
-        if (canvas->mXWindow != NULL) {
+        if (canvas->mRenderer != NULL) {
             /* Give the Glue routines a chance to free themselves */
-            XDestroyWindow(canvas->mXWindow->display, canvas->mXWindow->window);
-            XFreeFont(canvas->mXWindow->display, canvas->mXWindow->fontInfo);
-            XFree(canvas->mXWindow->visInfo);
-            XFreeColormap(canvas->mXWindow->display, canvas->mXWindow->colormap);
-            XSync(canvas->mXWindow->display, 0);
-            XCloseDisplay(canvas->mXWindow->display);
-            free(canvas->mXWindow);
+            XDestroyWindow(canvas->mRenderer->display, canvas->mRenderer->window);
+            XFreeFont(canvas->mRenderer->display, canvas->mRenderer->fontInfo);
+            XFree(canvas->mRenderer->visInfo);
+            XFreeColormap(canvas->mRenderer->display, canvas->mRenderer->colormap);
+            XSync(canvas->mRenderer->display, 0);
+            XCloseDisplay(canvas->mRenderer->display);
+            free(canvas->mRenderer);
             
         }
     }
@@ -733,7 +732,7 @@ static void glBeforeRender(Canvas *canvas)
 {
     Bool rv;
     glRenderer *renderer = dynamic_cast<glRenderer*>(canvas->mRenderer); 
-    rv = glXMakeCurrent(canvas->mXWindow->display, canvas->mXWindow->window, renderer->context);
+    rv = glXMakeCurrent(canvas->mRenderer->display, canvas->mRenderer->window, renderer->context);
     if (rv == False) {
         WARNING("couldn't make graphics context current before rendering");
     }
@@ -741,7 +740,7 @@ static void glBeforeRender(Canvas *canvas)
 
 static void glSwapBuffers(Canvas *canvas)
 {
-     glXSwapBuffers(canvas->mXWindow->display, canvas->mXWindow->window);
+     glXSwapBuffers(canvas->mRenderer->display, canvas->mRenderer->window);
 }
 
 static XVisualInfo *glChooseVisual(Display *display, int screenNumber)
@@ -789,8 +788,8 @@ static XVisualInfo *glStereoChooseVisual(Display *display, int screenNumber)
  */
 static void glDrawString(Canvas *canvas, int row, int column, const char *str)
 {
-    const int x = (column + 1) * canvas->mXWindow->fontHeight;
-    const int y = (row + 1) * canvas->mXWindow->fontHeight;
+    const int x = (column + 1) * canvas->mRenderer->fontHeight;
+    const int y = (row + 1) * canvas->mRenderer->fontHeight;
     glPushAttrib(GL_CURRENT_BIT);
     glBitmap(0, 0, 0, 0, x, canvas->height - y - 1, NULL);
     glCallLists(strlen(str), GL_UNSIGNED_BYTE, (GLubyte *) str);
@@ -808,11 +807,11 @@ static void x11SwapBuffers(Canvas *canvas)
   if (renderer->backBuffer) {
     /* If we're using DBE */
     XdbeSwapInfo swapInfo;
-    swapInfo.swap_window = canvas->mXWindow->window;
+    swapInfo.swap_window = canvas->mRenderer->window;
     swapInfo.swap_action = renderer->mSwapAction;
-    XdbeSwapBuffers(canvas->mXWindow->display, &swapInfo, 1);
+    XdbeSwapBuffers(canvas->mRenderer->display, &swapInfo, 1);
     /* Force sync, in case we get no events (dmx) */
-    XSync(canvas->mXWindow->display, 0);
+    XSync(canvas->mRenderer->display, 0);
   }
 }
 

@@ -12,7 +12,7 @@
 //======================================================================
 class x11Renderer: public NewRenderer {
  public:
-  x11Renderer(ProgramOptions *opt, Canvas *canvas);
+  x11Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow);
 
   virtual ~x11Renderer() ;
   // this is a no-op for x11, no options are handled
@@ -24,12 +24,8 @@ class x11Renderer: public NewRenderer {
               int destX, int destY, float zoom, int lod);
   
   // from X11RendererGlue
-  Display *display;
-  Visual *visual;
   Drawable drawable;
-  unsigned int depth;
   int doubleBuffered;
-  int fontHeight;
   // was global: 
   XdbeSwapAction mSwapAction;
   // from WindowInfo struct in xwindow.cpp

@@ -553,7 +553,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         panning = 0;
         break;
       case MOVIE_TOGGLE_CURSOR:
-        canvas->mXWindow->ToggleCursor(); 
+        canvas->mRenderer->ToggleCursor(); 
         break; 
       case MOVIE_MOUSE_PRESS_1:
         panning = 1;

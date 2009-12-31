@@ -278,8 +278,8 @@ void  dmx_DrawString(Canvas */*canvas*/, int row, int column, const char *str)
    ECHO_FUNCTION(5);
  if (!gRenderer->numValidWindowInfos) return; 
     
-    int x = (column + 1) * gRenderer->mFontHeight;
-    int y = (row + 1) * gRenderer->mFontHeight;
+    int x = (column + 1) * gRenderer->fontHeight;
+    int y = (row + 1) * gRenderer->fontHeight;
     int i;
 
     /* Send DrawString to back-end renderers, with appropriate offsets */
@@ -289,8 +289,8 @@ void  dmx_DrawString(Canvas */*canvas*/, int row, int column, const char *str)
 
             int tx = x - gRenderer->dmxWindowInfos[i].vis.x;
             int ty = y - gRenderer->dmxWindowInfos[i].vis.y;
-            int tcol = tx / gRenderer->mFontHeight - 1;
-            int trow = ty / gRenderer->mFontHeight - 1;
+            int tcol = tx / gRenderer->fontHeight - 1;
+            int trow = ty / gRenderer->fontHeight - 1;
 
             gRenderer->mActiveSlaves[scrn]->
 			  SendMessage(QString("DrawString %1 %2")

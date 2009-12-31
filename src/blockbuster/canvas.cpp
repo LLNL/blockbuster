@@ -68,12 +68,9 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
 	this->threads = mOptions->readerThreads;
 	this->cachesize = mOptions->frameCacheSize;
 
-    /* Initialize the xwindows side of things
-     */
-    mXWindow = new XWindow(this, mOptions, parentWindowID); 
-  
+    
     /* Renderer can initialize now. */
-    mRenderer = NewRenderer::CreateRenderer(mOptions, this); 
+    mRenderer = NewRenderer::CreateRenderer(mOptions, this, parentWindowID); 
     if (!mRenderer) {
       ERROR(QString("Badness:  cannot create renderer \"%1\"\n").
             arg(mOptions->rendererName)); 
@@ -135,7 +132,7 @@ void Canvas::ReportFrameListChange(const FrameList *frameList) {
     QString moviename = frameList->getFrame(0)->filename; 
     if (moviename.size() > 32) moviename = QString("...") + moviename.right(32); 
     mBlockbusterInterface->setTitle(QString("Blockbuster Control (%1)").arg(moviename)); 
-    mXWindow->SetTitle(QString("Blockbuster (%1)").arg(moviename)); 
+    mRenderer->SetTitle(QString("Blockbuster (%1)").arg(moviename)); 
   }
   return; 
 }

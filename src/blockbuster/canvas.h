@@ -84,7 +84,6 @@
       // this will replaces all the above function pointers. 
      NewRenderer *mRenderer; 
 
-     XWindow *mXWindow; 
 
 
     /**************************************************************/

@@ -37,28 +37,28 @@
 
 #include "glRenderer.h"
 
-glRenderer::glRenderer(ProgramOptions *opt, Canvas *canvas, QString name):
-  NewRenderer(opt, canvas, name) {
+glRenderer::glRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QString name):
+  NewRenderer(opt, canvas, parentWindow, name) {
 
   // from glFinishInitialization: 
   Bool rv;
-  Font id = canvas->mXWindow->fontInfo->fid;
-  unsigned int first = canvas->mXWindow->fontInfo->min_char_or_byte2;
-  unsigned int last = canvas->mXWindow->fontInfo->max_char_or_byte2;
+  Font id = fontInfo->fid;
+  unsigned int first = fontInfo->min_char_or_byte2;
+  unsigned int last = fontInfo->max_char_or_byte2;
   //  glRenderer *renderer = dynamic_cast<glRenderer*>(canvas->mRenderer); 
   
   /* All GL rendering in X11 requires a glX context. */
-  context = glXCreateContext(canvas->mXWindow->display, canvas->mXWindow->visInfo,
+  context = glXCreateContext(display, visInfo,
                                        NULL, GL_TRUE);
   if (!context) {
     ERROR("couldn't create GLX context");
     return ;
   }
   
-  rv = glXMakeCurrent(canvas->mXWindow->display, canvas->mXWindow->window, context);
+  rv = glXMakeCurrent(display, window, context);
   if (rv == False) {
     ERROR("couldn't make graphics context current");
-    glXDestroyContext(canvas->mXWindow->display, context);
+    glXDestroyContext(display, context);
     return ;
   }
   
@@ -68,7 +68,7 @@ glRenderer::glRenderer(ProgramOptions *opt, Canvas *canvas, QString name):
   fontBase = glGenLists((GLuint) last + 1);
   if (!fontBase) {
     ERROR("Unable to allocate display lists for fonts");
-    glXDestroyContext(canvas->mXWindow->display, context);
+    glXDestroyContext(display, context);
     return ;
   }
   
@@ -88,7 +88,7 @@ glRenderer::glRenderer(ProgramOptions *opt, Canvas *canvas, QString name):
 
 //=============================================================
 glRenderer::~glRenderer() {
-  glXDestroyContext(mCanvas->mXWindow->display, context);
+  glXDestroyContext(display, context);
   return; 
 }
 
@@ -442,7 +442,7 @@ void glStereoRenderer::Render(int frameNumber,
 // glTextureRenderer
 // ==========================================================
 
-glTextureRenderer::glTextureRenderer(ProgramOptions *opt, Canvas *canvas):
-  glRenderer(opt, canvas, "gltexture") {
+glTextureRenderer::glTextureRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow):
+  glRenderer(opt, canvas, parentWindow, "gltexture") {
   return; 
 }

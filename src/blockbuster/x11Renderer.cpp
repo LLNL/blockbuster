@@ -20,23 +20,20 @@
 
 #include "canvas.h" // POISON -- temporary -- x11Renderer should not know about canvases.
 
-x11Renderer::x11Renderer(ProgramOptions *opt, Canvas *canvas):
-  NewRenderer(opt, canvas, "x11"), mSwapAction(XdbeBackground) {
+x11Renderer::x11Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow):
+  NewRenderer(opt, canvas, parentWindow, "x11"), mSwapAction(XdbeBackground) {
   
-  display = canvas->mXWindow->display;
-  visual = canvas->mXWindow->visInfo->visual;
-  depth = canvas->mXWindow->visInfo->depth;
    
   /* This graphics context and font will be used for rendering status messages,
    * and as such are owned here, by the UserInterface.
    */
-  gc = XCreateGC(display, canvas->mXWindow->window, 0, NULL);
-  XSetFont(display, gc, canvas->mXWindow->fontInfo->fid);
+  gc = XCreateGC(display, window, 0, NULL);
+  XSetFont(display, gc, fontInfo->fid);
   XSetForeground(display, gc,
-                 WhitePixel(display, canvas->mXWindow->screenNumber));
+                 WhitePixel(display, screenNumber));
   
   backBuffer = 
-    XdbeAllocateBackBufferName(display, canvas->mXWindow->window, mSwapAction);
+    XdbeAllocateBackBufferName(display, window, mSwapAction);
   
  if (backBuffer) {
     doubleBuffered = 1;
@@ -44,35 +41,34 @@ x11Renderer::x11Renderer(ProgramOptions *opt, Canvas *canvas):
   }
   else {
     doubleBuffered = 0;
-    drawable = canvas->mXWindow->window;
+    drawable = window;
   }
   gc = gc;
-  fontHeight = canvas->mXWindow->fontHeight;
   
   /* Specify our required format.  Note that 24-bit X11 images require
    * *4* bytes per pixel, not 3.
    */
-  if (canvas->mXWindow->visInfo->depth > 16) {
+  if (visInfo->depth > 16) {
     canvas->requiredImageFormat.bytesPerPixel = 4;
   }
-  else if (canvas->mXWindow->visInfo->depth > 8) {
+  else if (visInfo->depth > 8) {
     canvas->requiredImageFormat.bytesPerPixel = 2;
   }
   else {
     canvas->requiredImageFormat.bytesPerPixel = 1;
   }
-  canvas->requiredImageFormat.scanlineByteMultiple = BitmapPad(canvas->mXWindow->display)/8;
+  canvas->requiredImageFormat.scanlineByteMultiple = BitmapPad(display)/8;
   
   /* If the bytesPerPixel value is 3 or 4, we don't need these;
    * but we'll put them in anyway.
    */
-  canvas->requiredImageFormat.redShift = ComputeShift(canvas->mXWindow->visInfo->visual->red_mask) - 8;
-  canvas->requiredImageFormat.greenShift = ComputeShift(canvas->mXWindow->visInfo->visual->green_mask) - 8;
-  canvas->requiredImageFormat.blueShift = ComputeShift(canvas->mXWindow->visInfo->visual->blue_mask) - 8;
-  canvas->requiredImageFormat.redMask = canvas->mXWindow->visInfo->visual->red_mask;
-  canvas->requiredImageFormat.greenMask = canvas->mXWindow->visInfo->visual->green_mask;
-  canvas->requiredImageFormat.blueMask = canvas->mXWindow->visInfo->visual->blue_mask;
-  canvas->requiredImageFormat.byteOrder = ImageByteOrder(canvas->mXWindow->display);
+  canvas->requiredImageFormat.redShift = ComputeShift(visInfo->visual->red_mask) - 8;
+  canvas->requiredImageFormat.greenShift = ComputeShift(visInfo->visual->green_mask) - 8;
+  canvas->requiredImageFormat.blueShift = ComputeShift(visInfo->visual->blue_mask) - 8;
+  canvas->requiredImageFormat.redMask = visInfo->visual->red_mask;
+  canvas->requiredImageFormat.greenMask = visInfo->visual->green_mask;
+  canvas->requiredImageFormat.blueMask = visInfo->visual->blue_mask;
+  canvas->requiredImageFormat.byteOrder = ImageByteOrder(display);
   canvas->requiredImageFormat.rowOrder = TOP_TO_BOTTOM;
   
     return; 
@@ -196,8 +192,8 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
   }
   
   xImage = XCreateImage(display, 
-                        visual, 
-                        depth,
+                        visInfo->visual, 
+                        visInfo->depth,
                         ZPixmap,
                          0, /* no offset to the image data */
                         start,

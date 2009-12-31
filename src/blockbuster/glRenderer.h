@@ -8,7 +8,7 @@
 /* Base GL rendering class for all other GL renderers */ 
 class glRenderer: public NewRenderer {
  public:
-  glRenderer(ProgramOptions *opt, Canvas *canvas, QString name="gl");
+  glRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QString name="gl");
 
   virtual ~glRenderer() ;
   // this is a no-op for glRenderers: 
@@ -27,8 +27,8 @@ class glRenderer: public NewRenderer {
 
 class glStereoRenderer: public glRenderer {
  public:
-  glStereoRenderer(ProgramOptions *opt, Canvas *canvas):
-    glRenderer(opt, canvas, "gl_stereo") {
+  glStereoRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow):
+    glRenderer(opt, canvas, parentWindow, "gl_stereo") {
     return; 
   }
   virtual ~glStereoRenderer() {}
@@ -41,7 +41,7 @@ class glStereoRenderer: public glRenderer {
 
 class glTextureRenderer: public glRenderer {
  public:
-  glTextureRenderer(ProgramOptions *opt, Canvas *canvas);
+  glTextureRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow);
   virtual ~glTextureRenderer() {}
   
   
