@@ -79,6 +79,13 @@ x11Renderer::x11Renderer(ProgramOptions *opt, Canvas *canvas):
 }
 
 //====================================================================
+x11Renderer::~x11Renderer() {
+  XFreeGC(display, gc);
+  
+  return; 
+}
+
+//====================================================================
 /* This utility function converts a raw mask into a mask and shift */
 int x11Renderer::ComputeShift(unsigned long mask) {
   register int shiftCount = 0;
