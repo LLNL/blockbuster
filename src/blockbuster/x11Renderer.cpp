@@ -23,6 +23,11 @@
 x11Renderer::x11Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow):
   NewRenderer(opt, canvas, parentWindow, "x11"), mSwapAction(XdbeBackground) {
   
+  ECHO_FUNCTION(5);
+  /* Trivial for gl renderer: */
+  /* Plug in our functions into the canvas */
+  mCanvas->RenderPtr = NULL;
+  mCanvas->DrawStringPtr = NULL;
    
   /* This graphics context and font will be used for rendering status messages,
    * and as such are owned here, by the UserInterface.
@@ -95,6 +100,7 @@ int x11Renderer::ComputeShift(unsigned long mask) {
 //====================================================================
 void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
                          int destX, int destY, float zoom, int lod){
+  ECHO_FUNCTION(5);
   XImage *xImage;
   Image *image;
   char *start;
@@ -109,8 +115,8 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
          imageRegion->x, imageRegion->y, imageRegion->width, imageRegion->height,
          destX, destY, zoom, lod);
 #endif
-  
-  if (mCanvas->frameList->stereo) {
+    
+  if (mFrameList->stereo) {
     localFrameNumber = frameNumber *2; /* we'll display left frame only */
   }
   else {
@@ -120,7 +126,7 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
   /*
    * Compute possibly reduced-resolution image region to display.
    */
-  bb_assert(lod <= mCanvas->frameList->getFrame(localFrameNumber)->maxLOD);
+  bb_assert(lod <= mFrameList->getFrame(localFrameNumber)->maxLOD);
   lodScale = 1 << lod;
   region.x = imageRegion->x / lodScale;
   region.y = imageRegion->y / lodScale;
@@ -129,7 +135,7 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
   zoom *= (float) lodScale;
   
   /* Pull the image from our cache */
-  image = mCanvas->mRenderer->GetImage(localFrameNumber, &region, lod);
+  image = GetImage(localFrameNumber, &region, lod);
   if (image == NULL) {
     /* error has already been reported */
     return;
@@ -164,7 +170,7 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
      * that's in the cache.  But we'll have to free this
      * image later.
      */
-    mCanvas->mRenderer->ReleaseImage(image);
+    ReleaseImage(image);
     image = zoomedImage;
     if (image == NULL) {
       /* error has already been reported */
@@ -191,11 +197,11 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
     start = (char *) image->imageData;
   }
   
-  xImage = XCreateImage(display, 
-                        visInfo->visual, 
+  xImage = XCreateImage(display,
+                        visInfo->visual,
                         visInfo->depth,
                         ZPixmap,
-                         0, /* no offset to the image data */
+                        0, /* no offset to the image data */
                         start,
                         subWidth,
                         subHeight,
@@ -278,6 +284,17 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
   }
 }
 
+void 
+x11Renderer::DrawString(int row, int column, const char *str)
+{
+  ECHO_FUNCTION(5);
+  int x = (column + 1) * fontHeight;
+  int y = (row + 1) * fontHeight;
+  XDrawString(display,
+              drawable,
+              gc, 
+              x, y, str, strlen(str));
+}
 
 
 

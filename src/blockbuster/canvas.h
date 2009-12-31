@@ -61,8 +61,9 @@
     */
      void Render(struct Canvas *canvas, int frameNumber,
                  const Rectangle *imageRegion,
-                 int destX, int destY, float zoom, int lod) {
+                 int destX, int destY, float zoom, int lod) {       
        if (RenderPtr) RenderPtr(canvas, frameNumber, imageRegion, destX, destY, zoom, lod); 
+       else mRenderer->Render(frameNumber, imageRegion, destX, destY, zoom, lod);
      } 
      void (*RenderPtr)(struct Canvas *canvas, int frameNumber,
                        const Rectangle *imageRegion,
@@ -176,6 +177,7 @@
      */
      void DrawString(struct Canvas *canvas, int row, int column, const char *str) {
        if (DrawStringPtr) DrawStringPtr(canvas, row, column, str); 
+       else mRenderer->DrawString(row, column, str); 
      }
     void (*DrawStringPtr)(struct Canvas *canvas, int row, int column, const char *str);
 
