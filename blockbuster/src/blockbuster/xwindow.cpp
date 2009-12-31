@@ -375,17 +375,6 @@ void XWindow::remove_mwm_border(void )
    return; 
 }
 
-/* This utility function converts a raw mask into a mask and shift */
-int ComputeShift(unsigned long mask)
-{
-    register int shiftCount = 0;
-    while (mask != 0) {
-	mask >>= 1;
-	shiftCount++;
-    }
-    return shiftCount;
-}
-
 
 /* Possible swap actions: 
     {"undefined", XdbeUndefined, "back buffer becomes undefined on swap"},
@@ -393,8 +382,6 @@ int ComputeShift(unsigned long mask)
 -    {"untouched", XdbeUntouched, "back buffer is contents of front buffer on swap"},
 -    {"copied", XdbeCopied, "back buffer is held constant on swap"},
 */ 
-static XdbeSwapAction globalSwapAction = XdbeBackground;
-
 
 //======================================================   
 void XWindow::ShowCursor(bool show) {
@@ -862,84 +849,13 @@ static void x11SwapBuffers(Canvas *canvas)
     /* If we're using DBE */
     XdbeSwapInfo swapInfo;
     swapInfo.swap_window = canvas->mXWindow->window;
-    swapInfo.swap_action = globalSwapAction;
+    swapInfo.swap_action = renderer->mSwapAction;
     XdbeSwapBuffers(canvas->mXWindow->display, &swapInfo, 1);
     /* Force sync, in case we get no events (dmx) */
     XSync(canvas->mXWindow->display, 0);
   }
 }
 
-
-static MovieStatus x11FinishInitialization(Canvas *canvas, const ProgramOptions *)
-{
-  X11RendererGlue *glueInfo;
-  x11Renderer *renderer = dynamic_cast<x11Renderer*>(canvas->mRenderer); 
-  
-  /* The X11 Renderer will require this structure to be present in gluePrivateData,
-   * to give it its rendering parameters
-   */
-  glueInfo = (X11RendererGlue *)calloc(1, sizeof(X11RendererGlue));
-  if (glueInfo == NULL) {
-    ERROR("Cannot allocate X11 renderer info");
-    return MovieFailure;
-  }
-  
-  /* This graphics context and font will be used for rendering status messages,
-   * and as such are owned here, by the UserInterface.
-   */
-  renderer->gc = XCreateGC(canvas->mXWindow->display, canvas->mXWindow->window, 0, NULL);
-  XSetFont(canvas->mXWindow->display, renderer->gc, canvas->mXWindow->fontInfo->fid);
-  XSetForeground(canvas->mXWindow->display, renderer->gc,
-                 WhitePixel(canvas->mXWindow->display, canvas->mXWindow->screenNumber));
-  
-  renderer->backBuffer = 
-    XdbeAllocateBackBufferName(canvas->mXWindow->display,
-                               canvas->mXWindow->window, globalSwapAction);
-  
-  glueInfo->display = canvas->mXWindow->display;
-  glueInfo->visual = canvas->mXWindow->visInfo->visual;
-  glueInfo->depth = canvas->mXWindow->visInfo->depth;
-  if (renderer->backBuffer) {
-    glueInfo->doubleBuffered = 1;
-    glueInfo->drawable = renderer->backBuffer;
-  }
-  else {
-    glueInfo->doubleBuffered = 0;
-    glueInfo->drawable = canvas->mXWindow->window;
-  }
-  glueInfo->gc = renderer->gc;
-  glueInfo->fontHeight = canvas->mXWindow->fontHeight;
-  canvas->gluePrivateData = glueInfo;
-  
-  /* Specify our required format.  Note that 24-bit X11 images require
-   * *4* bytes per pixel, not 3.
-   */
-  if (canvas->mXWindow->visInfo->depth > 16) {
-    canvas->requiredImageFormat.bytesPerPixel = 4;
-  }
-  else if (canvas->mXWindow->visInfo->depth > 8) {
-    canvas->requiredImageFormat.bytesPerPixel = 2;
-  }
-  else {
-    canvas->requiredImageFormat.bytesPerPixel = 1;
-  }
-  canvas->requiredImageFormat.scanlineByteMultiple = BitmapPad(canvas->mXWindow->display)/8;
-  
-  /* If the bytesPerPixel value is 3 or 4, we don't need these;
-   * but we'll put them in anyway.
-   */
-  canvas->requiredImageFormat.redShift = ComputeShift(canvas->mXWindow->visInfo->visual->red_mask) - 8;
-  canvas->requiredImageFormat.greenShift = ComputeShift(canvas->mXWindow->visInfo->visual->green_mask) - 8;
-  canvas->requiredImageFormat.blueShift = ComputeShift(canvas->mXWindow->visInfo->visual->blue_mask) - 8;
-  canvas->requiredImageFormat.redMask = canvas->mXWindow->visInfo->visual->red_mask;
-  canvas->requiredImageFormat.greenMask = canvas->mXWindow->visInfo->visual->green_mask;
-  canvas->requiredImageFormat.blueMask = canvas->mXWindow->visInfo->visual->blue_mask;
-  canvas->requiredImageFormat.byteOrder = ImageByteOrder(canvas->mXWindow->display);
-  canvas->requiredImageFormat.rowOrder = TOP_TO_BOTTOM;
-  
-  
-  return MovieSuccess;
-}
 
 static void x11DestroyGlue(Canvas *canvas)
 {
@@ -953,7 +869,7 @@ static void x11DestroyGlue(Canvas *canvas)
 
 RendererSpecificGlue x11RendererSpecificGlue = {
   pureC_x11ChooseVisual,
-  x11FinishInitialization,
+  NULL,
   x11DestroyGlue,
   NULL,               /* use Renderer's DrawString routine */
   NULL,               /* no BeforeRender routine necessary */
@@ -988,17 +904,12 @@ RendererSpecificGlue glStereoRendererSpecificGlue = {
 /***********************************************************************/
 /* Glue routines and data for the DMX renderer
  */
-// REMOVE ME WHEN POSSIBLE:  
-static MovieStatus dmxFinishInitialization(Canvas *, const ProgramOptions *)
-{
-  return MovieSuccess; 
-}
 
 
 
 RendererSpecificGlue dmxRendererSpecificGlue = {
   pureC_x11ChooseVisual,            /* same as X11 */
-  dmxFinishInitialization,
+  NULL,
   NULL,
   NULL,                       /* use Renderer's DrawString routine */
   NULL,                       /* no BeforeRender routine necessary */
