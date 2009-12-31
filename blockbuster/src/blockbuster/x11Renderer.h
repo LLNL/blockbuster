@@ -14,7 +14,7 @@ class x11Renderer: public NewRenderer {
  public:
   x11Renderer(ProgramOptions *opt, Canvas *canvas);
 
-  virtual ~x11Renderer() {}
+  virtual ~x11Renderer() ;
   // this is a no-op for x11, no options are handled
   //  void HandleOptions(int &argc, char *argv[]);
   int ComputeShift(unsigned long mask);

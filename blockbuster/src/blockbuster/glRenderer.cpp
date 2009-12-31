@@ -86,6 +86,13 @@ glRenderer::glRenderer(ProgramOptions *opt, Canvas *canvas, QString name):
   return; 
 }
 
+//=============================================================
+glRenderer::~glRenderer() {
+  glXDestroyContext(mCanvas->mXWindow->display, context);
+  return; 
+}
+
+//=============================================================
 void glRenderer::Render(int frameNumber, 
                         const Rectangle *imageRegion,
                         int destX, int destY, float zoom, int lod){

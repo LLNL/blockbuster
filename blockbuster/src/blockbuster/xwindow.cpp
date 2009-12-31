@@ -829,14 +829,6 @@ static void glDrawString(Canvas *canvas, int row, int column, const char *str)
     glPopAttrib();
 }
 
-/* Clean up after anything we did during initialization */
-static void glDestroyGlue(Canvas *canvas)
-{
-  glRenderer *renderer = dynamic_cast<glRenderer*>(canvas->mRenderer);   
-  glXDestroyContext(canvas->mXWindow->display, renderer->context);
-  return; 
-}
-
 /***********************************************************************/
 /* Glue routines and data for the X11 renderer
  */
@@ -857,20 +849,11 @@ static void x11SwapBuffers(Canvas *canvas)
 }
 
 
-static void x11DestroyGlue(Canvas *canvas)
-{
-  X11RendererGlue *glueInfo = (X11RendererGlue *)canvas->gluePrivateData;
-  
-  XFreeGC(canvas->mXWindow->display, dynamic_cast<x11Renderer*>(canvas->mRenderer)->gc);
-  
-  free(glueInfo);
-}
-
 
 RendererSpecificGlue x11RendererSpecificGlue = {
   pureC_x11ChooseVisual,
   NULL,
-  x11DestroyGlue,
+  NULL,
   NULL,               /* use Renderer's DrawString routine */
   NULL,               /* no BeforeRender routine necessary */
   NULL,               /* no AfterRender routine necessary */
@@ -881,7 +864,7 @@ RendererSpecificGlue x11RendererSpecificGlue = {
 RendererSpecificGlue glRendererSpecificGlue = {
   glChooseVisual,
   NULL,
-  glDestroyGlue,
+  NULL,
   glDrawString,
   glBeforeRender,
   NULL,               /* no AfterRender routine necessary */
@@ -892,7 +875,7 @@ RendererSpecificGlue glRendererSpecificGlue = {
 RendererSpecificGlue glStereoRendererSpecificGlue = {
   glStereoChooseVisual,
   NULL,
-  glDestroyGlue,
+  NULL,
   glDrawString,
   glBeforeRender,
   NULL,               /* no AfterRender routine necessary */

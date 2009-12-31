@@ -10,9 +10,7 @@ class glRenderer: public NewRenderer {
  public:
   glRenderer(ProgramOptions *opt, Canvas *canvas, QString name="gl");
 
-  virtual ~glRenderer() {
-    return; 
-  }
+  virtual ~glRenderer() ;
   // this is a no-op for glRenderers: 
   // virtual void HandleOptions(int &argc, char *argv[]);
 
