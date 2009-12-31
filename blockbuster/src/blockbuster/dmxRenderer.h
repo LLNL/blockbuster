@@ -173,7 +173,7 @@ class DMXSlave: public QObject {
 class dmxRenderer: public QObject, public NewRenderer {
   Q_OBJECT
  public:
-  dmxRenderer(ProgramOptions *opt, Canvas *canvas, QObject *parent = NULL);
+  dmxRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QObject *parent = NULL);
   virtual ~dmxRenderer(); 
 
   void Render(int frameNumber,
@@ -256,11 +256,6 @@ class dmxRenderer: public QObject, public NewRenderer {
   vector<string> files;
   int sentSwapBuffers[MAX_SCREENS]; /* is there an outstanding SwapBuffers? */
   
-  // from DXMRendererGlue
-  Display *mDisplay;
-  Window mWindow;
-  int mFontHeight;
-
 } ; // end dmxRenderer
 
   #endif

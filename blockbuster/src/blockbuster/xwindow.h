@@ -36,8 +36,7 @@ struct Canvas;
 struct ProgramOptions; 
 struct MovieEvent; 
 struct RendererSpecificGlue *GetRendererSpecificGlueByName(QString name);
-MovieStatus xwindow_Initialize(Canvas *canvas, const ProgramOptions *options,
-                               qint32 uiData);
+
 void XWindow_SetTitle(QString title); 
 void GetXEvent(Canvas *canvas, int block, MovieEvent *movieEvent);
 void CloseXWindow(Canvas *canvas);
@@ -54,8 +53,8 @@ void XWindow_ToggleCursor(void);
   int xwindow_GetReaderThreads(void); 
 */ 
 struct XWindow {
-  XWindow(Canvas *canvas,  ProgramOptions *options, qint32 uiData);
-  ~XWindow(){}
+  XWindow(Canvas *canvas,  ProgramOptions *options, Window parentWin);
+  virtual ~XWindow(){}
   void remove_mwm_border(void);
   void ShowCursor(bool show);
   void ToggleCursor(void);

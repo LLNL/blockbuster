@@ -2,15 +2,16 @@
 #define BB_RENDERER_H
 #include "cache.h"
 #include "settings.h"
+#include "xwindow.h"
 
 struct Canvas; 
 /* Base class for all other renderers, defining the API required */ 
 // factory function
 
-class NewRenderer {
+class NewRenderer: public XWindow {
  public:
-  static NewRenderer *CreateRenderer(ProgramOptions*, Canvas*);
-  NewRenderer(ProgramOptions *opt, Canvas *canvas, QString name);
+  static NewRenderer *CreateRenderer(ProgramOptions*, Canvas*, Window);
+  NewRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QString name);
 
   virtual ~NewRenderer() {
     return; 
@@ -38,19 +39,11 @@ class NewRenderer {
 
   //void *rendererPrivateData; // from Canvas class -- shouldn't need this
   
-  /* This becomes the constructor: */ 
-  //virtual MovieStatus Initialize(struct Canvas *canvas, const ProgramOptions *options) = 0; */
-  /*  This becomes the destructor: 
-   */
-  // virtual void DestroyRenderer(struct Canvas *canvas) = 0;
-  
+ 
   // from xwindow.cpp: RendererSpecificGlue
   /* XVisualInfo *ChooseVisual(Display *display, int screenNumber);
-     MovieStatus FinishInitialization(Canvas *canvas, const ProgramOptions *options);
-     void DestroyGlue(Canvas *canvas);
-     void DrawString(Canvas *canvas, int row, int column, const char *str);
+    void DrawString(Canvas *canvas, int row, int column, const char *str);
      void BeforeRender(Canvas *canvas);
-     void AfterRender(Canvas *canvas);
      void SwapBuffers(Canvas *canvas);
   */
  public:
