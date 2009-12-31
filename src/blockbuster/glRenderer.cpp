@@ -106,11 +106,10 @@ void glRenderer::Render(int frameNumber,
            imageRegion->width, imageRegion->height,
            imageRegion->x, imageRegion->y, zoom, lod);
 
-  Canvas *canvas = NULL;  // POISON -- placeholder to compile, will segfault
   /*
    * Compute possibly reduced-resolution image region to display.
    */
-  if (canvas->frameList->stereo) {
+  if (mCanvas->frameList->stereo) {
         localFrameNumber = frameNumber *2; /* we'll display left frame only */
   }
   else {
@@ -118,7 +117,7 @@ void glRenderer::Render(int frameNumber,
   }
 
  
-  if (lod > canvas->frameList->getFrame(localFrameNumber)->maxLOD) {
+  if (lod > mCanvas->frameList->getFrame(localFrameNumber)->maxLOD) {
     ERROR("Error in glRenderer::Render:  lod is greater than max\n"); 
     abort(); 
   }
@@ -159,7 +158,7 @@ void glRenderer::Render(int frameNumber,
 
 
   TIMER_PRINT("Pull the image from our cache "); 
-  image = canvas->mRenderer->GetImage(localFrameNumber, &region, lod);
+  image = mCanvas->mRenderer->GetImage(localFrameNumber, &region, lod);
   TIMER_PRINT("Got image"); 
   if (image == NULL) {
     /* error has already been reported */
@@ -174,13 +173,13 @@ void glRenderer::Render(int frameNumber,
   /*bb_assert(region.x + region.width <= image->width); */
   /*bb_assert(region.y + region.height <= image->height);*/
 
-  glViewport(0, 0, canvas->width, canvas->height);
+  glViewport(0, 0, mCanvas->width, mCanvas->height);
 
 
   /* only clear the window if we have to */
   if (destX > 0 || destY > 0 ||
-      region.width * zoom < canvas->width ||
-      region.height * zoom < canvas->height) {
+      region.width * zoom < mCanvas->width ||
+      region.height * zoom < mCanvas->height) {
     glClearColor(0.0, 0.0, 0.0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
   }
@@ -192,7 +191,7 @@ void glRenderer::Render(int frameNumber,
      * Do adjustments to flip Y axis.
      * Yes, this is tricky to understand.
      */
-    destY = canvas->height - static_cast<int32_t>((image->height * zoom) + destY) + static_cast<int32_t>(region.y * zoom);
+    destY = mCanvas->height - static_cast<int32_t>((image->height * zoom) + destY) + static_cast<int32_t>(region.y * zoom);
     
     if (destY < 0) {
       region.y = static_cast<int32_t>(-destY / zoom);
@@ -204,7 +203,7 @@ void glRenderer::Render(int frameNumber,
     glPixelZoom(zoom, zoom);
   }
   else {    
-    destY = canvas->height - destY - 1;
+    destY = mCanvas->height - destY - 1;
     glPixelZoom(zoom, -zoom);
   }
   TIMER_PRINT("before draw"); 
@@ -217,7 +216,7 @@ void glRenderer::Render(int frameNumber,
   glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
   glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 
-                canvas->requiredImageFormat.scanlineByteMultiple);
+                mCanvas->requiredImageFormat.scanlineByteMultiple);
 
   DEBUGMSG("Buffer for frame %d is %dw x %dh, region is %dw x %dh, destX = %d, destY = %d\n", frameNumber, image->width, image->height, region.width, region.height, destX, destY); 
 
@@ -238,7 +237,7 @@ void glRenderer::Render(int frameNumber,
  //  glRasterPos2i(0,0); 
   
   /* This is bad, we are managing the cache in the render thread.  Sigh.  Anyhow, have to release the image, or the cache will fill up */  
-  //canvas->imageCache->ReleaseImage(image);
+  //mCanvas->imageCache->ReleaseImage(image);
   TIMER_PRINT("glRenderer::Render end"); 
 }
 
@@ -257,18 +256,17 @@ void glStereoRenderer::Render(int frameNumber,
   int saveDestX;
   int saveDestY;
   
-  Canvas *canvas = NULL;  //POISON!  WILL SEGFAULT -- REMOVE 
   DEBUGMSG("glStereoRenderer::Render(frame %d) region @ (%d, %d) size %d x %d render at %d, %d, with zoom=%f  lod=%d, stereo = %d", frameNumber, 
            imageRegion->x, imageRegion->y,
            imageRegion->width, imageRegion->height,
            destX, destY, zoom, lod, 
-           (int)(canvas->frameList->stereo));
+           (int)(mCanvas->frameList->stereo));
   
   /*
    * Compute possibly reduced-resolution image region to display.
    */
  
-  if (canvas->frameList->stereo) {
+  if (mCanvas->frameList->stereo) {
         localFrameNumber = frameNumber *2; 
         /* start with left frame*/
         glDrawBuffer(GL_BACK_LEFT);
@@ -278,7 +276,7 @@ void glStereoRenderer::Render(int frameNumber,
   }
 
   
-  bb_assert(lod <= canvas->frameList->getFrame(localFrameNumber)->maxLOD);
+  bb_assert(lod <= mCanvas->frameList->getFrame(localFrameNumber)->maxLOD);
   lodScale = 1 << lod;
 
   {
@@ -312,7 +310,7 @@ void glStereoRenderer::Render(int frameNumber,
   zoom *= (float) lodScale;
 
   /* Pull the image from our cache */
-  image = canvas->mRenderer->GetImage(localFrameNumber, &region, lod);
+  image = mCanvas->mRenderer->GetImage(localFrameNumber, &region, lod);
 
   if (image == NULL) {
     /* error has already been reported */
@@ -329,13 +327,13 @@ void glStereoRenderer::Render(int frameNumber,
   /*bb_assert(region.x + region.width <= image->width);*/
   /*bb_assert(region.y + region.height <= image->height);*/
 
-  glViewport(0, 0, canvas->width, canvas->height);
+  glViewport(0, 0, mCanvas->width, mCanvas->height);
 
 
   /* only clear the window if we have to */
   if (destX > 0 || destY > 0 ||
-      region.width * zoom < canvas->width ||
-      region.height * zoom < canvas->height) {
+      region.width * zoom < mCanvas->width ||
+      region.height * zoom < mCanvas->height) {
     glClearColor(0.0, 0.0, 0.0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
   }
@@ -346,7 +344,7 @@ void glStereoRenderer::Render(int frameNumber,
      * Yes, this is tricky to understand.
      * And we're not going to help you. 
      */
-    destY = canvas->height - static_cast<int32_t>((image->height * zoom + destY)) + static_cast<int32_t>(region.y * zoom);
+    destY = mCanvas->height - static_cast<int32_t>((image->height * zoom + destY)) + static_cast<int32_t>(region.y * zoom);
     if (destY < 0) {
       region.y = static_cast<int32_t>(-destY / zoom);
       destY = 0;
@@ -361,7 +359,7 @@ void glStereoRenderer::Render(int frameNumber,
   }
   else {
     DEBUGMSG("TOP_TO_BOTTOM: glDrawPixels(%d, %d, GL_RGB, GL_UNSIGNED_BYTE, data)\n",   region.width, region.height); 
-    destY = canvas->height - destY - 1;
+    destY = mCanvas->height - destY - 1;
     /* RasterPos is (0,0).  Offset it by (destX, destY) */
     glPixelZoom(zoom, -zoom);
   }
@@ -370,7 +368,7 @@ void glStereoRenderer::Render(int frameNumber,
   glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
   glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 
-                canvas->requiredImageFormat.scanlineByteMultiple);
+                mCanvas->requiredImageFormat.scanlineByteMultiple);
   glDrawPixels(region.width, region.height,
                GL_RGB, GL_UNSIGNED_BYTE,
                image->imageData);
@@ -379,25 +377,25 @@ void glStereoRenderer::Render(int frameNumber,
   glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
   
   /* Have to release the image, or the cache will fill up */
-  //canvas->mRenderer->ReleaseImage(image);
+  //mCanvas->mRenderer->ReleaseImage(image);
   
-  if(canvas->frameList->stereo) {
+  if(mCanvas->frameList->stereo) {
     glDrawBuffer(GL_BACK_RIGHT);
     localFrameNumber++;
     
     /* Pull the image from our cache */
-    image = canvas->mRenderer->GetImage(localFrameNumber, &region, lod);
+    image = mCanvas->mRenderer->GetImage(localFrameNumber, &region, lod);
     if (image == NULL) {
       /* error has already been reported */
       return;
     }
     
-    glViewport(0, 0, canvas->width, canvas->height);
+    glViewport(0, 0, mCanvas->width, mCanvas->height);
     
     /* only clear the window if we have to */
     if (saveDestX > 0 || saveDestY > 0 ||
-        region.width * zoom < canvas->width ||
-        region.height * zoom < canvas->height) {
+        region.width * zoom < mCanvas->width ||
+        region.height * zoom < mCanvas->height) {
       glClearColor(0.0, 0.0, 0.0, 0);
       glClear(GL_COLOR_BUFFER_BIT);
     }
@@ -420,7 +418,7 @@ void glStereoRenderer::Render(int frameNumber,
     glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
     glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 
-                  canvas->requiredImageFormat.scanlineByteMultiple);
+                  mCanvas->requiredImageFormat.scanlineByteMultiple);
     glDrawPixels(region.width, region.height,
                  GL_RGB, GL_UNSIGNED_BYTE,
                  image->imageData);
@@ -429,7 +427,7 @@ void glStereoRenderer::Render(int frameNumber,
     glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
     
     /* Have to release the image, or the cache will fill up */
-    //canvas->mRenderer->ReleaseImage(image);
+    //mCanvas->mRenderer->ReleaseImage(image);
     
   }
   

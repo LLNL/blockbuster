@@ -90,7 +90,7 @@ SOURCES=main.cpp blockbuster_qt.cpp movie.cpp  timer.C \
 	sgi-rgb.cpp convert.cpp  \
 	gltexture.cpp sm.cpp dmxglue.cpp png.cpp splash.cpp  \
 	pnm.cpp tiff.cpp \
-	libdmx/dmx.c MovieCues.cpp events.cpp xwindow.cpp x11.cpp \
+	libdmx/dmx.c MovieCues.cpp events.cpp xwindow.cpp  \
 	MovieRenderer.cpp util.cpp settings.cpp errmsg.cpp \
 	Renderer.cpp x11Renderer.cpp glRenderer.cpp dmxRenderer.cpp 
 

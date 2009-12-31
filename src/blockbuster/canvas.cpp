@@ -78,8 +78,9 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
     }
     mOptions->mNewRenderer = mRenderer; 
 
-   status = mOptions->mOldRenderer->Initialize(this, mOptions);
- 
+    if (mOptions->mOldRenderer->Initialize) {
+      status = mOptions->mOldRenderer->Initialize(this, mOptions);
+    }
     /* If this renderer would like an image cache, we can create one, as
      * a convenience (this is done because most renderers do use an 
      * image cache; putting the cache creation here simplifies their

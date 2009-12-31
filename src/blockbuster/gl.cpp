@@ -18,6 +18,8 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#ifdef DONOTCOMPILE
+
 #include "blockbuster_gl.h"
 #include "xwindow.h"
 #include "util.h"
@@ -408,3 +410,6 @@ gl_InitializeStereo(Canvas *canvas, const ProgramOptions *)
 
   return MovieSuccess;
 }
+
+#endif
+

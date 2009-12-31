@@ -1,7 +1,6 @@
 #include "x11Renderer.h"
 
 #include "errmsg.h"
-#include "blockbuster_x11.h"
 #include "cache.h"
 #include "util.h"
 #include "frames.h"

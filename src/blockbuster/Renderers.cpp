@@ -1,5 +1,4 @@
 #include "Renderers.h"
-#include "blockbuster_x11.h"
 #include "blockbuster_gl.h"
 #include "gltexture.h"
 #include "dmxglue.h"
@@ -13,15 +12,15 @@ OldRenderer x11Renderer = {
 
 
 OldRenderer glRenderer = {
-  GL_NAME,
-  GL_DESCRIPTION,
-  gl_Initialize
+  "gl",
+  "does nothing",
+  NULL
 };
 
 OldRenderer glRendererStereo = {
-  GL_NAME_STEREO,
-  GL_DESCRIPTION_STEREO,
-  gl_InitializeStereo
+  "gl_stereo",
+  "does nothing",
+  NULL
 };
 
 OldRenderer glTextureRenderer = {
