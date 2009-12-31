@@ -12,15 +12,13 @@
 //======================================================================
 class x11Renderer: public NewRenderer {
  public:
-  x11Renderer(ProgramOptions *opt, Canvas *canvas):
-    NewRenderer(opt, canvas, "x11") {
-   return; 
-  }
+  x11Renderer(ProgramOptions *opt, Canvas *canvas);
 
   virtual ~x11Renderer() {}
   // this is a no-op for x11, no options are handled
   //  void HandleOptions(int &argc, char *argv[]);
-  
+  int ComputeShift(unsigned long mask);
+
   void Render(int frameNumber,
               const Rectangle *imageRegion,
               int destX, int destY, float zoom, int lod);
@@ -32,7 +30,8 @@ class x11Renderer: public NewRenderer {
   unsigned int depth;
   int doubleBuffered;
   int fontHeight;
-  
+  // was global: 
+  XdbeSwapAction mSwapAction;
   // from WindowInfo struct in xwindow.cpp
   GC gc;
   XdbeBackBuffer backBuffer;

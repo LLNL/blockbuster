@@ -20,9 +20,78 @@
 
 #include "canvas.h" // POISON -- temporary -- x11Renderer should not know about canvases.
 
+x11Renderer::x11Renderer(ProgramOptions *opt, Canvas *canvas):
+  NewRenderer(opt, canvas, "x11"), mSwapAction(XdbeBackground) {
+  
+  display = canvas->mXWindow->display;
+  visual = canvas->mXWindow->visInfo->visual;
+  depth = canvas->mXWindow->visInfo->depth;
+   
+  /* This graphics context and font will be used for rendering status messages,
+   * and as such are owned here, by the UserInterface.
+   */
+  gc = XCreateGC(display, canvas->mXWindow->window, 0, NULL);
+  XSetFont(display, gc, canvas->mXWindow->fontInfo->fid);
+  XSetForeground(display, gc,
+                 WhitePixel(display, canvas->mXWindow->screenNumber));
+  
+  backBuffer = 
+    XdbeAllocateBackBufferName(display, canvas->mXWindow->window, mSwapAction);
+  
+ if (backBuffer) {
+    doubleBuffered = 1;
+    drawable = backBuffer;
+  }
+  else {
+    doubleBuffered = 0;
+    drawable = canvas->mXWindow->window;
+  }
+  gc = gc;
+  fontHeight = canvas->mXWindow->fontHeight;
+  
+  /* Specify our required format.  Note that 24-bit X11 images require
+   * *4* bytes per pixel, not 3.
+   */
+  if (canvas->mXWindow->visInfo->depth > 16) {
+    canvas->requiredImageFormat.bytesPerPixel = 4;
+  }
+  else if (canvas->mXWindow->visInfo->depth > 8) {
+    canvas->requiredImageFormat.bytesPerPixel = 2;
+  }
+  else {
+    canvas->requiredImageFormat.bytesPerPixel = 1;
+  }
+  canvas->requiredImageFormat.scanlineByteMultiple = BitmapPad(canvas->mXWindow->display)/8;
+  
+  /* If the bytesPerPixel value is 3 or 4, we don't need these;
+   * but we'll put them in anyway.
+   */
+  canvas->requiredImageFormat.redShift = ComputeShift(canvas->mXWindow->visInfo->visual->red_mask) - 8;
+  canvas->requiredImageFormat.greenShift = ComputeShift(canvas->mXWindow->visInfo->visual->green_mask) - 8;
+  canvas->requiredImageFormat.blueShift = ComputeShift(canvas->mXWindow->visInfo->visual->blue_mask) - 8;
+  canvas->requiredImageFormat.redMask = canvas->mXWindow->visInfo->visual->red_mask;
+  canvas->requiredImageFormat.greenMask = canvas->mXWindow->visInfo->visual->green_mask;
+  canvas->requiredImageFormat.blueMask = canvas->mXWindow->visInfo->visual->blue_mask;
+  canvas->requiredImageFormat.byteOrder = ImageByteOrder(canvas->mXWindow->display);
+  canvas->requiredImageFormat.rowOrder = TOP_TO_BOTTOM;
+  
+    return; 
+}
+
+//====================================================================
+/* This utility function converts a raw mask into a mask and shift */
+int x11Renderer::ComputeShift(unsigned long mask) {
+  register int shiftCount = 0;
+  while (mask != 0) {
+	mask >>= 1;
+	shiftCount++;
+  }
+  return shiftCount;
+}
+
+//====================================================================
 void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
                          int destX, int destY, float zoom, int lod){
-  X11RendererGlue *glueInfo;
   XImage *xImage;
   Image *image;
   char *start;
@@ -37,9 +106,6 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
          imageRegion->x, imageRegion->y, imageRegion->width, imageRegion->height,
          destX, destY, zoom, lod);
 #endif
-  
-  bb_assert(mCanvas->gluePrivateData);
-  glueInfo = (X11RendererGlue *)mCanvas->gluePrivateData;
   
   if (mCanvas->frameList->stereo) {
     localFrameNumber = frameNumber *2; /* we'll display left frame only */
@@ -122,12 +188,11 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
     start = (char *) image->imageData;
   }
   
-  xImage = XCreateImage(
-                        glueInfo->display,
-                        glueInfo->visual,
-                        glueInfo->depth,
+  xImage = XCreateImage(display, 
+                        visual, 
+                        depth,
                         ZPixmap,
-                        0, /* no offset to the image data */
+                         0, /* no offset to the image data */
                         start,
                         subWidth,
                         subHeight,
@@ -141,16 +206,16 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
     return;
   }
   
-  XPutImage(glueInfo->display,
-            glueInfo->drawable,
-            glueInfo->gc,
+  XPutImage(display,
+            drawable,
+            gc,
             xImage,
             0, 0, /* src_x, src_y */
             destX, destY,
             subWidth, subHeight
             );
   
-  if (!glueInfo->doubleBuffered) {
+  if (!doubleBuffered) {
     /* clear unpainted window regions */
     int x, y, w, h;
     /* above */
@@ -159,7 +224,7 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
       y = 0;
       w = mCanvas->width;
       h = destY;
-      XClearArea(glueInfo->display, glueInfo->drawable,
+      XClearArea(display, drawable,
                  x, y, w, h, False);
     }
     /* below */
@@ -168,7 +233,7 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
       y = destY + (int) (subHeight * zoom);
       w = mCanvas->width;
       h = mCanvas->height - y;
-      XClearArea(glueInfo->display, glueInfo->drawable, 
+      XClearArea(display, drawable, 
                  x, y, w, h, False);
     }
     /* left */
@@ -177,7 +242,7 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
       y = destY;
       w = destX;
       h = mCanvas->height - y;
-      XClearArea(glueInfo->display, glueInfo->drawable,
+      XClearArea(display, drawable,
                  x, y, w, h, False);
     }
     /* right */
@@ -186,7 +251,7 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
       y = destY;
       w = mCanvas->width - x;
       h = mCanvas->height - y;
-      XClearArea(glueInfo->display, glueInfo->drawable, 
+      XClearArea(display, drawable, 
                  x, y, w, h, False);
     }
   }
