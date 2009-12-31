@@ -1,5 +1,6 @@
 #ifndef BLOCKBUSTER_GL_H
 #define BLOCKBUSTER_GL_H
+#ifdef DONOTCOMPILE
 #include "common.h"
 
 struct Canvas; 
@@ -15,5 +16,6 @@ MovieStatus gl_InitializeStereo(Canvas *canvas, const ProgramOptions *options);
 
 #define GL_NAME_STEREO "gl_stereo"
 #define GL_DESCRIPTION_STEREO "Render using OpenGL glDrawPixels to an X11 window in stereo"
+#endif
 #endif
 
