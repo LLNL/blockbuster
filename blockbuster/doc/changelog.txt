@@ -6,6 +6,8 @@ VERSION ???
 ???
 -- fixed segfault in smtest when no args are given
 -- Use tiling by default in img2sm and smcat
+-- fixed segfault in img2sm when JPEG or PNGs are being converted to a movie, the -first flag is used, and the user makes a typo specifying the file locations. 
+
 
 ================================================================================
 VERSION 2.6.3c
