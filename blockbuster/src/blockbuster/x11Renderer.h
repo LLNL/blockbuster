@@ -22,7 +22,8 @@ class x11Renderer: public NewRenderer {
   void Render(int frameNumber,
               const Rectangle *imageRegion,
               int destX, int destY, float zoom, int lod);
-  
+  void DrawString(int row, int column, const char *str);
+ 
   // from X11RendererGlue
   Drawable drawable;
   int doubleBuffered;

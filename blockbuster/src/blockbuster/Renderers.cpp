@@ -5,9 +5,9 @@
 #include "dmxglue.h"
 
 OldRenderer x11Renderer = {
-  X11_NAME,
-  X11_DESCRIPTION,
-  x11_Initialize
+  "x11",
+  "x11 renderer (does nothing)",
+  NULL
 };
 
 
