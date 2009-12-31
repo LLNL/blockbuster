@@ -75,7 +75,6 @@ struct XWindow {
   XFontStruct *fontInfo;
   int fontHeight;
   Colormap colormap;
-  void (*DestroyGlue)(Canvas *canvas);
   bool mShowCursor; 
 
 }; 

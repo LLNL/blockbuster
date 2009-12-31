@@ -69,18 +69,7 @@ static int globalSync = 0; // this used to be a user option, now it's  static.
      */
     XVisualInfo *(*ChooseVisual)(Display *display, int screenNumber);
 
-    /* Each renderer needs to be able to finish the initialization;
-     * in particular, renderers supported by this user interface may
-     * have their own unique supported image formats.
-     */
-    MovieStatus (*FinishInitialization)(Canvas *canvas, const ProgramOptions *options);
-
-    /* Each glue interface gets an opportunity to undo whatever
-     * it did during initialization.
-     */
-   void (*DestroyGlue)(Canvas *canvas);
-
-    /* The UserInterface passes on the responsibility of reporting
+   /* The UserInterface passes on the responsibility of reporting
      * status directly to the Glue routines, who will render 
      * the status text directly into their own windows.
      */
@@ -100,7 +89,7 @@ static int globalSync = 0; // this used to be a user option, now it's  static.
 XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, qint32 uiData):
   mOptions(options), mCanvas(canvas), display(NULL), 
   visInfo(NULL), screenNumber(0), window(0), isSubWindow(0), 
-  fontInfo(NULL), fontHeight(0), DestroyGlue(NULL), mShowCursor(true) {
+  fontInfo(NULL), fontHeight(0),  mShowCursor(true) {
   ECHO_FUNCTION(5);
   RendererSpecificGlue *rendererGlue = 
     GetRendererSpecificGlueByName(options->mOldRenderer->name); 
@@ -116,7 +105,6 @@ XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, qint32 uiData):
   const int winBorder = 0;
   int x, y, width, height;
   int required_x_margin, required_y_margin;
-  MovieStatus rv;
       
   display = XOpenDisplay(options->displayName.toAscii());
   if (!display) {
@@ -308,21 +296,6 @@ XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, qint32 uiData):
   canvas->AfterRenderPtr = rendererGlue->AfterRender;
   canvas->SwapBuffersPtr = rendererGlue->SwapBuffers;
   
-  DestroyGlue = rendererGlue->DestroyGlue;
-  
-  /* The Glue routines will finish initialization here; in particular, they need
-   * to prepare to use the font (above), and to set up the required image format
-   * (as each requires an independent format).
-   */
-  rv = rendererGlue->FinishInitialization(canvas, options);
-  if (rv != MovieSuccess) {
-    ERROR("FinishInitialization of renderer failed\n"); 
-    XFreeFont(display, fontInfo);
-    XFree(visInfo);
-    XFreeColormap(display, colormap);
-    XCloseDisplay(display);
-    return;
-  }
   
   return ;
 } // END CONSTRUCTOR for XWindow
@@ -740,9 +713,6 @@ CloseXWindow(Canvas *canvas)
         /* Give the Glue routines a chance to free themselves */
         if (canvas->mXWindow != NULL) {
             /* Give the Glue routines a chance to free themselves */
-            if (canvas->mXWindow->DestroyGlue != NULL) {
-                canvas->mXWindow->DestroyGlue(canvas);
-            }
             XDestroyWindow(canvas->mXWindow->display, canvas->mXWindow->window);
             XFreeFont(canvas->mXWindow->display, canvas->mXWindow->fontInfo);
             XFree(canvas->mXWindow->visInfo);
@@ -852,8 +822,6 @@ static void x11SwapBuffers(Canvas *canvas)
 
 RendererSpecificGlue x11RendererSpecificGlue = {
   pureC_x11ChooseVisual,
-  NULL,
-  NULL,
   NULL,               /* use Renderer's DrawString routine */
   NULL,               /* no BeforeRender routine necessary */
   NULL,               /* no AfterRender routine necessary */
@@ -863,8 +831,6 @@ RendererSpecificGlue x11RendererSpecificGlue = {
 
 RendererSpecificGlue glRendererSpecificGlue = {
   glChooseVisual,
-  NULL,
-  NULL,
   glDrawString,
   glBeforeRender,
   NULL,               /* no AfterRender routine necessary */
@@ -874,8 +840,6 @@ RendererSpecificGlue glRendererSpecificGlue = {
 
 RendererSpecificGlue glStereoRendererSpecificGlue = {
   glStereoChooseVisual,
-  NULL,
-  NULL,
   glDrawString,
   glBeforeRender,
   NULL,               /* no AfterRender routine necessary */
@@ -892,8 +856,6 @@ RendererSpecificGlue glStereoRendererSpecificGlue = {
 
 RendererSpecificGlue dmxRendererSpecificGlue = {
   pureC_x11ChooseVisual,            /* same as X11 */
-  NULL,
-  NULL,
   NULL,                       /* use Renderer's DrawString routine */
   NULL,                       /* no BeforeRender routine necessary */
   NULL,                       /* no AfterRender routine necessary */
