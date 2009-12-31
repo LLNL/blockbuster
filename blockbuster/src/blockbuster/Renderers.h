@@ -19,7 +19,7 @@
 struct OldRenderer; 
 OldRenderer *GetRendererByName(QString name); 
 
-extern OldRenderer oldX11Renderer, oldGlRenderer, oldGlRendererStereo, oldGlTextureRenderer, oldDmxRenderer; 
+extern OldRenderer  oldGlTextureRenderer, oldDmxRenderer; 
 
 struct OldRenderer {
   char *name;
