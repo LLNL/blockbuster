@@ -1042,9 +1042,8 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
              canvas->DrawString(canvas, row++, 0, str);
              }
       */
-       canvas->AfterRender(canvas);
  
-      if (playDirection) {
+       if (playDirection) {
         /* See if we need to introduce a pause to prevent exceeding
          * the target frame rate.
          */

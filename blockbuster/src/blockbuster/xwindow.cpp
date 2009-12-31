@@ -77,7 +77,6 @@ static int globalSync = 0; // this used to be a user option, now it's  static.
 
     /* These are standard configuration thingies */
     void (*BeforeRender)(Canvas *canvas);
-    void (*AfterRender)(Canvas *canvas);
     void (*SwapBuffers)(Canvas *canvas);
 } ;
 
@@ -293,7 +292,6 @@ XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, qint32 uiData):
   canvas->MovePtr = MoveXWindow;
   canvas->DrawStringPtr = rendererGlue->DrawString;
   canvas->BeforeRenderPtr = rendererGlue->BeforeRender;
-  canvas->AfterRenderPtr = rendererGlue->AfterRender;
   canvas->SwapBuffersPtr = rendererGlue->SwapBuffers;
   
   
@@ -824,7 +822,6 @@ RendererSpecificGlue x11RendererSpecificGlue = {
   pureC_x11ChooseVisual,
   NULL,               /* use Renderer's DrawString routine */
   NULL,               /* no BeforeRender routine necessary */
-  NULL,               /* no AfterRender routine necessary */
   x11SwapBuffers
 };
 
@@ -833,7 +830,6 @@ RendererSpecificGlue glRendererSpecificGlue = {
   glChooseVisual,
   glDrawString,
   glBeforeRender,
-  NULL,               /* no AfterRender routine necessary */
   glSwapBuffers
 };
 
@@ -842,7 +838,6 @@ RendererSpecificGlue glStereoRendererSpecificGlue = {
   glStereoChooseVisual,
   glDrawString,
   glBeforeRender,
-  NULL,               /* no AfterRender routine necessary */
   glSwapBuffers
 };
 
@@ -858,7 +853,6 @@ RendererSpecificGlue dmxRendererSpecificGlue = {
   pureC_x11ChooseVisual,            /* same as X11 */
   NULL,                       /* use Renderer's DrawString routine */
   NULL,                       /* no BeforeRender routine necessary */
-  NULL,                       /* no AfterRender routine necessary */
   NULL,                       /* use Renderer's SwapBuffers routine */
 };
 
