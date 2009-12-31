@@ -202,10 +202,6 @@
        if (BeforeRenderPtr) BeforeRenderPtr(canvas); 
      }
      void (*BeforeRenderPtr)(struct Canvas *canvas);
-     void AfterRender(struct Canvas *canvas){
-       if (AfterRenderPtr) AfterRenderPtr(canvas); 
-     }
-     void (*AfterRenderPtr)(struct Canvas *canvas);
      
      // DMX SPECIFIC STUFF: 
      void DMXSendHeartbeat(void);

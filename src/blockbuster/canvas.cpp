@@ -54,7 +54,7 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
   SetFrameListPtr(NULL), PreloadPtr(NULL), 
   ResizePtr(NULL), MovePtr(NULL), 
   DrawStringPtr(NULL), SwapBuffersPtr(NULL), 
-  BeforeRenderPtr(NULL), AfterRenderPtr(NULL), mOptions(options)
+  BeforeRenderPtr(NULL),  mOptions(options)
 {
 
     MovieStatus status;
