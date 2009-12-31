@@ -41,7 +41,6 @@ MovieStatus dmx_Initialize(Canvas *canvas, const ProgramOptions *options) {
   /* Plug in our special functions for canvas manipulations.
    * We basically override all the functions set in CreateXWindow.
    */
-  canvas->SetFrameListPtr = dmx_SetFrameList;
   canvas->RenderPtr = dmx_Render;
   canvas->ResizePtr = dmx_Resize;
   canvas->MovePtr = dmx_Move;
@@ -82,50 +81,6 @@ dmx_AtExitCleanup(void)
 }
 
 
-
-/* This SetFrameList method doesn't save a local framelist.
- */
- void dmx_SetFrameList(Canvas *canvas, FrameList *frameList){
-    
-  ECHO_FUNCTION(5);
-    uint32_t framenum;
-	uint32_t i; 
-	QString previousName; 
-	
-    canvas->frameList = frameList;
-	
-    /* concatenate filenames.  We want to send only unique filenames 
-     * back down to the slaves (or they'd try to load lots of files);
-     * we cheat a little here and just send a filename if it's not
-     * the same as the previous filename.
-     *
-     * Although this is not quite proper (it's allowable in the design
-     * for the main program to rearrange frames so that frames from
-     * different files are interleaved), it works for now.
-     *
-     * A more complex (but technically correct) solution would be to send
-     * the list of frames as a list of {filename, frame number} pairs,
-     * which is how the main program references frames.  But this would
-     * require a lot more complexity and no more utility, since there's
-     * no way the main program can take advange of such a feature now.
-     */
-    gRenderer->files.clear(); 
-    for (framenum = 0; framenum < frameList->numActualFrames(); framenum++) {
-      if (previousName != frameList->getFrame(framenum)->filename) {
-	gRenderer->files.push_back(frameList->getFrame(framenum)->filename); 
-	previousName = frameList->getFrame(framenum)->filename;        
-      }
-    }
-	
-    /* Tell back-end instances to load the files */
-    for (i = 0; i < gRenderer->dmxScreenInfos.size(); i++) {
-	  if (gRenderer->dmxWindowInfos[i].window) {
-		gRenderer->mActiveSlaves[gRenderer->dmxWindowInfos[i].screen]->
-		  SendFrameList(gRenderer->files);
-	  }
-    }
- }
- 
 void dmx_SetupPlay(int play, int preload, 
                    uint32_t startFrame, uint32_t endFrame) {
   ECHO_FUNCTION(5);

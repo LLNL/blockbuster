@@ -22,10 +22,27 @@ NewRenderer::NewRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindo
   // replaces Initialize() from file module (e.g. gl.cpp)
   XWindow(canvas, opt, parentWindow), 
   mName(name), mCanvas(canvas), mOptions(opt){  
-  mCache = canvas->imageCache; // this has to be here to avoid header madness
+  mCache = CreateImageCache(mOptions->readerThreads,
+                            mOptions->frameCacheSize, mCanvas);
   return; 
 } 
 
+void NewRenderer::SetFrameList(FrameList *frameList) {
+  if (!mCache) {
+    mCache = CreateImageCache(mCanvas->threads, mCanvas->cachesize, mCanvas);
+  }
+  if (mCache == NULL) {
+    ERROR("could not recreate image cache when changing frame list");
+    exit(1); 
+  }
+  
+  /* Tell the cache to manage the new frame list.  This will
+   * clear everything out of the cache that's already in there.
+   */
+  mCache->ManageFrameList(frameList); 
+  mFrameList = frameList; 
+  mCanvas->frameList = frameList; 
+}
 
 void NewRenderer::Preload(uint32_t frameNumber,
                      const Rectangle *imageRegion, uint32_t levelOfDetail) {

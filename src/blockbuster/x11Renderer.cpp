@@ -129,7 +129,7 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
   zoom *= (float) lodScale;
   
   /* Pull the image from our cache */
-  image = mCanvas->imageCache->GetImage(localFrameNumber, &region, lod);
+  image = mCanvas->mRenderer->GetImage(localFrameNumber, &region, lod);
   if (image == NULL) {
     /* error has already been reported */
     return;
@@ -164,7 +164,7 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
      * that's in the cache.  But we'll have to free this
      * image later.
      */
-    mCanvas->imageCache->ReleaseImage(image);
+    mCanvas->mRenderer->ReleaseImage(image);
     image = zoomedImage;
     if (image == NULL) {
       /* error has already been reported */
@@ -274,7 +274,7 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
     free(image);
   }
   else {
-    mCanvas->imageCache->ReleaseImage( image);
+    mCanvas->mRenderer->ReleaseImage( image);
   }
 }
 

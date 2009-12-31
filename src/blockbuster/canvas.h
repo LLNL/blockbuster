@@ -54,7 +54,7 @@
      * to put these variables into privateData).
      */
      FrameList *frameList;
-     struct ImageCache *imageCache;
+     //struct ImageCache *imageCache;
 
      public:
    /* The fundamental operation of the Renderer is to render.        This might be assigned gl_Render (gl.cpp, gl_Initialize), x11_Render (x11.cpp: x11_initialize()), or dmx_Render (dmxglue.cpp, dmx_Initialize()).  The assignment is done 
@@ -68,10 +68,10 @@
                        const Rectangle *imageRegion,
                        int destX, int destY, float zoom, int lod) ;
        
-     void SetFrameList(struct Canvas *canvas, FrameList *frameList) {
-       if (SetFrameListPtr) SetFrameListPtr(canvas, frameList); 
+
+     void SetFrameList(FrameList *frameList) {
+       mRenderer->SetFrameList(frameList); 
      }
-     void (*SetFrameListPtr)(struct Canvas *canvas, FrameList *frameList);
      
      void Preload(struct Canvas *canvas, uint32_t frameNumber,
                   const Rectangle *imageRegion, uint32_t levelOfDetail){
