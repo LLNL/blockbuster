@@ -6,7 +6,6 @@
 #include "frames.h"
 #include "errmsg.h"
 #include "convert.h"
-
 #include "errmsg.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +14,6 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/Xdbe.h>
-#include "x11glue.h"
 
 #include "canvas.h" // POISON -- temporary -- x11Renderer should not know about canvases.
 

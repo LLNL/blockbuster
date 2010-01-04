@@ -19,7 +19,6 @@
  */
 
 #include "xwindow.h"
-#include "blockbuster_gl.h"
 #include "util.h"
 #include "cache.h"
 #include "frames.h"
