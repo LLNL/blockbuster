@@ -45,7 +45,6 @@
 #include <GL/gl.h>
 #include <GL/glx.h>
 #include "xwindow.h"
-#include "x11glue.h"
 #include "pure_C.h"
 
 /* These qualify this UserInterface */

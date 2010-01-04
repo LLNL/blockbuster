@@ -7,7 +7,7 @@
 #include <X11/keysym.h>
 #include <GL/gl.h>
 #include <GL/glx.h>
-#include "x11glue.h"
+//#include "x11glue.h"
 #include "pure_C.h"
 #include "errmsg.h"
 

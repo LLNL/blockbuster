@@ -81,23 +81,6 @@ dmx_AtExitCleanup(void)
 }
 
 
-void dmx_SetupPlay(int play, int preload, 
-                   uint32_t startFrame, uint32_t endFrame) {
-  ECHO_FUNCTION(5);
-  uint32_t i = 0; 
-  for (i = 0; i < gRenderer->dmxScreenInfos.size(); i++) {
-    if (gRenderer->dmxWindowInfos[i].window) {
-      gRenderer->mActiveSlaves
-        [gRenderer->dmxWindowInfos[i].screen]->
-        SendMessage(QString("SetPlayDirection %1 %2 %3 %4")
-                    .arg(play).arg(preload).arg(startFrame).arg(endFrame));
-    }
-  }
-  return; 
-}
- 
-
-
 
 void dmx_Resize(Canvas *canvas, int newWidth, int newHeight, int cameFromX)
 {
