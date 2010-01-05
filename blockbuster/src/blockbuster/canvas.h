@@ -30,33 +30,7 @@
 
      ~Canvas(); 
 
-    int height;
-    int width;
-    int screenHeight, screenWidth; /* for when sidcar wants whole screen */ 
-    int XPos; 
-    int YPos; 
-    int depth;
-  int threads;
-  int cachesize;
-     
-     BlockbusterInterface *mBlockbusterInterface; 
-
-    /**************************************************************/
-    /* These fields are owned and initialized by the Renderer.  It seems like maybe the Renderer is an idea encapsulated by x11.cpp, gl.cpp, or dmxglue.cpp.  
-     */
-
  
-   /* The Canvas must manage the lists of frames and image caches
-     * filled with frames.  All the Renderers must provide the 
-     * methods listed below; typically, they will use the stored
-     * FrameList and ImageCache, which is why these two variables
-     * have been codified here (rather than require most Renderers
-     * to put these variables into privateData).
-     */
-     FrameList *frameList;
-     //struct ImageCache *imageCache;
-     FrameInfo *GetFrameInfoPtr(int frameNumber);
-
      public:
    /* The fundamental operation of the Renderer is to render.        This might be assigned gl_Render (gl.cpp, gl_Initialize), x11_Render (x11.cpp: x11_initialize()), or dmx_Render (dmxglue.cpp, dmx_Initialize()).  The assignment is done 
     */
@@ -74,8 +48,6 @@
        mRenderer->Preload(frameNumber, imageRegion, levelOfDetail); 
      }
      
-      // this will replaces all the above function pointers. 
-     NewRenderer *mRenderer; 
 
     /**************************************************************/
     /* The following fields are owned and initialized by the UserInterface.
@@ -199,8 +171,24 @@
      void DMXSpeedTest(void);
      void DMXCheckNetwork(void);
      
-    void *gluePrivateData;
+     int height;
+     int width;
+     int screenHeight, screenWidth; /* for when sidcar wants whole screen */ 
+     int XPos; 
+     int YPos; 
+     int depth;
+     int threads;
+     int cachesize;
+     
+     BlockbusterInterface *mBlockbusterInterface; 
+          
+     FrameList *frameList;
+     //struct ImageCache *imageCache;
+     FrameInfo *GetFrameInfoPtr(int frameNumber);
+    NewRenderer *mRenderer; 
 
+     void *gluePrivateData;
+     
      int32_t playDirection, startFrame, endFrame, preloadFrames; 
      ProgramOptions *mOptions; 
   } ;

@@ -43,7 +43,7 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
   frameList(NULL), 
   ResizePtr(NULL), MovePtr(NULL), 
   DrawStringPtr(NULL), SwapBuffersPtr(NULL), 
-  BeforeRenderPtr(NULL),  mOptions(options)
+  mOptions(options)
 {
 
 	this->threads = mOptions->readerThreads;

@@ -387,9 +387,6 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         // RESIZE ===========================
         if (event.eventType == MOVIE_RESIZE || event.eventType == MOVIE_MOVE_RESIZE) {
             //DEBUGMSG("RESIZE"); 
-          /* if (event.width == -1) {
-             event.width = canvas->screenWidth; 
-             } else*/
           if (event.width == 0) {
             /* if there are frames, use the frame width for the window width 
                else use the current width */ 
@@ -993,13 +990,8 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
        * Most canvases will refer to their own image caches to load
        * the image and render it.  Some will just send the
        * request "downstream".
-       */
-      
-      TIMER_PRINT("before  BeforeRender"); 
-
-      canvas->BeforeRender();
-      
-      /* If we're paused or stopped, render the frame at maximum
+       *
+       * If we're paused or stopped, render the frame at maximum
        * level of detail, regardless of what was requested during
        * playback.  If we're playing forward or backward, then use
        * the given level of detail.

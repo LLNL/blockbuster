@@ -73,7 +73,6 @@ static int globalSync = 0; // this used to be a user option, now it's  static.
     void (*DrawString)(Canvas *canvas, int row, int column, const char *str);
 
     /* These are standard configuration thingies */
-    void (*BeforeRender)(Canvas *canvas);
     void (*SwapBuffers)(Canvas *canvas);
 } ;
 
@@ -287,7 +286,6 @@ XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, Window parentWin):
   canvas->ResizePtr = ResizeXWindow;
   canvas->MovePtr = MoveXWindow;
   canvas->DrawStringPtr = rendererGlue->DrawString;
-  canvas->BeforeRenderPtr = rendererGlue->BeforeRender;
   canvas->SwapBuffersPtr = rendererGlue->SwapBuffers;
   
   
@@ -725,16 +723,6 @@ CloseXWindow(Canvas *canvas)
 /* Glue routines and data for the OpenGL renderers
  */
 
-static void glBeforeRender(Canvas *canvas)
-{
-    Bool rv;
-    glRenderer *renderer = dynamic_cast<glRenderer*>(canvas->mRenderer); 
-    rv = glXMakeCurrent(canvas->mRenderer->display, canvas->mRenderer->window, renderer->context);
-    if (rv == False) {
-        WARNING("couldn't make graphics context current before rendering");
-    }
-}
-
 static void glSwapBuffers(Canvas *canvas)
 {
      glXSwapBuffers(canvas->mRenderer->display, canvas->mRenderer->window);
@@ -817,7 +805,6 @@ static void x11SwapBuffers(Canvas *canvas)
 RendererSpecificGlue x11RendererSpecificGlue = {
   pureC_x11ChooseVisual,
   NULL,               /* use Renderer's DrawString routine */
-  NULL,               /* no BeforeRender routine necessary */
   x11SwapBuffers
 };
 
@@ -825,7 +812,6 @@ RendererSpecificGlue x11RendererSpecificGlue = {
 RendererSpecificGlue glRendererSpecificGlue = {
   glChooseVisual,
   glDrawString,
-  glBeforeRender,
   glSwapBuffers
 };
 
@@ -833,7 +819,6 @@ RendererSpecificGlue glRendererSpecificGlue = {
 RendererSpecificGlue glStereoRendererSpecificGlue = {
   glStereoChooseVisual,
   glDrawString,
-  glBeforeRender,
   glSwapBuffers
 };
 
@@ -848,7 +833,6 @@ RendererSpecificGlue glStereoRendererSpecificGlue = {
 RendererSpecificGlue dmxRendererSpecificGlue = {
   pureC_x11ChooseVisual,            /* same as X11 */
   NULL,                       /* use Renderer's DrawString routine */
-  NULL,                       /* no BeforeRender routine necessary */
   NULL,                       /* use Renderer's SwapBuffers routine */
 };
 
