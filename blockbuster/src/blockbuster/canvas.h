@@ -39,6 +39,8 @@
        mRenderer->Render(frameNumber, imageRegion, destX, destY, zoom, lod);
      } 
 
+     FrameInfo *GetFrameInfoPtr(int frameNumber);
+
      void SetFrameList(FrameList *frameList) {
        mRenderer->SetFrameList(frameList); 
      }
@@ -78,19 +80,32 @@
        mRenderer->Move(newX, newY, cameFromX); 
      }
 
+    /**************************************************************/
+    void DrawString(int row, int column, const char *str) {
+       mRenderer->DrawString(row, column, str); 
+     }
+
+     
+    /**************************************************************/
+    /* Called to swap front/back buffers */
+     void SwapBuffers(void) {
+       mRenderer->SwapBuffers(); 
+     }
+     
+     // DMX SPECIFIC STUFF: 
+     void DMXSendHeartbeat(void);
+     void DMXSpeedTest(void);
+     void DMXCheckNetwork(void);
 
     /* This is called if any module wishes to report an error,
      * warning, informational, or debug message.  The modules
      * call through the SYSERROR(), ERROR(), WARNING(), INFO(), 
      * and DEBUGMSG() macros, but ultimately the message comes to here.
-     * If the ReportMessage() method is NULL, or returns a
-     * STATUS_FAILURE code, the message will be reported to the
-     * console instead (as a convenience to the programmer).
      */
-    MovieStatus ReportMessage(const char *file, const char *function, 
-                              int line, int level, 
-                              const char *message);
-
+     MovieStatus ReportMessage(const char *file, const char *function, 
+                               int line, int level, 
+                               const char *message);
+     
      void ReportFrameListChange(const FrameList *frameList);
      void ReportFrameChange(int frameNumber);
      void ReportDetailRangeChange(int min, int max);
@@ -112,41 +127,6 @@
      void reportMovieCueComplete(void); 
      void reportStatusChanged(QString status); 
      
-    /**************************************************************/
-    /* This field is shared between the UserInterface and the Renderer;
-     * either (or neither!) may choose to implement it.  It is invoked
-     * to send a status message to the user.
-     *
-     * If implemented by a Renderer, it typically renders text
-     * over the image already rendered.  A UserInterface may choose
-     * to create a specific window or widget to hold any and all such
-     * messages.
-     *
-     * The UserInterface will get the first opportunity to set
-     * this value; if it is set, the Renderer's Initialize() method
-     * should not override it.
-     */
-     void DrawString(int row, int column, const char *str) {
-       mRenderer->DrawString(row, column, str); 
-     }
-
-     
-    /**************************************************************/
-    /* The following fields are owned and initialized by the 
-     * "glue" submodules of the UserInterface.  They are initialized
-     * by the UserInterface itself, but typically their values
-     * come from the "glue" routines in the UserInterface modules.
-     */
-
-    /* Called to swap front/back buffers */
-     void SwapBuffers(void) {
-       mRenderer->SwapBuffers(); 
-     }
-     
-     // DMX SPECIFIC STUFF: 
-     void DMXSendHeartbeat(void);
-     void DMXSpeedTest(void);
-     void DMXCheckNetwork(void);
      
      int height;
      int width;
@@ -161,7 +141,6 @@
           
      FrameList *frameList;
      //struct ImageCache *imageCache;
-     FrameInfo *GetFrameInfoPtr(int frameNumber);
     NewRenderer *mRenderer; 
 
      void *gluePrivateData;
