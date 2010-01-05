@@ -42,27 +42,26 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
   mBlockbusterInterface(gui), 
   frameList(NULL), 
   ResizePtr(NULL), MovePtr(NULL), 
-  SwapBuffersPtr(NULL), 
   mOptions(options)
 {
-
-	this->threads = mOptions->readerThreads;
-	this->cachesize = mOptions->frameCacheSize;
-
-    
-    /* Renderer can initialize now. */
-    mRenderer = NewRenderer::CreateRenderer(mOptions, this, parentWindowID); 
-    if (!mRenderer) {
-      ERROR(QString("Badness:  cannot create renderer \"%1\"\n").
-            arg(mOptions->rendererName)); 
-      exit(1); 
-    }
-    mOptions->mNewRenderer = mRenderer; 
-
-    DEBUGMSG(QString("frameCacheSize is %1").arg(mOptions->frameCacheSize));    
-    
-    /* All done */
-    return ;
+  
+  this->threads = mOptions->readerThreads;
+  this->cachesize = mOptions->frameCacheSize;
+  
+  
+  /* Renderer can initialize now. */
+  mRenderer = NewRenderer::CreateRenderer(mOptions, this, parentWindowID); 
+  if (!mRenderer) {
+    ERROR(QString("Badness:  cannot create renderer \"%1\"\n").
+          arg(mOptions->rendererName)); 
+    exit(1); 
+  }
+  mOptions->mNewRenderer = mRenderer; 
+  
+  DEBUGMSG(QString("frameCacheSize is %1").arg(mOptions->frameCacheSize));    
+  
+  /* All done */
+  return ;
 }
 
 Canvas::~Canvas()

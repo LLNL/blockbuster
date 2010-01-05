@@ -18,6 +18,7 @@ class glRenderer: public NewRenderer {
   virtual void Render(int frameNumber,
                       const Rectangle *imageRegion,
                       int destX, int destY, float zoom, int lod);  
+  virtual void SwapBuffers(void);
    
   bool mXSynchronize; // for debugging, presumably. 
 

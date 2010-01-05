@@ -154,8 +154,7 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
     subWidth = (int) (region.width * zoom + 0.0);
     subHeight = (int) (region.height * zoom + 0.0);
     
-    zoomedImage = ScaleImage(image, mCanvas,
-                             region.x, region.y,
+    zoomedImage = ScaleImage(image, region.x, region.y,
                              region.width, region.height,
                              subWidth, subHeight);
     
@@ -277,9 +276,8 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
   }
 }
 
-void 
-x11Renderer::DrawString(int row, int column, const char *str)
-{
+//========================================================
+void  x11Renderer::DrawString(int row, int column, const char *str) {
   ECHO_FUNCTION(5);
   int x = (column + 1) * fontHeight;
   int y = (row + 1) * fontHeight;
@@ -287,7 +285,19 @@ x11Renderer::DrawString(int row, int column, const char *str)
               drawable,
               gc, 
               x, y, str, strlen(str));
+  return; 
 }
 
-
-
+//========================================================
+void x11Renderer::SwapBuffers(void) {
+  if (backBuffer) {
+    /* If we're using DBE */
+    XdbeSwapInfo swapInfo;
+    swapInfo.swap_window = window;
+    swapInfo.swap_action = mSwapAction;
+    XdbeSwapBuffers(display, &swapInfo, 1);
+    /* Force sync, in case we get no events (dmx) */
+    XSync(display, 0);
+  }
+  return;
+}

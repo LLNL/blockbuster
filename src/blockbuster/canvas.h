@@ -151,18 +151,8 @@
 
     /* Called to swap front/back buffers */
      void SwapBuffers(void) {
-       if (SwapBuffersPtr) SwapBuffersPtr(this); 
+       mRenderer->SwapBuffers(); 
      }
-     void (*SwapBuffersPtr)(struct Canvas *canvas);
-     
-    /* Called before calling the Render() method, to allow the
-     * glue to make sure the surface is ready for rendering (e.g.,
-     * by calling glXMakeCurrent(), or a similar widget routine).
-     */
-     void BeforeRender(void){
-       if (BeforeRenderPtr) BeforeRenderPtr(this); 
-     }
-     void (*BeforeRenderPtr)(struct Canvas *canvas);
      
      // DMX SPECIFIC STUFF: 
      void DMXSendHeartbeat(void);
