@@ -272,9 +272,14 @@ void glRenderer::Render(int frameNumber,
   TIMER_PRINT("glRenderer::Render end"); 
 }
 
+//***********************************************************************
+void glRenderer::SwapBuffers(void) {
+  glXSwapBuffers(display, window);
+  return; 
+}
 
 
-
+//***********************************************************************
 void glStereoRenderer::Render(int frameNumber,
                               const Rectangle *imageRegion,
                               int destX, int destY, float zoom, int lod)

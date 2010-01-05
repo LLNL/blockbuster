@@ -45,7 +45,7 @@ typedef struct {
 
 int
 smLoadImage(Image *image, struct FrameInfo *frameInfo, 
-          Canvas *canvas, const Rectangle *desiredSub, int levelOfDetail)
+          Canvas *, const Rectangle *desiredSub, int levelOfDetail)
 {
   //  DEBUGMSG(QString("smLoadImage(%1").arg(frameInfo->frameNumber)); 
   const privateData *p = (privateData *)frameInfo->privateData;

@@ -27,6 +27,7 @@
 #include "xwindow.h"
 #include "canvas.h"
 #include "dmxglue.h"
+#include "SidecarServer.h"
 
 //  =============================================================
 //  dmxRenderer -- launch and connect remote slaves at startup, manage them
@@ -34,12 +35,10 @@
 dmxRenderer::dmxRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QObject* parent):
   QObject(parent), NewRenderer(opt, canvas, parentWindow, "dmx"), mAllowIdleSlaves(true), 
   mNumActiveSlaves(0), mSlavesReady(false),
-  haveDMX(0), 
-  dmxWindowInfos(NULL) {
+  haveDMX(0),  dmxWindowInfos(NULL) {
 
   canvas->ResizePtr = dmx_Resize;
   canvas->MovePtr = dmx_Move;
-  canvas->SwapBuffersPtr = dmx_SwapBuffers;
 
   connect(&mSlaveServer, SIGNAL(newConnection()), this, SLOT(SlaveConnected()));  
   mSlaveServer.listen(QHostAddress::Any);  //QTcpServer will choose a port for us.
@@ -149,9 +148,125 @@ int dmxRenderer::IsDMXDisplay(Display *dpy) {
 }
 
 //  =============================================================
-void dmxRenderer::Render(int ,
-                         const Rectangle *,
-                         int , int , float , int ) {
+void dmxRenderer::Render(int frameNumber,const Rectangle *imageRegion,
+                         int destX, int destY, float zoom, int lod)
+{
+  
+  ECHO_FUNCTION(5);
+  if (!numValidWindowInfos) return; 
+  
+  int i;
+     
+#if 0
+  printf("DMX::Render %d, %d  %d x %d  at %d, %d  zoom=%f\n",
+         imageRegion->x, imageRegion->y,
+         imageRegion->width, imageRegion->height,
+         destX, destY, zoom);
+#endif
+  
+  /*
+   * Loop over DMX back-end windows (tiles) computing the region of
+   * the image to display in each tile, and the clipped image's position.
+   * This is a bit tricky.
+   */
+  for (i = 0; i < numValidWindowInfos; i++) {
+    const int scrn = dmxWindowInfos[i].screen;
+#if 0
+    if (handle[scrn]) {
+      printf("  offset %d, %d\n",
+             dmxScreenInfos[scrn].xoffset,
+             dmxScreenInfos[scrn].yoffset);
+      printf("  origin %d, %d\n",
+             dmxScreenInfos[scrn].xorigin,
+             dmxScreenInfos[scrn].yorigin);
+      
+      printf("Window %d:\n", i);
+      printf("  screen: %d\n", dmxWindowInfos[i].screen);
+      printf("  pos: %d, %d  %d x %d\n",
+             dmxWindowInfos[i].pos.x,
+             dmxWindowInfos[i].pos.y,
+             dmxWindowInfos[i].pos.width,
+             dmxWindowInfos[i].pos.height);
+      printf("  vis: %d, %d  %d x %d\n",
+             dmxWindowInfos[i].vis.x,
+             dmxWindowInfos[i].vis.y,
+             dmxWindowInfos[i].vis.width,
+             dmxWindowInfos[i].vis.height);
+    }
+#endif
+    if (dmxWindowInfos[i].window) {
+      const XRectangle *vis = &dmxWindowInfos[i].vis;
+      Rectangle newRegion;
+      int newDestX, newDestY;
+      
+      ClipImageRegion(destX, destY, imageRegion, vis, zoom,
+                      &newDestX, &newDestY, &newRegion);
+      
+      mActiveSlaves[scrn]->SetCurrentFrame(frameNumber); 
+      mActiveSlaves[scrn]->
+        SendMessage(QString("Render %1 %2 %3 %4 %5 %6 %7 %8 %9")
+                    .arg(frameNumber)
+                    .arg(newRegion.x) .arg(newRegion.y)
+                    .arg(newRegion.width) .arg(newRegion.height)
+                    .arg(newDestX) .arg(newDestY)
+                    .arg(zoom).arg(lod));
+      
+      
+    }
+  }
+}
+
+//  =============================================================
+void dmxRenderer::SwapBuffers(void){
+  ECHO_FUNCTION(5);
+  static int32_t swapID = 0; 
+  if (!numValidWindowInfos) return; 
+  
+  /* Only check the first slave and the hell with the rest , to ensure we stay roughly in sync */ 
+  int numslaves = numValidWindowInfos;
+  vector<bool> incomplete; 
+  incomplete.assign(numslaves, true); 
+  int numcomplete = 0; 
+  uint32_t usecs = 0, lastusecs = 0; 
+  DEBUGMSG("Checking for pending swaps"); 
+  while (numcomplete < numslaves) {
+    //gCoreApp->processEvents(QEventLoop::ExcludeUserInputEvents); 
+    gCoreApp->processEvents(); 
+    int slavenum = numslaves;
+    while (slavenum--) {
+      DMXSlave *theSlave = 
+        
+        mActiveSlaves[dmxWindowInfos[slavenum].screen];
+      if (incomplete[slavenum]) {
+        incomplete[slavenum] = !theSlave->CheckSwapComplete(swapID-1); 
+        if (!incomplete[slavenum]) {
+          DEBUGMSG("Marking slave %d complete", slavenum); 
+          numcomplete ++; 
+        }
+      }
+      if (usecs - lastusecs > 10000) {
+        DEBUGMSG("still checking swaps after %d usecs", usecs); 
+        lastusecs = usecs;
+      }
+    }
+    if (usecs > 10*1000*1000) {
+      cerr << "Something is wrong. Slave has not swapped buffers after 10 seconds." << endl;
+      if (gSidecarServer) {
+        MovieEvent event(MOVIE_STOP_ERROR);
+        gSidecarServer->AddEvent(event);
+      }
+      return; 
+    }
+    usecs += 500; 
+    usleep (500);     
+  }  
+  
+  uint16_t slaveNum = 0; 
+  for (slaveNum=0; slaveNum< mActiveSlaves.size(); slaveNum++ ) {
+    /* Not all slaves have valid buffers to swap, but they will figure this out, and if MPI is involved, it's important they all get to call MPI_Barrer(), so send swapbuffers to everybody */    
+	mActiveSlaves[slaveNum]->SwapBuffers(swapID, mCanvas->playDirection, mCanvas->preloadFrames, mCanvas->startFrame, mCanvas->endFrame);
+  }
+  swapID ++; 
   return; 
 }
 

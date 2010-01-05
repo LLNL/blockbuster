@@ -183,7 +183,8 @@ class dmxRenderer: public QObject, public NewRenderer {
   void Render(int frameNumber,
               const Rectangle *imageRegion,
               int destX, int destY, float zoom, int lod);
-  
+  virtual void SwapBuffers(void);
+ 
   void SetFrameList(FrameList *frameList);
   void Preload(uint32_t frameNumber,
                const Rectangle *imageRegion, uint32_t levelOfDetail);
@@ -259,6 +260,7 @@ class dmxRenderer: public QObject, public NewRenderer {
   //int handle[MAX_SCREENS];          /* canvas handle [screen] */
   vector<string> files;
   int sentSwapBuffers[MAX_SCREENS]; /* is there an outstanding SwapBuffers? */
+  
   
 } ; // end dmxRenderer
 

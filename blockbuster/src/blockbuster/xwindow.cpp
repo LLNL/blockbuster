@@ -54,17 +54,6 @@
 static int globalSync = 0; // this used to be a user option, now it's  static.
 
 
-/* This structure allows finer control over the UserInterface,
- * based on which renderer will eventually be used.  It can be 
- * customized for exactly the features this particular UserInterface
- * needs to have handled by glue routines.
- */
- struct RendererSpecificGlue{
-
-    void (*SwapBuffers)(Canvas *canvas);
-} ;
-
-
 
 /* This function is called to initialize an already-allocated Canvas.
  * The Glue information is already copied into place.
@@ -74,8 +63,6 @@ XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, Window parentWin):
   visInfo(NULL), screenNumber(0), window(0), isSubWindow(0), 
   fontInfo(NULL), fontHeight(0),  mShowCursor(true) {
   ECHO_FUNCTION(5);
-  RendererSpecificGlue *rendererGlue = 
-    GetRendererSpecificGlueByName(options->rendererName); 
   const Rectangle *geometry = &options->geometry;
   int decorations = options->decorations;
   QString suggestedName = options->suggestedTitle;
@@ -269,7 +256,6 @@ XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, Window parentWin):
   */
   canvas->ResizePtr = ResizeXWindow;
   canvas->MovePtr = MoveXWindow;
-  canvas->SwapBuffersPtr = rendererGlue->SwapBuffers;
   
   
   return ;
@@ -700,90 +686,3 @@ CloseXWindow(Canvas *canvas)
     }
 }
 
-
-
-/***********************************************************************/
-/* Glue routines and data for the OpenGL renderers
- */
-
-static void glSwapBuffers(Canvas *canvas)
-{
-     glXSwapBuffers(canvas->mRenderer->display, canvas->mRenderer->window);
-}
-
-
-
-/***********************************************************************/
-/* Glue routines and data for the X11 renderer
- */
-
-static void x11SwapBuffers(Canvas *canvas)
-{
-  x11Renderer *renderer = dynamic_cast<x11Renderer*>(canvas->mRenderer); 
-  
-  if (renderer->backBuffer) {
-    /* If we're using DBE */
-    XdbeSwapInfo swapInfo;
-    swapInfo.swap_window = canvas->mRenderer->window;
-    swapInfo.swap_action = renderer->mSwapAction;
-    XdbeSwapBuffers(canvas->mRenderer->display, &swapInfo, 1);
-    /* Force sync, in case we get no events (dmx) */
-    XSync(canvas->mRenderer->display, 0);
-  }
-}
-
-
-
-RendererSpecificGlue x11RendererSpecificGlue = {
-  x11SwapBuffers
-};
-
-
-RendererSpecificGlue glRendererSpecificGlue = {
-  glSwapBuffers
-};
-
-
-RendererSpecificGlue glStereoRendererSpecificGlue = {
-  glSwapBuffers
-};
-
-#ifdef USE_DMX
-
-/***********************************************************************/
-/* Glue routines and data for the DMX renderer
- */
-
-
-
-RendererSpecificGlue dmxRendererSpecificGlue = {
-  NULL,                       /* use Renderer's SwapBuffers routine */
-};
-
-#endif
-
-/***********************************************************************/
-/* Finally, here is the actual definition of the X11 user interface,
- * including a list of supported renderers with the glue required to
- * support them, and our own initialization support.  Note that the
- * order of "glue" is important - if a user interface is specified,
- * but no renderer, the first one will be chosen.
- */
-
-RendererSpecificGlue *GetRendererSpecificGlueByName(QString name) {
-   if (name == "")  return &glRendererSpecificGlue; 
-
-  if (name == "x11") {
-    fprintf(stderr, "Error:  x11 renderer is no longer supported.\n"); 
-    exit(1); 
-  }
-
-  if (name == "gl") return &glRendererSpecificGlue; 
-  if (name == "gl_stereo") return &glStereoRendererSpecificGlue; 
-  if (name == "gltexture") return &glRendererSpecificGlue; // same as "gl"
-#ifdef USE_DMX
-  if (name == "dmx") return &dmxRendererSpecificGlue; 
-#endif
-  return NULL; 
- 
-}

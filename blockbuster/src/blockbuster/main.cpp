@@ -483,15 +483,8 @@ static void ParseOptions(int &argc, char *argv[])
   else {
     opt->loopCount = opt->loopCountName.toInt();
   }
-
     
-  /* Here's a big trick.  Find a nice match between the specified UserInterface
-   * (if any) and the specified Renderer (again, if any).  A NULL UserInterface
-   * name or Renderer name matches the first available UserInterface and/or
-   * first listed Renderer in a UserInterface.
-   */
-  opt->mRendererSpecificGlue = GetRendererSpecificGlueByName(opt->rendererName); 
-  return  ;  /* last unparsed arg */
+  return  ; 
 }
 
 void printargs(char *description, char *args[], int argc) {

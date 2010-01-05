@@ -225,8 +225,7 @@ Image *ConvertImageToFormat(const Image *image, Canvas *canvas)
  * the image and return a new image of that region scaled to zoomeWidth
  * by zoomedHeight
  */
-Image *ScaleImage(const Image *image, Canvas *canvas,
-		  int srcX, int srcY,
+Image *ScaleImage(const Image *image, int srcX, int srcY,
                   int srcWidth, int srcHeight,
                   int zoomedWidth, int zoomedHeight)
 {
