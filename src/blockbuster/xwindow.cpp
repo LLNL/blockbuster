@@ -31,7 +31,6 @@
 #include "Renderers.h"
 #include "glRenderer.h"
 #include "x11Renderer.h"
-#include "gltexture.h"
 #include "errmsg.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -90,7 +89,7 @@ XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, Window parentWin):
   fontInfo(NULL), fontHeight(0),  mShowCursor(true) {
   ECHO_FUNCTION(5);
   RendererSpecificGlue *rendererGlue = 
-    GetRendererSpecificGlueByName(options->mOldRenderer->name); 
+    GetRendererSpecificGlueByName(options->rendererName); 
   const Rectangle *geometry = &options->geometry;
   int decorations = options->decorations;
   QString suggestedName = options->suggestedTitle;

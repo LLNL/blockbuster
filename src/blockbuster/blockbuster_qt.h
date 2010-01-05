@@ -6,6 +6,8 @@
 #include "ui_InfoWindow.h"
 #include <deque>
 #include "Renderers.h"
+#include "events.h"
+class Canvas; 
 
 void qt_Resize(Canvas *canvas, int newWidth, int newHeight, int cameFromX);
 void qt_Move(Canvas *canvas, int newX, int newY, int cameFromX);
