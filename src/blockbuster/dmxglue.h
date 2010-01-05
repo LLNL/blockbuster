@@ -21,6 +21,8 @@
 #ifndef _DMXGLUE_H
 #define _DMXGLUE_H 1
 
+#if 0
+
 #include <QTcpSocket>
 #include <QTcpServer>
 #include <QThread>
@@ -78,4 +80,5 @@ void dmx_SetFrameList(Canvas *canvas, FrameList *frameList);
 
 
 
+#endif
 #endif
