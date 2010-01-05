@@ -28,7 +28,6 @@
 #include "frames.h"
 #include "errmsg.h"
 #include "dmxglue.h"
-#include "Renderers.h"
 #include "glRenderer.h"
 #include "x11Renderer.h"
 #include "errmsg.h"
