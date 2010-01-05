@@ -21,10 +21,6 @@ x11Renderer::x11Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindo
   NewRenderer(opt, canvas, parentWindow, "x11"), mSwapAction(XdbeBackground) {
   
   ECHO_FUNCTION(5);
-  /* Trivial for gl renderer: */
-  /* Plug in our functions into the canvas */
-  mCanvas->RenderPtr = NULL;
-  mCanvas->DrawStringPtr = NULL;
    
   /* This graphics context and font will be used for rendering status messages,
    * and as such are owned here, by the UserInterface.

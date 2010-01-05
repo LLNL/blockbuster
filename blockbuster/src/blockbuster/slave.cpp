@@ -374,7 +374,7 @@ int Slave::Loop(void)
             zoom = messageList[8].toFloat();
             
             if (mCanvas->frameList) {
-              mCanvas->Render(mCanvas, imageNum, &currentRegion, 
+              mCanvas->Render(imageNum, &currentRegion, 
                              destX, destY, zoom, lod);
               if (imageNum != lastImageRendered && lastImageRendered >= 0) {
                 if (mCanvas->frameList->stereo) {
@@ -413,7 +413,7 @@ int Slave::Loop(void)
             }
             (*mMasterStream) >> message; 
             DEBUGMSG((QString("string to draw is: ")+message)); 
-            mCanvas->DrawString(mCanvas, row, col, message.toAscii());          
+            mCanvas->DrawString(row, col, message.toAscii());          
           }// "DrawString"
           else if (token == "SwapBuffers") {
             if (messageList.size() != 7) {
@@ -445,7 +445,7 @@ int Slave::Loop(void)
             if (mCanvas && mCanvas->frameList) { 
               // only swap if there is a valid frame  
               DEBUGMSG("frame %d: mCanvas->SwapBuffers", lastImageRendered); 
-              mCanvas->SwapBuffers(mCanvas);
+              mCanvas->SwapBuffers();
               updateAndReportFPS(); 
             }
 #ifdef USE_MPI
@@ -465,7 +465,7 @@ int Slave::Loop(void)
                   frame = endFrame - (startFrame - frame); // for loops
                 } 
                 DEBUGMSG("Preload frame %d", frame); 
-                mCanvas->Preload(mCanvas, frame, &currentRegion, lod);
+                mCanvas->Preload(frame, &currentRegion, lod);
               }
                
             } 
@@ -516,7 +516,7 @@ int Slave::Loop(void)
             mCanvas = new Canvas(parentWin, options);
  
             GetXEvent(mCanvas, 0, &junkEvent); 
-            //canvas->GetEvent(mCanvas, 0, &junkEvent); 
+            //canvas->GetEvent(0, &junkEvent); 
              
             if (mCanvas == NULL) {
               ERROR("Could not create a canvas");
@@ -546,8 +546,8 @@ int Slave::Loop(void)
             if (!mCanvas) {
               SendError("ResizeCanvas requested, but canvas is not ready"); 
             } else {
-              mCanvas->Resize(mCanvas, w, h, 0);
-              mCanvas->Move(mCanvas, x, y, 0); // the zero means "force this" 
+              mCanvas->Resize(w, h, 0);
+              mCanvas->Move(x, y, 0); // the zero means "force this" 
             }
           }// end "MoveResizeCanvas"
           else if (token == "SetFrameList") {
@@ -591,7 +591,7 @@ int Slave::Loop(void)
       */ 
       if (0 && playStep) {
         if (mCanvas && mCanvas->frameList) {
-          mCanvas->Render(mCanvas, playFrame, &currentRegion, 
+          mCanvas->Render(playFrame, &currentRegion, 
                          destX, destY, zoom, lod);
         }
         lastImageRendered = playFrame; 
@@ -608,7 +608,7 @@ int Slave::Loop(void)
         if (mCanvas && mCanvas->frameList) { 
           // only swap if there is a valid frame  
           DEBUGMSG( "frame %d: mCanvas->SwapBuffers\n", lastImageRendered); 
-          mCanvas->SwapBuffers(mCanvas);
+          mCanvas->SwapBuffers();
         }
 #ifdef USE_MPI
         DEBUGMSG( "frame %d: Finished MPI_Barrier\n", lastImageRendered); 
@@ -623,7 +623,7 @@ int Slave::Loop(void)
           
           /* render the next frame and advance the counter */
           if (mCanvas && mCanvas->frameList) {
-            mCanvas->Render(mCanvas, playFrame, &currentRegion, 
+            mCanvas->Render(playFrame, &currentRegion, 
                            destX, destY, zoom, lod);
           }
           lastImageRendered = playFrame; 
@@ -640,7 +640,7 @@ int Slave::Loop(void)
           if (mCanvas && mCanvas->frameList) { 
             // only swap if there is a valid frame  
             DEBUGMSG( "speedTest: frame %d: mCanvas->SwapBuffers\n", lastImageRendered); 
-            mCanvas->SwapBuffers(mCanvas);
+            mCanvas->SwapBuffers();
           }
 #ifdef USE_MPI
           DEBUGMSG( "speedTest: frame %d: Finished MPI_Barrier\n", lastImageRendered); 
