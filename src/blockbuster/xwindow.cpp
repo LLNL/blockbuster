@@ -27,7 +27,6 @@
 #include "canvas.h"
 #include "frames.h"
 #include "errmsg.h"
-#include "dmxglue.h"
 #include "glRenderer.h"
 #include "x11Renderer.h"
 #include "errmsg.h"
@@ -51,17 +50,16 @@
 
 #define DEFAULT_WIDTH 800
 #define DEFAULT_HEIGHT 600
-static int globalSync = 0; // this used to be a user option, now it's  static.
-
 
 
 /* This function is called to initialize an already-allocated Canvas.
  * The Glue information is already copied into place.
  */
-XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, Window parentWin):
-  mOptions(options), mCanvas(canvas), display(NULL), 
+XWindow::XWindow(Canvas *theCanvas, ProgramOptions *options, Window parentWin):
+  mOptions(options), mCanvas(theCanvas), display(NULL), 
   visInfo(NULL), screenNumber(0), window(0), isSubWindow(0), 
-  fontInfo(NULL), fontHeight(0),  mShowCursor(true) {
+  fontInfo(NULL), fontHeight(0),  mShowCursor(true), 
+  mOldWidth(-1), mOldHeight(-1), mOldX(-1), mOldY(-1), mXSync(false) {
   ECHO_FUNCTION(5);
   const Rectangle *geometry = &options->geometry;
   int decorations = options->decorations;
@@ -83,7 +81,7 @@ XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, Window parentWin):
   }
   
   /* If the user asked for synchronous behavior, provide it */
-  if (globalSync) {
+  if (mXSync) {
     (void) XSynchronize(display, True);
   }
   
@@ -94,26 +92,25 @@ XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, Window parentWin):
   screenNumber = DefaultScreen(display);
   screen = ScreenOfDisplay(display, screenNumber);
   
-  
   /* if geometry is don't care and decorations flag is off -- then set window to max screen extents */
-  canvas->screenWidth = WidthOfScreen(screen);
+  mCanvas->screenWidth = WidthOfScreen(screen);
   if (geometry->width != DONT_CARE) 
     width = geometry->width;
   else {
     if(decorations) 
       width = DEFAULT_WIDTH;
     else 
-      width =  canvas->screenWidth;
+      width =  mCanvas->screenWidth;
   }
   
-  canvas->screenHeight = HeightOfScreen(screen);
+  mCanvas->screenHeight = HeightOfScreen(screen);
   if (geometry->height != DONT_CARE) 
     height = geometry->height;
   else {
     if(decorations)
       height = DEFAULT_HEIGHT;
     else
-      height =  canvas->screenHeight; 
+      height =  mCanvas->screenHeight; 
   }
   
   
@@ -246,17 +243,11 @@ XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, Window parentWin):
   fontHeight = fontInfo->ascent + fontInfo->descent;
   
   /* Prepare our Canvas structure that we can return to the caller */
-  canvas->width = width;
-  canvas->height = height;
-  canvas->depth = visInfo->depth;
+  mCanvas->width = width;
+  mCanvas->height = height;
+  mCanvas->depth = visInfo->depth;
   
-  /*
-    XXX Perhaps these two should belong to the Renderer, not to the
-    UserInterface?
-  */
-  canvas->ResizePtr = ResizeXWindow;
-  canvas->MovePtr = MoveXWindow;
-  
+ 
   
   return ;
 } // END CONSTRUCTOR for XWindow
@@ -272,63 +263,63 @@ void XWindow::remove_mwm_border(void )
 #define MWM_HINTS_DECORATIONS   (1L << 1)
 #define MWM_HINTS_INPUT_MODE    (1L << 2)
 #define MWM_HINTS_STATUS        (1L << 3)
-
-   typedef struct
-   {
-       unsigned long    flags;
-       unsigned long    functions;
-       unsigned long    decorations;
-       long             inputMode;
-       unsigned long    status;
-   } PropMotifWmHints;
-
-   PropMotifWmHints motif_hints;
-   Atom prop, proptype;
-
-   /* setup the property */
-   motif_hints.flags = MWM_HINTS_DECORATIONS;
-   motif_hints.decorations = 0;
-
-   /* get the atom for the property */
-   prop = XInternAtom(display, "_MOTIF_WM_HINTS", True );
-   if (!prop) {
-      /* something went wrong! */
-      return;
-   }
-
-   /* not sure this is correct, seems to work, XA_WM_HINTS didn't work */
-   proptype = prop;
-
-   XChangeProperty( display, window,  /* display, window */
-                    prop, proptype,   /* property, type */
-                    32,               /* format: 32-bit datums */
-                    PropModeReplace,  /* mode */
-                    (unsigned char *) &motif_hints, /* data */
-                    PROP_MOTIF_WM_HINTS_ELEMENTS    /* nelements */
-                  );
-   return; 
+  
+  typedef struct
+  {
+    unsigned long    flags;
+    unsigned long    functions;
+    unsigned long    decorations;
+    long             inputMode;
+    unsigned long    status;
+  } PropMotifWmHints;
+  
+  PropMotifWmHints motif_hints;
+  Atom prop, proptype;
+  
+  /* setup the property */
+  motif_hints.flags = MWM_HINTS_DECORATIONS;
+  motif_hints.decorations = 0;
+  
+  /* get the atom for the property */
+  prop = XInternAtom(display, "_MOTIF_WM_HINTS", True );
+  if (!prop) {
+    /* something went wrong! */
+    return;
+  }
+  
+  /* not sure this is correct, seems to work, XA_WM_HINTS didn't work */
+  proptype = prop;
+  
+  XChangeProperty( display, window,  /* display, window */
+                   prop, proptype,   /* property, type */
+                   32,               /* format: 32-bit datums */
+                   PropModeReplace,  /* mode */
+                   (unsigned char *) &motif_hints, /* data */
+                   PROP_MOTIF_WM_HINTS_ELEMENTS    /* nelements */
+                   );
+  return; 
 }
 
 
 /* Possible swap actions: 
-    {"undefined", XdbeUndefined, "back buffer becomes undefined on swap"},
--    {"background", XdbeBackground, "back buffer is cleared to window background on swap"},
--    {"untouched", XdbeUntouched, "back buffer is contents of front buffer on swap"},
--    {"copied", XdbeCopied, "back buffer is held constant on swap"},
+   {"undefined", XdbeUndefined, "back buffer becomes undefined on swap"},
+   -    {"background", XdbeBackground, "back buffer is cleared to window background on swap"},
+   -    {"untouched", XdbeUntouched, "back buffer is contents of front buffer on swap"},
+   -    {"copied", XdbeCopied, "back buffer is held constant on swap"},
 */ 
 
 //======================================================   
 void XWindow::ShowCursor(bool show) {
   DEBUGMSG("Show cursor: %d\n", show); 
   //cerr << "Show cursor: "<< show; 
-
+  
   if (!show) {
     /* make a blank cursor */
     Pixmap blank;
     XColor dummy;
     char data[1] = {0};
     Cursor cursor;
-
+    
     blank = XCreateBitmapFromData (display, window, data, 1, 1); 
     if(blank == None) fprintf(stderr, "error: out of memory.\n");
     cursor = XCreatePixmapCursor(display, blank, blank, &dummy, &dummy, 0, 0);
@@ -360,80 +351,68 @@ void XWindow::SetTitle(QString title) {
   return; 
 }
 
-//======================================================   
-// END XWindow struct
-//======================================================   
-/*
- * Resize the Canvas's X window to given 
- */
-void ResizeXWindow(Canvas *canvas, int newWidth, int newHeight, int cameFromX){
+void XWindow::Resize(int newWidth, int newHeight, int cameFromX){
   ECHO_FUNCTION(5);
   if (cameFromX) {
-    canvas->height = newHeight; 
-    canvas->width = newWidth; 
+    mCanvas->height = newHeight; 
+    mCanvas->width = newWidth; 
     return; 
   }
-    XWindowChanges values;
-    unsigned int mask;
-
-    bb_assert(canvas);
-    bb_assert(newWidth >= 0);
-    bb_assert(newHeight >= 0);
-
-    if (canvas->width == newWidth && canvas->height == newHeight)
-        return;
-
-    /* X windows must be at least 1x1 */
-    if (newWidth == 0)
-       newWidth = 1;
-    if (newHeight == 0)
-       newHeight = 1;
-
-
-    values.width = newWidth;
-    values.height = newHeight;
-    mask = CWWidth | CWHeight;
-    XConfigureWindow(canvas->mRenderer->display, canvas->mRenderer->window, mask, &values);
-    /* Force sync, in case we get no events (dmx) */
-    XSync(canvas->mRenderer->display, 0);
-
-    canvas->width = newWidth;
-    canvas->height = newHeight;
-
-    return; 
+  XWindowChanges values;
+  unsigned int mask;
+  
+  if (mCanvas->width == newWidth && mCanvas->height == newHeight)
+    return;
+  
+  /* X windows must be at least 1x1 */
+  if (newWidth == 0)
+    newWidth = 1;
+  if (newHeight == 0)
+    newHeight = 1;
+  
+  
+  values.width = newWidth;
+  values.height = newHeight;
+  mask = CWWidth | CWHeight;
+  XConfigureWindow(display, window, mask, &values);
+  /* Force sync, in case we get no events (dmx) */
+  XSync(display, 0);
+  
+  mCanvas->width = newWidth;
+  mCanvas->height = newHeight;
+  
+  return; 
 }
 
 
+// ===============================================================
 /*
- * Move the Canvas's X window to given 
- * Generally only used when using DMX.
+ * Move the X window to given position 
  */
-void MoveXWindow(Canvas *canvas, int newX, int newY, int cameFromX) {
+void XWindow::Move(int newX, int newY, int cameFromX) {
   ECHO_FUNCTION(5);
   //cerr << "MoveXWindow"<<endl;
   if (cameFromX) {
-    canvas->XPos = newX; 
-    canvas->YPos = newY; 
+    mCanvas->XPos = newX; 
+    mCanvas->YPos = newY; 
     return; 
   }
-   bb_assert(canvas);
-    //bb_assert(canvas->mRenderer->isSubWindow);
-    XMoveWindow(canvas->mRenderer->display, canvas->mRenderer->window, newX, newY);
-    canvas->XPos = newX;  
-    canvas->YPos = newY; 
-    /* Force sync, in case we get no events (dmx) */
-    XSync(canvas->mRenderer->display, 0);
+  XMoveWindow(display, window, newX, newY);
+  mCanvas->XPos = newX;  
+  mCanvas->YPos = newY; 
+  /* Force sync, in case we get no events (dmx) */
+  XSync(display, 0);
 }
 
 
 /*
  * Helper macro used by the renderers
  */
-#define EVENT_TYPE_STRING(x) (\
-    x==MapNotify?"MapNotify":\
-    x==UnmapNotify?"UnmapNotify":\
-    x==ReparentNotify?"ReparentNotify":\
-    "unknown")
+#define EVENT_TYPE_STRING(x) (                  \
+                              x==MapNotify?"MapNotify": \
+                              x==UnmapNotify?"UnmapNotify": \
+                              x==ReparentNotify?"ReparentNotify":   \
+                              "unknown")
 
 
 /*
@@ -441,248 +420,246 @@ void MoveXWindow(Canvas *canvas, int newX, int newY, int cameFromX) {
  * the idle event (MOVIE_NONE) if no event is present and
  * we aren't supposed to block waiting for input.
  */
- void
- GetXEvent(Canvas *canvas, int block, MovieEvent *movieEvent)
+void XWindow::GetXEvent(int block, MovieEvent *movieEvent)
 {
   bool resize=false, move=false; 
-    XEvent event;
-    Display *dpy = canvas->mRenderer->display;
-    static  long oldWidth = -1, oldHeight = -1, 
-	  oldX = -1, oldY = -1; 
-    if (!block && !XPending(dpy)) {
-        movieEvent->eventType = MOVIE_NONE;
-        return;
-    }
-
-    XNextEvent(dpy, &event);
-    if (event.xconfigure.y == 22) {
-      event.xconfigure.y = 22;
-    }
-    switch(event.type) {
-        case Expose:
-            while (XPending(dpy)) {
-                XPeekEvent(dpy, &event);
-                if (event.type == Expose) {
-                    XNextEvent(dpy, &event);
-                }
-                else
-                    break;
-            }
-            movieEvent->eventType = MOVIE_EXPOSE;
-            return;
-        case ConfigureNotify:
-            while (XPending(dpy)) {
-                XEvent nextEvent;
-                XPeekEvent(dpy, &nextEvent);
-                if (nextEvent.type == ConfigureNotify) {
-                    event = nextEvent;
-                    XNextEvent(dpy, &nextEvent);
-                }
-                else if (nextEvent.type == Expose) {
-                    XNextEvent(dpy, &nextEvent);
-                }
-                else
-                    break;
-            }
-            movieEvent->width = event.xconfigure.width;
-            movieEvent->height = event.xconfigure.height;
-			movieEvent->x = event.xconfigure.x;
-			movieEvent->y = event.xconfigure.y;
-			movieEvent->number = 1; // means "I got this from X, so don't call XMoveResize again" -- to prevent certain loops from happening, especially on the Mac where the window will keep marching down the screen.  Other window managers might have similar pathologies, so I did not implement a Mac-specific hack. 
-			
-            // Check if the size really changed.  If it did, send the event.
-            // Suppress it otherwise.
-            if (oldHeight != event.xconfigure.height || 
-				oldWidth != event.xconfigure.width) {
-			  resize = true; 
-			  oldHeight = event.xconfigure.height;
-			  oldWidth = event.xconfigure.width;
- 			  movieEvent->eventType = MOVIE_RESIZE;
-			}
-			
-			if (oldX != event.xconfigure.x || oldY != event.xconfigure.y) {
-			  move = true; 
-			  oldX = event.xconfigure.x;
-			  oldY = event.xconfigure.y;
-			  movieEvent->eventType = MOVIE_MOVE;
-			}
-		    
-			
-			/* do not process these events here, as they are spurious
-               if (resize && move)  movieEvent->eventType = MOVIE_MOVE_RESIZE;
-              else*/
-            if (resize)  movieEvent->eventType = MOVIE_RESIZE;
-			else if (move)  movieEvent->eventType = MOVIE_MOVE;
-			else movieEvent->eventType = MOVIE_NONE;
-			 
-          return;
-        case KeyPress:
-            {
-                int code = XLookupKeysym(&event.xkey, 0);
-                if (code == XK_Left && event.xkey.state & ControlMask) {
-                    movieEvent->eventType = MOVIE_SECTION_BACKWARD;
-                    return;
-                }
-                if (code == XK_Left && event.xkey.state & ShiftMask) {
-                    movieEvent->eventType = MOVIE_SKIP_BACKWARD;
-                    return;
-                }
-                else if (code == XK_Left) {
-                    movieEvent->eventType = MOVIE_STEP_BACKWARD;
-                    return;
-                }
-                else if (code == XK_Right && event.xkey.state & ControlMask) {
-                    movieEvent->eventType = MOVIE_SECTION_FORWARD;
-                    return;
-                }
-                else if (code == XK_Right && event.xkey.state & ShiftMask) {
-                    movieEvent->eventType = MOVIE_SKIP_FORWARD;
-                    return;
-                }
-                else if (code == XK_Right) {
-                    movieEvent->eventType = MOVIE_STEP_FORWARD;
-                    return;
-                }
-                else if (code == XK_Home) {
-                    movieEvent->eventType = MOVIE_GOTO_START;
-                    return;
-                }
-                else if (code == XK_Escape) {
-                  movieEvent->eventType = MOVIE_QUIT;
-                  return;
-                }  
-                else if (code == XK_End) {
-                    movieEvent->eventType = MOVIE_GOTO_END;
-                    return;
-                }
-                else {
-                    char buffer[10];
-                    int r = XLookupString(&event.xkey, buffer, sizeof(buffer),
-                                      NULL, NULL);
-                    if (r == 1) {
-                        switch (buffer[0]) {
-                        case 27:
-                        case 'c':
-                            movieEvent->eventType = MOVIE_CENTER;
-                            return;
-                        case 'p':
-                            movieEvent->eventType = MOVIE_PLAY_FORWARD;
-                            return;
-                        case 'q':
-                          movieEvent->eventType = MOVIE_QUIT;
-                          return;
-                        case 'r':
-                          movieEvent->eventType = MOVIE_PLAY_BACKWARD;
-                          return;
-                        case 'z':
-                            movieEvent->eventType = MOVIE_ZOOM_UP;
-                            return;
-                        case 'Z':
-                            movieEvent->eventType = MOVIE_ZOOM_DOWN;
-                            return;
-                        case ' ':
-                            movieEvent->eventType = MOVIE_PAUSE;
-                            return;
-                        case 'f':
-                            movieEvent->eventType = MOVIE_ZOOM_FIT;
-                            return;
-                        case '1':
-                            movieEvent->eventType = MOVIE_ZOOM_ONE;
-                            return;
-                       case '+':
-                            movieEvent->eventType = MOVIE_INCREASE_RATE;
-                            return;
-                        case '-':
-                            movieEvent->eventType = MOVIE_DECREASE_RATE;
-                            return;
-                        case 'l':
-                            movieEvent->eventType = MOVIE_INCREASE_LOD;
-                            return;
-                        case 'L':
-                            movieEvent->eventType = MOVIE_DECREASE_LOD;
-                            return;
-                        case 'i':
-                            movieEvent->eventType = MOVIE_TOGGLE_INTERFACE;
-                            return;
-                        case '?':
-                        case 'h':
-                            PrintKeyboardControls();
-                            break;
-                        case 'm':
-                          canvas->mRenderer->ToggleCursor(); 
-                          break; 
-                        default:
-                            DEBUGMSG("unimplemented character '%c'", buffer[0]);
-                            break;
-                        }
-                    }
-                }
-            }
-            break;
-        case ButtonPress:
-            movieEvent->x = event.xbutton.x;
-            movieEvent->y = event.xbutton.y;
-            movieEvent->eventType = 
-                event.xbutton.button == Button1 ? MOVIE_MOUSE_PRESS_1:
-                event.xbutton.button == Button2 ? MOVIE_MOUSE_PRESS_2:
-                event.xbutton.button == Button3 ? MOVIE_MOUSE_PRESS_3:
-                MOVIE_NONE;
-            return;
-        case ButtonRelease:
-            movieEvent->x = event.xbutton.x;
-            movieEvent->y = event.xbutton.y;
-            movieEvent->eventType = 
-                event.xbutton.button == Button1 ? MOVIE_MOUSE_RELEASE_1:
-                event.xbutton.button == Button2 ? MOVIE_MOUSE_RELEASE_2:
-                event.xbutton.button == Button3 ? MOVIE_MOUSE_RELEASE_3:
-                MOVIE_NONE;
-            return;
-        case MotionNotify:
-            /* filter/skip extra motion events */
-            movieEvent->x = event.xmotion.x;
-            movieEvent->y = event.xmotion.y;
-            while (XPending(dpy)) {
-                XPeekEvent(dpy, &event);
-                if (event.type == MotionNotify) {
-                    XNextEvent(dpy, &event);
-                    movieEvent->x = event.xmotion.x;
-                    movieEvent->y = event.xmotion.y;
-                }
-                else
-                    break;
-            }
-            movieEvent->eventType = MOVIE_MOUSE_MOVE;
-            return;
-
-        default:
-            DEBUGMSG("Got X event %d (%s)", event.type, EVENT_TYPE_STRING(event.type));
-    }
+  XEvent event;
+  Display *dpy = display;
+  if (!block && !XPending(dpy)) {
     movieEvent->eventType = MOVIE_NONE;
     return;
+  }
+  
+  XNextEvent(dpy, &event);
+  if (event.xconfigure.y == 22) {
+    event.xconfigure.y = 22;
+  }
+  switch(event.type) {
+  case Expose:
+    while (XPending(dpy)) {
+      XPeekEvent(dpy, &event);
+      if (event.type == Expose) {
+        XNextEvent(dpy, &event);
+      }
+      else
+        break;
+    }
+    movieEvent->eventType = MOVIE_EXPOSE;
+    return;
+  case ConfigureNotify:
+    while (XPending(dpy)) {
+      XEvent nextEvent;
+      XPeekEvent(dpy, &nextEvent);
+      if (nextEvent.type == ConfigureNotify) {
+        event = nextEvent;
+        XNextEvent(dpy, &nextEvent);
+      }
+      else if (nextEvent.type == Expose) {
+        XNextEvent(dpy, &nextEvent);
+      }
+      else
+        break;
+    }
+    movieEvent->width = event.xconfigure.width;
+    movieEvent->height = event.xconfigure.height;
+    movieEvent->x = event.xconfigure.x;
+    movieEvent->y = event.xconfigure.y;
+    movieEvent->number = 1; // means "I got this from X, so don't call XMoveResize again" -- to prevent certain loops from happening, especially on the Mac where the window will keep marching down the screen.  Other window managers might have similar pathologies, so I did not implement a Mac-specific hack. 
+    
+    // Check if the size really changed.  If it did, send the event.
+    // Suppress it otherwise.
+    if (mOldHeight != event.xconfigure.height || 
+        mOldWidth != event.xconfigure.width) {
+      resize = true; 
+      mOldHeight = event.xconfigure.height;
+      mOldWidth = event.xconfigure.width;
+      movieEvent->eventType = MOVIE_RESIZE;
+    }
+    
+    if (mOldX != event.xconfigure.x || mOldY != event.xconfigure.y) {
+      move = true; 
+      mOldX = event.xconfigure.x;
+      mOldY = event.xconfigure.y;
+      movieEvent->eventType = MOVIE_MOVE;
+    }
+    
+    
+    /* do not process these events here, as they are spurious
+       if (resize && move)  movieEvent->eventType = MOVIE_MOVE_RESIZE;
+       else*/
+    if (resize)  movieEvent->eventType = MOVIE_RESIZE;
+    else if (move)  movieEvent->eventType = MOVIE_MOVE;
+    else movieEvent->eventType = MOVIE_NONE;
+    
+    return;
+  case KeyPress:
+    {
+      int code = XLookupKeysym(&event.xkey, 0);
+      if (code == XK_Left && event.xkey.state & ControlMask) {
+        movieEvent->eventType = MOVIE_SECTION_BACKWARD;
+        return;
+      }
+      if (code == XK_Left && event.xkey.state & ShiftMask) {
+        movieEvent->eventType = MOVIE_SKIP_BACKWARD;
+        return;
+      }
+      else if (code == XK_Left) {
+        movieEvent->eventType = MOVIE_STEP_BACKWARD;
+        return;
+      }
+      else if (code == XK_Right && event.xkey.state & ControlMask) {
+        movieEvent->eventType = MOVIE_SECTION_FORWARD;
+        return;
+      }
+      else if (code == XK_Right && event.xkey.state & ShiftMask) {
+        movieEvent->eventType = MOVIE_SKIP_FORWARD;
+        return;
+      }
+      else if (code == XK_Right) {
+        movieEvent->eventType = MOVIE_STEP_FORWARD;
+        return;
+      }
+      else if (code == XK_Home) {
+        movieEvent->eventType = MOVIE_GOTO_START;
+        return;
+      }
+      else if (code == XK_Escape) {
+        movieEvent->eventType = MOVIE_QUIT;
+        return;
+      }  
+      else if (code == XK_End) {
+        movieEvent->eventType = MOVIE_GOTO_END;
+        return;
+      }
+      else {
+        char buffer[10];
+        int r = XLookupString(&event.xkey, buffer, sizeof(buffer),
+                              NULL, NULL);
+        if (r == 1) {
+          switch (buffer[0]) {
+          case 27:
+          case 'c':
+            movieEvent->eventType = MOVIE_CENTER;
+            return;
+          case 'p':
+            movieEvent->eventType = MOVIE_PLAY_FORWARD;
+            return;
+          case 'q':
+            movieEvent->eventType = MOVIE_QUIT;
+            return;
+          case 'r':
+            movieEvent->eventType = MOVIE_PLAY_BACKWARD;
+            return;
+          case 'z':
+            movieEvent->eventType = MOVIE_ZOOM_UP;
+            return;
+          case 'Z':
+            movieEvent->eventType = MOVIE_ZOOM_DOWN;
+            return;
+          case ' ':
+            movieEvent->eventType = MOVIE_PAUSE;
+            return;
+          case 'f':
+            movieEvent->eventType = MOVIE_ZOOM_FIT;
+            return;
+          case '1':
+            movieEvent->eventType = MOVIE_ZOOM_ONE;
+            return;
+          case '+':
+            movieEvent->eventType = MOVIE_INCREASE_RATE;
+            return;
+          case '-':
+            movieEvent->eventType = MOVIE_DECREASE_RATE;
+            return;
+          case 'l':
+            movieEvent->eventType = MOVIE_INCREASE_LOD;
+            return;
+          case 'L':
+            movieEvent->eventType = MOVIE_DECREASE_LOD;
+            return;
+          case 'i':
+            movieEvent->eventType = MOVIE_TOGGLE_INTERFACE;
+            return;
+          case '?':
+          case 'h':
+            PrintKeyboardControls();
+            break;
+          case 'm':
+            ToggleCursor(); 
+            break; 
+          default:
+            DEBUGMSG("unimplemented character '%c'", buffer[0]);
+            break;
+          }
+        }
+      }
+    }
+    break;
+  case ButtonPress:
+    movieEvent->x = event.xbutton.x;
+    movieEvent->y = event.xbutton.y;
+    movieEvent->eventType = 
+      event.xbutton.button == Button1 ? MOVIE_MOUSE_PRESS_1:
+      event.xbutton.button == Button2 ? MOVIE_MOUSE_PRESS_2:
+      event.xbutton.button == Button3 ? MOVIE_MOUSE_PRESS_3:
+      MOVIE_NONE;
+    return;
+  case ButtonRelease:
+    movieEvent->x = event.xbutton.x;
+    movieEvent->y = event.xbutton.y;
+    movieEvent->eventType = 
+      event.xbutton.button == Button1 ? MOVIE_MOUSE_RELEASE_1:
+      event.xbutton.button == Button2 ? MOVIE_MOUSE_RELEASE_2:
+      event.xbutton.button == Button3 ? MOVIE_MOUSE_RELEASE_3:
+      MOVIE_NONE;
+    return;
+  case MotionNotify:
+    /* filter/skip extra motion events */
+    movieEvent->x = event.xmotion.x;
+    movieEvent->y = event.xmotion.y;
+    while (XPending(dpy)) {
+      XPeekEvent(dpy, &event);
+      if (event.type == MotionNotify) {
+        XNextEvent(dpy, &event);
+        movieEvent->x = event.xmotion.x;
+        movieEvent->y = event.xmotion.y;
+      }
+      else
+        break;
+    }
+    movieEvent->eventType = MOVIE_MOUSE_MOVE;
+    return;
+    
+  default:
+    DEBUGMSG("Got X event %d (%s)", event.type, EVENT_TYPE_STRING(event.type));
+  }
+  movieEvent->eventType = MOVIE_NONE;
+  return;
 }
 
 
 /*
  * Close the X window associated with the canvas.
  */
- void
-CloseXWindow(Canvas *canvas)
+void XWindow::Close(void)
 {
   ECHO_FUNCTION(5);
-   if (canvas != NULL) {
+  /* Give the Glue routines a chance to free themselves */
+  if (mCanvas->mRenderer != NULL) {
+    /* Give the Glue routines a chance to free themselves */
+    XDestroyWindow(display, window);
+    XFreeFont(display, fontInfo);
+    XFree(visInfo);
+    XFreeColormap(display, colormap);
+    XSync(display, 0);
+    XCloseDisplay(display);
+    free(mCanvas->mRenderer);
+    
+  }
 
-        /* Give the Glue routines a chance to free themselves */
-        if (canvas->mRenderer != NULL) {
-            /* Give the Glue routines a chance to free themselves */
-            XDestroyWindow(canvas->mRenderer->display, canvas->mRenderer->window);
-            XFreeFont(canvas->mRenderer->display, canvas->mRenderer->fontInfo);
-            XFree(canvas->mRenderer->visInfo);
-            XFreeColormap(canvas->mRenderer->display, canvas->mRenderer->colormap);
-            XSync(canvas->mRenderer->display, 0);
-            XCloseDisplay(canvas->mRenderer->display);
-            free(canvas->mRenderer);
-            
-        }
-    }
+  return; 
 }
 
+//======================================================   
+// END XWindow struct
+//======================================================   

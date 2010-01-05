@@ -26,7 +26,6 @@
 #include <netinet/tcp.h>
 #include "xwindow.h"
 #include "canvas.h"
-#include "dmxglue.h"
 #include "SidecarServer.h"
 
 //  =============================================================
@@ -36,9 +35,6 @@ dmxRenderer::dmxRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindo
   QObject(parent), NewRenderer(opt, canvas, parentWindow, "dmx"), mAllowIdleSlaves(true), 
   mNumActiveSlaves(0), mSlavesReady(false),
   haveDMX(0),  dmxWindowInfos(NULL) {
-
-  canvas->ResizePtr = dmx_Resize;
-  canvas->MovePtr = dmx_Move;
 
   connect(&mSlaveServer, SIGNAL(newConnection()), this, SLOT(SlaveConnected()));  
   mSlaveServer.listen(QHostAddress::Any);  //QTcpServer will choose a port for us.
@@ -134,6 +130,85 @@ dmxRenderer::~dmxRenderer() {
     }
     if (dmxWindowInfos)
       delete [] dmxWindowInfos;
+  } 
+  int     slavenum = mActiveSlaves.size();
+  
+  while (slavenum--)
+    {
+      if (mActiveSlaves[slavenum])
+        mActiveSlaves[slavenum]->
+          SendMessage("Exit");
+    }
+  slavenum = mIdleSlaves.size();
+  while (slavenum--)
+    {
+      mIdleSlaves[slavenum]->SendMessage("Exit");
+    }
+  return;
+}
+
+//===================================================================
+void dmxRenderer::Resize(int newWidth, int newHeight, int cameFromX) {
+  
+  
+  ECHO_FUNCTION(5);
+
+  // don't forget to update the main window for Movie Cue events:
+  XWindow::Resize(newWidth, newHeight, cameFromX); 
+  /* I think these are redundant, as ResizeXWindow sets them
+     canvas->width = newWidth;
+     canvas->height = newHeight;
+  */ 
+  if (haveDMX) {
+    GetBackendInfo();
+  }
+  
+  UpdateBackendCanvases();
+}
+
+
+//===================================================================
+void dmxRenderer::Move(int newX, int newY, int cameFromX)
+{
+   
+  ECHO_FUNCTION(5);
+  /* Since we can use sidecar to move a window, we need to 
+     tell the backend servers to move the windows appropriately
+  */ 
+  XWindow::Move(newX, newY, cameFromX); 
+  if (haveDMX) {
+    GetBackendInfo();
+  }
+  
+  UpdateBackendCanvases();
+  
+} 
+
+//=====================================================================
+void  dmxRenderer::DrawString(int row, int column, const char *str) {
+  ECHO_FUNCTION(5);
+  if (!numValidWindowInfos) return; 
+  
+  int x = (column + 1) * fontHeight;
+  int y = (row + 1) * fontHeight;
+  int i;
+  
+  /* Send DrawString to back-end renderers, with appropriate offsets */
+  for (i = 0; i < numValidWindowInfos; i++) {
+    if (dmxWindowInfos[i].window) {
+      const int scrn = dmxWindowInfos[i].screen;
+      
+      int tx = x - dmxWindowInfos[i].vis.x;
+      int ty = y - dmxWindowInfos[i].vis.y;
+      int tcol = tx / fontHeight - 1;
+      int trow = ty / fontHeight - 1;
+      
+      mActiveSlaves[scrn]->
+        SendMessage(QString("DrawString %1 %2")
+                    .arg(trow).arg(tcol));
+      mActiveSlaves[scrn]->
+        SendMessage(QString(str));
+    }
   }
   return; 
 }

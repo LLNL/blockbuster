@@ -47,7 +47,6 @@
 #include <iostream> 
 #include "movie.h"
 #include <sys/stat.h>
-#include "dmxglue.h"
 #include "xwindow.h"
 #include "frames.h"
 #include "slave.h"
@@ -502,8 +501,8 @@ void printargs(char *description, char *args[], int argc) {
   Handle exit, by whatever means, whether signal or Quit.
 */
 void ExitHandler(void) {
-  DEBUGMSG("ExitHandler called.\n");
-  dmx_AtExitCleanup();
+  DEBUGMSG("WARNING:  ExitHandler called, but dmx_AtExitCleanup no longer being called.\n");
+  //dmx_AtExitCleanup();
   return; 
 }
   

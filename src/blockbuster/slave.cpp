@@ -515,8 +515,7 @@ int Slave::Loop(void)
             options->suggestedTitle = "Blockbuster Slave";
             mCanvas = new Canvas(parentWin, options);
  
-            GetXEvent(mCanvas, 0, &junkEvent); 
-            //canvas->GetEvent(0, &junkEvent); 
+            mCanvas->mRenderer->GetXEvent(0, &junkEvent); 
              
             if (mCanvas == NULL) {
               ERROR("Could not create a canvas");

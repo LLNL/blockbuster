@@ -35,13 +35,6 @@ struct ProgramOptions;
 struct MovieEvent; 
 struct RendererSpecificGlue *GetRendererSpecificGlueByName(QString name);
 
-void XWindow_SetTitle(QString title); 
-void GetXEvent(Canvas *canvas, int block, MovieEvent *movieEvent);
-void CloseXWindow(Canvas *canvas);
-void ResizeXWindow(Canvas *canvas, int newWidth, int newHeight, int cameFromX);
-void MoveXWindow(Canvas *canvas, int newX, int newY, int cameFromX);
-void XWindow_ShowCursor(bool show);
-void XWindow_ToggleCursor(void);
 
 struct XWindow {
   XWindow(Canvas *canvas,  ProgramOptions *options, Window parentWin);
@@ -58,10 +51,14 @@ struct XWindow {
   void ToggleCursor(void);
   void SetTitle (QString); 
 
+  void GetXEvent(int block, MovieEvent *movieEvent);
+  void Close(void);
+  void Resize(int newWidth, int newHeight, int cameFromX);
+  void Move(int newX, int newY, int cameFromX);
+  
   // new members: 
   ProgramOptions *mOptions; 
   Canvas *mCanvas; 
-
 
   // from WindowInfo struct:  
   Display *display;
@@ -73,7 +70,8 @@ struct XWindow {
   int fontHeight;
   Colormap colormap;
   bool mShowCursor; 
-
+  long mOldWidth, mOldHeight, mOldX, mOldY; 
+  bool mXSync; 
 }; 
 
 #endif
