@@ -2,12 +2,12 @@
 #include "SidecarServer.h"
 #include <iostream> 
 #include "errmsg.h"
-#include "dmxglue.h"
 #include "QMessageBox"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/tcp.h>
+#include "canvas.h"
 
 // global variables for network communications.  Can these be not global, somehow?   
 SidecarServer *gSidecarServer = NULL; 

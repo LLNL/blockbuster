@@ -39,11 +39,10 @@
 #include "movie.h"
 #include "errmsg.h"
 #include "frames.h"
-#include "dmxglue.h"
 #include "../libpng/pngsimple.h"
 #include <libgen.h>
 #include "xwindow.h"
-
+#include "canvas.h"
 
 
 /* ---------------------------------------------*/ 
@@ -269,7 +268,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       canvas->DMXSendHeartbeat(); 
       lastheartbeat = time(NULL); 
     }
-    //gCoreApp->processEvents(QEventLoop::AllEvents, 3); 
+ 
     gCoreApp->processEvents(); 
     if (gMainWindow->GetEvent(newEvent)) {  
       events.push_back(newEvent); 
@@ -277,7 +276,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
     if (GetNetworkEvent(&newEvent)) { /* Qt events from e.g. Sidecar */
       events.push_back(newEvent); 
     } 
-    GetXEvent(canvas, 0, &newEvent); 
+    canvas->mRenderer->GetXEvent(0, &newEvent); 
     if (playDirection && newEvent.eventType == MOVIE_GOTO_FRAME && 
         newEvent.number == frameNumber+playDirection) {
       newEvent.eventType = MOVIE_NONE; 

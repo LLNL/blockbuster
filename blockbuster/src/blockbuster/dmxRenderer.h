@@ -11,27 +11,6 @@
 #include <X11/extensions/Xdbe.h>
 #include <dmxext.h>
 
-#ifndef DmxBadXinerama
-#define DMX_API_VERSION 1
-#else
-#define DMX_API_VERSION 2
-#endif
-
-
-#define MAX_SCREENS 300
-
-#if DMX_API_VERSION == 1
-typedef DMXScreenInformation DMXScreenInfo; 
-typedef DMXWindowInformation DMXWindowInfo; 
-#define DMXGetScreenInfo  DMXGetScreenInformation
-#define DMXGetWindowInfo  DMXGetWindowInformation
-#else
-typedef DMXScreenAttributes DMXScreenInfo;   
-typedef DMXWindowAttributes DMXWindowInfo;   
-#define DMXGetScreenInfo  DMXGetScreenAttributes
-#define DMXGetWindowInfo  DMXGetWindowAttributes
-#endif
-
 
 //========================================================================
 /*! 
@@ -169,6 +148,30 @@ class DMXSlave: public QObject {
 
 
 //========================================================================
+// dmxRenderer class and associated data...
+//========================================================================
+#ifndef DmxBadXinerama
+#define DMX_API_VERSION 1
+#else
+#define DMX_API_VERSION 2
+#endif
+
+
+#define MAX_SCREENS 300
+
+#if DMX_API_VERSION == 1
+typedef DMXScreenInformation DMXScreenInfo; 
+typedef DMXWindowInformation DMXWindowInfo; 
+#define DMXGetScreenInfo  DMXGetScreenInformation
+#define DMXGetWindowInfo  DMXGetWindowInformation
+#else
+typedef DMXScreenAttributes DMXScreenInfo;   
+typedef DMXWindowAttributes DMXWindowInfo;   
+#define DMXGetScreenInfo  DMXGetScreenAttributes
+#define DMXGetWindowInfo  DMXGetWindowAttributes
+#endif
+
+//========================================================================
 
 class dmxRenderer: public QObject, public NewRenderer {
   Q_OBJECT
@@ -176,9 +179,10 @@ class dmxRenderer: public QObject, public NewRenderer {
   dmxRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QObject *parent = NULL);
   virtual ~dmxRenderer(); 
 
-  void DrawString(int , int , const char *){
-    return; // not implemented for DMX yet
-  }
+  void Resize(int newWidth, int newHeight, int cameFromX);
+  void Move(int newX, int newY, int cameFromX);
+
+  void DrawString(int row, int col , const char *str); 
   
   void Render(int frameNumber,
               const Rectangle *imageRegion,
@@ -188,7 +192,6 @@ class dmxRenderer: public QObject, public NewRenderer {
   void SetFrameList(FrameList *frameList);
   void Preload(uint32_t frameNumber,
                const Rectangle *imageRegion, uint32_t levelOfDetail);
-
 
   /*! 
     This must be called frequently to catch incoming network messages

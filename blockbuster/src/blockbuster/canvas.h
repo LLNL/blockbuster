@@ -62,19 +62,10 @@
      ImageFormat requiredImageFormat; // only defined and required by xwindow.cpp, strangely.  
 
     /* This renderer function will be called to notify the renderer
-     * that a resize has occurred.  Most renderers will not care
-     * about such a change, but some that manage subwindows (like
-     * DMX) will.
-     */
-     //void Resize(int newWidth, int newHeight, int cameFromX); 
+     * that a resize has occurred.    */
      void Resize(int newWidth, int newHeight, int camefromX) {
-       if (ResizePtr) ResizePtr(this, newWidth, newHeight, camefromX); 
-       else {
-          width = screenWidth;
-          height = screenHeight;
-       }
+       mRenderer->Resize(newWidth, newHeight, camefromX);     
      }
-     void (*ResizePtr)(struct Canvas *canvas, int newWidth, int newHeight, int camefromX);
 
     /* Only DMX uses this message; it tells a subwindow that it is 
      * supposed to move to a new location relative to its parent
@@ -84,10 +75,8 @@
 	 * from moves that themselves originated from X. 
      */
      void Move(int newX, int newY, int cameFromX){
-       if (MovePtr) MovePtr(this, newX, newY, cameFromX); 
+       mRenderer->Move(newX, newY, cameFromX); 
      }
-
-    void (*MovePtr)(struct Canvas *canvas, int newX, int newY, int cameFromX);
 
 
     /* This is called if any module wishes to report an error,
@@ -141,7 +130,7 @@
        mRenderer->DrawString(row, column, str); 
      }
 
-
+     
     /**************************************************************/
     /* The following fields are owned and initialized by the 
      * "glue" submodules of the UserInterface.  They are initialized
