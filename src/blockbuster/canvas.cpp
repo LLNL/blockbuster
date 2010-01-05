@@ -63,6 +63,7 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
   return ;
 }
 
+//============================================
 Canvas::~Canvas()
 {
   if (mRenderer) delete mRenderer; 
@@ -70,7 +71,25 @@ Canvas::~Canvas()
   return; 
 }
 
+//============================================================
+FrameInfo *Canvas::GetFrameInfoPtr(int frameNumber)
+{
+  /* Added to support stereo files */
+  /* Assumes canvas has a valid FrameList */
+  int localFrameNumber = 0;
 
+  if(frameList->stereo) {
+	localFrameNumber = frameNumber * 2;
+	
+  }
+  else {
+	localFrameNumber = frameNumber;
+  }
+  
+  return (FrameInfo*)frameList->getFrame(localFrameNumber);
+}
+
+//============================================================
 void Canvas::ReportFrameChange(int frameNumber) {
   DEBUGMSG("Canvas::ReportFrameChange %d", frameNumber); 
   if (mBlockbusterInterface) {
@@ -79,6 +98,7 @@ void Canvas::ReportFrameChange(int frameNumber) {
   return; 
 }
 
+//============================================================
 void Canvas::ReportFrameListChange(const FrameList *frameList) {
   DEBUGMSG("Canvas::ReportFrameListChange"); 
   if (mBlockbusterInterface) {
@@ -92,6 +112,7 @@ void Canvas::ReportFrameListChange(const FrameList *frameList) {
   return; 
 }
 
+//============================================================
 void Canvas::ReportDetailRangeChange(int min, int max) {
   if (mBlockbusterInterface) {
     mBlockbusterInterface->setLODRange(min,max); 
@@ -100,6 +121,7 @@ void Canvas::ReportDetailRangeChange(int min, int max) {
   return; 
 }
 
+//============================================================
 void Canvas::ReportDetailChange(int levelOfDetail) {
   if (mBlockbusterInterface) {
     mBlockbusterInterface->setLOD(levelOfDetail); 
@@ -107,6 +129,7 @@ void Canvas::ReportDetailChange(int levelOfDetail) {
   return; 
 }
 
+//============================================================
 void Canvas::ReportRateRangeChange(float min, float max) {
   if (mBlockbusterInterface) {
     mBlockbusterInterface->setFrameRateRange(min,max); 
@@ -114,6 +137,7 @@ void Canvas::ReportRateRangeChange(float min, float max) {
   return; 
 }
 
+//============================================================
 void Canvas::ReportLoopBehaviorChange(int behavior) {
   if (mBlockbusterInterface) {
     mBlockbusterInterface->setLoopBehavior(behavior); 
@@ -121,6 +145,7 @@ void Canvas::ReportLoopBehaviorChange(int behavior) {
   return; 
 }
 
+//============================================================
 void Canvas::ReportPingPongBehaviorChange(int behavior) {
   if (mBlockbusterInterface) {
     mBlockbusterInterface->setPingPongBehavior(behavior); 
@@ -128,6 +153,7 @@ void Canvas::ReportPingPongBehaviorChange(int behavior) {
   return; 
 }
 
+//============================================================
 void Canvas::ReportRateChange(float rate) {
   if (mBlockbusterInterface) {
     mBlockbusterInterface->setFrameRate(rate); 
@@ -135,6 +161,7 @@ void Canvas::ReportRateChange(float rate) {
   return; 
 }
 
+//============================================================
 void Canvas::ReportZoomChange(float zoom) {
   if (mBlockbusterInterface) {
     mBlockbusterInterface->setZoom(zoom); 
@@ -240,20 +267,3 @@ void Canvas::DMXCheckNetwork(void) {
   return; 
 }
 
-//============================================
-FrameInfo *Canvas::GetFrameInfoPtr(int frameNumber)
-{
-  /* Added to support stereo files */
-  /* Assumes canvas has a valid FrameList */
-  int localFrameNumber = 0;
-
-  if(frameList->stereo) {
-	localFrameNumber = frameNumber * 2;
-	
-  }
-  else {
-	localFrameNumber = frameNumber;
-  }
-  
-  return (FrameInfo*)frameList->getFrame(localFrameNumber);
-}
