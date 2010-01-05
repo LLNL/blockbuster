@@ -59,24 +59,18 @@
      public:
    /* The fundamental operation of the Renderer is to render.        This might be assigned gl_Render (gl.cpp, gl_Initialize), x11_Render (x11.cpp: x11_initialize()), or dmx_Render (dmxglue.cpp, dmx_Initialize()).  The assignment is done 
     */
-     void Render(struct Canvas *canvas, int frameNumber,
-                 const Rectangle *imageRegion,
+     void Render(int frameNumber, const Rectangle *imageRegion,
                  int destX, int destY, float zoom, int lod) {       
-       if (RenderPtr) RenderPtr(canvas, frameNumber, imageRegion, destX, destY, zoom, lod); 
-       else mRenderer->Render(frameNumber, imageRegion, destX, destY, zoom, lod);
+       mRenderer->Render(frameNumber, imageRegion, destX, destY, zoom, lod);
      } 
-     void (*RenderPtr)(struct Canvas *canvas, int frameNumber,
-                       const Rectangle *imageRegion,
-                       int destX, int destY, float zoom, int lod) ;
-       
 
      void SetFrameList(FrameList *frameList) {
        mRenderer->SetFrameList(frameList); 
      }
      
-     void Preload(struct Canvas *canvas, uint32_t frameNumber,
+     void Preload(uint32_t frameNumber,
                   const Rectangle *imageRegion, uint32_t levelOfDetail){
-       if (PreloadPtr) PreloadPtr(canvas, frameNumber, imageRegion, levelOfDetail); 
+       if (PreloadPtr) PreloadPtr(this, frameNumber, imageRegion, levelOfDetail); 
      }
      void (*PreloadPtr)(struct Canvas *canvas, uint32_t frameNumber,
                      const Rectangle *imageRegion, uint32_t levelOfDetail);
@@ -105,8 +99,8 @@
      * DMX) will.
      */
      //void Resize(int newWidth, int newHeight, int cameFromX); 
-     void Resize(struct Canvas *canvas, int newWidth, int newHeight, int camefromX) {
-       if (ResizePtr) ResizePtr(canvas, newWidth, newHeight, camefromX); 
+     void Resize(int newWidth, int newHeight, int camefromX) {
+       if (ResizePtr) ResizePtr(this, newWidth, newHeight, camefromX); 
        else {
           width = screenWidth;
           height = screenHeight;
@@ -121,8 +115,8 @@
 	 * redundant and bug-prone generation of XMoveWindow() calls 
 	 * from moves that themselves originated from X. 
      */
-     void Move(struct Canvas *canvas, int newX, int newY, int cameFromX){
-       if (MovePtr) MovePtr(canvas, newX, newY, cameFromX); 
+     void Move(int newX, int newY, int cameFromX){
+       if (MovePtr) MovePtr(this, newX, newY, cameFromX); 
      }
 
     void (*MovePtr)(struct Canvas *canvas, int newX, int newY, int cameFromX);
@@ -175,8 +169,8 @@
      * this value; if it is set, the Renderer's Initialize() method
      * should not override it.
      */
-     void DrawString(struct Canvas *canvas, int row, int column, const char *str) {
-       if (DrawStringPtr) DrawStringPtr(canvas, row, column, str); 
+     void DrawString(int row, int column, const char *str) {
+       if (DrawStringPtr) DrawStringPtr(this, row, column, str); 
        else mRenderer->DrawString(row, column, str); 
      }
     void (*DrawStringPtr)(struct Canvas *canvas, int row, int column, const char *str);
@@ -190,8 +184,8 @@
      */
 
     /* Called to swap front/back buffers */
-     void SwapBuffers(struct Canvas *canvas) {
-       if (SwapBuffersPtr) SwapBuffersPtr(canvas); 
+     void SwapBuffers(void) {
+       if (SwapBuffersPtr) SwapBuffersPtr(this); 
      }
      void (*SwapBuffersPtr)(struct Canvas *canvas);
      
@@ -199,8 +193,8 @@
      * glue to make sure the surface is ready for rendering (e.g.,
      * by calling glXMakeCurrent(), or a similar widget routine).
      */
-     void BeforeRender(struct Canvas *canvas){
-       if (BeforeRenderPtr) BeforeRenderPtr(canvas); 
+     void BeforeRender(void){
+       if (BeforeRenderPtr) BeforeRenderPtr(this); 
      }
      void (*BeforeRenderPtr)(struct Canvas *canvas);
      

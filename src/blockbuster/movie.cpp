@@ -378,8 +378,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
             event.x = canvas->XPos;
           if (event.y == -1) 
             event.y = canvas->YPos;
-          canvas->Move(canvas, event.x,
-                       event.y, event.number);            
+          canvas->Move(event.x, event.y, event.number);            
         }
         // END MOVE ===========================
         
@@ -420,7 +419,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
             event.height = canvas->screenHeight; 
           }
           
-          canvas->Resize(canvas, event.width,
+          canvas->Resize(event.width,
                          event.height, event.number);
           /* Set these in case there is no Resize function */
           canvas->width = event.width;
@@ -526,7 +525,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
           if (height > canvas->screenHeight) {
             height = canvas->screenHeight; 
           }
-          canvas->Resize(canvas, width,height, 0);
+          canvas->Resize(width,height, 0);
           if (frameInfo) {
             canvas->width = width;
             canvas->height = height;
@@ -998,7 +997,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       
       TIMER_PRINT("before  BeforeRender"); 
 
-      canvas->BeforeRender(canvas);
+      canvas->BeforeRender();
       
       /* If we're paused or stopped, render the frame at maximum
        * level of detail, regardless of what was requested during
@@ -1007,7 +1006,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
        */
       
        TIMER_PRINT("before render"); 
-       canvas->Render(canvas, frameNumber, &roi, destX, destY, currentZoom, lod);
+       canvas->Render(frameNumber, &roi, destX, destY, currentZoom, lod);
        if (!usingDmx && frameNumber != previousFrame && previousFrame >= 0) {
          if (allFrames->stereo) {
            canvas->mRenderer->mCache->ReleaseFrame(previousFrame*2); 
@@ -1026,18 +1025,18 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
              char str[100];
              int row = 0;
              sprintf(str, "Frame %d of %d", frameNumber + 1, allFrames->numStereoFrames());
-             canvas->DrawString(canvas, row++, 0, str);
+             canvas->DrawString(row++, 0, str);
              sprintf(str, "Frame Size: %d by %d pixels",
              frameInfo->width, frameInfo->height);
-             canvas->DrawString(canvas, row++, 0, str);
+             canvas->DrawString(row++, 0, str);
              sprintf(str, "Position: %d, %d",
              -(xOffset + panDeltaX), yOffset + panDeltaY);
-             canvas->DrawString(canvas, row++, 0, str);
+             canvas->DrawString(row++, 0, str);
              sprintf(str, "Zoom: %5.2f  LOD: %d (%d + %d)", currentZoom, lod, baseLOD, lodBias);
              
-             canvas->DrawString(canvas, row++, 0, str);
+             canvas->DrawString(row++, 0, str);
              sprintf(str, "FPS: %5.1f (target %.1f)", fps, targetFPS);
-             canvas->DrawString(canvas, row++, 0, str);
+             canvas->DrawString(row++, 0, str);
              }
       */
  
@@ -1066,7 +1065,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         canvas->playDirection = playDirection;
         canvas->startFrame = startFrame; 
         canvas->endFrame = endFrame; 
-        canvas->SwapBuffers(canvas);
+        canvas->SwapBuffers();
         if (playDirection && options->speedTest) {
           cerr << "requesting speedTest of slaves" << endl; 
           canvas->DMXSpeedTest(); 
@@ -1090,7 +1089,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
             frame = endFrame - (startFrame - frame); // for loops
           } 
           DEBUGMSG("Preload frame %d", frame); 
-          canvas->Preload(canvas, frame, &roi, lod);
+          canvas->Preload(frame, &roi, lod);
         }
       }
       
