@@ -61,13 +61,6 @@ static int globalSync = 0; // this used to be a user option, now it's  static.
  */
  struct RendererSpecificGlue{
 
-   /* The UserInterface passes on the responsibility of reporting
-     * status directly to the Glue routines, who will render 
-     * the status text directly into their own windows.
-     */
-    void (*DrawString)(Canvas *canvas, int row, int column, const char *str);
-
-    /* These are standard configuration thingies */
     void (*SwapBuffers)(Canvas *canvas);
 } ;
 
@@ -181,11 +174,7 @@ XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, Window parentWin):
     y = 0;
   
   
-  
-  /* Each renderer has its own way of choosing a visual; pass off the
-   * choice of visual to the glue routine.
-   */
-  visInfo = ChooseVisual( );
+  visInfo = ChooseVisual( ); // virtual function per renderer
   if (visInfo == NULL) {
     XCloseDisplay(display);
     ERROR("Could not get visInfo in XWindow constructor.\n"); 
@@ -280,7 +269,6 @@ XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, Window parentWin):
   */
   canvas->ResizePtr = ResizeXWindow;
   canvas->MovePtr = MoveXWindow;
-  canvas->DrawStringPtr = rendererGlue->DrawString;
   canvas->SwapBuffersPtr = rendererGlue->SwapBuffers;
   
   
@@ -724,18 +712,6 @@ static void glSwapBuffers(Canvas *canvas)
 }
 
 
-/* This can only be implemented in the "Glue" because it depends on the
- * window system parameters.
- */
-static void glDrawString(Canvas *canvas, int row, int column, const char *str)
-{
-    const int x = (column + 1) * canvas->mRenderer->fontHeight;
-    const int y = (row + 1) * canvas->mRenderer->fontHeight;
-    glPushAttrib(GL_CURRENT_BIT);
-    glBitmap(0, 0, 0, 0, x, canvas->height - y - 1, NULL);
-    glCallLists(strlen(str), GL_UNSIGNED_BYTE, (GLubyte *) str);
-    glPopAttrib();
-}
 
 /***********************************************************************/
 /* Glue routines and data for the X11 renderer
@@ -759,19 +735,16 @@ static void x11SwapBuffers(Canvas *canvas)
 
 
 RendererSpecificGlue x11RendererSpecificGlue = {
-  NULL,               /* use Renderer's DrawString routine */
   x11SwapBuffers
 };
 
 
 RendererSpecificGlue glRendererSpecificGlue = {
-  glDrawString,
   glSwapBuffers
 };
 
 
 RendererSpecificGlue glStereoRendererSpecificGlue = {
-  glDrawString,
   glSwapBuffers
 };
 
@@ -784,7 +757,6 @@ RendererSpecificGlue glStereoRendererSpecificGlue = {
 
 
 RendererSpecificGlue dmxRendererSpecificGlue = {
-  NULL,                       /* use Renderer's DrawString routine */
   NULL,                       /* use Renderer's SwapBuffers routine */
 };
 

@@ -42,7 +42,7 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
   mBlockbusterInterface(gui), 
   frameList(NULL), 
   ResizePtr(NULL), MovePtr(NULL), 
-  DrawStringPtr(NULL), SwapBuffersPtr(NULL), 
+  SwapBuffersPtr(NULL), 
   mOptions(options)
 {
 

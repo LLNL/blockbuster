@@ -113,6 +113,17 @@ XVisualInfo *glRenderer::ChooseVisual(void)
 }
 
 //=============================================================
+void glRenderer::DrawString(int row, int column, const char *str)
+{
+  const int x = (column + 1) * mCanvas->mRenderer->fontHeight;
+  const int y = (row + 1) * mCanvas->mRenderer->fontHeight;
+  glPushAttrib(GL_CURRENT_BIT);
+  glBitmap(0, 0, 0, 0, x, mCanvas->height - y - 1, NULL);
+  glCallLists(strlen(str), GL_UNSIGNED_BYTE, (GLubyte *) str);
+  glPopAttrib();
+  return; 
+}
+//=============================================================
 void glRenderer::Render(int frameNumber, 
                         const Rectangle *imageRegion,
                         int destX, int destY, float zoom, int lod){

@@ -40,10 +40,6 @@ dmxRenderer::dmxRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindo
   canvas->ResizePtr = dmx_Resize;
   canvas->MovePtr = dmx_Move;
   canvas->SwapBuffersPtr = dmx_SwapBuffers;
-  /* If the UserInterface implements this routine, we should not use ours */
-  if (canvas->DrawStringPtr == NULL) { 
-    canvas->DrawStringPtr = dmx_DrawString;
-  }
 
   connect(&mSlaveServer, SIGNAL(newConnection()), this, SLOT(SlaveConnected()));  
   mSlaveServer.listen(QHostAddress::Any);  //QTcpServer will choose a port for us.

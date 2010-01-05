@@ -138,10 +138,8 @@
      * should not override it.
      */
      void DrawString(int row, int column, const char *str) {
-       if (DrawStringPtr) DrawStringPtr(this, row, column, str); 
-       else mRenderer->DrawString(row, column, str); 
+       mRenderer->DrawString(row, column, str); 
      }
-    void (*DrawStringPtr)(struct Canvas *canvas, int row, int column, const char *str);
 
 
     /**************************************************************/

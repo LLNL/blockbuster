@@ -13,6 +13,7 @@ class glRenderer: public NewRenderer {
   virtual ~glRenderer() ;
 
   virtual XVisualInfo *ChooseVisual(void);  
+  void DrawString(int row, int column, const char *str);
 
   virtual void Render(int frameNumber,
                       const Rectangle *imageRegion,
