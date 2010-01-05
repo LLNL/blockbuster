@@ -25,6 +25,7 @@ class NewRenderer: public XWindow {
     mCache = NULL; 
     return; 
   }
+
   virtual Image *GetImage(uint32_t frameNumber,
                   const Rectangle *newRegion, uint32_t levelOfDetail){
     return mCache->GetImage(frameNumber, newRegion, levelOfDetail); 
