@@ -5,7 +5,6 @@
 #include "ui_BlockbusterControl.h"
 #include "ui_InfoWindow.h"
 #include <deque>
-#include "Renderers.h"
 #include "events.h"
 class Canvas; 
 

@@ -84,8 +84,7 @@ DEBUG=
 endif
 
 SOURCES=main.cpp blockbuster_qt.cpp movie.cpp  timer.C \
-	 pure_C.c Renderers.cpp \
-	frames.cpp  slave.cpp remotecommands.cpp \
+	 pure_C.c frames.cpp  slave.cpp remotecommands.cpp \
 	cache.cpp  canvas.cpp common.cpp \
 	sgi-rgb.cpp convert.cpp  \
 	sm.cpp dmxglue.cpp png.cpp splash.cpp  \
