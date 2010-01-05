@@ -556,6 +556,10 @@ void glTextureRenderer::Render(int frameNumber, const Rectangle *imageRegion,
          destX, destY, zoom, lod);
 #endif
   
+  if (glXMakeCurrent(display, window, context) == False) {
+    WARNING("couldn't make graphics context current before rendering");
+  }
+  
   UpdateProjectionAndViewport(mCanvas->width, mCanvas->height);
   glEnable(GL_TEXTURE_2D);
   

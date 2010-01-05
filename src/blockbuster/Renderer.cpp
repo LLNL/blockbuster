@@ -5,7 +5,6 @@
 #include "settings.h"
 #include "canvas.h"
 
-
 NewRenderer * NewRenderer::CreateRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow) {
   QString name = opt->rendererName; 
   NewRenderer *renderer = NULL; 
