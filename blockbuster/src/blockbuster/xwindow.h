@@ -50,7 +50,9 @@ struct XWindow {
     return  pureC_x11ChooseVisual(display,  screenNumber);
   }
 
-
+  virtual void DrawString(int row, int column, const char *str)=0;  
+  //virtual void SwapBuffers(void)=0;
+  
   void remove_mwm_border(void);
   void ShowCursor(bool show);
   void ToggleCursor(void);

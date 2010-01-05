@@ -45,7 +45,6 @@ class NewRenderer: public XWindow {
                       const Rectangle *imageRegion,
                       int destX, int destY, float zoom, int lod) = 0;
 
-  virtual void DrawString(int /*row*/ , int /*column*/, const char */*str*/) {}
   virtual void SetFrameList(FrameList *frameList) ;
     
   // from Canvas class 

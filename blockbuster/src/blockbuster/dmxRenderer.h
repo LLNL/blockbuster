@@ -176,6 +176,10 @@ class dmxRenderer: public QObject, public NewRenderer {
   dmxRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QObject *parent = NULL);
   virtual ~dmxRenderer(); 
 
+  void DrawString(int , int , const char *){
+    return; // not implemented for DMX yet
+  }
+  
   void Render(int frameNumber,
               const Rectangle *imageRegion,
               int destX, int destY, float zoom, int lod);
