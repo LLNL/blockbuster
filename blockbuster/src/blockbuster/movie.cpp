@@ -705,7 +705,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
 	  } else { 
 	    ERROR("Could not open movie file %s", event.mString); 
 	  }
-	  frameInfo =  (FrameInfo*)GetFrameInfoPtr(canvas, 1);
+	  frameInfo =  canvas->GetFrameInfoPtr(1);
 	  preloadFrames = MIN2(options->preloadFrames, static_cast<int32_t>(allFrames->numStereoFrames()));
 	}
         break;
@@ -842,7 +842,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       //=====================================================================
       
       /* frameInfo = allFrames->frames[frameNumber];  */
-      frameInfo =  (FrameInfo*)GetFrameInfoPtr(canvas, frameNumber); /* wrapper for stereo support */
+      frameInfo =  canvas->GetFrameInfoPtr(frameNumber); /* wrapper for stereo support */
       
       if (currentZoom != newZoom) {
         currentZoom = newZoom;

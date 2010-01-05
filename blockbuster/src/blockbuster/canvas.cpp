@@ -34,16 +34,6 @@
 #include "dmxRenderer.h"
 #include "Renderer.h"
 
-/* This file handles the creation and destruction of the dynamic Canvas
- * objects, and encapsulates references to the Renderers, UserInterfaces,
- * and appropriate Glue.
- */
-
-
-
-/* This is the master function to create a Canvas.  It plugs in the desired
- * UserInterface and Renderer and the appropriate Glue routines.
- */
 
 Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options, 
                BlockbusterInterface *gui):
@@ -51,17 +41,10 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
   XPos(0), YPos(0), depth(0), threads(0), cachesize(0), 
   mBlockbusterInterface(gui), 
   frameList(NULL), 
-  PreloadPtr(NULL), 
   ResizePtr(NULL), MovePtr(NULL), 
   DrawStringPtr(NULL), SwapBuffersPtr(NULL), 
   BeforeRenderPtr(NULL),  mOptions(options)
 {
-
-    /* We've got a UserInterface, a Renderer, and glue.  We're good to go. 
-     * The UserInterface gets to go first, because it has to open the window
-     * or widget (and may adjust the desired size appropriately), and it has
-     * to prepare the Glue required for the Renderer to function.
-     */
 
 	this->threads = mOptions->readerThreads;
 	this->cachesize = mOptions->frameCacheSize;
@@ -76,17 +59,7 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
     }
     mOptions->mNewRenderer = mRenderer; 
 
-   /* If this renderer would like an image cache, we can create one, as
-     * a convenience (this is done because most renderers do use an 
-     * image cache; putting the cache creation here simplifies their
-     * implementations).  If the UserInterface or Glue routines supply
-     * their own methods, we refuse to override them.
-     */
-    DEBUGMSG(QString("frameCacheSize is %1").arg(mOptions->frameCacheSize)); 
-    if (mOptions->frameCacheSize > 0 && this->PreloadPtr == NULL ) {
-      this->PreloadPtr = CachePreload;
-     }
-    
+    DEBUGMSG(QString("frameCacheSize is %1").arg(mOptions->frameCacheSize));    
     
     /* All done */
     return ;
@@ -100,6 +73,37 @@ Canvas::~Canvas()
 }
 
 
+
+/* Default/fallback routine for Canvas->Preload()
+   Will be replaced by NewRenderer::Preload() 
+ */
+void Canvas::Preload(uint32_t frameNumber, const Rectangle *imageRegion,
+	uint32_t levelOfDetail)
+{
+    Rectangle lodROI;
+    uint32_t localFrameNumber = 0;
+
+    /* Adjust ROI for LOD! (very important) */
+    lodROI.x = imageRegion->x >> levelOfDetail;
+    lodROI.y = imageRegion->y >> levelOfDetail;
+    lodROI.width = imageRegion->width >> levelOfDetail;
+    lodROI.height = imageRegion->height >> levelOfDetail;
+
+	
+	if(frameList->stereo) {
+	  localFrameNumber = frameNumber * 2;
+	  mRenderer->mCache->PreloadImage( localFrameNumber++,
+                                        &lodROI, levelOfDetail);
+	  mRenderer->mCache->PreloadImage(localFrameNumber,
+                                       &lodROI, levelOfDetail);
+	}
+	else {
+	  localFrameNumber = frameNumber;
+	  mRenderer->mCache->PreloadImage(localFrameNumber,
+                                       &lodROI, levelOfDetail);
+	}   
+    return; 
+}
 
 void Canvas::ReportFrameChange(int frameNumber) {
   DEBUGMSG("Canvas::ReportFrameChange %d", frameNumber); 
@@ -271,13 +275,13 @@ void Canvas::DMXCheckNetwork(void) {
 }
 
 //============================================
-FrameInfo *GetFrameInfoPtr(Canvas *canvas, int frameNumber)
+FrameInfo *Canvas::GetFrameInfoPtr(int frameNumber)
 {
   /* Added to support stereo files */
   /* Assumes canvas has a valid FrameList */
   int localFrameNumber = 0;
 
-  if(canvas->frameList->stereo) {
+  if(frameList->stereo) {
 	localFrameNumber = frameNumber * 2;
 	
   }
@@ -285,5 +289,5 @@ FrameInfo *GetFrameInfoPtr(Canvas *canvas, int frameNumber)
 	localFrameNumber = frameNumber;
   }
   
-  return (FrameInfo*)canvas->frameList->getFrame(localFrameNumber);
+  return (FrameInfo*)frameList->getFrame(localFrameNumber);
 }
