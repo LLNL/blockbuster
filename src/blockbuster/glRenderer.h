@@ -11,8 +11,8 @@ class glRenderer: public NewRenderer {
   glRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QString name="gl");
 
   virtual ~glRenderer() ;
-  // this is a no-op for glRenderers: 
-  // virtual void HandleOptions(int &argc, char *argv[]);
+
+  virtual XVisualInfo *ChooseVisual(void);  
 
   virtual void Render(int frameNumber,
                       const Rectangle *imageRegion,
@@ -32,8 +32,8 @@ class glStereoRenderer: public glRenderer {
     return; 
   }
   virtual ~glStereoRenderer() {}
-  virtual void Render(int frameNumber,
-              const Rectangle *imageRegion,
+  XVisualInfo *ChooseVisual(void);
+  void Render(int frameNumber, const Rectangle *imageRegion,
               int destX, int destY, float zoom, int lod);
 };
 
@@ -56,6 +56,7 @@ class glTextureRenderer: public glRenderer {
  public:
   glTextureRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow);
   virtual ~glTextureRenderer() {}
+
   int32_t MinPowerOf2(int x); 
   void Render(int frameNumber, const Rectangle *imageRegion,
               int destX, int destY, float zoom, int lod);

@@ -91,6 +91,27 @@ glRenderer::~glRenderer() {
   return; 
 }
 
+
+//=============================================================
+XVisualInfo *glRenderer::ChooseVisual(void)
+{
+  DEBUGMSG("glChooseVisual (no stereo)"); 
+  static int attributes[] = {
+    GLX_USE_GL, GLX_RGBA, GLX_DOUBLEBUFFER,
+    GLX_RED_SIZE, 1, GLX_GREEN_SIZE, 1, GLX_BLUE_SIZE, 1,
+    None
+  };
+  XVisualInfo *visualInfo;
+  
+  visualInfo = glXChooseVisual(display, screenNumber, attributes);
+  if (visualInfo == NULL) {
+    ERROR("cannot find a GLX visual on %s to create new OpenGL window",
+          DisplayString(display));
+    return NULL;
+  }
+  return visualInfo;
+}
+
 //=============================================================
 void glRenderer::Render(int frameNumber, 
                         const Rectangle *imageRegion,
@@ -434,6 +455,29 @@ void glStereoRenderer::Render(int frameNumber,
   return; 
   
 }
+//===========================================================
+// glStereoRenderer
+// ==========================================================
+XVisualInfo *glStereoRenderer::ChooseVisual(void)
+{
+  DEBUGMSG("glStereoChooseVisual"); 
+  static int attributes[] = {
+    GLX_USE_GL, GLX_RGBA, GLX_DOUBLEBUFFER, GLX_STEREO,
+    GLX_RED_SIZE, 1, GLX_GREEN_SIZE, 1, GLX_BLUE_SIZE, 1,
+    None
+  };
+  XVisualInfo *visualInfo;
+  
+  visualInfo = glXChooseVisual(display, screenNumber, attributes);
+  if (visualInfo == NULL) {
+    ERROR("cannot find a GLX stereo visual on %s to create new OpenGL window",
+          DisplayString(display));
+    return NULL;
+  }
+  
+  return visualInfo;
+}
+
 
 //===========================================================
 // glTextureRenderer

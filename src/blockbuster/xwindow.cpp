@@ -60,11 +60,6 @@ static int globalSync = 0; // this used to be a user option, now it's  static.
  * needs to have handled by glue routines.
  */
  struct RendererSpecificGlue{
-    /* Each renderer needs to be able to choose its own visual,
-     * so it can guarantee that a visual that can support its
-     * form of rendering is chosen.
-     */
-    XVisualInfo *(*ChooseVisual)(Display *display, int screenNumber);
 
    /* The UserInterface passes on the responsibility of reporting
      * status directly to the Glue routines, who will render 
@@ -190,7 +185,7 @@ XWindow::XWindow(Canvas *canvas,  ProgramOptions *options, Window parentWin):
   /* Each renderer has its own way of choosing a visual; pass off the
    * choice of visual to the glue routine.
    */
-  visInfo = rendererGlue->ChooseVisual( display, screenNumber );
+  visInfo = ChooseVisual( );
   if (visInfo == NULL) {
     XCloseDisplay(display);
     ERROR("Could not get visInfo in XWindow constructor.\n"); 
@@ -728,45 +723,6 @@ static void glSwapBuffers(Canvas *canvas)
      glXSwapBuffers(canvas->mRenderer->display, canvas->mRenderer->window);
 }
 
-static XVisualInfo *glChooseVisual(Display *display, int screenNumber)
-{
-  DEBUGMSG("glChooseVisual (no stereo)"); 
-    static int attributes[] = {
-        GLX_USE_GL, GLX_RGBA, GLX_DOUBLEBUFFER,
-        GLX_RED_SIZE, 1, GLX_GREEN_SIZE, 1, GLX_BLUE_SIZE, 1,
-        None
-    };
-    XVisualInfo *visualInfo;
-
-    visualInfo = glXChooseVisual(display, screenNumber, attributes);
-    if (visualInfo == NULL) {
-        ERROR("cannot find a GLX visual on %s to create new OpenGL window",
-              DisplayString(display));
-        return NULL;
-    }
-    return visualInfo;
-}
-
-
-static XVisualInfo *glStereoChooseVisual(Display *display, int screenNumber)
-{
-  DEBUGMSG("glStereoChooseVisual"); 
-    static int attributes[] = {
-      GLX_USE_GL, GLX_RGBA, GLX_DOUBLEBUFFER, GLX_STEREO,
-        GLX_RED_SIZE, 1, GLX_GREEN_SIZE, 1, GLX_BLUE_SIZE, 1,
-        None
-    };
-    XVisualInfo *visualInfo;
-
-    visualInfo = glXChooseVisual(display, screenNumber, attributes);
-    if (visualInfo == NULL) {
-        ERROR("cannot find a GLX stereo visual on %s to create new OpenGL window",
-              DisplayString(display));
-        return NULL;
-    }
-
-    return visualInfo;
-}
 
 /* This can only be implemented in the "Glue" because it depends on the
  * window system parameters.
@@ -803,21 +759,18 @@ static void x11SwapBuffers(Canvas *canvas)
 
 
 RendererSpecificGlue x11RendererSpecificGlue = {
-  pureC_x11ChooseVisual,
   NULL,               /* use Renderer's DrawString routine */
   x11SwapBuffers
 };
 
 
 RendererSpecificGlue glRendererSpecificGlue = {
-  glChooseVisual,
   glDrawString,
   glSwapBuffers
 };
 
 
 RendererSpecificGlue glStereoRendererSpecificGlue = {
-  glStereoChooseVisual,
   glDrawString,
   glSwapBuffers
 };
@@ -831,7 +784,6 @@ RendererSpecificGlue glStereoRendererSpecificGlue = {
 
 
 RendererSpecificGlue dmxRendererSpecificGlue = {
-  pureC_x11ChooseVisual,            /* same as X11 */
   NULL,                       /* use Renderer's DrawString routine */
   NULL,                       /* use Renderer's SwapBuffers routine */
 };

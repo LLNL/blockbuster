@@ -1,5 +1,5 @@
-#include "x11Renderer.h"
 
+#include "x11Renderer.h"
 #include "errmsg.h"
 #include "cache.h"
 #include "util.h"
@@ -14,8 +14,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/Xdbe.h>
-
-#include "canvas.h" // POISON -- temporary -- x11Renderer should not know about canvases.
+#include "canvas.h" 
 
 x11Renderer::x11Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow):
   NewRenderer(opt, canvas, parentWindow, "x11"), mSwapAction(XdbeBackground) {
@@ -78,6 +77,7 @@ x11Renderer::~x11Renderer() {
   
   return; 
 }
+
 
 //====================================================================
 /* This utility function converts a raw mask into a mask and shift */
