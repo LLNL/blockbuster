@@ -140,11 +140,8 @@
      BlockbusterInterface *mBlockbusterInterface; 
           
      FrameList *frameList;
-     //struct ImageCache *imageCache;
-    NewRenderer *mRenderer; 
+     NewRenderer *mRenderer; 
 
-     void *gluePrivateData;
-     
      int32_t playDirection, startFrame, endFrame, preloadFrames; 
      ProgramOptions *mOptions; 
   } ;
