@@ -71,37 +71,6 @@ bool jobComparer(const ImageCacheJob *first, const ImageCacheJob *second){
 }
 
 
-/* Default/fallback routine for Canvas->Preload()
-   Will be replaced by NewRenderer::Preload() 
- */
-void CachePreload(Canvas *canvas, uint32_t frameNumber, const Rectangle *imageRegion,
-	uint32_t levelOfDetail)
-{
-    Rectangle lodROI;
-    uint32_t localFrameNumber = 0;
-
-    /* Adjust ROI for LOD! (very important) */
-    lodROI.x = imageRegion->x >> levelOfDetail;
-    lodROI.y = imageRegion->y >> levelOfDetail;
-    lodROI.width = imageRegion->width >> levelOfDetail;
-    lodROI.height = imageRegion->height >> levelOfDetail;
-
-	
-	if(canvas->frameList->stereo) {
-	  localFrameNumber = frameNumber * 2;
-	  canvas->mRenderer->mCache->PreloadImage( localFrameNumber++,
-                                        &lodROI, levelOfDetail);
-	  canvas->mRenderer->mCache->PreloadImage(localFrameNumber,
-                                       &lodROI, levelOfDetail);
-	}
-	else {
-	  localFrameNumber = frameNumber;
-	  canvas->mRenderer->mCache->PreloadImage(localFrameNumber,
-                                       &lodROI, levelOfDetail);
-	}   
-    return; 
-}
-
 /* This utility function handles loading and converting images appropriately,
  * for both the single-threaded and multi-threaded cases.
  */

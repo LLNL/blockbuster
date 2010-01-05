@@ -55,6 +55,7 @@
      */
      FrameList *frameList;
      //struct ImageCache *imageCache;
+     FrameInfo *GetFrameInfoPtr(int frameNumber);
 
      public:
    /* The fundamental operation of the Renderer is to render.        This might be assigned gl_Render (gl.cpp, gl_Initialize), x11_Render (x11.cpp: x11_initialize()), or dmx_Render (dmxglue.cpp, dmx_Initialize()).  The assignment is done 
@@ -69,11 +70,7 @@
      }
      
      void Preload(uint32_t frameNumber,
-                  const Rectangle *imageRegion, uint32_t levelOfDetail){
-       if (PreloadPtr) PreloadPtr(this, frameNumber, imageRegion, levelOfDetail); 
-     }
-     void (*PreloadPtr)(struct Canvas *canvas, uint32_t frameNumber,
-                     const Rectangle *imageRegion, uint32_t levelOfDetail);
+                  const Rectangle *imageRegion, uint32_t levelOfDetail);
 
 
       // this will replaces all the above function pointers. 
