@@ -160,7 +160,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   /*int izoom = 0*/  // for mouse zoom
   float currentZoom = 1.0, newZoom, startZoom, oldZoom; // actual zoom factor
   int lod = 0, maxLOD, baseLOD = 0, lodBias = options->LOD;
-  bool usingDmx = (QString(options->mOldRenderer->name) == "dmx"); 
+  bool usingDmx = (QString(options->rendererName) == "dmx"); 
 
   /* Region Of Interest of the image */
   Rectangle roi;

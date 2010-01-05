@@ -57,8 +57,6 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
   BeforeRenderPtr(NULL),  mOptions(options)
 {
 
-    MovieStatus status;
-
     /* We've got a UserInterface, a Renderer, and glue.  We're good to go. 
      * The UserInterface gets to go first, because it has to open the window
      * or widget (and may adjust the desired size appropriately), and it has
@@ -78,10 +76,7 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
     }
     mOptions->mNewRenderer = mRenderer; 
 
-    if (mOptions->mOldRenderer->Initialize) {
-      status = mOptions->mOldRenderer->Initialize(this, mOptions);
-    }
-    /* If this renderer would like an image cache, we can create one, as
+   /* If this renderer would like an image cache, we can create one, as
      * a convenience (this is done because most renderers do use an 
      * image cache; putting the cache creation here simplifies their
      * implementations).  If the UserInterface or Glue routines supply

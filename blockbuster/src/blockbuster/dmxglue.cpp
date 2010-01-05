@@ -33,25 +33,6 @@
 #include "dmxRenderer.h"
 dmxRenderer *gRenderer = NULL;
 
-//============================================================
-
-MovieStatus dmx_Initialize(Canvas *canvas, const ProgramOptions *options) {
-  gRenderer = dynamic_cast<dmxRenderer *>(options->mNewRenderer); 
-
-  /* Plug in our special functions for canvas manipulations.
-   * We basically override all the functions set in CreateXWindow.
-   */
-  canvas->RenderPtr = dmx_Render;
-  canvas->ResizePtr = dmx_Resize;
-  canvas->MovePtr = dmx_Move;
-  canvas->SwapBuffersPtr = dmx_SwapBuffers;
-  /* If the UserInterface implements this routine, we should not use ours */
-  if (canvas->DrawStringPtr == NULL) { 
-    canvas->DrawStringPtr = dmx_DrawString;
-  }
-  return MovieSuccess; /* OK */
-}
-
 
 /*!
   This is set to be called at exit.  It looks at the last known

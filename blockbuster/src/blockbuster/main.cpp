@@ -490,7 +490,6 @@ static void ParseOptions(int &argc, char *argv[])
    * name or Renderer name matches the first available UserInterface and/or
    * first listed Renderer in a UserInterface.
    */
-  opt->mOldRenderer = GetRendererByName(opt->rendererName); 
   opt->mRendererSpecificGlue = GetRendererSpecificGlueByName(opt->rendererName); 
   return  ;  /* last unparsed arg */
 }
@@ -531,7 +530,6 @@ int main(int argc, char *argv[])
 {
   ProgramOptions *opt = GetGlobalOptions(); 
   Slave *theSlave; 
-  OldRenderer *renderer;
   char localSettingsFilename[BLOCKBUSTER_PATH_MAX];
   char homeSettingsFilename[BLOCKBUSTER_PATH_MAX];
   int homeSettingsFileExists = 0, localSettingsFileExists = 0;
@@ -614,10 +612,9 @@ int main(int argc, char *argv[])
     sprintf(buf, QString("DISPLAY=%1").arg(opt->displayName).toStdString().c_str()); 
     putenv(buf);
   }
-  renderer = opt->mOldRenderer;
  
 
-  INFO(QString("Using %1 renderer").arg(opt->mOldRenderer->name));
+  INFO(QString("Using %1 renderer").arg(opt->rendererName));
 
   // set up a connection to sidecar if that's what launched us
   if (opt->sidecarHostPort != "") {

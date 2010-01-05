@@ -88,7 +88,7 @@ SOURCES=main.cpp blockbuster_qt.cpp movie.cpp  timer.C \
 	frames.cpp  slave.cpp remotecommands.cpp \
 	cache.cpp  canvas.cpp common.cpp \
 	sgi-rgb.cpp convert.cpp  \
-	gltexture.cpp sm.cpp dmxglue.cpp png.cpp splash.cpp  \
+	sm.cpp dmxglue.cpp png.cpp splash.cpp  \
 	pnm.cpp tiff.cpp \
 	libdmx/dmx.c MovieCues.cpp events.cpp xwindow.cpp  \
 	MovieRenderer.cpp util.cpp settings.cpp errmsg.cpp \

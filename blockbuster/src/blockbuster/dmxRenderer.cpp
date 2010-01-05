@@ -26,6 +26,7 @@
 #include <netinet/tcp.h>
 #include "xwindow.h"
 #include "canvas.h"
+#include "dmxglue.h"
 
 //  =============================================================
 //  dmxRenderer -- launch and connect remote slaves at startup, manage them
@@ -35,6 +36,15 @@ dmxRenderer::dmxRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindo
   mNumActiveSlaves(0), mSlavesReady(false),
   haveDMX(0), 
   dmxWindowInfos(NULL) {
+
+  canvas->ResizePtr = dmx_Resize;
+  canvas->MovePtr = dmx_Move;
+  canvas->SwapBuffersPtr = dmx_SwapBuffers;
+  /* If the UserInterface implements this routine, we should not use ours */
+  if (canvas->DrawStringPtr == NULL) { 
+    canvas->DrawStringPtr = dmx_DrawString;
+  }
+
   connect(&mSlaveServer, SIGNAL(newConnection()), this, SLOT(SlaveConnected()));  
   mSlaveServer.listen(QHostAddress::Any);  //QTcpServer will choose a port for us.
   mPort = mSlaveServer.serverPort();
@@ -110,7 +120,7 @@ dmxRenderer::dmxRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindo
   if (!slavesReady()) {
     ERROR("Slaves not responding after 30 seconds"); 
     exit(10); 
-  }   
+  }
   
   UpdateBackendCanvases();
   
