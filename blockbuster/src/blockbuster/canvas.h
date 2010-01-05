@@ -70,13 +70,12 @@
      }
      
      void Preload(uint32_t frameNumber,
-                  const Rectangle *imageRegion, uint32_t levelOfDetail);
-
-
+                  const Rectangle *imageRegion, uint32_t levelOfDetail){
+       mRenderer->Preload(frameNumber, imageRegion, levelOfDetail); 
+     }
+     
       // this will replaces all the above function pointers. 
      NewRenderer *mRenderer; 
-
-
 
     /**************************************************************/
     /* The following fields are owned and initialized by the UserInterface.

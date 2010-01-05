@@ -73,38 +73,6 @@ Canvas::~Canvas()
 }
 
 
-
-/* Default/fallback routine for Canvas->Preload()
-   Will be replaced by NewRenderer::Preload() 
- */
-void Canvas::Preload(uint32_t frameNumber, const Rectangle *imageRegion,
-	uint32_t levelOfDetail)
-{
-    Rectangle lodROI;
-    uint32_t localFrameNumber = 0;
-
-    /* Adjust ROI for LOD! (very important) */
-    lodROI.x = imageRegion->x >> levelOfDetail;
-    lodROI.y = imageRegion->y >> levelOfDetail;
-    lodROI.width = imageRegion->width >> levelOfDetail;
-    lodROI.height = imageRegion->height >> levelOfDetail;
-
-	
-	if(frameList->stereo) {
-	  localFrameNumber = frameNumber * 2;
-	  mRenderer->mCache->PreloadImage( localFrameNumber++,
-                                        &lodROI, levelOfDetail);
-	  mRenderer->mCache->PreloadImage(localFrameNumber,
-                                       &lodROI, levelOfDetail);
-	}
-	else {
-	  localFrameNumber = frameNumber;
-	  mRenderer->mCache->PreloadImage(localFrameNumber,
-                                       &lodROI, levelOfDetail);
-	}   
-    return; 
-}
-
 void Canvas::ReportFrameChange(int frameNumber) {
   DEBUGMSG("Canvas::ReportFrameChange %d", frameNumber); 
   if (mBlockbusterInterface) {
