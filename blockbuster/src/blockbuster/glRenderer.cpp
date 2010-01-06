@@ -37,7 +37,7 @@
 #include "glRenderer.h"
 
 glRenderer::glRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QString name):
-  NewRenderer(opt, canvas, parentWindow, name) {
+  Renderer(opt, canvas, parentWindow, name) {
 
   // from glFinishInitialization: 
   Bool rv;

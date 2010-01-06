@@ -6,7 +6,7 @@
 #include <GL/glx.h>
 
 /* Base GL rendering class for all other GL renderers */ 
-class glRenderer: public NewRenderer {
+class glRenderer: public Renderer {
  public:
   glRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QString name="gl");
 

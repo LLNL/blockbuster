@@ -32,7 +32,7 @@
 //  dmxRenderer -- launch and connect remote slaves at startup, manage them
 //  =============================================================
 dmxRenderer::dmxRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QObject* parent):
-  QObject(parent), NewRenderer(opt, canvas, parentWindow, "dmx"), mAllowIdleSlaves(true), 
+  QObject(parent), Renderer(opt, canvas, parentWindow, "dmx"), mAllowIdleSlaves(true), 
   mNumActiveSlaves(0), mSlavesReady(false),
   haveDMX(0),  dmxWindowInfos(NULL) {
 

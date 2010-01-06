@@ -39,7 +39,7 @@ struct Canvas {
   }
   
   
-  /* This really should be part of NewRenderer.  It is set by the Renderer.
+  /* This really should be part of Renderer.  It is set by the Renderer.
    * Describes best image format for the Renderer.  The various FileFormat
    * modules will be told to give us images in this format; if they
    * fail to do so, we'll convert them ourselves (an expensive but
@@ -124,7 +124,7 @@ struct Canvas {
   BlockbusterInterface *mBlockbusterInterface; 
   
   FrameList *frameList;
-  NewRenderer *mRenderer; 
+  Renderer *mRenderer; 
   
   int32_t playDirection, startFrame, endFrame, preloadFrames; 
   ProgramOptions *mOptions; 

@@ -5,9 +5,9 @@
 #include "settings.h"
 #include "canvas.h"
 
-NewRenderer * NewRenderer::CreateRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow) {
+Renderer * Renderer::CreateRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow) {
   QString name = opt->rendererName; 
-  NewRenderer *renderer = NULL; 
+  Renderer *renderer = NULL; 
   if (name == "gl" || name == "") renderer = new glRenderer(opt, canvas, parentWindow); 
   if (name == "gl_stereo") renderer = new glStereoRenderer(opt, canvas, parentWindow); 
   if (name == "gltexture") renderer = new glTextureRenderer(opt, canvas, parentWindow); 
@@ -17,7 +17,7 @@ NewRenderer * NewRenderer::CreateRenderer(ProgramOptions *opt, Canvas *canvas, W
   
 }
 
-NewRenderer::NewRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QString name):
+Renderer::Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QString name):
   // replaces Initialize() from file module (e.g. gl.cpp)
   XWindow(canvas, opt, parentWindow), 
   mName(name), mCanvas(canvas), mOptions(opt){  
@@ -26,7 +26,7 @@ NewRenderer::NewRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindo
   return; 
 } 
 
-void NewRenderer::SetFrameList(FrameList *frameList) {
+void Renderer::SetFrameList(FrameList *frameList) {
   if (!mCache) {
     mCache = CreateImageCache(mCanvas->threads, mCanvas->cachesize, mCanvas);
   }
@@ -43,7 +43,7 @@ void NewRenderer::SetFrameList(FrameList *frameList) {
   mCanvas->frameList = frameList; 
 }
 
-void NewRenderer::Preload(uint32_t frameNumber,
+void Renderer::Preload(uint32_t frameNumber,
                      const Rectangle *imageRegion, uint32_t levelOfDetail) {
   /* code stolen from cache.cpp CachePreload() 
      This is the appropriate code for all but DMX renderers. 

@@ -9,7 +9,7 @@
 //====================================================================
 // x11Renderer CLASS
 //======================================================================
-class x11Renderer: public NewRenderer {
+class x11Renderer: public Renderer {
  public:
   x11Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow);
 
