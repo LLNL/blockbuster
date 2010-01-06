@@ -145,7 +145,7 @@ struct FrameInfo {
    * sense of the word.  In fact, all of this "object oriented" code is 
    * completely bogus.  
    */
-  void *privateData;
+  void *privateData; // used by tiff.cpp and sm.cpp.  Blech.  Another indication that Images and FrameInfos should be merged. 
   
   /* Pointer to frame data that's specific to the canvas */
   void *canvasPrivate;
