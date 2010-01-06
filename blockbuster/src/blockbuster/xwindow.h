@@ -29,6 +29,7 @@
 #include <GL/gl.h>
 #include <GL/glx.h>
 #include "pure_C.h"
+#include "frames.h"
 
 struct Canvas; 
 struct ProgramOptions; 
@@ -60,6 +61,7 @@ struct XWindow {
   ProgramOptions *mOptions; 
   Canvas *mCanvas; 
 
+  
   // from WindowInfo struct:  
   Display *display;
   XVisualInfo *visInfo;

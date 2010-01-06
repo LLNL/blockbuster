@@ -11,18 +11,6 @@
 #define SCREEN_X_MARGIN 20
 #define SCREEN_Y_MARGIN 40
 
-  /* The more complicated parent of the dynamic Canvas object is the
-   * UserInterface.  This is a collection of routines that know how to manage
-   * windows, how to get control messages from the user to the application, and how 
-   * to report messages from the application back to the user.
-   *
-   */
-
-  /* The Canvas object is the dynamic rendering object.  It inherits
-   * behaviors from both its parent UserInterface object and from its
-   * parent Renderer object (both of which are "static", in that they
-   * do not create a dynamic object outside of the Canvas).
-   */
 
    struct Canvas {
      Canvas(qint32 parentWindowID, ProgramOptions *options, 
@@ -51,20 +39,16 @@
      }
      
 
-    /**************************************************************/
-    /* The following fields are owned and initialized by the UserInterface.
-     */
-
-    /* The best image format for the window or widget configuration
-     * created by the UserInterface.  The various FileFormat
+    /* This really should be part of NewRenderer.  It is set by the Renderer.
+     * Describes best image format for the Renderer.  The various FileFormat
      * modules will be told to give us images in this format; if they
      * fail to do so, we'll convert them ourselves (an expensive but
      * functional situation).
      */
-     ImageFormat requiredImageFormat; // only defined and required by xwindow.cpp, strangely.  
-
-    /* This renderer function will be called to notify the renderer
-     * that a resize has occurred.    */
+     ImageFormat requiredImageFormat;
+     
+     /* notify the renderer
+      * that a resize has occurred.    */
      void Resize(int newWidth, int newHeight, int camefromX) {
        mRenderer->Resize(newWidth, newHeight, camefromX);     
      }
@@ -146,10 +130,6 @@
      ProgramOptions *mOptions; 
   } ;
 
-/* Canvas creator from canvas.c */
-//Canvas *CreateCanvas(/*const UserInterface *userInterface,*/
-//                   const int rendererIndex,
-//                    qint32 parentWindowID);
 void DestroyCanvas(Canvas *canvas);
 void DefaultSetFrameList(Canvas *canvas, FrameList *frameList);
 void CacheSetFrameList(Canvas *canvas, FrameList *frameList);

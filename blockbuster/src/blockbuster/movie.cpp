@@ -47,12 +47,9 @@
 
 /* ---------------------------------------------*/ 
 
-static void ModifyFrameList(Canvas *canvas, FrameList *frameList)
+static void FrameListModified(Canvas *canvas, FrameList *frameList)
 {
   canvas->SetFrameList(frameList);
-  /* The UserInterface module may want to report on the 
-   * various things associated with the frame list.
-   */
   canvas->ReportFrameListChange(frameList);
 
   
@@ -203,7 +200,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   
   /* Tell the Canvas about the frames it's going to render.
     Generate a warning if the frames are out of whack */
-  ModifyFrameList(canvas, allFrames);
+  FrameListModified(canvas, allFrames);
   ClampStartEndFrames(allFrames, startFrame, endFrame, frameNumber, true); 
   int playExit = options->playExit; 
   if (playExit < 0) playExit = endFrame; 
@@ -668,7 +665,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
 	    
 	    allFrames = newFrameList;
 	    allFrames->GetInfo(maxWidth, maxHeight, maxDepth, maxLOD, targetFPS);
-	    ModifyFrameList(canvas, allFrames);
+	    FrameListModified(canvas, allFrames);
 	    canvas->ReportRateChange(targetFPS); 
 	    
 	    startFrame = 0; 

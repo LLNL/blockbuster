@@ -137,11 +137,6 @@ void usage(void) {
   fprintf(stderr, "-stereo: short for -r gl_stereo, unless -dmx is given, in which case it is short for -R gl_stereo.\n");
   fprintf(stderr, "-dmxstereo: short for -r dmx -stereo.\n");
   fprintf(stderr, "-threads <num> specifies how many threads to use for reading from disk.\n");
-  fprintf(stderr, "-userInterface <name> specifies the user interface to use:\n");
-  fprintf(stderr, "\tgtk: Hybrid GTK/X11 user interface using a GTK toolbar and an X11 window\n");
-  fprintf(stderr, "\t(supports gl, gltexture, x11, gl_stereo, dmx renderers)\n");
-  fprintf(stderr, "\tx11: Simple X11 user interface using keypresses and mouse movements\n");
-  fprintf(stderr, "\t(supports gl, gltexture, x11, gl_stereo, dmx renderers)\n");  
   fprintf(stderr, "-verbose num: sets verbosity, with 0=quiet, 1=system, 2=error, 3=warning, 4=info, 5=debug.  Same behavior as -messageLevel but with numbers, basically.\n");
   fprintf(stderr, "-version prints the current blockbuster version\n");
   fprintf(stderr, "-zoom <zoom> sets the initial zoom ['auto' tracks window size,\n");
@@ -569,13 +564,7 @@ int main(int argc, char *argv[])
     ReadSettingsFromFile(opt->settings, localSettingsFilename);
   }
 
-  /* The UserInterface gets the next chance to parse options.  For
-   * both the UserInterface and the Renderer, any options passed
-   * change variables managed inside those modules, that affect
-   * their behavior; they don't get to change the 
-   * ProgramOptions structure.
-   */
-  //gCoreApp = new QCoreApplication(argc, args); 
+  // Get Qt rockin'.  This creates the basic Qt object.  
   gCoreApp = new QApplication(argc, args); 
 
   /* Grab any options that apply to the whole program */
@@ -636,7 +625,7 @@ int main(int argc, char *argv[])
   if (!opt->slaveMode && !allFrames) {
     QStringList fileList; 
     /* Try to get a filename from the user interface */
-    //    char *filename = opt->userInterface->ChooseFile(opt);
+    //    char *filename = someObject->ChooseFile(opt);
     char *filename = NULL; 
     if (filename == NULL) {
       WARNING("Warning: need to implement ChooseFile.  No frames found - nothing to display");

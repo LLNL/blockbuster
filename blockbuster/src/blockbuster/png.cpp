@@ -112,7 +112,7 @@ static int PrepPng(const char *filename,
 
 /* Load the desired subimage into a set of RGB bytes */
 static int
-LoadImage(Image *image, struct FrameInfo *frameInfo,
+pngLoadImage(Image *image, struct FrameInfo *frameInfo,
           Canvas *canvas, const Rectangle */*desiredSubregion*/, 
           int levelOfDetail)
 {
@@ -382,7 +382,7 @@ FrameList *pngGetFrameList(const char *filename)
     }
     frameInfo->frameNumber = 0;
     frameInfo->enable = 1;
-    frameInfo->LoadImage = LoadImage;
+    frameInfo->LoadImage = pngLoadImage;
     frameInfo->DestroyFrameInfo = DefaultDestroyFrameInfo;
 
     /* Fill out the final return form, and call it a day */

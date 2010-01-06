@@ -22,7 +22,6 @@ x11Renderer::x11Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindo
   ECHO_FUNCTION(5);
    
   /* This graphics context and font will be used for rendering status messages,
-   * and as such are owned here, by the UserInterface.
    */
   gc = XCreateGC(display, window, 0, NULL);
   XSetFont(display, gc, fontInfo->fid);
