@@ -17,7 +17,7 @@
 #include "canvas.h" 
 
 x11Renderer::x11Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow):
-  NewRenderer(opt, canvas, parentWindow, "x11"), mSwapAction(XdbeBackground) {
+  Renderer(opt, canvas, parentWindow, "x11"), mSwapAction(XdbeBackground) {
   
   ECHO_FUNCTION(5);
    

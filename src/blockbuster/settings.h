@@ -2,7 +2,7 @@
 #define BLOCKBUSTER_SETTINGS_H
 #include <QApplication>
 #include "common.h"
-class NewRenderer; 
+class Renderer; 
 struct RendererSpecificGlue; 
 
 class ProgramOptions *GetGlobalOptions(void); 
@@ -36,7 +36,7 @@ struct ProgramOptions {
 #else
     messageLevelName("error"), 
 #endif
-    messageLevel(NULL),  mNewRenderer(NULL),
+    messageLevel(NULL),  mRenderer(NULL),
     frameCacheSize(8), readerThreads(-1), loopCountName("1"), 
     startFrame(0), endFrame(-1), loopCount(1), LOD(0),
     slaveLaunchMethod("rsh"), useMPI(0), 
@@ -59,7 +59,7 @@ struct ProgramOptions {
   int rendererIndex;
   QString rendererName;
   RendererSpecificGlue *mRendererSpecificGlue; 
-  NewRenderer *mNewRenderer; 
+  Renderer *mRenderer; 
   QString backendRendererName;
   int frameCacheSize;
   int readerThreads;

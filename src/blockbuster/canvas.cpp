@@ -49,13 +49,13 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
   
   
   /* Renderer can initialize now. */
-  mRenderer = NewRenderer::CreateRenderer(mOptions, this, parentWindowID); 
+  mRenderer = Renderer::CreateRenderer(mOptions, this, parentWindowID); 
   if (!mRenderer) {
     ERROR(QString("Badness:  cannot create renderer \"%1\"\n").
           arg(mOptions->rendererName)); 
     exit(1); 
   }
-  mOptions->mNewRenderer = mRenderer; 
+  mOptions->mRenderer = mRenderer; 
   
   DEBUGMSG(QString("frameCacheSize is %1").arg(mOptions->frameCacheSize));    
   

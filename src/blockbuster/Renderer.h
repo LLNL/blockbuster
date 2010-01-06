@@ -7,14 +7,14 @@
 struct Canvas; 
 /* Base class for all other renderers, defining the API required */ 
 // factory function
-// NewRenderers: x11Renderer(broken), glRenderer, glStereoRenderer, glTextureRenderer, dmxRenderer
+// Renderers: x11Renderer(broken), glRenderer, glStereoRenderer, glTextureRenderer, dmxRenderer
 
-class NewRenderer: public XWindow {
+class Renderer: public XWindow {
  public:
-  static NewRenderer *CreateRenderer(ProgramOptions*, Canvas*, Window);
-  NewRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QString name);
+  static Renderer *CreateRenderer(ProgramOptions*, Canvas*, Window);
+  Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QString name);
 
-  virtual ~NewRenderer() {
+  virtual ~Renderer() {
     DestroyImageCache(); 
     return; 
   } // replaces DestroyRenderer from Canvas

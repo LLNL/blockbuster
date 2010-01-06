@@ -173,7 +173,7 @@ typedef DMXWindowAttributes DMXWindowInfo;
 
 //========================================================================
 
-class dmxRenderer: public QObject, public NewRenderer {
+class dmxRenderer: public QObject, public Renderer {
   Q_OBJECT
  public:
   dmxRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QObject *parent = NULL);
