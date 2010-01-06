@@ -101,7 +101,7 @@ struct Image {
 typedef int (*LoadImageFunc)
   ( Image *image,
     struct FrameInfo *frameInfo,
-    struct Canvas *canvas,
+    ImageFormat *requiredImageFormat, 
     const Rectangle *region,
     int levelOfDetail
     );

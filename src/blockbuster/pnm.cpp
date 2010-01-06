@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <errno.h>
 #include "errmsg.h"
-#include "canvas.h"
 #include "frames.h"
 #include "util.h"
 #include "frames.h"
@@ -1359,7 +1358,7 @@ ppm_freecolorhash(  colorhash_table cht)
 /* Load the desired subimage into a set of RGB bytes */
 static int
 LoadImage(Image *image, struct FrameInfo *frameInfo,
-          Canvas *canvas, const Rectangle *, int levelOfDetail)
+          ImageFormat *requiredImageFormat, const Rectangle *, int levelOfDetail)
 {
     FILE *f;
     register int i, j, k;
@@ -1375,16 +1374,16 @@ LoadImage(Image *image, struct FrameInfo *frameInfo,
     bb_assert(image);
 
     /* Calculate how much image data we need. */
-    extraBytesPerPixel = canvas->requiredImageFormat.bytesPerPixel - 3;
+    extraBytesPerPixel = requiredImageFormat->bytesPerPixel - 3;
     scanlineBytes = ROUND_TO_MULTIPLE(
-	canvas->requiredImageFormat.bytesPerPixel * frameInfo->width,
-	canvas->requiredImageFormat.scanlineByteMultiple
+	requiredImageFormat->bytesPerPixel * frameInfo->width,
+	requiredImageFormat->scanlineByteMultiple
     );
-    if (canvas->requiredImageFormat.rowOrder == ROW_ORDER_DONT_CARE)
+    if (requiredImageFormat->rowOrder == ROW_ORDER_DONT_CARE)
        rowOrder = BOTTOM_TO_TOP; /* Bias toward OpenGL */
     else
-       rowOrder = canvas->requiredImageFormat.rowOrder;
-    byteOrder = canvas->requiredImageFormat.byteOrder;
+       rowOrder = requiredImageFormat->rowOrder;
+    byteOrder = requiredImageFormat->byteOrder;
 
     if (!image->imageData) {
         /* The Canvas gets the opportunity to allocate image data first. */
@@ -1399,8 +1398,8 @@ LoadImage(Image *image, struct FrameInfo *frameInfo,
      
       image->width = frameInfo->width;
       image->height = frameInfo->height;
-      image->imageFormat.bytesPerPixel = canvas->requiredImageFormat.bytesPerPixel;
-      image->imageFormat.scanlineByteMultiple = canvas->requiredImageFormat.scanlineByteMultiple;
+      image->imageFormat.bytesPerPixel = requiredImageFormat->bytesPerPixel;
+      image->imageFormat.scanlineByteMultiple = requiredImageFormat->scanlineByteMultiple;
       image->imageFormat.byteOrder = byteOrder;
       image->imageFormat.rowOrder = rowOrder;
       image->levelOfDetail = levelOfDetail;
