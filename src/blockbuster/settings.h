@@ -36,8 +36,7 @@ struct ProgramOptions {
 #else
     messageLevelName("error"), 
 #endif
-    messageLevel(NULL), //userInterface(NULL),  rendererIndex(0), 
-    mNewRenderer(NULL),
+    messageLevel(NULL),  mNewRenderer(NULL),
     frameCacheSize(8), readerThreads(-1), loopCountName("1"), 
     startFrame(0), endFrame(-1), loopCount(1), LOD(0),
     slaveLaunchMethod("rsh"), useMPI(0), 
@@ -57,8 +56,6 @@ struct ProgramOptions {
   QString executable; /* path to the backend blockbuster */ 
   QString messageLevelName;
   struct MessageLevel *messageLevel;
-  //QString userInterfaceName;
-  //struct UserInterface *userInterface;
   int rendererIndex;
   QString rendererName;
   RendererSpecificGlue *mRendererSpecificGlue; 

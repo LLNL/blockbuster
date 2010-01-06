@@ -18,10 +18,6 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/*
- * This module encapsulates the X11 UserInterface, and includes all the
- * "glue" required by the renderers that the X11 UserInterface supports.
- */
 
 
 #include "canvas.h"
@@ -43,10 +39,6 @@
 #include <GL/glx.h>
 #include "xwindow.h"
 #include "pure_C.h"
-
-/* These qualify this UserInterface */
-#define NAME "x11"
-#define DESCRIPTION "Simple X11 user interface using keypresses and mouse movements"
 
 #define DEFAULT_WIDTH 800
 #define DEFAULT_HEIGHT 600
