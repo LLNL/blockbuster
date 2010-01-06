@@ -18,8 +18,6 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "canvas.h"
-#include "frames.h"
 #include "frames.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,19 +26,15 @@
 #include "errmsg.h"
 #include "cache.h"
 #include "splash.h"
+#include "canvas.h"
 
 
 extern unsigned char splashImageData[92700];  // defined at the bottom of this file
 
 
 /* This is a utility that saves the specified image to a file as
- * a compilable Image file.  Its primary purpose is to save a given
- * image as a splash screen, which is why we don't leave it in 
- * production code.
+ * a compilable Image file. 
  *
- * This code is very sensitive to the actual structure declarations.
- * Fortunately, a mismatch is easy to detect - the resulting file 
- * will not compile.
  */
 
 void WriteImageToFile(Canvas *canvas, int frameNumber)
@@ -194,7 +188,7 @@ static Image splashScreen
 
 
 static int LoadSplashScreen(Image *image, FrameInfo *,
-	Canvas *, const Rectangle *, int )
+	ImageFormat *, const Rectangle *, int )
 {
     *image = splashScreen;
     return 1;

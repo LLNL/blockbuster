@@ -94,7 +94,8 @@ static Image *LoadAndConvertImage(FrameInfo *frameInfo, unsigned int frameNumber
 
     CACHEDEBUG("LoadImage being called"); 
     /* Call the file format module to load the image */
-    rv = (*frameInfo->LoadImage)(image, frameInfo, canvas,
+    rv = (*frameInfo->LoadImage)(image, frameInfo, 
+                                 &canvas->requiredImageFormat,
                                  region, levelOfDetail);
     image->frameNumber = frameNumber; 
     CACHEDEBUG("LoadImage done"); 

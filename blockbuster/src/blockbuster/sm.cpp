@@ -25,12 +25,11 @@
 #include <string.h>
 #include <math.h>
 #include "errmsg.h"
-#include "canvas.h"
 #include "errmsg.h"
 #include "frames.h"
 #include "frames.h"
 #include "sm/smBase.h"
-
+#include "settings.h"
 #include "zlib.h"
 #include <X11/Xlib.h>
 
@@ -45,7 +44,7 @@ typedef struct {
 
 int
 smLoadImage(Image *image, struct FrameInfo *frameInfo, 
-          Canvas *, const Rectangle *desiredSub, int levelOfDetail)
+          ImageFormat *, const Rectangle *desiredSub, int levelOfDetail)
 {
   //  DEBUGMSG(QString("smLoadImage(%1").arg(frameInfo->frameNumber)); 
   const privateData *p = (privateData *)frameInfo->privateData;

@@ -19,7 +19,6 @@
  */
 
 #include "errmsg.h"
-#include "canvas.h"
 #include "frames.h"
 #include "util.h"
 #include "frames.h"
@@ -50,7 +49,7 @@ typedef struct {
 /* Use the TIFFRGBAImage facilities to load any supported image */
 static int
 LoadRGBAImage(Image *image, struct FrameInfo *frameInfo,
-		 Canvas *canvas, const Rectangle *,
+		 ImageFormat *requiredImageFormat, const Rectangle *,
 		 int levelOfDetail)
 {
     TIFF *f;
@@ -58,7 +57,6 @@ LoadRGBAImage(Image *image, struct FrameInfo *frameInfo,
     uint32_t extraBytesPerPixel, extraBytesPerScanline;
     int scanlineBytes;
     privateData *privateDataPtr = reinterpret_cast<privateData*>(frameInfo->privateData);
-    ImageFormat *format = &canvas->requiredImageFormat;
     register unsigned char *dest;
     TIFFRGBAImage rgbaImg;
     uint32* raster;
@@ -70,20 +68,20 @@ LoadRGBAImage(Image *image, struct FrameInfo *frameInfo,
     printf("LoadRGBAImage CALLED\n");
 
     /* Calculate how much image data we need. */
-    extraBytesPerPixel = format->bytesPerPixel - 3;
+    extraBytesPerPixel = requiredImageFormat->bytesPerPixel - 3;
     scanlineBytes = ROUND_TO_MULTIPLE(
-        format->bytesPerPixel * frameInfo->width,
-        format->scanlineByteMultiple
+        requiredImageFormat->bytesPerPixel * frameInfo->width,
+        requiredImageFormat->scanlineByteMultiple
         );
     extraBytesPerScanline = scanlineBytes - 
-       format->bytesPerPixel * frameInfo->width;
+       requiredImageFormat->bytesPerPixel * frameInfo->width;
 
 
     if (!image->imageData) {
-	if (canvas->requiredImageFormat.rowOrder == ROW_ORDER_DONT_CARE)
+	if (requiredImageFormat->rowOrder == ROW_ORDER_DONT_CARE)
 	    image->imageFormat.rowOrder = BOTTOM_TO_TOP; /* Bias toward OpenGL */
 	else
-	    image->imageFormat.rowOrder = format->rowOrder;
+	    image->imageFormat.rowOrder = requiredImageFormat->rowOrder;
 
 	/* The Canvas gets the opportunity to allocate image data first. */
 	image->imageData = calloc(1, frameInfo->height * scanlineBytes);
@@ -99,9 +97,9 @@ LoadRGBAImage(Image *image, struct FrameInfo *frameInfo,
 	 */
 	image->width = frameInfo->width;
 	image->height = frameInfo->height;
-	image->imageFormat.bytesPerPixel = format->bytesPerPixel;
-	image->imageFormat.scanlineByteMultiple = format->scanlineByteMultiple;
-	image->imageFormat.byteOrder = format->byteOrder;
+	image->imageFormat.bytesPerPixel = requiredImageFormat->bytesPerPixel;
+	image->imageFormat.scanlineByteMultiple = requiredImageFormat->scanlineByteMultiple;
+	image->imageFormat.byteOrder = requiredImageFormat->byteOrder;
 	image->levelOfDetail = levelOfDetail;
     }
 
@@ -167,7 +165,7 @@ LoadRGBAImage(Image *image, struct FrameInfo *frameInfo,
 	    green = TIFFGetG( raster[j] );
             blue = TIFFGetB( raster[j] );
 
-	    if (format->byteOrder == MSB_FIRST) {
+	    if (requiredImageFormat->byteOrder == MSB_FIRST) {
 		*dest++ = red;
 		*dest++ = green;
 		*dest++ = blue;
@@ -202,7 +200,7 @@ LoadRGBAImage(Image *image, struct FrameInfo *frameInfo,
  */
 static int
 LoadColor24Image(Image *image, struct FrameInfo *frameInfo,
-		 Canvas *canvas, const Rectangle *,
+		 ImageFormat *requiredImageFormat, const Rectangle *,
 		 int levelOfDetail)
 {
     TIFF *f;
@@ -210,26 +208,25 @@ LoadColor24Image(Image *image, struct FrameInfo *frameInfo,
     int extraBytesPerPixel, extraBytesPerScanline;
     int scanlineBytes;
     privateData *privateDataPtr = reinterpret_cast<privateData*>(frameInfo->privateData);
-    ImageFormat *format = &canvas->requiredImageFormat;
     register unsigned char *dest, *src;
 
     bb_assert(image);
 
     /* Calculate how much image data we need. */
-    extraBytesPerPixel = format->bytesPerPixel - 3;
+    extraBytesPerPixel = requiredImageFormat->bytesPerPixel - 3;
     scanlineBytes = ROUND_TO_MULTIPLE(
-        format->bytesPerPixel * frameInfo->width,
-        format->scanlineByteMultiple
+        requiredImageFormat->bytesPerPixel * frameInfo->width,
+        requiredImageFormat->scanlineByteMultiple
         );
     extraBytesPerScanline = scanlineBytes - 
-       format->bytesPerPixel * frameInfo->width;
+       requiredImageFormat->bytesPerPixel * frameInfo->width;
 
 
     if (!image->imageData) {
-	if (canvas->requiredImageFormat.rowOrder == ROW_ORDER_DONT_CARE)
+	if (requiredImageFormat->rowOrder == ROW_ORDER_DONT_CARE)
 	    image->imageFormat.rowOrder = BOTTOM_TO_TOP; /* Bias toward OpenGL */
 	else
-	    image->imageFormat.rowOrder = format->rowOrder;
+	    image->imageFormat.rowOrder = requiredImageFormat->rowOrder;
 
 	/* The Canvas gets the opportunity to allocate image data first. */
 	image->imageData = calloc(1, frameInfo->height * scanlineBytes);
@@ -245,9 +242,9 @@ LoadColor24Image(Image *image, struct FrameInfo *frameInfo,
 	 */
 	image->width = frameInfo->width;
 	image->height = frameInfo->height;
-	image->imageFormat.bytesPerPixel = format->bytesPerPixel;
-	image->imageFormat.scanlineByteMultiple = format->scanlineByteMultiple;
-	image->imageFormat.byteOrder = format->byteOrder;
+	image->imageFormat.bytesPerPixel = requiredImageFormat->bytesPerPixel;
+	image->imageFormat.scanlineByteMultiple = requiredImageFormat->scanlineByteMultiple;
+	image->imageFormat.byteOrder = requiredImageFormat->byteOrder;
 	image->levelOfDetail = levelOfDetail;
     }
 
@@ -297,7 +294,7 @@ LoadColor24Image(Image *image, struct FrameInfo *frameInfo,
 	    green = *src++;
 	    blue = *src++;
 
-	    if (format->byteOrder == MSB_FIRST) {
+	    if (requiredImageFormat->byteOrder == MSB_FIRST) {
 		*dest++ = red;
 		*dest++ = green;
 		*dest++ = blue;

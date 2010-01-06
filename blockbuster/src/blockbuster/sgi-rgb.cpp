@@ -24,7 +24,6 @@
 #include <errno.h>
 #include <string.h>
 #include "cache.h"
-#include "canvas.h"
 #include "util.h"
 #include "errmsg.h"
 #include "frames.h"
@@ -200,13 +199,12 @@ static void RawImageGetRow(rawImageRec *raw, unsigned char *buf, int y, int z)
 
 static int
 LoadSGIImage(Image *image, struct FrameInfo *frameInfo,
-             Canvas *canvas, const Rectangle */*desiredSubRegion*/,
+             ImageFormat *format, const Rectangle */*desiredSubRegion*/,
              int /*LOD*/)
 {
     int rowWidth;
 
     if (!image->imageData) {
-	const ImageFormat *format = &canvas->requiredImageFormat;
 
 	image->width = frameInfo->width;
 	image->height = frameInfo->height;

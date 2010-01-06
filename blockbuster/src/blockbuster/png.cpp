@@ -24,7 +24,6 @@
 #include <string.h>
 #include <png.h>
 #include "errmsg.h"
-#include "canvas.h"
 #include "frames.h"
 #include "util.h"
 #include "frames.h"
@@ -113,7 +112,7 @@ static int PrepPng(const char *filename,
 /* Load the desired subimage into a set of RGB bytes */
 static int
 pngLoadImage(Image *image, struct FrameInfo *frameInfo,
-          Canvas *canvas, const Rectangle */*desiredSubregion*/, 
+          ImageFormat *requiredImageFormat, const Rectangle */*desiredSubregion*/, 
           int levelOfDetail)
 {
     png_structp readStruct;
@@ -141,11 +140,11 @@ pngLoadImage(Image *image, struct FrameInfo *frameInfo,
      * no idea how to read a subimage of a PNG.  We'll always return the whole
      * image and let the renderer figure it out.
      */
-    if (canvas->requiredImageFormat.bytesPerPixel == 3 || 
-	canvas->requiredImageFormat.bytesPerPixel == 4) {
-	bytesPerPixel = canvas->requiredImageFormat.bytesPerPixel;
-	byteMultiple = canvas->requiredImageFormat.scanlineByteMultiple;
-	byteOrder = canvas->requiredImageFormat.byteOrder;
+    if (requiredImageFormat->bytesPerPixel == 3 || 
+	requiredImageFormat->bytesPerPixel == 4) {
+	bytesPerPixel = requiredImageFormat->bytesPerPixel;
+	byteMultiple = requiredImageFormat->scanlineByteMultiple;
+	byteOrder = requiredImageFormat->byteOrder;
     }
 
     scanlineBytes = ROUND_TO_MULTIPLE(
@@ -169,10 +168,10 @@ pngLoadImage(Image *image, struct FrameInfo *frameInfo,
       image->imageFormat.bytesPerPixel = bytesPerPixel;
       image->imageFormat.scanlineByteMultiple = byteMultiple;
       image->imageFormat.byteOrder = byteOrder;
-      if (canvas->requiredImageFormat.rowOrder == ROW_ORDER_DONT_CARE)
+      if (requiredImageFormat->rowOrder == ROW_ORDER_DONT_CARE)
 	    image->imageFormat.rowOrder = BOTTOM_TO_TOP; /* Bias for OpenGL */
         else
-          image->imageFormat.rowOrder = canvas->requiredImageFormat.rowOrder;
+          image->imageFormat.rowOrder = requiredImageFormat->rowOrder;
       
       image->levelOfDetail = levelOfDetail;
     }
