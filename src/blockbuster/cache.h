@@ -92,10 +92,13 @@ class ImageCache {
   
   Image *GetImage(uint32_t frameNumber,
                   const Rectangle *newRegion, uint32_t levelOfDetail);
-  void PreloadImage(uint32_t frameNumber, 
-                    const Rectangle *region, uint32_t levelOfDetail);
   void ManageFrameList(FrameList *frameList);
   
+  // I do not like that these are called outside of the cache.  This is a huge design flaw.  The cache needs to manage how items are cached!  
+
+  // PreloadImage is called from Renderer
+  void PreloadImage(uint32_t frameNumber, 
+                    const Rectangle *region, uint32_t levelOfDetail);
   void ReleaseImage(Image *image);
   void ReleaseFrame(int framenum);
  protected:
