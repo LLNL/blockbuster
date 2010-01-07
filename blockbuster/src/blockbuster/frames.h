@@ -88,7 +88,7 @@ struct Image {
   int levelOfDetail;
   uint32_t frameNumber; // if appropriate
   unsigned int imageDataBytes;
-  void *imageData;      /* the actual image data */
+  void *imageData;      /* the actual image data created when read from disk */
   bool mManageData; // if true, then imageData will be free()'d during destructor
   
 } ;
@@ -110,21 +110,22 @@ typedef  void (*DestroyFrameFunc)(struct FrameInfo *frameInfo);
 
 
 //============================================================
+/* Information about one frame of the movie. */ 
 struct FrameInfo {
   FrameInfo(): width(0), height(0), depth(0), maxLOD(0), filename(NULL), 
-               frameNumber(0), privateData(NULL), canvasPrivate(NULL), 
+               mFrameNumberInFile(0), privateData(NULL), canvasPrivate(NULL), 
                enable(0), LoadImage(NULL), DestroyFrameInfo(NULL) {}
-  FrameInfo(int w, int h, int d, int lod, char *fname, int fnum, 
+  FrameInfo(int w, int h, int d, int lod, char *fname, /*int fnum, */
             void *priv, void *cp, int en, 
             LoadImageFunc lif, DestroyFrameFunc dff):
     width(w), height(h), depth(d), maxLOD(lod), filename(fname), 
-    frameNumber(fnum), privateData(priv), canvasPrivate(cp), enable(en), 
+    mFrameNumberInFile(0), privateData(priv), canvasPrivate(cp), enable(en), 
     LoadImage(lif), DestroyFrameInfo(dff) {}
             
   ~FrameInfo() {}
 
   QString toString(void) {
-    return QString("{ FrameInfo: frameNumber = %1 }").arg(frameNumber); 
+    return QString("{ FrameInfo: frameNumber = %1 in file %2}").arg(mFrameNumberInFile).arg(filename); 
   }
   /* Basic statistics */
   int width, height, depth;
@@ -137,8 +138,8 @@ struct FrameInfo {
   /* If there is more than one frame in a single file, the format
    * driver can use this integer to distinguish them.
    */
-  int frameNumber;
-  
+  int mFrameNumberInFile;
+
   /* If the image loader has anything else it wants to store for the
    * frame (file offsets, image information, etc.) it goes here.
    * This is very poorly named -- it's not private at all in the classic
@@ -177,7 +178,7 @@ struct FrameInfo {
 
 //============================================================
 
-  /* A FrameList is an array of frames and associated metadata.  
+  /* A FrameList contains an array of frame pointers and associated metadata.  
    * The list itself is always released
    * with free(), although each of the frames on the inside must first be
    * released with the appropriate (*DestroyFrameInfo)() call.

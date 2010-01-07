@@ -47,10 +47,12 @@ typedef struct {
 
 
 /* Use the TIFFRGBAImage facilities to load any supported image */
-static int
-LoadRGBAImage(Image *image, struct FrameInfo *frameInfo,
-		 ImageFormat *requiredImageFormat, const Rectangle *,
-		 int levelOfDetail)
+/* image -- output image
+   all other params are input parameters
+*/ 
+static int RGBALoadImage(Image *image, struct FrameInfo *frameInfo,
+                         ImageFormat *requiredImageFormat, const Rectangle *,
+                         int levelOfDetail)
 {
     TIFF *f;
     register uint32_t i, j, k;
@@ -65,7 +67,7 @@ LoadRGBAImage(Image *image, struct FrameInfo *frameInfo,
 
     bb_assert(image);
 
-    printf("LoadRGBAImage CALLED\n");
+    printf("RGBALoadImage CALLED\n");
 
     /* Calculate how much image data we need. */
     extraBytesPerPixel = requiredImageFormat->bytesPerPixel - 3;
@@ -199,7 +201,7 @@ LoadRGBAImage(Image *image, struct FrameInfo *frameInfo,
  * contains 8-bit samples and 3 samples per pixel.
  */
 static int
-LoadColor24Image(Image *image, struct FrameInfo *frameInfo,
+Color24LoadImage(Image *image, struct FrameInfo *frameInfo,
 		 ImageFormat *requiredImageFormat, const Rectangle *,
 		 int levelOfDetail)
 {
@@ -424,11 +426,11 @@ FrameList *tiffGetFrameList(const char *filename)
      */
     if (bitsPerSample == 8 && samplesPerPixel == 3) {
 	/* 24-bit color image */
-	frameInfo->LoadImage = LoadColor24Image;
+	frameInfo->LoadImage = Color24LoadImage;
 	/* Each scan line will hold 3 bytes per pixel */
 	privateDataPtr->scanlineBuffer = (unsigned char *)malloc(width * 3);
     } else if ( TIFFRGBAImageOK( f, errMesg ) ) {
-	frameInfo->LoadImage = LoadRGBAImage;
+	frameInfo->LoadImage = RGBALoadImage;
 	/* Each scan line will hold 3 bytes per pixel */
 	privateDataPtr->scanlineBuffer = (unsigned char *)malloc(width * sizeof(uint32));
     }
@@ -467,7 +469,7 @@ FrameList *tiffGetFrameList(const char *filename)
     frameInfo->width = width;
     frameInfo->height = height;
     frameInfo->depth = 8*samplesPerPixel;
-    frameInfo->frameNumber = 0;
+    frameInfo->mFrameNumberInFile = 0;
     frameInfo->enable = 1;
     frameInfo->DestroyFrameInfo = DestroyFrameInfo;
 

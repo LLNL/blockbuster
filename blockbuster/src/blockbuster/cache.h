@@ -99,8 +99,10 @@ class ImageCache {
   // PreloadImage is called from Renderer
   void PreloadImage(uint32_t frameNumber, 
                     const Rectangle *region, uint32_t levelOfDetail);
-  void ReleaseImage(Image *image);
-  void ReleaseFrame(int framenum);
+
+ 
+  void ReleaseImage(Image *image); // called from glRenderer, x11Renderer and splash.cpp
+  void ReleaseFrame(int framenum); // called from movie.cpp and slave.cpp
  protected:
   CachedImage *GetCachedImageSlot(uint32_t newFrameNumber);
   
