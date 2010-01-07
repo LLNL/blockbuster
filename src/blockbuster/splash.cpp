@@ -205,7 +205,6 @@ static FrameInfo frameInfo
 (300, 103, 24, /* width, height, depth */
  0, /* maxLOD */
  "SPLASH", /* filename */
- 0, /* frameNumber */
  NULL, /* privateData */
  NULL, /* canvasPrivate */
  1, /* enable */

@@ -353,7 +353,7 @@ FrameList *sgirgbGetFrameList(const char *filename)
     frameInfo->width = rec->sizeX;
     frameInfo->height = rec->sizeY;
     frameInfo->depth = rec->sizeZ * 8;
-    frameInfo->frameNumber = 0;
+    frameInfo->mFrameNumberInFile = 0;
     frameInfo->enable = 1;
     frameInfo->DestroyFrameInfo = DefaultDestroyFrameInfo;
     frameInfo->LoadImage = LoadSGIImage;

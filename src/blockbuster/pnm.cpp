@@ -1566,7 +1566,7 @@ FrameList *pnmGetFrameList(const char *filename)
     frameInfo->width = width;
     frameInfo->height = height;
     frameInfo->depth = 8*depth;
-    frameInfo->frameNumber = 0;
+    frameInfo->mFrameNumberInFile = 0;
     frameInfo->enable = 1;
     frameInfo->LoadImage = LoadImage;
     frameInfo->DestroyFrameInfo = DefaultDestroyFrameInfo;

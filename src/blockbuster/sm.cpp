@@ -96,11 +96,11 @@ smLoadImage(Image *image, struct FrameInfo *frameInfo,
   dest = (char *) image->imageData + (pos[1] * image->width + pos[0]) * 3;
   
   DEBUGMSG("smLoadImage: Getting frame %d, SM region at (%d, %d), size (%d x %d)  of image sized (%d x %d)  destStride=%d",
-           frameInfo->frameNumber, desiredSub->x, desiredSub->y, 
+           frameInfo->mFrameNumberInFile, desiredSub->x, desiredSub->y, 
            size[0], size[1],
            image->width, image->height, destStride);
   
-  p->sm->getFrameBlock(frameInfo->frameNumber, (void *) dest, 
+  p->sm->getFrameBlock(frameInfo->mFrameNumberInFile, (void *) dest, 
                        GetCurrentThreadID(), destStride,
                        size, pos, step, levelOfDetail);
   
@@ -238,7 +238,7 @@ FrameList *smGetFrameList(const char *filename)
 	frameInfo->height = height;
         frameInfo->maxLOD = maxLOD;
 	frameInfo->depth = 24;
-	frameInfo->frameNumber = i;
+	frameInfo->mFrameNumberInFile = i;
 	frameInfo->enable = 1;
 	frameInfo->DestroyFrameInfo = smDestroyFrameInfo;
 	frameInfo->LoadImage = smLoadImage;

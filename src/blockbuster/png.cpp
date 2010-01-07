@@ -379,7 +379,7 @@ FrameList *pngGetFrameList(const char *filename)
 	    delete frameList;
 	    return NULL;
     }
-    frameInfo->frameNumber = 0;
+    frameInfo->mFrameNumberInFile = 0;
     frameInfo->enable = 1;
     frameInfo->LoadImage = pngLoadImage;
     frameInfo->DestroyFrameInfo = DefaultDestroyFrameInfo;

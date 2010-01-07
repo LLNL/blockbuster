@@ -103,7 +103,7 @@ static Image *LoadAndConvertImage(FrameInfo *frameInfo, unsigned int frameNumber
     if (!rv) {
 	ERROR("could not load frame %d (frame %d of file name %s) for the cache",
 	    frameNumber,
-	    frameInfo->frameNumber,
+	    frameInfo->mFrameNumberInFile,
 	    frameInfo->filename
 	);
 	frameInfo->enable = 0;
