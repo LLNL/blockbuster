@@ -5,7 +5,7 @@
 #include "common.h"
 #include <vector>
 #include <QStringList>
-
+struct TextureObject; 
 using namespace std; 
 struct Canvas; 
 
@@ -113,13 +113,13 @@ typedef  void (*DestroyFrameFunc)(struct FrameInfo *frameInfo);
 /* Information about one frame of the movie. */ 
 struct FrameInfo {
   FrameInfo(): width(0), height(0), depth(0), maxLOD(0), filename(NULL), 
-               mFrameNumberInFile(0), privateData(NULL), canvasPrivate(NULL), 
+               mFrameNumberInFile(0), privateData(NULL), mTextureObject(NULL), 
                enable(0), LoadImage(NULL), DestroyFrameInfo(NULL) {}
   FrameInfo(int w, int h, int d, int lod, char *fname, /*int fnum, */
-            void *priv, void *cp, int en, 
+            void *priv, int en, 
             LoadImageFunc lif, DestroyFrameFunc dff):
     width(w), height(h), depth(d), maxLOD(lod), filename(fname), 
-    mFrameNumberInFile(0), privateData(priv), canvasPrivate(cp), enable(en), 
+    mFrameNumberInFile(0), privateData(priv), mTextureObject(NULL), enable(en), 
     LoadImage(lif), DestroyFrameInfo(dff) {}
             
   ~FrameInfo() {}
@@ -149,7 +149,7 @@ struct FrameInfo {
   void *privateData; // used by tiff.cpp and sm.cpp.  Blech.  Another indication that Images and FrameInfos should be merged. 
   
   /* Pointer to frame data that's specific to the canvas */
-  void *canvasPrivate;
+  TextureObject *mTextureObject;
   
   /* A flag that we can use to disable frames that have errors */
   int enable;

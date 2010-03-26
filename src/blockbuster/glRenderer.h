@@ -43,14 +43,14 @@ class glStereoRenderer: public glRenderer {
 // glTextureRenderer
 // ==================================================================
 
-typedef struct {
+struct TextureObject {
     GLuint texture;
     GLuint width, height; /* level zero */
     Rectangle valid[MAX_IMAGE_LEVELS];
     GLboolean anyLoaded;   /* is any part of this texture valid/loaded? */
     GLuint age;
     FrameInfo *frameInfo;  /* back pointer */
-} TextureObject;
+} ;
 
 #define MAX_TEXTURES 20
 

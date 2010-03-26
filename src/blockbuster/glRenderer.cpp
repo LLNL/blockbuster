@@ -561,7 +561,7 @@ void glTextureRenderer::UpdateProjectionAndViewport(int newWidth, int newHeight)
 TextureObject *glTextureRenderer::GetTextureObject(int frameNumber)
 {
   static GLuint clock = 1;
-  TextureObject *texObj = (TextureObject *) mCanvas->frameList->getFrame(frameNumber)->canvasPrivate;
+  TextureObject *texObj = mCanvas->frameList->getFrame(frameNumber)->mTextureObject;
   
   if (!texObj) {
 	/* find a free texture object */
@@ -584,7 +584,7 @@ TextureObject *glTextureRenderer::GetTextureObject(int frameNumber)
     
 	/* unlink FrameInfo pointer */
 	if (texObj->frameInfo)
-      texObj->frameInfo->canvasPrivate = NULL;
+      texObj->frameInfo->mTextureObject = NULL;
     
 	/* update/init texObj fields */
 	texObj->age = clock++;	/* XXX handle clock wrap-around! */
@@ -592,7 +592,7 @@ TextureObject *glTextureRenderer::GetTextureObject(int frameNumber)
 	for (i = 0; i < MAX_IMAGE_LEVELS; i++)
       texObj->valid[i].width = texObj->valid[i].height = -1;
 	texObj->anyLoaded = GL_FALSE;
-	mCanvas->frameList->getFrame(frameNumber)->canvasPrivate = texObj;
+	mCanvas->frameList->getFrame(frameNumber)->mTextureObject = texObj;
   }
   
   return texObj;
