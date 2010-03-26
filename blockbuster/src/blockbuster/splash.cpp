@@ -96,7 +96,6 @@ void WriteImageToFile(Canvas *canvas, int frameNumber)
     fprintf(f, "    \"SPLASH\", /* filename */\n");
     fprintf(f, "    0, /* localFrameNumber */\n");
     fprintf(f, "    NULL, /* privateData */\n");
-    fprintf(f, "    NULL, /* canvasPrivate */\n");
     fprintf(f, "    1, /* enable */\n");
     fprintf(f, "    LoadSplashScreen, /* loadImageFunc */\n");
     fprintf(f, "    NullDestroyFrameInfo,\n");
@@ -206,7 +205,6 @@ static FrameInfo frameInfo
  0, /* maxLOD */
  "SPLASH", /* filename */
  NULL, /* privateData */
- NULL, /* canvasPrivate */
  1, /* enable */
  LoadSplashScreen, /* loadImageFunc */
  NullDestroyFrameInfo); 
