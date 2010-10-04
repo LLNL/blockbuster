@@ -11,6 +11,7 @@
 
 // global variables for network communications.  Can these be not global, somehow?   
 SidecarServer *gSidecarServer = NULL; 
+bool SidecarServer::mPromptForConnections = true; 
 
 //================================================================
 void EventQueue ::AddEvent(MovieEvent &command) {
