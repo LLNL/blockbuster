@@ -30,8 +30,7 @@ class SidecarServer : public QObject {
   Q_OBJECT
     public:
   SidecarServer(QObject *parent = 0): 
-    QObject(parent), mCanvas(NULL), 
-    mPromptForConnections(true), mSidecarSocket(NULL) {
+    QObject(parent), mCanvas(NULL), mSidecarSocket(NULL) {
     dbprintf(5, "SidecarServer\n"); 
     //mTcpServer.listen(QHostAddress::Any, 5959); 
     mTcpServer.listen(); 
@@ -41,7 +40,7 @@ class SidecarServer : public QObject {
   int GetNetworkEvent(MovieEvent *event);
   void AddEvent(MovieEvent &event);
  
-  void PromptForConnections(bool val) { mPromptForConnections = val; }
+  static void PromptForConnections(bool val) { mPromptForConnections = val; }
 
   void connectToSidecar(QString where);
   bool connected(void) { 
@@ -71,7 +70,7 @@ class SidecarServer : public QObject {
  protected: 
   QTcpServer mTcpServer;
   Canvas *mCanvas; 
-  bool mPromptForConnections; 
+  static bool mPromptForConnections; 
   QTcpSocket *mSidecarSocket;
   uint32_t mLastReceivedCommandID, mLastSentCommandID; 
 };
