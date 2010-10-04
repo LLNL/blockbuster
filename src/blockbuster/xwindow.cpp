@@ -39,7 +39,7 @@
 #include <GL/glx.h>
 #include "xwindow.h"
 #include "pure_C.h"
-
+#include <QX11Info>
 #define DEFAULT_WIDTH 800
 #define DEFAULT_HEIGHT 600
 
@@ -64,8 +64,12 @@ XWindow::XWindow(Canvas *theCanvas, ProgramOptions *options, Window parentWin):
   const int winBorder = 0;
   int x, y, width, height;
   int required_x_margin, required_y_margin;
-      
-  display = XOpenDisplay(options->displayName.toAscii());
+     
+  display = QX11Info::display(); 
+  if (!display) {
+    dbprintf(0, QString("Opening display %1\n").arg(options->displayName)); 
+    display = XOpenDisplay(options->displayName.toStdString().c_str());
+  }
   if (!display) {
     QString err("cannot open display '%1'"); 
     ERROR(err.arg(options->displayName));
