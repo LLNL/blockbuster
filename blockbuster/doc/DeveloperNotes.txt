@@ -29,3 +29,18 @@ Looking at the logs, I found that sidecar was reading its events and then respon
 to
   while (mBlockbusterSocket && mBlockbusterSocket->canReadLine()) {
 voila!  
+
+
+=============================================================================
+NewRenderers:  x11Renderer, glRenderer, glStereoRenderer, glTextureRenderer, dmxRenderer
+
+Major modes: 
+CACHING:  DMX vs. local
+RENDERING:  DMX vs. x11 vs. gl 
+USER INTERFACE:  You might think there were more than one -- only x11 is possible!  See ui.cpp.  This needs to get cleaned up!  
+
+Blockbuster invocation modes:  Local vs. DMX master vs. DMX slave:
+In general:  
+local is local caching, gl rendering, Qt controls
+DMX master is DMX caching, DMX rendering, Qt controls
+DMX slave is local caching, gl rendering, no Qt controls
