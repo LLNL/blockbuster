@@ -18,6 +18,7 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include "canvas.h"
 #include "errmsg.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +26,6 @@
 #include <X11/Xlib.h>
 #include "util.h"
 #include "errmsg.h"
-#include "canvas.h"
 
 static void ConvertPixel(const ImageFormat *srcFormat,
                          const ImageFormat *destFormat,

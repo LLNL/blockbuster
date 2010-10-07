@@ -1,10 +1,10 @@
 #ifndef BLOCKBUSTER_SLAVE_H
 #define BLOCKBUSTER_SLAVE_H
 
-#include "canvas.h"
 #include <QTcpSocket>
 #include "settings.h"
 #include <QWidget>
+#include "canvas.h"
 
 #ifdef USE_MPI
 #include "mpi.h"

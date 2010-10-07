@@ -1,8 +1,8 @@
 #ifndef DMXNEWRENDERER_H
 #define DMXNEWRENDERER_H yes
 
-#include "Renderer.h" // not "Renderers.h"
 #include <QTcpSocket>
+#include "Renderer.h" // not "Renderers.h"
 #include <QProcess>
 #include <QHostInfo>
 #include "events.h"

@@ -1,12 +1,12 @@
 #ifndef BLOCKBUSTER_CANVAS_H
 #define BLOCKBUSTER_CANVAS_H
 
+#include "events.h"
 #include "xwindow.h"
 #include "Renderer.h"
 #include "common.h"
 #include "frames.h"
 #include "settings.h"
-#include "events.h"
 
 #define SCREEN_X_MARGIN 20
 #define SCREEN_Y_MARGIN 40

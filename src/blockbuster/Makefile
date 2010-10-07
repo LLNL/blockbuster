@@ -57,16 +57,17 @@ FORCE:
 
 # QMAKE: allow user to set in environment or have in PATH: 
 QMAKE ?= $(shell which qmake)
+$(warning QMAKE from environment is $(QMAKE))
 ifeq ($(QMAKE),) 
 # if still no qmake, look in canonical place 
 	CANONICAL=/usr/gapps/asciviz/Trolltech/4.4.0/$(SYS_TYPE)/bin/qmake
 	QMAKE = $(shell [ -x $(CANONICAL) ] && echo $(CANONICAL))
-	$(warning QMAKE not defined, using $(QMAKE))
 endif
 ifeq ($(QMAKE),) 
 # finally, tag to make it obvious what happened if not found:
 	QMAKE = QMAKE_NOT_FOUND
 endif
+$(warning QMAKE is $(QMAKE))
 
 # no matter what, this is a good idea:
 export OPT=-g
