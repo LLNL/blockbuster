@@ -18,6 +18,8 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include "canvas.h"
+#include "glRenderer.h"
 #include "xwindow.h"
 #include "util.h"
 #include "cache.h"
@@ -32,9 +34,7 @@
 #include <GL/gl.h>
 #include <GL/glx.h>
 #include "timer.h"
-#include "canvas.h"
 
-#include "glRenderer.h"
 
 glRenderer::glRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QString name):
   Renderer(opt, canvas, parentWindow, name) {

@@ -1,9 +1,9 @@
+#include "canvas.h"
 #include "Renderer.h"
 #include "common.h"
 #include "glRenderer.h"
 #include "dmxRenderer.h"
 #include "settings.h"
-#include "canvas.h"
 
 Renderer * Renderer::CreateRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow) {
   QString name = opt->rendererName; 
