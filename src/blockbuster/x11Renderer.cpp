@@ -1,4 +1,5 @@
 
+#include "canvas.h" 
 #include "x11Renderer.h"
 #include "errmsg.h"
 #include "cache.h"
@@ -14,7 +15,6 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/Xdbe.h>
-#include "canvas.h" 
 
 x11Renderer::x11Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow):
   Renderer(opt, canvas, parentWindow, "x11"), mSwapAction(XdbeBackground) {

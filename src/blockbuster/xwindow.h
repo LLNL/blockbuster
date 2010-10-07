@@ -21,6 +21,7 @@
 #ifndef BLOCKBUSTER_XWINDOW
 #define BLOCKBUSTER_XWINDOW 1
 
+#include "QString"
 #include "common.h"
 #include <stdio.h>
 #include <stdlib.h>
