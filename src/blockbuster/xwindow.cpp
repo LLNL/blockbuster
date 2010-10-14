@@ -600,7 +600,12 @@ static MovieStatus xwindow_Initialize(Canvas *canvas, const ProgramOptions *opti
 
     sWindowInfo->mShowCursor = true;  
 
-    sWindowInfo->display = XOpenDisplay(options->displayName.toAscii());
+    dbprintf(1, QString("Opening display given to Qt GUI\n")); 
+    sWindowInfo->display = QX11Info::display(); 
+    if (!sWindowInfo->display) {
+      dbprintf(0, QString("Opening display %1\n").arg(options->displayName)); 
+      sWindowInfo->display = XOpenDisplay(options->displayName.toAscii());
+    }
     if (!sWindowInfo->display) {
 	  QString err("cannot open display '%1'"); 
 	  ERROR(err.arg(options->displayName));

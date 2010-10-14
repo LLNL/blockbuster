@@ -1,6 +1,23 @@
 CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
+
+================================================================================
+VERSION 2.6.3e
+October 14, 2010
+-- rolls back all changes in 2.6.3d, so identical to 2.6.3c except:
+-- fixed bug where -display flag is not passed on to X11 render context, breaking display on beast
+
+================================================================================
+VERSION 2.6.3d
+October 4, 2010
+-- fixed bug where -display flag is not passed on to X11 render context, breaking display on beast
+-- fixed segfault in blockbuster when -sidecar flag is given.
+-- fixed segfault in smtest when no args are given
+-- Use tiling by default in img2sm and smcat
+-- fixed segfault in img2sm when JPEG or PNGs are being converted to a movie, the -first flag is used, and the user makes a typo specifying the file locations. 
+
+
 ================================================================================
 VERSION 2.6.3c
 September 24, 2009
