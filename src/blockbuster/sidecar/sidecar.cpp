@@ -473,6 +473,7 @@ void SideCar::blockbusterProcessExit(int, QProcess::ExitStatus ) {
 //=======================================================================
 void SideCar::blockbusterReadStdErr() {
   //dbprintf(5, "Sidecar: ReadStdErr()... \n"); 
+  if (!mBlockbusterProcess) return; 
   mBlockbusterProcess->setReadChannel(QProcess::StandardError); 
   while (mBlockbusterProcess->canReadLine()) {
     QString line = mBlockbusterProcess->readLine(); 
@@ -502,6 +503,7 @@ void SideCar::blockbusterReadStdErr() {
 //=======================================================================
 void SideCar::blockbusterReadStdOut(){ 
   //dbprintf(5, "Sidecar: ReadStdOut()\n"); 
+  if (!mBlockbusterProcess) return; 
   mBlockbusterProcess->setReadChannel(QProcess::StandardOutput); 
   while (mBlockbusterProcess->canReadLine()) {
     QString line = mBlockbusterProcess->readLine(); 
