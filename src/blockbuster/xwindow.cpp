@@ -23,7 +23,7 @@
  * "glue" required by the renderers that the X11 UserInterface supports.
  */
 
-
+#include <QX11Info>
 #include "canvas.h"
 #include "frames.h"
 #include "errmsg.h"
