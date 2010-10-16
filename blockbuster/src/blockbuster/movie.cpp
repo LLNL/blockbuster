@@ -253,13 +253,13 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
     MovieEvent newEvent; 
     int oldPlay = playDirection;
 
-    /* Get an event from the canvas or network and process it.
-     */   
-    if (fullScreen) {
-      DEBUGMSG("fullScreen\n"); 
+    if (fullScreen && options->fullScreen) {
+      DEBUGMSG("fullScreen from options\n"); 
       events.push_back(MovieEvent(MOVIE_FULLSCREEN)); 
       options->fullScreen=false; 
     }
+    /* Get an event from the canvas or network and process it.
+     */   
     /* every minute or so, tell any DMX slaves we are alive */ 
     if (time(NULL) - lastheartbeat > 60) {
       canvas->DMXSendHeartbeat(); 
@@ -511,7 +511,11 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         newZoom = 1.0;
         zooming = 0;
         {
-          int width = frameInfo->width, height = frameInfo->height;           
+          int width = 100000, height = 1000000;
+          if (frameInfo != NULL) {
+            width = frameInfo->width;  
+            height = frameInfo->height;         
+          }
           if (width > canvas->screenWidth) {
             width = canvas->screenWidth; 
           }
@@ -695,6 +699,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
 	    canvas->ReportFrameChange(frameNumber);
 	    canvas->ReportDetailRangeChange(-maxLOD, maxLOD);
 	    canvas->ReportZoomChange(newZoom);
+        swapBuffers = true; 
 	  } else { 
 	    ERROR("Could not open movie file %s", event.mString); 
 	  }
@@ -766,11 +771,11 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       }
       
       if (event.eventType == MOVIE_NONE && !playDirection) {
-        /* start back up at outer loop */
+        dbprintf(5, " start back up at outer loop\n"); 
         continue;
       }
       else if (event.eventType == MOVIE_QUIT) {
-        /* break from the outer loop too */
+        dbprintf(5, "break from the outer loop too\n"); 
         break;
       }
       
@@ -1044,7 +1049,8 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         /* Compute next targetted swap time */
         nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
       }
-      if (swapBuffers = true ||
+       dbprintf(5, "check to swap buffers\n"); 
+      if (swapBuffers == true ||
           frameNumber != previousFrame ||
           currentZoom != oldZoom ||
           oldXOffset != xOffset ||

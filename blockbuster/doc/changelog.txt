@@ -1,6 +1,12 @@
 CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
+
+================================================================================
+VERSION 2.6.3f
+October 15, 2010
+-- fixes bug in the -display bugfix from 2.6.3d  that caused unresponsive mouse and keyboard among other issues
+
 ================================================================================
 VERSION 2.6.3d
 October 4, 2010
