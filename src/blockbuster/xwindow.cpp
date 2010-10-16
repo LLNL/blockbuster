@@ -65,7 +65,7 @@ XWindow::XWindow(Canvas *theCanvas, ProgramOptions *options, Window parentWin):
   int x, y, width, height;
   int required_x_margin, required_y_margin;
      
-  display = QX11Info::display(); 
+  display = XOpenDisplay(DisplayString(QX11Info::display())); 
   if (!display) {
     dbprintf(0, QString("Opening display %1\n").arg(options->displayName)); 
     display = XOpenDisplay(options->displayName.toStdString().c_str());
