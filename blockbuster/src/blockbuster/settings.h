@@ -56,6 +56,7 @@ struct ProgramOptions {
   QString executable; /* path to the backend blockbuster */ 
   QString messageLevelName;
   struct MessageLevel *messageLevel;
+  QString logFile;  
   int rendererIndex;
   QString rendererName;
   RendererSpecificGlue *mRendererSpecificGlue; 

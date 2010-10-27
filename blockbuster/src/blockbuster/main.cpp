@@ -303,9 +303,9 @@ static void ParseOptions(int &argc, char *argv[])
       }
       dbprintf(0, QString("Setting messageLevel to \"%1\"\n").arg(opt->messageLevelName)); 
       
-      maxMessageLevel = opt->messageLevel->messageLevel;
-      set_verbose(maxMessageLevel); 
-      sm_setVerbose(maxMessageLevel); 
+      //maxMessageLevel = opt->messageLevell->messageLevel;
+      set_verbose(opt->messageLevel->messageLevel); 
+      sm_setVerbose(opt->messageLevel->messageLevel); 
       //if (maxMessageLevel == 4) enable_dbprintf(); 
       continue;
     }
@@ -347,6 +347,10 @@ static void ParseOptions(int &argc, char *argv[])
       opt->messageLevel = FindMessageLevel(maxMessageLevel);
       set_verbose(maxMessageLevel); 
       sm_setVerbose(maxMessageLevel); 
+      continue;
+    }
+	else if (CHECK_STRING_ARG("-log", argc, argv, opt->logFile))  {
+      enableLogging(true, opt->logFile); 
       continue;
     }
 	else if (SET_BOOL_ARG("-version", argc, argv, help, 1)) {
