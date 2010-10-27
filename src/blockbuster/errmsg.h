@@ -5,12 +5,14 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 #define ECHO_FUNCTION(level) dbprintf(level, "BEGIN\n"); 
 #ifdef __cplusplus
 #include <QString>
 struct MessageLevel *FindMessageLevel(QString name);
 struct MessageLevel *FindMessageLevel(int verbosity); // maps verbosity from 0 to 5 into "messageLevel" from SYSERROR to DEBUG 
+
+// prints output to file at maximum debug level.  Warning:  big files will result!  
+void enableLogging(bool enable, QString logfile);
 #endif
 extern int maxMessageLevel; 
 extern struct Canvas *messageCanvas;
@@ -32,6 +34,7 @@ extern pthread_mutex_t debug_message_lock;
    #endif
 */
 void set_verbose(int level); 
+
 
 //void real_dbprintf(const char *fmt, ...); 
 #ifdef __cplusplus

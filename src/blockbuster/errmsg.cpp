@@ -22,12 +22,41 @@ pthread_mutex_t debug_message_lock = PTHREAD_MUTEX_INITIALIZER;
 static bool gDoDialogs = true; 
 static int gVerbose = 0; 
 
+static QString gLogFileName; 
+static FILE *gLogFile = NULL; 
+
 //===============================================
 QString getExactSeconds(void) {
   struct timeval t; 
   gettimeofday(&t, NULL); 
   //return QTime::currentTime().toString("ssss.zzz").toStdString(); 
   return QString("%1").arg(t.tv_sec + (double)t.tv_usec/1000000.0, 0, 'f', 3).right(8); 
+}
+
+//===============================================
+void enableLogging(bool enable, QString logfile) {
+  if (enable) {
+    if (logfile != "") {
+      gLogFileName = logfile; 
+    } else {
+      char *home = getenv("HOME");
+      if (home) {
+        gLogFileName = QString("%1/.blockbuster/blockbuster-log.txt").arg(home);
+      } else {
+        gLogFileName = "blockbuster-log.txt";
+      }
+    }
+    gLogFile = fopen(gLogFileName.toStdString().c_str(), "w"); 
+    if (gLogFile) {
+      cerr << "Blockbuster log is at " << gLogFileName.toStdString() << endl; 
+    } else {
+      cerr << "Could not create blockbuster log at " << gLogFileName.toStdString() << endl; 
+    }
+  } else {
+    gLogFile = NULL; 
+    gLogFileName = ""; 
+  }
+  return; 
 }
 
 //===============================================
