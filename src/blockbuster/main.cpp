@@ -225,6 +225,16 @@ bool  SET_BOOL_ARG(const char *flag, int &argc, char *argv[], int &barg, int val
   return false; 
 }
   
+static char ** DuplicateArgs(int argc, char *argv[]) {
+  char **argv_new = (char **)malloc(sizeof(char *) * argc); 
+  int argnum = 0; 
+  while (argnum < argc) {
+    argv_new[argnum] = strdup(argv[argnum]); 
+    argnum++; 
+  }
+  return argv_new;
+}
+
 /*
  * Parse argv[] options and set flags in <opt>.
  */
@@ -568,10 +578,12 @@ int main(int argc, char *argv[])
     ReadSettingsFromFile(opt->settings, localSettingsFilename);
   }
 
-  // Get Qt rockin'.  This creates the basic Qt object.  
-  gCoreApp = new QApplication(argc, args); 
-
   /* Grab any options that apply to the whole program */
+  char **newargs = DuplicateArgs(argc, args); 
+  int newargc = argc; 
+  // Get Qt rockin'.  This creates the basic Qt object.  
+  gCoreApp = new QApplication(newargc, newargs); 
+
   ParseOptions(argc, args);
   printargs("After ParseOptions", args, argc); 
 
