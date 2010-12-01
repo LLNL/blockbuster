@@ -3,6 +3,11 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 
 
 ================================================================================
+VERSION 2.6.3g
+-- fixed bug in getting number of CPUs on OS X
+-- fixed bug in display for OS X
+
+================================================================================
 VERSION 2.6.3f
 October 15, 2010
 -- fixes bug in the -display bugfix from 2.6.3d  that caused unresponsive mouse and keyboard among other issues
