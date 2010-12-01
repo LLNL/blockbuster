@@ -69,26 +69,9 @@ ProgramOptions gProgramOptions;
  */
 static int GetNumProcessors(void)
 {
-  FILE *f;
-  int count = 0;
-  char buffer[BLOCKBUSTER_PATH_MAX], *s;
-  int rv;
+  // works on Linux and OS X: 
+  return  sysconf( _SC_NPROCESSORS_ONLN );
 
-  f = fopen("/proc/cpuinfo", "r");
-  if (f == NULL) return 0;
-
-  while ((s = fgets(buffer, BLOCKBUSTER_PATH_MAX, f)) != NULL) {
-    if (strncmp(s, "processor", 9) == 0 && !isalpha(s[9])) {
-      count++;
-    }
-  }
-
-  rv = fclose(f);
-  if (rv != 0) {
-    SYSERROR("could not close /proc/cpuinfo (%d)", rv);
-  }
-    
-  return count;
 }
 
 
