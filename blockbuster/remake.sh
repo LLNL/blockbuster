@@ -3,7 +3,7 @@
 set -x
 for dir in src/blockbuster/ src/blockbuster/sidecar/; do 
     pushd $dir; 
-    rm -f blockbuster.pro Makefile.qt.include moc_*{cpp,o} ui_*h
+    rm -f blockbuster.pro Makefile.qt.include moc_*{cpp,o} *.o ui_*h
     popd
 done
 
