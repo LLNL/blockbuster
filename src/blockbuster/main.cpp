@@ -416,7 +416,7 @@ static void ParseOptions(int &argc, char *argv[])
   numProcessors = GetNumProcessors();
   if (opt->readerThreads == -1) {
     if (numProcessors > 1) {
-      opt->readerThreads = numProcessors;    
+      opt->readerThreads = 2; // too many might be problematic    
     }
   }
   DEBUGMSG("Using %d threads", opt->readerThreads); 
