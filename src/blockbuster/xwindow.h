@@ -39,11 +39,12 @@ struct RendererSpecificGlue *GetRendererSpecificGlueByName(QString name);
 
 
 struct XWindow {
-  XWindow(Canvas *canvas,  ProgramOptions *options, Window parentWin);
+  XWindow(ProgramOptions *options, Canvas *canvas,  Window parentWin);
   virtual ~XWindow(){}
   virtual XVisualInfo *ChooseVisual(void){
     return  pureC_x11ChooseVisual(display,  screenNumber);
   }
+  void FinishXWindowInit(ProgramOptions *opt, Canvas *canvas, Window parentWindow); 
 
   virtual void DrawString(int row, int column, const char *str)=0;  
   virtual void SwapBuffers(void)=0;

@@ -36,6 +36,10 @@ dmxRenderer::dmxRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindo
   mNumActiveSlaves(0), mSlavesReady(false),
   haveDMX(0),  dmxWindowInfos(NULL) {
 
+  return; 
+} 
+
+void dmxRenderer::FinishRendererInit(ProgramOptions *, Canvas *, Window ) {
   connect(&mSlaveServer, SIGNAL(newConnection()), this, SLOT(SlaveConnected()));  
   mSlaveServer.listen(QHostAddress::Any);  //QTcpServer will choose a port for us.
   mPort = mSlaveServer.serverPort();

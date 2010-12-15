@@ -3,6 +3,10 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 
 
 ================================================================================
+VERSION 2.6.3h
+- Fixed stereo rendering on powerwall
+
+================================================================================
 VERSION 2.6.3g
 -- fixed bug in getting number of CPUs on OS X
 -- fixed bug in display for OS X

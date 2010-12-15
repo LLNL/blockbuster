@@ -10,6 +10,7 @@ class glRenderer: public Renderer {
  public:
   glRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QString name="gl");
 
+  virtual void FinishRendererInit(ProgramOptions *opt, Canvas *canvas, Window parentWindow);
   virtual ~glRenderer() ;
 
   virtual XVisualInfo *ChooseVisual(void);  
@@ -34,7 +35,7 @@ class glStereoRenderer: public glRenderer {
     return; 
   }
   virtual ~glStereoRenderer() {}
-  XVisualInfo *ChooseVisual(void);
+  virtual XVisualInfo *ChooseVisual(void);
   void Render(int frameNumber, const Rectangle *imageRegion,
               int destX, int destY, float zoom, int lod);
 };
