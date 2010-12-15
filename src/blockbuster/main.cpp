@@ -167,6 +167,7 @@ bool  CHECK_STRING_ARG(const char *flag, int &argc, char *argv[], QString &str)	
 
   checkarg(argc, flag); // exits on error-- bad but no time to fix
   ConsumeArg(argc, argv, 1); 
+  DEBUGMSG("Setting string arg to %s\n", argv[1]); 
 
   str = argv[1];
   ConsumeArg(argc, argv, 1); 
@@ -176,6 +177,7 @@ bool  CHECK_STRING_ARG(const char *flag, int &argc, char *argv[], QString &str)	
 
 bool  CHECK_ATOF_ARG(const char *flag, int &argc, char *argv[], float &flt)	{
   if (strstr(flag, argv[1]) == flag) {
+    DEBUGMSG("Setting float arg\n"); 
     ConsumeArg(argc, argv, 1); 
 	checkarg(argc, flag);
 	flt = atof(argv[1]);
@@ -188,6 +190,7 @@ bool  CHECK_ATOF_ARG(const char *flag, int &argc, char *argv[], float &flt)	{
   
 bool  CHECK_ATOI_ARG(const char *flag, int &argc, char *argv[], int &intgr)	{
   if (strstr(flag, argv[1]) == flag) {
+    DEBUGMSG("Setting Int arg\n"); 
     ConsumeArg(argc, argv, 1); 
 	checkarg(argc, flag);
 	intgr = atoi(argv[1]);
@@ -199,6 +202,7 @@ bool  CHECK_ATOI_ARG(const char *flag, int &argc, char *argv[], int &intgr)	{
 
 bool  SET_BOOL_ARG(const char *flag, int &argc, char *argv[], int &barg, int val, bool consume=true)	{
   if (strstr(flag, argv[1]) == flag) {
+    DEBUGMSG("Setting bool arg\n"); 
 	barg = val;
     if (consume) {
       ConsumeArg(argc, argv, 1); 
@@ -246,6 +250,7 @@ static void ParseOptions(int &argc, char *argv[])
 
   int help = 0, doStereo = 0; 
   while (argc > 1) {
+    DEBUGMSG("Checking arg %s\n", argv[1]); 
 	QString zoomString; 
 	QString geometryString; 
 	if (CHECK_ATOI_ARG("-cache", argc, argv, opt->frameCacheSize)) continue; 
