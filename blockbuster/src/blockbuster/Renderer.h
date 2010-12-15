@@ -14,7 +14,10 @@ class Renderer: public XWindow {
   static Renderer *CreateRenderer(ProgramOptions*, Canvas*, Window);
   Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QString name);
 
-  virtual ~Renderer() {
+  virtual XVisualInfo *ChooseVisual(void) = 0;
+  void FinishInit(ProgramOptions *opt, Canvas *canvas, Window parentWindow);
+  virtual void FinishRendererInit(ProgramOptions *opt, Canvas *canvas, Window parentWindow) =0; 
+virtual ~Renderer() {
     DestroyImageCache(); 
     return; 
   } // replaces DestroyRenderer from Canvas

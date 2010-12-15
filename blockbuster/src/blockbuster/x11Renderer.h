@@ -12,6 +12,7 @@
 class x11Renderer: public Renderer {
  public:
   x11Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow);
+  virtual void FinishRendererInit(ProgramOptions *opt, Canvas *canvas, Window parentWindow);
 
   virtual ~x11Renderer() ;
   

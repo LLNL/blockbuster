@@ -23,9 +23,6 @@
 #include "canvas.h"
 #include "frames.h"
 #include "errmsg.h"
-#include "glRenderer.h"
-#include "x11Renderer.h"
-#include "errmsg.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,11 +32,7 @@
 #include <X11/extensions/Xdbe.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
-#include <GL/gl.h>
-#include <GL/glx.h>
 #include "xwindow.h"
-#include "pure_C.h"
-#include <QX11Info>
 #define DEFAULT_WIDTH 800
 #define DEFAULT_HEIGHT 600
 
@@ -47,24 +40,14 @@
 /* This function is called to initialize an already-allocated Canvas.
  * The Glue information is already copied into place.
  */
-XWindow::XWindow(Canvas *theCanvas, ProgramOptions *options, Window parentWin):
+XWindow::XWindow(ProgramOptions *options, Canvas *theCanvas, Window parentWin):
   mOptions(options), mCanvas(theCanvas), display(NULL), 
   visInfo(NULL), screenNumber(0), window(0), isSubWindow(0), 
   fontInfo(NULL), fontHeight(0),  mShowCursor(true), 
   mOldWidth(-1), mOldHeight(-1), mOldX(-1), mOldY(-1), mXSync(false) {
   ECHO_FUNCTION(5);
-  const Rectangle *geometry = &options->geometry;
-  int decorations = options->decorations;
-  QString suggestedName = options->suggestedTitle;
   
-  Screen *screen;
-  XSetWindowAttributes windowAttrs;
-  unsigned long windowAttrsMask;
-  XSizeHints sizeHints;
-  const int winBorder = 0;
-  int x, y, width, height;
-  int required_x_margin, required_y_margin;
-     
+      
   //display = XOpenDisplay(DisplayString(QX11Info::display())); 
   //if (!display) {
   //  dbprintf(0, QString("Opening display %1\n").arg(options->displayName)); 
@@ -84,6 +67,19 @@ XWindow::XWindow(Canvas *theCanvas, ProgramOptions *options, Window parentWin):
   if (parentWin)
     isSubWindow = 1;
   
+ 
+   return ;
+}
+  
+  
+void XWindow::FinishXWindowInit(ProgramOptions *options, Canvas *, Window parentWin) {
+  ECHO_FUNCTION(5); 
+  const Rectangle *geometry = &options->geometry;
+  int decorations = options->decorations;
+  QString suggestedName = options->suggestedTitle;
+ Screen *screen;
+  int x, y, width, height;
+  int required_x_margin, required_y_margin;
   /* Get the screen and do some sanity checks */
   screenNumber = DefaultScreen(display);
   screen = ScreenOfDisplay(display, screenNumber);
@@ -152,15 +148,18 @@ XWindow::XWindow(Canvas *theCanvas, ProgramOptions *options, Window parentWin):
     y = geometry->y;
   else
     y = 0;
-  
-  
-  visInfo = ChooseVisual( ); // virtual function per renderer
+ 
+
+  XSetWindowAttributes windowAttrs;
+  unsigned long windowAttrsMask;
+  XSizeHints sizeHints;
+  const int winBorder = 0;
+  //visInfo = this->ChooseVisual( ); // virtual function 
   if (visInfo == NULL) {
     XCloseDisplay(display);
     ERROR("Could not get visInfo in XWindow constructor.\n"); 
-    return ;
   }
-  
+
   /* Set up desired window attributes */
   colormap = XCreateColormap(display, RootWindow(display, screenNumber),
                              visInfo->visual, AllocNone);

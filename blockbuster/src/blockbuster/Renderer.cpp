@@ -8,23 +8,37 @@
 Renderer * Renderer::CreateRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow) {
   QString name = opt->rendererName; 
   Renderer *renderer = NULL; 
+
+  INFO("CreateRenderer creating renderer of type \"%s\"\n", name.toStdString().c_str()); 
+
   if (name == "gl" || name == "") renderer = new glRenderer(opt, canvas, parentWindow); 
   if (name == "gl_stereo") renderer = new glStereoRenderer(opt, canvas, parentWindow); 
   if (name == "gltexture") renderer = new glTextureRenderer(opt, canvas, parentWindow); 
   if (name == "dmx") renderer = new dmxRenderer(opt, canvas, parentWindow); 
   
+  // this has to be called after ChooseVisual() virtual functions are in place
+  renderer->FinishInit(opt, canvas, parentWindow); 
   return renderer;
   
 }
 
 Renderer::Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QString name):
   // replaces Initialize() from file module (e.g. gl.cpp)
-  XWindow(canvas, opt, parentWindow), 
+  XWindow(opt, canvas, parentWindow), 
   mName(name), mCanvas(canvas), mOptions(opt){  
+
   mCache = CreateImageCache(mOptions->readerThreads,
                             mOptions->frameCacheSize, mCanvas);
   return; 
 } 
+
+void Renderer::FinishInit(ProgramOptions *opt, Canvas *canvas, Window parentWindow) {
+  ECHO_FUNCTION(5); 
+  visInfo = ChooseVisual(); 
+  FinishXWindowInit(opt, canvas, parentWindow); 
+  FinishRendererInit(opt, canvas, parentWindow); 
+  return;
+}
 
 void Renderer::SetFrameList(FrameList *frameList) {
   if (!mCache) {

@@ -38,7 +38,10 @@
 
 glRenderer::glRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QString name):
   Renderer(opt, canvas, parentWindow, name) {
+  return; 
+}
 
+void glRenderer::FinishRendererInit(ProgramOptions *opt, Canvas *canvas, Window parentWindow) {
   // from glFinishInitialization: 
   Bool rv;
   Font id = fontInfo->fid;

@@ -177,6 +177,11 @@ class dmxRenderer: public QObject, public Renderer {
   Q_OBJECT
  public:
   dmxRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QObject *parent = NULL);
+  virtual XVisualInfo *ChooseVisual(void) {
+    return XWindow::ChooseVisual(); 
+  }
+  
+  virtual void FinishRendererInit(ProgramOptions *, Canvas *, Window );
   virtual ~dmxRenderer(); 
 
   void Resize(int newWidth, int newHeight, int cameFromX);

@@ -18,7 +18,10 @@
 
 x11Renderer::x11Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow):
   Renderer(opt, canvas, parentWindow, "x11"), mSwapAction(XdbeBackground) {
-  
+  return; 
+}
+
+void x11Renderer::FinishRendererInit(ProgramOptions *, Canvas *, Window ) {
   ECHO_FUNCTION(5);
    
   /* This graphics context and font will be used for rendering status messages,
@@ -45,27 +48,27 @@ x11Renderer::x11Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindo
    * *4* bytes per pixel, not 3.
    */
   if (visInfo->depth > 16) {
-    canvas->requiredImageFormat.bytesPerPixel = 4;
+    mCanvas->requiredImageFormat.bytesPerPixel = 4;
   }
   else if (visInfo->depth > 8) {
-    canvas->requiredImageFormat.bytesPerPixel = 2;
+    mCanvas->requiredImageFormat.bytesPerPixel = 2;
   }
   else {
-    canvas->requiredImageFormat.bytesPerPixel = 1;
+    mCanvas->requiredImageFormat.bytesPerPixel = 1;
   }
-  canvas->requiredImageFormat.scanlineByteMultiple = BitmapPad(display)/8;
+  mCanvas->requiredImageFormat.scanlineByteMultiple = BitmapPad(display)/8;
   
   /* If the bytesPerPixel value is 3 or 4, we don't need these;
    * but we'll put them in anyway.
    */
-  canvas->requiredImageFormat.redShift = ComputeShift(visInfo->visual->red_mask) - 8;
-  canvas->requiredImageFormat.greenShift = ComputeShift(visInfo->visual->green_mask) - 8;
-  canvas->requiredImageFormat.blueShift = ComputeShift(visInfo->visual->blue_mask) - 8;
-  canvas->requiredImageFormat.redMask = visInfo->visual->red_mask;
-  canvas->requiredImageFormat.greenMask = visInfo->visual->green_mask;
-  canvas->requiredImageFormat.blueMask = visInfo->visual->blue_mask;
-  canvas->requiredImageFormat.byteOrder = ImageByteOrder(display);
-  canvas->requiredImageFormat.rowOrder = TOP_TO_BOTTOM;
+  mCanvas->requiredImageFormat.redShift = ComputeShift(visInfo->visual->red_mask) - 8;
+  mCanvas->requiredImageFormat.greenShift = ComputeShift(visInfo->visual->green_mask) - 8;
+  mCanvas->requiredImageFormat.blueShift = ComputeShift(visInfo->visual->blue_mask) - 8;
+  mCanvas->requiredImageFormat.redMask = visInfo->visual->red_mask;
+  mCanvas->requiredImageFormat.greenMask = visInfo->visual->green_mask;
+  mCanvas->requiredImageFormat.blueMask = visInfo->visual->blue_mask;
+  mCanvas->requiredImageFormat.byteOrder = ImageByteOrder(display);
+  mCanvas->requiredImageFormat.rowOrder = TOP_TO_BOTTOM;
   
     return; 
 }
