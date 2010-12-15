@@ -3,7 +3,7 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 
 
 ================================================================================
-VERSION 2.6.3h
+VERSION 2.6.3h (r363)
 - Fixed stereo rendering on powerwall
 
 ================================================================================
