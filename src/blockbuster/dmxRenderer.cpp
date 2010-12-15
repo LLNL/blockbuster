@@ -478,7 +478,7 @@ void dmxRenderer::LaunchSlave(QString hostname) {
     } 
       
     args  <<  " -slave " <<  QString("%1:%2:mpi").arg(localHostname).arg(mPort)              
-          << "-u" <<  "x11"  // no reason to have GTK up and it screws up stereo
+      //<< "-u" <<  "x11"  // no reason to have GTK up and it screws up stereo
           << "-r" << mOptions->backendRendererName ;
     
     INFO(QString("Running command('%1 %2')\n")
