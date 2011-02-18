@@ -130,7 +130,7 @@ void ClampStartEndFrames(FrameList *allFrames,
  */
 int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
 {
-  int32_t frameNumber = 0, previousFrame = -1, cueEndFrame = 0;
+  int32_t previousFrame = -1, cueEndFrame = 0;
   uint totalFrameCount = 0, recentFrameCount = 0;
   FrameInfo *frameInfo = NULL;
   Canvas *canvas;
@@ -191,12 +191,8 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   int32_t preloadFrames= options->preloadFrames,
     playDirection = 0, 
     startFrame= options->startFrame, 
+    frameNumber = options->currentFrame, 
     endFrame = options->endFrame; 
-
-  /* Tell the messaging function that we have a Canvas
-   * to report messages through.
-   */
-  //  messageCanvas = canvas;
   
   /* Tell the Canvas about the frames it's going to render.
     Generate a warning if the frames are out of whack */
@@ -239,7 +235,6 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   if ( options->zoom != 1.0 )
     newZoom =options->zoom;
 
-  frameNumber = startFrame; 
   canvas->ReportRateChange(options->frameRate);
 					
   time_t lastheartbeat = time(NULL); 
@@ -489,6 +484,9 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
           /* special meaning to SideCar: go to the last frame */
           frameNumber = endFrame;
         } 
+        if (frameNumber < startFrame) {
+          frameNumber = startFrame; 
+        }
         break;
         
       case MOVIE_ZOOM_FIT: 
@@ -654,7 +652,30 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
           gMainWindow->setVisible(false); 
         }
        break;
-        
+       
+      case MOVIE_SET_STEREO:
+        /* Done with the canvas */
+        delete canvas;
+        if (event.number) {// TURN ON STEREO
+          if (options->rendererName == "dmx") {
+            options->backendRendererName = "gl_stereo";
+          } else {
+            options->rendererName = "gl_stereo"; 
+          }
+        } else { // TURN OFF STEREO
+          if (options->rendererName == "dmx") {
+            options->backendRendererName = "gl";
+          } else {
+            options->rendererName = "gl"; 
+          }
+        }
+        options->currentFrame = frameNumber; 
+        options->geometry.x = canvas->XPos; 
+        options->geometry.y = canvas->YPos; 
+        options->geometry.width = canvas->width; 
+        options->geometry.height = canvas->height; 
+        printf ("SET_STEREO: X,Y = %d, %d\n", canvas->XPos, canvas->YPos); 
+        return 1; // restarts the DisplayLoop and creates a new canvas in stereo
       case MOVIE_OPEN_FILE:   
       case MOVIE_OPEN_FILE_NOCHANGE: 
 	{
@@ -819,7 +840,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         if (playDirection < 0) { // we're playing backward and reached the end of movie
           if (pingpong) {
             playDirection = -playDirection; 
-            frameNumber = 0; 
+            frameNumber = startFrame; 
           } 
           else {
             if (loopCount > 0) {
@@ -1151,7 +1172,6 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   
   /* Done with the canvas */
   delete canvas;
-  messageCanvas = NULL;
   
   /* Done with the frames */
   allFrames->DeleteFrames(); 

@@ -274,6 +274,13 @@ void BlockbusterInterface::on_openButton_clicked() {
     mEventQueue.push_back(MovieEvent(MOVIE_OPEN_FILE, filename)); 
   }
 }
+
+//======================================================   
+void BlockbusterInterface::on_stereoCheckBox_stateChanged(int state) {
+  mEventQueue.push_back(MovieEvent(MOVIE_SET_STEREO, state)); 
+  return; 
+}
+
 void BlockbusterInterface::on_centerButton_clicked() {
   mEventQueue.push_back(MovieEvent(MOVIE_CENTER)); 
 }

@@ -56,7 +56,6 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
     exit(1); 
   }
   mOptions->mRenderer = mRenderer; 
-  
   DEBUGMSG(QString("frameCacheSize is %1").arg(mOptions->frameCacheSize));    
   
   /* All done */

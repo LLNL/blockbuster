@@ -79,7 +79,7 @@ void real_dbprintf(const char *fmt, ...);
 
   /* For geometry */
 #define DONT_CARE 194243 /* unlikely but positive for uint's */
-#define CENTER -998
+#define CENTER -99998
 
   /* A simple type (defined primarily to improve code readability) used
    * when a success/failure message is required.

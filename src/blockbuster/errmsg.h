@@ -15,7 +15,6 @@ struct MessageLevel *FindMessageLevel(int verbosity); // maps verbosity from 0 t
 void enableLogging(bool enable, QString logfile);
 #endif
 extern int maxMessageLevel; 
-extern struct Canvas *messageCanvas;
 
 struct MessageLevel {
   char *name;

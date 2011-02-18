@@ -38,7 +38,7 @@ struct ProgramOptions {
 #endif
     messageLevel(NULL),  mRenderer(NULL),
     frameCacheSize(8), readerThreads(-1), loopCountName("1"), 
-    startFrame(0), endFrame(-1), loopCount(1), LOD(0),
+    startFrame(0), currentFrame(0), endFrame(-1), loopCount(1), LOD(0),
     slaveLaunchMethod("rsh"), useMPI(0), 
     play(0), playExit(0),  speedTest(0), frameRate(0.0), 
     zoom(1.0), zoomFit(1), fullScreen(0), slaveMode(0), masterPort(0), 
@@ -65,7 +65,7 @@ struct ProgramOptions {
   int frameCacheSize;
   int readerThreads;
   QString loopCountName;
-  int32_t startFrame, endFrame; 
+  int32_t startFrame, currentFrame, endFrame; 
   int loopCount;
   int LOD; 
   QString slaveLaunchMethod; 
