@@ -172,7 +172,7 @@ class MovieCue: public QListWidgetItem {
   MovieCue(QString cueName="My Movie Cue", QListWidget *parent = NULL): 
     QListWidgetItem(cueName, parent), mMovieName("movie.sm"), mLoadMovie(false), 
     mPlayMovie(false), mPlayBackward(false), mShowControls(false), mFullScreen(true), mZoomOne(false), mPingPong(false), 
-    mCurrentFrame(0), mStartFrame(0), mEndFrame(-1), mLoopFrames(0), mWindowWidth(0), mWindowHeight(0), mWindowXPos(0), mWindowYPos(0), mImageXPos(0), mImageYPos(0), mLOD(1), mFrameRate(100.0), mZoom(1.0), isValid(true), mEOF(false)  {     return; }
+    mCurrentFrame(0), mStartFrame(0), mEndFrame(-1), mLoopFrames(0), mWindowWidth(0), mWindowHeight(0), mWindowXPos(0), mWindowYPos(0), mImageXPos(0), mImageYPos(0), mLOD(0), mFrameRate(100.0), mZoom(1.0), isValid(true), mEOF(false)  {     return; }
   QString mMovieName; 
   bool mLoadMovie, mPlayMovie, mPlayBackward, mShowControls, mFullScreen, mZoomOne, mPingPong; 
   int32_t mCurrentFrame, mStartFrame, mEndFrame, // if backwards, then endframe is the actual start frame, of course
