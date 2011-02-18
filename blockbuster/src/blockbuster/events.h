@@ -22,6 +22,7 @@
     MOVIE_MOVE_RESIZE,  /* move and resize to new x,y position */
     MOVIE_CENTER,
     MOVIE_TOGGLE_CURSOR,
+    MOVIE_SET_STEREO, 
 
     MOVIE_ZOOM_IN = 50,
     MOVIE_ZOOM_OUT,

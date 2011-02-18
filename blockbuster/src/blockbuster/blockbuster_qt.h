@@ -56,6 +56,7 @@ class BlockbusterInterface: public QWidget, public Ui::BlockbusterControl  {
   public slots:
   void on_quitButton_clicked();
   void on_openButton_clicked();
+  void on_stereoCheckBox_stateChanged(int);  
   void on_centerButton_clicked();
   void on_fullSizeButton_clicked();
   void on_fitButton_clicked();

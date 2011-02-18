@@ -672,7 +672,9 @@ int main(int argc, char *argv[])
     /* The display loop will destroy the frames for us (it has to, because it
      * must be able to change the frames too.)
      */
-    retval = DisplayLoop(allFrames, opt);
+    while (DisplayLoop(allFrames, opt)) {
+      continue; 
+    }
   }
 
   /* If we read settings, write them back out.  Only one of the

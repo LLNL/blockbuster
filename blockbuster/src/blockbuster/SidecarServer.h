@@ -14,6 +14,7 @@
 #include "errmsg.h"
 #include "settings.h"
 
+class Canvas; 
 extern class SidecarServer *gSidecarServer;
 
 struct EventQueue {

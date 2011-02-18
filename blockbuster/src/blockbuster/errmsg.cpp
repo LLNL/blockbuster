@@ -14,7 +14,6 @@ using namespace std;
 
 /* ---------------------------------------------*/ 
 /* for error reporting in dialogs, folks have been using a canvas, bleh*/ 
-Canvas *messageCanvas = NULL; // 
 int maxMessageLevel = M_WARNING;
 MessageRec theMessage;
 

@@ -40,7 +40,9 @@ struct RendererSpecificGlue *GetRendererSpecificGlueByName(QString name);
 
 struct XWindow {
   XWindow(ProgramOptions *options, Canvas *canvas,  Window parentWin);
-  virtual ~XWindow(){}
+  virtual ~XWindow(){
+    Close(); 
+  }
   virtual XVisualInfo *ChooseVisual(void){
     return  pureC_x11ChooseVisual(display,  screenNumber);
   }

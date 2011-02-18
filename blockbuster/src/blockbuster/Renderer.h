@@ -17,7 +17,7 @@ class Renderer: public XWindow {
   virtual XVisualInfo *ChooseVisual(void) = 0;
   void FinishInit(ProgramOptions *opt, Canvas *canvas, Window parentWindow);
   virtual void FinishRendererInit(ProgramOptions *opt, Canvas *canvas, Window parentWindow) =0; 
-virtual ~Renderer() {
+  virtual ~Renderer() {
     DestroyImageCache(); 
     return; 
   } // replaces DestroyRenderer from Canvas

@@ -77,7 +77,7 @@ void XWindow::FinishXWindowInit(ProgramOptions *options, Canvas *, Window parent
   const Rectangle *geometry = &options->geometry;
   int decorations = options->decorations;
   QString suggestedName = options->suggestedTitle;
- Screen *screen;
+  Screen *screen;
   int x, y, width, height;
   int required_x_margin, required_y_margin;
   /* Get the screen and do some sanity checks */
@@ -179,11 +179,13 @@ void XWindow::FinishXWindowInit(ProgramOptions *options, Canvas *, Window parent
   if (!parentWin)
     parentWin = RootWindow(display, screenNumber);
   
+  printf ("XCreateWindow: X,Y = %d, %d\n", x, y); 
   window = XCreateWindow(display, parentWin,
-                                      x, y, width, height,
-                                      winBorder, visInfo->depth, InputOutput,
-                                      visInfo->visual, windowAttrsMask, &windowAttrs);
+                         x, y, width, height,
+                         winBorder, visInfo->depth, InputOutput,
+                         visInfo->visual, windowAttrsMask, &windowAttrs);
   
+
   DEBUGMSG("created window 0x%x", window);
   
   /* Pass some information along to the window manager to keep it happy */
@@ -236,17 +238,50 @@ void XWindow::FinishXWindowInit(ProgramOptions *options, Canvas *, Window parent
     }
   }
   fontHeight = fontInfo->ascent + fontInfo->descent;
-  
-  /* Prepare our Canvas structure that we can return to the caller */
+
+
+  Window junkwin; 
+  XWindowAttributes win_attributes; 
+  XGetWindowAttributes(display, window, &win_attributes); 
+  /*  XTranslateCoordinates (display, window, win_attributes.root, 
+                         -win_attributes.border_width,
+                         -win_attributes.border_width,
+                         &x, &y, &junkwin); */
+
+  printf("New X,Y, border width is %d, %d, %d\n", x,y, win_attributes.border_width); 
+  XGetWindowAttributes(display, parentWin, &win_attributes); 
+  printf("ParentWindow: X,Y =  %d, %d\n", win_attributes.x, win_attributes.y);
+  //SetCanvasAttributes(window); 
   mCanvas->width = width;
   mCanvas->height = height;
+  mCanvas->XPos = x; 
+  mCanvas->YPos = y; 
+  mCanvas->depth = visInfo->depth;
+  return; 
+}// END CONSTRUCTOR for XWindow
+
+/* SetCanvasAttributes(Window window) {
+  Window junkwin; 
+  XWindowAttributes win_attributes; 
+  XGetWindowAttributes(display, window, &win_attributes); 
+  XTranslateCoordinates (display, window, win_attributes.root, 
+                         -win_attributes.border_width,
+                         -win_attributes.border_width,
+                         &x, &y, &junkwin); 
+
+  printf("New X,Y, border width is %d, %d, %d\n", x,y, win_attributes.border_width); 
+  // Prepare our Canvas structure that we can return to the caller 
+  mCanvas->width = width;
+  mCanvas->height = height;
+  mCanvas->XPos = x; 
+  mCanvas->YPos = y; 
   mCanvas->depth = visInfo->depth;
   
  
   
   return ;
-} // END CONSTRUCTOR for XWindow
-
+} 
+*/
  
 /*
  * Helper to remove window decorations
@@ -648,7 +683,6 @@ void XWindow::Close(void)
     XFreeColormap(display, colormap);
     XSync(display, 0);
     XCloseDisplay(display);
-    free(mCanvas->mRenderer);
     
   }
 
