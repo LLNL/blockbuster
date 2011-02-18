@@ -230,15 +230,6 @@ class BlockbusterLaunchDialog: public QDialog,
     ~BlockbusterLaunchDialog() {
       saveHistory(fileNameComboBox, "fileNameComboBox.history"); 
     }
-    /*  void KillProcess(void) {
-        if (mProcess) {
-        mProcess->kill(); 
-        delete mProcess; 
-        mProcess = NULL; 
-        }
-        return; 
-        }
-    */
     void setState(connectionState newstate) {
       mState = newstate; 
       emit stateChanged(newstate); 
@@ -276,7 +267,7 @@ class BlockbusterLaunchDialog: public QDialog,
   void on_launchButton_clicked();
   void on_useDMXCheckBox_clicked();
   void on_setDisplayCheckBox_clicked();
-
+  void on_hostNameField_editingFinished( ); 
   
   public:
   void saveHistory(QComboBox *box, QString filename);

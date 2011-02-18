@@ -1,7 +1,8 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>blockbusterLaunchDialog</class>
- <widget class="QDialog" name="blockbusterLaunchDialog" >
-  <property name="geometry" >
+ <widget class="QDialog" name="blockbusterLaunchDialog">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
@@ -9,14 +10,14 @@
     <height>473</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Launch or Connect to Blockbuster</string>
   </property>
-  <widget class="QLabel" name="label" >
-   <property name="enabled" >
+  <widget class="QLabel" name="label">
+   <property name="enabled">
     <bool>true</bool>
    </property>
-   <property name="geometry" >
+   <property name="geometry">
     <rect>
      <x>30</x>
      <y>0</y>
@@ -24,19 +25,19 @@
      <height>141</height>
     </rect>
    </property>
-   <property name="text" >
-    <string>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
-&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+   <property name="text">
+    <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
-&lt;p align="justify" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-size:10pt;">You are not connected to a currently running blockbuster instance.  Would you like to launch a new instance, connect to an existing instance, or just forget this ever happened?  &lt;/span>&lt;/p>&lt;/body>&lt;/html></string>
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;You are not connected to a currently running blockbuster instance.  Would you like to launch a new instance, connect to an existing instance, or just forget this ever happened?  &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
-   <property name="wordWrap" >
+   <property name="wordWrap">
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QWidget" name="layoutWidget" >
-   <property name="geometry" >
+  <widget class="QWidget" name="layoutWidget">
+   <property name="geometry">
     <rect>
      <x>60</x>
      <y>150</y>
@@ -44,53 +45,53 @@ p, li { white-space: pre-wrap; }
      <height>29</height>
     </rect>
    </property>
-   <layout class="QHBoxLayout" name="horizontalLayout" >
+   <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
-     <widget class="QPushButton" name="launchButton" >
-      <property name="sizePolicy" >
-       <sizepolicy vsizetype="Fixed" hsizetype="Minimum" >
+     <widget class="QPushButton" name="launchButton">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
-      <property name="text" >
+      <property name="text">
        <string>Launch New</string>
       </property>
-      <property name="autoDefault" >
+      <property name="autoDefault">
        <bool>false</bool>
       </property>
      </widget>
     </item>
     <item>
-     <widget class="QPushButton" name="connectButton" >
-      <property name="text" >
+     <widget class="QPushButton" name="connectButton">
+      <property name="text">
        <string>Connect</string>
       </property>
-      <property name="autoDefault" >
+      <property name="autoDefault">
        <bool>false</bool>
       </property>
      </widget>
     </item>
     <item>
-     <widget class="QPushButton" name="cancelButton" >
-      <property name="focusPolicy" >
+     <widget class="QPushButton" name="cancelButton">
+      <property name="focusPolicy">
        <enum>Qt::WheelFocus</enum>
       </property>
-      <property name="text" >
+      <property name="text">
        <string>Nevermind</string>
       </property>
-      <property name="autoDefault" >
+      <property name="autoDefault">
        <bool>false</bool>
       </property>
-      <property name="default" >
+      <property name="default">
        <bool>false</bool>
       </property>
      </widget>
     </item>
    </layout>
   </widget>
-  <widget class="QLabel" name="statusLabel" >
-   <property name="geometry" >
+  <widget class="QLabel" name="statusLabel">
+   <property name="geometry">
     <rect>
      <x>50</x>
      <y>180</y>
@@ -98,15 +99,15 @@ p, li { white-space: pre-wrap; }
      <height>30</height>
     </rect>
    </property>
-   <property name="text" >
+   <property name="text">
     <string>Blockbuster is not running.</string>
    </property>
-   <property name="alignment" >
+   <property name="alignment">
     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
-  <widget class="QWidget" name="layoutWidget" >
-   <property name="geometry" >
+  <widget class="QWidget" name="layoutWidget">
+   <property name="geometry">
     <rect>
      <x>10</x>
      <y>220</y>
@@ -114,21 +115,21 @@ p, li { white-space: pre-wrap; }
      <height>221</height>
     </rect>
    </property>
-   <layout class="QVBoxLayout" name="verticalLayout" >
+   <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_10" >
+     <layout class="QHBoxLayout" name="horizontalLayout_10">
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_2" >
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
         <item>
-         <widget class="QLabel" name="label_2" >
-          <property name="text" >
+         <widget class="QLabel" name="label_2">
+          <property name="text">
            <string>Hostname</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="hostNameField" >
-          <property name="text" >
+         <widget class="QLineEdit" name="hostNameField">
+          <property name="text">
            <string>localhost</string>
           </property>
          </widget>
@@ -136,38 +137,38 @@ p, li { white-space: pre-wrap; }
        </layout>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_3" >
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
         <item>
-         <widget class="QLabel" name="label_3" >
-          <property name="sizePolicy" >
-           <sizepolicy vsizetype="Preferred" hsizetype="Maximum" >
+         <widget class="QLabel" name="label_3">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
-          <property name="text" >
+          <property name="text">
            <string>Port</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="hostPortField" >
-          <property name="enabled" >
+         <widget class="QLineEdit" name="hostPortField">
+          <property name="enabled">
            <bool>true</bool>
           </property>
-          <property name="sizePolicy" >
-           <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
-          <property name="maximumSize" >
+          <property name="maximumSize">
            <size>
             <width>50</width>
             <height>16777215</height>
            </size>
           </property>
-          <property name="text" >
+          <property name="text">
            <string>5959</string>
           </property>
          </widget>
@@ -175,32 +176,32 @@ p, li { white-space: pre-wrap; }
        </layout>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_7" >
+       <layout class="QHBoxLayout" name="horizontalLayout_7">
         <item>
-         <widget class="QLabel" name="label_6" >
-          <property name="text" >
+         <widget class="QLabel" name="label_6">
+          <property name="text">
            <string>verbosity</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="verboseField" >
-          <property name="enabled" >
+         <widget class="QLineEdit" name="verboseField">
+          <property name="enabled">
            <bool>true</bool>
           </property>
-          <property name="sizePolicy" >
-           <sizepolicy vsizetype="Fixed" hsizetype="Maximum" >
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
             <horstretch>5</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
-          <property name="maximumSize" >
+          <property name="maximumSize">
            <size>
             <width>30</width>
             <height>16777215</height>
            </size>
           </property>
-          <property name="text" >
+          <property name="text">
            <string>0</string>
           </property>
          </widget>
@@ -210,19 +211,19 @@ p, li { white-space: pre-wrap; }
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_11" >
+     <layout class="QHBoxLayout" name="horizontalLayout_11">
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_6" >
+       <layout class="QHBoxLayout" name="horizontalLayout_6">
         <item>
-         <widget class="QLabel" name="label_5" >
-          <property name="text" >
+         <widget class="QLabel" name="label_5">
+          <property name="text">
            <string>rsh command</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="rshCommandField" >
-          <property name="text" >
+         <widget class="QLineEdit" name="rshCommandField">
+          <property name="text">
            <string>/usr/bin/rsh</string>
           </property>
          </widget>
@@ -230,20 +231,23 @@ p, li { white-space: pre-wrap; }
        </layout>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_4" >
+       <layout class="QHBoxLayout" name="horizontalLayout_4">
         <item>
-         <widget class="QCheckBox" name="setDisplayCheckBox" >
-          <property name="text" >
+         <widget class="QCheckBox" name="setDisplayCheckBox">
+          <property name="text">
            <string>set blockbuster DISPLAY:</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="blockbusterDisplayField" >
-          <property name="enabled" >
-           <bool>false</bool>
+         <widget class="QLineEdit" name="blockbusterDisplayField">
+          <property name="enabled">
+           <bool>true</bool>
           </property>
-          <property name="text" >
+          <property name="text">
            <string>:2001</string>
           </property>
          </widget>
@@ -253,17 +257,17 @@ p, li { white-space: pre-wrap; }
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_8" >
+     <layout class="QHBoxLayout" name="horizontalLayout_8">
       <item>
-       <widget class="QLabel" name="label_7" >
-        <property name="text" >
+       <widget class="QLabel" name="label_7">
+        <property name="text">
          <string>path to blockbuster</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="blockbusterPathField" >
-        <property name="text" >
+       <widget class="QLineEdit" name="blockbusterPathField">
+        <property name="text">
          <string>blockbuster</string>
         </property>
        </widget>
@@ -271,50 +275,50 @@ p, li { white-space: pre-wrap; }
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_5" >
+     <layout class="QHBoxLayout" name="horizontalLayout_5">
       <item>
-       <widget class="QLabel" name="label_4" >
-        <property name="text" >
+       <widget class="QLabel" name="label_4">
+        <property name="text">
          <string>Movie file:</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="fileNameComboBox" >
-        <property name="sizePolicy" >
-         <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+       <widget class="QComboBox" name="fileNameComboBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="focusPolicy" >
+        <property name="focusPolicy">
          <enum>Qt::WheelFocus</enum>
         </property>
-        <property name="layoutDirection" >
+        <property name="layoutDirection">
          <enum>Qt::LeftToRight</enum>
         </property>
-        <property name="editable" >
+        <property name="editable">
          <bool>true</bool>
         </property>
-        <property name="maxVisibleItems" >
+        <property name="maxVisibleItems">
          <number>15</number>
         </property>
-        <property name="insertPolicy" >
+        <property name="insertPolicy">
          <enum>QComboBox::InsertAtBottom</enum>
         </property>
         <item>
-         <property name="text" >
+         <property name="text">
           <string>/path/to/movie</string>
          </property>
         </item>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="browseButton" >
-        <property name="text" >
+       <widget class="QPushButton" name="browseButton">
+        <property name="text">
          <string>Browse...</string>
         </property>
-        <property name="autoDefault" >
+        <property name="autoDefault">
          <bool>false</bool>
         </property>
        </widget>
@@ -322,47 +326,47 @@ p, li { white-space: pre-wrap; }
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_9" >
+     <layout class="QHBoxLayout" name="horizontalLayout_9">
       <item>
-       <widget class="QCheckBox" name="playCheckBox" >
-        <property name="text" >
+       <widget class="QCheckBox" name="playCheckBox">
+        <property name="text">
          <string>Play on load</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QCheckBox" name="fullScreenCheckBox" >
-        <property name="text" >
+       <widget class="QCheckBox" name="fullScreenCheckBox">
+        <property name="text">
          <string>Full screen</string>
         </property>
-        <property name="checked" >
+        <property name="checked">
          <bool>false</bool>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QCheckBox" name="showControlsCheckBox" >
-        <property name="text" >
+       <widget class="QCheckBox" name="showControlsCheckBox">
+        <property name="text">
          <string>Show controls</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QCheckBox" name="useDMXCheckBox" >
-        <property name="text" >
+       <widget class="QCheckBox" name="useDMXCheckBox">
+        <property name="text">
          <string>Use DMX</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QCheckBox" name="mpiFrameSyncCheckBox" >
-        <property name="enabled" >
+       <widget class="QCheckBox" name="mpiFrameSyncCheckBox">
+        <property name="enabled">
          <bool>false</bool>
         </property>
-        <property name="text" >
+        <property name="text">
          <string>MPI frame sync</string>
         </property>
-        <property name="checked" >
+        <property name="checked">
          <bool>true</bool>
         </property>
        </widget>

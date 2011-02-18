@@ -1193,6 +1193,16 @@ void BlockbusterLaunchDialog::on_setDisplayCheckBox_clicked(){
 }
 
 //=======================================================================
+void BlockbusterLaunchDialog::on_hostNameField_editingFinished( ) {
+  if (hostNameField->text() != "localhost") {
+    if (blockbusterDisplayField->text() == ":2001") {
+      blockbusterDisplayField->setText(":0"); 
+    }
+  }
+  return; 
+}
+
+//=======================================================================
 void BlockbusterLaunchDialog::saveHistory(QComboBox *box, QString filename){
   filename = QString(gPrefs.GetValue("prefsdir").c_str()) +"/"+ filename;
   QFile histfile(filename); 
