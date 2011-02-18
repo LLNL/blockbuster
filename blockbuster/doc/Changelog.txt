@@ -1,6 +1,10 @@
 CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
+===============================================================================VERSION 2.6.3i (r368)
+-- Set DISPLAY to :0 when launching a remote blockbuster.
+-- Allow blockbuster to switch to and from stereo mode in mid-movie
+-- Set default cue LOD to 0 instead of 1 
 
 ================================================================================
 VERSION 2.6.3h (r363)
