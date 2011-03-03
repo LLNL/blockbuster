@@ -29,7 +29,6 @@ export OPT=-g
 ifdef GPROF
 export OPT = -g -pg
 endif
-export DEBUG=1
 INSTALL_DIR ?= /usr/gapps/asciviz/blockbuster/dev/chaos_4_x86_64_ib/
 
 #==================================
@@ -55,43 +54,43 @@ UI_HEADERS =
 
 DEPENDENT_LIBS = $(INSTALL_DIR)/lib/libz.a $(INSTALL_DIR)/lib/libsrwpng.a $(INSTALL_DIR)/lib/libjpeg.a  $(INSTALL_DIR)/lib/libpnmrw.a $(INSTALL_DIR)/lib/liblzo2.a $(INSTALL_DIR)/lib/libtiff.a 
 
-all:  blockbuster
+all:  smviewer
 
-blockbuster:
-	g++ -g smviewer.cpp -o smviewer $(CPPFLAGS) $(LDFLAGS) -lsmovie -lz -ljpeg -llzo2
+smviewer: Makefile.qt
+	gmake -f Makefile.qt
+#		g++ -g smviewer.cpp -o smviewer $(CPPFLAGS) $(LDFLAGS) -lsmovie -lz -ljpeg -llzo2
 
-blockbuster.pro :   $(FORMS)
+
+smviewer.pro :   $(FORMS)
 	echo QMAKE IS \"$(QMAKE)\" and INSTALL_DIR is $(INSTALL_DIR)
-	INSTALL_DIR=$(INSTALL_DIR) $(QMAKE) -project -nopwd 'LIBS += $(LDFLAGS) -L$(INSTALL_DIR)/lib -L/sw/lib  $(X11_LIBS) $(GL_LIBS) $(PTHREADS_LIBS) -lsmovie  -lsrwpng -ltiff -ljpeg -llzo2 -lz  -lm ' "INCLUDEPATH += libdmx ../common ../config $(INSTALL_DIR)/include  $$(echo $(X11_INCLUDES)  | sed -e s/-I//g ) " "MAKEFILE = Makefile.qt.include" "DEFINES +=  NO_BOOST $(MPI_DEFINES) $(USE_DMX) USE_QT $(DEBUG)" "QT += network"  "QT += opengl" "HEADERS = $(HEADERS)" "FORMS += $(FORMS)" "$(DEBUG_QT)"  "RESOURCES += images.qrc"  $(SOURCES)  
+	INSTALL_DIR=$(INSTALL_DIR) $(QMAKE) -project -nopwd 'LIBS += $(LDFLAGS) -L$(INSTALL_DIR)/lib -L/sw/lib  $(X11_LIBS) $(GL_LIBS) $(PTHREADS_LIBS) -lsmovie  -lsrwpng -ltiff -ljpeg -llzo2 -lz  -lm ' "INCLUDEPATH += libdmx ../common ../config $(INSTALL_DIR)/include  $$(echo $(X11_INCLUDES)  | sed -e s/-I//g ) " "MAKEFILE = Makefile.qt" "DEFINES +=  NO_BOOST $(MPI_DEFINES) $(USE_DMX) USE_QT $(DEBUG)" "QT += network"  "QT += opengl" "HEADERS = $(HEADERS)" "FORMS += $(FORMS)" "$(DEBUG_QT)" $(SOURCES)  
 
 qmake-force:
 	$(QMAKE) 
-	$(call SEDFILES,s/-O2/$(OPT) /g,Makefile.qt.include)
-	$(call SEDFILES,s/-O1/$(OPT) /g,Makefile.qt.include)
-	$(call SEDFILES,s/-g /$(OPT) /g,Makefile.qt.include)
-	$(call SEDFILES,s/CC.*=.*gcc/CC = $(CC) /g,Makefile.qt.include)
-	$(call SEDFILES,s/CXX.*=.*g++/CXX = $(CXX) /g,Makefile.qt.include)
-	$(call SEDFILES,s/LINK.*=.*g++/LINK = $(CXX) /g,Makefile.qt.include)
-	echo sm.o: ../sm/smBase.h >> Makefile.qt.include
+	$(call SEDFILES,s/-O2/$(OPT) /g,Makefile.qt)
+	$(call SEDFILES,s/-O1/$(OPT) /g,Makefile.qt)
+	$(call SEDFILES,s/-g /$(OPT) /g,Makefile.qt)
+	$(call SEDFILES,s/CC.*=.*gcc/CC = $(CC) /g,Makefile.qt)
+	$(call SEDFILES,s/CXX.*=.*g++/CXX = $(CXX) /g,Makefile.qt)
+	$(call SEDFILES,s/LINK.*=.*g++/LINK = $(CXX) /g,Makefile.qt)
+	echo sm.o: ../sm/smBase.h >> Makefile.qt
 
-Makefile.qt.include: blockbuster.pro
+Makefile.qt: smviewer.pro
 	echo running qmake because $@
 	$(MAKE) qmake-force
 
 .force:
 
 relink: $(DEPENDENT_LIBS)
-	rm -rf $(blockbuster)
+	rm -rf $(smviewer)
 
 qmake-clean: 
-	rm -f blockbuster.pro
-	$(MAKE) blockbuster.pro
-	rm -f Makefile.qt.include
-	INSTALL_DIR=$(INSTALL_DIR) $(MAKE) Makefile.qt.include 
+	rm -f smviewer.pro
+	$(MAKE) smviewer.pro
+	rm -f Makefile.qt
+	INSTALL_DIR=$(INSTALL_DIR) $(MAKE) Makefile.qt 
 
 project-clean:
 
 clean: 
-	rm -f blockbuster blockbuster.pro ui_*.h *.o moc_*
-	rm -f libdmx/*.{o,a}
-	cd sidecar && $(MAKE) clean
+	rm -f smviewer smviewer.pro ui_*.h *.o moc_*
