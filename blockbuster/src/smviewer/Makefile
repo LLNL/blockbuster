@@ -56,7 +56,7 @@ DEPENDENT_LIBS = $(INSTALL_DIR)/lib/libz.a $(INSTALL_DIR)/lib/libsrwpng.a $(INST
 
 all:  smviewer
 
-smviewer: Makefile.qt
+smviewer: Makefile.qt $(SOURCES)
 	gmake -f Makefile.qt
 #		g++ -g smviewer.cpp -o smviewer $(CPPFLAGS) $(LDFLAGS) -lsmovie -lz -ljpeg -llzo2
 
