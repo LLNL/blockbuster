@@ -17,8 +17,15 @@ int main(int argc, char *argv[]){
   smbase->getFrameBlock(50, imagep, 0, 1920, size, pos, step, 0);
   printf("image[1] = %d\n", (int)(imagep[1])); 
 
+  //  The Qt way: 
   SMGLWidget w(imagep); 
-  w.show(); 
+  w.setWindowFlags( Qt::FramelessWindowHint);
+  //w.show(); 
+  w.showFullScreen();
+  w.updateGL();
   app.exec(); 
+  
+  
   return 0; 
 }
+
