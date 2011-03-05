@@ -30,9 +30,9 @@
 #
 include ../config/config
 
-SRC_FILES = sm2.C smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C 
-OFILES = sm2.o smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o 
-HFILES = sm2.h smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h
+SRC_FILES = sm2.C # smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C 
+OFILES = sm2.o # smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o 
+HFILES = sm2.h # smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h
 
 CPPFLAGS += -g
 all: lib doc include
