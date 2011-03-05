@@ -579,7 +579,7 @@ uint32_t smBase::readData(int fd, u_char *buf, int bytes) {
 }
 
 /*!
-  Reads a frame.  Poorly named.
+  Reads a frame.  Does not decompress the data.  Poorly named.
   \param f The frame to read
   \param threadnum A zero-based thread id.  Threadnum must be less than numthreads.  No other thread should be using this threadnum, as there is one buffer per thread and collisions can happen. 
 */
@@ -609,9 +609,7 @@ uint32_t smBase::readWin(u_int f, int threadnum)
   return r; 
 }
 
-
-
-//!  Reads a frame.  Poorly named.
+//!  Reads and decompresses a frame.  Poorly named.
 /*!
   \param f The frame to read
   \param dim XY dimensions of the region of interest
