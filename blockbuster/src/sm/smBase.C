@@ -950,7 +950,6 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
    int ny = 0;
    int numTiles = 0;
    u_char *tbuf;
-   tileOverlapInfo *overlapInfo;
     
    nx = getTileNx(_res);
    ny = getTileNy(_res);
@@ -969,7 +968,7 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
    cdata = (u_char *)(mThreadData[threadnum].windowData);
    size = flength[_f];
    tbuf = (u_char *)&(mThreadData[threadnum].tile_buf[0]);
-   overlapInfo = (tileOverlapInfo *)&(mThreadData[threadnum].tile_info[0]);
+   tileOverlapInfo *overlapInfoList = (tileOverlapInfo *)&(mThreadData[threadnum].tile_info[0]);
 
    
    if(numTiles < 2) {
@@ -1005,17 +1004,17 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
      uint32_t copied=0;
      for(int tile=0; tile<numTiles; tile++){
        //smdbprintf(5,"tile %d", tile); 
-       tileOverlapInfo tileinfo = overlapInfo[tile];
-       //smdbprintf(5, "thread %d, Frame %d, tile %s", threadnum, f, tileinfo.toString().c_str());        
-       if(tileinfo.overlaps && (tileinfo.skipCorruptFlag == 0)) {
+       tileOverlapInfo overlapInfo = overlapInfoList[tile];
+       //smdbprintf(5, "thread %d, Frame %d, tile %s", threadnum, f, overlapInfo.toString().c_str());        
+       if(overlapInfo.overlaps && (overlapInfo.skipCorruptFlag == 0)) {
          
-         u_char *tdata = (u_char *)(cdata + tileinfo.readBufferOffset);
+         u_char *tdata = (u_char *)(cdata + overlapInfo.readBufferOffset);
          smdbprintf(5,"decompBlock, tile %d", tile); 
-         decompBlock(tdata,tbuf,tileinfo.compressedSize,tilesize);
+         decompBlock(tdata,tbuf,overlapInfo.compressedSize,tilesize);
          // 
-         u_char *to = (u_char*)(out + (tileinfo.blockOffsetY * destRowStride) + (tileinfo.blockOffsetX * 3));
-         u_char *from = (u_char*)(tbuf + (tileinfo.tileOffsetY * tilesize[0] * 3) + (tileinfo.tileOffsetX * 3));
-         int maxX = tileinfo.tileLengthX, maxY = tileinfo.tileLengthY; 
+         u_char *to = (u_char*)(out + (overlapInfo.blockOffsetY * destRowStride) + (overlapInfo.blockOffsetX * 3));
+         u_char *from = (u_char*)(tbuf + (overlapInfo.tileOffsetY * tilesize[0] * 3) + (overlapInfo.tileOffsetX * 3));
+         int maxX = overlapInfo.tileLengthX, maxY = overlapInfo.tileLengthY; 
          uint32_t newBytes = 3*maxX*maxY, maxAllowed = (_dim[0]*_dim[1]*3);
          uint32_t newTotal = newBytes + copied; 
          /*!
