@@ -83,7 +83,7 @@ struct TileInfo {
   std::string toString(void); 
   u_int frame, tileNum, threadnum;
   u_int overlaps;  /* newly overlaping data */
-  u_int prev_overlaps; /* overlap data from a prior read -- cached */
+  u_int cached; /* overlap data from a prior read -- cached */
   u_int blockOffsetX; /* where to start writing row data in uber block */
   u_int blockOffsetY; /* likewise for column data */
   u_int tileOffsetX; /* offset into current tile to grab data */
