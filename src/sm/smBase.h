@@ -79,7 +79,7 @@ void sm_setVerbose(int level);  // 0-5, 0 is quiet, 5 is verbose
 #define SM_MAGIC_VERSION1	0x0f1e2d3c
 #define SM_MAGIC_VERSION2	0x0f1e2d3d
 
-struct tileOverlapInfo {  
+struct tileInfo {  
   std::string toString(void); 
   u_int frame, tileNum, threadnum;
   u_int overlaps;  /* newly overlaping data */
@@ -105,7 +105,7 @@ struct smThreadData {
   std::vector <uint32_t> tile_offsets; 
   std::vector<u_char> tile_buf; // for reading tiles; 
   //std::vector<u_int> tile_sizes;
-  std::vector<tileOverlapInfo> overlap_info; // used for computing overlap info
+  std::vector<tileInfo> overlap_info; // used for computing overlap info
 };
   
 class smBase {

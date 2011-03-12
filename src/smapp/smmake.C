@@ -46,7 +46,7 @@ u_int tilesizes[2];
 int blockdim[2] ;
 int blockpos[2];
 
-tileOverlapInfo *tileinfo;
+tileInfo *tileinfo;
 
 int
 main(int argc, char *argv[])
@@ -91,7 +91,7 @@ main(int argc, char *argv[])
    int ny = sm2->getTileNy(0);
    int numTiles =  nx * ny ;
   
-   tileinfo = (tileOverlapInfo *)calloc(numTiles,sizeof(tileOverlapInfo));
+   tileinfo = (tileInfo *)calloc(numTiles,sizeof(tileInfo));
    blockdim[0] = 1; blockdim[1] =1; blockpos[0]=0; blockpos[1]=0;
    sm2->computeTileOverlap( &blockdim[0],&blockpos[0], 0, tileinfo);
 
@@ -155,7 +155,7 @@ main(int argc, char *argv[])
 
    printf("Case -- overlaps Tiles<0,0> AND <1,0>\n");
    blockdim[0] = 15; blockdim[1] =5; blockpos[0]=2; blockpos[1]=2;
-   memset(tileinfo,0,sizeof(tileOverlapInfo_t)*numTiles);
+   memset(tileinfo,0,sizeof(tileInfo_t)*numTiles);
    sm2->computeTileOverlap( &blockdim[0],&blockpos[0], 0, tileinfo);
    for(int j=0; j < ny; j++) {
      for(int i=0; i < nx; i++) {
@@ -173,7 +173,7 @@ main(int argc, char *argv[])
 
    printf("Case -- overlaps all\n");
    blockdim[0] = 35; blockdim[1] =35; blockpos[0]=2; blockpos[1]=2;
-   memset(tileinfo,0,sizeof(tileOverlapInfo_t)*numTiles);
+   memset(tileinfo,0,sizeof(tileInfo_t)*numTiles);
    sm2->computeTileOverlap( &blockdim[0],&blockpos[0], 0, tileinfo);
    for(int j=0; j < ny; j++) {
      for(int i=0; i < nx; i++) {
