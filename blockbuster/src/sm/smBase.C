@@ -67,7 +67,6 @@
 #else
 #include <stdlib.h>
 #endif
-
 #include "stringutil.h"
 
 using namespace std; 
@@ -79,8 +78,8 @@ const int DIO_DEFAULT_SIZE = 1024L*1024L*4;
 
 #define SM_HDR_SIZE 64
 
-string tileOverlapInfo::toString(void) {
-  return string("{{ tileOverlapInfo: frame ") + intToString(frame)
+string tileInfo::toString(void) {
+  return string("{{ tileInfo: frame ") + intToString(frame)
     + ", tile = "+intToString(tileNum)
     + ", overlaps="+intToString(overlaps)
     + ", prev_overlaps="+intToString(prev_overlaps)
@@ -656,7 +655,7 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
     //aliasing to reduce pointer dereferences 
     uint32_t *header = (uint32_t*)(mThreadData[threadnum].windowData); 
     uint32_t *toffsets = &(mThreadData[threadnum].tile_offsets[0]); 
-    tileOverlapInfo *firstOverlap = &(mThreadData[threadnum].overlap_info[0]), *overlapInfo;
+    tileInfo *firstOverlap = &(mThreadData[threadnum].overlap_info[0]), *overlapInfo;
     readBufferOffset = k;
     // get tile sizes and offsets
     u_int sum = 0;
@@ -704,6 +703,8 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
         tile++, overlapInfo++) {
       if(overlapInfo->overlaps && (!overlapInfo->prev_overlaps)) {
         //	smdbprintf(5,"tile %d newly overlaps",tile);
+        // store the tile offset in the read buffer for later decompression
+        // tiles are read out of order -- this allows incremental caching
         overlapInfo->readBufferOffset = readBufferOffset;
         overlapInfo->skipCorruptFlag = 0;
         
@@ -736,7 +737,7 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
 */ 
 void smBase::computeTileOverlap(int *blockDim, int* blockPos, int res, int threadnum)
 {
-  tileOverlapInfo *info = &(mThreadData[threadnum].overlap_info[0]);
+  tileInfo *info = &(mThreadData[threadnum].overlap_info[0]);
 
   int nx = getTileNx(res);
   int ny = getTileNy(res);
@@ -968,7 +969,7 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
    cdata = (u_char *)(mThreadData[threadnum].windowData);
    size = flength[_f];
    tbuf = (u_char *)&(mThreadData[threadnum].tile_buf[0]);
-   tileOverlapInfo *overlapInfoList = (tileOverlapInfo *)&(mThreadData[threadnum].overlap_info[0]);
+   tileInfo *overlapInfoList = (tileInfo *)&(mThreadData[threadnum].overlap_info[0]);
 
    
    if(numTiles < 2) {
@@ -1004,7 +1005,7 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
      uint32_t copied=0;
      for(int tile=0; tile<numTiles; tile++){
        //smdbprintf(5,"tile %d", tile); 
-       tileOverlapInfo overlapInfo = overlapInfoList[tile];
+       tileInfo overlapInfo = overlapInfoList[tile];
        //smdbprintf(5, "thread %d, Frame %d, tile %s", threadnum, f, overlapInfo.toString().c_str());        
        if(overlapInfo.overlaps && (overlapInfo.skipCorruptFlag == 0)) {
          
