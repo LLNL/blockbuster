@@ -530,8 +530,8 @@ void smBase::readHeader(void)
        mThreadData[i].tile_buf.resize(maxtilesize*3);
        mThreadData[i].tile_offsets.clear(); 
        mThreadData[i].tile_offsets.resize(maxNumTiles);
-       mThreadData[i].overlap_info.clear(); 
-       mThreadData[i].overlap_info.resize(maxNumTiles);
+       mThreadData[i].tile_infos.clear(); 
+       mThreadData[i].tile_infos.resize(maxNumTiles);
      }
    }
    return; 
@@ -655,7 +655,7 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
     //aliasing to reduce pointer dereferences 
     uint32_t *header = (uint32_t*)(mThreadData[threadnum].windowData); 
     uint32_t *toffsets = &(mThreadData[threadnum].tile_offsets[0]); 
-    tileInfo *firstOverlap = &(mThreadData[threadnum].overlap_info[0]), *overlapInfo;
+    tileInfo *firstOverlap = &(mThreadData[threadnum].tile_infos[0]), *overlapInfo;
     readBufferOffset = k;
     // get tile sizes and offsets
     u_int sum = 0;
@@ -668,7 +668,7 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
     }
     
     // determine previous overlaps
-    for(i = 0, overlapInfo = &(mThreadData[threadnum].overlap_info[0]); i < numTiles; 
+    for(i = 0, overlapInfo = &(mThreadData[threadnum].tile_infos[0]); i < numTiles; 
         i++, overlapInfo++) { 
       overlapInfo->compressedSize = (u_int)ntohl(header[i]);
       toffsets[i] = k + sum;
@@ -698,7 +698,7 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
     
     // Grab data for overlapping tiles
     int tile; 
-    for(tile = 0, overlapInfo = &(mThreadData[threadnum].overlap_info[0]); 
+    for(tile = 0, overlapInfo = &(mThreadData[threadnum].tile_infos[0]); 
         tile < numTiles; 
         tile++, overlapInfo++) {
       if(overlapInfo->overlaps && (!overlapInfo->prev_overlaps)) {
@@ -737,7 +737,7 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
 */ 
 void smBase::computeTileOverlap(int *blockDim, int* blockPos, int res, int threadnum)
 {
-  tileInfo *info = &(mThreadData[threadnum].overlap_info[0]);
+  tileInfo *info = &(mThreadData[threadnum].tile_infos[0]);
 
   int nx = getTileNx(res);
   int ny = getTileNy(res);
@@ -969,7 +969,7 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
    cdata = (u_char *)(mThreadData[threadnum].windowData);
    size = flength[_f];
    tbuf = (u_char *)&(mThreadData[threadnum].tile_buf[0]);
-   tileInfo *overlapInfoList = (tileInfo *)&(mThreadData[threadnum].overlap_info[0]);
+   tileInfo *overlapInfoList = (tileInfo *)&(mThreadData[threadnum].tile_infos[0]);
 
    
    if(numTiles < 2) {

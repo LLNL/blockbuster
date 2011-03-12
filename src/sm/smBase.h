@@ -105,7 +105,7 @@ struct smThreadData {
   std::vector <uint32_t> tile_offsets; 
   std::vector<u_char> tile_buf; // for reading tiles; 
   //std::vector<u_int> tile_sizes;
-  std::vector<tileInfo> overlap_info; // used for computing overlap info
+  std::vector<tileInfo> tile_infos; // used for computing overlap info
 };
   
 class smBase {
