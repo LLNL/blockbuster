@@ -82,7 +82,7 @@ string TileInfo::toString(void) {
   return string("{{ TileInfo: frame ") + intToString(frame)
     + ", tile = "+intToString(tileNum)
     + ", overlaps="+intToString(overlaps)
-    + ", prev_overlaps="+intToString(prev_overlaps)
+    + ", cached="+intToString(cached)
     + ", blockOffsetX="+intToString(blockOffsetX)
     + ", blockOffsetY="+intToString(blockOffsetY)
     + ", tileOffsetX = "+intToString(tileOffsetX)
@@ -610,6 +610,7 @@ uint32_t smBase::readWin(u_int f, int threadnum)
 
 //!  Reads and decompresses a frame.  Poorly named.
 /*!
+  Tiles are read in order but can be stored out of order in the read buffer. 
   \param f The frame to read
   \param dim XY dimensions of the region of interest
   \param pos XY position of the region of interest
@@ -667,29 +668,23 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
       tileInfo->frame = firstTile->frame;
     }
     
-    // determine previous overlaps
+    // skip over previous overlaps to find where the next tile should be read into if any new are found
     for(i = 0, tileInfo = &(mThreadData[threadnum].tile_infos[0]); i < numTiles; 
         i++, tileInfo++) { 
       tileInfo->compressedSize = (u_int)ntohl(header[i]);
       toffsets[i] = k + sum;
       sum += tileInfo->compressedSize;
       //smdbprintf(5,"tile[%d].frame = %d",i,tileInfo->frame);
-      if(tileInfo->frame == f) {
-        if(tileInfo->overlaps) {
-          tileInfo->prev_overlaps = 1;
+      if (tileInfo->frame == f) {
+        if ( tileInfo->cached) {
+          // This tile has been read, so we can add its size to the number of bytes we know is in the read buffer and mark it as cached
           readBufferOffset += tileInfo->compressedSize;
-          //smdbprintf(5,"tile[%d] setting prev_overlaps : readBufferOffset = %d",i,readBufferOffset);
-        }
-        else {
-          if(tileInfo->prev_overlaps) {
-            readBufferOffset += tileInfo->compressedSize;
-            //smdbprintf(5,"tile[%d] prev_overlaps : readBufferOffset = %d",i,readBufferOffset);
-          }
+          //smdbprintf(5,"tile[%d] setting cached : readBufferOffset = %d",i,readBufferOffset);
         }
       }
       else {
         tileInfo->frame = f;
-        tileInfo->prev_overlaps = 0;
+        tileInfo->cached = 0;
         tileInfo->overlaps = 0;
       }      
     }
@@ -701,7 +696,7 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
     for(tile = 0, tileInfo = &(mThreadData[threadnum].tile_infos[0]); 
         tile < numTiles; 
         tile++, tileInfo++) {
-      if(tileInfo->overlaps && (!tileInfo->prev_overlaps)) {
+      if(tileInfo->overlaps && ! tileInfo->cached) {
         //	smdbprintf(5,"tile %d newly overlaps",tile);
         // store the tile offset in the read buffer for later decompression
         // tiles are read out of order -- this allows incremental caching
@@ -719,6 +714,9 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
 	      smdbprintf(0,"smBase::readWin I/O error thread %d, frame %d: r=%d k=%d, offset=%Ld : skipping",threadnum,f, r,tileInfo->compressedSize, offset+ toffsets[tile]);
 	      tileInfo->skipCorruptFlag = 1;
 	    }
+        else {
+          tileInfo->cached = 1;
+        }
         bytesRead += r; 
         readBufferOffset += tileInfo->compressedSize;
       }
