@@ -596,7 +596,6 @@ uint32_t smBase::readWin(u_int f, int threadnum)
     smdbprintf(0, "Error seeking to frame %d", f);
   }
 
-  mThreadData[threadnum].windowData = &mThreadData[threadnum].io_buf[0];
   
   u_char *buf = &mThreadData[threadnum].io_buf[0]; 
   mThreadData[threadnum].currentFrame = f; 
@@ -633,8 +632,6 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
     smdbprintf(0, "Error seeking to frame %d, offset %d: %s", f, offset, strerror(errno));
     exit(1);
   }
-  mThreadData[threadnum].windowData =  &(mThreadData[threadnum].io_buf[0]); 
-  
   assert(res < nresolutions);
   int nx = getTileNx(res);
   int ny = getTileNy(res);
@@ -644,7 +641,7 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
   uint previousFrame = mThreadData[threadnum].currentFrame; 
   
   if(numTiles > 1 ) {
-    u_char *cdata = (u_char*)mThreadData[threadnum].windowData;
+    u_char *cdata = &(mThreadData[threadnum].io_buf[0]);
     int k =  numTiles * sizeof(uint32_t);
     int r=readData(fd, cdata, k);
     
@@ -656,19 +653,14 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
     }
 
     //aliasing to reduce pointer dereferences 
-    uint32_t *header = (uint32_t*)(mThreadData[threadnum].windowData); 
+    uint32_t *header = (uint32_t*)&(mThreadData[threadnum].io_buf[0]);
     uint32_t *toffsets = &(mThreadData[threadnum].tile_offsets[0]); 
     TileInfo *firstTile = &(mThreadData[threadnum].tile_infos[0]), *tileInfo;
     readBufferOffset = k;
     // get tile sizes and offsets
     u_int sum = 0;
     int i=0;
-    // reset frame in tileinfo insensitive to current MIPMAP -- i.e. maxNumTiles    
-    /*   for(i=0, tileInfo =  firstTile; i < maxNumTiles;
-         i++, tileInfo++) {
-         tileInfo->frame = previous_frame; 
-         }
-    */
+
     // skip over previous overlaps to find where the next tile should be read into if any new are found
     for(i = 0, tileInfo = firstTile; i < numTiles;  i++, tileInfo++) { 
       tileInfo->compressedSize = (u_int)ntohl(header[i]);
@@ -683,7 +675,6 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
         }
       }
       else {
-        // tileInfo->frame = f;
         tileInfo->cached = 0;
         tileInfo->overlaps = 0;
       }      
@@ -964,7 +955,7 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
    else {
      bytesRead = readWin(_f, threadnum);
    }
-   cdata = (u_char *)(mThreadData[threadnum].windowData);
+   cdata = &(mThreadData[threadnum].io_buf[0]); 
    size = flength[_f];
    tbuf = (u_char *)&(mThreadData[threadnum].tile_buf[0]);
    TileInfo *tileInfoList = (TileInfo *)&(mThreadData[threadnum].tile_infos[0]);
@@ -1229,7 +1220,7 @@ void smBase::getCompFrame(int frame, int threadnum, void *data, int &rsize, int 
    void *cdata;
 
    readWin(frame+res*getNumFrames(), threadnum);
-   cdata = (u_char *)(mThreadData[threadnum].windowData);
+   cdata = &(mThreadData[threadnum].io_buf[0]); 
    size = flength[frame];
    
    if (data) memcpy(data, cdata, size);

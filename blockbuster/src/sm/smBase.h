@@ -81,7 +81,7 @@ void sm_setVerbose(int level);  // 0-5, 0 is quiet, 5 is verbose
 
 struct TileInfo {  
   std::string toString(void); 
-  u_int /*frame,*/ tileNum /*threadnum*/;
+  u_int tileNum;
   u_int overlaps;  /* newly overlaping data */
   u_int cached; /* overlap data from a prior read -- cached */
   u_int blockOffsetX; /* where to start writing row data in uber block */
@@ -96,15 +96,13 @@ struct TileInfo {
 } ;
 
 struct smThreadData {
-  smThreadData(): fd(0), windowData(NULL), currentFrame(-1) {}
+  smThreadData(): fd(0),currentFrame(-1) {}
   ~smThreadData() {}
   int fd; 
-  void *windowData; // was void *win; probably the void * aligns it better than char * would 
   uint32_t currentFrame ; // prevent duplicate reads of same frame
   std::vector<u_char> io_buf;  // for reading chunks from files
   std::vector <uint32_t> tile_offsets; 
   std::vector<u_char> tile_buf; // for reading tiles; 
-  //std::vector<u_int> tile_sizes;
   std::vector<TileInfo> tile_infos; // used for computing overlap info
 };
   
