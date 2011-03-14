@@ -625,11 +625,11 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
   u_int readBufferOffset;
   smdbprintf(5,"readWin version 2, frame %d, thread %d", f, threadnum); 
   
-  off64_t offset = foffset[f] ;
+  off64_t frameOffset = foffset[f] ;
   int fd = mThreadData[threadnum].fd; 
 
-  if (LSEEK64(fd, offset, SEEK_SET) < 0) {
-    smdbprintf(0, "Error seeking to frame %d, offset %d: %s", f, offset, strerror(errno));
+  if (LSEEK64(fd, frameOffset, SEEK_SET) < 0) {
+    smdbprintf(0, "Error seeking to frame %d, frameOffset %d: %s", f, frameOffset, strerror(errno));
     exit(1);
   }
   assert(res < nresolutions);
@@ -694,15 +694,15 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
         tileInfo->readBufferOffset = readBufferOffset;
         tileInfo->skipCorruptFlag = 0;
         
-        if (LSEEK64(fd, offset + toffsets[tile] , SEEK_SET) < 0) {
-          smdbprintf(0, "Error seeking to frame %d at offset %Ld\n", f, offset + toffsets[tile]);
+        if (LSEEK64(fd, frameOffset + toffsets[tile] , SEEK_SET) < 0) {
+          smdbprintf(0, "Error seeking to frame %d at offset %Ld\n", f, frameOffset + toffsets[tile]);
 	      exit(1);
 	    }
         //smdbprintf(5,"Reading %d bytes from file for winnum %d for tile %d", tileInfo->compressedSize, winnum, tile); 
         r = readData(fd, ioBuf+readBufferOffset, tileInfo->compressedSize);
         
         if (r != tileInfo->compressedSize ) {
-	      smdbprintf(0,"smBase::readWin I/O error thread %d, frame %d: r=%d k=%d, offset=%Ld : skipping",threadnum,f, r,tileInfo->compressedSize, offset+ toffsets[tile]);
+	      smdbprintf(0,"smBase::readWin I/O error thread %d, frame %d: r=%d k=%d, frameOffset=%Ld : skipping",threadnum,f, r,tileInfo->compressedSize, frameOffset+ toffsets[tile]);
 	      tileInfo->skipCorruptFlag = 1;
 	    }
         else {
