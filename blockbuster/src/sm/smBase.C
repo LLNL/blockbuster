@@ -79,8 +79,9 @@ const int DIO_DEFAULT_SIZE = 1024L*1024L*4;
 #define SM_HDR_SIZE 64
 
 string TileInfo::toString(void) {
-  return string("{{ TileInfo: frame ") + intToString(frame)
-    + ", tile = "+intToString(tileNum)
+  // return string("{{ TileInfo: frame ") + intToString(frame)
+  //  + ", tile = "+intToString(tileNum)
+  return string("{{ TileInfo:  tile = ")+intToString(tileNum)
     + ", overlaps="+intToString(overlaps)
     + ", cached="+intToString(cached)
     + ", blockOffsetX="+intToString(blockOffsetX)
@@ -640,6 +641,7 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
   int numTiles =  nx * ny;
   
   // If numTiles > 1 then read in frame header of tile sizes
+  uint previousFrame = mThreadData[threadnum].currentFrame; 
   
   if(numTiles > 1 ) {
     u_char *cdata = (u_char*)mThreadData[threadnum].windowData;
@@ -661,21 +663,19 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
     // get tile sizes and offsets
     u_int sum = 0;
     int i=0;
-    
     // reset frame in tileinfo insensitive to current MIPMAP -- i.e. maxNumTiles    
-    for(i=0, tileInfo =  firstTile; i < maxNumTiles;
-        i++, tileInfo++) {
-      tileInfo->frame = firstTile->frame;
-    }
-    
+    /*   for(i=0, tileInfo =  firstTile; i < maxNumTiles;
+         i++, tileInfo++) {
+         tileInfo->frame = previous_frame; 
+         }
+    */
     // skip over previous overlaps to find where the next tile should be read into if any new are found
-    for(i = 0, tileInfo = &(mThreadData[threadnum].tile_infos[0]); i < numTiles; 
-        i++, tileInfo++) { 
+    for(i = 0, tileInfo = firstTile; i < numTiles;  i++, tileInfo++) { 
       tileInfo->compressedSize = (u_int)ntohl(header[i]);
       toffsets[i] = k + sum;
       sum += tileInfo->compressedSize;
       //smdbprintf(5,"tile[%d].frame = %d",i,tileInfo->frame);
-      if (tileInfo->frame == f) {
+      if (previousFrame == f) {
         if ( tileInfo->cached) {
           // This tile has been read, so we can add its size to the number of bytes we know is in the read buffer and mark it as cached
           readBufferOffset += tileInfo->compressedSize;
@@ -683,7 +683,7 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
         }
       }
       else {
-        tileInfo->frame = f;
+        // tileInfo->frame = f;
         tileInfo->cached = 0;
         tileInfo->overlaps = 0;
       }      
