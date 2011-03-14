@@ -641,9 +641,9 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
   uint previousFrame = mThreadData[threadnum].currentFrame; 
   
   if(numTiles > 1 ) {
-    u_char *cdata = &(mThreadData[threadnum].io_buf[0]);
+    u_char *ioBuf = &(mThreadData[threadnum].io_buf[0]);
     int k =  numTiles * sizeof(uint32_t);
-    int r=readData(fd, cdata, k);
+    int r=readData(fd, ioBuf, k);
     
     if (r !=  k) { // hmm -- assume we read it all, I guess... iffy?  
       char	s[40];
@@ -699,7 +699,7 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
 	      exit(1);
 	    }
         //smdbprintf(5,"Reading %d bytes from file for winnum %d for tile %d", tileInfo->compressedSize, winnum, tile); 
-        r = readData(fd, cdata+readBufferOffset, tileInfo->compressedSize);
+        r = readData(fd, ioBuf+readBufferOffset, tileInfo->compressedSize);
         
         if (r != tileInfo->compressedSize ) {
 	      smdbprintf(0,"smBase::readWin I/O error thread %d, frame %d: r=%d k=%d, offset=%Ld : skipping",threadnum,f, r,tileInfo->compressedSize, offset+ toffsets[tile]);
@@ -866,7 +866,7 @@ uint32_t smBase::getFrame(int f, void *data, int threadnum, int res)
 uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStride, int *dim, int *pos, int *step, int res)
 {
   smdbprintf(5,"smBase::getFrameBlock, frame %d, thread %d, data %p", f, threadnum, data); 
-   u_char *cdata;
+   u_char *ioBuf;
    uint32_t size;
    u_char *image;
    u_char *out = (u_char *)data;
@@ -947,7 +947,7 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
 
    assert(numTiles < 1000);
 
-   cdata = (u_char *)NULL;
+   ioBuf = (u_char *)NULL;
 
    if((version == 2) && (numTiles > 1)) {
      bytesRead = readWin(_f,&_dim[0],&_pos[0],(int)_res, threadnum);
@@ -955,7 +955,7 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
    else {
      bytesRead = readWin(_f, threadnum);
    }
-   cdata = &(mThreadData[threadnum].io_buf[0]); 
+   ioBuf = &(mThreadData[threadnum].io_buf[0]); 
    size = flength[_f];
    tbuf = (u_char *)&(mThreadData[threadnum].tile_buf[0]);
    TileInfo *tileInfoList = (TileInfo *)&(mThreadData[threadnum].tile_infos[0]);
@@ -967,13 +967,13 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
          (_step[0] == 1) && (_step[1] == 1) &&
          (_dim[0] == d[0]) && (_dim[1] == d[1])) {
        smdbprintf(5,"getFrameBlock: decompBlock on entire frame"); 
-       decompBlock(cdata,out,size,d); 
+       decompBlock(ioBuf,out,size,d); 
        
      } else {
        smdbprintf(5, "downsampled or partial frame %d", _f); 
        image = (u_char *)malloc(3*d[0]*d[1]);
        CHECK(image);
-       decompBlock(cdata,image,size,d);
+       decompBlock(ioBuf,image,size,d);
        for(int y=_pos[1];y<_pos[1]+_dim[1];y+=_step[1]) {
          u_char *dest = rowPtr;
          const u_char *p = image + 3*d[0]*y + _pos[0]*3;
@@ -998,7 +998,7 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
        //smdbprintf(5, "thread %d, Frame %d, tile %s", threadnum, f, tileInfo.toString().c_str());        
        if(tileInfo.overlaps && (tileInfo.skipCorruptFlag == 0)) {
          
-         u_char *tdata = (u_char *)(cdata + tileInfo.readBufferOffset);
+         u_char *tdata = (u_char *)(ioBuf + tileInfo.readBufferOffset);
          smdbprintf(5,"decompBlock, tile %d", tile); 
          decompBlock(tdata,tbuf,tileInfo.compressedSize,tilesize);
          // 
@@ -1059,7 +1059,7 @@ void smBase::setFrame(int f, void *data)
 {
    int i,tile,size;
    int *sizes,numTiles,version;
-   u_char *scaled0,*scaled1,*cdata;
+   u_char *scaled0,*scaled1,*tmpBuf;
 
    version = getVersion();
    numTiles = getTileNx(0)*getTileNy(0);
@@ -1069,11 +1069,11 @@ void smBase::setFrame(int f, void *data)
    if((version == 1) || (numTiles == 1)) {
      compFrame(data,NULL,size,0);
      //smdbprintf(5,"Frame %d is size %d",f,size);
-     cdata=(u_char *)malloc(size);
-     CHECK(cdata);
-     compFrame(data,cdata,size,0);
-     setCompFrame(f,cdata,size,0);
-     free(cdata);
+     tmpBuf=(u_char *)malloc(size);
+     CHECK(tmpBuf);
+     compFrame(data,tmpBuf,size,0);
+     setCompFrame(f,tmpBuf,size,0);
+     free(tmpBuf);
    }
    else {
      // we handle tiles
@@ -1086,12 +1086,12 @@ void smBase::setFrame(int f, void *data)
      for(tile=0; tile < numTiles;tile++) {
        size += sizes[tile];
      }
-     cdata=(u_char *)malloc(size); 
-     CHECK(cdata);
-     compFrame(data,cdata,sizes,0);
-     setCompFrame(f,cdata,sizes,0);
+     tmpBuf=(u_char *)malloc(size); 
+     CHECK(tmpBuf);
+     compFrame(data,tmpBuf,sizes,0);
+     setCompFrame(f,tmpBuf,sizes,0);
      free(sizes);
-     free(cdata);  
+     free(tmpBuf);  
    }
 
    // quick out
@@ -1112,11 +1112,11 @@ void smBase::setFrame(int f, void *data)
        // write the frame level
        if(version == 1) {
 	 compFrame(scaled1,NULL,size,i);
-	 cdata=(u_char *)malloc(size);
-	 CHECK(cdata);
-	 compFrame(scaled1,cdata,size,i);
-	 setCompFrame(f,cdata,size,i);
-	 free(cdata);
+	 tmpBuf=(u_char *)malloc(size);
+	 CHECK(tmpBuf);
+	 compFrame(scaled1,tmpBuf,size,i);
+	 setCompFrame(f,tmpBuf,size,i);
+	 free(tmpBuf);
        }
        else {
 	 // we handle tiles
@@ -1129,11 +1129,11 @@ void smBase::setFrame(int f, void *data)
 	 for(tile=0; tile< numTiles;tile++) {
 	   size += sizes[tile];
 	 }
-	 cdata=(u_char *)malloc(size); 
-	 CHECK(cdata);
-	 compFrame(scaled1,cdata,sizes,i);
-	 setCompFrame(f,cdata,sizes,i);
-	 free(cdata);
+	 tmpBuf=(u_char *)malloc(size); 
+	 CHECK(tmpBuf);
+	 compFrame(scaled1,tmpBuf,sizes,i);
+	 setCompFrame(f,tmpBuf,sizes,i);
+	 free(tmpBuf);
 	 free(sizes);
        }
 
@@ -1217,13 +1217,13 @@ void smBase::setCompFrame(int f, void *data, int *sizes, int res)
 void smBase::getCompFrame(int frame, int threadnum, void *data, int &rsize, int res) 
 {
    u_int size;
-   void *cdata;
+   void *ioBuf;
 
    readWin(frame+res*getNumFrames(), threadnum);
-   cdata = &(mThreadData[threadnum].io_buf[0]); 
+   ioBuf = &(mThreadData[threadnum].io_buf[0]); 
    size = flength[frame];
    
-   if (data) memcpy(data, cdata, size);
+   if (data) memcpy(data, ioBuf, size);
    rsize = (int)size;
 
    return;
