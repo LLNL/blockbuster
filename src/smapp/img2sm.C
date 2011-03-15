@@ -78,8 +78,16 @@ typedef struct {
   float	fRot;
 } wrk;
 
-
-
+// GLOBALS FOR NOW
+unsigned char *gInputBuf = NULL; 
+int	iInDims[4];
+unsigned short	bitsPerSample, tiffPhoto;
+int	iMin = -1;
+int	iMax = -1;
+int	iSize[4] = {-1,-1,0,0};
+int	iVerb = 0;
+int	iPlanar = 0;
+unsigned short	*rowbuf = NULL;
 
 
 #ifdef DMALLOC
@@ -132,43 +140,308 @@ void cmdline(char *app)
   exit(1);
 }
 
+//=================================================
+void FillInputBffer(int iType,  char *filename) {
+  
+  FILE		*fp = NULL;
+  TIFF		*tiff = NULL;
+  sgi_t		*libi = NULL;
+  
+  // read the file...
+  switch(iType) {
+  case 0: // TIFF
+    {
+      uint32 *temp;
+      unsigned int w, h;
+      tiff = TIFFOpen(filename,"r");
+      if (!tiff) {
+        fprintf(stderr,"Error: Unable to open TIFF: %s\n",filename);
+        exit(1);
+      }
+      TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH, &w);
+      TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, &h);
+      if ((w != iInDims[0]) || (h != iInDims[1])) {
+        fprintf(stderr,"Error: image size changed: %s\n",filename);
+        exit(1);
+      }
+      
+      if (bitsPerSample == 16) {
+        if (iMin == -1) {
+          unsigned short tt;
+          TIFFGetFieldDefaulted(tiff, 
+                                TIFFTAG_MINSAMPLEVALUE, &tt);
+          iMin = tt;
+        }
+        if (iMax == -1) {
+          unsigned short tt;
+          TIFFGetFieldDefaulted(tiff, 
+                                TIFFTAG_MAXSAMPLEVALUE, &tt);
+          iMax = tt;
+        }
+        temp = (uint32 *)malloc(iInDims[0]*iSize[2]*2);
+        CHECK(temp);
+        unsigned short *ss = (unsigned short *)temp;
+        int x,y;
+        float mult = 255.0/(float)(iMax-iMin);
+        unsigned char	*p = gInputBuf;
+        unsigned int mm[2] = {200000,0};
+        for(y=0;y<iInDims[1];y++) {
+          TIFFReadScanline(tiff,(unsigned char *)ss,y,0);
+          for(x=0;x<iInDims[0]*iSize[2];x++) {
+            if (ss[x] < mm[0]) mm[0] = ss[x];
+            if (ss[x] > mm[1]) mm[1] = ss[x];
+            if (ss[x] < iMin) ss[x] = iMin;
+            if (ss[x] > iMax) ss[x] = iMax;
+          }
+          for(x=0;x<iInDims[0];x++) {
+            if (iSize[2] == 1) {
+              unsigned char tt=(unsigned char)((ss[x]-iMin)*mult);
+              if (tiffPhoto==PHOTOMETRIC_MINISWHITE) {
+                tt=255-tt;
+              }
+              *p++ = tt;
+              *p++ = tt;
+              *p++ = tt;
+            } else {
+              *p++ = (unsigned char)((ss[x*3+0]-iMin)*mult);
+              *p++ = (unsigned char)((ss[x*3+1]-iMin)*mult);
+              *p++ = (unsigned char)((ss[x*3+2]-iMin)*mult);
+            }
+          }
+        }
+        if (iVerb) {
+          printf("Image min,max=%d %d\n",mm[0],mm[1]);
+        }
+      } else {
+        temp = (uint32 *)malloc(iInDims[0]*iInDims[1]*4);  // Caution deferred free under IRIX
+        CHECK(temp);
+        TIFFReadRGBAImage(tiff,w,h,temp,0);
+        unsigned char	*p = gInputBuf;
+        for(int x=0;x<w*h;x++) {
+          *p++ = TIFFGetR(temp[x]);
+          *p++ = TIFFGetG(temp[x]);
+          *p++ = TIFFGetB(temp[x]);
+        }
+      }
+      
+      TIFFClose(tiff);
+      free(temp);
+    }
+    break;
+  case 1: // SGI
+    {
+      unsigned char	*p = gInputBuf;
+      libi = sgiOpen(filename,SGI_READ,0,0,0,0,0);
+      if (!libi) {
+        fprintf(stderr,"Error: Unable to open SGI: %s\n",filename);
+        exit(1);
+      }
+      if ((libi->xsize != iInDims[0]) || 
+          (libi->ysize != iInDims[1])) {
+        fprintf(stderr,"Error: image size changed: %s\n",filename);
+        exit(1);
+      }
+      for(unsigned int y=0;y<iInDims[1];y++) {
+        int	x;
+        if (iSize[2] >= 3) {
+          sgiGetRow(libi,rowbuf,y,0);
+          for(x=0;x<iInDims[0];x++) {
+            p[x*3+0] = rowbuf[x];
+          }
+          sgiGetRow(libi,rowbuf,y,1);
+          for(x=0;x<iInDims[0];x++) {
+            p[x*3+1] = rowbuf[x];
+          }
+          sgiGetRow(libi,rowbuf,y,2);
+          for(x=0;x<iInDims[0];x++) {
+            p[x*3+2] = rowbuf[x];
+          }
+        } else {
+          sgiGetRow(libi,rowbuf,y,0);
+          for(x=0;x<iInDims[0];x++) {
+            p[x*3+0] = rowbuf[x];
+            p[x*3+1] = rowbuf[x];
+            p[x*3+2] = rowbuf[x];
+          }
+        }
+        p += 3*iInDims[0];
+      }
+      sgiClose(libi);
+    }
+    break;
+  case 2: // RAW
+    {
+      unsigned char	*p = gInputBuf;
+      
+      gzFile	fpz;
+      fpz = gzopen(filename,"r");
+      if (!fpz) {
+        fprintf(stderr,"Error: Unable to open RAW compressed: %s\n",filename);
+        exit(1);
+      }
+      // Header
+      if (iSize[3]) {
+        void *b = malloc(iSize[3]);
+        CHECK(b);
+        gzread(fpz,b,iSize[3]);
+        free(b);
+      }
+      // Scan lines
+      if (iPlanar && (iSize[2] == 3)) {
+        char *b = (char *)malloc(iInDims[0]*iInDims[1]*3);
+        CHECK(b);
+        char *p0 = b;
+        char *p1 = p0 + iInDims[0]*iInDims[1];
+        char *p2 = p1 + iInDims[0]*iInDims[1];
+        gzread(fpz,b,iInDims[0]*iInDims[1]*3);
+        for(int x=0;x<iInDims[0]*iInDims[1];x++) {
+          *p++ = *p0++;
+          *p++ = *p1++;
+          *p++ = *p2++;
+        }
+        free(b); 
+      } else {
+        for(unsigned int y=0;y<iInDims[1];y++) {
+          int  x;
+          if (iSize[2] == 3) {
+            gzread(fpz,p,iInDims[0]*3);
+          } else {
+            gzread(fpz,p,iInDims[0]);
+            for(x=iInDims[0]-1;x>=0;x--) {
+              p[x*3+2] = p[x];
+              p[x*3+1] = p[x];
+              p[x*3+0] = p[x];
+            }
+          }
+          p += 3*iInDims[0];
+        }
+      }
+      // done
+      gzclose(fpz);
+    }
+    break;
+  case 3: // PNM
+    {  
+      int 	dx,dy,fmt,f;
+      xelval	value;
+      
+      unsigned char	*p = gInputBuf;
+      
+      fp = pm_openr(filename);
+      if (!fp) {
+        fprintf(stderr,"Unable to open the file: %s\n",filename);
+        exit(1);
+      }
+      if (pnm_readpnminit(fp, &dx,&dy,&value,&fmt) == -1) {
+        fprintf(stderr,"The file is not in PNM format: %s.\n",filename);
+        pm_closer(fp);
+        exit(1);
+      }
+      if ((dx != iInDims[0]) || 
+          (dy != iInDims[1])) {
+        fprintf(stderr,"Error: image size changed: %s\n",filename);
+        pm_closer(fp);
+        exit(1);
+      }
+      
+      if (PNM_FORMAT_TYPE(fmt) == PPM_TYPE) {
+        f = 3;
+      } else if(PNM_FORMAT_TYPE(fmt) == PGM_TYPE) {
+        f = 1;
+      } else {
+        fprintf(stderr,"Error: file type not supported:%s\n",filename);
+        pm_closer(fp);
+        exit(1);
+      }
+      if (f != iSize[2]) {
+        fprintf(stderr,"Error: file type changed:%s\n",filename);
+        pm_closer(fp);
+        exit(1);
+      }
+      
+      xel*	xrow;
+      xel*	xp;
+      int	rp,gp,bp;
+      
+#define NORM(x,mx) ((float)(x)/(float)(mx))*255.0
+      
+      xrow = pnm_allocrow( dx );
+      for(int y=0;y<dy;y++) {
+        p = gInputBuf + (dy-y-1)*dx*3;
+        pnm_readpnmrow( fp, xrow, dx, value, fmt );
+        if (iSize[2] == 3) {
+          xp = xrow;
+          for(int x=0;x<dx;x++) {
+            rp = (int)(NORM(PPM_GETR(*xp),value));
+            gp = (int)(NORM(PPM_GETG(*xp),value));
+            bp = (int)(NORM(PPM_GETB(*xp),value));
+            xp++;
+            *p++ = rp;
+            *p++ = gp;
+            *p++ = bp;
+          }
+        } else {
+          xp = xrow;
+          for(int x=0;x<dx;x++) {
+            rp = (int)(NORM(PNM_GET1(*xp),value));
+            xp++;
+            *p++ = rp;
+            *p++ = rp;
+            *p++ = rp;
+          }
+        }
+      }
+      pnm_freerow(xrow);
+      
+      pm_closer(fp);
+    }
+    break;
+  case 4: // PNG
+    if (!read_png_image(filename,iInDims,gInputBuf)) {
+      fprintf(stderr,"Unable to read PNG file: %s\n",filename);
+      exit(1);
+    }
+    break;
+  case 5: // JPEG
+    if (!read_jpeg_image(filename,iInDims,gInputBuf)) {
+      fprintf(stderr,"Unable to read JPEG file: %s\n",filename);
+      exit(1);
+    }
+    break;
+  }
+  return; 
+} // end FillInputBuffer()
+
+
 int main(int argc,char **argv)
 {
-  int	iSize[4] = {-1,-1,0,0};
   int	iRLE = 0;
   int	iType = -1;
   char		*sTemplate = NULL;
   char		*sOutput = NULL;
   int	iFlipx = 0;
   int	iFlipy = 0;
-  int	iVerb = 0;
   int	iStereo = 0;
-  int	iPlanar = 0;
   int	iQual = 75;
-  int	iMin = -1;
-  int	iMax = -1;
   int	iIgnore = 0;
   float		fFPS = 30.0;
   float		fRotate = 0.0;
   int           nThreads = 1;
   int		nRes = 1;
 
-  int	iInDims[4];
   int	iStart=-1,iEnd=-1,iStep=1;
   int	i,count;
   FILE		*fp = NULL;
-  char		tstr[1024],tstr2[1024];
+  char		filename[1024],filename2[1024];
   char          tsizestr[1024] = "512";
   unsigned int  tsizes[8][2];
   int tiled = 0;
-  unsigned char	*buf = NULL;
+  //unsigned char	*inputBuf = NULL;
   smBase 		*sm = NULL;
 
   TIFF		*tiff = NULL;
   sgi_t		*libi = NULL;
-  unsigned short	*rowbuf = NULL;
-
-  unsigned short	bps,spp,photo;
+  unsigned short spp;
   pt_pool         thepool;
   pt_pool_t       pool = &thepool;
 
@@ -366,9 +639,9 @@ int main(int argc,char **argv)
 
   // Bad template name?
   if (!iIgnore) {
-    sprintf(tstr,sTemplate,0);
-    sprintf(tstr2,sTemplate,1);
-    if (strcmp(tstr,tstr2) == 0) {
+    sprintf(filename,sTemplate,0);
+    sprintf(filename2,sTemplate,1);
+    if (strcmp(filename,filename2) == 0) {
       fprintf(stderr,"Invalid sprintf filename template: %s\n",
               sTemplate);
       exit(1);
@@ -379,8 +652,8 @@ int main(int argc,char **argv)
   if (iStart < 0) {
     i = 0;
     while (i < 10000) {
-      sprintf(tstr,sTemplate,i);
-      fp = fopen(tstr,"r");
+      sprintf(filename,sTemplate,i);
+      fp = fopen(filename,"r");
       if (fp) break;
       i += 1;
     }
@@ -396,8 +669,8 @@ int main(int argc,char **argv)
     i = iStart + iStep;
   }
   while (iEnd < 0) {
-    sprintf(tstr,sTemplate,i);
-    fp = fopen(tstr,"r");
+    sprintf(filename,sTemplate,i);
+    fp = fopen(filename,"r");
     if (fp) {
       fclose(fp);
       i += iStep;
@@ -407,20 +680,20 @@ int main(int argc,char **argv)
   }
 
   // Check the file type
-  sprintf(tstr,sTemplate,iStart);
+  sprintf(filename,sTemplate,iStart);
   if (iType == -1) {
-    if (tiff = TIFFOpen(tstr,"r")) {
+    if (tiff = TIFFOpen(filename,"r")) {
       if (iVerb) fprintf(stderr,"TIFF input format detected\n");
       iType = 0;
       TIFFClose(tiff);
-    } else if (libi = sgiOpen(tstr,SGI_READ,0,0,0,0,0)) {
+    } else if (libi = sgiOpen(filename,SGI_READ,0,0,0,0,0)) {
       if (iVerb) fprintf(stderr,"SGI input format detected\n");
       iType = 1;
       sgiClose(libi);
-    } else if (check_if_png(tstr,NULL)) { 
+    } else if (check_if_png(filename,NULL)) { 
       if (iVerb) fprintf(stderr,"PNG input format detected\n");
       iType = 4; /* PNG */
-    } else if (check_if_jpeg(tstr,NULL)) { 
+    } else if (check_if_jpeg(filename,NULL)) { 
       if (iVerb) fprintf(stderr,"JPEG input format detected\n");
       iType = 5; /* JPEG */
     } else {
@@ -430,18 +703,18 @@ int main(int argc,char **argv)
   }
   // get the frame size
   if (iType == 0) {  // TIFF
-    tiff = TIFFOpen(tstr,"r");
+    tiff = TIFFOpen(filename,"r");
     if (!tiff) {
-      fprintf(stderr,"Error: %s is not a TIFF format file.\n",tstr);
+      fprintf(stderr,"Error: %s is not a TIFF format file.\n",filename);
       exit(1);
     }
-    if (!TIFFGetField(tiff,TIFFTAG_BITSPERSAMPLE,&bps)) bps = 1;
+    if (!TIFFGetField(tiff,TIFFTAG_BITSPERSAMPLE,&bitsPerSample)) bitsPerSample = 1;
     if (!TIFFGetField(tiff,TIFFTAG_SAMPLESPERPIXEL,&spp)) spp = 1;
-    TIFFGetField(tiff, TIFFTAG_PHOTOMETRIC, &photo);
+    TIFFGetField(tiff, TIFFTAG_PHOTOMETRIC, &tiffPhoto);
     TIFFGetField(tiff,TIFFTAG_IMAGEWIDTH,&(iSize[0]));
     TIFFGetField(tiff,TIFFTAG_IMAGELENGTH,&(iSize[1]));
     TIFFClose(tiff);
-    if ((bps != 8) && (bps != 16)) {
+    if ((bitsPerSample != 8) && (bitsPerSample != 16)) {
       fprintf(stderr,"Only 8 and 16 bits/sample TIFF files allowed\n");
       exit(1);
     }
@@ -452,9 +725,9 @@ int main(int argc,char **argv)
     iSize[2] = spp;
   } else if (iType == 1) { // SGI
 
-    libi = sgiOpen(tstr,SGI_READ,0,0,0,0,0);
+    libi = sgiOpen(filename,SGI_READ,0,0,0,0,0);
     if (!libi) {
-      fprintf(stderr,"Error: %s is not an SGI libimage format file.\n",tstr);
+      fprintf(stderr,"Error: %s is not an SGI libimage format file.\n",filename);
       exit(1);
     }
     iSize[0] = libi->xsize;
@@ -473,9 +746,9 @@ int main(int argc,char **argv)
     int 	dx,dy,fmt;
     xelval	value;
 
-    fp = pm_openr(tstr);
+    fp = pm_openr(filename);
     if (!fp) {
-      fprintf(stderr,"Unable to open the file: %s\n",tstr);
+      fprintf(stderr,"Unable to open the file: %s\n",filename);
       exit(1);
     }
     if (pnm_readpnminit(fp, &dx,&dy,&value,&fmt) == -1) {
@@ -496,12 +769,12 @@ int main(int argc,char **argv)
     iSize[0] = dx;
     iSize[1] = dy;
   } else if (iType == 4) { // PNG
-    if (!check_if_png(tstr,iSize)) {
+    if (!check_if_png(filename,iSize)) {
       fprintf(stderr, "Could not open the first PNG image -- it is either corrupt, nonexistent, or not a PNG file\n"); 
       exit(1); 
     }
   } else if (iType == 5) { // JPEG
-    if (!check_if_jpeg(tstr,iSize)) {
+    if (!check_if_jpeg(filename,iSize)) {
       fprintf(stderr, "Could not open the first JPEG image -- it is either corrupt, nonexistent, or not a JPEG file\n"); 
       exit(1); 
     }
@@ -575,8 +848,8 @@ int main(int argc,char **argv)
   pt_pool_init(pool, nThreads, nThreads*2, 0);
 
   // memory buffer for frame input
-  buf = (unsigned char *)malloc(iSize[0]*iSize[1]*3L); 
-  CHECK(buf);
+  gInputBuf = (unsigned char *)malloc(iSize[0]*iSize[1]*3L); 
+  CHECK(gInputBuf);
   if (iVerb) {
     printf("Creating streaming movie file from...\n");
     printf("Template: %s\n",sTemplate);
@@ -586,281 +859,18 @@ int main(int argc,char **argv)
 
   // Walk the input files...
   for(i=iStart;;i+=iStep) {
-	
+
     // terminate??
     if ((iStep > 0) && (i>iEnd)) break;
     if ((iStep < 0) && (i<iEnd)) break;
 
     // Get the filename
-    sprintf(tstr,sTemplate,i);
-
+    sprintf(filename,sTemplate,i);
     if (iVerb) {
       printf("Working on: %s : (%d) %d to %d\n",
-	     tstr,i,iStart,iEnd);
+             filename,i,iStart,iEnd);
     }
-
-    // read the file...
-    switch(iType) {
-    case 0: // TIFF
-      {
-	uint32 *temp;
-	unsigned int w, h;
-	tiff = TIFFOpen(tstr,"r");
-	if (!tiff) {
-	  fprintf(stderr,"Error: Unable to open TIFF: %s\n",tstr);
-	  exit(1);
-	}
-	TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH, &w);
-	TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, &h);
-	if ((w != iInDims[0]) || (h != iInDims[1])) {
-	  fprintf(stderr,"Error: image size changed: %s\n",tstr);
-	  exit(1);
-	}
-
-	if (bps == 16) {
-	  if (iMin == -1) {
-	    unsigned short tt;
-	    TIFFGetFieldDefaulted(tiff, 
-				  TIFFTAG_MINSAMPLEVALUE, &tt);
-	    iMin = tt;
-	  }
-	  if (iMax == -1) {
-	    unsigned short tt;
-	    TIFFGetFieldDefaulted(tiff, 
-				  TIFFTAG_MAXSAMPLEVALUE, &tt);
-	    iMax = tt;
-	  }
-	  temp = (uint32 *)malloc(iInDims[0]*iSize[2]*2);
-	  CHECK(temp);
-	  unsigned short *ss = (unsigned short *)temp;
-	  int x,y;
-	  float mult = 255.0/(float)(iMax-iMin);
-	  unsigned char	*p = buf;
-	  unsigned int mm[2] = {200000,0};
-	  for(y=0;y<iInDims[1];y++) {
-	    TIFFReadScanline(tiff,(unsigned char *)ss,y,0);
-	    for(x=0;x<iInDims[0]*iSize[2];x++) {
-	      if (ss[x] < mm[0]) mm[0] = ss[x];
-	      if (ss[x] > mm[1]) mm[1] = ss[x];
-	      if (ss[x] < iMin) ss[x] = iMin;
-	      if (ss[x] > iMax) ss[x] = iMax;
-	    }
-	    for(x=0;x<iInDims[0];x++) {
-	      if (iSize[2] == 1) {
-		unsigned char tt=(unsigned char)((ss[x]-iMin)*mult);
-		if (photo==PHOTOMETRIC_MINISWHITE) {
-		  tt=255-tt;
-		}
-		*p++ = tt;
-		*p++ = tt;
-		*p++ = tt;
-	      } else {
-		*p++ = (unsigned char)((ss[x*3+0]-iMin)*mult);
-		*p++ = (unsigned char)((ss[x*3+1]-iMin)*mult);
-		*p++ = (unsigned char)((ss[x*3+2]-iMin)*mult);
-	      }
-	    }
-	  }
-	  if (iVerb) {
-	    printf("Image min,max=%d %d\n",mm[0],mm[1]);
-	  }
-	} else {
-	  temp = (uint32 *)malloc(iInDims[0]*iInDims[1]*4);  // Caution deferred free under IRIX
-	  CHECK(temp);
-	  TIFFReadRGBAImage(tiff,w,h,temp,0);
-	  unsigned char	*p = buf;
-	  for(int x=0;x<w*h;x++) {
-	    *p++ = TIFFGetR(temp[x]);
-	    *p++ = TIFFGetG(temp[x]);
-	    *p++ = TIFFGetB(temp[x]);
-	  }
-	}
-
-	TIFFClose(tiff);
-	free(temp);
-      }
-      break;
-    case 1: // SGI
-      {
-	unsigned char	*p = buf;
-	libi = sgiOpen(tstr,SGI_READ,0,0,0,0,0);
-	if (!libi) {
-	  fprintf(stderr,"Error: Unable to open SGI: %s\n",tstr);
-	  exit(1);
-	}
-	if ((libi->xsize != iInDims[0]) || 
-	    (libi->ysize != iInDims[1])) {
-	  fprintf(stderr,"Error: image size changed: %s\n",tstr);
-	  exit(1);
-	}
-	for(unsigned int y=0;y<iInDims[1];y++) {
-	  int	x;
-	  if (iSize[2] >= 3) {
-	    sgiGetRow(libi,rowbuf,y,0);
-	    for(x=0;x<iInDims[0];x++) {
-	      p[x*3+0] = rowbuf[x];
-	    }
-	    sgiGetRow(libi,rowbuf,y,1);
-	    for(x=0;x<iInDims[0];x++) {
-	      p[x*3+1] = rowbuf[x];
-	    }
-	    sgiGetRow(libi,rowbuf,y,2);
-	    for(x=0;x<iInDims[0];x++) {
-	      p[x*3+2] = rowbuf[x];
-	    }
-	  } else {
-	    sgiGetRow(libi,rowbuf,y,0);
-	    for(x=0;x<iInDims[0];x++) {
-	      p[x*3+0] = rowbuf[x];
-	      p[x*3+1] = rowbuf[x];
-	      p[x*3+2] = rowbuf[x];
-	    }
-	  }
-	  p += 3*iInDims[0];
-	}
-	sgiClose(libi);
-      }
-      break;
-    case 2: // RAW
-      {
-	unsigned char	*p = buf;
-				
-	gzFile	fpz;
-	fpz = gzopen(tstr,"r");
-	if (!fpz) {
-	  fprintf(stderr,"Error: Unable to open RAW compressed: %s\n",tstr);
-	  exit(1);
-	}
-	// Header
-	if (iSize[3]) {
-	  void *b = malloc(iSize[3]);
-          CHECK(b);
-	  gzread(fpz,b,iSize[3]);
-	  free(b);
-	}
-	// Scan lines
-	if (iPlanar && (iSize[2] == 3)) {
-	  char *b = (char *)malloc(iInDims[0]*iInDims[1]*3);
-          CHECK(b);
-	  char *p0 = b;
-	  char *p1 = p0 + iInDims[0]*iInDims[1];
-	  char *p2 = p1 + iInDims[0]*iInDims[1];
-	  gzread(fpz,b,iInDims[0]*iInDims[1]*3);
-	  for(int x=0;x<iInDims[0]*iInDims[1];x++) {
-	    *p++ = *p0++;
-	    *p++ = *p1++;
-	    *p++ = *p2++;
-	  }
-	  free(b); 
-	} else {
-	  for(unsigned int y=0;y<iInDims[1];y++) {
-	    int  x;
-	    if (iSize[2] == 3) {
-	      gzread(fpz,p,iInDims[0]*3);
-	    } else {
-	      gzread(fpz,p,iInDims[0]);
-	      for(x=iInDims[0]-1;x>=0;x--) {
-		p[x*3+2] = p[x];
-		p[x*3+1] = p[x];
-		p[x*3+0] = p[x];
-	      }
-	    }
-	    p += 3*iInDims[0];
-	  }
-	}
-	// done
-	gzclose(fpz);
-      }
-      break;
-    case 3: // PNM
-      {  
-	int 	dx,dy,fmt,f;
-	xelval	value;
-
-	unsigned char	*p = buf;
-
-	fp = pm_openr(tstr);
-	if (!fp) {
-	  fprintf(stderr,"Unable to open the file: %s\n",tstr);
-	  exit(1);
-	}
-	if (pnm_readpnminit(fp, &dx,&dy,&value,&fmt) == -1) {
-	  fprintf(stderr,"The file is not in PNM format: %s.\n",tstr);
-	  pm_closer(fp);
-	  exit(1);
-	}
-	if ((dx != iInDims[0]) || 
-	    (dy != iInDims[1])) {
-	  fprintf(stderr,"Error: image size changed: %s\n",tstr);
-	  pm_closer(fp);
-	  exit(1);
-	}
-
-	if (PNM_FORMAT_TYPE(fmt) == PPM_TYPE) {
-	  f = 3;
-	} else if(PNM_FORMAT_TYPE(fmt) == PGM_TYPE) {
-	  f = 1;
-	} else {
-	  fprintf(stderr,"Error: file type not supported:%s\n",tstr);
-	  pm_closer(fp);
-	  exit(1);
-	}
-	if (f != iSize[2]) {
-	  fprintf(stderr,"Error: file type changed:%s\n",tstr);
-	  pm_closer(fp);
-	  exit(1);
-	}
-
-	xel*	xrow;
-	xel*	xp;
-	int	rp,gp,bp;
-
-#define NORM(x,mx) ((float)(x)/(float)(mx))*255.0
-
-	xrow = pnm_allocrow( dx );
-	for(int y=0;y<dy;y++) {
-	  p = buf + (dy-y-1)*dx*3;
-	  pnm_readpnmrow( fp, xrow, dx, value, fmt );
-	  if (iSize[2] == 3) {
-	    xp = xrow;
-	    for(int x=0;x<dx;x++) {
-	      rp = (int)(NORM(PPM_GETR(*xp),value));
-	      gp = (int)(NORM(PPM_GETG(*xp),value));
-	      bp = (int)(NORM(PPM_GETB(*xp),value));
-	      xp++;
-	      *p++ = rp;
-	      *p++ = gp;
-	      *p++ = bp;
-	    }
-	  } else {
-	    xp = xrow;
-	    for(int x=0;x<dx;x++) {
-	      rp = (int)(NORM(PNM_GET1(*xp),value));
-	      xp++;
-	      *p++ = rp;
-	      *p++ = rp;
-	      *p++ = rp;
-	    }
-	  }
-	}
-	pnm_freerow(xrow);
-
-	pm_closer(fp);
-      }
-      break;
-    case 4: // PNG
-      if (!read_png_image(tstr,iInDims,buf)) {
-	fprintf(stderr,"Unable to read PNG file: %s\n",tstr);
-	exit(1);
-      }
-      break;
-    case 5: // JPEG
-      if (!read_jpeg_image(tstr,iInDims,buf)) {
-	fprintf(stderr,"Unable to read JPEG file: %s\n",tstr);
-	exit(1);
-      }
-      break;
-    }
+	FillInputBffer(iType, filename); 
 
     // Compress and save (in parallel)
     wrk *p = (wrk *)malloc(sizeof(wrk)+(iSize[0]*iSize[1]*3)); // Caution too large a pool can lead to trouble in this area for large format frames
@@ -872,7 +882,7 @@ int main(int argc,char **argv)
     p->iFlipy = iFlipy;
     p->frame = (i-iStart)/iStep;
     p->buffer = (u_char *)(p + 1);
-    memcpy(p->buffer,buf,iSize[0]*iSize[1]*3);
+    memcpy(p->buffer,gInputBuf,iSize[0]*iSize[1]*3);
     pt_pool_add_work(pool, workproc, (void *)p);
   }
   pt_pool_destroy(pool,1);
@@ -880,7 +890,7 @@ int main(int argc,char **argv)
   // Done..
   sm->closeFile();
 
-  free(buf);
+  free(gInputBuf);
   if (rowbuf) free(rowbuf);
 
   exit(0);
