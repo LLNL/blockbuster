@@ -1071,11 +1071,13 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
       }
        dbprintf(5, "check to swap buffers\n"); 
-      if (swapBuffers == true ||
-          frameNumber != previousFrame ||
-          currentZoom != oldZoom ||
-          oldXOffset != xOffset ||
-          oldYOffset != yOffset) {
+       if ( 1 ) {
+         /* ( swapBuffers == true ||
+            frameNumber != previousFrame ||
+            currentZoom != oldZoom ||
+            oldXOffset != xOffset ||
+            oldYOffset != yOffset)  {
+         */
         canvas->preloadFrames = preloadFrames; 
         canvas->playDirection = playDirection;
         canvas->startFrame = startFrame; 
