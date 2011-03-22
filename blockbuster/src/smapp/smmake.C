@@ -46,7 +46,7 @@ u_int tilesizes[2];
 int blockdim[2] ;
 int blockpos[2];
 
-tileInfo *tileinfo;
+TileInfo *tileinfo;
 
 int
 main(int argc, char *argv[])
