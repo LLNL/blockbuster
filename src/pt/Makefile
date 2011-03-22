@@ -42,7 +42,7 @@ MANLINKFILES = pt_gate_init.3 pt_gate_destroy.3 pt_gate_sync.3 \
 
 all:  libptutil.a CPMANPAGES
 
-libptutil.a: $(OFILES)  
+libptutil.a: $(OFILES) $(HFILES)
 	$(AR) rsc $@ $(OFILES)
 	cp $@ $(INSTALL_DIR)/lib
 	mkdir -p $(INSTALL_DIR)/include/pt
