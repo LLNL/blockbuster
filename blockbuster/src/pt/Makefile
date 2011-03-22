@@ -40,7 +40,9 @@ MANLINKFILES = pt_gate_init.3 pt_gate_destroy.3 pt_gate_sync.3 \
 	pt_rw_write_lock.3 pt_rw_write_unlock.3 pt_rw_destroy.3 \
 	pt_pool_init.3 pt_pool_destroy.3 pt_pool_add_work.3
 
-libptutil.a: $(OFILES) MANLINKS
+all:  libptutil.a CPMANPAGES
+
+libptutil.a: $(OFILES)  
 	$(AR) rsc $@ $(OFILES)
 	cp $@ $(INSTALL_DIR)/lib
 	mkdir -p $(INSTALL_DIR)/include/pt
@@ -55,12 +57,16 @@ clean:
 	rm -rf MANLINKS $(INSTALL_DIR)/include/pt $(INSTALL_DIR)/lib/libptutil.a
 	makedepend
 
-MANLINKS: 
+CPMANPAGES: $(MANLINKFILES)
+	mkdir -p $(INSTALL_DIR)/man/man3
+	cp pt_*.3 $(INSTALL_DIR)/man/man3
+	date > CPMANPAGES
+
+$(MANLINKFILES):
 	@list='$(MANFILES)'; \
 	for j in $$list; do \
 		grep LINK $$j | cut -d ' ' -f2- | xargs -n 1 ln -s $$j ; \
 	done
-	date > MANLINKS
 
 depend:
 	makedepend -Y. -Y.. $(INCLUDES) $(SRC_FILES)
