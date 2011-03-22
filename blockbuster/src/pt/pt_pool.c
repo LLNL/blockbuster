@@ -46,6 +46,9 @@ void pt_pool_init(pt_pool_t tpool, int num_worker_threads,
   gPool = tpool; 
   pt_pool_work_t *workp;
    
+#ifdef irix
+  pthread_setconcurrency(num_worker_threads*2);
+#endif
   /* initialize th fields */
   tpool->num_threads = num_worker_threads;
   tpool->max_queue_size = max_queue_size;
