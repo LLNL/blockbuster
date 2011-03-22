@@ -108,7 +108,7 @@ typedef struct pt_pool {
 } *pt_pool_t;
 
 void pt_pool_init( pt_pool_t tpool, int num_threads, int max_queue_size, 
-			int do_not_block_when_full=0);
+			int do_not_block_when_full);
 int pt_pool_add_work( pt_pool_t tpool,void (*routine)(void *),void *arg);
 void pt_pool_destroy( pt_pool_t tpool, int finish);
   int pt_pool_threadnum(void);
