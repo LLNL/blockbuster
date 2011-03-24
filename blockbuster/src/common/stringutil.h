@@ -1,75 +1,36 @@
 #ifndef TSB_STRING_UTIL_H
 #define TSB_STRING_UTIL_H
+#include <iostream>
+#include <sstream>
 #include <string>
-#include <string.h>
+#include <vector>
 #include <stdio.h>
 #include <algorithm>
-#include <vector>
+//#include <inttypes.h>
 //#include "RCDebugStream.h"
+
 using namespace std; 
 
 #define errout if (0) cerr
-#define rcdebug5 if (0) cerr
-// ===========================================
-// and here is a nice utility function
-// I don't know if it really belongs here, but for now...  
-static string _gHostname; 
-inline string &GetHostname(void) {
-  if (_gHostname == "") {
-    char buf[2048]; 
-    if (gethostname(buf, 2047) == -1) {
-      _gHostname = "unknown host"; 
-    }
-    else 
-      _gHostname = buf; 
-  }
-  return _gHostname; 
-}
+#define debugout if (0) cerr
 
 //===============================================================
-inline vector<string> Split(const string &s, char delimchar = ' ') {
-  vector <string> sv; 
-  vector<string::size_type> delims; 
-  string sub; 
-  errout << "Split(\""<<s<<"\", '"<<delimchar<<"')"<<endl;
-  // build a list of where the delims occur in the string
-  string::size_type found = s.find(delimchar), previous=string::npos; 
-  errout << "initially found " << found<<endl;
-  if (found == string::npos) {
-    errout << "No delimchar found in string" << endl; 
-    if (s.size()) {
-      sv.push_back(s); 
-    }
-    return sv; 
+// New versions of Split from http://stackoverflow.com/questions/236129/how-to-split-a-string
+// The first one splits a string into an existing vector and returns that
+inline std::vector<std::string> &Split(const std::string &s, char delim, std::vector<std::string> &elems) {
+  std::stringstream ss(s);
+  std::string item;
+  while(std::getline(ss, item, delim)) {
+    elems.push_back(item);
   }
+  return elems;
+}
 
-  while (1) {
-    errout << "Loop: found is "<< found << endl;
-    if (found == string::npos) {
-      if (previous < s.size()-1) {
-        sub=s.substr(previous+1); 
-        errout << "1. Pushing back \""<<sub<<"\""<<endl;
-        sv.push_back(sub);
-      }
-      return sv; 
-    } 
-    if (previous == string::npos) {
-      if (found > 0) {
-        sub=s.substr(0, found);
-        errout << "2. Pushing back \""<<sub<<"\""<<endl;
-        sv.push_back(sub); 
-      }
-    }
-    else if (found - previous > 1) {
-      sub=s.substr(previous+1, found-(previous+1));
-      errout << "2. Pushing back \""<<sub<<"\""<<endl;
-      sv.push_back(sub); 
-    }
-    previous=found;
-    found = s.find(delimchar, found+1); 
-  }
 
-  return sv;             
+// This version returns a new string vector
+inline std::vector<std::string> Split(const std::string &s, char delim = ' ') {
+    std::vector<std::string> elems;
+    return Split(s, delim, elems);
 }
 
 //===============================================================
@@ -114,8 +75,8 @@ inline string StripBack(const string &value, string pattern=" ") {
   int loc = result.size() - pattern.size(), patlen = pattern.length(); 
   
   while(loc >= 0 && result.substr(loc,patlen) == pattern) {
-	result.erase(loc, patlen); 
-	loc = result.size() - pattern.size();
+    result.erase(loc, patlen); 
+    loc = result.size() - pattern.size();
   }
   return result; 
 }
@@ -129,8 +90,8 @@ inline string StripFront(const string &value, string pattern=" ") {
   int reslen = result.length(), patlen = pattern.length(); 
 
   while (reslen >= patlen && result.substr(0, patlen) == pattern) {
-	result.erase(0, patlen); 
-	reslen = result.length();
+    result.erase(0, patlen); 
+    reslen = result.length();
   }
   return result; 
 }
@@ -168,14 +129,8 @@ inline string applyPatternToString(string pattern, string s) {
   return out; 
 }
 
-// operator string() cannot be overloaded for ints
-inline std::string intToString(uint32_t i) {
-  char buf[128] = "";
-  sprintf(buf, "%d", i);    
-  std::string s(buf);
-  return s; 
-}
-// operator string() cannot be overloaded for ints and doubles, so:
+
+// operator string() cannot be overloaded for doubles, so:
 inline std::string doubleToString(double d, int precision=-1){
   char buf[128] = "", fmt[1024] = "%f";
   if (precision != -1) 
@@ -184,6 +139,17 @@ inline std::string doubleToString(double d, int precision=-1){
   sprintf(buf, fmt, d);    
   std::string s(buf);
   return s; 
+}
+
+// operator string() cannot be overloaded for ints
+inline std::string intToString(double i) {
+  return doubleToString(i, 0); 
+
+  /*  char buf[128] = "";
+  sprintf(buf, "%d", i);    
+  std::string s(buf);
+  return s; 
+  */
 }
 
 inline std::string pointerToString(const void *ptr) {
@@ -253,97 +219,5 @@ string arrayToString(T *array, int length) {
 }
 //==========================================================================
 
-#define NO_BOOST 1
-
-//==========================================================================
-
-#ifndef NO_BOOST
-#include "boost/tokenizer.hpp"
-#include "boost/format.hpp"
-#ifndef tokenizer
-#define tokenizer tokenizer<boost::char_separator<char> >
-#endif
-using namespace boost; 
-
-//==========================================================================
-
-//============================================
-// more robust form of strtod;  accepts weird FORTRAN case like this: 
-// -0.300000000000000D+01 as well as "normal" cases like this: 3.0
-template <class T> 
-T stringToNum(string &inString, T &num) {
-  num = static_cast<T>(strtod(inString.c_str(), NULL));  //gets most of the cases  
-  boost::char_separator<char> sep("D");
-  tokenizer  tokens(inString, sep);
-  tokenizer::iterator pos = tokens.begin(); 
-  if (++pos != tokens.end()) {	 
-    double exponent = strtod((*pos).c_str(), NULL); 
-    if (exponent > 0) {
-      while (exponent-- > 0)
-	num *= 10; 
-    } else {
-      while (exponent++ < 0)
-	num /= 10; 
-    }      
-  }
-  return num; 
-}
-
-// ====================================
-// different way to access stringToNum
-/*template <class T> 
-void stringToNum(string &inString, T &num) {
-  num = static_cast<T>(stringToNum(inString)); 
-  return; 
-}
-*/
-
-//============================================
-/* Useful if you happen to be parsing a line in a file with a tokenizer and expect a series of numbers or a point to be next in the tokenizer sequence:
- */
-template <class T> 
-void GetNumsFromTokenizer(const tokenizer &inTokens, tokenizer::iterator &inPos, int inNumVals, vector<T> &outValues) {
-		      
-  tokenizer::iterator endpos = inTokens.end(); 
-  rcdebug5 << "GetNumsFromString values are [" ; 
-  int i=0; while (i<inNumVals){
-    T num; 
-    string value(*inPos); 
-    if (inPos == endpos)
-      throw string("Missing expected value from given tokens"); 
-    stringToNum<T>(value, num);
-    outValues.push_back(num);
-    rcdebug5 << num; 
-    if (i!=inNumVals-1) {
-      rcdebug5 << ", ";
-    } else {
-      rcdebug5 << "]" << endl; 
-    }
-    ++i; ++inPos;
-  }
-  return;
-}
-//============================================
-// given a string, use a tokenizer to extract some numbers
-/* example separator to choose field delimiters: 
-   boost::char_separator<char> sep("()[] ,-");
-*/
-template <class T> 
-void GetNumsFromString(const string &inString, int inNumVals, vector<T> &outValues) {
-  const boost::char_separator<char> delims("()[] ,-");//delimiters
-  tokenizer tokens(inString, delims);
-  tokenizer::iterator pos = tokens.begin(), endpos = tokens.end(); 
-  try {
-    GetNumsFromTokenizer(tokens, pos, inNumVals, outValues); 
-  } catch (string err) {
-    throw string("Error in GetNumsFromString with string \"")+inString+string("\": ")+err;
-  }
-
-  return; 
-}
-
-
-
-#endif // end ifndef NO_TOKENIZER
 
 #endif

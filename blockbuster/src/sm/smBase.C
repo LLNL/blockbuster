@@ -127,12 +127,12 @@ static smMsgStruct gMsgStruct;
 
 inline void sm_real_dbprintf(int level, const char *fmt, ...) {  
   if (smVerbose < level) return; 
-  cerr << GetHostname() << " SMDEBUG: ";
+  cerr << " SMDEBUG [" << gMsgStruct.file << ":"<< gMsgStruct.function << "(), line "<< gMsgStruct.line << ", time=" << GetExactSeconds() << "]: " ;
   va_list ap;
   va_start(ap, fmt);
   vfprintf(stderr,fmt,ap);
   va_end(ap);
-  cerr << " [" << gMsgStruct.file << ":"<< gMsgStruct.function << "(), line "<< gMsgStruct.line << ", time=" << GetExactSeconds() << "]" << endl; 
+  //cerr << endl; 
   return; 
 }
 #else
@@ -193,36 +193,45 @@ void smBase::init(void)
 */
 //
 //----------------------------------------------------------------------------
-smBase::smBase(const char *_fname, int numthreads)
-{
+smBase::smBase(const char *_fname, int numthreads):mNumThreads(numthreads) {
   smdbprintf(5, "smBase::smBase(%s, %d)", _fname, numthreads);
   int i;
-   setFlags(0);
-   setFPS(getFPS());
-   nframes = 0;
-   foffset = NULL;
-   flength = NULL;
-   version = 0;
-   nresolutions = 1;
-   
-   mThreadData.clear(); 
-   mThreadData.resize(numthreads); 
-   
-   if (_fname != NULL) {
-      fname = strdup(_fname);
-      int threadnum = mThreadData.size();
-      while (threadnum--) {
-        mThreadData[threadnum].fd = OPEN(fname, O_RDONLY);
-      }
-      readHeader();
-      initWin(); // only does something for version 1.0
-   }
-   else
-      fname = NULL;
-
-   bModFile = FALSE;
-
-   return;
+  setFlags(0);
+  setFPS(getFPS());
+  nframes = 0;
+  foffset = NULL;
+  flength = NULL;
+  version = 0;
+  nresolutions = 1;
+  
+  mThreadData.clear(); 
+  mThreadData.resize(numthreads); 
+  
+  if (_fname != NULL) {
+    fname = strdup(_fname);
+    int threadnum = mNumThreads;
+    while (threadnum--) {
+      mThreadData[threadnum].fd = OPEN(fname, O_RDONLY);
+    }
+    readHeader();
+    initWin(); // only does something for version 1.0
+  }
+  else
+    fname = NULL;
+  
+  if (mNumThreads > 1) {
+    // this assumes we have already called pthreads_init(); 
+    int status = pthread_mutex_init(&mStagingBufferMutex, NULL); 
+    if (!status) {
+      status = pthread_mutex_init(&mOutputBufferMutex, NULL); 
+    } 
+    if (status) {
+      fprintf(stderr, "Error:  cannot initializes mutexes\n"); 
+      exit(2); 
+    }
+  }
+  bModFile = FALSE;
+  return;
 }
 
 //----------------------------------------------------------------------------
@@ -363,6 +372,7 @@ int smBase::newFile(const char *_fname, u_int _width, u_int _height,
    fname = strdup(_fname);
 
    mThreadData[0].fd = OPENC(_fname, O_WRONLY|O_CREAT|O_TRUNC, 0666);
+
    foffset = (off64_t *)calloc(sizeof(off64_t),nframes*nresolutions);
    CHECK(foffset);
    foffset[0] = SM_HDR_SIZE*sizeof(u_int) +
@@ -434,7 +444,7 @@ void smBase::readHeader(void)
 
    READ(lfd, &nframes, sizeof(u_int));
    nframes = ntohl(nframes);
-   smdbprintf(5,"open file, nframes = %d", nframes);
+   smdbprintf(4,"open file, nframes = %d", nframes);
 
    READ(lfd, &i, sizeof(u_int));
    framesizes[0][0] = ntohl(i);
@@ -447,8 +457,8 @@ void smBase::readHeader(void)
    memcpy(tilesizes,framesizes,sizeof(framesizes));
    nresolutions = 1;
 
-   smdbprintf(5,"image size: %d %d", framesizes[0][0], framesizes[0][1]);
-   smdbprintf(5,"nframes=%d",nframes);
+   smdbprintf(4,"image size: %d %d", framesizes[0][0], framesizes[0][1]);
+   smdbprintf(4,"nframes=%d",nframes);
 
    // Version 2 header is bigger...
    if (version == 2) {
@@ -472,9 +482,9 @@ void smBase::readHeader(void)
        if(maxNumTiles < (tileNxNy[i][0] * tileNxNy[i][1])) {
 	 maxNumTiles = tileNxNy[i][0] * tileNxNy[i][1];
        }
-       //smdbprintf(5,"tileNxNy[%ld,%ld] : maxnumtiles %ld", tileNxNy[i][0], tileNxNy[i][1],maxNumTiles);
+       smdbprintf(5,"tileNxNy[%ld,%ld] : maxnumtiles %ld", tileNxNy[i][0], tileNxNy[i][1],maxNumTiles);
      }
-     //smdbprintf(5,"maxtilesize = %ld, maxnumtiles = %ld",maxtilesize,maxNumTiles);
+     smdbprintf(5,"maxtilesize = %ld, maxnumtiles = %ld",maxtilesize,maxNumTiles);
      
    }
    else {
@@ -511,12 +521,12 @@ void smBase::readHeader(void)
        if (flength[w] > maxFrameSize) maxFrameSize = flength[w];
      }
    }
-#if 0 && SM_VERBOSE
+#if SM_VERBOSE
    for (w=0; w<nframes; w++) {
      smdbprintf(5,"window %d: %d size %d", w, (int)foffset[w],flength[w]);
    }
 #endif
-   smdbprintf(5,"maximum frame size is %d", maxFrameSize);
+   smdbprintf(4,"maximum frame size is %d", maxFrameSize);
    
    // bump up the size to the next multiple of the DIO requirements
    maxFrameSize += 2;
@@ -1014,7 +1024,7 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
            _dim[0], _dim[1], maxAllowed ); 
          */ 
          if (newTotal > maxAllowed) {
-           smdbprintf(5, "Houston, we have a problem. Dump core here. new total > maxAllowed"); 
+           smdbprintf(0, "Houston, we have a problem. Dump core here. new total > maxAllowed"); 
            abort(); 
          }
          for(int rows = 0; rows < maxY; rows += _step[1]) {
@@ -1049,6 +1059,93 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
    return bytesRead; 
  }
 
+void smBase::flushFrames(void) {
+  // smdbprintf(3, "flushFrames() called\n"); 
+  // smdbprintf(3, "write out the output buffer if possible.  mStagingBuffer=%s and mOutputBuffer=%s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
+  while  (mOutputBuffer.mFrameData.size()) {
+    // smdbprintf(3, "flushFrames: writing frame %d to sm file\n", mOutputBuffer.mExpectedFirst); 
+    setFrame(mOutputBuffer.mExpectedFirst, mOutputBuffer.mFrameData[0]);
+    delete mOutputBuffer.mFrameData[0];
+    mOutputBuffer.mFrameData.pop_front(); 
+    mOutputBuffer.mExpectedFirst++; 
+  }
+  // smdbprintf(3, "After flushing output buffer, mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
+  if (mStagingBuffer.mExpectedFirst == mOutputBuffer.mExpectedFirst) {
+    // Yes, output buffer can accept mStagingBuffer.mFrameData[0] and more, 
+    //  if it exists:
+    while (mStagingBuffer.mFrameData.size() && mStagingBuffer.mFrameData[0]){
+    // smdbprintf(3, "flushFrames: moving frame %d to output buffer\n", mOutputBuffer.mExpectedFirst); 
+      mOutputBuffer.mFrameData.push_back(mStagingBuffer.mFrameData[0]);   
+      mStagingBuffer.mFrameData.pop_front(); 
+      mStagingBuffer.mExpectedFirst++; 
+    }
+  }
+  // smdbprintf(3, "After flushing staging buffer, mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
+  // write out the output buffer if possible
+  while  (mOutputBuffer.mFrameData.size()) {
+    setFrame(mOutputBuffer.mExpectedFirst, mOutputBuffer.mFrameData[0]);
+    delete mOutputBuffer.mFrameData[0];
+    mOutputBuffer.mFrameData.pop_front(); 
+    mOutputBuffer.mExpectedFirst++; 
+  }
+  // smdbprintf(3, "After flushing output buffer, mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
+  return; 
+}
+  
+void smBase::bufferFrame(int f,  unsigned char *data, bool oktowrite) {
+  // smdbprintf(3, "bufferFrame(%d, data[10] == %d)\n", f, (int)data[10]); 
+  pthread_mutex_lock(&mStagingBufferMutex); 
+
+  // smdbprintf(3, "bufferFrame, got staging mutex.  mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
+  
+  // buffer the frame into the staging buffer  
+  int32_t slotnum = f - mStagingBuffer.mExpectedFirst; 
+  // smdbprintf(4, "slotnum = %d\n", slotnum); 
+  if (slotnum+1 > mStagingBuffer.mFrameData.size()) {
+    // smdbprintf(3, "resizing mStagingBuffer to %d\n", slotnum+1); 
+    mStagingBuffer.mFrameData.resize(slotnum+1, NULL); 
+  }
+  // smdbprintf(3, "adding frame %d to mStagingBuffer slot %d\n", f,  slotnum); 
+  mStagingBuffer.mFrameData[slotnum] = data; 
+  // smdbprintf(3, "bufferFrame, mStagingBuffer = %s",  mStagingBuffer.toString().c_str()); 
+  pthread_mutex_unlock(&mStagingBufferMutex); 
+  if (oktowrite) {
+    pthread_mutex_lock(&mStagingBufferMutex); 
+    // now lets' see if we can flush to output buffer and even to disk...
+    if (pthread_mutex_trylock(&mOutputBufferMutex) != EBUSY) {
+      // smdbprintf(4, "f=%d, got output buffer mutex\n", f); 
+      // Can staging buffer  be flushed into the writing buffer?
+      if (mStagingBuffer.mExpectedFirst == mOutputBuffer.mExpectedFirst && mStagingBuffer.mFrameData.size() && mStagingBuffer.mFrameData[0]) {
+        // smdbprintf(3, "bufferFrame f=%d: Yes, output buffer can accept mStagingBuffer.mFrameData[0] and more,if it exists.\n", f); 
+        while (mStagingBuffer.mFrameData.size() && mStagingBuffer.mFrameData[0]){
+          // smdbprintf(3, "bufferFrame f=%d: moving frame %d from front of staging to back of output buffer\n", f, mStagingBuffer.mExpectedFirst); 
+          mOutputBuffer.mFrameData.push_back(mStagingBuffer.mFrameData[0]);   
+          mStagingBuffer.mFrameData.pop_front(); 
+          mStagingBuffer.mExpectedFirst++; 
+        }
+        // smdbprintf(4, "bufferFrame f=%d: We are done flushing the staging buffer\n"); 
+      } else {
+        // smdbprintf(4, "bufferFrame f=%d: We did not flush the staging buffer\n"); 
+      }      
+      // smdbprintf(4, "bufferFrame f=%d: We can unlock the staging mutex\n", f); 
+      // smdbprintf(3, "bufferFrame, mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
+      pthread_mutex_unlock(&mStagingBufferMutex); 
+      // write out the output buffer if possible
+      while  (mOutputBuffer.mFrameData.size()) {
+        // smdbprintf(3, "bufferFrame f=%d: writing frame %d to sm file\n", f, mOutputBuffer.mExpectedFirst); 
+        setFrame(mOutputBuffer.mExpectedFirst, mOutputBuffer.mFrameData[0]);
+        delete mOutputBuffer.mFrameData[0];
+        mOutputBuffer.mFrameData.pop_front(); 
+        mOutputBuffer.mExpectedFirst++; 
+      }
+      // smdbprintf(3, "bufferFrame f=%d: now unlock the output mutex\n", f); 
+      pthread_mutex_unlock(&mOutputBufferMutex); 
+    } 
+  }
+
+  return; 
+}
+
 //! Another poorly named function . Should be called "writeFrame", I think.
 /*!
   Compress the data and calls helpers to write it out to disk. 
@@ -1072,7 +1169,7 @@ void smBase::setFrame(int f, void *data)
      tmpBuf=(u_char *)malloc(size);
      CHECK(tmpBuf);
      compFrame(data,tmpBuf,size,0);
-     setCompFrame(f,tmpBuf,size,0);
+     setCompFrame(f,tmpBuf,size, 0);
      free(tmpBuf);
    }
    else {
@@ -1149,6 +1246,8 @@ void smBase::setFrame(int f, void *data)
 
 //! Should probably be called "writeCompFrame"
 /*!
+  Not thread-safe -- must be called in serial fashion due to varying sizes of 
+  each compressed frame.  
   Writes an already-compressed set of data to the file. 
   \param f the frame number
   \param data the compressed data
@@ -1157,6 +1256,7 @@ void smBase::setFrame(int f, void *data)
 */
 void smBase::setCompFrame(int f, void *data, int size, int res)
 {
+  
    foffset[f+res*getNumFrames()] = LSEEK64(mThreadData[0].fd,0,SEEK_CUR);
    flength[f+res*getNumFrames()] = size;
    WRITE(mThreadData[0].fd, data, size);
@@ -1179,15 +1279,15 @@ void smBase::setCompFrame(int f, void *data, int *sizes, int res)
   uint32_t tz;
   int size;
   int numTiles = getTileNx(res)*getTileNy(res);
-
-  foffset[f+res*getNumFrames()] = LSEEK64(mThreadData[0].fd,0,SEEK_CUR);
+  int fd = mThreadData[0].fd;
+  foffset[f+res*getNumFrames()] = LSEEK64(fd,0,SEEK_CUR);
  
   size = 0;
   // if frame is tiled then write tile offset (jump table) first
   if(numTiles > 1) {
     for(int i = 0; i < numTiles; i++) {
       tz =  htonl((uint32_t)sizes[i]);
-      WRITE(mThreadData[0].fd,&tz,sizeof(uint32_t));
+      WRITE(fd,&tz,sizeof(uint32_t));
       //smdbprintf(5,"size tile[%d] = %d\n",i,sizes[i]);
       size += sizes[i];
     } 
@@ -1199,7 +1299,7 @@ void smBase::setCompFrame(int f, void *data, int *sizes, int res)
      flength[f+res*getNumFrames()] = size;
   }
   //smdbprintf(5,"write %d bytes\n",size);
-  WRITE(mThreadData[0].fd, data, size);
+  WRITE(fd, data, size);
 
   bModFile = TRUE;
   return;
@@ -1345,7 +1445,8 @@ void smBase::compFrame(void *in, void *out, int *outsizes, int res)
     return;
 }
 
-
+/* close the file and write out the header
+ */
 void smBase::closeFile(void)
 {
    u_int arr[64] = {0};
@@ -1378,9 +1479,11 @@ void smBase::closeFile(void)
    	byteswap(flength,sizeof(u_int)*nframes*nresolutions,sizeof(u_int));
 
 	//smdbprintf(5,"seek header end is %d\n",LSEEK64(mThreadData[0].fd, 0, SEEK_CUR));
-	CLOSE(mThreadData[0].fd);
    }
-	
+   int i=mNumThreads; 
+   while (i--) {
+     CLOSE(mThreadData[i].fd);
+   }
 }
 //! convenience function
 /*!

@@ -43,6 +43,7 @@
 #include <string.h>
 #include <math.h> 
 #include <sys/types.h>
+#include "../common/stringutil.h"
 #ifndef WIN32
 #include <sys/mman.h>
 #include <unistd.h>
@@ -52,10 +53,12 @@
 
 #include <string>
 #include <vector>
+#include <deque>
 //#define DISABLE_PTHREADS 1
 #ifndef DISABLE_PTHREADS
 #include <pthread.h>
 #else
+#error PTHREADS DISABLED
 #define pthread_cond_t char
 #define pthread_mutex_t char
 #endif 
@@ -106,6 +109,22 @@ struct smThreadData {
   std::vector<TileInfo> tile_infos; // used for computing overlap info
 };
   
+
+struct OutputBuffer {
+  OutputBuffer():mExpectedFirst(0) {
+    return; 
+  }
+  std::string toString(void) {
+    return std::string("{OutputBuffer: mExpectedFirst: ")+intToString(mExpectedFirst)+", num frames="+intToString(mFrameData.size())+"}";
+  }
+  /*!
+    mExpectedFirst tells you where to slot a new frame in the buffer, and conversely what frame is stored in a given buffer slot
+    iff mFrameData[0] is non-NULL, we have a frame and the buffer can be flushed, assuming the next buffer is ready.  Disk is always ready, but output buffer is only ready if its expected first frame matches the staging buffer.  
+  */
+  int32_t mExpectedFirst; 
+  std::deque<unsigned char *> mFrameData; 
+}; 
+
 class smBase {
  public:
   smBase(const char *fname, int numthreads=1);
@@ -124,9 +143,13 @@ class smBase {
   
   // set the frame image, either uncompressed or compressed data
   void setFrame(int frame,void *data);
-  void setCompFrame(int frame,void *data,int size,int res = 0);
-  void setCompFrame(int frame,void *data,int *sizes,int res = 0);
-  
+  void setCompFrame(int frame, void *data, int size,int res = 0);
+  void setCompFrame(int frame, void *data, int *sizes,int res = 0);
+
+  // for multithreaded case, this allows buffering into a queue.  This will hang if a frame is ever skipped!  
+  void bufferFrame(int frame,unsigned char *data, bool oktowrite);
+  void flushFrames(void); 
+
   // convert an image into its compressed form
   void compFrame(void *in, void *out, int &outsize,int res = 0);
   // Tile based version follows
@@ -200,6 +223,7 @@ void printFrameDetails(FILE *fp, int f);
   uint32_t readWin(u_int frame, int threadnum);
   uint32_t readWin(u_int frame, int*dimensions, int*position, int resolution, int threadnum);
   
+  int mNumThreads; 
   // Flags on top of the filetype...
   u_int flags;
   
@@ -237,8 +261,9 @@ void printFrameDetails(FILE *fp, int f);
     Per-thread data structures, to ensure thread safety.  Every function must now specify a thread number. 
   */ 
   std::vector<smThreadData> mThreadData; 
-  
-  
+  OutputBuffer mStagingBuffer, mOutputBuffer; 
+  pthread_mutex_t mStagingBufferMutex, mOutputBufferMutex; 
+
   // directory of movie types
   static u_int ntypes;
   static u_int *typeID;

@@ -125,7 +125,7 @@ void smGZ::compBlock(void *data, void *cdata, int &size,int *dim)
    uLongf dlen,len;
 
    len = dim[0]*dim[1]*sizeof(u_char[3]);
-   dlen = (len * (uLongf)1.1)+12;
+   dlen = (len * (uLongf)1.1)+12; // estimate length
    if (cdata) {
        status = compress((Bytef *)cdata,&dlen,(Bytef *)data,len);
        if (status != Z_OK) {
