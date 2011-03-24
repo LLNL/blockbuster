@@ -68,18 +68,20 @@ void cmdline(char *app);
 int check_if_png(char *file_name,int *size);
 int read_png_image(char *file_name,int *iSize,unsigned char *buf);
 
-typedef struct {
+struct Work {
+  char filename[2048];
   smBase *sm;
   int frame;
-  u_char *buffer;
+  int filetype; 
+  u_char *buffer; // allocate externally to permit copyless buffering
   int iFlipx;
   int iFlipy;
   int *iInDims;
   float	fRot;
-} wrk;
+};
 
 // GLOBALS FOR NOW
-unsigned char *gInputBuf = NULL; 
+//unsigned char *gInputBuf = NULL; 
 int	iInDims[4];
 unsigned short	bitsPerSample, tiffPhoto;
 int	iMin = -1;
@@ -87,7 +89,7 @@ int	iMax = -1;
 int	iSize[4] = {-1,-1,0,0};
 int	iVerb = 0;
 int	iPlanar = 0;
-unsigned short	*rowbuf = NULL;
+//unsigned short	*rowbuf = NULL;
 
 
 #ifdef DMALLOC
@@ -104,6 +106,19 @@ void img2sm_fail_check(char *file,int line)
   perror("fail_check");
   fprintf(stderr,"Failed at line %d in file %s\n",line,file);
   exit(1); 
+}
+
+/*!
+  To encapsulate what each worker needs to process its data
+*/ 
+struct WorkerData {
+  int threadNum, numThreads, startFrame, endFrame, frameStep; 
+}; 
+
+void workerThreadFunction(void *workerData) {
+  WorkerData *myData = (WorkerData*)workerData; 
+  //FillInputBuffer(myData); 
+  return; 
 }
 
 
@@ -131,7 +146,8 @@ void cmdline(char *app)
   fprintf(stderr,"\t-fps [fps] Set preferred frame rate.  Default is 30, max is 50.  (-FPS is deprecated) \n");
   fprintf(stderr,"\t-threads [nt] Number of threads to use. Default is 1.\n");
   fprintf(stderr,"\t-mipmaps [n] Number of mipmap levels. Default is 1.\n");
-  fprintf(stderr,"\t-v Verbose mode.\n");
+  fprintf(stderr,"\t-v Verbose mode (same as -verbose 1).\n");
+  fprintf(stderr,"\t-verbose n Sets verbose level to n.\n");
   fprintf(stderr,"\t-stereo Specify the output file is L/R stereo.\n");
   fprintf(stderr,"\t-form [\"tiff\"|\"raw\"|\"sgi\"|\"pnm\"|\"png\"|\"jpg\"] Selects the input file format\n");
   fprintf(stderr,"\t-planar Raw img is planar interleaved (default: pixel interleave).\n");
@@ -141,27 +157,27 @@ void cmdline(char *app)
 }
 
 //=================================================
-void FillInputBffer(int iType,  char *filename) {
+void FillInputBuffer(Work *wrk) {
   
   FILE		*fp = NULL;
   TIFF		*tiff = NULL;
   sgi_t		*libi = NULL;
   
   // read the file...
-  switch(iType) {
+  switch(wrk->filetype) {
   case 0: // TIFF
     {
       uint32 *temp;
       unsigned int w, h;
-      tiff = TIFFOpen(filename,"r");
+      tiff = TIFFOpen(wrk->filename,"r");
       if (!tiff) {
-        fprintf(stderr,"Error: Unable to open TIFF: %s\n",filename);
+        fprintf(stderr,"Error: Unable to open TIFF: %s\n",wrk->filename);
         exit(1);
       }
       TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH, &w);
       TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, &h);
       if ((w != iInDims[0]) || (h != iInDims[1])) {
-        fprintf(stderr,"Error: image size changed: %s\n",filename);
+        fprintf(stderr,"Error: image size changed: %s\n",wrk->filename);
         exit(1);
       }
       
@@ -183,7 +199,7 @@ void FillInputBffer(int iType,  char *filename) {
         unsigned short *ss = (unsigned short *)temp;
         int x,y;
         float mult = 255.0/(float)(iMax-iMin);
-        unsigned char	*p = gInputBuf;
+        unsigned char	*p = wrk->buffer;
         unsigned int mm[2] = {200000,0};
         for(y=0;y<iInDims[1];y++) {
           TIFFReadScanline(tiff,(unsigned char *)ss,y,0);
@@ -216,7 +232,7 @@ void FillInputBffer(int iType,  char *filename) {
         temp = (uint32 *)malloc(iInDims[0]*iInDims[1]*4);  // Caution deferred free under IRIX
         CHECK(temp);
         TIFFReadRGBAImage(tiff,w,h,temp,0);
-        unsigned char	*p = gInputBuf;
+        unsigned char	*p = wrk->buffer;
         for(int x=0;x<w*h;x++) {
           *p++ = TIFFGetR(temp[x]);
           *p++ = TIFFGetG(temp[x]);
@@ -230,15 +246,17 @@ void FillInputBffer(int iType,  char *filename) {
     break;
   case 1: // SGI
     {
-      unsigned char	*p = gInputBuf;
-      libi = sgiOpen(filename,SGI_READ,0,0,0,0,0);
+      unsigned char	*p = wrk->buffer;
+      unsigned short *rowbuf = new unsigned short[iInDims[0]];
+      CHECK(rowbuf);
+      libi = sgiOpen(wrk->filename,SGI_READ,0,0,0,0,0);
       if (!libi) {
-        fprintf(stderr,"Error: Unable to open SGI: %s\n",filename);
+        fprintf(stderr,"Error: Unable to open SGI: %s\n",wrk->filename);
         exit(1);
       }
       if ((libi->xsize != iInDims[0]) || 
           (libi->ysize != iInDims[1])) {
-        fprintf(stderr,"Error: image size changed: %s\n",filename);
+        fprintf(stderr,"Error: image size changed: %s\n",wrk->filename);
         exit(1);
       }
       for(unsigned int y=0;y<iInDims[1];y++) {
@@ -267,16 +285,17 @@ void FillInputBffer(int iType,  char *filename) {
         p += 3*iInDims[0];
       }
       sgiClose(libi);
+      delete rowbuf; 
     }
     break;
   case 2: // RAW
     {
-      unsigned char	*p = gInputBuf;
+      unsigned char	*p = wrk->buffer;
       
       gzFile	fpz;
-      fpz = gzopen(filename,"r");
+      fpz = gzopen(wrk->filename,"r");
       if (!fpz) {
-        fprintf(stderr,"Error: Unable to open RAW compressed: %s\n",filename);
+        fprintf(stderr,"Error: Unable to open RAW compressed: %s\n",wrk->filename);
         exit(1);
       }
       // Header
@@ -325,21 +344,21 @@ void FillInputBffer(int iType,  char *filename) {
       int 	dx,dy,fmt,f;
       xelval	value;
       
-      unsigned char	*p = gInputBuf;
+      unsigned char	*p = wrk->buffer;
       
-      fp = pm_openr(filename);
+      fp = pm_openr(wrk->filename);
       if (!fp) {
-        fprintf(stderr,"Unable to open the file: %s\n",filename);
+        fprintf(stderr,"Unable to open the file: %s\n",wrk->filename);
         exit(1);
       }
       if (pnm_readpnminit(fp, &dx,&dy,&value,&fmt) == -1) {
-        fprintf(stderr,"The file is not in PNM format: %s.\n",filename);
+        fprintf(stderr,"The file is not in PNM format: %s.\n",wrk->filename);
         pm_closer(fp);
         exit(1);
       }
       if ((dx != iInDims[0]) || 
           (dy != iInDims[1])) {
-        fprintf(stderr,"Error: image size changed: %s\n",filename);
+        fprintf(stderr,"Error: image size changed: %s\n",wrk->filename);
         pm_closer(fp);
         exit(1);
       }
@@ -349,12 +368,12 @@ void FillInputBffer(int iType,  char *filename) {
       } else if(PNM_FORMAT_TYPE(fmt) == PGM_TYPE) {
         f = 1;
       } else {
-        fprintf(stderr,"Error: file type not supported:%s\n",filename);
+        fprintf(stderr,"Error: file type not supported:%s\n",wrk->filename);
         pm_closer(fp);
         exit(1);
       }
       if (f != iSize[2]) {
-        fprintf(stderr,"Error: file type changed:%s\n",filename);
+        fprintf(stderr,"Error: file type changed:%s\n",wrk->filename);
         pm_closer(fp);
         exit(1);
       }
@@ -367,7 +386,7 @@ void FillInputBffer(int iType,  char *filename) {
       
       xrow = pnm_allocrow( dx );
       for(int y=0;y<dy;y++) {
-        p = gInputBuf + (dy-y-1)*dx*3;
+        p = wrk->buffer + (dy-y-1)*dx*3;
         pnm_readpnmrow( fp, xrow, dx, value, fmt );
         if (iSize[2] == 3) {
           xp = xrow;
@@ -397,21 +416,20 @@ void FillInputBffer(int iType,  char *filename) {
     }
     break;
   case 4: // PNG
-    if (!read_png_image(filename,iInDims,gInputBuf)) {
-      fprintf(stderr,"Unable to read PNG file: %s\n",filename);
+    if (!read_png_image(wrk->filename,iInDims,wrk->buffer)) {
+      fprintf(stderr,"Unable to read PNG file: %s\n",wrk->filename);
       exit(1);
     }
     break;
   case 5: // JPEG
-    if (!read_jpeg_image(filename,iInDims,gInputBuf)) {
-      fprintf(stderr,"Unable to read JPEG file: %s\n",filename);
+    if (!read_jpeg_image(wrk->filename,iInDims,wrk->buffer)) {
+      fprintf(stderr,"Unable to read JPEG file: %s\n",wrk->filename);
       exit(1);
     }
     break;
   }
   return; 
 } // end FillInputBuffer()
-
 
 int main(int argc,char **argv)
 {
@@ -442,8 +460,6 @@ int main(int argc,char **argv)
   TIFF		*tiff = NULL;
   sgi_t		*libi = NULL;
   unsigned short spp;
-  pt_pool         thepool;
-  pt_pool_t       pool = &thepool;
 
   /* parse the command line ... */
   i = 1;
@@ -460,6 +476,9 @@ int main(int argc,char **argv)
       iPlanar = 1;
     } else if (strcmp(argv[i],"-v")==0) {
       iVerb = 1;
+    } else if (strcmp(argv[i],"-verbose")==0) {
+      iVerb = atoi(argv[++i]);
+      sm_setVerbose(iVerb); 
     } else if (strcmp(argv[i],"-ignore")==0) {
       iIgnore = 1;
     } else if (strcmp(argv[i],"-flipx")==0) {
@@ -734,8 +753,6 @@ int main(int argc,char **argv)
     iSize[1] = libi->ysize;
     iSize[2] = libi->zsize;
     sgiClose(libi);
-    rowbuf = (unsigned short *)malloc(iSize[0]*sizeof(unsigned short));
-    CHECK(rowbuf);
   } else if (iType == 2) { // RAW
     if (iSize[0] < 0) cmdline(argv[0]);
     if ((iSize[2] != 1) && (iSize[2] != 3)) cmdline(argv[0]);
@@ -842,14 +859,14 @@ int main(int argc,char **argv)
       fprintf(stderr,"Warning -- throttling thread usage to conserve memory : new count = %d\n",nThreads);
     }
   }
-#ifdef irix
-  pthread_setconcurrency(nThreads*2);
-#endif
+  
+  pt_pool         thepool;
+  pt_pool_t       pool = &thepool;
   pt_pool_init(pool, nThreads, nThreads*2, 0);
-
+    
   // memory buffer for frame input
-  gInputBuf = (unsigned char *)malloc(iSize[0]*iSize[1]*3L); 
-  CHECK(gInputBuf);
+  /*gInputBuf = (unsigned char *)malloc(iSize[0]*iSize[1]*3L); 
+    CHECK(gInputBuf);*/
   if (iVerb) {
     printf("Creating streaming movie file from...\n");
     printf("Template: %s\n",sTemplate);
@@ -864,51 +881,54 @@ int main(int argc,char **argv)
     if ((iStep > 0) && (i>iEnd)) break;
     if ((iStep < 0) && (i<iEnd)) break;
 
-    // Get the filename
-    sprintf(filename,sTemplate,i);
-    if (iVerb) {
-      printf("Working on: %s : (%d) %d to %d\n",
-             filename,i,iStart,iEnd);
-    }
-	FillInputBffer(iType, filename); 
+    Work *wrk = new Work; 
+    CHECK(wrk);
 
+    // Get the filename
+    sprintf(wrk->filename,sTemplate,i);
+    if (iVerb) {
+      fprintf(stderr, "Working on: %s : (%d) %d to %d\n",
+             wrk->filename,i,iStart,iEnd);
+    }
+    wrk->filetype = iType; 
     // Compress and save (in parallel)
-    wrk *p = (wrk *)malloc(sizeof(wrk)+(iSize[0]*iSize[1]*3)); // Caution too large a pool can lead to trouble in this area for large format frames
-    CHECK(p);
-    p->iInDims = iInDims;
-    p->fRot = fRotate;
-    p->sm = sm;
-    p->iFlipx = iFlipx;
-    p->iFlipy = iFlipy;
-    p->frame = (i-iStart)/iStep;
-    p->buffer = (u_char *)(p + 1);
-    memcpy(p->buffer,gInputBuf,iSize[0]*iSize[1]*3);
-    pt_pool_add_work(pool, workproc, (void *)p);
+    wrk->iInDims = iInDims;
+    wrk->fRot = fRotate;
+    wrk->sm = sm;
+    wrk->iFlipx = iFlipx;
+    wrk->iFlipy = iFlipy;
+    wrk->frame = (i-iStart)/iStep;
+    wrk->buffer = new u_char[iSize[0]*iSize[1]*3]; 
+    pt_pool_add_work(pool, workproc, (void *)wrk);
   }
   pt_pool_destroy(pool,1);
 
   // Done..
+  sm->flushFrames(); 
   sm->closeFile();
 
-  free(gInputBuf);
-  if (rowbuf) free(rowbuf);
+  //free(gInputBuf);
+  //if (rowbuf) free(rowbuf);
 
   exit(0);
 }
 
 void workproc(void *arg)
 {
-  wrk *p = (wrk *)arg;
+  Work *wrk = (Work *)arg;
+  FillInputBuffer(wrk); 
 
   // rotate 
-  rotate_img(p->buffer,p->iInDims[0],p->iInDims[1],p->fRot);
+  rotate_img(wrk->buffer,wrk->iInDims[0],wrk->iInDims[1],wrk->fRot);
 
   // flipping...
-  if (p->iFlipx) flipx(p->buffer,p->sm->getWidth(),p->sm->getHeight());
-  if (p->iFlipy) flipy(p->buffer,p->sm->getWidth(),p->sm->getHeight());
+  if (wrk->iFlipx) flipx(wrk->buffer,wrk->sm->getWidth(),wrk->sm->getHeight());
+  if (wrk->iFlipy) flipy(wrk->buffer,wrk->sm->getWidth(),wrk->sm->getHeight());
+  bool writeOK = (pt_pool_threadnum() == 0) ;
+  wrk->sm->bufferFrame(wrk->frame,wrk->buffer, writeOK);  
 
-  p->sm->setFrame(p->frame,p->buffer);
-  free(arg);
+  //free(arg);
+  delete wrk; 
 
 #ifdef DMALLOC
    dmalloc_log_stats();

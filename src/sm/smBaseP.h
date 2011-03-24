@@ -85,14 +85,15 @@
 
 #else
 
-#define OPEN(P,F) smdfs_open((P),(F),0)
+/*#define OPEN(P,F) smdfs_open((P),(F),0)
 #define OPENC(P,F,M) smdfs_open((P),(F),(M))
 #define CLOSE(I) smdfs_close((I))
 #define LSEEK64(I,O,W) smdfs_lseek64((I),(O),(W))
 #define READ(I,B,S) smdfs_read((I),(B),(S))
 #define WRITE(I,B,S) smdfs_write((I),(B),(S))
+*/
 
-#ifdef NEVER
+// #ifdef NEVER
 #define OPEN open
 #define OPENC open
 #define CLOSE close
@@ -103,7 +104,7 @@
 #else
 #define LSEEK64 lseek
 #endif
-#endif
+// #endif
 
 
 #endif
