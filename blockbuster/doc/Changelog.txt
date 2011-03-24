@@ -1,6 +1,10 @@
 CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
+VERSION 2.6.3j (r???)
+-- Always swap buffers in display loop.  This eliminates black frames at start of movie.  
+-- img2sm and sm2img now properly use pthreads. Result is a respectable speedup on systems with good I/O.  
+
 ===============================================================================VERSION 2.6.3i (r368)
 -- Set DISPLAY to :0 when launching a remote blockbuster.
 -- Allow blockbuster to switch to and from stereo mode in mid-movie
