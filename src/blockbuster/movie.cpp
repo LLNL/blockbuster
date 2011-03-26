@@ -344,20 +344,31 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         yOffset = event.y; 
         break; 
       case MOVIE_FULLSCREEN:
-        //DEBUGMSG("fullscreen"); 
+        //DEBUGMSG("fullscreen"); canvas->width
         if(frameInfo != NULL) {
-          newZoom = ComputeZoomToFit(canvas, frameInfo->width,
+          /*newZoom = ComputeZoomToFit(canvas, frameInfo->width,
                                    frameInfo->height);
+          */
+          newZoom = ComputeZoomToFit(canvas, canvas->width,
+                                   canvas->height);
           //DEBUGMSG("Zoom to Fit: %f", newZoom);
         } else {
           //DEBUGMSG("No zooming done"); 
         }
         fullScreen = true; 
-        break; 
+        // fall through to MOVIE_MOVE_RESIZE: 
+        event.eventType = MOVIE_MOVE_RESIZE;
+        event.width = canvas->screenWidth; 
+        event.height = canvas->screenHeight; 
+        event.x = 0; 
+        event.y = 0; 
+        goto MOVIE_MOVE_RESIZE; 
       case MOVIE_MOVE:
       case MOVIE_RESIZE:
       case MOVIE_MOVE_RESIZE:
-        if (event.eventType == MOVIE_RESIZE || event.eventType == MOVIE_MOVE_RESIZE) {
+      MOVIE_MOVE_RESIZE:
+        if (0) // (event.eventType == MOVIE_RESIZE || event.eventType == MOVIE_MOVE_RESIZE) 
+          {
           zoomOne = fullScreen = false; 
         }
         // The code below moves, resizes or does both as appropriate.  Doing it this way was easier than making two new functions, so sue me.  
@@ -406,7 +417,6 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
           if (event.height > canvas->screenHeight) {
             event.height = canvas->screenHeight; 
           }
-          
           canvas->Resize(event.width,
                          event.height, event.number);
           /* Set these in case there is no Resize function */
@@ -414,7 +424,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
           canvas->height = event.height;
           // If we have zoomFit set, resize the frame to fit in the newly resized
           // window.
-          if (options->zoomFit && !event.number) {
+          if (options->zoomFit/* && !event.number*/) {
             goto MOVIE_ZOOM_FIT;
           }
         }
@@ -490,7 +500,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         break;
         
       case MOVIE_ZOOM_FIT: 
-      MOVIE_ZOOM_FIT:
+      MOVIE_ZOOM_FIT: 
         if(frameInfo != NULL) {
           newZoom = ComputeZoomToFit(canvas, frameInfo->width,
                                    frameInfo->height);
@@ -503,40 +513,27 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
                                      allFrames->getFrame(0)->height);
         }
         xOffset = yOffset = 0;
+        options->zoomFit = true; 
         break;
       case MOVIE_ZOOM_ONE:
+        options->zoomFit = false; 
         zoomOne = true; 
         newZoom = 1.0;
-        zooming = 0;
-        {
-          int width = 100000, height = 1000000;
-          if (frameInfo != NULL) {
-            width = frameInfo->width;  
-            height = frameInfo->height;         
-          }
-          if (width > canvas->screenWidth) {
-            width = canvas->screenWidth; 
-          }
-          if (height > canvas->screenHeight) {
-            height = canvas->screenHeight; 
-          }
-          canvas->Resize(width,height, 0);
-          if (frameInfo) {
-            canvas->width = width;
-            canvas->height = height;
-          }
-        }
+        zooming = 0;       
         break;
       case MOVIE_ZOOM_SET:
+        options->zoomFit = false; 
         newZoom = event.rate;
         if (newZoom == 0.0) newZoom = 1.0; 
         //zooming = 0;
         break;
       case MOVIE_ZOOM_UP:
+        options->zoomFit = false; 
         newZoom = 1.2*currentZoom;
         zooming = 0;
         break;
       case MOVIE_ZOOM_DOWN:
+        options->zoomFit = false; 
         newZoom = 0.8*currentZoom;
         if (newZoom < 0.05) newZoom = 0.05; 
         zooming = 0;
