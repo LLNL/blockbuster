@@ -63,11 +63,12 @@ smBase *smRaw::create(const char *_fname, int _nwin)
 }
 
 smRaw *smRaw::newFile(const char *_fname, u_int _width,  u_int _height,
-                      u_int _nframes, u_int *_tile, u_int _nres)
+                      u_int _nframes, u_int *_tile, u_int _nres, 
+                    int numthreads)
 {
    smRaw *r = new smRaw(NULL);
 
-   if (r->smBase::newFile(_fname, _width, _height, _nframes, _tile, _nres)) {
+   if (r->smBase::newFile(_fname, _width, _height, _nframes, _tile, _nres, numthreads)) {
 	delete r;
 	r = NULL;
    }

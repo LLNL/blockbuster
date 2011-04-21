@@ -46,6 +46,21 @@
 #include "pt/pt.h"
 
 #include "zlib.h"
+#include <stdarg.h>
+
+int		gVerbosity = 0;
+
+
+//===============================================
+void dbprintf(int level, const char *fmt, ...) {
+  if (gVerbosity < level) return; 
+  // cerr <<  DBPRINTF_PREAMBLE; 
+  va_list ap;
+  va_start(ap, fmt);
+  vfprintf(stderr,fmt,ap);
+  va_end(ap);
+  return; 
+}
 
 // Prototypes 
 void cmdline(char *app);
@@ -64,7 +79,8 @@ void cmdline(char *app)
 	fprintf(stderr,"(%s) usage: %s [options] outfile infile1 [infile2...]\n",
 		__DATE__,app);
 	fprintf(stderr,"Options:\n");
-	fprintf(stderr,"\t-v Verbose mode.\n");
+	fprintf(stderr,"\t-v Verbose mode (sets verbosity to 1).\n");
+	fprintf(stderr,"\t-verbose n Set verbosity to n.\n");
 	fprintf(stderr,"\t-threads [nt] Number of threads to use. Default: 1.\n");
 	fprintf(stderr,"\t-mipmaps [n] Number of mipmap levels. Default: 1\n");
 	fprintf(stderr,"\t-tilesizes Specify tile sizes per mipmap level. Comma separated.  Non-square tiles can be specified as e.g. 128x256. (default: 512).\n");
@@ -92,7 +108,7 @@ typedef struct {
 	int num;
 } inp;
 
-typedef struct {
+struct Work {
 	smBase *sm;
 	smBase *insm;
 	int inframe;
@@ -101,7 +117,8 @@ typedef struct {
 	int iFilter;
 	int *dst;
 	int *src;
-} wrk;
+  unsigned char *buffer;
+} ;
 
 void workproc(void *arg);
 
@@ -109,7 +126,6 @@ int main(int argc,char **argv)
 {
 	int		iRLE = 0;
 	char		*sOutput = NULL;
-	int		iVerb = 0;
 	int		iFilter = 0;
 	int		iStereo = 0;
 	int		iSize[2];
@@ -140,9 +156,12 @@ int main(int argc,char **argv)
 	i = 1; 
 	while ((i<argc) && (argv[i][0] == '-')) {
 		if (strcmp(argv[i],"-v")==0) {
-			iVerb = 1;
+			gVerbosity = 1;
             //sm_setVerbose(5); 
-		} else if (strcmp(argv[i],"-stereo")==0) {
+		}  else if (strcmp(argv[i],"-verbose")==0) {
+          gVerbosity = atoi(argv[++i]);
+          sm_setVerbose(gVerbosity); 
+        } else if (strcmp(argv[i],"-stereo")==0) {
 			iStereo = SM_FLAGS_STEREO;
 		} else if (strcmp(argv[i],"-filter")==0) {
 			iFilter = 1;
@@ -237,7 +256,7 @@ int main(int argc,char **argv)
 	    count++; 
 	  }
 
-	  if(parsed && iVerb) {
+	  if(parsed && gVerbosity) {
 	    for(int n=0; n< nRes; n++) {
 	      fprintf(stderr,"Resolution[%d] Tilesize=[%dx%d]\n",n,tsizes[n][0],tsizes[n][1]);
 	    }
@@ -342,7 +361,7 @@ int main(int argc,char **argv)
 			}
 		}
 
-		if (iVerb) {
+		if (gVerbosity) {
 			printf("Input: %d - %d of %s - size %d %d\n",
 				input[j-i].first,input[j-i].last,
 				input[j-i].name,iSize[0],iSize[1]);
@@ -385,16 +404,16 @@ int main(int argc,char **argv)
 	// Open the output file...
 	if(tiled) {
 	  if (iRLE == 1) {
-	    sm = smRLE::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes);
+	    sm = smRLE::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes, nThreads);
 	  } else if (iRLE == 2) {
-	    sm = smGZ::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes);
+	    sm = smGZ::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes, nThreads);
 	  } else if (iRLE == 3) {
-	    sm = smLZO::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes);
+	    sm = smLZO::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes, nThreads);
 	  } else if (iRLE == 4) {
-	    sm = smJPG::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes);
+	    sm = smJPG::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes, nThreads);
 	    ((smJPG *)sm)->setQuality(iQual);
 	  } else {
-	    sm = smRaw::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes);
+	    sm = smRaw::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes, nThreads);
 	  }
 	  if (!sm) {
 	    fprintf(stderr,"Unable to create the file: %s\n",
@@ -404,16 +423,16 @@ int main(int argc,char **argv)
 	}
 	else {
 	  if (iRLE == 1) {
-	    sm = smRLE::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes);
+	    sm = smRLE::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes, nThreads);
 	  } else if (iRLE == 2) {
-	    sm = smGZ::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes);
+	    sm = smGZ::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes, nThreads);
 	  } else if (iRLE == 3) {
-	    sm = smLZO::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes);
+	    sm = smLZO::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes, nThreads);
 	  } else if (iRLE == 4) {
-	    sm = smJPG::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes);
+	    sm = smJPG::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes, nThreads);
 	    ((smJPG *)sm)->setQuality(iQual);
 	  } else {
-	    sm = smRaw::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes);
+	    sm = smRaw::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes, nThreads);
 	  }
 	  if (!sm) {
 	    fprintf(stderr,"Unable to create the file: %s\n",
@@ -436,14 +455,14 @@ int main(int argc,char **argv)
 	i = 0;
 	for(j=0;j<ninputs;j++) {
 		int	x;
-		if (iVerb) {
+		if (gVerbosity) {
 			printf("Reading from %s (%d to %d by %d)\n",
 			   input[j].name,input[j].first,input[j].last,
 				input[j].step);
 		}
 		k = input[j].first;
 		for(x=0;x<input[j].num;x++) {
-			if (iVerb) {
+			if (gVerbosity) {
 				printf("Working on %d of %d\n",i+1,count);
 			}
 			if (nThreads == 1 && (input[j].sm->getType() == sm->getType()) && 
@@ -462,16 +481,16 @@ int main(int argc,char **argv)
 				}
 				i++;
 			} else {
-				wrk *p = (wrk *)malloc(sizeof(wrk));
-				p->insm = input[j].sm;
-				p->sm = sm;
-				p->inframe = k;
-				p->outframe = i++;
-				p->iScale = iScale;
-				p->iFilter = iFilter;
-				p->dst = dst;
-				p->src = src;
-				pt_pool_add_work(pool, workproc, (void *)p);
+				Work *wrk = new Work;
+				wrk->insm = input[j].sm;
+				wrk->sm = sm;
+				wrk->inframe = k;
+				wrk->outframe = i++;
+				wrk->iScale = iScale;
+				wrk->iFilter = iFilter;
+				wrk->dst = dst;
+				wrk->src = src;
+				pt_pool_add_work(pool, workproc, wrk);
 			}
 			k += input[j].step;
 		}
@@ -492,30 +511,33 @@ int main(int argc,char **argv)
 
 void workproc(void *arg)
 {
-	wrk *p = (wrk *)arg;
+	Work *wrk = (Work *)arg;
 
-	int	sizein = 3*p->insm->getHeight()*p->insm->getWidth();
-	int	sizeout = 3*p->sm->getHeight()*p->sm->getWidth();
+	int	sizein = 3*wrk->insm->getHeight()*wrk->insm->getWidth();
+	int	sizeout = 3*wrk->sm->getHeight()*wrk->sm->getWidth();
 	int	size;
-	unsigned char *buffer = (unsigned char *)malloc(sizein);
-
-	p->insm->getFrame(p->inframe,buffer, pt_pool_threadnum());
-	if (p->iScale) {
-		unsigned char *pZoom = (unsigned char *)malloc(sizeout);
-		Sample2d(buffer,
-			 p->insm->getWidth(),
-			 p->insm->getHeight(),
+	wrk->buffer = new unsigned char[sizein];
+    dbprintf(4, "created new buffer %p for frame %d\n", 
+             wrk->buffer, wrk->outframe); 
+	wrk->insm->getFrame(wrk->inframe,wrk->buffer, pt_pool_threadnum());
+	if (wrk->iScale) {
+		unsigned char *pZoom = new unsigned char[sizeout];
+		Sample2d(wrk->buffer,
+			 wrk->insm->getWidth(),
+			 wrk->insm->getHeight(),
 			 pZoom,
-			 p->dst[0],p->dst[1],p->src[0],p->src[1],
-			 p->src[2],p->src[3],p->iFilter);
-		free(buffer);
-		buffer = pZoom;
+			 wrk->dst[0],wrk->dst[1],wrk->src[0],wrk->src[1],
+			 wrk->src[2],wrk->src[3],wrk->iFilter);
+        dbprintf(4, "deleting new buffer %p, replacing with %p for frame %d\n", wrk->buffer, pZoom, wrk->outframe); 
+		delete wrk->buffer;
+		wrk->buffer = pZoom;
 	}
-	p->sm->setFrame(p->outframe,buffer);
+    bool writeOK = (pt_pool_threadnum() == 0) ;
+	wrk->sm->bufferFrame(wrk->outframe,wrk->buffer, writeOK);
 
-	free(buffer);
+	// delete wrk->buffer; sm will delete when finished
 
-	free(arg);
+	delete wrk;
 }
 
 static void smoothx(unsigned char *image, int dx, int dy)

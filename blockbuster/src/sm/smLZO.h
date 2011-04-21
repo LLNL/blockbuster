@@ -55,7 +55,8 @@ class smLZO : public smBase {
       virtual ~smLZO();
 
       static smLZO *newFile(const char *fname, u_int w, u_int h, u_int nframes,
-		      u_int *tilesizes = NULL, u_int nres=1);
+		      u_int *tilesizes = NULL, u_int nres=1, 
+                    int numthreads=1);
 
       static void init(void);
 

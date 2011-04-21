@@ -211,7 +211,7 @@ void printFrameDetails(FILE *fp, int f);
   
   // create a new movie
   int newFile(const char *fname, u_int w, u_int h,
-		      u_int nframes, u_int *tilesizes = NULL, u_int nres=1);
+		      u_int nframes, u_int *tilesizes = NULL, u_int nres=1, int numthreads=1);
   
   static void registerType(u_int t, smBase *(*)(const char *, int));
   

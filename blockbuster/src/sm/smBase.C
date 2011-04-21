@@ -329,10 +329,12 @@ void smBase::printFrameDetails(FILE *fp,int f)
   \param _nres  number of resolutions (levels of detail)
 */
 int smBase::newFile(const char *_fname, u_int _width, u_int _height, 
-                    u_int _nframes, u_int *_tsizes, u_int _nres)
+                    u_int _nframes, u_int *_tsizes, u_int _nres, 
+                    int numthreads)
 {
    int i;
    nframes = _nframes;
+   mNumThreads = numthreads;
    framesizes[0][0] = _width;
    framesizes[0][1] = _height;
    for(i=1;i<8;i++) {
@@ -1060,27 +1062,27 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
  }
 
 void smBase::flushFrames(void) {
-  // smdbprintf(3, "flushFrames() called\n"); 
-  // smdbprintf(3, "write out the output buffer if possible.  mStagingBuffer=%s and mOutputBuffer=%s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
+  smdbprintf(3, "flushFrames() called\n"); 
+  smdbprintf(3, "write out the output buffer if possible.  mStagingBuffer=%s and mOutputBuffer=%s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
   while  (mOutputBuffer.mFrameData.size()) {
-    // smdbprintf(3, "flushFrames: writing frame %d to sm file\n", mOutputBuffer.mExpectedFirst); 
+    smdbprintf(3, "flushFrames: writing frame %d to sm file\n", mOutputBuffer.mExpectedFirst); 
     setFrame(mOutputBuffer.mExpectedFirst, mOutputBuffer.mFrameData[0]);
     delete mOutputBuffer.mFrameData[0];
     mOutputBuffer.mFrameData.pop_front(); 
     mOutputBuffer.mExpectedFirst++; 
   }
-  // smdbprintf(3, "After flushing output buffer, mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
+  smdbprintf(3, "After flushing output buffer, mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
   if (mStagingBuffer.mExpectedFirst == mOutputBuffer.mExpectedFirst) {
     // Yes, output buffer can accept mStagingBuffer.mFrameData[0] and more, 
     //  if it exists:
     while (mStagingBuffer.mFrameData.size() && mStagingBuffer.mFrameData[0]){
-    // smdbprintf(3, "flushFrames: moving frame %d to output buffer\n", mOutputBuffer.mExpectedFirst); 
+    smdbprintf(3, "flushFrames: moving frame %d to output buffer\n", mOutputBuffer.mExpectedFirst); 
       mOutputBuffer.mFrameData.push_back(mStagingBuffer.mFrameData[0]);   
       mStagingBuffer.mFrameData.pop_front(); 
       mStagingBuffer.mExpectedFirst++; 
     }
   }
-  // smdbprintf(3, "After flushing staging buffer, mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
+  smdbprintf(3, "After flushing staging buffer, mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
   // write out the output buffer if possible
   while  (mOutputBuffer.mFrameData.size()) {
     setFrame(mOutputBuffer.mExpectedFirst, mOutputBuffer.mFrameData[0]);
@@ -1088,57 +1090,67 @@ void smBase::flushFrames(void) {
     mOutputBuffer.mFrameData.pop_front(); 
     mOutputBuffer.mExpectedFirst++; 
   }
-  // smdbprintf(3, "After flushing output buffer, mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
+  smdbprintf(3, "After flushing output buffer, mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
   return; 
 }
   
 void smBase::bufferFrame(int f,  unsigned char *data, bool oktowrite) {
-  // smdbprintf(3, "bufferFrame(%d, data[10] == %d)\n", f, (int)data[10]); 
+  smdbprintf(3, "bufferFrame(%d, data == %p, oktowrite=%d)\n", f, data, (int)oktowrite); 
   pthread_mutex_lock(&mStagingBufferMutex); 
+  if (!oktowrite) {
+    if  (mStagingBuffer.mFrameData.size() > mNumThreads*20) {
+      pthread_mutex_unlock(&mStagingBufferMutex); 
+      while (mStagingBuffer.mFrameData.size() > mNumThreads*20) {
+        usleep(1000); 
+      }
+      pthread_mutex_lock(&mStagingBufferMutex); 
+    }
+  }
 
-  // smdbprintf(3, "bufferFrame, got staging mutex.  mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
+  smdbprintf(3, "bufferFrame, got staging mutex.  mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
   
   // buffer the frame into the staging buffer  
   int32_t slotnum = f - mStagingBuffer.mExpectedFirst; 
-  // smdbprintf(4, "slotnum = %d\n", slotnum); 
+  smdbprintf(4, "slotnum = %d\n", slotnum); 
   if (slotnum+1 > mStagingBuffer.mFrameData.size()) {
-    // smdbprintf(3, "resizing mStagingBuffer to %d\n", slotnum+1); 
+    smdbprintf(3, "resizing mStagingBuffer to %d\n", slotnum+1); 
     mStagingBuffer.mFrameData.resize(slotnum+1, NULL); 
   }
-  // smdbprintf(3, "adding frame %d to mStagingBuffer slot %d\n", f,  slotnum); 
+  smdbprintf(3, "adding frame %d to mStagingBuffer slot %d\n", f,  slotnum); 
   mStagingBuffer.mFrameData[slotnum] = data; 
-  // smdbprintf(3, "bufferFrame, mStagingBuffer = %s",  mStagingBuffer.toString().c_str()); 
+  smdbprintf(3, "bufferFrame, mStagingBuffer = %s",  mStagingBuffer.toString().c_str()); 
   pthread_mutex_unlock(&mStagingBufferMutex); 
   if (oktowrite) {
     pthread_mutex_lock(&mStagingBufferMutex); 
     // now lets' see if we can flush to output buffer and even to disk...
     if (pthread_mutex_trylock(&mOutputBufferMutex) != EBUSY) {
-      // smdbprintf(4, "f=%d, got output buffer mutex\n", f); 
+      smdbprintf(4, "f=%d, got output buffer mutex\n", f); 
       // Can staging buffer  be flushed into the writing buffer?
       if (mStagingBuffer.mExpectedFirst == mOutputBuffer.mExpectedFirst && mStagingBuffer.mFrameData.size() && mStagingBuffer.mFrameData[0]) {
-        // smdbprintf(3, "bufferFrame f=%d: Yes, output buffer can accept mStagingBuffer.mFrameData[0] and more,if it exists.\n", f); 
+        smdbprintf(3, "bufferFrame f=%d: Yes, output buffer can accept mStagingBuffer.mFrameData[0] and more,if it exists.\n", f); 
         while (mStagingBuffer.mFrameData.size() && mStagingBuffer.mFrameData[0]){
-          // smdbprintf(3, "bufferFrame f=%d: moving frame %d from front of staging to back of output buffer\n", f, mStagingBuffer.mExpectedFirst); 
+          smdbprintf(3, "bufferFrame f=%d: moving frame %d from front of staging to back of output buffer\n", f, mStagingBuffer.mExpectedFirst); 
           mOutputBuffer.mFrameData.push_back(mStagingBuffer.mFrameData[0]);   
           mStagingBuffer.mFrameData.pop_front(); 
           mStagingBuffer.mExpectedFirst++; 
         }
-        // smdbprintf(4, "bufferFrame f=%d: We are done flushing the staging buffer\n"); 
+        smdbprintf(4, "bufferFrame f=%d: We are done flushing the staging buffer\n"); 
       } else {
-        // smdbprintf(4, "bufferFrame f=%d: We did not flush the staging buffer\n"); 
+        smdbprintf(4, "bufferFrame f=%d: We did not flush the staging buffer\n"); 
       }      
-      // smdbprintf(4, "bufferFrame f=%d: We can unlock the staging mutex\n", f); 
-      // smdbprintf(3, "bufferFrame, mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
+      smdbprintf(4, "bufferFrame f=%d: We can unlock the staging mutex\n", f); 
+      smdbprintf(3, "bufferFrame, mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
       pthread_mutex_unlock(&mStagingBufferMutex); 
       // write out the output buffer if possible
       while  (mOutputBuffer.mFrameData.size()) {
-        // smdbprintf(3, "bufferFrame f=%d: writing frame %d to sm file\n", f, mOutputBuffer.mExpectedFirst); 
+        smdbprintf(3, "bufferFrame f=%d: writing frame %d to sm file\n", f, mOutputBuffer.mExpectedFirst); 
         setFrame(mOutputBuffer.mExpectedFirst, mOutputBuffer.mFrameData[0]);
+        smdbprintf(4, "deleting frame buffer %p for frame %d\n" , mOutputBuffer.mFrameData[0], mOutputBuffer.mExpectedFirst);
         delete mOutputBuffer.mFrameData[0];
         mOutputBuffer.mFrameData.pop_front(); 
         mOutputBuffer.mExpectedFirst++; 
       }
-      // smdbprintf(3, "bufferFrame f=%d: now unlock the output mutex\n", f); 
+      smdbprintf(3, "bufferFrame f=%d: now unlock the output mutex\n", f); 
       pthread_mutex_unlock(&mOutputBufferMutex); 
     } 
   }
