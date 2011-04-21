@@ -94,11 +94,12 @@ smRLE::decompBlock(u_char *cdata,u_char *image,int,int *dim)
 
 smRLE *
 smRLE::newFile(const char *_fname, u_int _width, u_int _height,
-               u_int _nframes, u_int *_tiles,u_int _nres)
+               u_int _nframes, u_int *_tiles,u_int _nres, 
+               int numthreads)
 {
    smRLE *r = new smRLE(NULL);
 
-   if (r->smBase::newFile(_fname, _width, _height, _nframes, _tiles, _nres)) {
+   if (r->smBase::newFile(_fname, _width, _height, _nframes, _tiles, _nres, numthreads)) {
 	delete r;
 	r = NULL;
    }

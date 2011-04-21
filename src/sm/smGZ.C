@@ -107,11 +107,12 @@ void smGZ::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
 
 smGZ *smGZ::newFile(const char *_fname, 
                     u_int _width, u_int _height, u_int _nframes, 
-                    u_int *_tile, u_int _nres)
+                    u_int *_tile, u_int _nres, 
+                    int numthreads)
 {
    smGZ *r = new smGZ(NULL);
 
-   if (r->smBase::newFile(_fname, _width, _height, _nframes, _tile, _nres)) {
+   if (r->smBase::newFile(_fname, _width, _height, _nframes, _tile, _nres, numthreads)) {
 	delete r;
 	r = NULL;
    }
