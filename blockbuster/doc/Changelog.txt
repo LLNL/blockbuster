@@ -3,6 +3,7 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 
 ===============================================================================VERSION 2.6.3k (r???)
 -- smcat now is threaded properly.  Still some mystery as to why maximum throughput not attained.
+-- implemented host profiles in sidecar launch dialogs, so that you don't have to always reenter the information. 
 
 ===============================================================================VERSION 2.6.3j (r404)
 -- In blockbuster, always swap buffers in display loop.  This eliminates black frames at start of movie.  
