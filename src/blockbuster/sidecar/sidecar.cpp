@@ -1134,6 +1134,7 @@ void BlockbusterLaunchDialog::on_deleteProfilePushButton_clicked(){
                          QString("You cannot delete profile \"%1\".").arg(mCurrentProfile->displayName())); ; 
     return; 
   }
+  QString profname = hostProfilesComboBox->currentText(); 
   QMessageBox::StandardButton answer = QMessageBox::question
     (this, tr("Confirm Deletion"), 
      tr("Are you sure you want to delete?"), 
@@ -1142,17 +1143,17 @@ void BlockbusterLaunchDialog::on_deleteProfilePushButton_clicked(){
   if (answer == QMessageBox::Yes) {
     vector<HostProfile *>:: iterator pos = mHostProfiles.begin();
     while (pos != mHostProfiles.end() && 
-           (*pos)->displayName() != hostProfilesComboBox->currentText()) {
+           (*pos)->displayName() != profname) {
       ++pos; 
     }
     if (pos == mHostProfiles.end()) {
       dbprintf(0, "Error:  cannot find profile to match name %1\n"); 
       abort(); 
     }
-    delete *pos; 
+    HostProfile *tmpProfile = *pos; 
     mHostProfiles.erase(pos); 
-    hostProfilesComboBox->removeItem(hostProfilesComboBox->currentIndex());
-
+    saveAndRefreshHostProfiles(tmpProfile); 
+    delete tmpProfile; 
   }    
   
   return; 
@@ -1185,26 +1186,10 @@ void BlockbusterLaunchDialog::createNewProfile(const HostProfile *inProfile){
     return; 
   mCurrentProfile = new HostProfile(name.replace(QRegExp("\\s+"), "_"), inProfile);
   mHostProfiles.push_back(mCurrentProfile); 
-  sortAndSaveHostProfiles(); // sorts and saves to files
-  removeHostProfiles(); 
-  readHostProfiles(); // rereads them in order
+  saveAndRefreshHostProfiles(mCurrentProfile); 
   return; 
 }
 
-//=======================================================================
-void BlockbusterLaunchDialog::removeHostProfiles(void) {
-   vector<HostProfile *>::iterator pos = mHostProfiles.begin(), endpos = mHostProfiles.end(); 
-   while (pos != endpos) {
-     delete (*pos); 
-     pos++; 
-   }
-   mHostProfiles.clear(); 
-   hostProfilesComboBox->blockSignals(true); 
-   hostProfilesComboBox->clear(); 
-   hostProfilesComboBox->blockSignals(false); 
-   mCurrentProfile = NULL; 
-   return ;
-}
 
 // ======================================================================
 void BlockbusterLaunchDialog::on_newProfilePushButton_clicked(){
@@ -1337,6 +1322,49 @@ void BlockbusterLaunchDialog::saveHistory(QComboBox *box, QString filename){
   
 
 //=======================================================================
+void BlockbusterLaunchDialog::saveAndRefreshHostProfiles(HostProfile *inProfile) {
+  
+  HostProfile profCopy(inProfile);
+  dbprintf(5, QString("saveAndRefreshHostProfiles(%1), profCopy=%2\n").arg(inProfile->toQString()).arg(profCopy.toQString())); 
+  sortAndSaveHostProfiles(); // sorts and saves to files
+  removeHostProfiles(); 
+  readAndSortHostProfiles(); // rereads them in order
+  if (!hostProfilesComboBox->count() || !inProfile) {
+    return; 
+  }
+  
+  int profnum = 0; 
+  vector<HostProfile *>::iterator pos = mHostProfiles.begin(), endpos = mHostProfiles.end(); 
+  while (pos != endpos && **pos < profCopy) {
+    ++profnum; ++pos; 
+  }
+  dbprintf(5, QString("Found pos >= profCopy: pos=%1, profCopy=%2\n").arg((*pos)->toQString()).arg(profCopy.toQString()
+)); 
+  if (pos == endpos) {
+    if (profnum) 
+      profnum--; 
+  } 
+  dbprintf(5,  QString("hostProfilesComboBox->setCurrentIndex(%1)").arg(profnum)); 
+  hostProfilesComboBox->setCurrentIndex(profnum); 
+  return; 
+}
+
+//=======================================================================
+void BlockbusterLaunchDialog::removeHostProfiles(void) {
+   vector<HostProfile *>::iterator pos = mHostProfiles.begin(), endpos = mHostProfiles.end(); 
+   while (pos != endpos) {
+     delete (*pos); 
+     pos++; 
+   }
+   mHostProfiles.clear(); 
+   hostProfilesComboBox->blockSignals(true); 
+   hostProfilesComboBox->clear(); 
+   hostProfilesComboBox->blockSignals(false); 
+   mCurrentProfile = NULL; 
+   return ;
+}
+
+//=======================================================================
 void BlockbusterLaunchDialog::sortAndSaveHostProfiles(void) {
   // first sort by output file and name:  
   sort(mHostProfiles.begin(), mHostProfiles.end(), CompareHostProfiles); 
@@ -1396,15 +1424,25 @@ void BlockbusterLaunchDialog::on_hostProfilesComboBox_currentIndexChanged
 
 
 //=======================================================================
-void BlockbusterLaunchDialog::readHostProfiles(void) {
+void BlockbusterLaunchDialog::readAndSortHostProfiles(void) {
   
   char *globalProfile = getenv("SIDECAR_GLOBAL_HOST_PROFILE"); 
-  hostProfilesComboBox->blockSignals(true); 
   
   if (globalProfile) {
     readHostProfileFile(globalProfile, true); 
   }
   readHostProfileFile(HostProfile::mUserHostProfileFile, false); 
+  sort(mHostProfiles.begin(), mHostProfiles.end(), CompareHostProfiles); 
+
+  // now set up the combo box with the sorted values: 
+  hostProfilesComboBox->blockSignals(true); 
+  vector<HostProfile *>::iterator pos = mHostProfiles.begin(), endpos = mHostProfiles.end(); 
+  while (pos != endpos) {
+    HostProfile *profile = *pos; // for readability
+    hostProfilesComboBox->addItem(profile->displayName());   
+    dbprintf(5, QString("After adding item %1, hostProfilesComboBox->currentText() = %2\n").arg(profile->displayName()).arg(hostProfilesComboBox->currentText())); 
+    ++pos; 
+  }
   hostProfilesComboBox->blockSignals(false);   
   on_hostProfilesComboBox_currentIndexChanged(hostProfilesComboBox->currentIndex()); 
   return;
@@ -1439,8 +1477,6 @@ void BlockbusterLaunchDialog::readHostProfileFile(QString filename, bool readonl
     mCurrentProfile = profile; 
     dbprintf(5, QString("Adding item: %1\n").arg(profile->toQString())); 
     mHostProfiles.push_back(profile); 
-    hostProfilesComboBox->addItem(profile->displayName());   
-    dbprintf(5, QString("After adding item %1, hostProfilesComboBox->currentText() = %2\n").arg(tokens[0]).arg(hostProfilesComboBox->currentText())); 
   }
 
   return; 

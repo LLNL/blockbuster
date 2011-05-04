@@ -171,7 +171,6 @@ class SideCar: public QMainWindow, public Ui::SideCarWindow {
   }
   // quit the application if this window is closed
   void closeEvent(QCloseEvent *event) {
-    cerr << "sidecar closeEvent" << endl; 
     // give the cues window a say in the matter:
     if (mCueManager->okToQuit()) {
       mCueManager->blockExecution();  
@@ -212,6 +211,7 @@ class SideCar: public QMainWindow, public Ui::SideCarWindow {
 
 //=======================================================
 struct HostProfile {
+  
   HostProfile() {
     init("profile", mUserHostProfileFile); 
     return; 
@@ -228,6 +228,14 @@ struct HostProfile {
     return; 
   } 
   
+  // make an exact duplicate of "in"
+  HostProfile(const HostProfile *in) {
+    if (in) {
+      *this = *in; 
+    }
+    return;     
+  }
+  // make a copy of "in" that is not readOnly and has name "name"
   HostProfile(const QString &name, const HostProfile *in){
     QStringList tokens = in->toProfileString().split(QRegExp("\\s+")); 
     tokens[0] = name; 
@@ -243,6 +251,12 @@ struct HostProfile {
     return mName; 
   }
 
+  HostProfile& operator =(const HostProfile& other){
+    QStringList tokens = other.toProfileString().split(QRegExp("\\s+")); 
+    init(tokens, other.mProfileFile, other.mReadOnly); 
+    return *this; 
+  }
+
   bool operator <(const HostProfile& other) const {
     bool retval = false; 
     // sort by provenance, then by profile name; makes saving easier
@@ -256,6 +270,10 @@ struct HostProfile {
     }
     return retval; 
   }
+
+  bool operator >(const HostProfile& other) const {
+    return (other < *this); 
+  }
   
   void init(const QString &name, QString filename) {
     QStringList tokens = QString("%1 localhost 5959 1 /usr/bin/rsh setDisplay=true :0 blockbuster").arg(name).split(QRegExp("\\s+"), QString::SkipEmptyParts);
@@ -267,7 +285,7 @@ struct HostProfile {
     mProfileFile = filename; 
     mReadOnly = readOnly; 
     if (tokens.size() != 8) {
-      cerr << "Warning:  HostProfile requires 8 tokens in initializer but I'm only seeing "  << tokens.size() << endl;
+      dbprintf(1, QString("Warning:  HostProfile requires 8 tokens in initializer but I'm only seeing %1\n").arg(tokens.size()));
     }
     if (tokens.size() > 0)  mName = tokens[0]; 
     if (tokens.size() > 1)  mHostName = tokens[1];
@@ -280,7 +298,7 @@ struct HostProfile {
     return; 
   }
   QString toQString(void) const {
-    return QString("HostProfile: mReadOnly=%1, mName=%2, mPort=%3, mVerbosity=%4, mRsh=%5, mSetDisplay=%6, mDisplay=%7, mBlockbusterPath=%8, mProfileFile=%9").arg((int)mReadOnly).arg(mName).arg(mPort).arg(mVerbosity).arg(mRsh).arg((int)mSetDisplay).arg(mDisplay).arg(mBlockbusterPath).arg(mProfileFile); 
+    return QString("<< HostProfile: mReadOnly=%1, mName=%2, mPort=%3, mVerbosity=%4, mRsh=%5, mSetDisplay=%6, mDisplay=%7, mBlockbusterPath=%8, mProfileFile=%9 >>").arg((int)mReadOnly).arg(mName).arg(mPort).arg(mVerbosity).arg(mRsh).arg((int)mSetDisplay).arg(mDisplay).arg(mBlockbusterPath).arg(mProfileFile); 
   }
   QString toProfileString(void) const {    
     return QString("%1 %2 %3 %4 %5 setDisplay=%6 %7 %8").arg(mName).arg(mHostName).arg(mPort).arg(mVerbosity).arg(mRsh).arg(mSetDisplay?"true":"false").arg(mDisplay).arg(mBlockbusterPath); 
@@ -309,7 +327,7 @@ class BlockbusterLaunchDialog: public QDialog,
     hostPortField->setText(port); 
     verboseField->setText(QString("%1").arg(bbVerbose)); 
     initMovieComboBox(file); 
-    readHostProfiles(); 
+    readAndSortHostProfiles(); 
     connect(fileNameComboBox, SIGNAL(currentIndexChanged(int)), 
             this, SLOT(comboBoxItemChanged(int))); 
     return; 
@@ -352,7 +370,6 @@ class BlockbusterLaunchDialog: public QDialog,
     this->hide(); 
   }
   void createNewProfile(const HostProfile *inProfile);
-  void removeHostProfiles(void); 
   void on_deleteProfilePushButton_clicked(); 
   void on_newProfilePushButton_clicked(); 
   void on_duplicateProfilePushButton_clicked(); 
@@ -364,8 +381,10 @@ class BlockbusterLaunchDialog: public QDialog,
   void on_hostNameField_editingFinished( ); 
   public:
   void saveHistory(QComboBox *box, QString filename);
+  void saveAndRefreshHostProfiles(HostProfile *inProfile);
+  void removeHostProfiles(void); 
   void sortAndSaveHostProfiles(void); 
-  void readHostProfiles(void) ;
+  void readAndSortHostProfiles(void) ;
   void readHostProfileFile(QString filename, bool isGlobal);
   void initMovieComboBox(QString initialItem);   
 
