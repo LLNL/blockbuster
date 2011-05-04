@@ -42,6 +42,7 @@
 #include <QFileDialog>
 #include <QHostInfo> 
 #include <QApplication>
+#include <algorithm>
 #include "sidecar.h"
 #include "common.h"
 #include "events.h"
@@ -51,7 +52,15 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/tcp.h>
+#include "stringutil.h"
 using namespace std; 
+QString HostProfile::mUserHostProfileFile; 
+
+bool CompareHostProfiles(const HostProfile * h1, const HostProfile * h2) {
+  bool retval = (*h1 < *h2); 
+  cerr << "  -=== RETVAL is " << retval << endl; 
+  return retval; 
+} 
 
 //===============================================================
 SideCar::SideCar(QApplication *app, Preferences *prefs, QWidget *parent)
@@ -60,6 +69,9 @@ SideCar::SideCar(QApplication *app, Preferences *prefs, QWidget *parent)
     mNextCommandID(1), 
     mCueManager(NULL),
     mRemoteControl(NULL), mExiting(false), mCueExecuting(false) {
+  
+  HostProfile::mUserHostProfileFile = QString(mPrefs->GetValue("prefsdir").c_str()) +"/hostProfiles.cnf";
+  
   setupUi(this); 
   mCueManager = new MovieCueManager(NULL); 
   connect(mCueManager, SIGNAL(closed()), this, SLOT(on_showCuesButton_clicked())); 
@@ -1111,6 +1123,105 @@ void BlockbusterLaunchDialog::on_browseButton_clicked(){
   }
   return; 
 } 
+//======================================================================
+void BlockbusterLaunchDialog::on_deleteProfilePushButton_clicked(){
+  if (!mCurrentProfile) {
+    dbprintf(0, "Error:  delete Profile called with no current profile!\n"); 
+    abort(); 
+  }
+  if (mCurrentProfile->mReadOnly) {
+    QMessageBox::warning(this,  "Read-only profile",
+                         QString("You cannot delete profile \"%1\".").arg(mCurrentProfile->displayName())); ; 
+    return; 
+  }
+  QMessageBox::StandardButton answer = QMessageBox::question
+    (this, tr("Confirm Deletion"), 
+     tr("Are you sure you want to delete?"), 
+     QMessageBox::Yes | QMessageBox::Cancel, 
+     QMessageBox::Cancel); 
+  if (answer == QMessageBox::Yes) {
+    vector<HostProfile *>:: iterator pos = mHostProfiles.begin();
+    while (pos != mHostProfiles.end() && 
+           (*pos)->displayName() != hostProfilesComboBox->currentText()) {
+      ++pos; 
+    }
+    if (pos == mHostProfiles.end()) {
+      dbprintf(0, "Error:  cannot find profile to match name %1\n"); 
+      abort(); 
+    }
+    delete *pos; 
+    mHostProfiles.erase(pos); 
+    hostProfilesComboBox->removeItem(hostProfilesComboBox->currentIndex());
+
+  }    
+  
+  return; 
+} 
+// ======================================================================
+void BlockbusterLaunchDialog::createNewProfile(const HostProfile *inProfile){
+  HostProfile dummy; 
+  if (!inProfile) inProfile = &dummy; 
+  // let's find a unique name: 
+  QString suggestedName = inProfile->name(); 
+  if (suggestedName == "") {
+    dbprintf(0, "Warning: createNewProfile():  inProfile->mName is empty\n"); 
+    suggestedName = "profile"; 
+  } 
+  vector<HostProfile *>::iterator pos = mHostProfiles.begin(), endpos = mHostProfiles.end(); 
+  while (pos != endpos) {
+    if ((*pos)->name() == suggestedName) {
+      suggestedName = QString("new_%1").arg(suggestedName); 
+      pos = mHostProfiles.begin(); 
+    } else {
+      ++pos; 
+    }
+  }
+  bool ok; 
+  QString name = QInputDialog::getText
+    (this, tr("New Dialog"), "What do you want to call the new profile?", 
+     QLineEdit::Normal, suggestedName, &ok); 
+
+  if (!ok) 
+    return; 
+  mCurrentProfile = new HostProfile(name.replace(QRegExp("\\s+"), "_"), inProfile);
+  mHostProfiles.push_back(mCurrentProfile); 
+  sortAndSaveHostProfiles(); // sorts and saves to files
+  removeHostProfiles(); 
+  readHostProfiles(); // rereads them in order
+  return; 
+}
+
+//=======================================================================
+void BlockbusterLaunchDialog::removeHostProfiles(void) {
+   vector<HostProfile *>::iterator pos = mHostProfiles.begin(), endpos = mHostProfiles.end(); 
+   while (pos != endpos) {
+     delete (*pos); 
+     pos++; 
+   }
+   mHostProfiles.clear(); 
+   hostProfilesComboBox->blockSignals(true); 
+   hostProfilesComboBox->clear(); 
+   hostProfilesComboBox->blockSignals(false); 
+   mCurrentProfile = NULL; 
+   return ;
+}
+
+// ======================================================================
+void BlockbusterLaunchDialog::on_newProfilePushButton_clicked(){
+  createNewProfile(NULL); 
+  return; 
+} 
+
+//======================================================================
+void BlockbusterLaunchDialog::on_duplicateProfilePushButton_clicked(){
+  createNewProfile(mCurrentProfile); 
+  return; 
+}  
+
+//======================================================================
+void BlockbusterLaunchDialog::on_deleteMoviePushButton_clicked(){
+  return; 
+} 
 //=======================================================================
 void BlockbusterLaunchDialog::on_connectButton_clicked(){
   setState(BB_WAIT_CONNECTION); // Sidecar will check this
@@ -1223,15 +1334,126 @@ void BlockbusterLaunchDialog::saveHistory(QComboBox *box, QString filename){
   histfile.close(); 
   return; 
 }
+  
+
+//=======================================================================
+void BlockbusterLaunchDialog::sortAndSaveHostProfiles(void) {
+  // first sort by output file and name:  
+  sort(mHostProfiles.begin(), mHostProfiles.end(), CompareHostProfiles); 
+  
+  QString profileFile =""; 
+  FILE *fp = NULL; 
+  dbprintf(5, "Examining profiles to save them.\n"); 
+  vector<HostProfile *>::iterator pos = mHostProfiles.begin(), endpos = mHostProfiles.end(); 
+  while (pos != endpos) {
+    HostProfile *profile = *pos; // for readability
+    dbprintf(5, QString("Examining profile %1.\n").arg(profile->toQString())); 
+    
+    if ( !profile->mReadOnly) {
+      if(!fp || (profile->mProfileFile != profileFile) ) {
+        profileFile = profile->mProfileFile; 
+        dbprintf(5, QString("Opening new profile file %1\n").arg(profileFile)); 
+        if (fp) fclose(fp); 
+        fp = fopen(profileFile.toStdString().c_str(), "w");
+      }
+      dbprintf(5, QString("Writing profile %1 (%2) to file %3\n").arg(profile->name()).arg(profile->toProfileString().toStdString().c_str()).arg(profileFile)); 
+      fprintf(fp, "%s\n", profile->toProfileString().toStdString().c_str()); 
+    } else {
+      dbprintf(5, "Profile is read-only\n"); 
+    }
+    ++pos; 
+  }
+  if (fp) fclose(fp); 
+  return; 
+}
+
+//=======================================================================
+void BlockbusterLaunchDialog::on_hostProfilesComboBox_currentIndexChanged
+(int index ) {
+  cerr << "on_hostProfilesComboBox_currentIndexChanged( " << index << " )" << endl;
+
+ 
+  //  set mCurrentProfile correctly
+  mCurrentProfile = mHostProfiles[index]; 
+  if (!mCurrentProfile) {
+    dbprintf(0, QString("Error: No current profile matching name %2 in combo box!\n").arg(mCurrentProfile->displayName()).arg(hostProfilesComboBox->currentText())); 
+    abort(); 
+  }  
+  if (mCurrentProfile->displayName() != hostProfilesComboBox->currentText()) {
+    dbprintf(0, QString("Error:  current profile  %1 does not match corresponding name %2 in combo box at index %3!\n").arg(mCurrentProfile->displayName()).arg(hostProfilesComboBox->currentText()).arg(index)); 
+    abort(); 
+  }
+  hostNameField->setText(mCurrentProfile->mHostName); 
+  hostPortField->setText(mCurrentProfile->mPort); 
+  verboseField->setText(mCurrentProfile->mVerbosity); 
+  rshCommandField->setText(mCurrentProfile->mRsh); 
+  setDisplayCheckBox->setChecked(mCurrentProfile->mSetDisplay); 
+  blockbusterDisplayField->setText(mCurrentProfile->mDisplay); 
+  blockbusterPathField->setText(mCurrentProfile->mBlockbusterPath); 
+   
+  return;
+}
 
 
 //=======================================================================
-void BlockbusterLaunchDialog::initComboBox(QComboBox *box, QString filename, QString initialItem){
-  box->clear(); 
-  filename = QString(gPrefs.GetValue("prefsdir").c_str()) +"/"+ filename;
+void BlockbusterLaunchDialog::readHostProfiles(void) {
+  
+  char *globalProfile = getenv("SIDECAR_GLOBAL_HOST_PROFILE"); 
+  hostProfilesComboBox->blockSignals(true); 
+  
+  if (globalProfile) {
+    readHostProfileFile(globalProfile, true); 
+  }
+  readHostProfileFile(HostProfile::mUserHostProfileFile, false); 
+  hostProfilesComboBox->blockSignals(false);   
+  on_hostProfilesComboBox_currentIndexChanged(hostProfilesComboBox->currentIndex()); 
+  return;
+}
+
+//=======================================================================
+void BlockbusterLaunchDialog::readHostProfileFile(QString filename, bool readonly) {
+  // HostProfile profile; 
+  QFile profileFile(filename); 
+  if (!profileFile.open(QIODevice::ReadOnly)) {
+    fileNameComboBox->addItem("/Type/movie/path/here"); 
+    dbprintf(5, QString("Could not load history from %1\n").arg(filename)); 
+    return; 
+  }
+  dbprintf(5, QString("Loading history from file %1\n").arg(filename)); 
+  QString item, line; 
+  while ((line = profileFile.readLine())!= "") {
+    dbprintf(5, "Examining line: \"%s\"\n", line.toStdString().c_str());  
+    QStringList tokens = line.split(QRegExp("\\s+"), QString::SkipEmptyParts); 
+    if (!tokens.size()) {
+      dbprintf(5, "empty line, skipping...\n"); 
+      continue; 
+    }
+    if (tokens[0].startsWith("#") && item != "") {
+      dbprintf(5, "Comment of null first token, skipping line...\n"); 
+      continue; 
+    }
+    if (tokens.size() != 8) {
+      dbprintf(0, "Warning:  malformed line in host profile config file \"%s\": \"%s\".  Profile might be weird. \n", filename.toStdString().c_str(), line.toStdString().c_str());  
+    }
+    HostProfile *profile = new HostProfile(tokens, filename, readonly);
+    mCurrentProfile = profile; 
+    dbprintf(5, QString("Adding item: %1\n").arg(profile->toQString())); 
+    mHostProfiles.push_back(profile); 
+    hostProfilesComboBox->addItem(profile->displayName());   
+    dbprintf(5, QString("After adding item %1, hostProfilesComboBox->currentText() = %2\n").arg(tokens[0]).arg(hostProfilesComboBox->currentText())); 
+  }
+
+  return; 
+}
+
+//=======================================================================
+void BlockbusterLaunchDialog::initMovieComboBox(QString initialItem){
+  fileNameComboBox->clear(); 
+
+  QString filename = QString(gPrefs.GetValue("prefsdir").c_str()) +"/fileNameComboBox.history";
   QFile histfile(filename); 
   if (!histfile.open(QIODevice::ReadOnly)) {
-    box->addItem("/Type/movie/path/here"); 
+    fileNameComboBox->addItem("/Type/movie/path/here"); 
     dbprintf(5, QString("Could not load history from %1\n").arg(filename)); 
     return; 
   }
@@ -1242,7 +1464,7 @@ void BlockbusterLaunchDialog::initComboBox(QComboBox *box, QString filename, QSt
     item = item.trimmed(); 
     if (!item.startsWith("#") && item != "" && item != "NO_MOVIE") {
       dbprintf(5, QString("Adding item: %1\n").arg(item)); 
-      box->addItem(item);     
+      fileNameComboBox->addItem(item);     
       items++; 
     } else { 
       dbprintf(5, QString("Did not add item \"%1\"\n").arg(item)); 
@@ -1250,12 +1472,12 @@ void BlockbusterLaunchDialog::initComboBox(QComboBox *box, QString filename, QSt
   }
   dbprintf(5, QString("Loaded %1 history items\n").arg(items)); 
   if (initialItem != "" && initialItem != "NO_MOVIE") {
-    int init = box->findText(initialItem, Qt::MatchExactly); 
+    int init = fileNameComboBox->findText(initialItem, Qt::MatchExactly); 
     if (init != -1) {
-      box->setCurrentIndex(init); 
+      fileNameComboBox->setCurrentIndex(init); 
     } else {
-      box->addItem(initialItem); 
-      box->setCurrentIndex(box->findText(initialItem, Qt::MatchExactly)); 
+      fileNameComboBox->addItem(initialItem); 
+      fileNameComboBox->setCurrentIndex(fileNameComboBox->findText(initialItem, Qt::MatchExactly)); 
     }
   }
 

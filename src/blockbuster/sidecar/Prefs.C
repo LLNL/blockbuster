@@ -2,6 +2,7 @@
 #include "RCDebugStream.h"
 #else
 #define rcdebug5 if (0) cerr
+//#define rcdebug5 cerr
 #endif
 #include "Prefs.h"
 #include "stringutil.h"
@@ -327,7 +328,7 @@ void Preferences::SaveToFile(bool createDir, bool clobber){
     SaveSectionToFile(outfile, *outpos);
     ++outpos;
   }
-  rcdebug5 << "Finished writing prefs."<<endl;
+  rcdebug5 << "Finished writing prefs to "<<mFilename << endl;
   mPrefs = current;
   return;
 }
