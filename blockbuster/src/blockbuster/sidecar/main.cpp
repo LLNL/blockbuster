@@ -77,6 +77,7 @@ void ParseOptions(int &argc, char *argv[]) {
   // gPrefs.ReadFromFile(false);  
   gPrefs.SetValue("rsh", "rsh"); 
   gPrefs.SetValue("verbose", 0); 
+  gPrefs.ReadFromFile(false); 
   gPrefs.ReadFromEnvironment(); 
   gPrefs.GetFromArgs(argc, argv, args); 
 }
@@ -86,6 +87,7 @@ int main(int argc, char *argv[]) {
   QString prefsdir = QDir::homePath() + "/.sidecar"; 
   mkdir(prefsdir.toStdString().c_str(), 0777); 
   gPrefs.SetValue("prefsdir", prefsdir.toStdString()); 
+  gPrefs.SetFile((prefsdir + "/prefs.cnf").toStdString()); 
 
   SideCar sidecar(&app, &gPrefs);
   //QStyle *myStyle = new QCleanlooksStyle();
@@ -127,9 +129,6 @@ int main(int argc, char *argv[]) {
     }
   }
   int retval = app.exec();
-  /* vector<string> saveKeys; 
-     saveKeys.push_back("movie");      
-     gPrefs.SaveToFile(saveKeys, true);  */ 
-  //gPrefs.SaveToFile(true, true); 
+  gPrefs.SaveToFile(true, true); 
   return retval; 
 }
