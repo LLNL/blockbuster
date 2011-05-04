@@ -148,6 +148,16 @@ echo "Cleaning up tempdir..."
 cd $tmpdir/..
 rm -rf $tmpdir
 
+echo "Installing software..." 
+cd $installdir
+rm -rf chaos*
+mkdir -p chaos_4_x86_64_ib
+ln -s chaos_4_x86_64_ib chaos_4_x86_64
+cd chaos_4_x86_64_ib || errexit "Cannot cd to install directory chaos_4_x86_64_ib"
+tar -xzf ../blockbuster-v${version}.tgz || errexit "Cannot untar tarball!?" 
+cd blockbuster-v${version} || errexit "Cannot cd to blockbuster source directory" 
+make || errexit "Could not make software" 
+
 echo "Done.  Tarball is $installdir/blockbuster-v${version}.tgz"
 exit 0
 
