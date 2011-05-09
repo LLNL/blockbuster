@@ -180,13 +180,13 @@ int main(int argc,char **argv)
 			if (iVerb) printf("Working on %d of %d\n",i,nFrames);
 			evo_movie_get_image(evo,evo_img,i/(iStereo+1),
 		       		LEFTEYE);
-			sm->setFrame(i,img);
+			sm->compressAndWriteFrame(i,img);
 			/* if the sm is to be stereo, pick the other eye
 			 * if you can do that */
 			if (iStereo) {
 				evo_movie_get_image(evo,evo_img,i/(iStereo+1),
 					evo->stereo ? RIGHTEYE : LEFTEYE);
-				sm->setFrame(i+1,img);
+				sm->compressAndWriteFrame(i+1,img);
 			}
 		}
 

@@ -125,6 +125,29 @@ struct OutputBuffer {
   std::deque<unsigned char *> mFrameData; 
 }; 
 
+/*!
+  A struct to hold info for compressing a frame to avoid recomputing stuff
+*/ 
+struct FrameCompressionWork {
+  FrameCompressionWork(int inFrame, void *data)  {
+    frame = inFrame; 
+    uncompressed = data; 
+  }
+  ~FrameCompressionWork() {
+    int  pos = compressed.size(); 
+    while (pos--) {
+      delete compressed[pos]; 
+    }
+    compressed.clear(); 
+  }
+  int frame;
+  vector< vector<int> > compTileSizes; //sizes of the compressed tiles, for each resolution
+  vector<int> compFrameSize; // total size of compressed frame at each resolution
+  void *uncompressed;
+  vector<u_char *>compressed; // compressed frames, one for each resolution level 
+}; 
+
+
 class smBase {
  public:
   smBase(const char *fname, int numthreads=1);
@@ -142,18 +165,20 @@ class smBase {
   int getCompFrameSize(int frame,int res = 0);
   
   // set the frame image, either uncompressed or compressed data
-  void setFrame(int frame,void *data);
-  void setCompFrame(int frame, void *data, int size,int res = 0);
-  void setCompFrame(int frame, void *data, int *sizes,int res = 0);
+  void compressAndWriteFrame(int frame,void *data);
+  //void setCompFrame(int frame, void *data, int size,int res = 0);
+  void writeCompFrame(int frame, void *data, int *sizes,int res = 0);
 
   // for multithreaded case, this allows buffering into a queue.  This will hang if a frame is ever skipped!  
   void bufferFrame(int frame,unsigned char *data, bool oktowrite);
   void flushFrames(void); 
 
-  // convert an image into its compressed form
-  void compFrame(void *in, void *out, int &outsize,int res = 0);
   // Tile based version follows
-  void compFrame(void *in, void *out, int *outsizes,int res = 0);
+  int computeTileSizes(FrameCompressionWork *wrk, int resolution);
+  void compressFrame(FrameCompressionWork *wrk);
+
+  // convert an image into its compressed form, tiled 
+  int compFrame(void *in, void *out, int *outsizes,int res = 0);
   
 #ifdef WIN32
   static void __cdecl init(void);
@@ -198,7 +223,7 @@ void printFrameDetails(FILE *fp, int f);
     i = (i << SM_FLAGS_FPS_SHIFT) & SM_FLAGS_FPS_MASK;
     flags = (flags & ~SM_FLAGS_FPS_MASK) | i;
   };
-  int getVersion(void) { return(version); };
+  int getVersion(void) { return(mVersion); };
   
   void computeTileOverlap(int *blockDim, int* blockPos, int res, int thread);
   
@@ -233,7 +258,7 @@ void printFrameDetails(FILE *fp, int f);
   
   // image size
   u_int framesizes[8][2]; // 8 is the limit on LOD apparently. 
-  // size of the tiles...
+  // dimensions of the tiles...
   u_int tilesizes[8][2];
   u_int tileNxNy[8][2];
   u_int maxNumTiles;
@@ -247,7 +272,7 @@ void printFrameDetails(FILE *fp, int f);
   int bModFile;
   
   // version
-  int version;
+  int mVersion;
   
   // global file descriptor
   //int *fd;

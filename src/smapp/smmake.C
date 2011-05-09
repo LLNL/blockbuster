@@ -64,7 +64,7 @@ main(int argc, char *argv[])
             buf[x][y][0] =
             buf[x][y][1] =
             buf[x][y][2] = t+10;
-      sm->setFrame(t, buf);
+      sm->compressAndWriteFrame(t, buf);
    }
 
    sm->closeFile();
@@ -82,7 +82,7 @@ main(int argc, char *argv[])
             buf[x][y][0] =
             buf[x][y][1] =
             buf[x][y][2] = t+10;
-      sm2->setFrame(t, buf);
+      sm2->compressAndWriteFrame(t, buf);
    }
 #if 0
    // test various tile overlap configurations -- include degenerate cases

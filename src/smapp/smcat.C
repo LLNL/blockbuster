@@ -118,6 +118,7 @@ struct Work {
 	int *dst;
 	int *src;
   unsigned char *buffer;
+  unsigned char *compbuffer;
 } ;
 
 void workproc(void *arg);
@@ -477,7 +478,7 @@ int main(int argc,char **argv)
 					buffer_len = size;
 				    }
 				    input[j].sm->getCompFrame(k,0,buffer,size,res);
-				    sm->setCompFrame(i,buffer,size,res);
+				    sm->writeCompFrame(i,buffer,&size,res);
 				}
 				i++;
 			} else {
