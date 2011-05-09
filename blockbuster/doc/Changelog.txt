@@ -2,6 +2,9 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
+VERSION 2.6.3l (r???) ??? 2011
+-- changed smlib to support independent compression and I/O for performance
+===============================================================================
 VERSION 2.6.3k (r424) Wed May  4 13:59:13 PDT 2011
 -- smcat now is threaded.  Still maximum throughput not attained since I/O is combined with compression inappropriately, but it's a great improvement. 
 -- implemented host profiles in sidecar launch dialogs, so that you don't have to always reenter the information. 

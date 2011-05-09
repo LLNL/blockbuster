@@ -28,13 +28,13 @@
 #
 #       $Id: Makefile,v 1.10 2009/05/12 17:48:36 wealthychef Exp $
 #
+
 include ../config/config
 
 SRC_FILES = smBase.C smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C smdfc/smdfc.c
 OFILES = smBase.o smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o smdfc.o
 HFILES = smBase.h smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h
 
-CPPFLAGS += -g
 all: lib doc include
 
 lib: $(INSTALL_DIR)/lib/libsmovie.a

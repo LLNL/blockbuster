@@ -30,8 +30,10 @@ DEBUG=TRUE
 endif
 
 ifdef DEBUG
+$(warning DEBUG is on)
 export OPT ?= -g
 else
+$(warning DEBUG is off)
 export OPT ?= -g -O2
 endif
 export DEBUG
