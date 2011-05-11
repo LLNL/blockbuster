@@ -170,16 +170,16 @@ smBase::smBase(const char *_fname, int numthreads, uint32_t bufferSize):mNumThre
   mOutputBuffer = mOutputBuffers[1] = new OutputBuffer(bufferSize); 
 
   if (_fname != NULL) {
-    fname = strdup(_fname);
+    mMovieName = strdup(_fname);
     int threadnum = mNumThreads;
     while (threadnum--) {
-      mThreadData[threadnum].fd = OPEN(fname, O_RDONLY);
+      mThreadData[threadnum].fd = OPEN(mMovieName, O_RDONLY);
     }
     readHeader();
     initWin(); // only does something for version 1.0
   }
   else
-    fname = NULL;
+    mMovieName = NULL;
   
   if (mNumThreads > 1) {
     // this assumes we have already called pthreads_init(); 
@@ -204,9 +204,9 @@ smBase::~smBase()
 {
    int i;
 
-   smdbprintf(5,"smBase destructor : %s",fname);
+   smdbprintf(5,"smBase destructor : %s",mMovieName);
    if ((bModFile == TRUE) && (mThreadData[0].fd)) CLOSE(mThreadData[0].fd);
-   if (fname) free(fname);
+   if (mMovieName) free(mMovieName);
 }
 
 //----------------------------------------------------------------------------
@@ -330,7 +330,7 @@ int smBase::newFile(const char *_fname, u_int _width, u_int _height,
    smdbprintf(5,"init: w %d h %d frames %d", framesizes[0][0], framesizes[0][1], 
 		mNumFrames);
 
-   fname = strdup(_fname);
+   mMovieName = strdup(_fname);
 
    mThreadData[0].fd = OPENC(_fname, O_WRONLY|O_CREAT|O_TRUNC, 0666);   
    mResFileNames.push_back(_fname); 
@@ -404,7 +404,7 @@ void smBase::readHeader(void)
    // the file size is needed for the size of the last frame
    filesize = LSEEK64(mThreadData[0].fd,0,SEEK_END);
 
-   lfd = OPEN(fname, O_RDONLY);
+   lfd = OPEN(mMovieName, O_RDONLY);
    READ(lfd, &magic, sizeof(u_int));
    magic = ntohl(magic);
    if (magic == SM_MAGIC_1) mVersion = 1;
@@ -1042,6 +1042,7 @@ void *writeThreadFunction(void *arg) {
   Called by work proc for the writing thread -- keeps flushing the buffer. 
 */
 void smBase::writeThread(void) {
+  smdbprintf(2, "Starting writeThread\n"); 
   while (!mWriteThreadStopSignal) {
     if (!flushFrames(false)) {
       usleep(1000); 
@@ -1077,11 +1078,12 @@ void smBase::stopWriteThread(void) {
 #define CHUNK_SIZE 5*1000*1000
 
 void smBase::combineResolutionFiles(void) {
-  smdbprintf(4, "combineResolutionFiles()\n"); 
+  smdbprintf(1, "combining Resolution Files into final movie...\n"); 
   if (mResFDs.size() < 2) return; 
   u_char buf[CHUNK_SIZE+1]; 
   int res = 1; 
   while (res < mNumResolutions) {
+    smdbprintf(1, "combining Resolution level %d from file %s into final movie...\n", res, mResFileNames[res].c_str()); 
     // we are going to place this resolution at the end of the movie file, 
     // so adjust the offsets by the current movie file length
     uint64_t offsetAdjust = LSEEK64(mResFDs[0], 0, SEEK_END); // get file length
@@ -1125,8 +1127,9 @@ void smBase::combineResolutionFiles(void) {
                  LSEEK64(mResFDs[0], 0, SEEK_END)); 
                  
     }
-    smdbprintf(1, "Finished copying res %d file %s to movie file, which is now %d bytes\n", res, mResFileNames[res].c_str(), LSEEK64(mResFDs[0], 0, SEEK_END)); 
+    smdbprintf(1, "Finished copying res %d file %s to movie file, which is now %d bytes. Unlinking res file\n", res, mResFileNames[res].c_str(), LSEEK64(mResFDs[0], 0, SEEK_END)); 
     close (fd); 
+    unlink (mResFileNames[res].c_str() ); 
     ++ res; 
   }
   bModFile = TRUE;
@@ -1148,6 +1151,7 @@ bool smBase::flushFrames(bool force) {
     cerr << "Error:  mOutputBuffer has data in it already before swapping!" << endl; 
     abort(); 
   }
+  smdbprintf(2, "flushing %d frames from output buffer\n", mOutputBuffer->mNumFrames); 
   // swap buffers: 
   pthread_mutex_lock(&mBufferMutex); 
   OutputBuffer *tmpBuf = mOutputBuffer; 
@@ -1159,6 +1163,7 @@ bool smBase::flushFrames(bool force) {
   
   // see how much of a write buffer we need and reallocate if needed: 
   if (mOutputBuffer->mRequiredWriteBufferSize > mWriteBuffer.size()) {
+    smdbprintf(3, "Resizing write buffer to %d\n", mOutputBuffer->mRequiredWriteBufferSize); 
     mWriteBuffer.resize(mOutputBuffer->mRequiredWriteBufferSize, 42); 
   }
 
@@ -1219,15 +1224,18 @@ bool smBase::flushFrames(bool force) {
     LSEEK64(fd, firstFileOffset, SEEK_SET); 
     WRITE(fd, &mWriteBuffer[0], buffBytes); 
     mResFileBytes[res] += buffBytes; 
-    smdbprintf(4, "Writing buffer:  Res=%d, startFrame=%d, numFrames=%d, bufbytes = %d , requiredBytes=%d, firstFileOffset = %d, mResFileBytes = %d, actual file length = %d, filename=%s.\n", res, firstFrame, stopFrame-firstFrame, buffBytes, mOutputBuffer->mRequiredWriteBufferSize, firstFileOffset, mResFileBytes[res], LSEEK64(fd, 0, SEEK_END), filename.c_str()); 
+    smdbprintf(3, "flushFrames( is writing resolution frames to buffer:  Res=%d, startFrame=%d, numFrames=%d, bufbytes = %d , requiredBytes=%d, firstFileOffset = %d, mResFileBytes = %d, actual res file length = %d, filename=%s.\n", res, firstFrame, stopFrame-firstFrame, buffBytes, mOutputBuffer->mRequiredWriteBufferSize, firstFileOffset, mResFileBytes[res], LSEEK64(fd, 0, SEEK_END), filename.c_str()); 
     ++res; 
   }
   uint32_t f = mOutputBuffer->mFrameBuffer.size(); 
   while (f--) {
-    delete mOutputBuffer->mFrameBuffer[f]; 
-    mOutputBuffer->mFrameBuffer[f] = NULL;
+    if (mOutputBuffer->mFrameBuffer[f]) {
+      delete mOutputBuffer->mFrameBuffer[f]; 
+      mOutputBuffer->mFrameBuffer[f] = NULL;
+    }
   }
   mOutputBuffer->mNumFrames = 0; 
+  mOutputBuffer->mRequiredWriteBufferSize = 0; 
   bModFile = TRUE;
   return true; 
 }
@@ -1553,6 +1561,8 @@ void smBase::closeFile(void)
    while (i--) {
      CLOSE(mThreadData[i].fd);
    }
+   smdbprintf(0, "Finished with movie %s\n", mMovieName);
+   return;
 }
 //! convenience function
 /*!
