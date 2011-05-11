@@ -96,18 +96,25 @@ void sm_setVerbose(int level);  // 0-5, 0 is quiet, 5 is verbose
 void sm_setVerbose(int level);
 
 struct smMsgStruct {
+  smMsgStruct(int l, string fi, string func) :
+    line(l), file(fi), function(func) {
+    return; 
+  }
   int line; 
   string file, function; 
 }; 
-static smMsgStruct gMsgStruct; 
+//static smMsgStruct gMsgStruct; 
 
 #define SMPREAMBLE 
-#define smdbprintf  \
-  gMsgStruct.line = __LINE__, gMsgStruct.file=__FILE__, gMsgStruct.function=__FUNCTION__, sm_real_dbprintf  
+#define smdbprintf(args...)                                  \
+  sm_real_dbprintf( smMsgStruct(__LINE__,__FILE__,__FUNCTION__), args)   
+//  gMsgStruct.line = __LINE__, gMsgStruct.file=__FILE__, gMsgStruct.function=__FUNCTION__, sm_real_dbprintf
+
+
 extern int smVerbose;
-inline void sm_real_dbprintf(int level, const char *fmt, ...) {  
+inline void sm_real_dbprintf(const smMsgStruct msg, int level, const char *fmt, ...) {  
   if (smVerbose < level) return; 
-  cerr << " SMDEBUG [" << gMsgStruct.file << ":"<< gMsgStruct.function << "(), line "<< gMsgStruct.line << ", time=" << GetExactSeconds() << "]: " ;
+  cerr << " SMDEBUG [" << msg.file << ":"<< msg.function << "(), line "<< msg.line << ", time=" << GetExactSeconds() << "]: " ;
   va_list ap;
   va_start(ap, fmt);
   vfprintf(stderr,fmt,ap);
@@ -116,7 +123,7 @@ inline void sm_real_dbprintf(int level, const char *fmt, ...) {
   return; 
 }
 #else
-inline void sm_real_dbprintf(int level, const char *fmt, ...) {  
+inline void sm_real_dbprintf(int , const char * ...) {  
   return; 
 }
 #define smdbprintf if(0) sm_real_dbprintf
