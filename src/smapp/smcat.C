@@ -523,7 +523,7 @@ void workproc(void *arg)
 	int	sizeout = 3*wrk->sm->getHeight()*wrk->sm->getWidth();
 	int	size;
 	wrk->buffer = new unsigned char[sizein];
-    dbprintf(4, "created new buffer %p for frame %d\n", 
+    dbprintf(5, "created new buffer %p for frame %d\n", 
              wrk->buffer, wrk->outframe); 
 	wrk->insm->getFrame(wrk->inframe,wrk->buffer, pt_pool_threadnum());
 	if (wrk->iScale) {

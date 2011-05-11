@@ -175,15 +175,30 @@ struct FrameCompressionWork {
     while (pos--) {
       delete mCompressed[pos]; 
     }
+      smdbprintf(5, "deleting uncompressed image buffer %p for frame %d\n", 
+                 mUncompressed, mFrame);  
     delete mUncompressed; 
     mUncompressed = NULL; 
     mCompressed.clear(); 
     mCompTileSizes.clear(); 
-    mCompFrameSize.clear(); 
+    mCompFrameSizes.clear(); 
   }
+  string toString(void ) {
+    string mystring = string("<< FrameCompressionWork: mFrame = ") + intToString(mFrame); 
+    int numsizes=mCompFrameSizes.size(), sizenum = 0; 
+    if (numsizes) {
+      mystring += ", mCompFrameSizes = ("; 
+      while (sizenum < numsizes-1) {
+        mystring += intToString(mCompFrameSizes[sizenum]) + ","; 
+        ++ sizenum;
+      }
+      mystring += intToString(mCompFrameSizes[sizenum]) + ")"; 
+    }
+    return mystring;
+  }      
   int mFrame;
   vector< vector<int> > mCompTileSizes; //sizes of the compressed tiles, for each resolution
-  vector<int> mCompFrameSize; // total size of compressed frame at each resolution
+  vector<int> mCompFrameSizes; // total size of compressed frame at each resolution
   u_char *mUncompressed;
   vector<u_char *>mCompressed; // Buffers of compressed frames, one for each resolution level
 }; 
@@ -212,7 +227,7 @@ struct OutputBuffer {
     if (mFrameBuffer[slotnum]) {
       smdbprintf(0, "Bad thing:  placing frame %d in an occupied slot!\n", frame->mFrame);
     }
-    mRequiredWriteBufferSize += frame->mCompFrameSize[0]; 
+    mRequiredWriteBufferSize += frame->mCompFrameSizes[0]; 
     mFrameBuffer[slotnum] = frame; 
     mNumFrames++; 
     return true; 
@@ -350,8 +365,8 @@ void printFrameDetails(FILE *fp, int f);
   void readHeader(void);
   void initWin(void);
   uint32_t readData(int fd, u_char *buf, int bytes);
-  uint32_t readWin(u_int frame, int threadnum);
-  uint32_t readWin(u_int frame, int*dimensions, int*position, int resolution, int threadnum);
+  uint32_t readCompressedFrame(u_int frame, int threadnum);
+  uint32_t readAndDecompressFrame(u_int frame, int*dimensions, int*position, int resolution, int threadnum);
   
   int mNumThreads; 
   // Flags on top of the filetype...
