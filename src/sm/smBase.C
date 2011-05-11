@@ -538,7 +538,7 @@ void smBase::initWin(void)
 */ 
 uint32_t smBase::readData(int fd, u_char *buf, int bytes) {
   ///smdbprintf(5, "readData: %d bytes", bytes); 
-  int remaining = bytes; 
+  uint32_t remaining = bytes; 
   while  (remaining >0) {
     int r=READ(fd, buf, remaining);
     if (r < 0) {
@@ -1144,14 +1144,13 @@ void smBase::combineResolutionFiles(void) {
 bool smBase::flushFrames(bool force) {
   smdbprintf(4, "flushFrames(%d)\n", (int)force); 
   if (!force && !mStagingBuffer->full()) {
-    smdbprintf(4, "flushFrames() returning false\n");     
+    smdbprintf(5, "flushFrames() returning false\n");     
     return false; 
   }
   if (!mOutputBuffer->empty()) {
     cerr << "Error:  mOutputBuffer has data in it already before swapping!" << endl; 
     abort(); 
   }
-  smdbprintf(2, "flushing %d frames from output buffer\n", mOutputBuffer->mNumFrames); 
   // swap buffers: 
   pthread_mutex_lock(&mBufferMutex); 
   OutputBuffer *tmpBuf = mOutputBuffer; 
@@ -1160,6 +1159,7 @@ bool smBase::flushFrames(bool force) {
   mStagingBuffer->mFirstFrameNum = mOutputBuffer->mFirstFrameNum + mOutputBuffer->mNumFrames; 
   smdbprintf(4, "flushFrames() swapped buffers\n");     
   pthread_mutex_unlock(&mBufferMutex); 
+  smdbprintf(2, "flushing %d frames from output buffer\n", mOutputBuffer->mNumFrames); 
   
   // see how much of a write buffer we need and reallocate if needed: 
   if (mOutputBuffer->mRequiredWriteBufferSize > mWriteBuffer.size()) {

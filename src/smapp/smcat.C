@@ -37,6 +37,7 @@
 #include <string.h>
 #include <math.h>
 
+ #define SM_VERBOSE 1
 #include "sm/smRLE.h"
 #include "sm/smGZ.h"
 #include "sm/smLZO.h"
@@ -52,6 +53,8 @@ int		gVerbosity = 0;
 
 
 //===============================================
+#define dbprintf smdbprintf
+/*
 void dbprintf(int level, const char *fmt, ...) {
   if (gVerbosity < level) return; 
   // cerr <<  DBPRINTF_PREAMBLE; 
@@ -61,7 +64,7 @@ void dbprintf(int level, const char *fmt, ...) {
   va_end(ap);
   return; 
 }
-
+*/
 // Prototypes 
 void cmdline(char *app);
 
@@ -259,7 +262,7 @@ int main(int argc,char **argv)
 
 	  if(parsed && gVerbosity) {
 	    for(int n=0; n< nRes; n++) {
-	      fprintf(stderr,"Resolution[%d] Tilesize=[%dx%d]\n",n,tsizes[n][0],tsizes[n][1]);
+	      dbprintf(1,"Resolution[%d] Tilesize=[%dx%d]\n",n,tsizes[n][0],tsizes[n][1]);
 	    }
 	  }
 	}
