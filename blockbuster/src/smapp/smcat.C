@@ -445,6 +445,7 @@ int main(int argc,char **argv)
 	/* set any flags */
 	sm->setFlags(iStereo);
 	sm->setFPS(fFPS);
+    sm->startWriteThread(); 
 
 	/* init the parallel tools */
 #ifdef irix
@@ -497,7 +498,8 @@ int main(int argc,char **argv)
 		}
 	}
 	pt_pool_destroy(pool,1);
-
+    sm->stopWriteThread(); 
+    sm->flushFrames(true); 
 	sm->closeFile();
 
 	/* clean up */
@@ -529,15 +531,20 @@ void workproc(void *arg)
 			 pZoom,
 			 wrk->dst[0],wrk->dst[1],wrk->src[0],wrk->src[1],
 			 wrk->src[2],wrk->src[3],wrk->iFilter);
-        dbprintf(4, "deleting new buffer %p, replacing with %p for frame %d\n", wrk->buffer, pZoom, wrk->outframe); 
+        dbprintf(4, "workproc deleting new buffer %p, replacing with %p for frame %d\n", wrk->buffer, pZoom, wrk->outframe); 
 		delete wrk->buffer;
 		wrk->buffer = pZoom;
 	}
-    bool writeOK = (pt_pool_threadnum() == 0) ;
-	wrk->sm->bufferFrame(wrk->outframe,wrk->buffer, writeOK);
-
-	// delete wrk->buffer; sm will delete when finished
-
+    //bool writeOK = (pt_pool_threadnum() == 0) ;
+	//wrk->sm->bufferFrame(wrk->outframe,wrk->buffer, writeOK);
+    /*   while (!wrk->sm->bufferReady(wrk->outframe))  {
+      // buffer cannot take this frame yet, needs to get written and swapped
+      usleep (1000); 
+    }
+    */
+    //wrk->sm->bufferFrame(wrk->frame,wrk->buffer, writeOK);
+    wrk->sm->compressAndBufferFrame(wrk->outframe,wrk->buffer);
+	// do not delete wrk->buffer; sm will delete when finished
 	delete wrk;
 }
 
