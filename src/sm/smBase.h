@@ -377,7 +377,7 @@ void printFrameDetails(FILE *fp, int f);
   off64_t filesize;
   
   //path to movie file
-  char *fname;
+  char *mMovieName;
   
   
   vector<int> mResFDs; // for mipmap files written in "parallel" 
