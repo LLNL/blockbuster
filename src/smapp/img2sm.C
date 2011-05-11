@@ -863,6 +863,7 @@ int main(int argc,char **argv)
   pt_pool         thepool;
   pt_pool_t       pool = &thepool;
   pt_pool_init(pool, nThreads, nThreads*2, 0);
+  sm->startWriteThread(); 
     
   // memory buffer for frame input
   /*gInputBuf = (unsigned char *)malloc(iSize[0]*iSize[1]*3L); 
@@ -873,7 +874,8 @@ int main(int argc,char **argv)
     printf("First, Last, Step: %d %d %d\n",iStart,iEnd,iStep);
     printf("%d images of size %d %d\n",count,iSize[0],iSize[1]);
   }
-
+  
+  
   // Walk the input files...
   for(i=iStart;;i+=iStep) {
 
@@ -902,11 +904,13 @@ int main(int argc,char **argv)
     pt_pool_add_work(pool, workproc, (void *)wrk);
   }
   pt_pool_destroy(pool,1);
-
+  sm->stopWriteThread(); 
+ 
   // Done..
-  sm->flushFrames(); 
+  sm->stopWriteThread(); 
+  sm->flushFrames(true); 
   sm->closeFile();
-
+  
   //free(gInputBuf);
   //if (rowbuf) free(rowbuf);
 
@@ -924,8 +928,9 @@ void workproc(void *arg)
   // flipping...
   if (wrk->iFlipx) flipx(wrk->buffer,wrk->sm->getWidth(),wrk->sm->getHeight());
   if (wrk->iFlipy) flipy(wrk->buffer,wrk->sm->getWidth(),wrk->sm->getHeight());
-  bool writeOK = (pt_pool_threadnum() == 0) ;
-  wrk->sm->bufferFrame(wrk->frame,wrk->buffer, writeOK);  
+  
+  //wrk->sm->bufferFrame(wrk->frame,wrk->buffer, writeOK);
+  wrk->sm->compressAndBufferFrame(wrk->frame,wrk->buffer);
 
   //free(arg);
   delete wrk; 

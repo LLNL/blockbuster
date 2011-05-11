@@ -4,6 +4,7 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 ===============================================================================
 VERSION 2.6.3l (r???) ??? 2011
 -- changed smlib to support independent compression and I/O for performance
+-- smcat is now at least 8x faster with multithreading.  Basically, you are bound by I/O performance now, not bad code.  
 ===============================================================================
 VERSION 2.6.3k (r424) Wed May  4 13:59:13 PDT 2011
 -- smcat now is threaded.  Still maximum throughput not attained since I/O is combined with compression inappropriately, but it's a great improvement. 

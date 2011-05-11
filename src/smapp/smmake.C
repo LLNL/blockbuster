@@ -74,15 +74,15 @@ main(int argc, char *argv[])
    tilesizes[0] = 10;
    tilesizes[1] = 10;
    int frames = 1;
-   sm2= smRaw::newFile("test.smraw", 40, 40, frames, &tilesizes[0], 1);
-   
+   sm2 = smRaw::newFile("test.smraw", 40, 40, frames, &tilesizes[0], 1);
+   u_char *bufp = &buf[0][0][0];
    for (t=0; t<frames; t++) {
-      for (x=0; x<40; x++)
-         for (y=0; y<40; y++)
-            buf[x][y][0] =
-            buf[x][y][1] =
-            buf[x][y][2] = t+10;
-      sm2->compressAndWriteFrame(t, buf);
+     for (x=0; x<40; x++)
+       for (y=0; y<40; y++)
+         buf[x][y][0] =
+           buf[x][y][1] =
+           buf[x][y][2] = t+10;
+     sm2->compressAndWriteFrame(t, bufp);
    }
 #if 0
    // test various tile overlap configurations -- include degenerate cases

@@ -55,12 +55,6 @@
 #include <errno.h>
 #include <math.h>
 
-#include "smBaseP.h"
-#include "smRaw.h"
-#include "smRLE.h"
-#include "smGZ.h"
-#include "smLZO.h"
-#include "smJPG.h"
 
 #ifdef DMALLOC
 #include <dmalloc.h>
@@ -71,7 +65,21 @@
 
 using namespace std; 
 
- 
+ #define SM_VERBOSE 1
+#include "smBaseP.h"
+#include "smRaw.h"
+#include "smRLE.h"
+#include "smGZ.h"
+#include "smLZO.h"
+#include "smJPG.h"
+
+//#undef  SM_VERBOSE
+int smVerbose = 0; 
+void sm_setVerbose(int level) {
+  std::cerr << "sm_setVerbose level " << level << std::endl; 
+  smVerbose = level; 
+}
+
 const int SM_MAGIC_1=SM_MAGIC_VERSION1;
 const int SM_MAGIC_2=SM_MAGIC_VERSION2;
 const int DIO_DEFAULT_SIZE = 1024L*1024L*4;
@@ -95,53 +103,6 @@ string TileInfo::toString(void) {
     + ", skipCorruptFlag = "+intToString(skipCorruptFlag)
     + "}}"; 
 } 
-/*!
-  ===============================================
-  debug print statements, using smdbprintf, which 
-  output the file, line, time of execution for each statement. 
-  Incredibly useful
-*/ 
-#define SM_VERBOSE 1
-//#undef  SM_VERBOSE
-static int smVerbose = 0; 
-void sm_setVerbose(int level) {
-  std::cerr << "sm_setVerbose level " << level << std::endl; 
-  smVerbose = level; 
-}
-
-#ifdef SM_VERBOSE 
-#include <stdarg.h>
-#include "../common/timer.h"
-#include "../common/stringutil.h"
-
-struct smMsgStruct {
-  int line; 
-  string file, function; 
-}; 
-static smMsgStruct gMsgStruct; 
-
-#define SMPREAMBLE 
-#define smdbprintf  \
-  gMsgStruct.line = __LINE__, gMsgStruct.file=__FILE__, gMsgStruct.function=__FUNCTION__, sm_real_dbprintf  
-    
-
-inline void sm_real_dbprintf(int level, const char *fmt, ...) {  
-  if (smVerbose < level) return; 
-  cerr << " SMDEBUG [" << gMsgStruct.file << ":"<< gMsgStruct.function << "(), line "<< gMsgStruct.line << ", time=" << GetExactSeconds() << "]: " ;
-  va_list ap;
-  va_start(ap, fmt);
-  vfprintf(stderr,fmt,ap);
-  va_end(ap);
-  //cerr << endl; 
-  return; 
-}
-#else
-inline void sm_real_dbprintf(int level, const char *fmt, ...) {  
-  return; 
-}
-#define smdbprintf if(0) sm_real_dbprintf
-#endif
-//===============================================
 
 #define CHECK(v) \
 if(v == NULL) \
@@ -193,20 +154,21 @@ void smBase::init(void)
 */
 //
 //----------------------------------------------------------------------------
-smBase::smBase(const char *_fname, int numthreads):mNumThreads(numthreads) {
+smBase::smBase(const char *_fname, int numthreads, uint32_t bufferSize):mNumThreads(numthreads), mWriteThreadRunning(false), mWriteThreadStopSignal(false) {
   smdbprintf(5, "smBase::smBase(%s, %d)", _fname, numthreads);
   int i;
   setFlags(0);
   setFPS(getFPS());
-  nframes = 0;
-  foffset = NULL;
-  flength = NULL;
+  mNumFrames = 0;
   mVersion = 0;
-  nresolutions = 1;
+  mNumResolutions = 1;
   
   mThreadData.clear(); 
   mThreadData.resize(numthreads); 
-  
+
+  mStagingBuffer = mOutputBuffers[0] = new OutputBuffer(bufferSize); 
+  mOutputBuffer = mOutputBuffers[1] = new OutputBuffer(bufferSize); 
+
   if (_fname != NULL) {
     fname = strdup(_fname);
     int threadnum = mNumThreads;
@@ -221,12 +183,9 @@ smBase::smBase(const char *_fname, int numthreads):mNumThreads(numthreads) {
   
   if (mNumThreads > 1) {
     // this assumes we have already called pthreads_init(); 
-    int status = pthread_mutex_init(&mStagingBufferMutex, NULL); 
-    if (!status) {
-      status = pthread_mutex_init(&mOutputBufferMutex, NULL); 
-    } 
+    int status = pthread_mutex_init(&mBufferMutex, NULL); 
     if (status) {
-      fprintf(stderr, "Error:  cannot initializes mutexes\n"); 
+      fprintf(stderr, "Error:  cannot initializes output buffer mutex\n"); 
       exit(2); 
     }
   }
@@ -307,14 +266,14 @@ smBase *smBase::openFile(const char *_fname, int numthreads)
 */ 
 void smBase::printFrameDetails(FILE *fp,int f)
 {
-   if ((f < 0) || (f >= nframes*nresolutions)) {
+   if ((f < 0) || (f >= mNumFrames*mNumResolutions)) {
       fprintf(fp,"%d\tInvalid frame\n",f);
       return;
    }
 #ifdef WIN32
-   fprintf(fp,"%d\t%I64d\t%d\n",f,foffset[f],flength[f]);
+   fprintf(fp,"%d\t%I64d\t%d\n",f,mFrameOffsets[f],mFrameLengths[f]);
 #else
-   fprintf(fp,"%d\t%lld\t%d\n",f,foffset[f],flength[f]);
+   fprintf(fp,"%d\t%lld\t%d\n",f,mFrameOffsets[f],mFrameLengths[f]);
 #endif
    return;
 }
@@ -333,7 +292,7 @@ int smBase::newFile(const char *_fname, u_int _width, u_int _height,
                     int numthreads)
 {
    int i;
-   nframes = _nframes;
+   mNumFrames = _nframes;
    mNumThreads = numthreads;
    framesizes[0][0] = _width;
    framesizes[0][1] = _height;
@@ -342,14 +301,14 @@ int smBase::newFile(const char *_fname, u_int _width, u_int _height,
        framesizes[i][1] = framesizes[i-1][1]/2;
    }
    memcpy(tilesizes,framesizes,sizeof(framesizes));
-   nresolutions = _nres;
-   if (nresolutions < 1) nresolutions = 1;
-   if (nresolutions > 8) nresolutions = 8;
+   mNumResolutions = _nres;
+   if (mNumResolutions < 1) mNumResolutions = 1;
+   if (mNumResolutions > 8) mNumResolutions = 8;
 
    mVersion = 2;
    
   
-   for(i=0;i<nresolutions;i++) {
+   for(i=0;i<mNumResolutions;i++) {
      if (_tsizes) {
        tilesizes[i][0] = _tsizes[(i*2)+0];
        tilesizes[i][1] = _tsizes[(i*2)+1];
@@ -369,19 +328,30 @@ int smBase::newFile(const char *_fname, u_int _width, u_int _height,
    
   
    smdbprintf(5,"init: w %d h %d frames %d", framesizes[0][0], framesizes[0][1], 
-		nframes);
+		mNumFrames);
 
    fname = strdup(_fname);
 
-   mThreadData[0].fd = OPENC(_fname, O_WRONLY|O_CREAT|O_TRUNC, 0666);
-
-   foffset = (off64_t *)calloc(sizeof(off64_t),nframes*nresolutions);
-   CHECK(foffset);
-   foffset[0] = SM_HDR_SIZE*sizeof(u_int) +
-	   nframes*nresolutions*(sizeof(off64_t)+sizeof(u_int));
-   flength = (u_int *)calloc(sizeof(u_int),nframes*nresolutions);
-   CHECK(flength);
-   if (LSEEK64(mThreadData[0].fd, foffset[0], SEEK_SET) < 0)
+   mThreadData[0].fd = OPENC(_fname, O_WRONLY|O_CREAT|O_TRUNC, 0666);   
+   mResFileNames.push_back(_fname); 
+   mResFDs.push_back(mThreadData[0].fd); 
+   mResFileBytes.resize(mNumResolutions, 0); 
+   if (mNumResolutions > 1) {
+     char filename[L_tmpnam+1];
+     int res = 1;
+     while (res < mNumResolutions) {
+       mResFileNames.push_back(tmpnam(filename)); 
+       mResFDs.push_back(OPENC(mResFileNames[res].c_str(), O_WRONLY|O_CREAT|O_TRUNC, 0666)); 
+       ++res; 
+     }
+   }
+   
+   mFrameOffsets.resize(mNumFrames*mNumResolutions, 0); 
+   mFrameOffsets[0] = SM_HDR_SIZE*sizeof(u_int) +
+	   mNumFrames*mNumResolutions*(sizeof(off64_t)+sizeof(u_int));
+   
+   mFrameLengths.resize(mNumFrames*mNumResolutions, 0);
+   if (LSEEK64(mThreadData[0].fd, mFrameOffsets[0], SEEK_SET) < 0)
      smdbprintf(0, "Error seeking to frame 0\n");
 
    bModFile = TRUE;
@@ -444,9 +414,9 @@ void smBase::readHeader(void)
    setFlags(ntohl(type) & SM_FLAGS_MASK);
    type = ntohl(type) & SM_TYPE_MASK;
 
-   READ(lfd, &nframes, sizeof(u_int));
-   nframes = ntohl(nframes);
-   smdbprintf(4,"open file, nframes = %d", nframes);
+   READ(lfd, &mNumFrames, sizeof(u_int));
+   mNumFrames = ntohl(mNumFrames);
+   smdbprintf(4,"open file, mNumFrames = %d", mNumFrames);
 
    READ(lfd, &i, sizeof(u_int));
    framesizes[0][0] = ntohl(i);
@@ -457,10 +427,10 @@ void smBase::readHeader(void)
      framesizes[i][1] = framesizes[i-1][1]/2;
    }
    memcpy(tilesizes,framesizes,sizeof(framesizes));
-   nresolutions = 1;
+   mNumResolutions = 1;
 
    smdbprintf(4,"image size: %d %d", framesizes[0][0], framesizes[0][1]);
-   smdbprintf(4,"nframes=%d",nframes);
+   smdbprintf(4,"mNumFrames=%d",mNumFrames);
 
    // Version 2 header is bigger...
    if (mVersion == 2) {
@@ -470,9 +440,9 @@ void smBase::readHeader(void)
      LSEEK64(lfd,0,SEEK_SET);
      READ(lfd, arr, sizeof(u_int)*SM_HDR_SIZE);
      byteswap(arr,sizeof(u_int)*SM_HDR_SIZE,sizeof(u_int));
-     nresolutions = arr[5];
-     //smdbprintf(5,"nresolutions : %d",nresolutions);
-     for(i=0;i<nresolutions;i++) {
+     mNumResolutions = arr[5];
+     //smdbprintf(5,"mNumResolutions : %d",mNumResolutions);
+     for(i=0;i<mNumResolutions;i++) {
        tilesizes[i][1] = (arr[6+i] & 0xffff0000) >> 16;
        tilesizes[i][0] = (arr[6+i] & 0x0000ffff);
        tileNxNy[i][0] = (u_int)ceil((double)framesizes[i][0]/(double)tilesizes[i][0]);
@@ -491,7 +461,7 @@ void smBase::readHeader(void)
    }
    else {
      // initialize tile info to reasonable defaults
-     for (i = 0; i < nresolutions; i++) {
+     for (i = 0; i < mNumResolutions; i++) {
        tilesizes[i][0] = framesizes[i][0];
        tilesizes[i][1] = framesizes[i][1];
        tileNxNy[i][0] = 1;
@@ -500,32 +470,30 @@ void smBase::readHeader(void)
    }
    
    // Get the framestart offsets
-   foffset = (off64_t *)malloc(sizeof(off64_t)*(nframes+1)*nresolutions);
-   CHECK(foffset);
-   READ(lfd, foffset, sizeof(off64_t)*nframes*nresolutions);
-   byteswap(foffset,sizeof(off64_t)*nframes*nresolutions,sizeof(off64_t));
-   foffset[nframes*nresolutions] = filesize;
+   mFrameOffsets.resize((mNumFrames+1)*mNumResolutions, 0); 
+   READ(lfd, &mFrameOffsets[0], sizeof(off64_t)*mNumFrames*mNumResolutions);
+   byteswap(&mFrameOffsets[0],sizeof(off64_t)*mNumFrames*mNumResolutions,sizeof(off64_t));
+   mFrameOffsets[mNumFrames*mNumResolutions] = filesize;
 
    // Get the compressed frame lengths...
-   flength = (u_int *)malloc(sizeof(u_int)*(nframes)*nresolutions);
-   CHECK(flength);
+   mFrameLengths.resize(mNumFrames*mNumResolutions, 0); 
    maxFrameSize = 0; //maximum frame size
    if (mVersion == 2) {
-     READ(lfd, flength, sizeof(u_int)*nframes*nresolutions);
-     byteswap(flength,sizeof(u_int)*nframes*nresolutions,sizeof(u_int));
-     for (w=0; w<nframes*nresolutions; w++) {
-       if (flength[w] > maxFrameSize) maxFrameSize = flength[w];
+     READ(lfd, &mFrameLengths[0], sizeof(u_int)*mNumFrames*mNumResolutions);
+     byteswap(&mFrameLengths[0],sizeof(u_int)*mNumFrames*mNumResolutions,sizeof(u_int));
+     for (w=0; w<mNumFrames*mNumResolutions; w++) {
+       if (mFrameLengths[w] > maxFrameSize) maxFrameSize = mFrameLengths[w];
      }
    } else {
      // Compute this for older format files...
-     for (w=0; w<nframes*nresolutions; w++) {
-	   flength[w] = (foffset[w+1] - foffset[w]);
-       if (flength[w] > maxFrameSize) maxFrameSize = flength[w];
+     for (w=0; w<mNumFrames*mNumResolutions; w++) {
+	   mFrameLengths[w] = (mFrameOffsets[w+1] - mFrameOffsets[w]);
+       if (mFrameLengths[w] > maxFrameSize) maxFrameSize = mFrameLengths[w];
      }
    }
 #if SM_VERBOSE
-   for (w=0; w<nframes; w++) {
-     smdbprintf(5,"window %d: %d size %d", w, (int)foffset[w],flength[w]);
+   for (w=0; w<mNumFrames; w++) {
+     smdbprintf(5,"window %d: %d size %d", w, (int)mFrameOffsets[w],mFrameLengths[w]);
    }
 #endif
    smdbprintf(4,"maximum frame size is %d", maxFrameSize);
@@ -538,11 +506,11 @@ void smBase::readHeader(void)
      if(mVersion == 2) {
        // put preallocated tilebufs and tile info support here as well
        mThreadData[i].io_buf.clear(); 
-       mThreadData[i].io_buf.resize(maxFrameSize);
+       mThreadData[i].io_buf.resize(maxFrameSize, 0);
        mThreadData[i].tile_buf.clear();
-       mThreadData[i].tile_buf.resize(maxtilesize*3);
+       mThreadData[i].tile_buf.resize(maxtilesize*3, 0);
        mThreadData[i].tile_offsets.clear(); 
-       mThreadData[i].tile_offsets.resize(maxNumTiles);
+       mThreadData[i].tile_offsets.resize(maxNumTiles, 0);
        mThreadData[i].tile_infos.clear(); 
        mThreadData[i].tile_infos.resize(maxNumTiles);
      }
@@ -599,12 +567,12 @@ uint32_t smBase::readWin(u_int f, int threadnum)
 {
   off64_t size;
   
-  size = flength[f];
+  size = mFrameLengths[f];
   int fd = mThreadData[threadnum].fd;
   
-  smdbprintf(5,"READWIN frame %d, thread %d, %ld bytes at offset %ld", f, threadnum, size, foffset[f]);
+  smdbprintf(5,"READWIN frame %d, thread %d, %ld bytes at offset %ld", f, threadnum, size, mFrameOffsets[f]);
   
-  if (LSEEK64(fd, foffset[f], SEEK_SET) < 0){
+  if (LSEEK64(fd, mFrameOffsets[f], SEEK_SET) < 0){
     smdbprintf(0, "Error seeking to frame %d", f);
   }
 
@@ -637,14 +605,14 @@ uint32_t smBase::readWin(u_int f, int *dim, int* pos, int res, int threadnum)
   u_int readBufferOffset;
   smdbprintf(5,"readWin version 2, frame %d, thread %d", f, threadnum); 
   
-  off64_t frameOffset = foffset[f] ;
+  off64_t frameOffset = mFrameOffsets[f] ;
   int fd = mThreadData[threadnum].fd; 
 
   if (LSEEK64(fd, frameOffset, SEEK_SET) < 0) {
     smdbprintf(0, "Error seeking to frame %d, frameOffset %d: %s", f, frameOffset, strerror(errno));
     exit(1);
   }
-  assert(res < nresolutions);
+  assert(res < mNumResolutions);
   int nx = getTileNx(res);
   int ny = getTileNy(res);
   int numTiles =  nx * ny;
@@ -887,7 +855,7 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
    int d[2],_dim[2],_step[2],_pos[2],tilesize[2];
    int _res,_f;
    
-   if((res < 0) || (res > (nresolutions - 1))) {
+   if((res < 0) || (res > (mNumResolutions - 1))) {
      _res = 0;
    }
    else { 
@@ -920,7 +888,7 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
    
    /* move _f into initial resolution */
    if(_res > 0)
-     _f += getNumFrames() * _res;
+     _f += mNumFrames * _res;
    
    /* pick a resolution based on stepping */
    while((_res+1 < getNumResolutions()) && (_step[0] > 1) && (step[1] > 1)) {
@@ -931,7 +899,7 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
      _pos[1] >>= 1;
      _dim[0] >>= 1;
      _dim[1] >>=1;
-     _f += getNumFrames();
+     _f += mNumFrames;
    }
    
    d[0] = getWidth(_res);
@@ -968,7 +936,7 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
      bytesRead = readWin(_f, threadnum);
    }
    ioBuf = &(mThreadData[threadnum].io_buf[0]); 
-   size = flength[_f];
+   size = mFrameLengths[_f];
    tbuf = (u_char *)&(mThreadData[threadnum].tile_buf[0]);
    TileInfo *tileInfoList = (TileInfo *)&(mThreadData[threadnum].tile_infos[0]);
 
@@ -1061,138 +1029,259 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
    return bytesRead; 
  }
 
-void smBase::flushFrames(void) {
-  smdbprintf(3, "flushFrames() called\n"); 
-  smdbprintf(3, "write out the output buffer if possible.  mStagingBuffer=%s and mOutputBuffer=%s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
-  while  (mOutputBuffer.mFrameData.size()) {
-    smdbprintf(3, "flushFrames: writing frame %d to sm file\n", mOutputBuffer.mExpectedFirst); 
-    compressAndWriteFrame(mOutputBuffer.mExpectedFirst, mOutputBuffer.mFrameData[0]);
-    delete mOutputBuffer.mFrameData[0];
-    mOutputBuffer.mFrameData.pop_front(); 
-    mOutputBuffer.mExpectedFirst++; 
-  }
-  smdbprintf(3, "After flushing output buffer, mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
-  if (mStagingBuffer.mExpectedFirst == mOutputBuffer.mExpectedFirst) {
-    // Yes, output buffer can accept mStagingBuffer.mFrameData[0] and more, 
-    //  if it exists:
-    while (mStagingBuffer.mFrameData.size() && mStagingBuffer.mFrameData[0]){
-    smdbprintf(3, "flushFrames: moving frame %d to output buffer\n", mOutputBuffer.mExpectedFirst); 
-      mOutputBuffer.mFrameData.push_back(mStagingBuffer.mFrameData[0]);   
-      mStagingBuffer.mFrameData.pop_front(); 
-      mStagingBuffer.mExpectedFirst++; 
-    }
-  }
-  smdbprintf(3, "After flushing staging buffer, mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
-  // write out the output buffer if possible
-  while  (mOutputBuffer.mFrameData.size()) {
-    compressAndWriteFrame(mOutputBuffer.mExpectedFirst, mOutputBuffer.mFrameData[0]);
-    delete mOutputBuffer.mFrameData[0];
-    mOutputBuffer.mFrameData.pop_front(); 
-    mOutputBuffer.mExpectedFirst++; 
-  }
-  smdbprintf(3, "After flushing output buffer, mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
-  return; 
+/*!
+  Work proc for the writing thread -- just calls sm->writeThread()
+*/
+void *writeThreadFunction(void *arg) {
+  smdbprintf(5, "writeThreadFunction\n"); 
+  ((smBase*) arg)-> writeThread(); 
+  return NULL; 
 }
-  
-void smBase::bufferFrame(int f,  unsigned char *data, bool oktowrite) {
-  smdbprintf(3, "bufferFrame(%d, data == %p, oktowrite=%d)\n", f, data, (int)oktowrite); 
-  pthread_mutex_lock(&mStagingBufferMutex); 
-  if (!oktowrite) {
-    if  (mStagingBuffer.mFrameData.size() > mNumThreads*20) {
-      pthread_mutex_unlock(&mStagingBufferMutex); 
-      while (mStagingBuffer.mFrameData.size() > mNumThreads*20) {
-        usleep(1000); 
-      }
-      pthread_mutex_lock(&mStagingBufferMutex); 
-    }
-  }
-
-  smdbprintf(3, "bufferFrame, got staging mutex.  mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
-  
-  // buffer the frame into the staging buffer  
-  int32_t slotnum = f - mStagingBuffer.mExpectedFirst; 
-  smdbprintf(4, "slotnum = %d\n", slotnum); 
-  if (slotnum+1 > mStagingBuffer.mFrameData.size()) {
-    smdbprintf(3, "resizing mStagingBuffer to %d\n", slotnum+1); 
-    mStagingBuffer.mFrameData.resize(slotnum+1, NULL); 
-  }
-  smdbprintf(3, "adding frame %d to mStagingBuffer slot %d\n", f,  slotnum); 
-  
-  /* NEW CODE FOR THREADED COMPRESSION */
-  FrameCompressionWork wrk( f, data); 
-
-  /* end threaded compression code */ 
-
-  mStagingBuffer.mFrameData[slotnum] = data; 
-  smdbprintf(3, "bufferFrame, mStagingBuffer = %s",  mStagingBuffer.toString().c_str()); 
-  pthread_mutex_unlock(&mStagingBufferMutex); 
-  if (oktowrite) {
-    pthread_mutex_lock(&mStagingBufferMutex); 
-    // now lets' see if we can flush to output buffer and even to disk...
-    if (pthread_mutex_trylock(&mOutputBufferMutex) != EBUSY) {
-      smdbprintf(4, "f=%d, got output buffer mutex\n", f); 
-      // Can staging buffer  be flushed into the writing buffer?
-      if (mStagingBuffer.mExpectedFirst == mOutputBuffer.mExpectedFirst && mStagingBuffer.mFrameData.size() && mStagingBuffer.mFrameData[0]) {
-        smdbprintf(3, "bufferFrame f=%d: Yes, output buffer can accept mStagingBuffer.mFrameData[0] and more,if it exists.\n", f); 
-        while (mStagingBuffer.mFrameData.size() && mStagingBuffer.mFrameData[0]){
-          smdbprintf(3, "bufferFrame f=%d: moving frame %d from front of staging to back of output buffer\n", f, mStagingBuffer.mExpectedFirst); 
-          mOutputBuffer.mFrameData.push_back(mStagingBuffer.mFrameData[0]);   
-          mStagingBuffer.mFrameData.pop_front(); 
-          mStagingBuffer.mExpectedFirst++; 
-        }
-        smdbprintf(4, "bufferFrame f=%d: We are done flushing the staging buffer\n"); 
-      } else {
-        smdbprintf(4, "bufferFrame f=%d: We did not flush the staging buffer\n"); 
-      }      
-      smdbprintf(4, "bufferFrame f=%d: We can unlock the staging mutex\n", f); 
-      smdbprintf(3, "bufferFrame, mStagingBuffer = %s and mOutputBuffer = %s\n", mStagingBuffer.toString().c_str(), mOutputBuffer.toString().c_str()); 
-      pthread_mutex_unlock(&mStagingBufferMutex); 
-      // write out the output buffer if possible
-      while  (mOutputBuffer.mFrameData.size()) {
-        smdbprintf(3, "bufferFrame f=%d: writing frame %d to sm file\n", f, mOutputBuffer.mExpectedFirst); 
-        compressAndWriteFrame(mOutputBuffer.mExpectedFirst, mOutputBuffer.mFrameData[0]);
-        smdbprintf(4, "deleting frame buffer %p for frame %d\n" , mOutputBuffer.mFrameData[0], mOutputBuffer.mExpectedFirst);
-        delete mOutputBuffer.mFrameData[0];
-        mOutputBuffer.mFrameData.pop_front(); 
-        mOutputBuffer.mExpectedFirst++; 
-      }
-      smdbprintf(3, "bufferFrame f=%d: now unlock the output mutex\n", f); 
-      pthread_mutex_unlock(&mOutputBufferMutex); 
-    } 
-  }
-
-  return; 
-}
-
 
 /*!
-  thread-safe compression routine to help get speedup on multicore machines.  
+  Called by work proc for the writing thread -- keeps flushing the buffer. 
+*/
+void smBase::writeThread(void) {
+  while (!mWriteThreadStopSignal) {
+    if (!flushFrames(false)) {
+      usleep(1000); 
+    }
+  }
+  return; 
+}
+
+/*!
+  Starts the writing thread 
+*/
+void smBase::startWriteThread(void) {
+  mWriteThreadRunning = true; 
+  mWriteThreadStopSignal = false; 
+  pthread_create(&mWriteThread, NULL, writeThreadFunction, this); 
+  return; 
+}
+/*!
+  Stops the writing thread.  Does not return until thread is dead
+*/
+void smBase::stopWriteThread(void) {
+  mWriteThreadStopSignal = true; 
+  pthread_join(mWriteThread, NULL); 
+  mWriteThreadRunning = false; 
+  return; 
+}  
+
+/*!
+  1) close all resolution tmp files written by flushFrames()
+  2) reopen each resolution file  and cat onto the end of our movie.  
+  3) Fix all file offsets at this point from relative to absolute
+*/
+#define CHUNK_SIZE 5*1000*1000
+
+void smBase::combineResolutionFiles(void) {
+  smdbprintf(4, "combineResolutionFiles()\n"); 
+  if (mResFDs.size() < 2) return; 
+  u_char buf[CHUNK_SIZE+1]; 
+  int res = 1; 
+  while (res < mNumResolutions) {
+    // we are going to place this resolution at the end of the movie file, 
+    // so adjust the offsets by the current movie file length
+    uint64_t offsetAdjust = LSEEK64(mResFDs[0], 0, SEEK_END); // get file length
+    smdbprintf(4, "offsetAdjust is %d\n", offsetAdjust); 
+    uint32_t frame = 0, resframe = res*mNumFrames; 
+    while (frame++ < mNumFrames) { 
+      mFrameOffsets[resframe++] += offsetAdjust; 
+    }
+
+    // close the res file and reopen as readonly:
+    int fd = mResFDs[res]; 
+    close(fd); 
+    fd = open(mResFileNames[res].c_str(), O_RDONLY); 
+    if (fd == -1) {
+      smdbprintf(0, "ERROR: failed to open res file %s for reading.\n", mResFileNames[res].c_str());
+      perror("combineResolutionFiles"); 
+      abort(); 
+    }
+    // spin through the file and grab bytes and copy to "real" movie
+    uint64_t inputFileSize = mResFileBytes[res];   
+    uint64_t  bytesRemaining = inputFileSize; 
+    while (bytesRemaining) {
+      uint64_t bytesToRead = bytesRemaining; 
+      if (bytesToRead > CHUNK_SIZE) bytesToRead = CHUNK_SIZE; 
+      uint64_t bytesRead = read(fd, buf, bytesToRead); 
+      if (bytesRead <= 0) {
+        smdbprintf(0, "Error: failed read from res file %s\n", mResFileNames[res].c_str()); 
+        perror("combineResolutionFiles"); 
+        abort(); 
+      }
+      
+      uint64_t bytesWritten = WRITE(mResFDs[0], buf, bytesRead); 
+      if (bytesWritten != bytesRead) {
+         smdbprintf(0, "Error: failed write from res file %s to movie file\n", mResFileNames[res].c_str()); 
+        perror("combineResolutionFiles"); 
+        abort(); 
+      }       
+      bytesRemaining -= bytesRead;
+      smdbprintf(4, "After writing %d bytes, offset in file is %d\n", 
+                 inputFileSize - bytesRemaining, 
+                 LSEEK64(mResFDs[0], 0, SEEK_END)); 
+                 
+    }
+    smdbprintf(1, "Finished copying res %d file %s to movie file, which is now %d bytes\n", res, mResFileNames[res].c_str(), LSEEK64(mResFDs[0], 0, SEEK_END)); 
+    close (fd); 
+    ++ res; 
+  }
+  bModFile = TRUE;
+  return; 
+}
+
+/*! 
+  Called from the I/O thread to flush the staging buffer iff it is full.  
+  If force == true, then does not check to see if the buffer is full.  
+  To flush the buffer, first swap buffers, then write.  
+*/
+bool smBase::flushFrames(bool force) {
+  smdbprintf(4, "flushFrames(%d)\n", (int)force); 
+  if (!force && !mStagingBuffer->full()) {
+    smdbprintf(4, "flushFrames() returning false\n");     
+    return false; 
+  }
+  if (!mOutputBuffer->empty()) {
+    cerr << "Error:  mOutputBuffer has data in it already before swapping!" << endl; 
+    abort(); 
+  }
+  // swap buffers: 
+  pthread_mutex_lock(&mBufferMutex); 
+  OutputBuffer *tmpBuf = mOutputBuffer; 
+  mOutputBuffer = mStagingBuffer; 
+  mStagingBuffer = tmpBuf; 
+  mStagingBuffer->mFirstFrameNum = mOutputBuffer->mFirstFrameNum + mOutputBuffer->mNumFrames; 
+  smdbprintf(4, "flushFrames() swapped buffers\n");     
+  pthread_mutex_unlock(&mBufferMutex); 
+  
+  // see how much of a write buffer we need and reallocate if needed: 
+  if (mOutputBuffer->mRequiredWriteBufferSize > mWriteBuffer.size()) {
+    mWriteBuffer.resize(mOutputBuffer->mRequiredWriteBufferSize, 42); 
+  }
+
+  // copy each level of the output buffer: 
+  int res = 0; 
+  int firstFrame = mOutputBuffer->mFirstFrameNum, 
+    stopFrame =  mOutputBuffer->mFirstFrameNum + mOutputBuffer->mNumFrames;
+  
+  while (res < mNumResolutions) {
+
+    string filename = mResFileNames[res]; 
+    int fd =  mResFDs[res];   
+    // figure out the offset to the first frame in the resolution:
+    uint32_t firstFileOffset = 0; // true for res!=0 and firstFrame == 0 
+    uint32_t frame = firstFrame;   
+    uint32_t resFrame = frame + res*mNumFrames; 
+    
+    if (firstFrame != 0) {
+      firstFileOffset = mFrameOffsets[resFrame-1] + mFrameLengths[resFrame-1];
+    }     
+    else { //  firstFrame == 0) {
+      if (res == 0 ) {
+        firstFileOffset = mFrameOffsets[0]; // already pre-computed
+      }
+    }
+    uint32_t fileOffset = firstFileOffset; 
+
+    // setup some other variables for loop
+    int numTiles = getTileNx(res)*getTileNy(res);
+    uint32_t buffBytes = 0; // keep track of bytes to write
+    u_char *bufptr = &mWriteBuffer[0];
+    // copy all frames in this resolution to the output buffer:
+    while (frame < stopFrame) {
+      FrameCompressionWork *frameData = mOutputBuffer->mFrameBuffer[frame-firstFrame]; 
+      mFrameOffsets[resFrame] = fileOffset; 
+      mFrameLengths[resFrame] = 0;
+      // copy the tile info if needed into the output buffer:
+      if (mVersion != 1 && numTiles != 1) {  
+        int tileBytes = numTiles*sizeof(uint32_t);
+        memcpy(bufptr, &frameData->mCompTileSizes[res][0], tileBytes); 
+        mFrameLengths[resFrame] += tileBytes;   
+        bufptr += tileBytes;  
+        fileOffset += tileBytes; 
+        buffBytes += tileBytes;
+      }
+      // copy the image into the output buffer:  
+      int frameBytes = frameData->mCompFrameSize[res]; 
+      memcpy(bufptr, &frameData->mCompressed[res][0], frameBytes); 
+      mFrameLengths[resFrame] += frameBytes;;
+      bufptr += frameBytes;;
+      fileOffset += frameBytes;
+      buffBytes += frameBytes;
+      ++frame;
+      ++resFrame; 
+    }
+    // now write the entire buffer out into the file: 
+    
+    LSEEK64(fd, firstFileOffset, SEEK_SET); 
+    WRITE(fd, &mWriteBuffer[0], buffBytes); 
+    mResFileBytes[res] += buffBytes; 
+    smdbprintf(4, "Writing buffer:  Res=%d, startFrame=%d, numFrames=%d, bufbytes = %d , requiredBytes=%d, firstFileOffset = %d, mResFileBytes = %d, actual file length = %d, filename=%s.\n", res, firstFrame, stopFrame-firstFrame, buffBytes, mOutputBuffer->mRequiredWriteBufferSize, firstFileOffset, mResFileBytes[res], LSEEK64(fd, 0, SEEK_END), filename.c_str()); 
+    ++res; 
+  }
+  uint32_t f = mOutputBuffer->mFrameBuffer.size(); 
+  while (f--) {
+    delete mOutputBuffer->mFrameBuffer[f]; 
+    mOutputBuffer->mFrameBuffer[f] = NULL;
+  }
+  mOutputBuffer->mNumFrames = 0; 
+  bModFile = TRUE;
+  return true; 
+}
+/*! 
+  Compress the frame, then place it into the output buffer for writing.  
+  In order for buffered frames to actually get written,  call flushBuffer() 
+  occasionally, whether from the same thread or another.  Make sure enough 
+  frames are buffered so that I/O proceeds in large chunks.  
+ */
+void smBase::compressAndBufferFrame(int f,  u_char *data) {  
+  smdbprintf(4, "compressAndBufferFrame(frame=%d)\n", f); 
+  FrameCompressionWork *wrk = new FrameCompressionWork(f, data); 
+  compressFrame(wrk); 
+
+  bool canBuffer = false; 
+  pthread_mutex_lock(&mBufferMutex); 
+  while (!mStagingBuffer->addFrame(wrk)) {
+    pthread_mutex_unlock(&mBufferMutex); 
+    usleep(500); 
+    pthread_mutex_lock(&mBufferMutex); 
+  } 
+  pthread_mutex_unlock(&mBufferMutex); 
+  
+  return; 
+}
+
+/*!
+  Thread-safe compression routine to help get speedup on multicore machines.  
   This allows writing to be deferred until later, so that more than one thread
   can compress and I/O can be done from a single thread without any other work
-  to do.  
-  Since this only works on one mipmap level, the best way to loop over these is over mipmap levels, for best output throughput.  
+  to do.   
   Memory is freed when the wrk pointer is deleted.  
 */ 
 void smBase::compressFrame(FrameCompressionWork *wrk) {
+  smdbprintf(4, "START compressFrame, frame=%d\n", wrk->mFrame); 
   int numTiles = getTileNx(0)*getTileNy(0);
-   if (wrk->compressed.size()) {
-     smdbprintf(0, "Warning: Unexpected memory allocation present in work quantum.  I didn't think that would ever happen.\n");      
+   if (wrk->mCompressed.size()) {
+     smdbprintf(0, "Warning: Unexpected memory allocation present in work quantum.  Probably that should not ever happen.\n");      
    } 
-   if (wrk->compressed.size() < nresolutions) {
-     wrk->compressed.resize(nresolutions); 
-     wrk->compFrameSize.resize(nresolutions); 
-     wrk->compTileSizes.resize(nresolutions);
+   if (wrk->mCompressed.size() < mNumResolutions) {
+     wrk->mCompressed.resize(mNumResolutions, NULL);  
+     wrk->mCompFrameSize.resize(mNumResolutions, 0); 
+     wrk->mCompTileSizes.resize(mNumResolutions);
    }
    int res = 0; 
-   for (res=0; res<nresolutions; res++) {
-     if (wrk->compTileSizes[res].size() < numTiles) {
-       wrk->compTileSizes[res].resize(numTiles); 
-     }
-   } 
-   wrk->compFrameSize[0] = compFrame(wrk->uncompressed, NULL, &wrk->compTileSizes[0][0], 0); 
+   for (res=0; res<mNumResolutions; res++) {
+     if (wrk->mCompTileSizes[res].size() < numTiles) {
+       wrk->mCompTileSizes[res].resize(numTiles, 0);      
+     } 
+   }
+   wrk->mCompFrameSize[0] = compFrame(wrk->mUncompressed, NULL, &wrk->mCompTileSizes[0][0], 0); 
    // Set the zeroth resolution
-   wrk->compressed[0] = new u_char [wrk->compFrameSize[0]];
-   compFrame(wrk->uncompressed,wrk->compressed[0],&wrk->compTileSizes[0][0],0);
+   wrk->mCompressed[0] = new u_char [wrk->mCompFrameSize[0]];
+   wrk->mCompFrameSize[0] = compFrame(wrk->mUncompressed,wrk->mCompressed[0],&wrk->mCompTileSizes[0][0],0);
    
    // quick out
    if (getNumResolutions() == 1) return;
@@ -1202,7 +1291,7 @@ void smBase::compressFrame(FrameCompressionWork *wrk) {
    u_char *scaled1 = new u_char[getWidth(0)*getHeight(0)*3];
    CHECK(scaled0);
    CHECK(scaled1);
-   memcpy(scaled0,wrk->uncompressed,getWidth(0)*getHeight(0)*3);
+   memcpy(scaled0,wrk->mUncompressed,getWidth(0)*getHeight(0)*3);
    for(res=1;res<getNumResolutions();res++) {
      
      Sample2d(scaled0,getWidth(res-1),getHeight(res-1),
@@ -1210,33 +1299,37 @@ void smBase::compressFrame(FrameCompressionWork *wrk) {
               0,0,getWidth(res-1),getHeight(res-1),1);
      
      // write the frame level
-     wrk->compFrameSize[res] = compFrame(scaled1,NULL,&wrk->compTileSizes[res][0],res);
-     wrk->compressed[res]= new u_char[wrk->compFrameSize[res]];
-     compFrame(scaled1,wrk->compressed[res],&wrk->compTileSizes[res][0],res);
+     wrk->mCompFrameSize[res] = compFrame(scaled1,NULL,&wrk->mCompTileSizes[res][0],res);
+     wrk->mCompressed[res]= new u_char[wrk->mCompFrameSize[res]];
+     wrk->mCompFrameSize[res] = compFrame(scaled1,wrk->mCompressed[res],&wrk->mCompTileSizes[res][0],res);
+     smdbprintf(5, "res %d, frame %d compressed size: %d\n", res, wrk->mFrame, wrk->mCompFrameSize[res] ); 
      u_char *tmp = scaled0; 
      scaled0 = scaled1;
      scaled1 = tmp; 
    }
    delete scaled0;
    delete scaled1;
+   smdbprintf(4, "END compressFrame, frame=%d\n", wrk->mFrame); 
    return; 
 }
 
-//! Another poorly named function . Should be called "writeFrame", I think.
 /*!
-  Compress the data and calls helpers to write it out to disk. 
+  Compress the data and calls helpers to write it out to disk. Writing one 
+  frame at a time is bad for performance;  I just rewrote the old code with my new compressFrame() code as a test case.  
+  For better performance, call bufferFrame() and then occasionally flushBuffer(). 
   \param f the frame number
   \param data frame data to write.
 */ 
-void smBase::compressAndWriteFrame(int f, void *data)
+void smBase::compressAndWriteFrame(int f, u_char *data)
 {
+  smdbprintf(4, "compressAndWriteFrame(%d)\n", f); 
   FrameCompressionWork wrk(f, data); 
 
   compressFrame(&wrk); 
    
   int res=0; 
   for(res=0;res<getNumResolutions();res++) {
-    writeCompFrame(f,wrk.compressed[res],&wrk.compTileSizes[res][0],res);
+    writeCompFrame(f,wrk.mCompressed[res],&wrk.mCompTileSizes[res][0],res);
   }
      
   return; 
@@ -1255,14 +1348,15 @@ void smBase::compressAndWriteFrame(int f, void *data)
 */
 void smBase::writeCompFrame(int f, void *data, int *sizes, int res)
 {
+  smdbprintf(4, "writeCompFrame(f=%d, res=%d)\n", f, res); 
   uint32_t tz;
   int numTiles = getTileNx(res)*getTileNy(res);
   int fd = mThreadData[0].fd;
-  foffset[f+res*getNumFrames()] = LSEEK64(fd,0,SEEK_CUR);
+  mFrameOffsets[f+res*mNumFrames] = LSEEK64(fd,0,SEEK_CUR);
  
   if (mVersion == 1 || numTiles == 1) {
-    foffset[f+res*getNumFrames()] = LSEEK64(mThreadData[0].fd,0,SEEK_CUR);
-    flength[f+res*getNumFrames()] = sizes[0];
+    mFrameOffsets[f+res*mNumFrames] = LSEEK64(mThreadData[0].fd,0,SEEK_CUR);
+    mFrameLengths[f+res*mNumFrames] = sizes[0];
     WRITE(mThreadData[0].fd, data, sizes[0]);
     
     bModFile = TRUE;
@@ -1278,12 +1372,12 @@ void smBase::writeCompFrame(int f, void *data, int *sizes, int res)
       //smdbprintf(5,"size tile[%d] = %d\n",i,sizes[i]);
       size += sizes[i];
     } 
-    flength[f+res*getNumFrames()] = size + numTiles*sizeof(uint32_t);
+    mFrameLengths[f+res*mNumFrames] = size + numTiles*sizeof(uint32_t);
    
   }
   else {
      size += sizes[0];
-     flength[f+res*getNumFrames()] = size;
+     mFrameLengths[f+res*mNumFrames] = size;
   }
   //smdbprintf(5,"write %d bytes\n",size);
   WRITE(fd, data, size);
@@ -1306,9 +1400,9 @@ void smBase::getCompFrame(int frame, int threadnum, void *data, int &rsize, int 
    u_int size;
    void *ioBuf;
 
-   readWin(frame+res*getNumFrames(), threadnum);
+   readWin(frame+res*mNumFrames, threadnum);
    ioBuf = &(mThreadData[threadnum].io_buf[0]); 
-   size = flength[frame];
+   size = mFrameLengths[frame];
    
    if (data) memcpy(data, ioBuf, size);
    rsize = (int)size;
@@ -1322,7 +1416,7 @@ void smBase::getCompFrame(int frame, int threadnum, void *data, int &rsize, int 
 */
 int smBase::getCompFrameSize(int frame, int res)
 {
-	return(flength[frame+res*getNumFrames()]);
+	return(mFrameLengths[frame+res*mNumFrames]);
 }
 
 
@@ -1338,8 +1432,7 @@ int smBase::compFrame(void *in, void *out, int *outsizes, int res)
 {
    int frameDims[2];
    int tileDims[2];
-   int size, totsize = 0;
-   int msize;
+   int totsize = 0;
    char *base;
    
    frameDims[0] = getWidth(res);
@@ -1351,8 +1444,6 @@ int smBase::compFrame(void *in, void *out, int *outsizes, int res)
    
    //smdbprintf(5,"frameDims[%d,%d] , tileDims[%d,%d]\n",frameDims[0],frameDims[1],tileDims[0],tileDims[1]);
    
-   char *tilebuf = (char *)malloc(tileDims[0] * tileDims[1] * 3);
-   CHECK(tilebuf);
 
    int nx = getTileNx(res);
    int ny = getTileNy(res);
@@ -1360,19 +1451,22 @@ int smBase::compFrame(void *in, void *out, int *outsizes, int res)
    if (mVersion == 1 || numTiles == 1) {
      if (!out) {
        // How big is the frame
-       compBlock(in,NULL,size,frameDims);
+       compBlock(in,NULL,totsize,frameDims);
      } else {
        // build the compressed frame...
-       compBlock(in,out,size,frameDims);
+       compBlock(in,out,totsize,frameDims);
      }
-     outsizes[0] = size; 
-     return size;
+     outsizes[0] = totsize; 
+     return totsize;
    }
 
+   char *tilebuf = (char *)malloc(tileDims[0] * tileDims[1] * 3);
+   CHECK(tilebuf);
    char *outp = (char*)out;
    
    for(int j=0;j<ny;j++) {
      for(int i=0;i<nx;i++) {
+       int size =0, msize=0; 
        if(out == NULL) {
          //smdbprintf(5,"compFrame tile index[%d,%d]\n",i,j);
        }
@@ -1416,7 +1510,7 @@ int smBase::compFrame(void *in, void *out, int *outsizes, int res)
    }
 #endif 
    free(tilebuf);
-   return size;
+   return totsize;
 }
 
 /* close the file and write out the header
@@ -1427,30 +1521,31 @@ void smBase::closeFile(void)
    smdbprintf(3, "smBase::closeFile"); 
 
    if (bModFile == TRUE) {
+     combineResolutionFiles(); 
 	int i;
 
    	LSEEK64(mThreadData[0].fd, 0, SEEK_SET);
 
    	arr[0] = SM_MAGIC_2;
    	arr[1] = getType() | getFlags();
- 	arr[2] = nframes;
+ 	arr[2] = mNumFrames;
   	arr[3] = framesizes[0][0];
    	arr[4] = framesizes[0][1];
-	arr[5] = nresolutions;
-	//smdbprintf(5,"nresolutions = %d\n",nresolutions);
-	for(i=0;i<nresolutions;i++) {
+	arr[5] = mNumResolutions;
+	//smdbprintf(5,"mNumResolutions = %d\n",mNumResolutions);
+	for(i=0;i<mNumResolutions;i++) {
 		arr[i+6] = (tilesizes[i][1] << 16) | tilesizes[i][0];
 	}
    	byteswap(arr,sizeof(u_int)*SM_HDR_SIZE,sizeof(u_int));
    	WRITE(mThreadData[0].fd, arr, sizeof(u_int)*SM_HDR_SIZE);
 
-   	byteswap(foffset,sizeof(off64_t)*nframes*nresolutions,sizeof(off64_t));
-   	WRITE(mThreadData[0].fd, foffset, sizeof(off64_t)*nframes*nresolutions);
-   	byteswap(foffset,sizeof(off64_t)*nframes*nresolutions,sizeof(off64_t));
+   	byteswap(&mFrameOffsets[0],sizeof(off64_t)*mNumFrames*mNumResolutions,sizeof(off64_t));
+   	WRITE(mThreadData[0].fd, &mFrameOffsets[0], sizeof(off64_t)*mNumFrames*mNumResolutions);
+   	byteswap(&mFrameOffsets[0],sizeof(off64_t)*mNumFrames*mNumResolutions,sizeof(off64_t));
 
-   	byteswap(flength,sizeof(u_int)*nframes*nresolutions,sizeof(u_int));
-   	WRITE(mThreadData[0].fd, flength, sizeof(u_int)*nframes*nresolutions);
-   	byteswap(flength,sizeof(u_int)*nframes*nresolutions,sizeof(u_int));
+   	byteswap(&mFrameLengths[0],sizeof(u_int)*mNumFrames*mNumResolutions,sizeof(u_int));
+   	WRITE(mThreadData[0].fd, &mFrameLengths[0], sizeof(u_int)*mNumFrames*mNumResolutions);
+   	byteswap(&mFrameLengths[0],sizeof(u_int)*mNumFrames*mNumResolutions,sizeof(u_int));
 
 	//smdbprintf(5,"seek header end is %d\n",LSEEK64(mThreadData[0].fd, 0, SEEK_CUR));
    }

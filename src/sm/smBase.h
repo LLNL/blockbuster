@@ -82,6 +82,48 @@ void sm_setVerbose(int level);  // 0-5, 0 is quiet, 5 is verbose
 #define SM_MAGIC_VERSION1	0x0f1e2d3c
 #define SM_MAGIC_VERSION2	0x0f1e2d3d
 
+/*!
+  ===============================================
+  debug print statements, using smdbprintf, which 
+  output the file, line, time of execution for each statement. 
+  Incredibly useful
+*/ 
+
+#ifdef SM_VERBOSE 
+#include <stdarg.h>
+#include "../common/timer.h"
+#include "../common/stringutil.h"
+void sm_setVerbose(int level);
+
+struct smMsgStruct {
+  int line; 
+  string file, function; 
+}; 
+static smMsgStruct gMsgStruct; 
+
+#define SMPREAMBLE 
+#define smdbprintf  \
+  gMsgStruct.line = __LINE__, gMsgStruct.file=__FILE__, gMsgStruct.function=__FUNCTION__, sm_real_dbprintf  
+extern int smVerbose;
+inline void sm_real_dbprintf(int level, const char *fmt, ...) {  
+  if (smVerbose < level) return; 
+  cerr << " SMDEBUG [" << gMsgStruct.file << ":"<< gMsgStruct.function << "(), line "<< gMsgStruct.line << ", time=" << GetExactSeconds() << "]: " ;
+  va_list ap;
+  va_start(ap, fmt);
+  vfprintf(stderr,fmt,ap);
+  va_end(ap);
+  //cerr << endl; 
+  return; 
+}
+#else
+inline void sm_real_dbprintf(int level, const char *fmt, ...) {  
+  return; 
+}
+#define smdbprintf if(0) sm_real_dbprintf
+#endif
+//===============================================
+
+
 struct TileInfo {  
   std::string toString(void); 
   u_int tileNum;
@@ -109,9 +151,78 @@ struct smThreadData {
   std::vector<TileInfo> tile_infos; // used for computing overlap info
 };
   
+/*!
+  A struct to hold info for compressing a frame to avoid recomputing stuff
+*/ 
+struct FrameCompressionWork {
+  FrameCompressionWork(int inFrame, u_char *data)  {
+    mFrame = inFrame; 
+    mUncompressed = data; 
+  }
+  ~FrameCompressionWork() {
+    clear(); 
+  }
+  
+  void clear(void) {
+    int  pos = mCompressed.size(); 
+    while (pos--) {
+      delete mCompressed[pos]; 
+    }
+    delete mUncompressed; 
+    mUncompressed = NULL; 
+    mCompressed.clear(); 
+    mCompTileSizes.clear(); 
+    mCompFrameSize.clear(); 
+  }
+  int mFrame;
+  vector< vector<int> > mCompTileSizes; //sizes of the compressed tiles, for each resolution
+  vector<int> mCompFrameSize; // total size of compressed frame at each resolution
+  u_char *mUncompressed;
+  vector<u_char *>mCompressed; // Buffers of compressed frames, one for each resolution level
+}; 
 
+/*!
+  Helps organize buffering for I/O. 
+*/ 
 struct OutputBuffer {
-  OutputBuffer():mExpectedFirst(0) {
+  OutputBuffer(uint32_t buffSize): mRequiredWriteBufferSize(0),
+                  mFirstFrameNum(0), mNumFrames(0) {
+    mFrameBuffer.resize(buffSize); 
+    return; 
+  }
+  bool full(void) {
+    return (mNumFrames == mFrameBuffer.size()); 
+  } 
+  bool empty(void) { 
+    return (mNumFrames == 0); 
+  }
+  
+  bool addFrame(FrameCompressionWork* frame){
+    int slotnum = frame->mFrame - mFirstFrameNum;
+    if (slotnum + 1 > mFrameBuffer.size() ||  slotnum < 0) {      
+      return false; 
+    }
+    if (mFrameBuffer[slotnum]) {
+      smdbprintf(0, "Bad thing:  placing frame %d in an occupied slot!\n", frame->mFrame);
+    }
+    mRequiredWriteBufferSize += frame->mCompFrameSize[0]; 
+    mFrameBuffer[slotnum] = frame; 
+    mNumFrames++; 
+    return true; 
+  }
+  
+  
+  vector<FrameCompressionWork*> mFrameBuffer; // stored as work quanta until actually rewritten; then marshalled into mWriteBuffer for efficient I/O 
+  int64_t mRequiredWriteBufferSize; // computed as frames are buffered
+  int32_t mFirstFrameNum;  
+  int32_t mNumFrames;  // number of entries in mDataBuffer -- can't use size() because elements are placed out of order, and resize() is called only once.  
+}; 
+
+/*!
+  OLD CODE: 
+*/
+struct OldOutputBuffer {
+  OldOutputBuffer():mExpectedFirst(0) {
     return; 
   }
   std::string toString(void) {
@@ -126,31 +237,11 @@ struct OutputBuffer {
 }; 
 
 /*!
-  A struct to hold info for compressing a frame to avoid recomputing stuff
+  SMbASE base class for streaming movies
 */ 
-struct FrameCompressionWork {
-  FrameCompressionWork(int inFrame, void *data)  {
-    frame = inFrame; 
-    uncompressed = data; 
-  }
-  ~FrameCompressionWork() {
-    int  pos = compressed.size(); 
-    while (pos--) {
-      delete compressed[pos]; 
-    }
-    compressed.clear(); 
-  }
-  int frame;
-  vector< vector<int> > compTileSizes; //sizes of the compressed tiles, for each resolution
-  vector<int> compFrameSize; // total size of compressed frame at each resolution
-  void *uncompressed;
-  vector<u_char *>compressed; // compressed frames, one for each resolution level 
-}; 
-
-
 class smBase {
  public:
-  smBase(const char *fname, int numthreads=1);
+  smBase(const char *fname, int numthreads=1, uint32_t bufferSize=50);
   virtual ~smBase();
   
   // get the decompressed image or return the raw compressed data
@@ -165,13 +256,20 @@ class smBase {
   int getCompFrameSize(int frame,int res = 0);
   
   // set the frame image, either uncompressed or compressed data
-  void compressAndWriteFrame(int frame,void *data);
+  void compressAndWriteFrame(int frame, u_char *data);
   //void setCompFrame(int frame, void *data, int size,int res = 0);
   void writeCompFrame(int frame, void *data, int *sizes,int res = 0);
 
   // for multithreaded case, this allows buffering into a queue.  This will hang if a frame is ever skipped!  
-  void bufferFrame(int frame,unsigned char *data, bool oktowrite);
-  void flushFrames(void); 
+  // void bufferFrame(int frame,unsigned char *data, bool oktowrite);
+  void writeThread(void); 
+  void startWriteThread(void); 
+  void stopWriteThread(void); 
+
+  void combineResolutionFiles(void);
+  bool flushFrames(bool force); 
+  void compressAndBufferFrame(int frame,u_char *data);
+  //void flushFrames(void); 
 
   // Tile based version follows
   int computeTileSizes(FrameCompressionWork *wrk, int resolution);
@@ -188,8 +286,8 @@ class smBase {
   
   u_int getWidth(int res=0)  { return(framesizes[res][0]); }
   u_int getHeight(int res=0) { return(framesizes[res][1]); }
-  u_int getNumFrames() { return(nframes); }
-  u_int getNumResolutions() { return(nresolutions); }
+  u_int getNumFrames() { return(mNumFrames); }
+  u_int getNumResolutions() { return(mNumResolutions); }
   u_int getTileWidth(int res=0) { return(tilesizes[res][0]); }
   u_int getTileHeight(int res=0) { return(tilesizes[res][1]); }
   u_int getTileNx(int res=0) { return(tileNxNy[res][0]); }
@@ -253,8 +351,8 @@ void printFrameDetails(FILE *fp, int f);
   u_int flags;
   
   // number of frames in the movie
-  u_int nframes;
-  u_int nresolutions;
+  u_int mNumFrames;
+  u_int mNumResolutions;
   
   // image size
   u_int framesizes[8][2]; // 8 is the limit on LOD apparently. 
@@ -264,9 +362,9 @@ void printFrameDetails(FILE *fp, int f);
   u_int maxNumTiles;
   
   // 64-bit offset of each compressed frame
-  off64_t *foffset;
+  vector<off64_t>mFrameOffsets;
   // 32-bit length of each compressed frame
-  unsigned int *flength;
+  vector<unsigned int>mFrameLengths;
   
   // "mod" flag
   int bModFile;
@@ -282,12 +380,24 @@ void printFrameDetails(FILE *fp, int f);
   char *fname;
   
   
-  /*!
+  vector<int> mResFDs; // for mipmap files written in "parallel" 
+  vector<string> mResFileNames; //  they have to be written to, then read
+  vector<uint64_t> mResFileBytes; // size of the tmp files
+ /*!
     Per-thread data structures, to ensure thread safety.  Every function must now specify a thread number. 
   */ 
   std::vector<smThreadData> mThreadData; 
-  OutputBuffer mStagingBuffer, mOutputBuffer; 
-  pthread_mutex_t mStagingBufferMutex, mOutputBufferMutex; 
+  // staging buffer is for worker threads to place work to
+  OutputBuffer *mOutputBuffers[2]; 
+  OutputBuffer *mStagingBuffer, 
+  // output buffer is for I/O thread to write to disk
+    *mOutputBuffer; 
+  pthread_mutex_t mBufferMutex; 
+
+  pthread_t mWriteThread; 
+  bool mWriteThreadRunning, mWriteThreadStopSignal; 
+
+  vector<u_char>mWriteBuffer; // for use in marshalling data and writing
 
   // directory of movie types
   static u_int ntypes;
