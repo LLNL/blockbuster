@@ -193,6 +193,19 @@ struct FrameCompressionWork {
         ++ sizenum;
       }
       mystring += intToString(mCompFrameSizes[sizenum]) + ")"; 
+    } else {
+      mystring += ", no compressed frames found";
+    }
+    if (mCompTileSizes.size()) {
+      mystring += ", tiles per resolution: ("; 
+      int resnum = 0; 
+      while (resnum < mCompTileSizes.size()-1) {
+        mystring += intToString(mCompTileSizes[resnum].size()) + ",";
+        ++ resnum; 
+      }
+      mystring += intToString(mCompTileSizes[resnum].size()) + ")";
+    } else {
+      mystring += ", no tiles detected"; 
     }
     return mystring;
   }      
@@ -352,7 +365,7 @@ void printFrameDetails(FILE *fp, int f);
   // internal functions to compress or decompress a rectangle of pixels
   // most subclasses need only replace these...
   virtual void compBlock(void *in, void *out, int &outsize, int *dim) = 0;
-  virtual void decompBlock(u_char *in,u_char *out,int insize, int *dim) = 0;
+  virtual bool decompBlock(u_char *in,u_char *out,int insize, int *dim) = 0;
   
   // create a new movie
   int newFile(const char *fname, u_int w, u_int h,

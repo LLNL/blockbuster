@@ -64,32 +64,31 @@ smRLE::create(const char *_fname, int _nwin)
    return(new smRLE(_fname, _nwin));
 }
 
-void
-smRLE::decompBlock(u_char *cdata,u_char *image,int,int *dim)
-   {
-   int i,n;
-   int npix = 0;
-   //fprintf(stderr,"decompressing rle\n");
-   while (npix < dim[0]*dim[1])
+bool smRLE::decompBlock(u_char *cdata,u_char *image,int,int *dim)
+{
+  int i,n;
+  int npix = 0;
+  //fprintf(stderr,"decompressing rle\n");
+  while (npix < dim[0]*dim[1]) {
+    
+    n = *cdata++;
+    //fprintf(stderr,"npix %d : n %d\n",npix,n);
+    if (npix + n > getWidth()*getHeight()) 
       {
-	
-      n = *cdata++;
-      //fprintf(stderr,"npix %d : n %d\n",npix,n);
-      if (npix + n > getWidth()*getHeight()) 
-         {
-         fprintf(stderr, "smRLE: rle code error\n");
-         n = getWidth()*getHeight() - npix;
-         }
-      for (i=0; i<n; i++) 
-         {
-         *image++ = cdata[0];
-         *image++ = cdata[1];
-         *image++ = cdata[2];
-         }
-      cdata += 3;
-      npix += n;
+        fprintf(stderr, "smRLE: rle code error\n");
+        n = getWidth()*getHeight() - npix;
       }
-   }
+    for (i=0; i<n; i++) 
+      {
+        *image++ = cdata[0];
+        *image++ = cdata[1];
+        *image++ = cdata[2];
+      }
+    cdata += 3;
+    npix += n;
+  }
+  return true; 
+}
 
 
 smRLE *

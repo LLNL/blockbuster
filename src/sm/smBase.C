@@ -310,8 +310,12 @@ int smBase::newFile(const char *_fname, u_int _width, u_int _height,
   
    for(i=0;i<mNumResolutions;i++) {
      if (_tsizes) {
-       tilesizes[i][0] = _tsizes[(i*2)+0];
-       tilesizes[i][1] = _tsizes[(i*2)+1];
+       if (_tsizes[(i*2)+0] < tilesizes[i][0]) {
+         tilesizes[i][0] = _tsizes[(i*2)+0];
+       }
+       if (_tsizes[(i*2)+1] < tilesizes[i][1]) {
+         tilesizes[i][1] = _tsizes[(i*2)+1];
+       }
        tileNxNy[i][0] = (u_int)ceil((double)framesizes[i][0]/(double)tilesizes[i][0]);
        tileNxNy[i][1] = (u_int)ceil((double)framesizes[i][1]/(double)tilesizes[i][1]);
        assert(tileNxNy[i][0] < 1000);
@@ -541,6 +545,10 @@ uint32_t smBase::readData(int fd, u_char *buf, int bytes) {
   uint32_t remaining = bytes; 
   while  (remaining >0) {
     int r=READ(fd, buf, remaining);
+    if (!r) {
+        smdbprintf(0, "smBase::readData() error: read=%d remaining=%d, unsuccessful read, giving up\n",r, remaining); 
+        return bytes-remaining; 
+    }
     if (r < 0) {
       if ((errno != EINTR) && (errno != EAGAIN)) {
         smdbprintf(0, "smBase::readData() error: read=%d remaining=%d: %s",r, remaining, strerror(errno)); 
@@ -612,7 +620,11 @@ uint32_t smBase::readAndDecompressFrame(u_int f, int *dim, int* pos, int res, in
     smdbprintf(0, "Error seeking to frame %d, frameOffset %d: %s", f, frameOffset, strerror(errno));
     exit(1);
   }
-  assert(res < mNumResolutions);
+  if (res > mNumResolutions-1) {
+    smdbprintf(0, "Error: requested resolution %d does not exist in movie", res);
+    exit(1);
+  }
+    
   int nx = getTileNx(res);
   int ny = getTileNy(res);
   int numTiles =  nx * ny;
@@ -665,7 +677,7 @@ uint32_t smBase::readAndDecompressFrame(u_int f, int *dim, int* pos, int res, in
     // Grab data for overlapping tiles
     int tile; 
     for(tile = 0, tileInfo = &(mThreadData[threadnum].tile_infos[0]); 
-        tile < numTiles; 
+        tile < numTiles && !tileInfo->skipCorruptFlag; 
         tile++, tileInfo++) {
       if(tileInfo->overlaps && ! tileInfo->cached) {
         //	smdbprintf(5,"tile %d newly overlaps",tile);
@@ -843,39 +855,33 @@ uint32_t smBase::getFrame(int f, void *data, int threadnum, int res)
   \param res resolution desired (level of detail)
 */
  
-uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStride, int *dim, int *pos, int *step, int res)
+uint32_t smBase::getFrameBlock(int frame, void *data, int threadnum,  int destRowStride, int *inDim, int *inPos, int *inStep, int res)
 {
-  smdbprintf(5,"smBase::getFrameBlock, frame %d, thread %d, data %p", f, threadnum, data); 
+  smdbprintf(5,"smBase::getFrameBlock, frame %d, thread %d, data %p", frame, threadnum, data); 
    u_char *ioBuf;
    uint32_t size;
    u_char *image;
    u_char *out = (u_char *)data;
    u_char *rowPtr = (u_char *)data;
    uint32_t bytesRead=0; 
-   int d[2],_dim[2],_step[2],_pos[2],tilesize[2];
-   int _res,_f;
+   int full_frame_dims[2], _dim[2],_step[2],_pos[2],tilesize[2];
    
    if((res < 0) || (res > (mNumResolutions - 1))) {
-     _res = 0;
+     res = 0;
    }
-   else { 
-     _res = res;
-   }
-
-   _f = f;
-
-   if (step) {
-       _step[0] = step[0]; _step[1] = step[1];
+ 
+   if (inStep) {
+       _step[0] = inStep[0]; _step[1] = inStep[1];
    } else {
        _step[0] = 1; _step[1] = 1;
    }
-   if (dim) {
-       _dim[0] = dim[0]; _dim[1] = dim[1];
+   if (inDim) {
+       _dim[0] = inDim[0]; _dim[1] = inDim[1];
    } else {
-       _dim[0] = getWidth(_res); _dim[1] = getHeight(_res);
+       _dim[0] = getWidth(res); _dim[1] = getHeight(res);
    }
-   if (pos) {
-       _pos[0] = pos[0]; _pos[1] = pos[1];
+   if (inPos) {
+       _pos[0] = inPos[0]; _pos[1] = inPos[1];
    } else {
        _pos[0] = 0; _pos[1] = 0;
    }
@@ -886,34 +892,33 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
    assert(_dim[0] + _pos[0] <= getWidth(0));
    assert(_dim[1] + _pos[1] <= getHeight(0));
    
-   /* move _f into initial resolution */
-   if(_res > 0)
-     _f += mNumFrames * _res;
+   /* move frame into initial resolution */
+   if(res > 0)
+     frame += mNumFrames * res;
    
    /* pick a resolution based on stepping */
-   while((_res+1 < getNumResolutions()) && (_step[0] > 1) && (step[1] > 1)) {
-     _res++;
+   while((res+1 < getNumResolutions()) && (_step[0] > 1)) {
+     res++;
      _step[0] >>= 1;
      _step[1] >>= 1;
      _pos[0] >>= 1;
      _pos[1] >>= 1;
      _dim[0] >>= 1;
      _dim[1] >>=1;
-     _f += mNumFrames;
+     frame += mNumFrames;
    }
    
-   d[0] = getWidth(_res);
-   d[1] = getHeight(_res);
+   full_frame_dims[0] = getWidth(res);
+   full_frame_dims[1] = getHeight(res);
    
    if (!destRowStride)
      destRowStride = _dim[0] * 3;
    
-   tilesize[0] = getTileWidth(_res);
-   tilesize[1] = getTileHeight(_res);
+   tilesize[0] = getTileWidth(res);
+   tilesize[1] = getTileHeight(res);
    
-   if (d[0] < tilesize[0]) d[0] = tilesize[0];
-   if (d[1] < tilesize[1]) d[1] = tilesize[1];
-   
+   //if (full_frame_dims[0] > tilesize[0]) full_frame_dims[0] = tilesize[0];
+   //if (full_frame_dims[1] > tilesize[1]) full_frame_dims[1] = tilesize[1];   
    
    // tile support 
    int nx = 0;
@@ -921,42 +926,47 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
    int numTiles = 0;
    u_char *tbuf;
     
-   nx = getTileNx(_res);
-   ny = getTileNy(_res);
+   nx = getTileNx(res);
+   ny = getTileNy(res);
    numTiles =  nx * ny;
 
-   assert(numTiles < 1000);
+   //assert(numTiles < 1000);
 
    ioBuf = (u_char *)NULL;
 
    if((mVersion == 2) && (numTiles > 1)) {
-     bytesRead = readAndDecompressFrame(_f,&_dim[0],&_pos[0],(int)_res, threadnum);
+     bytesRead = readAndDecompressFrame(frame,&_dim[0],&_pos[0],(int)res, threadnum);
    }
    else {
-     bytesRead = readCompressedFrame(_f, threadnum);
+     bytesRead = readCompressedFrame(frame, threadnum);
    }
    ioBuf = &(mThreadData[threadnum].io_buf[0]); 
-   size = mFrameLengths[_f];
+   size = mFrameLengths[frame];
    tbuf = (u_char *)&(mThreadData[threadnum].tile_buf[0]);
    TileInfo *tileInfoList = (TileInfo *)&(mThreadData[threadnum].tile_infos[0]);
 
    
    if(numTiles < 2) {
-     smdbprintf(5,"Calling decompBlock on frame %d since numTiles < 2", _f);
+     smdbprintf(5,"Calling decompBlock on frame %d since numTiles < 2", frame);
      if ((_pos[0] == 0) && (_pos[1] == 0) && 
          (_step[0] == 1) && (_step[1] == 1) &&
-         (_dim[0] == d[0]) && (_dim[1] == d[1])) {
+         (_dim[0] == full_frame_dims[0]) && (_dim[1] == full_frame_dims[1])) {
        smdbprintf(5,"getFrameBlock: decompBlock on entire frame"); 
-       decompBlock(ioBuf,out,size,d); 
-       
+       if (!decompBlock(ioBuf,out,size,full_frame_dims)) {
+         smdbprintf(0, "Error decompressing block in frame %d\n", frame); 
+         return 0; 
+       }       
      } else {
-       smdbprintf(5, "downsampled or partial frame %d", _f); 
-       image = (u_char *)malloc(3*d[0]*d[1]);
+       smdbprintf(5, "downsampled or partial frame %d", frame); 
+       image = (u_char *)malloc(3*full_frame_dims[0]*full_frame_dims[1]);
        CHECK(image);
-       decompBlock(ioBuf,image,size,d);
+       if (!decompBlock(ioBuf,image,size,full_frame_dims)) {
+         smdbprintf(0, "Error decompressing block in frame %d\n", frame); 
+         return 0; 
+       }       
        for(int y=_pos[1];y<_pos[1]+_dim[1];y+=_step[1]) {
          u_char *dest = rowPtr;
-         const u_char *p = image + 3*d[0]*y + _pos[0]*3;
+         const u_char *p = image + 3*full_frame_dims[0]*y + _pos[0]*3;
          for(int x=0;x<_dim[0];x+=_step[0]) {
            *dest++ = p[0];
            *dest++ = p[1];
@@ -970,7 +980,7 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
      smdbprintf(5, "Done with single tiled image"); 
    } /* END single tiled simage */ 
    else { 
-     smdbprintf(5,"smBase::getFrameBlock(frame %d, thread %d): process across %d overlapping tiles", f, threadnum, numTiles); 
+     smdbprintf(5,"smBase::getFrameBlock(frame %d, thread %d): process across %d overlapping tiles", frame, threadnum, numTiles); 
      uint32_t copied=0;
      for(int tile=0; tile<numTiles; tile++){
        //smdbprintf(5,"tile %d", tile); 
@@ -987,12 +997,12 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
          int maxX = tileInfo.tileLengthX, maxY = tileInfo.tileLengthY; 
          uint32_t newBytes = 3*maxX*maxY, maxAllowed = (_dim[0]*_dim[1]*3);
          uint32_t newTotal = newBytes + copied; 
-         /*!
-           smdbprintf(5, "thread %d, Frame %d, tile %d, copying %d rows %d pixels per row, %d new bytes, %d copied so far, new total will be %d, max allowed is %d x %d x 3 = %d", 
-           threadnum, f, tile, maxY, maxX, newBytes, 
+         
+         smdbprintf(5, "thread %d, Frame %d, tile %d, copying %d rows %d pixels per row, %d new bytes, %d copied so far, new total will be %d, max allowed is %d x %d x 3 = %d", 
+           threadnum, frame, tile, maxY, maxX, newBytes, 
            copied, newTotal,  
            _dim[0], _dim[1], maxAllowed ); 
-         */ 
+         
          if (newTotal > maxAllowed) {
            smdbprintf(0, "Houston, we have a problem. Dump core here. new total > maxAllowed"); 
            abort(); 
@@ -1025,7 +1035,7 @@ uint32_t smBase::getFrameBlock(int f, void *data, int threadnum,  int destRowStr
      }
    } /* end process across overlapping tiles */
    
-   smdbprintf(5,"END smBase::getFrameBlock, frame %d, thread %d, bytes read = %d", f, threadnum, bytesRead); 
+   smdbprintf(5,"END smBase::getFrameBlock, frame %d, thread %d, bytes read = %d", frame, threadnum, bytesRead); 
    return bytesRead; 
  }
 
@@ -1201,7 +1211,7 @@ bool smBase::flushFrames(bool force) {
       mFrameOffsets[resFrame] = fileOffset; 
       mFrameLengths[resFrame] = 0;
       // copy the tile info if needed into the output buffer:
-      if (mVersion != 1 && numTiles != 1) {  
+      if (mVersion != 1 && numTiles > 1) {  
         int tileBytes = numTiles*sizeof(uint32_t);
         memcpy(bufptr, &frameData->mCompTileSizes[res][0], tileBytes); 
         mFrameLengths[resFrame] += tileBytes;   
@@ -1271,54 +1281,54 @@ void smBase::compressAndBufferFrame(int f,  u_char *data) {
 */ 
 void smBase::compressFrame(FrameCompressionWork *wrk) {
   smdbprintf(4, "START compressFrame, frame=%d\n", wrk->mFrame); 
-  int numTiles = getTileNx(0)*getTileNy(0);
-   if (wrk->mCompressed.size()) {
-     smdbprintf(0, "Warning: Unexpected memory allocation present in work quantum.  Probably that should not ever happen.\n");      
-   } 
-   if (wrk->mCompressed.size() < mNumResolutions) {
-     wrk->mCompressed.resize(mNumResolutions, NULL);  
-     wrk->mCompFrameSizes.resize(mNumResolutions, 0); 
-     wrk->mCompTileSizes.resize(mNumResolutions);
-   }
-   int res = 0; 
-   for (res=0; res<mNumResolutions; res++) {
-     if (wrk->mCompTileSizes[res].size() < numTiles) {
-       wrk->mCompTileSizes[res].resize(numTiles, 0);      
-     } 
-   }
-   wrk->mCompFrameSizes[0] = compFrame(wrk->mUncompressed, NULL, &wrk->mCompTileSizes[0][0], 0); 
-   // Set the zeroth resolution
-   wrk->mCompressed[0] = new u_char [wrk->mCompFrameSizes[0]];
-   wrk->mCompFrameSizes[0] = compFrame(wrk->mUncompressed,wrk->mCompressed[0],&wrk->mCompTileSizes[0][0],0);
-   
-   // quick out
-   if (getNumResolutions() == 1) return;
-   
-   // Now the mipmaps...
-   u_char *scaled0 = new u_char[getWidth(0)*getHeight(0)*3];
-   u_char *scaled1 = new u_char[getWidth(0)*getHeight(0)*3];
-   CHECK(scaled0);
-   CHECK(scaled1);
-   memcpy(scaled0,wrk->mUncompressed,getWidth(0)*getHeight(0)*3);
-   for(res=1;res<getNumResolutions();res++) {
-     
-     Sample2d(scaled0,getWidth(res-1),getHeight(res-1),
-              scaled1,getWidth(res),getHeight(res),
-              0,0,getWidth(res-1),getHeight(res-1),1);
-     
-     // write the frame level
-     wrk->mCompFrameSizes[res] = compFrame(scaled1,NULL,&wrk->mCompTileSizes[res][0],res);
-     wrk->mCompressed[res]= new u_char[wrk->mCompFrameSizes[res]];
-     wrk->mCompFrameSizes[res] = compFrame(scaled1,wrk->mCompressed[res],&wrk->mCompTileSizes[res][0],res);
-     smdbprintf(5, "res %d, frame %d compressed size: %d\n", res, wrk->mFrame, wrk->mCompFrameSizes[res] ); 
-     u_char *tmp = scaled0; 
-     scaled0 = scaled1;
-     scaled1 = tmp; 
-   }
-   delete scaled0;
-   delete scaled1;
-   smdbprintf(4, "END compressFrame: wrk=%s\n", wrk->toString().c_str()); 
-   return; 
+  if (wrk->mCompressed.size()) {
+    smdbprintf(0, "Warning: Unexpected memory allocation present in work quantum.  Probably that should not ever happen.\n");      
+  } 
+  if (wrk->mCompressed.size() < mNumResolutions) {
+    wrk->mCompressed.resize(mNumResolutions, NULL);  
+    wrk->mCompFrameSizes.resize(mNumResolutions, 0); 
+    wrk->mCompTileSizes.resize(mNumResolutions);
+  }
+  int res = 0; 
+  for (res=0; res<mNumResolutions; res++) {
+    int numTiles = getTileNx(res)*getTileNy(res);
+    if (wrk->mCompTileSizes[res].size() < numTiles) {
+      wrk->mCompTileSizes[res].resize(numTiles, 0);      
+    } 
+  }
+  wrk->mCompFrameSizes[0] = compFrame(wrk->mUncompressed, NULL, &wrk->mCompTileSizes[0][0], 0); 
+  // Set the zeroth resolution
+  wrk->mCompressed[0] = new u_char [wrk->mCompFrameSizes[0]];
+  wrk->mCompFrameSizes[0] = compFrame(wrk->mUncompressed,wrk->mCompressed[0],&wrk->mCompTileSizes[0][0],0);
+  
+  // quick out
+  if (getNumResolutions() == 1) return;
+  
+  // Now the mipmaps...
+  u_char *scaled0 = new u_char[getWidth(0)*getHeight(0)*3];
+  u_char *scaled1 = new u_char[getWidth(0)*getHeight(0)*3];
+  CHECK(scaled0);
+  CHECK(scaled1);
+  memcpy(scaled0,wrk->mUncompressed,getWidth(0)*getHeight(0)*3);
+  for(res=1;res<getNumResolutions();res++) {
+    
+    Sample2d(scaled0,getWidth(res-1),getHeight(res-1),
+             scaled1,getWidth(res),getHeight(res),
+             0,0,getWidth(res-1),getHeight(res-1),1);
+    
+    // write the frame level
+    wrk->mCompFrameSizes[res] = compFrame(scaled1,NULL,&wrk->mCompTileSizes[res][0],res);
+    wrk->mCompressed[res]= new u_char[wrk->mCompFrameSizes[res]];
+    wrk->mCompFrameSizes[res] = compFrame(scaled1,wrk->mCompressed[res],&wrk->mCompTileSizes[res][0],res);
+    smdbprintf(4, "res %d, frame %d compressed size: %d\n", res, wrk->mFrame, wrk->mCompFrameSizes[res] ); 
+    u_char *tmp = scaled0; 
+    scaled0 = scaled1;
+    scaled1 = tmp; 
+  }
+  delete scaled0;
+  delete scaled1;
+  smdbprintf(4, "END compressFrame: wrk=%s\n", wrk->toString().c_str()); 
+  return; 
 }
 
 /*!

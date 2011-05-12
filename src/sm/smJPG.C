@@ -111,7 +111,7 @@ smBase *smJPG::create(const char *_fname, int _nwin)
    return(new smJPG(_fname, _nwin));
 }
 
-void smJPG::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
+bool smJPG::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
 {
    jpgerr_struct jerr_st;
    struct jpeg_decompress_struct cinfo;
@@ -137,7 +137,7 @@ void smJPG::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
    jerr_st.pub.error_exit=jpg_error_exit;
    if (setjmp(jerr_st.setjmp_buffer)) {
    	jpeg_destroy_decompress(&cinfo);
-	return;
+	return false;
    }
 
    // grab header and startup decompress
@@ -154,7 +154,7 @@ void smJPG::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
    jpeg_finish_decompress(&cinfo);
    jpeg_destroy_decompress(&cinfo);
 
-   return;
+   return true;
 }
 
 smJPG *smJPG::newFile(const char *_fname, 

@@ -405,6 +405,8 @@ int main(int argc,char **argv)
 		if (!pZoom) exit(1);
 	}
 
+    
+
 	// Open the output file...
 	if(tiled) {
 	  if (iRLE == 1) {
