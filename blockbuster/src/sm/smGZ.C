@@ -65,7 +65,7 @@ smBase *smGZ::create(const char *_fname, int _nwin)
    return(new smGZ(_fname, _nwin));
 }
 
-void smGZ::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
+bool smGZ::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
 {
    int 	err;
    int  dlen;
@@ -85,7 +85,7 @@ void smGZ::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
    err = inflateInit(&stream);
    if (err != Z_OK) {
      gzdbprintf(stderr,"GZ decompression init error: %d\n",err);
-      return;
+      return false;
    }
 
    while(err == Z_OK) {
@@ -93,16 +93,17 @@ void smGZ::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
    }
    if (err != Z_STREAM_END) {
      gzdbprintf(stderr,"GZ decompression error: %d\n",err);
+      return false;
    }
 
    err = inflateEnd(&stream);
    if (err != Z_OK) {
       gzdbprintf(stderr,"GZ decompression end error: %d\n",err);
-      return;
+      return false;
    }
 
 
-   return;
+   return true;
 }
 
 smGZ *smGZ::newFile(const char *_fname, 

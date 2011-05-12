@@ -90,7 +90,7 @@ smBase *smLZO::create(const char *_fname, int _nwin)
    return(new smLZO(_fname, _nwin));
 }
 
-void smLZO::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
+bool smLZO::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
 {
    lzo_uint dlen;
    int  status;
@@ -100,9 +100,10 @@ void smLZO::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
 		   (lzo_byte *)image,&dlen,NULL);
    if (status != LZO_E_OK) {
 	fprintf(stderr,"LZO decompression error: %d\n",status);
+    return false; 
    }
 
-   return;
+   return true;
 }
 
 smLZO *smLZO::newFile(const char *_fname, 

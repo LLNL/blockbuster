@@ -63,7 +63,7 @@ class smRLE : public smBase {
    protected:
       static smBase *create(const char *_fname, int _nwin);
       void compBlock(void *, void *, int&, int *dim);
-      void decompBlock(u_char *,u_char *,int, int *dim);
+      bool decompBlock(u_char *,u_char *,int, int *dim);
 
    private:
       static u_int typeID;

@@ -70,7 +70,7 @@ class smJPG : public smBase {
    protected:
       static smBase *create(const char *_fname, int _nwin);
       void compBlock(void *, void *, int&, int *dim);
-      void decompBlock(u_char *cdata,u_char *image,int size, int *dim);
+      bool decompBlock(u_char *cdata,u_char *image,int size, int *dim);
 
 
    private:

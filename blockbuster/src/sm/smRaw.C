@@ -82,7 +82,8 @@ void smRaw::compBlock(void *data, void *cdata, int &size,int *dim)
    if (cdata) memcpy(cdata, data, size);
 }
 
-void smRaw::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
+bool smRaw::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
 {
    memcpy(image,cdata,size);
+   return true; 
 }
