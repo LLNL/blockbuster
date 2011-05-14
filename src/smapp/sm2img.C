@@ -94,6 +94,7 @@ void cmdline(char *app,int binfo)
 	fprintf(stderr,"\t-last num Select last frame number to extract. Default:last frame.\n");
 	fprintf(stderr,"\t-step num Select frame number step factor. Default:1.\n");
 	fprintf(stderr,"\t-quality num Select JPEG output quality (0-100). Default: 75\n");
+	fprintf(stderr,"\t-threads num Use num threads for work. Default: 1\n");
 	fprintf(stderr,"\t-form [\"tiff\"|\"sgi\"|\"pnm\"|\"png\"|\"jpg\"|\"YUV\"] Output file format (default:sgi)\n");
 	fprintf(stderr,"\t-region offsetX offsetY sizeX sizeY -- Output will be the given subregion of the input.  Default: offsets 0 0, original size .  \n");
 	fprintf(stderr,"\t-mipmap Extract frame from mipmap level. Default: 0\n");

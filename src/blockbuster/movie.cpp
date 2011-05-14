@@ -789,7 +789,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       }
       
       if (event.eventType == MOVIE_NONE && !playDirection) {
-        dbprintf(5, " start back up at outer loop\n"); 
+        //dbprintf(5, " start back up at outer loop\n"); 
         continue;
       }
       else if (event.eventType == MOVIE_QUIT) {

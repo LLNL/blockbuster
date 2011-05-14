@@ -142,6 +142,7 @@ struct TileInfo {
   u_int tileOffsetY;
   u_int tileLengthX;  /* length of mem copy */
   u_int tileLengthY;
+  uint32_t fileOffset; /* offset from start of frame, including header */ 
   u_int readBufferOffset; /* where to find this tile in buffer */
   u_int compressedSize; 
   u_int skipCorruptFlag;
@@ -153,7 +154,6 @@ struct smThreadData {
   int fd; 
   uint32_t currentFrame ; // prevent duplicate reads of same frame
   std::vector<u_char> io_buf;  // for reading chunks from files
-  std::vector <uint32_t> tile_offsets; 
   std::vector<u_char> tile_buf; // for reading tiles; 
   std::vector<TileInfo> tile_infos; // used for computing overlap info
 };
@@ -228,6 +228,12 @@ struct OutputBuffer {
   bool full(void) {
     return (mNumFrames == mFrameBuffer.size()); 
   } 
+
+  void resize(uint32_t frames) {
+    smdbprintf(3, "OutputBuffer::resize() Resizing frame buffer to %ld frames\n", frames); 
+    mFrameBuffer.resize(frames); 
+  }
+
   bool empty(void) { 
     return (mNumFrames == 0); 
   }
@@ -279,6 +285,9 @@ class smBase {
   smBase(const char *fname, int numthreads=1, uint32_t bufferSize=50);
   virtual ~smBase();
   
+  /// set size of output buffers. 
+  void setBufferSize(uint32_t frames);
+
   // get the decompressed image or return the raw compressed data
   uint32_t getFrame (int frame, void *out, int threadnum, int res=0); // for threads
   
@@ -367,7 +376,7 @@ void printFrameDetails(FILE *fp, int f);
   virtual void compBlock(void *in, void *out, int &outsize, int *dim) = 0;
   virtual bool decompBlock(u_char *in,u_char *out,int insize, int *dim) = 0;
   
-  // create a new movie
+  // create a new movie for writing
   int newFile(const char *fname, u_int w, u_int h,
 		      u_int nframes, u_int *tilesizes = NULL, u_int nres=1, int numthreads=1);
   
@@ -378,8 +387,8 @@ void printFrameDetails(FILE *fp, int f);
   void readHeader(void);
   void initWin(void);
   uint32_t readData(int fd, u_char *buf, int bytes);
-  uint32_t readCompressedFrame(u_int frame, int threadnum);
-  uint32_t readAndDecompressFrame(u_int frame, int*dimensions, int*position, int resolution, int threadnum);
+  uint32_t readFrame(u_int frame, int threadnum);
+  uint32_t readTiledFrame(u_int frame, int*dimensions, int*position, int resolution, int threadnum);
   
   int mNumThreads; 
   // Flags on top of the filetype...

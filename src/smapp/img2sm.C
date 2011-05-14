@@ -144,6 +144,7 @@ void cmdline(char *app)
   fprintf(stderr,"\t-last [last] Last image number. Default is to search.\n");
   fprintf(stderr,"\t-step [step] Image number step.  Default is 1.\n");
   fprintf(stderr,"\t-fps [fps] Set preferred frame rate.  Default is 30, max is 50.  (-FPS is deprecated) \n");
+  fprintf(stderr,"\t-buffersize [nt] Number of frames to buffer.  Default is 200.  Using lower values saves memory but may decrease performance, and vice versa.\n");
   fprintf(stderr,"\t-threads [nt] Number of threads to use. Default is 1.\n");
   fprintf(stderr,"\t-mipmaps [n] Number of mipmap levels. Default is 1.\n");
   fprintf(stderr,"\t-v Verbose mode (same as -verbose 1).\n");
@@ -444,6 +445,7 @@ int main(int argc,char **argv)
   int	iIgnore = 0;
   float		fFPS = 30.0;
   float		fRotate = 0.0;
+  int           bufferSize = 100;
   int           nThreads = 1;
   int		nRes = 1;
 
@@ -453,7 +455,7 @@ int main(int argc,char **argv)
   char		filename[1024],filename2[1024];
   char          tsizestr[1024] = "512";
   unsigned int  tsizes[8][2];
-  int tiled = 0;
+  int tiled = 1;
   //unsigned char	*inputBuf = NULL;
   smBase 		*sm = NULL;
 
@@ -498,6 +500,8 @@ int main(int argc,char **argv)
       i++; nRes = atoi(argv[i]);
       if (nRes < 1) nRes = 1;
       if (nRes > 8) nRes = 8;
+    } else if ((strcmp(argv[i],"-buffersize")==0) && (i+1 < argc))  {
+      i++; bufferSize = atoi(argv[i]);
     } else if ((strcmp(argv[i],"-threads")==0) && (i+1 < argc))  {
       i++; nThreads = atoi(argv[i]);
     } else if (strcmp(argv[i],"-form")==0) {
@@ -842,23 +846,9 @@ int main(int argc,char **argv)
   // set the flags...
   sm->setFlags(iStereo);
   sm->setFPS(fFPS);
-
+  sm->setBufferSize(bufferSize); 
   /* init the parallel tools */
 
-  {
-    // Check memory resources
-    const int cMaxMem = 1024 * 1024 * 512;
-
-    // rationale for the following formula (allow 2 images for the pool, 1 image for deferred free, and 2 images for setFrame)
-    int maxThreads = (int)floor((double)(cMaxMem/((iSize[0]*iSize[1]*3)*5)));
-    
-    if (maxThreads < 1) maxThreads = 1;
-
-    if(nThreads > maxThreads) {
-      nThreads = maxThreads;
-      fprintf(stderr,"Warning -- throttling thread usage to conserve memory : new count = %d\n",nThreads);
-    }
-  }
   
   pt_pool         thepool;
   pt_pool_t       pool = &thepool;
