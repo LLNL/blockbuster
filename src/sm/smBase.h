@@ -284,24 +284,6 @@ struct OutputBuffer {
 }; 
 
 /*!
-  OLD CODE: 
-*/
-struct OldOutputBuffer {
-  OldOutputBuffer():mExpectedFirst(0) {
-    return; 
-  }
-  std::string toString(void) {
-    return std::string("{OutputBuffer: mExpectedFirst: ")+intToString(mExpectedFirst)+", num frames="+intToString(mFrameData.size())+"}";
-  }
-  /*!
-    mExpectedFirst tells you where to slot a new frame in the buffer, and conversely what frame is stored in a given buffer slot
-    iff mFrameData[0] is non-NULL, we have a frame and the buffer can be flushed, assuming the next buffer is ready.  Disk is always ready, but output buffer is only ready if its expected first frame matches the staging buffer.  
-  */
-  int32_t mExpectedFirst; 
-  std::deque<unsigned char *> mFrameData; 
-}; 
-
-/*!
   SMbASE base class for streaming movies
 */ 
 class smBase {

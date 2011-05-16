@@ -350,11 +350,12 @@ int smBase::newFile(const char *_fname, u_int _width, u_int _height,
    mResFDs.push_back(mThreadData[0].fd); 
    mResFileBytes.resize(mNumResolutions, 0); 
    if (mNumResolutions > 1) {
-     char filename[L_tmpnam+1];
+     char filename[] = "/tmp/smBase-tmpfileXXXXXX";
      int res = 1;
      while (res < mNumResolutions) {
-       mResFileNames.push_back(tmpnam(filename)); 
-       mResFDs.push_back(OPENC(mResFileNames[res].c_str(), O_WRONLY|O_CREAT|O_TRUNC, 0666)); 
+       int fd = mkstemp(filename); 
+       mResFileNames.push_back(filename); 
+       mResFDs.push_back(fd); 
        ++res; 
      }
    }
