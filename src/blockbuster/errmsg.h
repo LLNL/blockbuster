@@ -40,12 +40,12 @@ void set_verbose(int level);
 void real_dbprintf(int level, const char *fmt, ...);
 void real_dbprintf(int level, QString msg); 
 //void real_dbprintf(QString msg); 
-#endif
 // dbprintf stuff is in common.h, as it is used in sidecar
 /*!
   The slaves will call this to prevent error messages from popping up on DMX displays from the backends.
 */ 
 void SuppressMessageDialogs(bool);
+#endif
 
 // assertions are kind of sucky.  I prefer an actual error.  This looks uninformative, but ERROR at least tells you a line number.  Later I could add more informative info as well.   
 #define bb_assert(condition)                      \

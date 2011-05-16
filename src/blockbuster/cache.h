@@ -17,19 +17,21 @@
 #include <deque>
 using namespace std; 
 
-class ImageCache; 
+#define ImageCache OldImageCache
 
-//! ImageCacheJob:  a request for the workers to get an image
-struct ImageCacheJob {
-  ImageCacheJob(): frameNumber(0), levelOfDetail(0), requestNumber(0) {}
-  ImageCacheJob(uint32_t frame, const Rectangle *reg, 
+class OldImageCache; 
+
+//! OldImageCacheJob:  a request for the workers to get an image
+struct OldImageCacheJob {
+  OldImageCacheJob(): frameNumber(0), levelOfDetail(0), requestNumber(0) {}
+  OldImageCacheJob(uint32_t frame, const Rectangle *reg, 
                 uint32_t  lod, uint32_t reqnum): 
     frameNumber(frame),  levelOfDetail(lod), requestNumber(reqnum)
   { region = *reg; }
     
-  ~ImageCacheJob() {}
+  ~OldImageCacheJob() {}
   QString toString(void) {
-    return QString("{ ImageCacheJob: frameNumber = %1, region = %2, LOD = %3, request = %4, frameInfo = %5 }").arg(frameNumber).arg(region.toString()).arg(levelOfDetail).arg(requestNumber).arg(frameInfo.toString());
+    return QString("{ OldImageCacheJob: frameNumber = %1, region = %2, LOD = %3, request = %4, frameInfo = %5 }").arg(frameNumber).arg(region.toString()).arg(levelOfDetail).arg(requestNumber).arg(frameInfo.toString());
   }
 
   FrameInfo frameInfo; /* Local copy needed in case FrameList changes while we're working */
@@ -52,7 +54,7 @@ struct CachedImage{
 class CacheThread: public QThread {
   Q_OBJECT
     public:
-  CacheThread(ImageCache *incache): 
+  CacheThread(OldImageCache *incache): 
     cache(incache), mStop(false) {
     CACHEDEBUG("CacheThread constructor");     
     RegisterThread(this); 
@@ -62,7 +64,7 @@ class CacheThread: public QThread {
 
   void run(void); 
   void stop(void) { mStop = true; }
-  ImageCache *cache;
+  OldImageCache *cache;
   bool mStop; 
 };
 
@@ -74,21 +76,21 @@ class CacheThread: public QThread {
  * to be preloaded, loaded upon request, retrieved quickly if they're
  * already loaded, etc.
  *
- * The ImageCache handles the basic threading operations required
+ * The OldImageCache handles the basic threading operations required
  * by the application, by handing off work to child threads and
  * waiting on them appropriately.  (If no threads are specified,
- * the ImageCache can also run simply as an abstraction layer.)
+ * the OldImageCache can also run simply as an abstraction layer.)
  * Most of the information in here is owned by the "boss" thread,
  * if there's more than one thread.  It should not be accessed
  * or changed by the child threads, except where specifically
  * allowed, because access is not, in general, controlled by
  * mutexes (mutices? :-).
  */
-class ImageCache {
+class OldImageCache {
   friend class CacheThread; 
  public:
-  ImageCache(int numthreads, int numimages, Canvas *c);
-  ~ImageCache(); 
+  OldImageCache(int numthreads, int numimages, Canvas *c);
+  ~OldImageCache(); 
   
   Image *GetImage(uint32_t frameNumber,
                   const Rectangle *newRegion, uint32_t levelOfDetail);
@@ -106,22 +108,22 @@ class ImageCache {
  protected:
   CachedImage *GetCachedImageSlot(uint32_t newFrameNumber);
   
-  void RemoveJobFromPendingQueue(ImageCacheJob *job) {
+  void RemoveJobFromPendingQueue(OldImageCacheJob *job) {
     RemoveJobFromQueue(mPendingQueue, job); 
   }
   
-  void RemoveJobFromQueue(deque<ImageCacheJob*> &queue, ImageCacheJob *job);
+  void RemoveJobFromQueue(deque<OldImageCacheJob*> &queue, OldImageCacheJob *job);
   
-  ImageCacheJob *FindJobInQueue
-    (deque<ImageCacheJob*> &queue,  unsigned int frameNumber, 
+  OldImageCacheJob *FindJobInQueue
+    (deque<OldImageCacheJob*> &queue,  unsigned int frameNumber, 
      const Rectangle *region, unsigned int levelOfDetail); 
-  void ClearQueue(deque<ImageCacheJob*> &queue); 
+  void ClearQueue(deque<OldImageCacheJob*> &queue); 
   void ClearImages(void); 
   void ClearJobQueue(void);
   CachedImage *FindImage(uint32_t frame, uint32_t lod);
   void Print(void); 
 #define PrintJobQueue(q) __PrintJobQueue(#q,q)
-  void __PrintJobQueue(QString name, deque<ImageCacheJob *>&q); 
+  void __PrintJobQueue(QString name, deque<OldImageCacheJob *>&q); 
   void  lock(char *reason, char *file="unknown file", int line=0) {
     CACHEDEBUG("%s: %d: locking image cache (%s)", 
                file, line, reason); 
@@ -177,16 +179,16 @@ class ImageCache {
   std::vector<CacheThread *> mThreads;
   QMutex imageCacheLock; 
   QWaitCondition jobReady, jobDone; 
-  deque<ImageCacheJob *> mJobQueue;
-  deque<ImageCacheJob *> mPendingQueue;
-  deque<ImageCacheJob *> mErrorQueue;
+  deque<OldImageCacheJob *> mJobQueue;
+  deque<OldImageCacheJob *> mPendingQueue;
+  deque<OldImageCacheJob *> mErrorQueue;
 } ;
 
 /* Image Cache management from cache.c.  These utilities are expected to be
  * used by Renderer modules to manage their images (because each renderer
  * is responsible for its own image management).
  */
-ImageCache *CreateImageCache(int numReaderThreads, int maxCachedImages, Canvas *canvas);
+OldImageCache *CreateImageCache(int numReaderThreads, int maxCachedImages, Canvas *canvas);
 void CachePreload(Canvas *canvas, uint32_t frameNumber, 
                   const Rectangle *imageRegion, uint32_t levelOfDetail);
 
