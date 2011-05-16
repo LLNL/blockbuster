@@ -271,17 +271,19 @@ smBase *smBase::openFile(const char *_fname, int numthreads)
   \param fp FILE * to the file containing the frame
   \param f frame number
 */ 
-void smBase::printFrameDetails(FILE *fp,int f)
+void smBase::printFrameDetails(FILE *fp,int f, int res)
 {
-   if ((f < 0) || (f >= mNumFrames*mNumResolutions)) {
-      fprintf(fp,"%d\tInvalid frame\n",f);
-      return;
-   }
+  f = res*getNumFrames() + f; 
+  if ((f < 0) || (f >= mNumFrames*mNumResolutions)) {
+    fprintf(fp,"%d\tInvalid frame\n",f);
+    return;
+  }
 #ifdef WIN32
-   fprintf(fp,"%d\t%I64d\t%d\n",f,mFrameOffsets[f],mFrameLengths[f]);
+  fprintf(fp,"%d\toffset=%I64d\tlength=%d\n",f,mFrameOffsets[f],mFrameLengths[f]);
 #else
-   fprintf(fp,"%d\t%lld\t%d\n",f,mFrameOffsets[f],mFrameLengths[f]);
+  fprintf(fp,"%d\t%lld\t%d\n",f,mFrameOffsets[f],mFrameLengths[f]);
 #endif
+     
    return;
 }
 
@@ -621,11 +623,11 @@ uint32_t smBase::readTiledFrame(u_int f, int *dim, int* pos, int res, int thread
   
   uint32_t bytesRead = 0; 
   u_int readBufferOffset=0;
-  smdbprintf(5,"readAndDecompressFrame version 2, frame %d, thread %d", f, threadnum); 
+  smdbprintf(5,"readTiledFrame version 2, frame %d, thread %d", f, threadnum); 
   
   off64_t frameOffset = mFrameOffsets[f] ;
   int fd = mThreadData[threadnum].fd; 
-
+  
   if (LSEEK64(fd, frameOffset, SEEK_SET) < 0) {
     smdbprintf(0, "Error seeking to frame %d, frameOffset %d: %s", f, frameOffset, strerror(errno));
     exit(1);
@@ -647,14 +649,16 @@ uint32_t smBase::readTiledFrame(u_int f, int *dim, int* pos, int res, int thread
     int headerSize =  numTiles * sizeof(uint32_t);
     // read the tile sizes from frame header
     int r=readData(fd, ioBuf, headerSize);
-    
+    smdbprintf(5, "Read header, %lu bytes from offset %lu in file\n", 
+               headerSize, frameOffset); 
     if (r !=  headerSize) { // hmm -- assume we read it all, I guess... iffy?  
       char	s[40];
-      sprintf(s,"smBase::readAndDecompressFrame I/O error : r=%d k=%d ",r,headerSize);
+      sprintf(s,"smBase::readTiledFrame I/O error : r=%d k=%d ",r,headerSize);
       perror(s);
       exit(1); // !!! shit!  whatevs. 
     }
-    
+    //byteswap(ioBuf, headerSize, sizeof(uint32_t)); 
+
     //aliasing to reduce pointer dereferences 
     uint32_t *header = (uint32_t*)&(mThreadData[threadnum].io_buf[0]);
     TileInfo *tileInfo=NULL;
@@ -703,6 +707,7 @@ uint32_t smBase::readTiledFrame(u_int f, int *dim, int* pos, int res, int thread
           stopByte = tileInfo->fileOffset + tileInfo->compressedSize;
           stopTile = tileNum +1; 
         }
+        smdbprintf(5, "after tile %d, stopByte=%lu\n", stopByte); 
       }
     }
    
@@ -714,10 +719,13 @@ uint32_t smBase::readTiledFrame(u_int f, int *dim, int* pos, int res, int thread
       smdbprintf(0, "Error: stop byte is before first byte.  Absolutely inconceivable!\n"); 
       abort(); 
     }
-     
-    uint64_t bytesNeeded = stopByte - firstByte; 
-    if (LSEEK64(fd, frameOffset + firstByte , SEEK_SET) < 0) {
-      smdbprintf(0, "Error seeking to frame %d at offset %Ld\n", f, frameOffset + firstByte);
+    smdbprintf(5, "Reading tiles %d to %d, from byte %lu to %lu\n", 
+               firstTile, stopTile-1, firstByte, stopByte-1); 
+
+    uint64_t bytesNeeded = stopByte - firstByte, 
+      firstOffset = frameOffset + firstByte; 
+    if (LSEEK64(fd,  firstOffset, SEEK_SET) < 0) {
+      smdbprintf(0, "Error seeking to first needed tile of frame %d at offset %Ld\n", f, firstOffset);
       exit(1);
     }
     if (mThreadData[threadnum].tile_buf.size() < bytesNeeded) {
@@ -726,7 +734,7 @@ uint32_t smBase::readTiledFrame(u_int f, int *dim, int* pos, int res, int thread
     u_char *tile_buf_ptr =  &mThreadData[threadnum].tile_buf[0];
     r = readData(fd, tile_buf_ptr, bytesNeeded);
     if (r != bytesNeeded ) {
-      smdbprintf(0,"smBase::readAndDecompressFrame I/O error thread %d, frame %d: r=%d headerSize=%d, frameOffset=%Ld : marking all current unread tiles as corrupt and moving returning.",threadnum,f, r,tileInfo->compressedSize, frameOffset+ tileInfo->fileOffset);
+      smdbprintf(0,"smBase::readTiledFrame I/O error thread %d, frame %d, r=%d bytesNeeded=%d, frameOffset=%Ld, firstByte = %Ld : marking all current unread tiles as corrupt and moving returning.",threadnum,f, r, bytesNeeded, frameOffset, firstByte);
       for(tileNum = firstTile; tileNum < stopTile ;  tileNum++) {
         tileInfo = &(mThreadData[threadnum].tile_infos[tileNum]);
         if(tileInfo->overlaps && ! tileInfo->cached) {
@@ -758,7 +766,7 @@ uint32_t smBase::readTiledFrame(u_int f, int *dim, int* pos, int res, int thread
       
     } // end memcpy of all new tiles
   }
-  smdbprintf(5,"Done with readAndDecompressFrame v2 for frame %d, thread %d, read %d bytes", f, threadnum, bytesRead); 
+  smdbprintf(5,"Done with readTiledFrame v2 for frame %d, thread %d, read %d bytes", f, threadnum, bytesRead); 
   mThreadData[threadnum].currentFrame = f; 
   return bytesRead; 
 }
@@ -1054,7 +1062,7 @@ uint32_t smBase::getFrameBlock(int frame, void *data, int threadnum,  int destRo
            _dim[0], _dim[1], maxAllowed ); 
          
          if (newTotal > maxAllowed) {
-           smdbprintf(0, "Houston, we have a problem. Dump core here. new total > maxAllowed\n"); 
+           smdbprintf(0, "Houston, we have a problem. Dump core here. new total %lu > maxAllowed  %lu\n", newTotal, maxAllowed); 
            abort(); 
          }
          for(int rows = 0; rows < maxY; rows += _step[1]) {
@@ -1237,7 +1245,7 @@ bool smBase::flushFrames(bool force) {
     string filename = mResFileNames[res]; 
     int fd =  mResFDs[res];   
     // figure out the offset to the first frame in the resolution:
-    uint32_t firstFileOffset = 0; // true for res!=0 and firstFrame == 0 
+    uint32_t firstFileOffset = 0; // true for res!=0 and firstFrame == 0, as they write to temp files
     uint32_t frame = firstFrame;   
     uint32_t resFrame = frame + res*mNumFrames; 
     
@@ -1258,12 +1266,15 @@ bool smBase::flushFrames(bool force) {
     // copy all frames in this resolution to the output buffer:
     while (frame < stopFrame) {
       FrameCompressionWork *frameData = mOutputBuffer->mFrameBuffer[frame-firstFrame]; 
+      smdbprintf(5, "Writing frameData:  %s\n", frameData->toString().c_str());
       mFrameOffsets[resFrame] = fileOffset; 
       mFrameLengths[resFrame] = 0;
       // copy the tile info if needed into the output buffer:
+      int tileBytes = 0; 
       if (mVersion != 1 && numTiles > 1) {  
-        int tileBytes = numTiles*sizeof(uint32_t);
+        tileBytes = numTiles*sizeof(uint32_t);
         memcpy(bufptr, &frameData->mCompTileSizes[res][0], tileBytes); 
+        byteswap(bufptr, tileBytes, sizeof(uint32_t));
         mFrameLengths[resFrame] += tileBytes;   
         bufptr += tileBytes;  
         fileOffset += tileBytes; 
@@ -1271,16 +1282,20 @@ bool smBase::flushFrames(bool force) {
       }
       // copy the image into the output buffer:  
       int frameBytes = frameData->mCompFrameSizes[res]; 
+      buffBytes += frameBytes;
+      if (buffBytes >  mOutputBuffer->mRequiredWriteBufferSize) {
+        smdbprintf(0, "Houston, we have a buffer overflow. buffBytes = %lu, mRequiredWriteBufferSize = %lu  :-(\n", buffBytes, mOutputBuffer->mRequiredWriteBufferSize); 
+        abort(); 
+      }
       memcpy(bufptr, &frameData->mCompressed[res][0], frameBytes); 
       mFrameLengths[resFrame] += frameBytes;;
       bufptr += frameBytes;;
       fileOffset += frameBytes;
-      buffBytes += frameBytes;
+      smdbprintf(5, "Copied %lu bytes to buffer, %lu for tile header, %lu for compressed frame\n", tileBytes+frameBytes, tileBytes, frameBytes);  
       ++frame;
       ++resFrame; 
     }
-    // now write the entire buffer out into the file: 
-    
+    // now write the entire buffer out into the temp file: 
     LSEEK64(fd, firstFileOffset, SEEK_SET); 
     WRITE(fd, &mWriteBuffer[0], buffBytes); 
     mResFileBytes[res] += buffBytes; 
@@ -1497,24 +1512,17 @@ int smBase::getCompFrameSize(int frame, int res)
 */ 
 int smBase::compFrame(void *in, void *out, int *outsizes, int res)
 {
-   int frameDims[2];
-   int tileDims[2];
    int compressedSize = 0;
-   char *base;
-   
-   frameDims[0] = getWidth(res);
-   frameDims[1] = getHeight(res);
-
-   tileDims[0] = getTileWidth(res);
-   tileDims[1] = getTileHeight(res);
-
-   
-   //smdbprintf(5,"frameDims[%d,%d] , tileDims[%d,%d]\n",frameDims[0],frameDims[1],tileDims[0],tileDims[1]);
-   
-
    int nx = getTileNx(res);
    int ny = getTileNy(res);
    int numTiles = nx*ny; 
+   
+   int frameDims[2];
+   frameDims[0] = getWidth(res);
+   frameDims[1] = getHeight(res);
+
+   //smdbprintf(5,"frameDims[%d,%d] , tileDims[%d,%d]\n",frameDims[0],frameDims[1],tileDims[0],tileDims[1]);
+   
    if (mVersion == 1 || numTiles == 1) {
      if (!out) {
        // How big is the frame
@@ -1527,32 +1535,46 @@ int smBase::compFrame(void *in, void *out, int *outsizes, int res)
      return compressedSize;
    }
 
-   char *tilebuf = (char *)malloc(tileDims[0] * tileDims[1] * 3);
+   int tileDims[2];
+   tileDims[0] = getTileWidth(res);
+   tileDims[1] = getTileHeight(res);
+
+   
+   uint32_t tilepixelbytes = tileDims[0] * tileDims[1] * 3;
+   char *tilebuf = new char[tilepixelbytes];
    CHECK(tilebuf);
    char *outp = (char*)out;
+   char *base  = (char*)in;
    
-   for(int j=0;j<ny;j++) {
-     for(int i=0;i<nx;i++) {
-       int size =0, msize=0; 
+   for(uint32_t j=0;j<ny;j++) {
+     for(uint32_t i=0;i<nx;i++) {
+       int size =0, tileLineBytes=tileDims[0]*3; 
        if(out == NULL) {
          //smdbprintf(5,"compFrame tile index[%d,%d]\n",i,j);
        }
        base = (char*)in + (((j * tileDims[1] * frameDims[0]) + (i * tileDims[0]))*3) ;
        if(((i+1) * tileDims[0]) > frameDims[0]) {
-         msize = (frameDims[0] - (i*tileDims[0])) * 3;
-         memset(tilebuf,0,tileDims[0] * tileDims[1] * 3);
+         tileLineBytes = (frameDims[0] - (i*tileDims[0])) * 3;
+         memset(tilebuf,0,tilepixelbytes);
        }
        else {
-         msize = tileDims[0]*3;
+         //msize = tileDims[0]*3;
          if(((j+1) * tileDims[1]) > frameDims[1]) {
-           memset(tilebuf,0,tileDims[0] * tileDims[1] * 3);
+           memset(tilebuf,0,tilepixelbytes);
          }
        }
-       for(int k=0;k<tileDims[1];k++) {
-         if(((j * tileDims[1])+k) == frameDims[1]) 
-           break;
-         
-         memcpy(tilebuf+(k*tileDims[0]*3),base+(k*frameDims[0]*3),msize);
+       uint32_t maxk = tileDims[1];
+       if (maxk > frameDims[1] - (j * tileDims[1])) {
+         maxk = frameDims[1] - (j * tileDims[1]);
+       }
+       for(int k=0; k<maxk; k++) {
+         /*       for(int k=0;k<tileDims[1];k++) {
+                  if(((j * tileDims[1])+k) == frameDims[1]) 
+                  break;
+         */
+         memcpy(tilebuf+(k*tileDims[0]*3),
+                base+(k*frameDims[0]*3),
+                tileLineBytes);
        }
        
        

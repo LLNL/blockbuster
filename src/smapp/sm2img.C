@@ -88,7 +88,8 @@ void cmdline(char *app,int binfo)
 	fprintf(stderr,"(%s) usage: %s [options] smfile [outputtemplate]\n",
 		__DATE__,app);
 	fprintf(stderr,"Options:\n");
-	fprintf(stderr,"\t-v Verbose mode.\n");
+	fprintf(stderr,"\t-v Verbose mode. Equivalent to -verbose 1\n");
+    fprintf(stderr, "\t-verbose n Set verbosity to n.\n"); 
 	fprintf(stderr,"\t-ignore Ignore invalid output templates. Default:check.\n");
 	fprintf(stderr,"\t-first num Select first frame number to extract. Default:0.\n");
 	fprintf(stderr,"\t-last num Select last frame number to extract. Default:last frame.\n");
@@ -110,74 +111,78 @@ int main(int argc,char **argv)
   int	originalImageSize[2];
   int		bIsInfo = 0;
   //int	i,j,x,y;
-  int i; 
+  int argnum; 
   char		nametemplate[1024],nametemplate2[1024];
   int nThreads=1; 
-  
+  bool getinfo = false; 
+
   if (strstr(argv[0],"sminfo")) {
-    
+    getinfo = true; 
     bIsInfo = 1;
-    i = 1;
-    while ((i<argc) && (argv[i][0] == '-')) {
-      if (strcmp(argv[i],"-v")==0) {
+    argnum = 1;
+    while ((argnum<argc) && (argv[argnum][0] == '-')) {
+      if (strcmp(argv[argnum],"-v")==0) {
         gVerbosity = 1;
       } else {
         cmdline(argv[0],bIsInfo);
       }
-      i++;
+      argnum++;
     }
-    if ((argc - i) != 1) cmdline(argv[0],bIsInfo);
+    //if ((argc - argnum) != 1) cmdline(argv[0],bIsInfo);
     
   } else {
     
 	/* parse the command line ... */
-	i = 1;
-	while ((i<argc) && (argv[i][0] == '-')) {
-      if (strcmp(argv[i],"-v")==0) {
+	argnum = 1;
+	while ((argnum<argc) && (argv[argnum][0] == '-')) {
+      if (strcmp(argv[argnum],"-v")==0) {
         gVerbosity = 1;
-      } else if (strcmp(argv[i],"-ignore")==0) {
+      } else if (strcmp(argv[argnum],"-verbose")==0) {
+        gVerbosity = atoi(argv[argnum+1]);
+        argnum++; 
+      } else if (strcmp(argv[argnum],"-ignore")==0) {
         iIgnore = 1;
-      } else if (strcmp(argv[i],"-quality")==0) {
-        if ((argc-i) > 1) {
-          gQuality = atoi(argv[i+1]);
+      } else if (strcmp(argv[argnum],"-quality")==0) {
+        if ((argc-argnum) > 1) {
+          gQuality = atoi(argv[argnum+1]);
         } else {
           cmdline(argv[0],bIsInfo);
         }
-        i++;
-      } else if (strcmp(argv[i],"-first")==0) {
-        if ((argc-i) > 1) {
-          gFirstFrame = atoi(argv[i+1]);
+        argnum++;
+      } else if (strcmp(argv[argnum],"-first")==0) {
+        if ((argc-argnum) > 1) {
+          gFirstFrame = atoi(argv[argnum+1]);
         } else {
           cmdline(argv[0],bIsInfo);
         }
-        i++;
-      } else if (strcmp(argv[i],"-last")==0) {
-        if ((argc-i) > 1) {
-          gLastFrame = atoi(argv[i+1]);
+        argnum++;
+      } else if (strcmp(argv[argnum],"-last")==0) {
+        if ((argc-argnum) > 1) {
+          gLastFrame = atoi(argv[argnum+1]);
         } else {
           cmdline(argv[0],bIsInfo);
         }
-        i++;
-      } else if (strcmp(argv[i],"-step")==0) {
-        if ((argc-i) > 1) {
-          gFrameStep = atoi(argv[i+1]);
+        argnum++;
+      } else if (strcmp(argv[argnum],"-step")==0) {
+        if ((argc-argnum) > 1) {
+          gFrameStep = atoi(argv[argnum+1]);
         } else { 
           cmdline(argv[0],bIsInfo);
         }
-        i++;
-      } else if (strcmp(argv[i],"-threads")==0) {
-        if ((argc-i) > 1) {
-          nThreads = atoi(argv[i+1]);
+        argnum++;
+      } else if (strcmp(argv[argnum],"-threads")==0) {
+        if ((argc-argnum) > 1) {
+          nThreads = atoi(argv[argnum+1]);
         } else {
           cmdline(argv[0],bIsInfo);
         }
-        i++;
-      } else if (strcmp(argv[i],"-region")==0) {
-        if ((argc-i) > 4) {
-          gBlockOffset[0] = atoi(argv[++i]);
-          gBlockOffset[1] = atoi(argv[++i]);
-          gBlocksize[0] = atoi(argv[++i]);
-          gBlocksize[1] = atoi(argv[++i]);
+        argnum++;
+      } else if (strcmp(argv[argnum],"-region")==0) {
+        if ((argc-argnum) > 4) {
+          gBlockOffset[0] = atoi(argv[++argnum]);
+          gBlockOffset[1] = atoi(argv[++argnum]);
+          gBlocksize[0] = atoi(argv[++argnum]);
+          gBlocksize[1] = atoi(argv[++argnum]);
           if (gBlocksize[0] <= 0 || gBlocksize[1] <= 0){
             fprintf(stderr, "Error: image size must be greater than zero.\n");
             exit(1);
@@ -189,113 +194,121 @@ int main(int argc,char **argv)
         } else {
           cmdline(argv[0],bIsInfo);
         }
-      } else if (strcmp(argv[i],"-mipmap")==0) {
-        if ((argc-i) > 1) {
-          gMipmap = atoi(argv[++i]);
+      } else if (strcmp(argv[argnum],"-mipmap")==0) {
+        if ((argc-argnum) > 1) {
+          gMipmap = atoi(argv[++argnum]);
 		  
         } else {
           cmdline(argv[0],bIsInfo);
         }
-      } else if (strcmp(argv[i],"-form")==0) {
-        if ((argc-i) > 1) {
-          if (strcmp(argv[i+1],"tiff") == 0) {
+      } else if (strcmp(argv[argnum],"-form")==0) {
+        if ((argc-argnum) > 1) {
+          if (strcmp(argv[argnum+1],"tiff") == 0) {
             gType = 0;
-          } else if (strcmp(argv[i+1],"sgi") == 0) {
+          } else if (strcmp(argv[argnum+1],"sgi") == 0) {
             gType = 1;
-          } else if (strcmp(argv[i+1],"pnm") == 0) {
+          } else if (strcmp(argv[argnum+1],"pnm") == 0) {
             gType = 2;
-          } else if (strcmp(argv[i+1],"YUV") == 0) {
+          } else if (strcmp(argv[argnum+1],"YUV") == 0) {
             gType = 3;
-          } else if (strcmp(argv[i+1],"png") == 0) {
+          } else if (strcmp(argv[argnum+1],"png") == 0) {
             gType = 4;
-          } else if (strcmp(argv[i+1],"jpg") == 0) {
+          } else if (strcmp(argv[argnum+1],"jpg") == 0) {
             gType = 5;
           } else {
             fprintf(stderr,"Invalid format: %s\n",
-                    argv[i+1]);
+                    argv[argnum+1]);
             exit(1);
           }
-          i++;
+          argnum++;
         } else {
           cmdline(argv[0],bIsInfo);
         }
       } else {
-        fprintf(stderr,"Unknown option: %s\n\n",argv[i]);
+        fprintf(stderr,"Unknown option: %s\n\n",argv[argnum]);
         cmdline(argv[0],bIsInfo);
       }
-      i++;
+      argnum++;
 	}
     
   }
   
   smBase::init(); 
-  
+
+  if ((argc - argnum) == 1) {
+    getinfo = true; // even for sm2img, a single arg is a request for info
+  }
   // Movie info case... (both sminfo and sm2img file)
-  if ((argc - i) == 1) {
-    strncpy(gSmFilename, argv[i], 4095); 
-    
-    gSm = smBase::openFile(gSmFilename, nThreads);
-    if (!gSm) {
-      fprintf(stderr,"Unable to open the file: %s\n",gSmFilename);
-      exit(1);
-    }
-    
-    printf("File: %s\n",gSmFilename);
-    printf("Streaming movie version: %d\n",gSm->getVersion());
-    if (gSm->getType() == 1) {   // smRLE::typeID
-      printf("Format: RLE compressed\n");
-    } else if (gSm->getType() == 2) {   // smGZ::typeID
-      printf("Format: gzip compressed\n");
-    } else if (gSm->getType() == 4) {   // smJPG::typeID
-      printf("Format: JPG compressed\n");
-    } else if (gSm->getType() == 3) {   // smLZO::typeID
-      printf("Format: LZO compressed\n");
-    } else if (gSm->getType() == 0) {   // smRaw::typeID
-      printf("Format: RAW uncompressed\n");
-    } else {
-      printf("Format: unknown\n");
-    }
-    printf("Size: %d %d\n",gSm->getWidth(),gSm->getHeight());
-    printf("Frames: %d\n",gSm->getNumFrames());
-    printf("FPS: %0.2f\n",gSm->getFPS());
-    double len = 0;
-    double len_u = 0;
-    int j;
-    for(j=0;j<gSm->getNumResolutions();j++) {
-      for(i=0;i<gSm->getNumFrames();i++) {
-        len += (double)(gSm->getCompFrameSize(i,j));
-        len_u += (double)(gSm->getWidth(j)*gSm->getHeight(j)*3);
-      }
-    }
-    printf("Compression ratio: %0.4f%%\n",(len/len_u)*100.0);
-    printf("Number of resolutions: %d\n",gSm->getNumResolutions());
-    for(i=0;i<gSm->getNumResolutions();i++) {
-      printf("    Level: %d : size %d x %d : tile %d x %d\n",
-             i,gSm->getWidth(i),gSm->getHeight(i),
-             gSm->getTileWidth(i),gSm->getTileHeight(i));
+  if (getinfo) {
+    while (argc-argnum) {
+      strncpy(gSmFilename, argv[argnum++], 4095); 
       
-    }
-    printf("Flags: ");
-    if (gSm->getFlags() & SM_FLAGS_STEREO) printf("Stereo ");
-    printf("\n");
-    
-    if (gVerbosity) {
-      printf("Frame\tOffset\tLength\n");
-      for(i=0;i<gSm->getNumFrames()*gSm->getNumResolutions();i++) {
-        gSm->printFrameDetails(stdout,i);
+      gSm = smBase::openFile(gSmFilename, nThreads);
+      if (!gSm) {
+        fprintf(stderr,"Unable to open the file: %s\n",gSmFilename);
+        exit(1);
       }
+      
+      printf("-----------------------------------------\n"); 
+      printf("File: %s\n",gSmFilename);
+      printf("Streaming movie version: %d\n",gSm->getVersion());
+      if (gSm->getType() == 1) {   // smRLE::typeID
+        printf("Format: RLE compressed\n");
+      } else if (gSm->getType() == 2) {   // smGZ::typeID
+        printf("Format: gzip compressed\n");
+      } else if (gSm->getType() == 4) {   // smJPG::typeID
+        printf("Format: JPG compressed\n");
+      } else if (gSm->getType() == 3) {   // smLZO::typeID
+        printf("Format: LZO compressed\n");
+      } else if (gSm->getType() == 0) {   // smRaw::typeID
+        printf("Format: RAW uncompressed\n");
+      } else {
+        printf("Format: unknown\n");
+      }
+      printf("Size: %d %d\n",gSm->getWidth(),gSm->getHeight());
+      printf("Frames: %d\n",gSm->getNumFrames());
+      printf("FPS: %0.2f\n",gSm->getFPS());
+      double len = 0;
+      double len_u = 0;
+      int frame, res;
+      for(res=0;res<gSm->getNumResolutions();res++) {
+        for(frame=0;frame<gSm->getNumFrames();frame++) {
+          len += (double)(gSm->getCompFrameSize(frame,res));
+          len_u += (double)(gSm->getWidth(res)*gSm->getHeight(res)*3);
+        }
+      }
+      printf("Compression ratio: %0.4f%%\n",(len/len_u)*100.0);
+      printf("Number of resolutions: %d\n",gSm->getNumResolutions());
+      for(res=0;res<gSm->getNumResolutions();res++) {
+        printf("    Level: %d : size %d x %d : tile %d x %d\n",
+               res,gSm->getWidth(res),gSm->getHeight(res),
+               gSm->getTileWidth(res),gSm->getTileHeight(res));
+        
+      }
+      printf("Flags: ");
+      if (gSm->getFlags() & SM_FLAGS_STEREO) printf("Stereo ");
+      printf("\n");
+      
+      if (gVerbosity) {
+        printf("Frame\tOffset\tLength\n");
+        int res = 0; 
+        for (res=0; res < gSm->getNumResolutions(); res++) {
+          for(frame=0;frame<gSm->getNumFrames();frame++) {
+            gSm->printFrameDetails(stdout,frame, res);
+          }
+        }
+      }
+
+      delete gSm;
     }
-    
-    delete gSm;
-    
     exit(0);
   }
   
-  if ((argc - i) != 2) cmdline(argv[0],bIsInfo);
+  if ((argc - argnum) != 2) cmdline(argv[0],bIsInfo);
   
   // get the arguments
-  strncpy(gSmFilename, argv[i], 4095); 
-  strncpy(gNameTemplate, argv[i+1], 2047); 
+  strncpy(gSmFilename, argv[argnum], 4095); 
+  strncpy(gNameTemplate, argv[argnum+1], 2047); 
   
   if (!iIgnore) {
     // Bad template name?

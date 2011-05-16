@@ -172,13 +172,23 @@ struct FrameCompressionWork {
   
   void clear(void) {
     int  pos = mCompressed.size(); 
+    smdbprintf(5, "deleting %d compressed image buffers for frame %d\n", 
+               pos, mFrame);
+    
     while (pos--) {
-      delete mCompressed[pos]; 
+      if (mCompressed[pos]) {
+        smdbprintf(5, "deleting compressed image %d buffer %p for frame %d\n", 
+                   pos, mCompressed[pos], mFrame);
+        delete mCompressed[pos]; 
+        mCompressed[pos]= NULL;
+      }
     }
-      smdbprintf(5, "deleting uncompressed image buffer %p for frame %d\n", 
-                 mUncompressed, mFrame);  
-    delete mUncompressed; 
-    mUncompressed = NULL; 
+    smdbprintf(5, "deleting uncompressed image buffer %p for frame %d\n", 
+               mUncompressed, mFrame);
+    if (mUncompressed) {
+      delete mUncompressed; 
+      mUncompressed = NULL; 
+    }
     mCompressed.clear(); 
     mCompTileSizes.clear(); 
     mCompFrameSizes.clear(); 
@@ -197,13 +207,27 @@ struct FrameCompressionWork {
       mystring += ", no compressed frames found";
     }
     if (mCompTileSizes.size()) {
-      mystring += ", tiles per resolution: ("; 
+      mystring += ", tiles per resolution: "; 
       int resnum = 0; 
-      while (resnum < mCompTileSizes.size()-1) {
-        mystring += intToString(mCompTileSizes[resnum].size()) + ",";
-        ++ resnum; 
+      while (resnum < mCompTileSizes.size()) {
+        int numtiles = mCompTileSizes[resnum].size();
+        uint32_t totalTilesize = 0; 
+        mystring += "<<resolution " + intToString(resnum) + ", " + intToString(numtiles) + "tiles"; 
+        if (numtiles) { 
+          mystring += ", tilesizes: ("; 
+          int tilenum = 0; 
+          while (tilenum < numtiles-1) {
+            mystring += intToString(mCompTileSizes[resnum][tilenum]) + ",";
+            totalTilesize += mCompTileSizes[resnum][tilenum];
+           ++tilenum; 
+          }
+          totalTilesize += mCompTileSizes[resnum][tilenum];
+          mystring += intToString(mCompTileSizes[resnum][tilenum]) + "), total =  " + intToString(totalTilesize) + ">>";
+          if (resnum < mCompTileSizes.size()-1) 
+            mystring += ", ";
+        }      
+        ++ resnum;          
       }
-      mystring += intToString(mCompTileSizes[resnum].size()) + ")";
     } else {
       mystring += ", no tiles detected"; 
     }
@@ -246,7 +270,7 @@ struct OutputBuffer {
     if (mFrameBuffer[slotnum]) {
       smdbprintf(0, "Bad thing:  placing frame %d in an occupied slot!\n", frame->mFrame);
     }
-    mRequiredWriteBufferSize += frame->mCompFrameSizes[0]; 
+    mRequiredWriteBufferSize += frame->mCompFrameSizes[0] + frame->mCompTileSizes[0].size()*sizeof(uint32_t); 
     mFrameBuffer[slotnum] = frame; 
     mNumFrames++; 
     return true; 
@@ -336,11 +360,12 @@ class smBase {
   u_int getTileHeight(int res=0) { return(tilesizes[res][1]); }
   u_int getTileNx(int res=0) { return(tileNxNy[res][0]); }
   u_int getTileNy(int res=0) { return(tileNxNy[res][1]); }
+  uint32_t getNumTiles(int res) { return getTileNx(res)*getTileNx(res); }
   u_int getMaxNumTiles() { return(maxNumTiles);}
   
   int Min(int a,int b) { return((a > b) ? b : a); }
   
-void printFrameDetails(FILE *fp, int f);
+  void printFrameDetails(FILE *fp, int f, int res);
   
   // open a movie
 #ifdef WIN32
@@ -390,6 +415,7 @@ void printFrameDetails(FILE *fp, int f);
   uint32_t readFrame(u_int frame, int threadnum);
   uint32_t readTiledFrame(u_int frame, int*dimensions, int*position, int resolution, int threadnum);
   
+  vector<u_char>mWriteBuffer; // for use in marshalling data and writing
   int mNumThreads; 
   // Flags on top of the filetype...
   u_int flags;
@@ -441,7 +467,6 @@ void printFrameDetails(FILE *fp, int f);
   pthread_t mWriteThread; 
   bool mWriteThreadRunning, mWriteThreadStopSignal; 
 
-  vector<u_char>mWriteBuffer; // for use in marshalling data and writing
 
   // directory of movie types
   static u_int ntypes;
