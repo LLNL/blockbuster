@@ -41,7 +41,7 @@ glRenderer::glRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow,
   return; 
 }
 
-void glRenderer::FinishRendererInit(ProgramOptions *opt, Canvas *canvas, Window parentWindow) {
+void glRenderer::FinishRendererInit(ProgramOptions *, Canvas *canvas, Window ) {
   // from glFinishInitialization: 
   Bool rv;
   Font id = fontInfo->fid;
@@ -254,9 +254,9 @@ void glRenderer::Render(int frameNumber,
 
   DEBUGMSG("Buffer for frame %d is %dw x %dh, region is %dw x %dh, destX = %d, destY = %d\n", frameNumber, image->width, image->height, region.width, region.height, destX, destY); 
 
-  if (region.width > image->width || region.height > image->height ||
+  if (region.width > (int32_t)image->width || region.height > (int32_t)image->height ||
       region.width < 0 || region.height < 0 ||
-      region.width*region.height > image->width*image->height) {
+      region.width*region.height > (int32_t)(image->width*image->height)) {
     DEBUGMSG("Abort before glDrawPixels due to programming error.  Sanity check failed.\n"); 
     abort(); 
   } else {    

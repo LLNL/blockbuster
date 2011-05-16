@@ -208,7 +208,7 @@ struct FrameCompressionWork {
     }
     if (mCompTileSizes.size()) {
       mystring += ", tiles per resolution: "; 
-      int resnum = 0; 
+      uint32_t resnum = 0; 
       while (resnum < mCompTileSizes.size()) {
         int numtiles = mCompTileSizes[resnum].size();
         uint32_t totalTilesize = 0; 
@@ -263,8 +263,8 @@ struct OutputBuffer {
   }
   
   bool addFrame(FrameCompressionWork* frame){
-    int slotnum = frame->mFrame - mFirstFrameNum;
-    if (slotnum + 1 > mFrameBuffer.size() ||  slotnum < 0) {      
+    int32_t slotnum = frame->mFrame - mFirstFrameNum;
+    if (slotnum + 1 > (int32_t)mFrameBuffer.size() ||  slotnum < 0) {      
       return false; 
     }
     if (mFrameBuffer[slotnum]) {
@@ -280,7 +280,7 @@ struct OutputBuffer {
   vector<FrameCompressionWork*> mFrameBuffer; // stored as work quanta until actually rewritten; then marshalled into mWriteBuffer for efficient I/O 
   int64_t mRequiredWriteBufferSize; // computed as frames are buffered
   int32_t mFirstFrameNum;  
-  int32_t mNumFrames;  // number of entries in mDataBuffer -- can't use size() because elements are placed out of order, and resize() is called only once.  
+  uint32_t mNumFrames;  // number of entries in mDataBuffer -- can't use size() because elements are placed out of order, and resize() is called only once.  
 }; 
 
 /*!

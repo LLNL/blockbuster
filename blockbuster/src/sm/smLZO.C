@@ -129,7 +129,7 @@ void smLZO::compBlock(void *data, void *cdata, int &size,int *dim)
 
    len = dim[0]*dim[1]*sizeof(u_char[3]);
    /* actually: i + (i/64) + 16 + 3 = 1.015i+19 */
-   dlen = (len * 1.1)+19;
+   dlen = (lzo_uint)(len * 1.1)+19;
 
    if (cdata) {
        if (eCompressionOpt == LZO_OPT_999) {

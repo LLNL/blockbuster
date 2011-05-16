@@ -175,8 +175,8 @@ smJPG *smJPG::newFile(const char *_fname,
 void smJPG::compBlock(void *data, void *cdata, int &size,int *dim)
 {
     if (!cdata) {
-	size = dim[0]*dim[1]*3*1.5;
-	return;
+      size = (int)(dim[0]*dim[1]*3*1.5);
+      return;
     }
 
     jpgdst_struct jdst_st;
@@ -193,7 +193,7 @@ void smJPG::compBlock(void *data, void *cdata, int &size,int *dim)
        jdst_st.pub.empty_output_buffer = jpg_empty_output_buffer;
        jdst_st.pub.term_destination = jpg_term_destination;
        jdst_st.buf = (char*)cdata;
-       jdst_st.size = dim[0]*dim[1]*3*1.1;
+       jdst_st.size = (int)(dim[0]*dim[1]*3*1.1);
        jdst_st.final = 0;
 
        cinfo.dest=(struct jpeg_destination_mgr *)(&jdst_st);

@@ -240,7 +240,6 @@ void XWindow::FinishXWindowInit(ProgramOptions *options, Canvas *, Window parent
   fontHeight = fontInfo->ascent + fontInfo->descent;
 
 
-  Window junkwin; 
   XWindowAttributes win_attributes; 
   XGetWindowAttributes(display, window, &win_attributes); 
   /*  XTranslateCoordinates (display, window, win_attributes.root, 
