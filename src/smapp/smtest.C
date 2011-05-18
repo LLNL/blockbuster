@@ -38,6 +38,7 @@
 #include <stdint.h>
 #include <vector>
 #include "../common/timer.h"
+#include "../config/version.h"
 
 smBase *sm;
 uint32_t gVerbose; 
@@ -215,7 +216,7 @@ void *readThread(void *data)
 
 void usage(char *prg)
 {
-   fprintf(stderr, "(%s) usage: %s [options] smfilename\n",__DATE__,prg);
+   fprintf(stderr, "%s (%s) usage: %s [options] smfilename\n",__DATE__,prg);
    fprintf(stderr,"Options:\n");
    fprintf(stderr, "\t -h or -help:  display this menu\n"); 
    fprintf(stderr,"\t-lod <num> Level of detail.  default: 0\n");

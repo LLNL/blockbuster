@@ -43,6 +43,7 @@
 #include "sm/smLZO.h"
 #include "sm/smRaw.h"
 #include "sm/smJPG.h"
+#include "../config/version.h"
 
 #include "pt/pt.h"
 
@@ -79,8 +80,8 @@ void Sample2d(unsigned char *in,int idx,int idy,unsigned char *out,
 /* code... */
 void cmdline(char *app)
 {
-	fprintf(stderr,"(%s) usage: %s [options] outfile infile1 [infile2...]\n",
-		__DATE__,app);
+	fprintf(stderr,"%s (%s) usage: %s [options] outfile infile1 [infile2...]\n",
+              basename(app), BLOCKBUSTER_VERSION, basename(app));
 	fprintf(stderr,"Options:\n");
 	fprintf(stderr,"\t-v Verbose mode (sets verbosity to 1).\n");
 	fprintf(stderr,"\t-verbose n Set verbosity to n.\n");

@@ -44,6 +44,7 @@
 #include "sm/smJPG.h"
 
 #include "zlib.h"
+#include "../config/version.h"
 
 #include "evomovie.h"
 
@@ -52,8 +53,8 @@ void cmdline(char *app);
 
 void cmdline(char *app)
 {
-	fprintf(stderr,"(%s) usage: %s [options] evofile smfile | smfile evofile\n",
-		__DATE__,app);
+	fprintf(stderr,"%s (%s) usage: %s [options] evofile smfile | smfile evofile\n",
+		basename(app), BLOCKBUSTER_VERSION, basename(app));
 	fprintf(stderr,"Options:\n");
 	fprintf(stderr,"\t-v Verbose mode.\n");
 	fprintf(stderr,"\t-rle Selects RLE sm compression\n");

@@ -51,6 +51,7 @@
 #include "libimage/sgilib.h"
 #include "../libpnmrw/libpnmrw.h"
 #include "simple_jpeg.h"
+#include "../config/version.h"
 
 #include "pt/pt.h"
 #define int32 int32hack
@@ -126,9 +127,9 @@ void workerThreadFunction(void *workerData) {
 void workproc(void *arg);
 
 void cmdline(char *app)
-{
-  fprintf(stderr,"(%s) usage: %s [options] template output\n",
-	  __DATE__,app);
+{  
+  fprintf(stderr,"%s (%s) usage: %s [options] template output\n",
+          basename(app), BLOCKBUSTER_VERSION, basename(app));
   fprintf(stderr,"Options:\n");
   fprintf(stderr,"\t-rle Selects RLE compression\n");
   fprintf(stderr,"\t-gz Selects gzip compression\n");
