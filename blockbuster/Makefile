@@ -1,6 +1,5 @@
 # Top-level makefile for blockbuster. 
 
-
 SHELL = /bin/bash
 
 SYS_TYPE ?= $(shell uname)
@@ -12,7 +11,7 @@ export DEBUG
 
 all:
 	mkdir -p $(INSTALL_DIR)/man/man1 
-	[ -d $(INSTALL_DIR) ] && cd src  && $(MAKE) all
+	[ -d $(INSTALL_DIR) ] && cd src  && $(MAKE) -e all
 	mkdir -p $(INSTALL_DIR)/doc/blockbuster && \
 		cp -rf doc/* $(INSTALL_DIR)/doc/blockbuster
 
