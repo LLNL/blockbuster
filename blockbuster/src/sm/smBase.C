@@ -950,10 +950,13 @@ uint32_t smBase::getFrameBlock(int frame, void *data, int threadnum,  int destRo
    
    if(_dim[0] <= 0 || _dim[1] <= 0)
      return 0;
-   
-   assert(_dim[0] + _pos[0] <= getWidth(0));
-   assert(_dim[1] + _pos[1] <= getHeight(0));
-   
+   if (_dim[0] + _pos[0] > getWidth(0) ||
+       _dim[1] + _pos[1] > getHeight(0)) {
+     fprintf(stderr, "dim(%d,%d) + _pos(%d,%d) > dims(%lu, %lu)\n", 
+             _dim[0], _dim[1], _pos[0], _pos[1], getWidth(0), getHeight(0));
+     abort(); 
+   }
+  
    /* move frame into initial resolution */
    if(res > 0)
      frame += mNumFrames * res;
