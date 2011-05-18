@@ -58,6 +58,7 @@ extern "C" {
 #include "libimage/sgilib.h"
 #include "libpnmrw/libpnmrw.h"
 #include "simple_jpeg.h"
+#include "../config/version.h"
 
 void workproc(void *work);
 int gBlocksize[3] = {0,0,3}, gBlockOffset[2]= {0,0}; 
@@ -81,25 +82,24 @@ struct Work {
 void cmdline(char *app,int binfo)
 {
     if (binfo) {
-	fprintf(stderr,"(%s) usage: %s smfile\n",
-		__DATE__,app);
-    } else {
-
-	fprintf(stderr,"(%s) usage: %s [options] smfile [outputtemplate]\n",
-		__DATE__,app);
-	fprintf(stderr,"Options:\n");
-	fprintf(stderr,"\t-v Verbose mode. Equivalent to -verbose 1\n");
-    fprintf(stderr, "\t-verbose n Set verbosity to n.\n"); 
-	fprintf(stderr,"\t-ignore Ignore invalid output templates. Default:check.\n");
-	fprintf(stderr,"\t-first num Select first frame number to extract. Default:0.\n");
-	fprintf(stderr,"\t-last num Select last frame number to extract. Default:last frame.\n");
-	fprintf(stderr,"\t-step num Select frame number step factor. Default:1.\n");
-	fprintf(stderr,"\t-quality num Select JPEG output quality (0-100). Default: 75\n");
-	fprintf(stderr,"\t-threads num Use num threads for work. Default: 1\n");
-	fprintf(stderr,"\t-form [\"tiff\"|\"sgi\"|\"pnm\"|\"png\"|\"jpg\"|\"YUV\"] Output file format (default:sgi)\n");
-	fprintf(stderr,"\t-region offsetX offsetY sizeX sizeY -- Output will be the given subregion of the input.  Default: offsets 0 0, original size .  \n");
-	fprintf(stderr,"\t-mipmap Extract frame from mipmap level. Default: 0\n");
-	fprintf(stderr,"\tNote: without an output template, movie stats will be displayed.\n");
+      fprintf(stderr,"%s (%s) usage: %s smfile\n",
+              basename(app), BLOCKBUSTER_VERSION, basename(app));
+    } else {      
+      fprintf(stderr,"%s (%s) usage: %s [options] smfile [outputtemplate]\n",
+              basename(app), BLOCKBUSTER_VERSION, basename(app));
+      fprintf(stderr,"Options:\n");
+      fprintf(stderr,"\t-v Verbose mode. Equivalent to -verbose 1\n");
+      fprintf(stderr, "\t-verbose n Set verbosity to n.\n"); 
+      fprintf(stderr,"\t-ignore Ignore invalid output templates. Default:check.\n");
+      fprintf(stderr,"\t-first num Select first frame number to extract. Default:0.\n");
+      fprintf(stderr,"\t-last num Select last frame number to extract. Default:last frame.\n");
+      fprintf(stderr,"\t-step num Select frame number step factor. Default:1.\n");
+      fprintf(stderr,"\t-quality num Select JPEG output quality (0-100). Default: 75\n");
+      fprintf(stderr,"\t-threads num Use num threads for work. Default: 1\n");
+      fprintf(stderr,"\t-form [\"tiff\"|\"sgi\"|\"pnm\"|\"png\"|\"jpg\"|\"YUV\"] Output file format (default:sgi)\n");
+      fprintf(stderr,"\t-region offsetX offsetY sizeX sizeY -- Output will be the given subregion of the input.  Default: offsets 0 0, original size .  \n");
+      fprintf(stderr,"\t-mipmap Extract frame from mipmap level. Default: 0\n");
+      fprintf(stderr,"\tNote: without an output template, movie stats will be displayed.\n");
     }
     exit(1);
 }
