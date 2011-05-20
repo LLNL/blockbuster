@@ -1,0 +1,87 @@
+        Version 2.0 is in the man page.  As of version 3.0, the streaming movie format 
+        shall be as follows: 
+
+      The  format consists of a header, a table of resolutions, a frameoffset table and 
+      image data, optionally followed by arbitrary information we shall call "metadata."
+
+      The file is to written as big endian to ensure cross-platform compatibility.  
+
+      HEADER 
+      The header consists of a total of 384 bytes, composed of "words" of various length, 
+      defined as:
+          (word) meaning
+          -----------------------------------------------------
+            (00) uint32 Magic  (0x0f1e2d3d)
+            (01) float32 Frame rate
+            (02) uint16 Number of resolutions (max 20)
+            (03) uint16 Flags (see discussion below)
+            (04) uint64 Number of frames in the file
+            (05) uint64 Movie frame width
+            (06) uint64 Movie frame height
+            (07) 40 uint64 values for tile heights/widths, one pair per resolution.  
+                    Unused tile resolutions shall be set to 0
+            (08) 28 unused bytes, reserved for future use, shall be set to zero for now.  
+
+       The low order 8 bits of word 3, "Flags" field specifies the compression:  
+       0x00000000=none (RAW), 0x00000001=RLE, 0x00000002=zlib, 0x00000003=lzo,    
+       0x00000004=jpg. The upper bits are other flags.  Currently defined
+       flags: 0x00000100 = Stereo.  0x00000200 = Metadata exists.  See "Metadata" 
+       discussion below.  If this flag is not set, then it is guaranteed that no metadata 
+       of any sort will be stored in the movie.  
+
+       SM 3.0 supports multiple resolutions of the movie in the same  file, just as version 
+       2.0 did, but has increased the maximum limit from 8 to 20 levels.   The  number  of
+       resolutions  are listed in the file header.
+       The number of actual compressed frames in the file  is  equal  to  the  number  of
+       frames  listed  in  the  header field times the number of resolutions in the file.
+       Each frame can be decomposed into tiles. The  compression  algorithm  is  executed
+       independently on each tile. The size of each tile is stored in the "Tile size" ta-
+       ble in the header.  The X and Y sizes are both 64 bit unsigned integers, stored as 
+       pairs, with X first. 
+
+       FRAME OFFSETS AND FRAME DATA
+       The header is followed by a table of offsets from the beginning of the sm file  to
+       the  data  for  a  given frame.  These offsets are 64bit unsigned integers and there 
+       is one integer for each frame times the number of resolutions in the  file.   The  offset
+       table  is  followed  by  a table of compressed frame lengths.  This is an array of
+       64bit unsigned integers, one for each frame times the number of resolutions in the
+       file.
+
+       There  are no ordering constraints on the fames in the file. Individual frames are
+       not necessarily stored in a contiguous or sequential fashion. However, it is a 
+       good idea for performance if they are in general practice. 
+
+       Frames are considered to be 24bits/pixel.  A  given  frame  is  considered  to  be
+       3bytes*frame  width*frame  height in size.  Data are laid out in pixel interleaved
+       format (e.g. RGBRGBRGB...) from right to left and bottom to top  (default  glDraw-
+       Pixels()  form).  No  padding is provided.  Each frame is passed to the compressor
+       and the resulting output is placed in the file.   Details  on  the  specific  data
+       organization for a given compression scheme may be found be referencing the appro-
+       priate subclass.
+
+       METADATA
+       The metadata section shall begin at the first byte following the last frame of the 
+       movie and continues to the end of the movie.  Metadata is a general term and can 
+       include any arbitrary information, including binary payloads, that one might want
+       to include with a movie.  The metadata is written one item at a time, and is written
+       "backwards" as follows.  Naturally, fields (2) through (4) values are big-endian.  
+
+       (0) <tag name/description> 
+       (1) <data payload>
+       (2) uint32 - length of tag name/description 
+       (3) uint64 - length of payload
+       (4) uint64 - a fixed binary signature like 0xB000B335B000B335
+
+       This allows the metadata to be found simply by reading the last 20 bytes of the file, 
+       confirming the binary signature (4), and reading chunks (0) and (1) whose location is 
+       determined from fields (2) and (3).  The next metadata item is found by reading the 
+       20 bytes preceding this one, and so on.  This backwards flow is convenient, flexible,
+       and eliminates the need to store any more than just the metadata itself.  
+       
+       If the tag name is not understood by the reader, the metadata item shall simply be 
+       skipped.  To repeat, both the tag name/description and the data payload may be of any 
+       format, including binary, compressed, "wrong" endian, etc.  
+
+
+COMPRESSION SCHEMES
+       Unchanged from version 2.0.  
