@@ -4,7 +4,7 @@ SHELL = /bin/bash
 
 SYS_TYPE ?= $(shell uname)
 
-export INSTALL_DIR ?= $(shell if pwd | grep  /usr/gapps/asciviz>/dev/null;  then echo `pwd`/..; else echo `pwd`/$(SYS_TYPE); fi)
+export INSTALL_DIR ?= $(shell if pwd | grep -e /usr/gapps/asciviz -e /dvsviz/blockbuster >/dev/null;  then echo `pwd`/..; else echo `pwd`/$(SYS_TYPE); fi)
 $(warning INSTALL_DIR is $(INSTALL_DIR) )
 export NO_DMX
 export DEBUG
