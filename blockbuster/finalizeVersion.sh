@@ -158,6 +158,10 @@ tar -xzf ../blockbuster-v${version}.tgz || errexit "Cannot untar tarball!?"
 cd blockbuster-v${version} || errexit "Cannot cd to blockbuster source directory" 
 make || errexit "Could not make software" 
 
-echo "Done.  Tarball is $installdir/blockbuster-v${version}.tgz"
+echo "Creating symlink of new version to /usr/gapps/asciviz/blockbuster/test"
+
+rm /usr/gapps/asciviz/blockbuster/test
+ln -s /usr/gapps/asciviz/blockbuster/$version /usr/gapps/asciviz/blockbuster/test
+echo "Done.  Tarball is $installdir/blockbuster-v${version}.tgz.  To use the new version, type \"use asciviz-test\""
 exit 0
 
