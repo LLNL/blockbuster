@@ -19,6 +19,44 @@ using namespace std;
 
 #define ImageCache OldImageCache
 
+
+class NewImageCache {
+  friend class CacheThread; 
+ public:
+  NewImageCache(int numthreads, int numimages, Canvas *c);
+  ~NewImageCache(); 
+  
+  Image *GetImage(uint32_t frameNumber,
+                  const Rectangle *newRegion, uint32_t levelOfDetail);
+
+  void ManageFrameList(FrameList *frameList);
+  
+  // I do not like that these are called outside of the cache.  This is a huge design flaw.  The cache needs to manage how items are cached!  
+
+  // PreloadImage is called from Renderer
+  void PreloadImage(uint32_t , 
+                    const Rectangle *, uint32_t ) {
+    return; 
+  }
+
+ 
+  void ReleaseImage(Image *){
+    // called from glRenderer, x11Renderer and splash.cpp
+    return; 
+  }
+  void ReleaseFrame(int ) {
+    // called from movie.cpp and slave.cpp
+    return; 
+  }
+
+  
+};
+
+/*! 
+  ==================================================================
+  old code:  BADLY BEHAVING OLD CACHE and associated stuff
+  ==================================================================
+*/
 class OldImageCache; 
 
 //! OldImageCacheJob:  a request for the workers to get an image
