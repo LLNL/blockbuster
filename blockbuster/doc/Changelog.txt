@@ -2,6 +2,10 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
+VERSION 2.6.3m (r???) sometime in 2011
+-- report versions from smtools now
+
+===============================================================================
 VERSION 2.6.3l (r441) Wed May 18 10:32:49 PDT 2011
 -- changed smlib to support independent compression and I/O for performance
 -- smcat, img2sm and sm2img are now much faster with multithreading.  Basically, you are bound by I/O performance, RAM, and number of cores now, not bad code.
