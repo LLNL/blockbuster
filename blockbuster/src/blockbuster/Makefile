@@ -103,6 +103,8 @@ UI_HEADERS = ui_MovieCueWidget.h ui_BlockbusterControl.h ui_InfoWindow.h
 
 LIBDMX = libdmx/libdmx.a 
 
+iotest: iotest.C
+	$(CXX) iotest.C -g -o iotest
 
 libdmx/libdmx.a: libdmx/dmx.cpp
 	$(CXX) -O -I. -c libdmx/dmx.cpp -o libdmx/dmx.o
