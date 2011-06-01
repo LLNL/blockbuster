@@ -223,7 +223,8 @@ void glRenderer::Render(int frameNumber,
   if (image->imageFormat.rowOrder == BOTTOM_TO_TOP) {
     /*
      * Do adjustments to flip Y axis.
-     * Yes, this is tricky to understand.
+     * Yes, this is tricky to understand.  
+     * The authors did not bother to explain it, either.  LOL
      */
     destY = mCanvas->height - static_cast<int32_t>((image->height * zoom) + destY) + static_cast<int32_t>(region.y * zoom);
     
