@@ -651,15 +651,18 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
        break;
        
       case MOVIE_SET_STEREO:
+      MOVIE_SET_STEREO:
         /* Done with the canvas */
         delete canvas;
         if (event.number) {// TURN ON STEREO
+          cerr << "TURN ON STEREO" << endl; 
           if (options->rendererName == "dmx") {
             options->backendRendererName = "gl_stereo";
           } else {
             options->rendererName = "gl_stereo"; 
           }
         } else { // TURN OFF STEREO
+          cerr << "TURN OFF STEREO" << endl; 
           if (options->rendererName == "dmx") {
             options->backendRendererName = "gl";
           } else {
@@ -671,7 +674,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         options->geometry.y = canvas->YPos; 
         options->geometry.width = canvas->width; 
         options->geometry.height = canvas->height; 
-        printf ("SET_STEREO: X,Y = %d, %d\n", canvas->XPos, canvas->YPos); 
+        //printf ("SET_STEREO: X,Y = %d, %d\n", canvas->XPos, canvas->YPos); 
         return 1; // restarts the DisplayLoop and creates a new canvas in stereo
       case MOVIE_OPEN_FILE:   
       case MOVIE_OPEN_FILE_NOCHANGE: 
@@ -724,7 +727,17 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
 	  frameInfo =  canvas->GetFrameInfoPtr(1);
 	  preloadFrames = MIN2(options->preloadFrames, static_cast<int32_t>(allFrames->numStereoFrames()));
 	}
-        break;
+    if (!options->stereoSwitchDisable) {
+      if ((allFrames->stereo && options->rendererName != "gl_stereo") ||
+          (!allFrames->stereo && options->rendererName == "gl_stereo"))
+        {
+          cerr << "toggle stereo automatically"<< endl; 
+          event.number = (!allFrames->stereo); 
+          goto MOVIE_SET_STEREO;          
+        }
+    } 
+             
+    break;
       case MOVIE_SAVE_IMAGE:
         WriteImageToFile(canvas, frameNumber);
         break;

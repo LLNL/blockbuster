@@ -102,6 +102,7 @@ void usage(void) {
   fprintf(stderr, "-no-autores:  normally, you want blockbuster to decrease resolution when the zoom increases.  This flag suppresses this, for testing.\n");
   fprintf(stderr, "-no-controls (or -withoutControls) turns off the control window (if defined for the user interface)\n");
   fprintf(stderr, "-no-splash (or -S) suppresses display of splash screen\n");
+  fprintf(stderr, "-no-stereo-switch suppresses automatic stereo or mono mode switches based on movie being stereo or mono\n");
   fprintf(stderr, "-play (or -Play) automatically starts the movie after loading\n");
   fprintf(stderr, "-playexit framenum: play one time until frame given, then exit.  Useful for testing.  If framenum == -1, play all the way to end.\n");
   fprintf(stderr, "-preload <num> specifies how many frames to preload\n");
@@ -313,7 +314,11 @@ static void ParseOptions(int &argc, char *argv[])
 	else if (SET_BOOL_ARG("-withoutControls", argc, argv, opt->drawInterface, 0) || 
              SET_BOOL_ARG("-no-controls", argc, argv, opt->drawInterface, 0)) continue;
 	else if (SET_BOOL_ARG("-no-splash", argc, argv,  opt->splashScreen, 0) || 
-             SET_BOOL_ARG("-SplashDisable",  argc, argv, opt->splashScreen, 0)) continue; 
+             SET_BOOL_ARG("-SplashDisable",  argc, argv, opt->splashScreen, 0)) 
+      continue; 
+	else if (SET_BOOL_ARG("-no-stereo-switch", argc, argv,  opt->stereoSwitchDisable, 1) || 
+             SET_BOOL_ARG("-StereoSwitchDisable",  argc, argv, opt->stereoSwitchDisable, 1)) 
+      continue; 
 	else if (SET_BOOL_ARG("-Play", argc, argv, opt->play, 1)||
              SET_BOOL_ARG("-play", argc, argv, opt->play, 1)){
       continue; 
@@ -672,6 +677,14 @@ int main(int argc, char *argv[])
     /* The display loop will destroy the frames for us (it has to, because it
      * must be able to change the frames too.)
      */
+    if (!opt->stereoSwitchDisable) {
+      if ((allFrames->stereo && opt->rendererName != "gl_stereo")) {
+        opt->rendererName = "gl_stereo";
+      }
+      if (!allFrames->stereo && opt->rendererName == "gl_stereo") {
+        opt->rendererName = "gl";
+      }
+    } 
     while (DisplayLoop(allFrames, opt)) {
       continue; 
     }

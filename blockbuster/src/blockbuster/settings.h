@@ -45,7 +45,7 @@ struct ProgramOptions {
     preloadFrames(4), noAutoRes(0), 
     drawInterface(1), splashScreen(0), gui(1), decorations(1), 
     suggestedTitle("blockbuster"), fontName(DEFAULT_X_FONT), 
-    settings(NULL), allowIdleSlaves(1) {
+    stereoSwitchDisable(0), settings(NULL), allowIdleSlaves(1) {
     geometry.x = DONT_CARE;
     geometry.y = DONT_CARE;
     geometry.width = DONT_CARE;
@@ -93,7 +93,7 @@ struct ProgramOptions {
   QString displayName;
   QString suggestedTitle;
   QString fontName;
-  int stereoView;
+  int stereoSwitchDisable;
   Settings *settings; 
   int allowIdleSlaves; 
 } ;
