@@ -2,6 +2,10 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
+VERSION 2.6.3n (r458) Wed Jun  1 11:34:52 PDT 2011
+-- opening a stereo movie now enables stereo mode automatically, unless -no-stereo-switch is given on the command line
+
+===============================================================================
 VERSION 2.6.3m (r453) Tue May 31 17:16:36 PDT 2011
 -- report versions from smtools now
 -- fixed "trying to preload non-existent frame" error with short movies
