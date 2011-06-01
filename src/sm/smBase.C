@@ -609,7 +609,7 @@ uint32_t smBase::readFrame(u_int f, int threadnum)
   return r; 
 }
 
-//!  Reads a tiled frame.  Does not decompress the data. 
+//!  Reads a tiled frame.  Does not decompress the data. Stores in internal buffers for later decompression etc.  
 /*!
   Tiles are read in order but can be stored out of order in the read buffer. 
   \param f The frame to read
