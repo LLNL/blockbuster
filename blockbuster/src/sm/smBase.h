@@ -294,9 +294,10 @@ class smBase {
   /// set size of output buffers. 
   void setBufferSize(uint32_t frames);
 
-  // get the decompressed image or return the raw compressed data
+  // get the decompressed image 
   uint32_t getFrame (int frame, void *out, int threadnum, int res=0); // for threads
   
+  // get part of an image and decompress it appropriately
   uint32_t getFrameBlock(int frame, void *out, int threadnum, 
                      int destRowStride=0,
                      int *dim = NULL, 
