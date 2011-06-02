@@ -36,6 +36,7 @@
 #include <QPlastiqueStyle>
 #include "settings.h"
 #include "common.h"
+#include "../../config/version.h"
 #include "Prefs.h"
 #include <string>
 #include <sys/stat.h>
@@ -83,6 +84,7 @@ void ParseOptions(int &argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
+  cerr << "sidecar version " << BLOCKBUSTER_VERSION << endl; 
   QApplication app(argc, argv);
   QString prefsdir = QDir::homePath() + "/.sidecar"; 
   mkdir(prefsdir.toStdString().c_str(), 0777); 
