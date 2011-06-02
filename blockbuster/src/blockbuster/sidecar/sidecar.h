@@ -260,7 +260,9 @@ struct HostProfile {
   bool operator <(const HostProfile& other) const {
     bool retval = false; 
     // sort by provenance, then by profile name; makes saving easier
-    if (other.mProfileFile != this->mProfileFile ) {
+    if (other.mReadOnly != this->mReadOnly) {
+      retval = this->mReadOnly; 
+    } else if (other.mProfileFile != this->mProfileFile ) {      
       retval = (this->mProfileFile < other.mProfileFile); 
       dbprintf(5, QString("%1 != %2, retval = %3").arg(other.mProfileFile).arg(this->mProfileFile ).arg(retval)); 
       return retval; 
@@ -305,9 +307,8 @@ struct HostProfile {
   }
 
   static QString mUserHostProfileFile; 
-  protected: 
+   public: 
   QString mName;
-  public: 
   QString mHostName, mPort, mVerbosity, mRsh, 
     mDisplay, mBlockbusterPath, mProfileFile; 
   bool mSetDisplay, mReadOnly; 
@@ -319,49 +320,37 @@ class BlockbusterLaunchDialog: public QDialog,
   public Ui::blockbusterLaunchDialog {
   Q_OBJECT
     public:
-  BlockbusterLaunchDialog(SideCar *sidecar, QString host, QString port, QString file, connectionState state, QString rshCmd, QProcess *process, long bbVerbose): 
-    mSidecar(sidecar), mState(state), mProcess(process), mBlockbusterPort(port.toInt()), mCurrentProfile(NULL) {
-    setupUi(this); 
-    rshCommandField->setText(rshCmd); 
-    hostNameField->setText(host); 
-    hostPortField->setText(port); 
-    verboseField->setText(QString("%1").arg(bbVerbose)); 
-    initMovieComboBox(file); 
-    readAndSortHostProfiles(); 
-    connect(fileNameComboBox, SIGNAL(currentIndexChanged(int)), 
-            this, SLOT(comboBoxItemChanged(int))); 
+  BlockbusterLaunchDialog(SideCar *sidecar, QString host, QString port, QString file, connectionState state, QString rshCmd, QProcess *process, long bbVerbose);
+  ~BlockbusterLaunchDialog() {
+    saveHistory(fileNameComboBox, "fileNameComboBox.history"); 
+  }
+  void setState(connectionState newstate) {
+    mState = newstate; 
+    emit stateChanged(newstate); 
+  }
+  QString getPort(void) { return hostPortField->text(); }
+  QString getHost(void) { return hostNameField->text(); }
+ signals:   
+  void stateChanged(connectionState newstate); 
+  void listenForBlockbuster(); 
+  
+  public slots:
+  void blockbusterConnected() {      
+    hide(); 
+  }
+  
+  public slots:
+  void comboBoxItemChanged(int num) {
+    if (num == -1 && fileNameComboBox->count() == 0) {
+      fileNameComboBox->addItem("/Type/movie/path/here"); 
+    } else {
+      if (fileNameComboBox->count() && fileNameComboBox->itemText(0) == "/Type/movie/path/here") {
+        fileNameComboBox->removeItem(0); 
+      }
+    }
     return; 
   }
-    ~BlockbusterLaunchDialog() {
-      saveHistory(fileNameComboBox, "fileNameComboBox.history"); 
-    }
-    void setState(connectionState newstate) {
-      mState = newstate; 
-      emit stateChanged(newstate); 
-    }
-    QString getPort(void) { return hostPortField->text(); }
-    QString getHost(void) { return hostNameField->text(); }
- signals:   
-    void stateChanged(connectionState newstate); 
-    void listenForBlockbuster(); 
-
-    public slots:
-     void blockbusterConnected() {      
-      hide(); 
-    }
-    
-    public slots:
-     void comboBoxItemChanged(int num) {
-       if (num == -1 && fileNameComboBox->count() == 0) {
-          fileNameComboBox->addItem("/Type/movie/path/here"); 
-       } else {
-         if (fileNameComboBox->count() && fileNameComboBox->itemText(0) == "/Type/movie/path/here") {
-           fileNameComboBox->removeItem(0); 
-         }
-       }
-       return; 
-     }
-   
+  
   void on_browseButton_clicked();
   void on_connectButton_clicked();
   void on_cancelButton_clicked() {
@@ -371,6 +360,7 @@ class BlockbusterLaunchDialog: public QDialog,
   }
   void createNewProfile(const HostProfile *inProfile);
   void on_deleteProfilePushButton_clicked(); 
+  void on_saveProfilePushButton_clicked(); 
   void on_newProfilePushButton_clicked(); 
   void on_duplicateProfilePushButton_clicked(); 
   void on_hostProfilesComboBox_currentIndexChanged (int index ); 
@@ -378,7 +368,15 @@ class BlockbusterLaunchDialog: public QDialog,
   void on_launchButton_clicked();
   void on_useDMXCheckBox_clicked();
   void on_setDisplayCheckBox_clicked();
-  void on_hostNameField_editingFinished( ); 
+  void on_hostNameField_editingFinished(); 
+
+  // editing checks for dirty profiles etc. 
+  void hostProfileModified(void); 
+  // overload: 
+  void hostProfileModified(const QString & ) {
+    hostProfileModified(); 
+  }
+
   public:
   void saveHistory(QComboBox *box, QString filename);
   void saveAndRefreshHostProfiles(HostProfile *inProfile);

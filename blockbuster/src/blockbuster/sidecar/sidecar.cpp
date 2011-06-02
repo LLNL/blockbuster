@@ -1108,6 +1108,46 @@ void SideCar::InterestingKey(QKeyEvent *event){
 }
 
 //======================================================================
+BlockbusterLaunchDialog::BlockbusterLaunchDialog(SideCar *sidecar, QString host, QString port, QString file, connectionState state, QString rshCmd, QProcess *process, long bbVerbose): 
+  mSidecar(sidecar), mState(state), mProcess(process), mBlockbusterPort(port.toInt()), mCurrentProfile(NULL) {
+  setupUi(this); 
+  rshCommandField->setText(rshCmd); 
+  hostNameField->setText(host); 
+  hostPortField->setText(port); 
+  verboseField->setText(QString("%1").arg(bbVerbose)); 
+  initMovieComboBox(file); 
+  readAndSortHostProfiles(); 
+  connect(hostProfilesComboBox,  SIGNAL(editTextChanged (const QString &)),
+          this, SLOT(hostProfileModified(const QString&)));
+  connect(hostNameField,  SIGNAL(textEdited ( const QString & )),
+          this, SLOT(hostProfileModified(const QString&)));
+  connect(hostPortField, SIGNAL(textEdited ( const QString & )),
+          this, SLOT(hostProfileModified(const QString&)));
+  connect(verboseField, SIGNAL(textEdited ( const QString & )),
+          this, SLOT(hostProfileModified(const QString&)));
+  connect(rshCommandField, SIGNAL(textEdited ( const QString & )),
+          this, SLOT(hostProfileModified(const QString&)));
+  connect(blockbusterDisplayField, SIGNAL(textEdited ( const QString & )),
+          this, SLOT(hostProfileModified(const QString&)));
+  connect(blockbusterPathField, SIGNAL(textEdited ( const QString & )),
+          this, SLOT(hostProfileModified(const QString&)));
+  connect(fileNameComboBox, SIGNAL(editTextChanged (const QString &)),
+          this, SLOT(hostProfileModified(const QString&)));
+  connect(playCheckBox, SIGNAL(clicked()),
+          this, SLOT(hostProfileModified()));
+  connect(fullScreenCheckBox, SIGNAL(clicked()),
+          this, SLOT(hostProfileModified()));
+  connect(showControlsCheckBox, SIGNAL(clicked()),
+          this, SLOT(hostProfileModified()));
+  connect(useDMXCheckBox, SIGNAL(clicked()),
+          this, SLOT(hostProfileModified()));
+  connect(mpiFrameSyncCheckBox, SIGNAL(clicked()),
+          this, SLOT(hostProfileModified()));
+
+  return; 
+}
+
+//======================================================================
 void BlockbusterLaunchDialog::on_browseButton_clicked(){
   QString filename = QFileDialog::
     getOpenFileName(this, "Choose a movie file",
@@ -1192,6 +1232,12 @@ void BlockbusterLaunchDialog::createNewProfile(const HostProfile *inProfile){
 
 
 // ======================================================================
+void BlockbusterLaunchDialog::on_saveProfilePushButton_clicked(){
+  sortAndSaveHostProfiles(); 
+  return; 
+} 
+
+// ======================================================================
 void BlockbusterLaunchDialog::on_newProfilePushButton_clicked(){
   createNewProfile(NULL); 
   return; 
@@ -1204,7 +1250,11 @@ void BlockbusterLaunchDialog::on_duplicateProfilePushButton_clicked(){
 }  
 
 //======================================================================
-void BlockbusterLaunchDialog::on_deleteMoviePushButton_clicked(){
+void BlockbusterLaunchDialog::on_deleteMoviePushButton_clicked(){  
+  fileNameComboBox->removeItem(fileNameComboBox->currentIndex());
+  if (fileNameComboBox->count() == 0) {
+    fileNameComboBox->addItem("/Type/movie/path/here"); 
+  }  
   return; 
 } 
 //=======================================================================
@@ -1279,12 +1329,14 @@ void BlockbusterLaunchDialog::on_launchButton_clicked(){
 void BlockbusterLaunchDialog::on_useDMXCheckBox_clicked(){
   mpiFrameSyncCheckBox->setEnabled(useDMXCheckBox->isChecked()); 
   fullScreenCheckBox->setChecked(useDMXCheckBox->isChecked()); 
+  hostProfileModified(); 
   return; 
 }
 
 //=======================================================================
 void BlockbusterLaunchDialog::on_setDisplayCheckBox_clicked(){
   blockbusterDisplayField->setEnabled(setDisplayCheckBox->isChecked()); 
+  hostProfileModified(); 
   return; 
 }
 
@@ -1295,8 +1347,26 @@ void BlockbusterLaunchDialog::on_hostNameField_editingFinished( ) {
       blockbusterDisplayField->setText(":0"); 
     }
   }
+  hostProfileModified(); 
   return; 
 }
+
+//=======================================================================
+void BlockbusterLaunchDialog::hostProfileModified(void){
+  bool dirty = 
+    (hostProfilesComboBox->currentText() != mCurrentProfile->mName ||
+     hostNameField->text() != mCurrentProfile->mHostName ||
+     hostPortField->text() != mCurrentProfile->mPort ||
+     verboseField->text() != mCurrentProfile->mVerbosity ||
+     rshCommandField->text() != mCurrentProfile->mRsh ||
+     blockbusterDisplayField->text() != mCurrentProfile->mDisplay ||
+     blockbusterPathField->text() != mCurrentProfile->mBlockbusterPath ||
+     setDisplayCheckBox->isChecked() != mCurrentProfile->mSetDisplay); 
+
+  saveProfilePushButton->setEnabled(dirty && !mCurrentProfile->mReadOnly); 
+  return; 
+}
+
 
 //=======================================================================
 void BlockbusterLaunchDialog::saveHistory(QComboBox *box, QString filename){
@@ -1418,7 +1488,7 @@ void BlockbusterLaunchDialog::on_hostProfilesComboBox_currentIndexChanged
   setDisplayCheckBox->setChecked(mCurrentProfile->mSetDisplay); 
   blockbusterDisplayField->setText(mCurrentProfile->mDisplay); 
   blockbusterPathField->setText(mCurrentProfile->mBlockbusterPath); 
-   
+  hostProfileModified(); 
   return;
 }
 
@@ -1453,10 +1523,18 @@ void BlockbusterLaunchDialog::readHostProfileFile(QString filename, bool readonl
   // HostProfile profile; 
   QFile profileFile(filename); 
   if (!profileFile.open(QIODevice::ReadOnly)) {
-    fileNameComboBox->addItem("/Type/movie/path/here"); 
+    if (fileNameComboBox->count() == 0) {
+      fileNameComboBox->addItem("/Type/movie/path/here"); 
+    }
     dbprintf(5, QString("Could not load history from %1\n").arg(filename)); 
     return; 
   }
+  int num = fileNameComboBox->findText("/Type/movie/path/here");
+  while (num != -1) {
+    fileNameComboBox->removeItem(num); 
+    num = fileNameComboBox->findText("/Type/movie/path/here");
+  }
+    
   dbprintf(5, QString("Loading history from file %1\n").arg(filename)); 
   QString item, line; 
   while ((line = profileFile.readLine())!= "") {
