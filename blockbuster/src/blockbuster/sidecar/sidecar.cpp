@@ -58,7 +58,6 @@ QString HostProfile::mUserHostProfileFile;
 
 bool CompareHostProfiles(const HostProfile * h1, const HostProfile * h2) {
   bool retval = (*h1 < *h2); 
-  cerr << "  -=== RETVAL is " << retval << endl; 
   return retval; 
 } 
 
@@ -1224,7 +1223,10 @@ void BlockbusterLaunchDialog::createNewProfile(const HostProfile *inProfile){
 
   if (!ok) 
     return; 
+
+  dbprintf(5, "Creating new profile from %s\n", inProfile->toQString().toStdString().c_str());
   mCurrentProfile = new HostProfile(name.replace(QRegExp("\\s+"), "_"), inProfile);
+  dbprintf(5, "New profile is %s\n", mCurrentProfile->toQString().toStdString().c_str());
   mHostProfiles.push_back(mCurrentProfile); 
   saveAndRefreshHostProfiles(mCurrentProfile); 
   return; 
@@ -1233,7 +1235,20 @@ void BlockbusterLaunchDialog::createNewProfile(const HostProfile *inProfile){
 
 // ======================================================================
 void BlockbusterLaunchDialog::on_saveProfilePushButton_clicked(){
+  if (0 && mCurrentProfile->displayName() != hostProfilesComboBox->currentText()) {
+    dbprintf(0, QString("Error:  current profile  %1 does not match corresponding name %2 in combo box at index %3!\n").arg(mCurrentProfile->displayName()).arg(hostProfilesComboBox->currentText()).arg(hostProfilesComboBox->currentIndex())); 
+    abort(); 
+  }
+  mCurrentProfile->mHostName = hostNameField->text(); 
+  mCurrentProfile->mPort = hostPortField->text(); 
+  mCurrentProfile->mVerbosity = verboseField->text(); 
+  mCurrentProfile->mRsh = rshCommandField->text(); 
+  mCurrentProfile->mSetDisplay = setDisplayCheckBox->isChecked(); 
+  mCurrentProfile->mDisplay = blockbusterDisplayField->text(); 
+  mCurrentProfile->mBlockbusterPath = blockbusterPathField->text(); 
+  
   sortAndSaveHostProfiles(); 
+  hostProfileModified(); 
   return; 
 } 
 
@@ -1267,13 +1282,6 @@ void BlockbusterLaunchDialog::on_connectButton_clicked(){
 //=======================================================================
 void BlockbusterLaunchDialog::on_launchButton_clicked(){
   // launch blockbuster in a separate thread, display a "waiting dialog," and if there is success, close the dialog and set mConnect to true
-  /*   if (fileNameComboBox->currentIndex() < 3) {
-       QMessageBox::warning(this,  "Error",
-       "Invalid movie path -- select or type another");
-       return; 
-       }
-  */ 
-
    
   setState(BB_STARTING); 
   mBlockbusterPort = mSidecar->listenForBlockbuster(); 
@@ -1352,19 +1360,17 @@ void BlockbusterLaunchDialog::on_hostNameField_editingFinished( ) {
 }
 
 //=======================================================================
-void BlockbusterLaunchDialog::hostProfileModified(void){
+bool BlockbusterLaunchDialog::hostProfileModified(void){
   bool dirty = 
-    (hostProfilesComboBox->currentText() != mCurrentProfile->mName ||
-     hostNameField->text() != mCurrentProfile->mHostName ||
+    (hostNameField->text() != mCurrentProfile->mHostName ||
      hostPortField->text() != mCurrentProfile->mPort ||
      verboseField->text() != mCurrentProfile->mVerbosity ||
      rshCommandField->text() != mCurrentProfile->mRsh ||
      blockbusterDisplayField->text() != mCurrentProfile->mDisplay ||
      blockbusterPathField->text() != mCurrentProfile->mBlockbusterPath ||
      setDisplayCheckBox->isChecked() != mCurrentProfile->mSetDisplay); 
-
   saveProfilePushButton->setEnabled(dirty && !mCurrentProfile->mReadOnly); 
-  return; 
+  return dirty; 
 }
 
 
@@ -1408,12 +1414,12 @@ void BlockbusterLaunchDialog::saveAndRefreshHostProfiles(HostProfile *inProfile)
   while (pos != endpos && **pos < profCopy) {
     ++profnum; ++pos; 
   }
-  dbprintf(5, QString("Found pos >= profCopy: pos=%1, profCopy=%2\n").arg((*pos)->toQString()).arg(profCopy.toQString()
-)); 
   if (pos == endpos) {
     if (profnum) 
       profnum--; 
-  } 
+  } else {
+    dbprintf(5, QString("Found pos >= profCopy: pos=%1, profCopy=%2\n").arg((*pos)->toQString()).arg(profCopy.toQString())); 
+  }
   dbprintf(5,  QString("hostProfilesComboBox->setCurrentIndex(%1)").arg(profnum)); 
   hostProfilesComboBox->setCurrentIndex(profnum); 
   return; 
@@ -1466,18 +1472,14 @@ void BlockbusterLaunchDialog::sortAndSaveHostProfiles(void) {
 }
 
 //=======================================================================
-void BlockbusterLaunchDialog::on_hostProfilesComboBox_currentIndexChanged
-(int index ) {
-  cerr << "on_hostProfilesComboBox_currentIndexChanged( " << index << " )" << endl;
-
- 
+void BlockbusterLaunchDialog::setupGuiAndCurrentProfile(int index){
   //  set mCurrentProfile correctly
   mCurrentProfile = mHostProfiles[index]; 
   if (!mCurrentProfile) {
     dbprintf(0, QString("Error: No current profile matching name %2 in combo box!\n").arg(mCurrentProfile->displayName()).arg(hostProfilesComboBox->currentText())); 
     abort(); 
   }  
-  if (mCurrentProfile->displayName() != hostProfilesComboBox->currentText()) {
+  if (0 && mCurrentProfile->displayName() != hostProfilesComboBox->currentText()) {
     dbprintf(0, QString("Error:  current profile  %1 does not match corresponding name %2 in combo box at index %3!\n").arg(mCurrentProfile->displayName()).arg(hostProfilesComboBox->currentText()).arg(index)); 
     abort(); 
   }
@@ -1488,7 +1490,46 @@ void BlockbusterLaunchDialog::on_hostProfilesComboBox_currentIndexChanged
   setDisplayCheckBox->setChecked(mCurrentProfile->mSetDisplay); 
   blockbusterDisplayField->setText(mCurrentProfile->mDisplay); 
   blockbusterPathField->setText(mCurrentProfile->mBlockbusterPath); 
+
   hostProfileModified(); 
+  return;
+}
+
+//=======================================================================
+void BlockbusterLaunchDialog::on_hostProfilesComboBox_currentIndexChanged
+(int index) {
+  cerr << "on_hostProfilesComboBox_currentIndexChanged( " << index << " )" << endl;
+  if (hostProfileModified()) {
+    if (mCurrentProfile->mReadOnly) {
+      QMessageBox::StandardButton answer = QMessageBox::question
+        (this, tr("Read-only profile changed"), 
+         tr("You have made changes to a read-only profile.  These cannot be saved.  "
+            "Would you like to save your changes to the current profile in a new profile?  If not, your changes will be lost."),      
+         QMessageBox::Yes | QMessageBox::Cancel, 
+         QMessageBox::Cancel); 
+      if (answer == QMessageBox::Yes) {
+        createNewProfile(mCurrentProfile); 
+      }
+    } else {
+      QMessageBox::StandardButton answer = QMessageBox::question
+        (this, tr("Profile changed"), 
+         tr("Would you like to save your changes to the current profile?  If not, your changes will be lost."),      
+         QMessageBox::Yes | QMessageBox::Discard | QMessageBox::Cancel, 
+         QMessageBox::Cancel); 
+      if (answer == QMessageBox::Cancel) {
+        // find the current profile in the list and change to it.  
+        hostProfilesComboBox->blockSignals(true); 
+        hostProfilesComboBox->setCurrentIndex(hostProfilesComboBox->findText(mCurrentProfile->displayName())); 
+        hostProfilesComboBox->blockSignals(false); 
+        return; 
+      } else if  (answer == QMessageBox::Yes) {
+        on_saveProfilePushButton_clicked(); 
+      } else {
+      dbprintf(1, "current profile being reverted to new profile\n"); 
+      }
+    }
+  }
+  setupGuiAndCurrentProfile(index); 
   return;
 }
 
@@ -1514,7 +1555,8 @@ void BlockbusterLaunchDialog::readAndSortHostProfiles(void) {
     ++pos; 
   }
   hostProfilesComboBox->blockSignals(false);   
-  on_hostProfilesComboBox_currentIndexChanged(hostProfilesComboBox->currentIndex()); 
+  // on_hostProfilesComboBox_currentIndexChanged(hostProfilesComboBox->currentIndex()); 
+  setupGuiAndCurrentProfile(hostProfilesComboBox->currentIndex()); 
   return;
 }
 
