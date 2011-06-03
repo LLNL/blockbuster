@@ -240,6 +240,7 @@ struct HostProfile {
     QStringList tokens = in->toProfileString().split(QRegExp("\\s+")); 
     tokens[0] = name; 
     init(tokens, in->mProfileFile, false); 
+    mProfileFile = HostProfile::mUserHostProfileFile ;
     return;     
   }
 
@@ -363,7 +364,8 @@ class BlockbusterLaunchDialog: public QDialog,
   void on_saveProfilePushButton_clicked(); 
   void on_newProfilePushButton_clicked(); 
   void on_duplicateProfilePushButton_clicked(); 
-  void on_hostProfilesComboBox_currentIndexChanged (int index ); 
+  void setupGuiAndCurrentProfile(int index);
+  void on_hostProfilesComboBox_currentIndexChanged(int index); 
   void on_deleteMoviePushButton_clicked(); 
   void on_launchButton_clicked();
   void on_useDMXCheckBox_clicked();
@@ -371,7 +373,7 @@ class BlockbusterLaunchDialog: public QDialog,
   void on_hostNameField_editingFinished(); 
 
   // editing checks for dirty profiles etc. 
-  void hostProfileModified(void); 
+  bool hostProfileModified(void); 
   // overload: 
   void hostProfileModified(const QString & ) {
     hostProfileModified(); 
