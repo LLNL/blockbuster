@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
     }
   }
   int retval = app.exec();
-  gPrefs.SetLongValue("verbose", 0); // do not inherit this from previous
+  gPrefs.SetValue("verbose", 0); // do not inherit this from previous
   gPrefs.SaveToFile(true, true); 
   return retval; 
 }
