@@ -74,6 +74,7 @@ class SideCar: public QMainWindow, public Ui::SideCarWindow {
   void doStressTests(void) {mDoStressTests = true; }
   void ReadCueFile(std::string filename); 
 
+  QProcess *createNewBlockbusterProcess(void);
   void askLaunchBlockbuster(QString iMovieName, bool fromMain=false); 
   int listenForBlockbuster() {
     mBlockbusterServer.listen(QHostAddress::Any); 
@@ -321,7 +322,7 @@ class BlockbusterLaunchDialog: public QDialog,
   public Ui::blockbusterLaunchDialog {
   Q_OBJECT
     public:
-  BlockbusterLaunchDialog(SideCar *sidecar, QString host, QString port, QString file, connectionState state, QString rshCmd, QProcess *process, long bbVerbose);
+  BlockbusterLaunchDialog(SideCar *sidecar, QString host, QString port, QString file, connectionState state, QString rshCmd, long bbVerbose);
   ~BlockbusterLaunchDialog() {
     saveHistory(fileNameComboBox, "fileNameComboBox.history"); 
   }
