@@ -587,6 +587,7 @@ int main(int argc, char *argv[])
       printf("Initialization failed. Slave will now exit.\n"); 
       exit(1); 
     }
+    SuppressMessageDialogs(true); 
   } else {
     gMainWindow = new BlockbusterInterface; 
     
@@ -609,6 +610,7 @@ int main(int argc, char *argv[])
   // set up a connection to sidecar if that's what launched us
   if (opt->sidecarHostPort != "") {
     gSidecarServer->connectToSidecar(opt->sidecarHostPort); 
+    SuppressMessageDialogs(true); 
   }
   /* Remaining args are movie filenames, load them (skip args[0]=progname) */
   
@@ -621,9 +623,14 @@ int main(int argc, char *argv[])
   while (count < argc && args[count]) count++;  
   if (count && count-1) {
     allFrames = new FrameList(count-1, &args[1]);
+    if (allFrames->numActualFrames() == 0) {
+      delete allFrames; 
+      allFrames = NULL; 
+    }
   }
   if (opt->sidecarHostPort != "" && allFrames == NULL) {
     ERROR("%s is not a valid movie file - nothing to display", args[1]);
+    gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
     exit(1);
   } 
 
@@ -638,13 +645,17 @@ int main(int argc, char *argv[])
     char *filename = NULL; 
     if (filename == NULL) {
       WARNING("Warning: need to implement ChooseFile.  No frames found - nothing to display");
+      gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
       exit(MOVIE_OK);
     }
     fileList.append(filename);
     free(filename);
 
     allFrames = new FrameList; 
-    allFrames->LoadFrames(fileList);
+    if (!allFrames->LoadFrames(fileList)) {
+      gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
+      exit(1);
+    }
   }
 
   /* At this point, we should have a full list of frames.  If we don't,
@@ -652,6 +663,7 @@ int main(int argc, char *argv[])
    */
   if (!opt->slaveMode && allFrames == NULL) {
     ERROR("No frames found - nothing to display");
+    gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
     exit(1);
   }
 
