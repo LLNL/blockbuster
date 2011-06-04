@@ -594,6 +594,26 @@ void SideCar::on_HostField_returnPressed() {
   return; 
 }
 
+//===============================================================
+QProcess *SideCar::createNewBlockbusterProcess(void) {
+  if (mBlockbusterProcess) {
+    delete mBlockbusterProcess;
+    mBlockbusterProcess = NULL; 
+  }
+
+  mBlockbusterProcess = new QProcess;
+  //qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
+  //connect(mProcess, SIGNAL(started()), this, SLOT(ProcessStarted())); 
+  connect(mBlockbusterProcess, SIGNAL(error(QProcess::ProcessError)), 
+          this, SLOT(blockbusterProcessError(QProcess::ProcessError))); 
+  connect(mBlockbusterProcess, SIGNAL(finished(int, QProcess::ExitStatus)), 
+          this, SLOT(blockbusterProcessExit(int, QProcess::ExitStatus)));
+  connect(mBlockbusterProcess, SIGNAL(readyReadStandardError()), 
+          this, SLOT(blockbusterReadStdErr())); 
+  connect(mBlockbusterProcess, SIGNAL(readyReadStandardOutput()), 
+          this, SLOT(blockbusterReadStdOut())); 
+  return mBlockbusterProcess; 
+}
 
 //===============================================================
 /* give user opportunity to launch blockbuster, with or without a cue */
@@ -615,19 +635,8 @@ void SideCar::askLaunchBlockbuster(QString iMovieName, bool fromMain) {
     dbprintf(5, "no @ symbol found\n"); 
   }
 
-  mBlockbusterProcess = new QProcess;
-  //qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
-  //connect(mProcess, SIGNAL(started()), this, SLOT(ProcessStarted())); 
-  connect(mBlockbusterProcess, SIGNAL(error(QProcess::ProcessError)), 
-          this, SLOT(blockbusterProcessError(QProcess::ProcessError))); 
-  connect(mBlockbusterProcess, SIGNAL(finished(int, QProcess::ExitStatus)), 
-          this, SLOT(blockbusterProcessExit(int, QProcess::ExitStatus)));
-  connect(mBlockbusterProcess, SIGNAL(readyReadStandardError()), 
-          this, SLOT(blockbusterReadStdErr())); 
-  connect(mBlockbusterProcess, SIGNAL(readyReadStandardOutput()), 
-          this, SLOT(blockbusterReadStdOut())); 
   
-  BlockbusterLaunchDialog dialog(this, HostField->text(), PortField->text(), iMovieName, mState, mPrefs->GetValue("rsh").c_str(), mBlockbusterProcess, gPrefs.GetLongValue("verbose"));
+  BlockbusterLaunchDialog dialog(this, HostField->text(), PortField->text(), iMovieName, mState, mPrefs->GetValue("rsh").c_str(), gPrefs.GetLongValue("verbose"));
   setBlockbusterPort(PortField->text()); 
   connect(&mBlockbusterServer, SIGNAL(newConnection()), &dialog, SLOT(blockbusterConnected())); 
   connect (&dialog, SIGNAL(stateChanged(connectionState)), this, SLOT(setState(connectionState))); 
@@ -1119,8 +1128,8 @@ void SideCar::InterestingKey(QKeyEvent *event){
 }
 
 //======================================================================
-BlockbusterLaunchDialog::BlockbusterLaunchDialog(SideCar *sidecar, QString host, QString port, QString file, connectionState state, QString rshCmd, QProcess *process, long bbVerbose): 
-  mSidecar(sidecar), mState(state), mProcess(process), mBlockbusterPort(port.toInt()), mCurrentProfile(NULL) {
+BlockbusterLaunchDialog::BlockbusterLaunchDialog(SideCar *sidecar, QString host, QString port, QString file, connectionState state, QString rshCmd, long bbVerbose): 
+  mSidecar(sidecar), mState(state), mBlockbusterPort(port.toInt()), mCurrentProfile(NULL) {
   setupUi(this); 
   rshCommandField->setText(rshCmd); 
   hostNameField->setText(host); 
@@ -1154,7 +1163,6 @@ BlockbusterLaunchDialog::BlockbusterLaunchDialog(SideCar *sidecar, QString host,
           this, SLOT(hostProfileModified()));
   connect(mpiFrameSyncCheckBox, SIGNAL(clicked()),
           this, SLOT(hostProfileModified()));
-
   return; 
 }
 
@@ -1338,6 +1346,7 @@ void BlockbusterLaunchDialog::on_launchButton_clicked(){
   dbprintf(5, "Launching command %s\n", cmd.toStdString().c_str()); 
 
 
+  mProcess = mSidecar->createNewBlockbusterProcess(); 
   mProcess->start(cmd); 
     
   return; 
