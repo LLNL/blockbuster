@@ -2,12 +2,13 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.6.3o (r???) Wed 2011
+VERSION 2.6.3o (r467) Fri Jun  3 18:21:13 PDT 2011
 -- sidecar now announces its version
 -- fixed a segfault in sidecar that happened when blockbuster disappeared unexpectedly
 -- made managing host profiles more intuitive in sidecar
 -- improved sorting of sidecar host profiles 
 -- fixed a bug in movie lists and enabled deleting of movies from the list
+-- Handle crashing and misbehaving blockbuster processes much better, i.e., without crashing.  
 
 ===============================================================================
 VERSION 2.6.3n (r458) Wed Jun  1 11:34:52 PDT 2011
