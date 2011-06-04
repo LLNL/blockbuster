@@ -395,10 +395,18 @@ void SideCar::checkBlockbusterData() {
         mCueExecuting = false;
       }
       break; 
+    case MOVIE_STOP_ERROR:
+      { 
+        QMessageBox::critical(this, "Blockbuster error", 
+                              QString("Message from blockbuster:  %1.")
+                              .arg(event.mString)); 
+        break; 
+      }
     default:
       cerr << "Bad event: " << event.Stringify() << " in checkBlockbusterData()\n"<< endl; 
     }
-  }  
+                              
+  }
   return; 
 }
 
@@ -484,8 +492,9 @@ void SideCar::blockbusterProcessExit(int, QProcess::ExitStatus ) {
 //=======================================================================
 void SideCar::blockbusterReadStdErr() {
   //dbprintf(5, "Sidecar: ReadStdErr()... \n"); 
+  if (!mBlockbusterProcess) return; 
   mBlockbusterProcess->setReadChannel(QProcess::StandardError); 
-  while (mBlockbusterProcess->canReadLine()) {
+  while (mBlockbusterProcess && mBlockbusterProcess->canReadLine()) {
     QString line = mBlockbusterProcess->readLine(); 
     if (line == "") {
       dbprintf(3,"got null line from stderr\n"); 
@@ -500,11 +509,13 @@ void SideCar::blockbusterReadStdErr() {
       setBlockbusterPort(tokens[3]); 
    } else {                             
       dbprintf(1, "Got blockbuster stderr: %s\n", line.toStdString().c_str()); 
-      if (line.contains(QRegExp("[Nn]o such file"))) {
+      if (line.contains(QRegExp("[Nn]o such file")) && 
+          !line.contains("scanning")) {
         QMessageBox::warning(this, "Error", 
                              "Path to blockbuster is incorrect"); 
         setState(BB_ERROR);
       }
+      
     }
   }
   return; 
@@ -513,8 +524,9 @@ void SideCar::blockbusterReadStdErr() {
 //=======================================================================
 void SideCar::blockbusterReadStdOut(){ 
   //dbprintf(5, "Sidecar: ReadStdOut()\n"); 
+  if (!mBlockbusterProcess) return; 
   mBlockbusterProcess->setReadChannel(QProcess::StandardOutput); 
-  while (mBlockbusterProcess->canReadLine()) {
+  while (mBlockbusterProcess && mBlockbusterProcess->canReadLine()) {
     QString line = mBlockbusterProcess->readLine(); 
     if (line == "") {
       dbprintf(3, "got null line from stdout\n"); 

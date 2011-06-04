@@ -466,6 +466,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       case MOVIE_STOP_ERROR: 
         DEBUGMSG("Got stop error"); 
         playDirection = 0; 
+        gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, event.mString));
         continue;
       case MOVIE_PAUSE: 
         playDirection = !playDirection;
@@ -723,6 +724,8 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         swapBuffers = true; 
 	  } else { 
 	    ERROR("Could not open movie file %s", event.mString); 
+        gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
+        return 0; 
 	  }
 	  frameInfo =  canvas->GetFrameInfoPtr(1);
 	  preloadFrames = MIN2(options->preloadFrames, static_cast<int32_t>(allFrames->numStereoFrames()));

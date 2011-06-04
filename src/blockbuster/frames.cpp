@@ -26,6 +26,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <errno.h>
 #include "util.h"
 #include <libgen.h>
 #include "frames.h"
@@ -127,7 +128,9 @@ bool FrameList::LoadFrames(QStringList &files) {
     filename = strdup(MakeAbsolutePath(files[index]).toStdString().c_str()); 
     DEBUGMSG(QString("Checking for file %1").arg( filename)); 
     strncpy(base, basename(filename), strlen(filename)); 
+    filename = strdup(MakeAbsolutePath(files[index]).toStdString().c_str()); 
     strncpy(directory, dirname(filename), strlen(filename));; 
+    filename = strdup(MakeAbsolutePath(files[index]).toStdString().c_str()); 
     
     QString recentFileName;
     int numFiles;
@@ -151,12 +154,12 @@ bool FrameList::LoadFrames(QStringList &files) {
     else if ((numFiles = scandir(directory,
 				 &fileList, 
 				 matchStartOfName, alphasort)) < 0){
-      SYSERROR(QString("cannot scan for '%1' - skipping").arg( filename));
-      continue;
+      ERROR(QString("Error scanning directory '%1': %2").arg(directory ).arg(strerror(errno)));
+      return false;
     }
     else if (numFiles == 0) {
-      WARNING(QString("no files match '%1'.  Skipping...").arg(filename));
-      continue;
+      ERROR(QString("no files match '%1'.  Skipping...").arg(filename));
+      return false;
     }
     
     /* One or more files matched - we're happy as clams.  Now the

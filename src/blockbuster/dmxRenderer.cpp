@@ -331,7 +331,7 @@ void dmxRenderer::SwapBuffers(void){
     if (usecs > 10*1000*1000) {
       cerr << "Something is wrong. Slave has not swapped buffers after 10 seconds." << endl;
       if (gSidecarServer) {
-        MovieEvent event(MOVIE_STOP_ERROR);
+        MovieEvent event(MOVIE_STOP_ERROR, "Something is wrong. Slave has not swapped buffers after 10 seconds.");
         gSidecarServer->AddEvent(event);
       }
       return; 
