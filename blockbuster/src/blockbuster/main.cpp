@@ -40,6 +40,7 @@
 
 #include <signal.h>
 #include "QMessageBox"
+#include <QFileDialog>
 #include "errmsg.h"
 #include <version.h>
 #include "settings.h"
@@ -639,20 +640,26 @@ int main(int argc, char *argv[])
    * chance to supply us with some frames.
    */
   if (!opt->slaveMode && !allFrames) {
-    QStringList fileList; 
-    /* Try to get a filename from the user interface */
-    //    char *filename = someObject->ChooseFile(opt);
-    char *filename = NULL; 
-    if (filename == NULL) {
-      WARNING("Warning: need to implement ChooseFile.  No frames found - nothing to display");
+    QString filename;
+    if (opt->sidecarHostPort == "") { 
+      /* Try to get a filename from the user interface */
+      //    char *filename = someObject->ChooseFile(opt);
+      QString filename = 
+        QFileDialog::  getOpenFileName(NULL, "Choose a movie file", 
+                                       "Navigate to a movie file to play",
+                                       "Movie Files (*.sm)");
+    }
+    if (filename == "") {
+      WARNING("No frames found - nothing to display");
       gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
       exit(MOVIE_OK);
     }
-    fileList.append(filename);
-    free(filename);
-
+    
+    
     allFrames = new FrameList; 
-    if (!allFrames->LoadFrames(fileList)) {
+    QStringList names(filename); 
+    if (!allFrames->LoadFrames(names) ||
+        !allFrames->numActualFrames()) {
       gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
       exit(1);
     }
