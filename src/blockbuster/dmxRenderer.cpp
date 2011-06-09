@@ -1035,6 +1035,9 @@ int DMXSlave::QueueNetworkEvents(void) {
     else if (EventFromMessage(msg, event)) {
       mIncomingEvents.push_back(event); 
       numqueued++; 
+    } else if (msg.startsWith("ERROR")) {
+      ERROR(QString("Error from slave: %1\n").arg(msg));
+      abort(); 
     }
     else {
       //DEBUGMSG(QString("Unknown message from slave: %1").arg(msg).toAscii()); 

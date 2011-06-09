@@ -559,7 +559,7 @@ int Slave::Loop(void)
             }
            message.remove(0, 13); //strip "SetFrameList " from front
            DEBUGMSG((QString("File list is: ")+message)); 
-           if (!LoadFrames( message.toAscii())) {			
+           if (!LoadFrames( message.toAscii()) || !mCanvas->frameList->numActualFrames()) {			
               SendError("No frames could be loaded."); 
             }
             playFirstFrame = 0; 
