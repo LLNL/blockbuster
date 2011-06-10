@@ -9,7 +9,6 @@
 #include "QThread"
 //#include "blockbuster_qt.h"
 class BlockbusterInterface; 
-#define TIMER_PRINT DEBUGMSG
 
 // =====================================
 /* Since sidecar and blockbuster share keyboard controls, document them
