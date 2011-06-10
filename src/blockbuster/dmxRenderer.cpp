@@ -124,7 +124,16 @@ void dmxRenderer::FinishRendererInit(ProgramOptions *, Canvas *, Window ) {
 //  =============================================================
 dmxRenderer::~dmxRenderer() {
   ECHO_FUNCTION(5);
-  if (!numValidWindowInfos) return; 
+  ShutDownSlaves();
+  return;
+}
+
+//===================================================================
+void dmxRenderer::ShutDownSlaves(void) {
+  ECHO_FUNCTION(5);
+  if (!numValidWindowInfos) {
+    return; 
+  }
   if (mCanvas != NULL) {    
     int i;
     for (i = 0; i < numValidWindowInfos; i++) {
@@ -135,25 +144,31 @@ dmxRenderer::~dmxRenderer() {
     if (dmxWindowInfos)
       delete [] dmxWindowInfos;
   } 
+
   int     slavenum = mActiveSlaves.size();
   
-  while (slavenum--)
-    {
-      if (mActiveSlaves[slavenum])
-        mActiveSlaves[slavenum]->
-          SendMessage("Exit");
+  while (slavenum--) {
+    if (mActiveSlaves[slavenum]) {
+      mActiveSlaves[slavenum]->disconnect(this); 
+      delete mActiveSlaves[slavenum]; 
     }
+  }
+  mActiveSlaves.clear();
+  
   slavenum = mIdleSlaves.size();
-  while (slavenum--)
-    {
-      mIdleSlaves[slavenum]->SendMessage("Exit");
+  while (slavenum--) {
+    if (mIdleSlaves[slavenum]) {
+      mIdleSlaves[slavenum]->disconnect(this); 
+      delete mIdleSlaves[slavenum]; 
     }
-  return;
+  }
+  mIdleSlaves.clear();
+
+  return; 
 }
 
 //===================================================================
-void dmxRenderer::Resize(int newWidth, int newHeight, int cameFromX) {
-  
+void dmxRenderer::Resize(int newWidth, int newHeight, int cameFromX) {  
   
   ECHO_FUNCTION(5);
 
@@ -528,6 +543,9 @@ void dmxRenderer::SlaveConnected() {
   QString newAddressString = hostAddress.toString(), 
     dmxAddressString; 
   DMXSlave *theSlave =  new DMXSlave(newAddressString, theSocket, mOptions->preloadFrames);
+  connect(theSlave, SIGNAL(Error(DMXSlave*, QString, QString, bool)), 
+          this, SLOT(slaveError(DMXSlave*, QString, QString, bool))); 
+
   int screenNum = dmxScreenInfos.size();
   DEBUGMSG(QString("SlaveConnect from host %1").arg( hostAddress.toString())); 
   bool matched = false; 
@@ -572,6 +590,23 @@ void dmxRenderer::UnexpectedDisconnect(DMXSlave *theSlave) {
   ERROR(QString("Slave  host %1 disconnected unexpectedly")
         .arg(QString::fromStdString(theSlave->GetHost())));
   exit(1); 
+}
+
+//===================================================================
+void dmxRenderer::SlaveError(DMXSlave *, QString host, 
+                             QString msg, bool abort) {
+  ERROR(QString("Host %1: %2\n").arg(host).arg(msg)); 
+  if (gSidecarServer->connected()) {   
+    if (abort) {
+      gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, QString("Slave on %1: %2").arg(host).arg(msg)));
+    } else  {
+      gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, QString("Slave on %1: %2").arg(host).arg(msg)));
+    }
+  }
+  if (abort) {
+    ShutDownSlaves(); 
+  } 
+  return; 
 }
 
 //===================================================================
@@ -1036,8 +1071,8 @@ int DMXSlave::QueueNetworkEvents(void) {
       mIncomingEvents.push_back(event); 
       numqueued++; 
     } else if (msg.startsWith("ERROR")) {
-      ERROR(QString("Error from slave: %1\n").arg(msg));
-      abort(); 
+      DEBUGMSG(QString("Slave %1: %2\n").arg(mRemoteHostname.c_str()).arg(msg));
+      emit Error(this, mRemoteHostname.c_str(), msg, true); 
     }
     else {
       //DEBUGMSG(QString("Unknown message from slave: %1").arg(msg).toAscii()); 
