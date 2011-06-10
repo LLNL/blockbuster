@@ -2,6 +2,12 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
+VERSION 2.7.0a (r476) Fri Jun 10 14:26:43 PDT 2011
+-- If no files are given on the command line, blockbuster now opens a file dialog
+-- Allow the user to set the local hostname manually, so blockbuster can find sidecar when the localhost name differs from its external network name. 
+-- If a DMX slave cannot find a file on the remote host, try to handle it better.  
+
+===============================================================================
 VERSION 2.6.3o (r467) Fri Jun  3 18:21:13 PDT 2011
 -- sidecar now announces its version
 -- fixed a segfault in sidecar that happened when blockbuster disappeared unexpectedly
