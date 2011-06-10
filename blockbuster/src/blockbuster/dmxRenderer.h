@@ -110,6 +110,7 @@ class DMXSlave: public QObject {
 
  signals:
   void SlaveDisconnect(DMXSlave *); 
+  void Error(DMXSlave *, QString host, QString msg, bool abort); 
 
   //=============-==================================
   // public data:
@@ -184,6 +185,8 @@ class dmxRenderer: public QObject, public Renderer {
   virtual void FinishRendererInit(ProgramOptions *, Canvas *, Window );
   virtual ~dmxRenderer(); 
 
+  void ShutDownSlaves(void); 
+
   void Resize(int newWidth, int newHeight, int cameFromX);
   void Move(int newX, int newY, int cameFromX);
 
@@ -220,6 +223,7 @@ class dmxRenderer: public QObject, public Renderer {
   public slots:
   void SlaveConnected(); 
   void UnexpectedDisconnect(DMXSlave *); 
+  void SlaveError(DMXSlave *, QString host, QString msg, bool abort); 
   
   void setNumDMXDisplays(int num) {
     mActiveSlaves.resize(num, NULL);     
@@ -257,15 +261,11 @@ class dmxRenderer: public QObject, public Renderer {
   // FROM RENDERINFO: 
   int haveDMX;
   
-  //QString mBackendRenderer; 
   vector<DMXScreenInfo *> dmxScreenInfos;  /* [numScreens] */
   vector<QHostAddress > dmxHostAddresses; // Qt goodness for convenience
   DMXWindowInfo *dmxWindowInfos;  /* up to numScreens */
   int numValidWindowInfos; 
   
-  //  vector<DMXSlave *> Slaves ;  /* to conform with the local conventions */
-  //int backendSockets[MAX_SCREENS];/* socket [screen] */
-  //int handle[MAX_SCREENS];          /* canvas handle [screen] */
   vector<string> files;
   int sentSwapBuffers[MAX_SCREENS]; /* is there an outstanding SwapBuffers? */
   
