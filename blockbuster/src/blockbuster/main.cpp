@@ -120,6 +120,7 @@ void usage(void) {
   fprintf(stderr, "\t    (supported in 'gtk', 'x11' user interfaces)\n");
   
   fprintf(stderr, "-stereo: short for -r gl_stereo, unless -dmx is given, in which case it is short for -R gl_stereo.\n");
+  fprintf(stderr, "-timer: enable timer (makes things very verbose, you probably do not want this)\n"); 
   fprintf(stderr, "-dmxstereo: short for -r dmx -stereo.\n");
   fprintf(stderr, "-threads <num> specifies how many threads to use for reading from disk.\n");
   fprintf(stderr, "-verbose num: sets verbosity, with 0=quiet, 1=system, 2=error, 3=warning, 4=info, 5=debug.  Same behavior as -messageLevel but with numbers, basically.\n");
@@ -347,6 +348,7 @@ static void ParseOptions(int &argc, char *argv[])
     }
 	else if (SET_BOOL_ARG("-stereo", argc, argv, doStereo, 1)) continue;
     else if (CHECK_ATOI_ARG("-threads", argc, argv,  opt->readerThreads)) continue; 
+	//else if (SET_BOOL_ARG("-timer", argc, argv, gTimerOn, 0)) continue;
 	else if (CHECK_ATOI_ARG("-verbose", argc, argv,maxMessageLevel))  {
       opt->messageLevel = FindMessageLevel(maxMessageLevel);
       set_verbose(maxMessageLevel); 
@@ -610,6 +612,7 @@ int main(int argc, char *argv[])
 
   // set up a connection to sidecar if that's what launched us
   if (opt->sidecarHostPort != "") {
+    INFO(QString("Connecting to sidecar on %1\n").arg(opt->sidecarHostPort)); 
     gSidecarServer->connectToSidecar(opt->sidecarHostPort); 
     SuppressMessageDialogs(true); 
   }

@@ -8,6 +8,10 @@
 #define ECHO_FUNCTION(level) dbprintf(level, "BEGIN\n"); 
 #ifdef __cplusplus
 #include <QString>
+
+extern int gTimerOn; 
+#define TIMER_PRINT(...) if (gTimerOn) DEBUGMSG(__VA_ARGS__)
+
 struct MessageLevel *FindMessageLevel(QString name);
 struct MessageLevel *FindMessageLevel(int verbosity); // maps verbosity from 0 to 5 into "messageLevel" from SYSERROR to DEBUG 
 
@@ -89,8 +93,9 @@ theMessage.file=__FILE__,theMessage.function=__FUNCTION__,theMessage.line=__LINE
 #define MESSAGEBASE \
    theMessage.file=__FILE__,theMessage.function="(unknown)",theMessage.line=__LINE__,Message
 #endif
-#define SYSERROR \
-   theMessage.level=M_SYSERROR,MESSAGEBASE
+
+#define SYSERROR                                \
+  theMessage.level=M_SYSERROR,MESSAGEBASE
 #define ERROR \
    theMessage.level=M_ERROR,MESSAGEBASE
 #define WARNING \
