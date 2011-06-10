@@ -35,7 +35,7 @@ class SidecarServer : public QObject {
     dbprintf(5, "SidecarServer\n"); 
     //mTcpServer.listen(QHostAddress::Any, 5959); 
     mTcpServer.listen(); 
-    cerr << "Blockbuster sidecar port: " << mTcpServer.serverPort() << endl;
+    cerr << "Blockbuster listening for sidecar on port: " << mTcpServer.serverPort() << endl;
     connect(&mTcpServer, SIGNAL(newConnection()), this, SLOT(NewConnection()));
   }
   int GetNetworkEvent(MovieEvent *event);
