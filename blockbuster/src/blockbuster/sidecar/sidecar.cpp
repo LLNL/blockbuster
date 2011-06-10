@@ -1161,6 +1161,8 @@ BlockbusterLaunchDialog::BlockbusterLaunchDialog(SideCar *sidecar, QString host,
           this, SLOT(hostProfileModified()));
   connect(useDMXCheckBox, SIGNAL(clicked()),
           this, SLOT(hostProfileModified()));
+  connect(autoSidecarHostCheckBox, SIGNAL(clicked()),
+          this, SLOT(hostProfileModified()));
   connect(mpiFrameSyncCheckBox, SIGNAL(clicked()),
           this, SLOT(hostProfileModified()));
   return; 
@@ -1266,7 +1268,8 @@ void BlockbusterLaunchDialog::on_saveProfilePushButton_clicked(){
   mCurrentProfile->mSetDisplay = setDisplayCheckBox->isChecked(); 
   mCurrentProfile->mDisplay = blockbusterDisplayField->text(); 
   mCurrentProfile->mBlockbusterPath = blockbusterPathField->text(); 
-  
+  mCurrentProfile->mAutoSidecarHost = autoSidecarHostCheckBox->isChecked(); 
+  mCurrentProfile->mSidecarHost = sidecarHostNameField->text(); 
   sortAndSaveHostProfiles(); 
   hostProfileModified(); 
   return; 
@@ -1313,9 +1316,9 @@ void BlockbusterLaunchDialog::on_launchButton_clicked(){
     cmd += QString("%1 %2 ")
       .arg(rshCommandField->text())
       .arg(host); 
-  }
+  }  
   cmd += blockbusterPathField->text() + QString(" -sidecar %1:%2 -v %3")
-    .arg(QHostInfo::localHostName())  
+    .arg(sidecarHostNameField->text())
     .arg(mBlockbusterPort).arg(verboseField->text()); 
 
   if (playCheckBox->isChecked()) {
@@ -1363,6 +1366,16 @@ void BlockbusterLaunchDialog::on_useDMXCheckBox_clicked(){
 }
 
 //=======================================================================
+void BlockbusterLaunchDialog::on_autoSidecarHostCheckBox_clicked(){
+  sidecarHostNameField->setEnabled(!autoSidecarHostCheckBox->isChecked()); 
+  if (autoSidecarHostCheckBox->isChecked()) {
+    sidecarHostNameField->setText(QHostInfo::localHostName()); 
+  }
+  hostProfileModified(); 
+  return; 
+}
+
+//=======================================================================
 void BlockbusterLaunchDialog::on_setDisplayCheckBox_clicked(){
   blockbusterDisplayField->setEnabled(setDisplayCheckBox->isChecked()); 
   hostProfileModified(); 
@@ -1388,8 +1401,10 @@ bool BlockbusterLaunchDialog::hostProfileModified(void){
      verboseField->text() != mCurrentProfile->mVerbosity ||
      rshCommandField->text() != mCurrentProfile->mRsh ||
      blockbusterDisplayField->text() != mCurrentProfile->mDisplay ||
-     blockbusterPathField->text() != mCurrentProfile->mBlockbusterPath ||
-     setDisplayCheckBox->isChecked() != mCurrentProfile->mSetDisplay); 
+     blockbusterPathField->text() != mCurrentProfile->mBlockbusterPath||
+     setDisplayCheckBox->isChecked() != mCurrentProfile->mSetDisplay ||
+     autoSidecarHostCheckBox->isChecked() != mCurrentProfile->mAutoSidecarHost ||
+     (!autoSidecarHostCheckBox->isChecked() && sidecarHostNameField->text() != mCurrentProfile->mSidecarHost) ); 
   saveProfilePushButton->setEnabled(dirty && !mCurrentProfile->mReadOnly); 
   return dirty; 
 }
@@ -1510,8 +1525,16 @@ void BlockbusterLaunchDialog::setupGuiAndCurrentProfile(int index){
   rshCommandField->setText(mCurrentProfile->mRsh); 
   setDisplayCheckBox->setChecked(mCurrentProfile->mSetDisplay); 
   blockbusterDisplayField->setText(mCurrentProfile->mDisplay); 
+  blockbusterDisplayField->setEnabled(setDisplayCheckBox->isChecked()); 
   blockbusterPathField->setText(mCurrentProfile->mBlockbusterPath); 
-
+  autoSidecarHostCheckBox->setChecked(mCurrentProfile->mAutoSidecarHost); 
+  if (mCurrentProfile->mAutoSidecarHost || mCurrentProfile->mSidecarHost == ""){
+    sidecarHostNameField->setText(QHostInfo::localHostName()); 
+  } else {
+    sidecarHostNameField->setText(mCurrentProfile->mSidecarHost);     
+  }    
+  sidecarHostNameField->setEnabled(!autoSidecarHostCheckBox->isChecked()); 
+  
   hostProfileModified(); 
   return;
 }

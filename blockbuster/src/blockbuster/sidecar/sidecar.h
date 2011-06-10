@@ -288,7 +288,8 @@ struct HostProfile {
   void init(const QStringList &tokens, QString filename, bool readOnly) {
     mProfileFile = filename; 
     mReadOnly = readOnly; 
-    if (tokens.size() != 8) {
+    mAutoSidecarHost = true; 
+    if (tokens.size() != 10) {
       dbprintf(1, QString("Warning:  HostProfile requires 8 tokens in initializer but I'm only seeing %1\n").arg(tokens.size()));
     }
     if (tokens.size() > 0)  mName = tokens[0]; 
@@ -299,21 +300,23 @@ struct HostProfile {
     if (tokens.size() > 5)  mSetDisplay = (tokens[5] == "setDisplay=true"); 
     if (tokens.size() > 6)  mDisplay = tokens[6]; 
     if (tokens.size() > 7)  mBlockbusterPath = tokens[7]; 
+    if (tokens.size() > 8)  mAutoSidecarHost = (tokens[8] == "mAutoSidecarHost=true"); 
+    if (tokens.size() > 9)  mSidecarHost = tokens[9]; 
     return; 
   }
   QString toQString(void) const {
-    return QString("<< HostProfile: mReadOnly=%1, mName=%2, mPort=%3, mVerbosity=%4, mRsh=%5, mSetDisplay=%6, mDisplay=%7, mBlockbusterPath=%8, mProfileFile=%9 >>").arg((int)mReadOnly).arg(mName).arg(mPort).arg(mVerbosity).arg(mRsh).arg((int)mSetDisplay).arg(mDisplay).arg(mBlockbusterPath).arg(mProfileFile); 
+    return QString("<< HostProfile: mReadOnly=%1, mName=%2, mPort=%3, mVerbosity=%4, mRsh=%5, mSetDisplay=%6, mDisplay=%7, mBlockbusterPath=%8, mProfileFile=%9 mAutoSidecarHost=%9, mSidecarHost=%10>>").arg((int)mReadOnly).arg(mName).arg(mPort).arg(mVerbosity).arg(mRsh).arg(mSetDisplay?"true":"false").arg(mDisplay).arg(mBlockbusterPath).arg(mProfileFile).arg(mAutoSidecarHost?"true":"false").arg(mSidecarHost); 
   }
   QString toProfileString(void) const {    
-    return QString("%1 %2 %3 %4 %5 setDisplay=%6 %7 %8").arg(mName).arg(mHostName).arg(mPort).arg(mVerbosity).arg(mRsh).arg(mSetDisplay?"true":"false").arg(mDisplay).arg(mBlockbusterPath); 
+    return QString("%1 %2 %3 %4 %5 setDisplay=%6 %7 %8 autoSidecarHost=%9 %10").arg(mName).arg(mHostName).arg(mPort).arg(mVerbosity).arg(mRsh).arg(mSetDisplay?"true":"false").arg(mDisplay).arg(mBlockbusterPath).arg(mAutoSidecarHost?"true":"false").arg(mSidecarHost); 
   }
 
   static QString mUserHostProfileFile; 
    public: 
   QString mName;
-  QString mHostName, mPort, mVerbosity, mRsh, 
+  QString mHostName, mPort, mVerbosity, mRsh, mSidecarHost,  
     mDisplay, mBlockbusterPath, mProfileFile; 
-  bool mSetDisplay, mReadOnly; 
+  bool mSetDisplay, mReadOnly, mAutoSidecarHost; 
 }; 
 
 
@@ -370,6 +373,7 @@ class BlockbusterLaunchDialog: public QDialog,
   void on_deleteMoviePushButton_clicked(); 
   void on_launchButton_clicked();
   void on_useDMXCheckBox_clicked();
+  void on_autoSidecarHostCheckBox_clicked();
   void on_setDisplayCheckBox_clicked();
   void on_hostNameField_editingFinished(); 
 
