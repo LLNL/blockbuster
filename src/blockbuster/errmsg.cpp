@@ -12,6 +12,15 @@
 #include "QMessageBox"
 using namespace std; 
 
+/*!
+  For certain tight timings -- generally want this off
+*/ 
+int gTimerOn = 0; 
+
+void enableTimer(bool onoff) {
+  gTimerOn=onoff; 
+}
+
 /* ---------------------------------------------*/ 
 /* for error reporting in dialogs, folks have been using a canvas, bleh*/ 
 int maxMessageLevel = M_WARNING;
