@@ -216,12 +216,13 @@ bool  SET_BOOL_ARG(const char *flag, int &argc, char *argv[], int &barg, int val
 }
   
 static char ** DuplicateArgs(int argc, char *argv[]) {
-  char **argv_new = (char **)malloc(sizeof(char *) * argc); 
+  char **argv_new = (char **)malloc(sizeof(char *) * (argc+1)); 
   int argnum = 0; 
   while (argnum < argc) {
     argv_new[argnum] = strdup(argv[argnum]); 
     argnum++; 
   }
+  argv_new[argnum] = NULL; 
   return argv_new;
 }
 
@@ -578,9 +579,9 @@ int main(int argc, char *argv[])
   char **newargs = DuplicateArgs(argc, args); 
   int newargc = argc; 
   // Get Qt rockin'.  This creates the basic Qt object.  
-  gCoreApp = new QApplication(newargc, newargs); 
+  gCoreApp = new QApplication(argc, args); 
 
-  ParseOptions(argc, args);
+  ParseOptions(newargc, newargs);
   printargs("After ParseOptions", args, argc); 
 
   /* initialize the slave portion if we are a slave */
