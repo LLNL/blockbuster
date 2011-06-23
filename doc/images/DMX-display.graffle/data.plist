@@ -40,7 +40,7 @@
 	<key>MasterSheets</key>
 	<array/>
 	<key>ModificationDate</key>
-	<string>2011-06-21 17:29:00 -0700</string>
+	<string>2011-06-22 16:06:07 -0700</string>
 	<key>Modifier</key>
 	<string>Cook, Rich</string>
 	<key>NotesVisible</key>
@@ -4851,6 +4851,47 @@
 			<string>1 0/72 in = 1.0000 in</string>
 			<key>GraphicsList</key>
 			<array>
+				<dict>
+					<key>Bounds</key>
+					<string>{{404.596, 537.25}, {28.5082, 8}}</string>
+					<key>Class</key>
+					<string>ShapedGraphic</string>
+					<key>ID</key>
+					<integer>176</integer>
+					<key>Shape</key>
+					<string>Rectangle</string>
+					<key>Style</key>
+					<dict>
+						<key>fill</key>
+						<dict>
+							<key>Color</key>
+							<dict>
+								<key>b</key>
+								<string>0.687155</string>
+								<key>g</key>
+								<string>0.788799</string>
+								<key>r</key>
+								<string>0.897059</string>
+							</dict>
+							<key>Draws</key>
+							<string>NO</string>
+						</dict>
+						<key>stroke</key>
+						<dict>
+							<key>Color</key>
+							<dict>
+								<key>b</key>
+								<string>0.47641</string>
+								<key>g</key>
+								<string>0.0186552</string>
+								<key>r</key>
+								<string>0.608696</string>
+							</dict>
+							<key>Width</key>
+							<real>0.5</real>
+						</dict>
+					</dict>
+				</dict>
 				<dict>
 					<key>AllowToConnect</key>
 					<false/>
@@ -10888,11 +10929,11 @@ Hard to read.\
 	<key>WindowInfo</key>
 	<dict>
 		<key>CurrentSheet</key>
-		<integer>5</integer>
+		<integer>3</integer>
 		<key>ExpandedCanvases</key>
 		<array/>
 		<key>Frame</key>
-		<string>{{204, 441}, {1123, 1110}}</string>
+		<string>{{184, 232}, {1123, 1110}}</string>
 		<key>ListView</key>
 		<true/>
 		<key>OutlineWidth</key>
