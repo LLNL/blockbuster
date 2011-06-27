@@ -1509,6 +1509,8 @@ void BlockbusterLaunchDialog::sortAndSaveHostProfiles(void) {
 //=======================================================================
 void BlockbusterLaunchDialog::setupGuiAndCurrentProfile(int index){
   //  set mCurrentProfile correctly
+  if (index == -1) return; 
+
   mCurrentProfile = mHostProfiles[index]; 
   if (!mCurrentProfile) {
     dbprintf(0, QString("Error: No current profile matching name %2 in combo box!\n").arg(mCurrentProfile->displayName()).arg(hostProfilesComboBox->currentText())); 
