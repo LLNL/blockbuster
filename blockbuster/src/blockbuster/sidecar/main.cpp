@@ -79,6 +79,9 @@ void ParseOptions(int &argc, char *argv[]) {
   gPrefs.SetValue("rsh", "rsh"); 
   gPrefs.SetValue("verbose", 0); 
   gPrefs.ReadFromFile(false); 
+  gPrefs.DeleteValue("verbose"); // do not inherit this from previous
+  gPrefs.DeleteValue("movie"); // do not inherit this from previous
+  gPrefs.DeleteValue("play"); // do not inherit this from previous
   gPrefs.ReadFromEnvironment(); 
   gPrefs.GetFromArgs(argc, argv, args); 
 }
@@ -131,7 +134,9 @@ int main(int argc, char *argv[]) {
     }
   }
   int retval = app.exec();
-  gPrefs.SetValue("verbose", 0); // do not inherit this from previous
+  gPrefs.DeleteValue("verbose"); // do not inherit this from previous
+  gPrefs.DeleteValue("movie"); // do not inherit this from previous
+  gPrefs.DeleteValue("play"); // do not inherit this from previous
   gPrefs.SaveToFile(true, true); 
   return retval; 
 }
