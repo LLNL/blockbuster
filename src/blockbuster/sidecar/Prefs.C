@@ -1,16 +1,11 @@
-#ifdef RCDEBUG
-#include "RCDebugStream.h"
-#else
-#define rcdebug5 if (0) cerr
-//#define rcdebug5 cerr
-#endif
+#define NO_BOOST 1
 #include "Prefs.h"
 #include "stringutil.h"
 #include "errno.h"
 /* class Preferences
    member functions 
 */
-// $Revision: 1.7 $
+// $Revision: 1.27 $
 
 //#ifdef __USE_GNU
 extern char **environ;
@@ -19,6 +14,9 @@ extern char **environ;
 
 using namespace std;
 
+// IF YOU WANT TO DEBUG PREFS, set the "debugprefs" environment variable to 1
+static string debugprefs("false"); 
+#define prefsdebug if (debugprefs != "false") cerr << __FILE__ <<" line "<<__LINE__ << ": "
 
 //====================================================
 void Preferences::Merge(const Preferences &other, bool addnew, bool overwrite) {
@@ -41,6 +39,13 @@ void Preferences::Merge(const Preferences &other, bool addnew, bool overwrite) {
 void Preferences::Reset(void){
   ClearPrefs();
   mFilename  = "";
+
+  char *dbptr = getenv("debugprefs");
+  if (dbptr) {
+    debugprefs = dbptr;
+    cerr << "enabling debugging of prefs because debugprefs environment variable is set" << endl; 
+  }
+ 
   SetLabel("SoleRecord");//if "SoleRecord", then we know there is only one section in the file
   _dirty = 0;
   _writtenToDisk = 0;
@@ -49,20 +54,15 @@ void Preferences::Reset(void){
 
 //====================================================
 bool Preferences::TryGetValue(const string &key,  std::string &outValue) const {
-  try {
-    outValue = GetValue(key); 
-  } catch (string err) {
-    return false; 
-  }
+  outValue = GetValue(key, false);    
   if (outValue == "") return false; 
   return true; 
 }
 
 //====================================================
 bool Preferences::TryGetDoubleValue(const string &key, double &outValue) const {
-  try {
-    outValue = GetDoubleValue(key); 
-  } catch (string err) {
+  outValue = GetDoubleValue(key, false); 
+  if (outValue == DOUBLE_FALSE) { 
     return false; 
   }
   return true; 
@@ -70,39 +70,51 @@ bool Preferences::TryGetDoubleValue(const string &key, double &outValue) const {
 
 //====================================================
 bool Preferences::TryGetLongValue(const string &key, long &outValue) const {
-  try {
-    outValue = GetLongValue(key); 
-  } catch (string err) {
+  outValue = GetLongValue(key, false);   
+  if (outValue == LONG_FALSE) {
     return false; 
   }
   return true; 
 }
 
 //====================================================
-std::string Preferences::GetValue(const std::string &key) const { 
-  if (mPrefs.find(key) == mPrefs.end()) 
-    throw string(key+" not found");   
+std::string Preferences::GetValue(const std::string &key, bool dothrow) const { 
+  if (mPrefs.find(key) == mPrefs.end()) {
+    if (dothrow) {
+      throw string(key+" not found");
+    } else {
+      return string("");
+    }
+  }
   return mPrefs.find(key)->second;
 }
 
 //====================================================
-double Preferences::GetDoubleValue(const string &key) const {
+double Preferences::GetDoubleValue(const string &key, bool dothrow) const {
   char *endptr;
-  string value = GetValue(key);
+  string value = GetValue(key, dothrow);
   double result = strtod(value.c_str(), &endptr);
   if (endptr == value.c_str()) {
-    throw string("Bad key in  Preferences::GetDoubleValue");
+    if (dothrow) {
+      throw string("Bad key in  Preferences::GetDoubleValue");
+    } else {
+      return DOUBLE_FALSE;
+    }
   }
   return result;  
 }
 
 //====================================================
-long Preferences::GetLongValue(const string &key) const {
+long Preferences::GetLongValue(const string &key, bool dothrow) const {
   char *endptr;
-  string value = GetValue(key);
+  string value = GetValue(key, dothrow);
   long result = strtol(value.c_str(), &endptr, 10);
   if (endptr == value.c_str()){
-    throw string("Bad key in  Preferences::GetDoubleValue");
+    if (dothrow) {
+      throw string("Bad key in  Preferences::GetDoubleValue");
+    } else {
+      return LONG_FALSE;
+    }
  }
   
   return result;  
@@ -118,6 +130,7 @@ void Preferences::SetValue(const string &key, double value){
 //====================================================
 /* Look in the environment for new values for previously declared keys */ 
 void Preferences::ReadFromEnvironment(void){
+  prefsdebug << "ReadFromEnvironment"<<endl;
   char **envp = environ; 
   char *currentstring; 
   while ((currentstring = *envp) != NULL) {
@@ -127,9 +140,10 @@ void Preferences::ReadFromEnvironment(void){
       throw string("Error in environment:  environment string is malformed: \"") + keypair + "\""; 
     }    
     string key = keypair.substr(0, equals), value = keypair.substr(equals+1);
-    if (mPrefs.find(key) != mPrefs.end()) {
-      mPrefs[key] = value;
-    }
+    //if (mPrefs.find(key) != mPrefs.end()) {
+    prefsdebug << "Setting prefs key "<< key<< " to value from environment: " << value << endl; 
+    mPrefs[key] = value;
+    //}
     ++envp; 
   }
   return; 
@@ -140,7 +154,7 @@ void Preferences::ReadFromEnvironment(void){
 string Preferences::NextKey(ifstream&theFile){
   char buf[2048];
   string key("");
-  rcdebug5 << "Preferences::NextKey"<<endl; 
+  prefsdebug << "Preferences::NextKey"<<endl; 
   try {
     while (theFile) {
       theFile >> key;     
@@ -161,7 +175,7 @@ map<string, string> Preferences::ReadNextSection(ifstream &theFile){
   map<string, string> theMap;
   char buf[2048];
   string key, value; 
-  rcdebug5<<"Preferences::ReadNextSection "<<endl;
+  prefsdebug<<"Preferences::ReadNextSection "<<endl;
   try { 
     key = NextKey(theFile);
   } catch (string err ) {
@@ -172,7 +186,7 @@ map<string, string> Preferences::ReadNextSection(ifstream &theFile){
 
   if (key != "BEGINRECORD")
     throw string("Prefs records must begin with BEGINRECORD, not \"")+key+"\"";
-  rcdebug5 << "found BEGINRECORD in prefs file" << endl;
+  prefsdebug << "found BEGINRECORD in prefs file" << endl;
   fflush(stdout); 
   theFile.getline(buf, 2048);//toss away rest of line
 
@@ -184,7 +198,7 @@ map<string, string> Preferences::ReadNextSection(ifstream &theFile){
       cerr << "Error getting next key" << endl; 
       break; 
     }
-    rcdebug5 << "Found key: " << key << endl; 
+    prefsdebug << "Found key: " << key << endl; 
     fflush(stdout); 
     if (!gotlabel) {
       if (key != "prefs_label") {
@@ -200,7 +214,7 @@ map<string, string> Preferences::ReadNextSection(ifstream &theFile){
     string::size_type idx = value.find_first_not_of(" \t\n\r");
     value = value.substr(idx);
     theMap[key] =value;    
-    rcdebug5<< "map["<<key<<"] = \""<<value<<"\""<<endl; 
+    prefsdebug<< "map["<<key<<"] = \""<<value<<"\""<<endl; 
     fflush(stdout); 
   }
 
@@ -216,7 +230,7 @@ map<string, string> Preferences::ReadNextSection(ifstream &theFile){
  */
 void Preferences::ReadFromFile(bool throw_exceptions){
   ifstream theFile(mFilename.c_str());
-  rcdebug5<<"Preferences::ReadFromFile"<<endl;
+  prefsdebug<<"Preferences::ReadFromFile"<<endl;
   if (!theFile) {
     if (throw_exceptions) {
       throw string("Can't open file for reading: ")+mFilename;
@@ -225,7 +239,6 @@ void Preferences::ReadFromFile(bool throw_exceptions){
   }
   map<string, string> current;
   current["prefs_label"] = "!!!??? nothing at all (no match)";
-  map<string, string>::iterator pos;
   string targetlabel;
   try {
     targetlabel=GetLabel(); 
@@ -238,7 +251,7 @@ void Preferences::ReadFromFile(bool throw_exceptions){
   }
   while (current["prefs_label"] != targetlabel){
     try {
-      rcdebug5 << "read next section"<<endl;
+      prefsdebug << "read next section"<<endl;
       current = ReadNextSection(theFile);
     }
     catch(string s){
@@ -249,9 +262,13 @@ void Preferences::ReadFromFile(bool throw_exceptions){
       }
       return;
     }
+    map<string, string>::iterator pos = current.begin(), endpos = current.end(); 
+    while (pos != endpos) {
+      mPrefs[pos->first] = pos->second; 
+      ++pos; 
+    }
   }
-  rcdebug5 << "Finished reading prefs: "<< string(*this) << endl;
-  mPrefs = current;
+  prefsdebug << "Finished reading prefs: "<< string(*this) << endl;
   _dirty = 0;
   _writtenToDisk = 1;
   return;
@@ -328,7 +345,7 @@ void Preferences::SaveToFile(bool createDir, bool clobber){
     SaveSectionToFile(outfile, *outpos);
     ++outpos;
   }
-  rcdebug5 << "Finished writing prefs to "<<mFilename << endl;
+  prefsdebug << "Finished writing prefs."<<endl;
   mPrefs = current;
   return;
 }

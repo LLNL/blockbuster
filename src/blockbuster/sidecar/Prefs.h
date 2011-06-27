@@ -3,7 +3,7 @@
 
    To do:  multiple Preferences should be able to be written to a single file. 
  */
-// $Revision: 1.4 $
+// $Revision: 1.20 $
 #ifndef RCPREFS_H
 #define RCPREFS_H
 
@@ -13,6 +13,9 @@
 #include <string>
 #include <fstream>
 #include "stringutil.h"
+
+#define DOUBLE_FALSE (0.0)
+#define LONG_FALSE  (0)
 
 //======================================================
 struct argType {
@@ -74,7 +77,7 @@ class Preferences {
 
   //========================
   //saving and restoring from disk
-  void SaveToFile(bool createDir=false, bool clobber=true); //open the file, read and remember previous sections, read and discard my section, read and remember sections after me, then write previous section, my section, and trailing sections, then close the file.  Optionally create the needed directory for the file. 
+  void SaveToFile(bool createDir=true, bool clobber=true); //open the file, read and remember previous sections, read and discard my section, read and remember sections after me, then write previous section, my section, and trailing sections, then close the file.  Optionally create the needed directory for the file. 
   void SaveToFile(vector<string> saveKeys, bool createDir=false, bool clobber=false) {
     //same as SaveToFile() above, but only save keys listed in saveKeys
     mSaveKeys = saveKeys; 
@@ -87,7 +90,7 @@ class Preferences {
     SaveToFile(createDir); 
   }
 
-  void ReadFromFile(bool throw_exceptions=true); //open the file, seek past label, read my section, close file
+  void ReadFromFile(bool throw_exceptions=false); //open the file, seek past label, read my section, close file
   void ReadFromFile(string filename, bool throw_exceptions=true) {
     SetFile(filename); 
     ReadFromFile(throw_exceptions); 
@@ -110,6 +113,10 @@ class Preferences {
   // Copy the entire environment variable list into prefs, e.g., if $verbose is 5, then set Prefs["verbose"] to "5"
   void ReadFromEnvironment(void); 
 
+  bool hasKey(string key) {
+    return mPrefs.find(key) != mPrefs.end();
+  }
+
   //=============================
   // AddEquivalentArgs: (not implemented yet)
   /* All keys in inEquivalents are considered to be the same as inOption when found on the command line.  inEquivalents are appended to any previous equivalents.  For example, if inOption = "keep" and inEquivalents is { "keep", "dontdiscard" }, then all the following set the value of variable "keep", when found on the command line: {--keep, -keep, --dontdiscard, -dontdiscard }.  Equivalencies can be chained together.  That is, 
@@ -120,7 +127,9 @@ class Preferences {
   */
   // void AddEquivalentArgs(const string &inOption, const vector<string> &inEquivalents); 
   /* append the inEquivalent to the list of equivalent options for inOption */
-  // void AddEquivalentArg(const string &inOption, const vector<string> &inEquivalents); 
+  // void AddEquivalentArg(const string &inOption, const vector<string> &inEquivalents);
+
+
   //========================
   /* values: getting and setting (remember to set dirty bit!) 
      Note that all values are actually saved as strings and are converted, so this is not exactly a high-performance library.  :-) */
@@ -140,16 +149,18 @@ class Preferences {
   bool TryGetDoubleValue(const std::string &key, double &outValue) const;
   // see below for GetBoolValue()
 
-  // The following throw if no such key exists or bad values are generated: 
-  std::string GetValue(const  std::string &key) const;
-  long GetLongValue(const  std::string &key)  const;
-  double GetDoubleValue(const  std::string &key) const;
+  /*!
+    The following return 0, or "" if no such key exists or bad vals are generated. If dothrow is true, then  throw an exception for bad vals.
+  */ 
+  std::string GetValue(const  std::string &key, bool dothrow=false) const;
+  long GetLongValue(const  std::string &key, bool dothrow=false)  const;
+  double GetDoubleValue(const  std::string &key, bool dothrow=false) const;
+  std::string operator [] (const std::string &key) const { return GetValue(key); }
 
   // special case: never throws;  not being defined is the same as being false
   bool GetBoolValue(const std::string &key) { 
-    string value; 
-    if (!TryGetValue(key, value)) return false; 
-    return value == "true"; 
+    string value = GetValue(key, false); 
+    return value == "true" || value == "1" || value == "on"; 
   }
   
  protected:
@@ -158,7 +169,7 @@ class Preferences {
   void SaveSectionToFile(std::ofstream &outfile, std::map<std::string, std::string> &section);
 
   // there is no copy constructor, so be sure these shallow copy:
-  vector< pair< string, vector<string> > > mEquivalents; 
+  //vector< pair< string, vector<string> > > mEquivalents; 
   std::map<std::string, std::string>  mPrefs; 
   std::vector<std::string> mSaveKeys; // only save these keys if given
   std::string mFilename;
