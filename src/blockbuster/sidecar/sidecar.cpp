@@ -1409,7 +1409,6 @@ bool BlockbusterLaunchDialog::hostProfileModified(void){
   return dirty; 
 }
 
-
 //=======================================================================
 void BlockbusterLaunchDialog::saveHistory(QComboBox *box, QString filename){
   filename = QString(gPrefs.GetValue("prefsdir").c_str()) +"/"+ filename;

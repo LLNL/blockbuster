@@ -129,6 +129,9 @@ class Preferences {
   void SetBoolValue(const std::string &key, bool value) {
     SetValue(key, value?string("true"):string("false")); 
   }
+  void DeleteValue(const std::string &key) {
+    mPrefs.erase(key); // safe if key does not exist. 
+  }
 
   // The following return false if no such key exists or bad values or an empty string are generated, 
   // They return true if it does and store the value: 
