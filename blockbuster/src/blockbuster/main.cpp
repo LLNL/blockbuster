@@ -648,10 +648,10 @@ int main(int argc, char *argv[])
     if (opt->sidecarHostPort == "") { 
       /* Try to get a filename from the user interface */
       //    char *filename = someObject->ChooseFile(opt);
-      QString filename = 
-        QFileDialog::  getOpenFileName(NULL, "Choose a movie file", 
-                                       "Navigate to a movie file to play",
-                                       "Movie Files (*.sm)");
+      filename = 
+        QFileDialog::getOpenFileName(NULL, "Choose a movie file", 
+                                     "Navigate to a movie file to play",
+                                     "Movie Files (*.sm)");
     }
     if (filename == "") {
       WARNING("No frames found - nothing to display");
