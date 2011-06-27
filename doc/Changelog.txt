@@ -2,6 +2,10 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
+VERSION 2.7.0b (r487) Mon Jun 27 16:41:17 PDT 2011
+-- Fixed a sidecar crash when no host profiles are found at startup'
+
+===============================================================================
 VERSION 2.7.0a (r476) Fri Jun 10 14:26:43 PDT 2011
 -- If no files are given on the command line, blockbuster now opens a file dialog
 -- Allow the user to set the local hostname manually, so blockbuster can find sidecar when the localhost name differs from its external network name. 
