@@ -93,6 +93,8 @@ function sedfiles () {
 #=================================
 
 
+#======================================================
+# Update version.h
 version=$1
 if [ x$version = x ]; then 
     errexit "You need to supply a version number or I'll kill you." 
@@ -104,10 +106,8 @@ cd $(dirname $0)
 echo "Setting version in src/config/version.h..." 
 sedfiles -e "s/#define BLOCKBUSTER_VERSION.*/#define BLOCKBUSTER_VERSION \"$version -- $(date)\"/" src/config/version.h  || errexit "sedfiles failed"
 
-echo "Removing version $version from SVN if it exists..." 
-versiondir=https://blockbuster.svn.sourceforge.net/svnroot/blockbuster/tags/blockbuster-v$version
-svn rm -m "Removing version $version if it exists..."  $versiondir
-
+#======================================================
+# Update Changelog
 revision=$(svn update | sed 's/At revision \(.*\)\./\1/')
 newrevision=$(expr $revision + 2)
 echo "Current SVN revision is $revision and new revision will be $newrevision..." 
@@ -118,9 +118,17 @@ if ! grep $version doc/Changelog.txt >/dev/null; then
 fi
 sedfiles -e "s/VERSION $version .*/VERSION $version (r$newrevision) $(date)/" doc/Changelog.txt || errexit "Could not place version in doc/Changelog.txt.  Please check the Changelog file for errors."  
 
+#======================================================
+# Update Subversion repository
+echo "Removing version $version from SVN if it exists..." 
+versiondir=https://blockbuster.svn.sourceforge.net/svnroot/blockbuster/tags/blockbuster-v$version
+svn rm -m "Removing version $version if it exists..."  $versiondir
+
 echo "Checking in source..."
 svn commit -m "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)" doc/Changelog.txt src/config/version.h || errexit "svn commit failed"
 
+#======================================================
+# Update and install on LC cluster
 echo "Creating temp directory to work in for tarball creation..." 
 tmpdir=$(pwd)/finalizeVersion-tmp
 rm -rf $tmpdir
