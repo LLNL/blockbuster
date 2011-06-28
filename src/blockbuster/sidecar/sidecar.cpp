@@ -1588,6 +1588,12 @@ void BlockbusterLaunchDialog::readAndSortHostProfiles(void) {
     readHostProfileFile(globalProfile, true); 
   }
   readHostProfileFile(HostProfile::mUserHostProfileFile, false); 
+
+  if (mHostProfiles.size() == 0) {
+    mCurrentProfile = new HostProfile;
+    mHostProfiles.push_back(mCurrentProfile); 
+  }
+
   sort(mHostProfiles.begin(), mHostProfiles.end(), CompareHostProfiles); 
 
   // now set up the combo box with the sorted values: 
