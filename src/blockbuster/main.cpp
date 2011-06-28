@@ -582,7 +582,7 @@ int main(int argc, char *argv[])
   gCoreApp = new QApplication(argc, args); 
 
   ParseOptions(newargc, newargs);
-  printargs("After ParseOptions", args, argc); 
+  printargs("After ParseOptions", newargs, newargc); 
 
   /* initialize the slave portion if we are a slave */
   if (opt->slaveMode != 0) {
@@ -617,24 +617,24 @@ int main(int argc, char *argv[])
     gSidecarServer->connectToSidecar(opt->sidecarHostPort); 
     SuppressMessageDialogs(true); 
   }
-  /* Remaining args are movie filenames, load them (skip args[0]=progname) */
+  /* Remaining newargs are movie filenames, load them (skip newargs[0]=progname) */
   
   /* initialize the smlibrary with the number of threads */
   //   smBase::init(opt->readerThreads); 
 
-  /* count the remaining args and treat them as files */ 
-  printargs("Before framelist", args, argc); 
+  /* count the remaining newargs and treat them as files */ 
+  printargs("Before framelist", newargs, newargc); 
   int count = 0; 
-  while (count < argc && args[count]) count++;  
+  while (count < newargc && newargs[count]) count++;  
   if (count && count-1) {
-    allFrames = new FrameList(count-1, &args[1]);
+    allFrames = new FrameList(count-1, &newargs[1]);
     if (allFrames->numActualFrames() == 0) {
       delete allFrames; 
       allFrames = NULL; 
     }
   }
   if (opt->sidecarHostPort != "" && allFrames == NULL) {
-    ERROR("%s is not a valid movie file - nothing to display", args[1]);
+    ERROR("%s is not a valid movie file - nothing to display", newargs[1]);
     gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
     exit(1);
   } 
