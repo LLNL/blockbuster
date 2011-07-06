@@ -338,7 +338,7 @@ void dmxRenderer::SwapBuffers(void){
           numcomplete ++; 
         }
       }
-      if (usecs - lastusecs > 10000) {
+      if (usecs - lastusecs > 1000*1000) {
         DEBUGMSG("still checking swaps after %d usecs", usecs); 
         lastusecs = usecs;
       }
@@ -544,7 +544,7 @@ void dmxRenderer::SlaveConnected() {
     dmxAddressString; 
   DMXSlave *theSlave =  new DMXSlave(newAddressString, theSocket, mOptions->preloadFrames);
   connect(theSlave, SIGNAL(Error(DMXSlave*, QString, QString, bool)), 
-          this, SLOT(slaveError(DMXSlave*, QString, QString, bool))); 
+          this, SLOT(SlaveError(DMXSlave*, QString, QString, bool))); 
 
   int screenNum = dmxScreenInfos.size();
   DEBUGMSG(QString("SlaveConnect from host %1").arg( hostAddress.toString())); 
@@ -597,11 +597,7 @@ void dmxRenderer::SlaveError(DMXSlave *, QString host,
                              QString msg, bool abort) {
   ERROR(QString("Host %1: %2\n").arg(host).arg(msg)); 
   if (gSidecarServer->connected()) {   
-    if (abort) {
-      gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, QString("Slave on %1: %2").arg(host).arg(msg)));
-    } else  {
-      gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, QString("Slave on %1: %2").arg(host).arg(msg)));
-    }
+    gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, QString("Slave on %1: %2").arg(host).arg(msg)));
   }
   if (abort) {
     ShutDownSlaves(); 
