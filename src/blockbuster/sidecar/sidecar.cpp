@@ -1270,6 +1270,11 @@ void BlockbusterLaunchDialog::on_saveProfilePushButton_clicked(){
   mCurrentProfile->mBlockbusterPath = blockbusterPathField->text(); 
   mCurrentProfile->mAutoSidecarHost = autoSidecarHostCheckBox->isChecked(); 
   mCurrentProfile->mSidecarHost = sidecarHostNameField->text(); 
+  mCurrentProfile->mPlay = playCheckBox->isChecked(); 
+  mCurrentProfile->mFullScreen = fullScreenCheckBox->isChecked(); 
+  mCurrentProfile->mShowControls = showControlsCheckBox->isChecked(); 
+  mCurrentProfile->mUseDMX = useDMXCheckBox->isChecked(); 
+  mCurrentProfile->mMpiFrameSync = mpiFrameSyncCheckBox->isChecked(); 
   sortAndSaveHostProfiles(); 
   hostProfileModified(); 
   return; 
@@ -1404,7 +1409,12 @@ bool BlockbusterLaunchDialog::hostProfileModified(void){
      blockbusterPathField->text() != mCurrentProfile->mBlockbusterPath||
      setDisplayCheckBox->isChecked() != mCurrentProfile->mSetDisplay ||
      autoSidecarHostCheckBox->isChecked() != mCurrentProfile->mAutoSidecarHost ||
-     (!autoSidecarHostCheckBox->isChecked() && sidecarHostNameField->text() != mCurrentProfile->mSidecarHost) ); 
+     (!autoSidecarHostCheckBox->isChecked() && sidecarHostNameField->text() != mCurrentProfile->mSidecarHost) ||
+     mCurrentProfile->mPlay != playCheckBox->isChecked() ||
+     mCurrentProfile->mFullScreen != fullScreenCheckBox->isChecked() ||
+     mCurrentProfile->mShowControls != showControlsCheckBox->isChecked()  ||
+     mCurrentProfile->mUseDMX != useDMXCheckBox->isChecked()  ||
+     mCurrentProfile->mMpiFrameSync != mpiFrameSyncCheckBox->isChecked() ); 
   saveProfilePushButton->setEnabled(dirty && !mCurrentProfile->mReadOnly); 
   return dirty; 
 }
@@ -1535,7 +1545,11 @@ void BlockbusterLaunchDialog::setupGuiAndCurrentProfile(int index){
     sidecarHostNameField->setText(mCurrentProfile->mSidecarHost);     
   }    
   sidecarHostNameField->setEnabled(!autoSidecarHostCheckBox->isChecked()); 
-  
+  playCheckBox->setChecked(mCurrentProfile->mPlay); 
+  fullScreenCheckBox->setChecked(mCurrentProfile->mFullScreen); 
+  showControlsCheckBox->setChecked(mCurrentProfile->mShowControls); 
+  useDMXCheckBox->setChecked(mCurrentProfile->mUseDMX); 
+  mpiFrameSyncCheckBox->setChecked(mCurrentProfile->mMpiFrameSync); 
   hostProfileModified(); 
   return;
 }
@@ -1640,9 +1654,6 @@ void BlockbusterLaunchDialog::readHostProfileFile(QString filename, bool readonl
     if (tokens[0].startsWith("#") && item != "") {
       dbprintf(5, "Comment of null first token, skipping line...\n"); 
       continue; 
-    }
-    if (tokens.size() != 8) {
-      dbprintf(0, "Warning:  malformed line in host profile config file \"%s\": \"%s\".  Profile might be weird. \n", filename.toStdString().c_str(), line.toStdString().c_str());  
     }
     HostProfile *profile = new HostProfile(tokens, filename, readonly);
     mCurrentProfile = profile; 
