@@ -31,7 +31,7 @@
 #
 
 # just build with -g for now
-OPT=-g
+OPT=-g -O0
 ifdef GPROF
 OPT = -g -pg
 endif

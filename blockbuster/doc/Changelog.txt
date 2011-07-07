@@ -4,6 +4,7 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 ===============================================================================
 VERSION 2.7.1a (r496) Wed Jul  6 16:51:20 PDT 2011
 -- fixed a bug preventing slaves from communicating errors to frontend.  Errors on backends are now much clearer and easier to understand.  
+-- Include more information from the launch dialog in the host profile to reduce clicks.  
 
 ===============================================================================
 VERSION 2.7.0b (r492) Mon Jun 27 18:07:09 PDT 2011
