@@ -637,10 +637,8 @@ void SideCar::askLaunchBlockbuster(QString iMovieName, bool fromMain) {
     
   BlockbusterLaunchDialog dialog(this, HostField->text(), PortField->text(), iMovieName, mState, mPrefs->GetValue("rsh").c_str(), gPrefs.GetLongValue("verbose"));
   // restore the last used profile or the default if first launch
-  string defaultProfile; 
-  if (gPrefs.TryGetValue("defaultProfile", defaultProfile)) {
-    dialog.trySetProfile(defaultProfile.c_str()); 
-  }
+  dialog.trySetProfile(gPrefs.GetValue("SIDECAR_DEFAULT_PROFILE").c_str()); 
+  
 
   setBlockbusterPort(PortField->text()); 
   connect(&mBlockbusterServer, SIGNAL(newConnection()), &dialog, SLOT(blockbusterConnected())); 
@@ -1432,7 +1430,8 @@ bool BlockbusterLaunchDialog::hostProfileModified(void){
 
 //=======================================================================
 void BlockbusterLaunchDialog::trySetProfile (QString name) {
-  if (mCurrentProfile->mName == name) {
+  dbprintf(4, QString("trySetProfile(%1)\n").arg(name)); 
+  if (name == "" || mCurrentProfile->mName == name) {
     return; 
   }
 
@@ -1440,6 +1439,7 @@ void BlockbusterLaunchDialog::trySetProfile (QString name) {
   while (pos--) {
     if (mHostProfiles[pos]->mName == name) {
       setupGuiAndCurrentProfile(pos); 
+      hostProfilesComboBox->setCurrentIndex(pos); 
       return; 
     }
   }
