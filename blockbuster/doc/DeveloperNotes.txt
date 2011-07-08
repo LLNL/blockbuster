@@ -5,20 +5,33 @@ DEVELOPMENT TASKS:all now tracked on sourceforge website
 FEATURES: all now tracked on sourceforge website
 
 ----------------------------------------------------------------------------------------------------------
-BUGS: all are now in sourceforge.net/tracker
--- 
+BUGS: all are now in blockbuster.sourceforge.net/tracker
 
-FILE RELEASE MANAGEMENT: 
-Use rsync over ssh as recommended by sourceforge.  
-https://sourceforge.net/apps/trac/sourceforge/wiki/Release%20files%20for%20download#Uploadafile
-https://sourceforge.net/apps/trac/sourceforge/wiki/File%20management%20service
+-------------------------------------------------------------
+VERSION RELEASE MANAGEMENT: 
+Create new versions using finalizeVersion.sh at top level directory.  
+Then upload the resulting tarball to sourceforge using their web interface. 
+Be sure to mark this as the default download if appropriate.  
 
-DOCUMENTATION USING DOXYGEN: 
-I am planning to start to use doxygen for doc generation, so much easier!  Stay tuned. 
+-------------------------------------------------------------
+DOCUMENTATION USING SCREENSTEPS SOFTWARE: 
+Documentation is created using ScreenSteps software on the Mac. http://www.bluemangolearning.com/screensteps/.  I export it to HTML.  See 
 
--0------------------------------------------------------------
+ I am thinking to add the use of doxygen for doc generation, so much easier!  Stay tuned. 
+
+To update the sourceforge web page, you  sftp to web.sourceforge.net:
+
+alias ftpblockbuster='sftp wealthychef@web.sourceforge.net:/home/project-web/blockbuster/htdocs'
+mac
+
+-------------------------------------------------------------
+LLNL INSTALLATION: 
+There is a wrapper script at /usr/gapps/asciviz/blockbuster/bin/blockbuster_wrapper.sh, which is pointed to by symlinks named "blockbuster", "sidecar", "img2sm" etc.  This location is put in your PATH using dotkit:  "use asciviz"
+
+-------------------------------------------------------------
 STRACE: 
-Using strace:  Here is how I captured the network delay bug I was having, where sidecar was several frames behind blockbuster, which was causing weird looping stuff to happen in blockbuster.    
+Using strace:  Here is how I captured the network delay bug I was having, where sidecar was several frames behind blockbuster, which was causing weird looping stuff to happen in blockbuster. 
+Note that most of the relevant args are handled by the wrapper script at /usr/gapps/asciviz/blockbuster/bin/blockbuster_wrapper.sh, which is pointed to by all symlinks.  
 
 blockbuster -dev -strace-args "-ttt -e trace=desc -e write=15 -e verbose=write" -messageLevel debug ~/dataAndImages/langer.sm >blockbuster.out 2>&1
 
@@ -37,7 +50,7 @@ NewRenderers:  x11Renderer, glRenderer, glStereoRenderer, glTextureRenderer, dmx
 Major modes: 
 CACHING:  DMX vs. local
 RENDERING:  DMX vs. x11 vs. gl 
-USER INTERFACE:  You might think there were more than one -- only x11 is possible!  See ui.cpp.  This needs to get cleaned up!  
+USER INTERFACE:  It's all Qt and X11.
 
 Blockbuster invocation modes:  Local vs. DMX master vs. DMX slave:
 In general:  
