@@ -664,10 +664,9 @@ void SideCar::askLaunchBlockbuster(QString iMovieName, bool fromMain) {
       HostField->setText(dialog.getHost()); 
       connectToBlockbuster(); 
     }  
-    QString profiletext = dialog.hostProfilesComboBox->currentText(); 
-    if (profiletext != "") {
+    if (dialog.mCurrentProfile) {
       // save the user's preference as default for next launch.  
-      gPrefs.SetValue("SIDECAR_DEFAULT_PROFILE", dialog.hostProfilesComboBox->currentText().toStdString()); 
+      gPrefs.SetValue("SIDECAR_DEFAULT_PROFILE", dialog.mCurrentProfile->mName.toStdString()); 
     }
  } else {    
     dialog.on_launchButton_clicked(); 

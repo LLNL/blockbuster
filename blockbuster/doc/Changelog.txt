@@ -6,7 +6,9 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 VERSION 2.7.1a (r496) Wed Jul  6 16:51:20 PDT 2011
 -- fixed a bug preventing slaves from communicating errors to frontend.  Errors on backends are now much clearer and easier to understand.  
 -- Include more information from the launch dialog in the host profile to reduce clicks.  
--- Fixed crashing bug in img2sm and fixed the -ignore flag so you can make a movie out of a single file. 
+-- Fixed crashing bug in img2sm and fixed the -ignore flag so you can make a movie out of a single file.
+-- Added -profile option and SIDECAR_DEFAULT_PROFILE to allow user and site admin (me) to set the default profile to use on startup.  
+-- Remember the last profile a user used and use it for the next launch.  NOTE:  This preference only persists for the next sidecar session if not overridden by SIDECAR_DEFAULT_PROFILE or -profile options.  
 
 ===============================================================================
 VERSION 2.7.0b (r492) Mon Jun 27 18:07:09 PDT 2011
