@@ -40,6 +40,7 @@
 #include <QTcpSocket>
 #include <QApplication>
 #include <QProcess>
+#include <QHostInfo>
 #include <QTimer>
 #include "Prefs.h"
 #include "../errmsg.h"
@@ -289,8 +290,10 @@ struct HostProfile {
     mProfileFile = filename; 
     mReadOnly = readOnly; 
     mAutoSidecarHost = true; 
-    if (tokens.size() != 10) {
-      dbprintf(1, QString("Warning:  HostProfile requires 8 tokens in initializer but I'm only seeing %1\n").arg(tokens.size()));
+    mSidecarHost = QHostInfo::localHostName(); 
+    mPlay = mFullScreen = mShowControls = mUseDMX = mMpiFrameSync = false; 
+    if (tokens.size() != 15) {
+      dbprintf(1, QString("Warning:  HostProfile uses 15 tokens in initializer but I'm only seeing %1, so I'll be using default values for some items.\n").arg(tokens.size()));
     }
     if (tokens.size() > 0)  mName = tokens[0]; 
     if (tokens.size() > 1)  mHostName = tokens[1];
@@ -300,15 +303,52 @@ struct HostProfile {
     if (tokens.size() > 5)  mSetDisplay = (tokens[5] == "setDisplay=true"); 
     if (tokens.size() > 6)  mDisplay = tokens[6]; 
     if (tokens.size() > 7)  mBlockbusterPath = tokens[7]; 
-    if (tokens.size() > 8)  mAutoSidecarHost = (tokens[8] == "mAutoSidecarHost=true"); 
+    if (tokens.size() > 8)  mAutoSidecarHost = (tokens[8] == "autoSidecarHost=true"); 
     if (tokens.size() > 9)  mSidecarHost = tokens[9]; 
+    if (tokens.size() > 10)  mPlay = (tokens[10] == "play=true"); 
+    if (tokens.size() > 11)  mFullScreen = (tokens[11] == "fullScreen=true"); 
+    if (tokens.size() > 12)  mShowControls = (tokens[12] == "showControls=true"); 
+    if (tokens.size() > 13)  mUseDMX = (tokens[13] == "useDMX=true"); 
+    if (tokens.size() > 14)  mMpiFrameSync = (tokens[14] == "mpiFrameSync=true"); 
     return; 
   }
   QString toQString(void) const {
-    return QString("<< HostProfile: mReadOnly=%1, mName=%2, mPort=%3, mVerbosity=%4, mRsh=%5, mSetDisplay=%6, mDisplay=%7, mBlockbusterPath=%8, mProfileFile=%9 mAutoSidecarHost=%9, mSidecarHost=%10>>").arg((int)mReadOnly).arg(mName).arg(mPort).arg(mVerbosity).arg(mRsh).arg(mSetDisplay?"true":"false").arg(mDisplay).arg(mBlockbusterPath).arg(mProfileFile).arg(mAutoSidecarHost?"true":"false").arg(mSidecarHost); 
+    return QString("<< HostProfile: mReadOnly=%1, mProfileFile=%2, mHostName=%3, mName=%4, mPort=%5, mVerbosity=%6, mRsh=%7, mSetDisplay=%8, mDisplay=%9, mBlockbusterPath=%10, mAutoSidecarHost=%11, mSidecarHost=%12, mPlay=%13, mFullScreen=%14, mShowControls=%15, mUseDMX=%16, mMpiFrameSync=%17>>")
+      .arg((int)mReadOnly)
+      .arg(mProfileFile)
+      .arg(mName)
+      .arg(mHostName)
+      .arg(mPort)
+      .arg(mVerbosity)
+      .arg(mRsh)
+      .arg(mSetDisplay?"true":"false")
+      .arg(mDisplay)
+      .arg(mBlockbusterPath)
+      .arg(mAutoSidecarHost?"true":"false")
+      .arg(mSidecarHost)
+      .arg(mPlay?"true":"false")
+      .arg(mFullScreen?"true":"false")
+      .arg(mShowControls?"true":"false")
+.arg(mUseDMX?"true":"false")
+      .arg(mMpiFrameSync?"true":"false"); 
   }
   QString toProfileString(void) const {    
-    return QString("%1 %2 %3 %4 %5 setDisplay=%6 %7 %8 autoSidecarHost=%9 %10").arg(mName).arg(mHostName).arg(mPort).arg(mVerbosity).arg(mRsh).arg(mSetDisplay?"true":"false").arg(mDisplay).arg(mBlockbusterPath).arg(mAutoSidecarHost?"true":"false").arg(mSidecarHost); 
+    return QString("%1 %2 %3 %4 %5 setDisplay=%6 %7 %8 autoSidecarHost=%9 %10 play=%11 fullScreen=%12 showControls=%13 useDMX=%14 mpiFrameSync=%15")
+      .arg(mName)
+      .arg(mHostName)
+      .arg(mPort)
+      .arg(mVerbosity)
+      .arg(mRsh)
+      .arg(mSetDisplay?"true":"false")
+      .arg(mDisplay)
+      .arg(mBlockbusterPath)
+      .arg(mAutoSidecarHost?"true":"false")
+      .arg(mSidecarHost)
+      .arg(mPlay?"true":"false")
+      .arg(mFullScreen?"true":"false")
+      .arg(mShowControls?"true":"false")
+      .arg(mUseDMX?"true":"false")
+      .arg(mMpiFrameSync?"true":"false"); 
   }
 
   static QString mUserHostProfileFile; 
@@ -316,7 +356,8 @@ struct HostProfile {
   QString mName;
   QString mHostName, mPort, mVerbosity, mRsh, mSidecarHost,  
     mDisplay, mBlockbusterPath, mProfileFile; 
-  bool mSetDisplay, mReadOnly, mAutoSidecarHost; 
+  bool mSetDisplay, mReadOnly, mAutoSidecarHost, 
+    mPlay, mFullScreen, mShowControls, mUseDMX, mMpiFrameSync; 
 }; 
 
 
@@ -338,7 +379,7 @@ class BlockbusterLaunchDialog: public QDialog,
  signals:   
   void stateChanged(connectionState newstate); 
   void listenForBlockbuster(); 
-  
+
   public slots:
   void blockbusterConnected() {      
     hide(); 
@@ -385,6 +426,7 @@ class BlockbusterLaunchDialog: public QDialog,
   }
 
   public:
+  void trySetProfile (QString name);  
   void saveHistory(QComboBox *box, QString filename);
   void saveAndRefreshHostProfiles(HostProfile *inProfile);
   void removeHostProfiles(void); 
