@@ -34,6 +34,7 @@
 #include "QDir"
 #include <QCleanlooksStyle>
 #include <QPlastiqueStyle>
+#include <QHostInfo>
 #include "settings.h"
 #include "common.h"
 #include "../../config/version.h"
@@ -117,11 +118,13 @@ int main(int argc, char *argv[]) {
     exit(0); 
   }
   set_verbose(gPrefs.GetLongValue("verbose")); 
-  /*
-    if (gPrefs.GetLongValue("verbose") > 4) {
-    enable_dbprintf(); 
-    }
-  */
+
+  // if nothing from environment, prefs, or args, then try local host name as default profile
+  string profile; 
+  if (!gPrefs.TryGetValue("SIDECAR_DEFAULT_PROFILE", profile)) {
+    gPrefs.SetValue("SIDECAR_DEFAULT_PROFILE",  QHostInfo::localHostName().toStdString()); 
+  }
+
   if (argc > 1) { 
     sidecar.ReadCueFile(argv[1]);
   }
