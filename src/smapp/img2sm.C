@@ -130,6 +130,7 @@ void cmdline(char *app)
 {  
   fprintf(stderr,"%s (%s) usage: %s [options] template output\n",
           basename(app), BLOCKBUSTER_VERSION, basename(app));
+  fprintf(stderr, "  Example template for 4-digits in a filename:  filename%04d.sm Also see -ignore option to specify a single file.\n"); 
   fprintf(stderr,"Options:\n");
   fprintf(stderr,"\t-rle Selects RLE compression\n");
   fprintf(stderr,"\t-gz Selects gzip compression\n");
@@ -670,7 +671,7 @@ int main(int argc,char **argv)
               sTemplate);
       exit(1);
     }
-  }
+  } 
 
   // count the files...
   if (iStart < 0) {
@@ -691,6 +692,9 @@ int main(int argc,char **argv)
     i += 1;
   } else {
     i = iStart + iStep;
+  }
+  if (iIgnore) {
+    iEnd = iStart; 
   }
   while (iEnd < 0) {
     sprintf(filename,sTemplate,i);
@@ -850,7 +854,11 @@ int main(int argc,char **argv)
   sm->setBufferSize(bufferSize); 
   /* init the parallel tools */
 
-  
+  int numsteps = (iEnd-iStart+1)/iStep; 
+  if (numsteps < nThreads) {
+    nThreads = numsteps; 
+  }
+    
   pt_pool         thepool;
   pt_pool_t       pool = &thepool;
   pt_pool_init(pool, nThreads, nThreads*2, 0);
@@ -895,7 +903,6 @@ int main(int argc,char **argv)
     pt_pool_add_work(pool, workproc, (void *)wrk);
   }
   pt_pool_destroy(pool,1);
-  sm->stopWriteThread(); 
  
   // Done..
   sm->stopWriteThread(); 
@@ -907,7 +914,7 @@ int main(int argc,char **argv)
 
   exit(0);
 }
-
+ 
 void workproc(void *arg)
 {
   Work *wrk = (Work *)arg;

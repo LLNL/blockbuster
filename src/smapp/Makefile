@@ -28,6 +28,7 @@
 #
 #       $Id: Makefile,v 1.4 2009/05/14 02:34:38 wealthychef Exp $
 #
+export OPT = -g
 include ../config/config
 
 LIBS = $(LDFLAGS) -L$(INSTALL_DIR)/lib -lsmovie -lptutil $(IFL_LIBS) -lpthread -ljpeg $(PNG_LIBS) -lm -ltiff -lpnmrw -lsrwpng -lz -llzo2
