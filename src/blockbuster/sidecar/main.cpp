@@ -65,6 +65,18 @@ void usage(void) {
 }
 
 void ParseOptions(int &argc, char *argv[]) {
+
+  gPrefs.SetValue("rsh", "rsh"); 
+  gPrefs.SetValue("verbose", 0); 
+
+  gPrefs.ReadFromFile(false); 
+
+  gPrefs.DeleteValue("verbose"); // do not inherit this from previous
+  gPrefs.DeleteValue("movie"); // do not inherit this from previous
+  gPrefs.DeleteValue("play"); // do not inherit this from previous
+
+  gPrefs.ReadFromEnvironment(); 
+
   vector<argType> args; 
   args.push_back(argType("-help", "help", "bool")); 
   args.push_back(argType("-keyhelp", "keyhelp", "bool")); 
@@ -72,18 +84,10 @@ void ParseOptions(int &argc, char *argv[]) {
   args.push_back(argType("-dmx", "dmx", "bool")); 
   args.push_back(argType("-movie", "movie", "string")); 
   args.push_back(argType("-play", "play", "string")); 
+  args.push_back(argType("-profile", "SIDECAR_DEFAULT_PROFILE", "string")); 
   args.push_back(argType("-rsh", "rsh", "string")); 
   args.push_back(argType("-stresstest", "stresstest", "bool")); 
   args.push_back(argType("-v", "verbose", "long")); 
-  //gPrefs.SetFile(string(getenv("HOME")) + "/.blockbuster/sidecar");   
-  // gPrefs.ReadFromFile(false);  
-  gPrefs.SetValue("rsh", "rsh"); 
-  gPrefs.SetValue("verbose", 0); 
-  gPrefs.ReadFromFile(false); 
-  gPrefs.DeleteValue("verbose"); // do not inherit this from previous
-  gPrefs.DeleteValue("movie"); // do not inherit this from previous
-  gPrefs.DeleteValue("play"); // do not inherit this from previous
-  gPrefs.ReadFromEnvironment(); 
   gPrefs.GetFromArgs(argc, argv, args); 
 }
 
@@ -120,9 +124,9 @@ int main(int argc, char *argv[]) {
   set_verbose(gPrefs.GetLongValue("verbose")); 
 
   // if nothing from environment, prefs, or args, then try local host name as default profile
-  string profile; 
-  if (!gPrefs.TryGetValue("SIDECAR_DEFAULT_PROFILE", profile)) {
-    gPrefs.SetValue("SIDECAR_DEFAULT_PROFILE",  QHostInfo::localHostName().toStdString()); 
+  if (gPrefs.GetValue("SIDECAR_DEFAULT_PROFILE") == "") {
+    gPrefs.SetValue("SIDECAR_DEFAULT_PROFILE",  
+                    QHostInfo::localHostName().toStdString()); 
   }
 
   if (argc > 1) { 
