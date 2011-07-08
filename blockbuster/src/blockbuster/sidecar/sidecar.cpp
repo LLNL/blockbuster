@@ -40,7 +40,6 @@
 #include "QHBoxLayout"
 #include "QInputDialog"
 #include <QFileDialog>
-#include <QHostInfo> 
 #include <QApplication>
 #include <algorithm>
 #include "sidecar.h"
@@ -635,8 +634,14 @@ void SideCar::askLaunchBlockbuster(QString iMovieName, bool fromMain) {
     dbprintf(5, "no @ symbol found\n"); 
   }
 
-  
+    
   BlockbusterLaunchDialog dialog(this, HostField->text(), PortField->text(), iMovieName, mState, mPrefs->GetValue("rsh").c_str(), gPrefs.GetLongValue("verbose"));
+  // restore the last used profile or the default if first launch
+  string defaultProfile; 
+  if (gPrefs.TryGetValue("defaultProfile", defaultProfile)) {
+    dialog.trySetProfile(defaultProfile.c_str()); 
+  }
+
   setBlockbusterPort(PortField->text()); 
   connect(&mBlockbusterServer, SIGNAL(newConnection()), &dialog, SLOT(blockbusterConnected())); 
   connect (&dialog, SIGNAL(stateChanged(connectionState)), this, SLOT(setState(connectionState))); 
@@ -661,7 +666,12 @@ void SideCar::askLaunchBlockbuster(QString iMovieName, bool fromMain) {
       HostField->setText(dialog.getHost()); 
       connectToBlockbuster(); 
     }  
- } else {
+    QString profiletext = dialog.hostProfilesComboBox->currentText(); 
+    if (profiletext != "") {
+      // save the user's preference as default for next launch.  
+      gPrefs.SetValue("SIDECAR_DEFAULT_PROFILE", dialog.hostProfilesComboBox->currentText().toStdString()); 
+    }
+ } else {    
     dialog.on_launchButton_clicked(); 
   }
   while (mState == BB_WAIT_CONNECTION || mState == BB_STARTING) {
@@ -1130,6 +1140,7 @@ void SideCar::InterestingKey(QKeyEvent *event){
 //======================================================================
 BlockbusterLaunchDialog::BlockbusterLaunchDialog(SideCar *sidecar, QString host, QString port, QString file, connectionState state, QString rshCmd, long bbVerbose): 
   mSidecar(sidecar), mState(state), mBlockbusterPort(port.toInt()), mCurrentProfile(NULL) {
+
   setupUi(this); 
   rshCommandField->setText(rshCmd); 
   hostNameField->setText(host); 
@@ -1417,6 +1428,23 @@ bool BlockbusterLaunchDialog::hostProfileModified(void){
      mCurrentProfile->mMpiFrameSync != mpiFrameSyncCheckBox->isChecked() ); 
   saveProfilePushButton->setEnabled(dirty && !mCurrentProfile->mReadOnly); 
   return dirty; 
+}
+
+//=======================================================================
+void BlockbusterLaunchDialog::trySetProfile (QString name) {
+  if (mCurrentProfile->mName == name) {
+    return; 
+  }
+
+  int pos = mHostProfiles.size(); 
+  while (pos--) {
+    if (mHostProfiles[pos]->mName == name) {
+      setupGuiAndCurrentProfile(pos); 
+      return; 
+    }
+  }
+
+  return;
 }
 
 //=======================================================================
