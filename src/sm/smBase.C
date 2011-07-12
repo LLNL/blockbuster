@@ -80,6 +80,7 @@ void sm_setVerbose(int level) {
   smVerbose = level; 
 }
 
+
 const int SM_MAGIC_1=SM_MAGIC_VERSION1;
 const int SM_MAGIC_2=SM_MAGIC_VERSION2;
 const int DIO_DEFAULT_SIZE = 1024L*1024L*4;
@@ -181,8 +182,9 @@ smBase::smBase(const char *_fname, int numthreads, uint32_t bufferSize):mNumThre
   else
     mMovieName = NULL;
   
-  if (mNumThreads > 1) {
+  if (mNumThreads > 0) {
     // this assumes we have already called pthreads_init(); 
+    smdbprintf(5, "smBase::smBase: initializing buffer mutex\n"); 
     int status = pthread_mutex_init(&mBufferMutex, NULL); 
     if (status) {
       fprintf(stderr, "Error:  cannot initializes output buffer mutex\n"); 
@@ -1224,12 +1226,14 @@ bool smBase::flushFrames(bool force) {
     abort(); 
   }
   // swap buffers: 
+  smdbprintf(5, "flushFrames() locking buffer mutex for buffer swap\n"); 
   pthread_mutex_lock(&mBufferMutex); 
   OutputBuffer *tmpBuf = mOutputBuffer; 
   mOutputBuffer = mStagingBuffer; 
   mStagingBuffer = tmpBuf; 
   mStagingBuffer->mFirstFrameNum = mOutputBuffer->mFirstFrameNum + mOutputBuffer->mNumFrames; 
-  smdbprintf(4, "flushFrames() swapped buffers\n");     
+  smdbprintf(4, "flushFrames() swapped buffers\n");
+  smdbprintf(5, "flushFrames() unlocking mutex\n");     
   pthread_mutex_unlock(&mBufferMutex); 
   smdbprintf(2, "flushing %d frames from output buffer\n", mOutputBuffer->mNumFrames); 
   
@@ -1330,12 +1334,16 @@ void smBase::compressAndBufferFrame(int f,  u_char *data) {
   compressFrame(wrk); 
 
   bool canBuffer = false; 
+  smdbprintf(5, "compressAndBufferFrame: locking buffer mutex\n"); 
   pthread_mutex_lock(&mBufferMutex); 
   while (!mStagingBuffer->addFrame(wrk)) {
+    smdbprintf(5, "compressAndBufferFrame: unlocking buffer mutex\n"); 
     pthread_mutex_unlock(&mBufferMutex); 
-    usleep(500); 
+    usleep(1500); 
+    smdbprintf(5, "compressAndBufferFrame: locking buffer mutex\n"); 
     pthread_mutex_lock(&mBufferMutex); 
   } 
+  smdbprintf(5, "compressAndBufferFrame: unlocking buffer mutex\n"); 
   pthread_mutex_unlock(&mBufferMutex); 
   
   return; 
@@ -1646,7 +1654,7 @@ void smBase::closeFile(void)
    while (i--) {
      CLOSE(mThreadData[i].fd);
    }
-   smdbprintf(0, "Finished with movie %s\n", mMovieName);
+   smdbprintf(1, "Finished with movie %s\n", mMovieName);
    return;
 }
 //! convenience function
