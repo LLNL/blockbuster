@@ -122,6 +122,7 @@ inline void sm_real_dbprintf(const smMsgStruct msg, int level, const char *fmt, 
   //cerr << endl; 
   return; 
 }
+
 #else
 inline void sm_real_dbprintf(int , const char * ...) {  
   return; 

@@ -31,7 +31,7 @@
 */
 #define DMALLOC 1
 #undef DMALLOC
-
+#define SM_VERBOSE 1
 // Utility to combine image files into movie
 #include <stdio.h>
 #include <stdlib.h>
@@ -479,7 +479,8 @@ int main(int argc,char **argv)
     } else if (strcmp(argv[i],"-planar")==0) {
       iPlanar = 1;
     } else if (strcmp(argv[i],"-v")==0) {
-      iVerb = 1;
+      iVerb = 1; 
+      sm_setVerbose(iVerb); 
     } else if (strcmp(argv[i],"-verbose")==0) {
       iVerb = atoi(argv[++i]);
       sm_setVerbose(iVerb); 
@@ -643,11 +644,11 @@ int main(int argc,char **argv)
       tsizes[count][0] = tsizes[count-1][0];
       tsizes[count][1] = tsizes[count-1][1];
       count++; 
-    }
-
-    if(parsed && iVerb) {
-      for(int n=0; n< nRes; n++) {
-	fprintf(stderr,"Resolution[%d] Tilesize=[%dx%d]\n",n,tsizes[n][0],tsizes[n][1]);
+    } 
+    int n=0; 
+    if(parsed) {
+      for(n=0; n< nRes; n++) {
+        smdbprintf(1,"Resolution[%d] Tilesize=[%dx%d]\n",n,tsizes[n][0],tsizes[n][1]);
       }
     }
   }
@@ -867,12 +868,11 @@ int main(int argc,char **argv)
   // memory buffer for frame input
   /*gInputBuf = (unsigned char *)malloc(iSize[0]*iSize[1]*3L); 
     CHECK(gInputBuf);*/
-  if (iVerb) {
-    printf("Creating streaming movie file from...\n");
-    printf("Template: %s\n",sTemplate);
-    printf("First, Last, Step: %d %d %d\n",iStart,iEnd,iStep);
-    printf("%d images of size %d %d\n",count,iSize[0],iSize[1]);
-  }
+  smdbprintf(1, "Creating streaming movie file from...\n");
+  smdbprintf(1, "Template: %s\n",sTemplate);
+  smdbprintf(1, "First, Last, Step: %d %d %d\n",iStart,iEnd,iStep);
+  smdbprintf(1, "%d images of size %d %d\n",count,iSize[0],iSize[1]);
+
   
   
   // Walk the input files...
@@ -887,10 +887,6 @@ int main(int argc,char **argv)
 
     // Get the filename
     sprintf(wrk->filename,sTemplate,i);
-    if (iVerb) {
-      fprintf(stderr, "Working on: %s : (%d) %d to %d\n",
-             wrk->filename,i,iStart,iEnd);
-    }
     wrk->filetype = iType; 
     // Compress and save (in parallel)
     wrk->iInDims = iInDims;
@@ -900,6 +896,9 @@ int main(int argc,char **argv)
     wrk->iFlipy = iFlipy;
     wrk->frame = (i-iStart)/iStep;
     wrk->buffer = new u_char[iSize[0]*iSize[1]*3]; 
+    smdbprintf(1, "Adding work: %s : (%d) %d to %d\n",
+               wrk->filename,i,iStart,iEnd);
+  
     pt_pool_add_work(pool, workproc, (void *)wrk);
   }
   pt_pool_destroy(pool,1);
@@ -918,6 +917,9 @@ int main(int argc,char **argv)
 void workproc(void *arg)
 {
   Work *wrk = (Work *)arg;
+  smdbprintf(3, "Thread %d working on %s : frame %d\n",
+          pt_pool_threadnum(), wrk->filename, wrk->frame);
+
   FillInputBuffer(wrk); 
 
   // rotate 
