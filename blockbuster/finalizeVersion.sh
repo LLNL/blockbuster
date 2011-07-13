@@ -168,8 +168,9 @@ make || errexit "Could not make software"
 
 echo "Creating symlink of new version to /usr/gapps/asciviz/blockbuster/test"
 
-rm /usr/gapps/asciviz/blockbuster/test
-ln -s /usr/gapps/asciviz/blockbuster/$version /usr/gapps/asciviz/blockbuster/test
+cd /usr/gapps/asciviz/blockbuster/ || errexit "Could not cd to blockbuster public area"
+rm -f test
+ln -s $version test
 echo "Done.  Tarball is $installdir/blockbuster-v${version}.tgz.  To use the new version, type \"use asciviz-test\""
 exit 0
 
