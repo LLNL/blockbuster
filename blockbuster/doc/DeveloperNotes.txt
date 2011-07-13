@@ -22,7 +22,7 @@ Documentation is created using ScreenSteps software on the Mac. http://www.bluem
 To update the sourceforge web page, you  sftp to web.sourceforge.net:
 
 alias ftpblockbuster='sftp wealthychef@web.sourceforge.net:/home/project-web/blockbuster/htdocs'
-mac
+
 
 -------------------------------------------------------------
 LLNL INSTALLATION: 
