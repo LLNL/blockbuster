@@ -10,16 +10,16 @@ def errexit (msg):
 def usage():
     print "Usage:  img2smtest.py [options]"
     print "Options:"
-    print " -path pathname:  exact location of sm2img for disambiguation"
+    print " -bindir dirnam:  path to the directory containing sm2img for disambiguation -- typically this will be $INSTALL_DIR/bin"
     
 # PARSE ARGUMENTS:
-smpath="img2sm"
-if "-path" in sys.argv:
-    pos = sys.argv.index('-path')
+bindir=""
+if "-bindir" in sys.argv:
+    pos = sys.argv.index('-bindir')
     if len(sys.argv) < pos+2:
         usage()
         sys.exit(-1)        
-    smpath=sys.argv[pos+1]
+    bindir=sys.argv[pos+1] + "/" # make sure there's a trailing '/'
 
 # RUN TESTS:
 testdir = "/tmp/"+os.getenv("USER")+"/img2smtest/"
@@ -55,9 +55,9 @@ def testrun(command, filename):
     print "Success!" 
     return
 
-testrun(smpath +" -ignore -form tiff  sample-data/mountains.tiff", "%s/mountains-ignore.sm"%testdir)
-testrun(smpath +"  -form png -first 084 -last 084 sample-data/quicksand-short-6fps/quicksand-short-6fps%03d.png", "%s/quicksand-single-template.sm"%testdir)
-testrun(smpath +" -form png -gz sample-data/quicksand-short-6fps/quicksand-short-6fps\%03d.png", "%s/quicksand-all-template-gz.sm"%testdir)
+testrun(bindir +"img2sm -ignore -form tiff  sample-data/mountains.tiff", "%s/mountains-ignore.sm"%testdir)
+testrun(bindir +"img2sm  -form png -first 084 -last 084 sample-data/quicksand-short-6fps/quicksand-short-6fps%03d.png", "%s/quicksand-single-template.sm"%testdir)
+testrun(bindir +"img2sm -form png -gz sample-data/quicksand-short-6fps/quicksand-short-6fps\%03d.png", "%s/quicksand-all-template-gz.sm"%testdir)
 
 sys.exit(0)
 
