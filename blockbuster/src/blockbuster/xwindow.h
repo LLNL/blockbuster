@@ -60,7 +60,7 @@ struct XWindow {
   void Close(void);
   void Resize(int newWidth, int newHeight, int cameFromX);
   void Move(int newX, int newY, int cameFromX);
-  
+  void fakeMouseClick(void); 
   // new members: 
   ProgramOptions *mOptions; 
   Canvas *mCanvas; 

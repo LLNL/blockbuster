@@ -433,7 +433,55 @@ void XWindow::Move(int newX, int newY, int cameFromX) {
   XSync(display, 0);
 }
 
-
+// ===============================================================
+/*!
+  Added to keep the screensaver from kicking in during a movie. 
+  Moves the pointer to a certain spot and clicks there.  
+  Code stolen from https://gist.github.com/726474
+  Written by Pioz, whoever that is.  
+  Modified by Rich Cook.  Please don't sue me.  
+*/ 
+void XWindow::fakeMouseClick(void)
+{
+  XEvent event;
+  
+  if(display == NULL)  {
+    fprintf(stderr, "Warning:  fakeMouseClick() called with no active display.\n"); 
+    return; 
+  }
+  
+  memset(&event, 0x00, sizeof(event));
+  
+  event.type = ButtonPress;
+  event.xbutton.button = Button1;
+  event.xbutton.same_screen = True;
+  
+  XQueryPointer(display, RootWindow(display, DefaultScreen(display)), &event.xbutton.root, &event.xbutton.window, &event.xbutton.x_root, &event.xbutton.y_root, &event.xbutton.x, &event.xbutton.y, &event.xbutton.state);
+  
+  event.xbutton.subwindow = event.xbutton.window;
+  
+  while(event.xbutton.subwindow)	{
+    event.xbutton.window = event.xbutton.subwindow;
+    
+    XQueryPointer(display, event.xbutton.window, &event.xbutton.root, &event.xbutton.subwindow, &event.xbutton.x_root, &event.xbutton.y_root, &event.xbutton.x, &event.xbutton.y, &event.xbutton.state);
+  }
+  
+  if(XSendEvent(display, PointerWindow, True, 0xfff, &event) == 0)  {
+    fprintf(stderr, "Warning: Error with XSendEvent in fakeMouseClick()\n");
+  }
+  
+  XFlush(display);
+  
+  //usleep(100*000); // ? Why is this included? 
+  
+  event.type = ButtonRelease;
+  event.xbutton.state = 0x100;
+  
+  if(XSendEvent(display, PointerWindow, True, 0xfff, &event) == 0) {
+    fprintf(stderr, "Warning: Error with XSendEvent in fakeMouseClick()\n");
+  }
+  return; 
+}
 /*
  * Helper macro used by the renderers
  */
