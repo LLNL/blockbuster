@@ -144,6 +144,8 @@ SideCar::SideCar(QApplication *app, Preferences *prefs, QWidget *parent)
           this, SLOT(fpsSpinBox_valueChanged(double))); 
   connect(mRemoteControl->foreverCheckBox, SIGNAL(stateChanged(int)), 
           this, SLOT(foreverCheckBox_stateChanged(int))); 
+  connect(mRemoteControl->noScreensaverCheckBox, SIGNAL(stateChanged(int)), 
+          this, SLOT(noScreensaverCheckBox_stateChanged(int))); 
   connect(mRemoteControl->loopCheckBox, SIGNAL(stateChanged(int)), 
           this, SLOT(loopCheckBox_stateChanged(int))); 
   connect(mRemoteControl->pingpongCheckBox, SIGNAL(stateChanged(int)), 
@@ -1007,6 +1009,11 @@ void SideCar::foreverCheckBox_stateChanged(int state) {
 }
 
 //================================================================
+void SideCar::noScreensaverCheckBox_stateChanged(int state) {
+  SendEvent(MovieEvent(MOVIE_NOSCREENSAVER, state)); 
+}
+
+//================================================================
 void SideCar::loopCheckBox_stateChanged(int state) {   
   if (state) mRemoteControl->pingpongCheckBox->setChecked(false); 
   SendEvent(MovieEvent(MOVIE_SET_LOOP, state)); 
@@ -1339,6 +1346,9 @@ void BlockbusterLaunchDialog::on_launchButton_clicked(){
   } 
   if (fullScreenCheckBox->isChecked()) {
     cmd += " -D "; 
+  } 
+  if (noScreensaverCheckBox->isChecked()) {
+    cmd += " -noscreensaver "; 
   } 
   if (!showControlsCheckBox->isChecked()) {
     cmd += " -w "; 
