@@ -42,6 +42,7 @@ void RemoteControl::updateFromSnapshot(MovieSnapshot &snapshot){
   BLOCK_APPLY(loopCheckBox, setChecked(snapshot.mLoop)); 
   BLOCK_APPLY(foreverCheckBox, setEnabled(snapshot.mLoop)); 
   BLOCK_APPLY(foreverCheckBox, setChecked(snapshot.mLoop == -1)); 
+  BLOCK_APPLY(noScreensaverCheckBox, setChecked(snapshot.mNoScreensaver)); 
   BLOCK_APPLY(pingpongCheckBox, setChecked(snapshot.mPingPong)); 
   dbprintf(5, QString("Updated control window from %1\n").arg(snapshot.humanReadableString())); 
   return; 

@@ -491,6 +491,19 @@ p, li { white-space: pre-wrap; }
            </widget>
           </item>
           <item>
+           <widget class="QCheckBox" name="noScreensaverCheckBox">
+            <property name="text">
+             <string>No Screensaver</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+            <property name="tristate">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QCheckBox" name="mpiFrameSyncCheckBox">
             <property name="enabled">
              <bool>false</bool>

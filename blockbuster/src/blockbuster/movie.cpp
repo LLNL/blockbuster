@@ -143,10 +143,14 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   struct tms startTime, endTime;
   clock_t startClicks, endClicks;
   long Hertz;
-  double recentStartTime, recentEndTime, elapsedTime, userTime, systemTime;
+  double recentStartTime = GetCurrentTime(), 
+    recentEndTime, elapsedTime, userTime, systemTime;
   double fps = 0.0;
   double nextSwapTime = 0.0;
   float targetFPS = 0.0;
+
+  double noscreensaverStartTime = GetCurrentTime();
+
   bool pingpong = false; // play forward, then backward, then forward, etc
   bool cuePlaying = false;  // when true, status will not change. 
   /* UI / events */
@@ -227,7 +231,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   /* Start timing */
   startClicks = times(&startTime);
   recentStartTime = GetCurrentTime();
- 
+
   if ( options->play != 0 )
     playDirection = options->play;
 
@@ -276,7 +280,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
     events.push_back(newEvent); 
     
     //canvas->GetEvent(canvas, 0, &newEvent);
-
+ 
    // we now have at least one event
     uint32_t eventNum = 0; 
     while (eventNum < events.size()) {
@@ -547,6 +551,10 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       case MOVIE_TOGGLE_CURSOR:
         canvas->mRenderer->ToggleCursor(); 
         break; 
+      case MOVIE_NOSCREENSAVER:
+        options->noscreensaver = event.number;
+        noscreensaverStartTime = GetCurrentTime();
+       break; 
       case MOVIE_MOUSE_PRESS_1:
         panning = 1;
         panStartX = event.x;
@@ -789,6 +797,19 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       //===============================================================
       /* END SWITCH on type of event */
       //===================================================================
+      
+      if (options->noscreensaver) {
+        // Generate mouse click to defeat the screen saver
+        double currentTime = GetCurrentTime();
+        //dbprintf(3, "noscreensaverStartTime = %f, currentTime = %f\n", 
+        //        noscreensaverStartTime, currentTime); 
+        if (currentTime - noscreensaverStartTime > 90) {
+          dbprintf(1, "Generating false mouse click to defeat screen saver.\n"); 
+          canvas->mRenderer->fakeMouseClick(); 
+          noscreensaverStartTime = currentTime;
+        }
+      }
+      
       //TIMER_PRINT("end switch, frame %d", frameNumber); 
       if (frameNumber != previousFrame) {
         DEBUGMSG("frameNumber changed  to %d after switch", frameNumber); 
@@ -824,7 +845,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
           nextSwapTime = 0.0;
       }
       
-      //=====================================================================
+     //=====================================================================
       // The frame number manipulations above may have advanced
       // or recessed the frame number beyond bounds.  We do the right thing here.
       if (frameNumber > endFrame) {    
@@ -896,7 +917,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       }
       
       { 
-        MovieSnapshot newSnapshot(event.eventType, filename, fps, targetFPS, currentZoom, lodBias, playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, loopmsg, pingpong, fullScreen, zoomOne, canvas->height, canvas->width, canvas->XPos, canvas->YPos, imageHeight, imageWidth, -xOffset, yOffset); 
+        MovieSnapshot newSnapshot(event.eventType, filename, fps, targetFPS, currentZoom, lodBias, playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, loopmsg, pingpong, fullScreen, zoomOne, options->noscreensaver, canvas->height, canvas->width, canvas->XPos, canvas->YPos, imageHeight, imageWidth, -xOffset, yOffset); 
         if (sendSnapshot || newSnapshot != oldSnapshot) {
           
           canvas->reportWindowMoved(canvas->XPos, canvas->YPos); 

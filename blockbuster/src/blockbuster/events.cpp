@@ -87,7 +87,7 @@ bool MovieSnapshot::operator == (const MovieSnapshot &other) const{
 
 //==========================================================================
 QString MovieSnapshot::humanReadableString(void) const {
-  QString retval = QString("Snapshot:  mSnapshotType=%1 mFilename=%2 mFrameRate=%3 mTargetFPS=%4 mZoom=%5 mLOD=%6 mPlayStep=%7 mStartFrame=%8 mEndFrame=%9 mNumFrames=%10 mFrameNumber=%11 mLoop=%12 mPingPong=%13 mFullScreen=%14 mZoomOne=%15 mScreenHeight=%16 mScreenWidth=%17 mScreenXpos=%18 mScreenYpos=%19 mImageHeight=%20 mImageWidth=%21 mImageXpos=%22 mImageYpos=%23")
+  QString retval = QString("Snapshot:  mSnapshotType=%1 mFilename=%2 mFrameRate=%3 mTargetFPS=%4 mZoom=%5 mLOD=%6 mPlayStep=%7 mStartFrame=%8 mEndFrame=%9 mNumFrames=%10 mFrameNumber=%11 mLoop=%12 mPingPong=%13 mFullScreen=%14 mZoomOne=%15 mNoScreensaver=%16 mScreenHeight=%17 mScreenWidth=%18 mScreenXpos=%19 mScreenYpos=%20 mImageHeight=%21 mImageWidth=%22 mImageXpos=%23 mImageYpos=%24")
     .arg(mSnapshotType)
     .arg(mFilename)
     .arg(mFrameRate)
@@ -103,6 +103,7 @@ QString MovieSnapshot::humanReadableString(void) const {
     .arg(mPingPong)
     .arg(mFullScreen)
     .arg(mZoomOne)
+    .arg(mNoScreensaver)
     .arg(mScreenHeight)
     .arg(mScreenWidth)
     .arg(mScreenXpos)
@@ -119,7 +120,7 @@ QString MovieSnapshot::humanReadableString(void) const {
 
 //==========================================================================
 QString MovieSnapshot::toString(void) const {
-  QString retval = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19 %20 %21 %22 %23")
+  QString retval = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19 %20 %21 %22 %23 %24")
     .arg(mSnapshotType)
     .arg(mFilename)
     .arg(mFrameRate)
@@ -135,6 +136,7 @@ QString MovieSnapshot::toString(void) const {
     .arg(mPingPong)
     .arg(mFullScreen)
     .arg(mZoomOne)
+    .arg(mNoScreensaver)
     .arg(mScreenHeight)
     .arg(mScreenWidth)
     .arg(mScreenXpos)
@@ -153,29 +155,30 @@ void MovieSnapshot::fromString(QString iString) {
   QStringList parts(iString.split(" "));  
   try {
     int partnum = 0;    
-    mSnapshotType = parts[partnum++].toInt();
-    mFilename     = parts[partnum++];
-    mFrameRate    = parts[partnum++].toFloat();
-    mTargetFPS    = parts[partnum++].toFloat();
-    mZoom         = parts[partnum++].toFloat();
-    mLOD          = parts[partnum++].toInt();
-    mPlayStep     = parts[partnum++].toInt();
-    mStartFrame   = parts[partnum++].toInt();
-    mEndFrame     = parts[partnum++].toInt();
-    mNumFrames    = parts[partnum++].toInt();
-    mFrameNumber  = parts[partnum++].toInt();
-    mLoop         = parts[partnum++].toInt(); 
-    mPingPong     = parts[partnum++].toInt(); 
-    mFullScreen   = parts[partnum++].toInt();
-    mZoomOne      = parts[partnum++].toInt();
-    mScreenHeight = parts[partnum++].toInt();
-    mScreenWidth  = parts[partnum++].toInt();
-    mScreenXpos   = parts[partnum++].toInt();
-    mScreenYpos   = parts[partnum++].toInt();
-    mImageHeight  = parts[partnum++].toInt();
-    mImageWidth   = parts[partnum++].toInt();
-    mImageXpos    = parts[partnum++].toInt();
-    mImageYpos    = parts[partnum++].toInt();
+    mSnapshotType     = parts[partnum++].toInt();
+    mFilename         = parts[partnum++];
+    mFrameRate        = parts[partnum++].toFloat();
+    mTargetFPS        = parts[partnum++].toFloat();
+    mZoom             = parts[partnum++].toFloat();
+    mLOD              = parts[partnum++].toInt();
+    mPlayStep         = parts[partnum++].toInt();
+    mStartFrame       = parts[partnum++].toInt();
+    mEndFrame         = parts[partnum++].toInt();
+    mNumFrames        = parts[partnum++].toInt();
+    mFrameNumber      = parts[partnum++].toInt();
+    mLoop             = parts[partnum++].toInt(); 
+    mPingPong         = parts[partnum++].toInt(); 
+    mFullScreen       = parts[partnum++].toInt();
+    mZoomOne          = parts[partnum++].toInt();
+    mNoScreensaver    = parts[partnum++].toInt();
+    mScreenHeight     = parts[partnum++].toInt();
+    mScreenWidth      = parts[partnum++].toInt();
+    mScreenXpos       = parts[partnum++].toInt();
+    mScreenYpos       = parts[partnum++].toInt();
+    mImageHeight      = parts[partnum++].toInt();
+    mImageWidth       = parts[partnum++].toInt();
+    mImageXpos        = parts[partnum++].toInt();
+    mImageYpos        = parts[partnum++].toInt();
   }
   catch (...) {
     cerr << QString("Error: cannot create snapshot from string: \"%1\"").arg(iString).toStdString() << endl;

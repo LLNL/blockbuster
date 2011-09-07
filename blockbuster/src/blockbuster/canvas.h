@@ -63,7 +63,7 @@ struct Canvas {
   void Move(int newX, int newY, int cameFromX){
     mRenderer->Move(newX, newY, cameFromX); 
   }
-  
+
   /**************************************************************/
   void DrawString(int row, int column, const char *str) {
     mRenderer->DrawString(row, column, str); 

@@ -62,6 +62,7 @@ BlockbusterInterface *gMainWindow = NULL;
 QThread *gMainThread = NULL; 
 ProgramOptions gProgramOptions;
 
+// =====================================================================
 /* This utility is used to get the number of processors
  * available on a system.  If the number of processors is
  * greater than 1, threads will be enabled by default.
@@ -76,11 +77,13 @@ static int GetNumProcessors(void)
 }
 
 
+// =====================================================================
 void version(void) {
   fprintf(stderr, "Blockbuster version "BLOCKBUSTER_VERSION"  (c) Tungsten Graphics, Inc. with modifications by IMG group at Lawrence Livermore National Laboratory\n\n");
   return; 
 }
 
+// =====================================================================
 void usage(void) {
   version(); 
   fprintf(stderr, "Usage: blockbuster [options] [-- -<renderer-specific options>] [file]\n");
@@ -96,6 +99,7 @@ void usage(void) {
   fprintf(stderr, "-fullscreen: turns off window decorations and goes to full-screen display\n"); 
   fprintf(stderr, "-geometry <geometrystring> specifies X window geometry\n");
   fprintf(stderr, "-help displays this help message\n");
+  fprintf(stderr, "-noscreensaver: use fake mouse clicks to defeat screensaver\n");
   fprintf(stderr, "-keyhelp:  display list of keyboard controls\n");
   fprintf(stderr, "-lod num: specifies a starting level of detail for the given movie\n");
   fprintf(stderr, "-loops <loops> specifies how many times to loop (number or 'forever')\n");
@@ -163,6 +167,7 @@ void checkarg(int argc, const char *argname) {
   return;
 }
 
+// =====================================================================
 bool  CHECK_STRING_ARG(const char *flag, int &argc, char *argv[], QString &str)	{
 
   char *found = strstr(flag, argv[1]); 
@@ -178,6 +183,7 @@ bool  CHECK_STRING_ARG(const char *flag, int &argc, char *argv[], QString &str)	
   return true;
 }
 
+// =====================================================================
 bool  CHECK_ATOF_ARG(const char *flag, int &argc, char *argv[], float &flt)	{
   if (strstr(flag, argv[1]) == flag) {
     DEBUGMSG("Setting float arg\n"); 
@@ -191,6 +197,7 @@ bool  CHECK_ATOF_ARG(const char *flag, int &argc, char *argv[], float &flt)	{
 }
 
   
+// =====================================================================
 bool  CHECK_ATOI_ARG(const char *flag, int &argc, char *argv[], int &intgr)	{
   if (strstr(flag, argv[1]) == flag) {
     DEBUGMSG("Setting Int arg\n"); 
@@ -203,10 +210,11 @@ bool  CHECK_ATOI_ARG(const char *flag, int &argc, char *argv[], int &intgr)	{
   return false; 
 }
 
-bool  SET_BOOL_ARG(const char *flag, int &argc, char *argv[], int &barg, int val, bool consume=true)	{
+// =====================================================================
+bool  SET_BOOL_ARG(const char *flag, int &argc, char *argv[], int &barg, int setval, bool consume=true)	{
   if (strstr(flag, argv[1]) == flag) {
     DEBUGMSG("Setting bool arg\n"); 
-	barg = val;
+	barg = setval;
     if (consume) {
       ConsumeArg(argc, argv, 1); 
     }
@@ -215,6 +223,7 @@ bool  SET_BOOL_ARG(const char *flag, int &argc, char *argv[], int &barg, int val
   return false; 
 }
   
+// =====================================================================
 static char ** DuplicateArgs(int argc, char *argv[]) {
   char **argv_new = (char **)malloc(sizeof(char *) * (argc+1)); 
   int argnum = 0; 
@@ -226,7 +235,24 @@ static char ** DuplicateArgs(int argc, char *argv[]) {
   return argv_new;
 }
 
-/*
+// =====================================================================
+/*!
+  Look for environment variables.  
+  This is a start at a systematic approach to this.  
+  Not all environment variables are set here.  Far from it. 
+*/ 
+static void ParseEnvironmentVars(void) {
+  ProgramOptions *opt = GetGlobalOptions(); 
+  char *noscreensavers = getenv("BLOCKBUSTER_NOSCREENSAVER"); 
+  if (noscreensavers) {
+    string noscreensaverstr(noscreensavers); 
+    opt->noscreensaver = (noscreensaverstr != "0" && noscreensaverstr != "false");    
+  }
+  return; 
+}
+
+// =====================================================================
+/* 
  * Parse argv[] options and set flags in <opt>.
  */
 static void ParseOptions(int &argc, char *argv[])
@@ -284,6 +310,9 @@ static void ParseOptions(int &argc, char *argv[])
 	else if (SET_BOOL_ARG("-help", argc, argv, help, 1)) {
 	  usage(); 
 	  exit(MOVIE_HELP);	   	
+	}
+	else if (SET_BOOL_ARG("-noscreensaver", argc, argv, opt->noscreensaver, 1)) {
+      continue;
 	}
 	else if (SET_BOOL_ARG("-keyhelp", argc, argv, help, 1)) {
       PrintKeyboardControls(); 
@@ -426,7 +455,7 @@ static void ParseOptions(int &argc, char *argv[])
       opt->rendererName = "gl_stereo"; 
     }
   }
-
+    
   numProcessors = GetNumProcessors();
   if (opt->readerThreads == -1) {
     if (numProcessors > 1) {
@@ -524,6 +553,10 @@ InterruptHandler(int)
   exit(1);
 }
 
+// =====================================================================
+/*!  
+  MAIN()  This is slightly important.
+*/
 int main(int argc, char *argv[])
 {
   ProgramOptions *opt = GetGlobalOptions(); 
@@ -581,6 +614,7 @@ int main(int argc, char *argv[])
   // Get Qt rockin'.  This creates the basic Qt object.  
   gCoreApp = new QApplication(argc, args); 
 
+  ParseEnvironmentVars(); 
   ParseOptions(newargc, newargs);
   printargs("After ParseOptions", newargs, newargc); 
 

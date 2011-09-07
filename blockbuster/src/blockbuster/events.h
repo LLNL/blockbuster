@@ -22,6 +22,7 @@
     MOVIE_MOVE_RESIZE,  /* move and resize to new x,y position */
     MOVIE_CENTER,
     MOVIE_TOGGLE_CURSOR,
+    MOVIE_NOSCREENSAVER, /* Stop screensaver with fake mouse clicks */
     MOVIE_SET_STEREO, 
 
     MOVIE_ZOOM_IN = 50,
@@ -306,7 +307,7 @@ struct MovieSnapshot {
     mZoom(0.0), mLOD(0), 
     mPlayStep(0), mStartFrame(1), mEndFrame(1),  mNumFrames(0), 
     mFrameNumber(1),  mLoop(0),  mPingPong(false), 
-    mFullScreen(false), mZoomOne(false), 
+    mFullScreen(false), mZoomOne(false), mNoScreensaver(false), 
     mScreenHeight(0), mScreenWidth(0), mScreenXpos(0), mScreenYpos(0), 
     mImageHeight(0), mImageWidth(0), mImageXpos(0),  mImageYpos(0){ return; }
     
@@ -316,6 +317,7 @@ struct MovieSnapshot {
                 int32_t playStep,  int32_t startFrame, int32_t endFrame, 
                 int32_t numFrames, int32_t frameNumber,  
                 int32_t loop,  bool pingpong, bool fullScreen, bool zoomOne, 
+                int32_t noScreensaver, 
                 int32_t screenHeight, int32_t screenWidth, 
                 int32_t screenXpos, int32_t screenYpos, 
                 int32_t imageHeight, int32_t imageWidth,
@@ -326,7 +328,7 @@ struct MovieSnapshot {
     mStartFrame(startFrame), mEndFrame(endFrame),  
     mNumFrames(numFrames), mFrameNumber(frameNumber), 
     mLoop(loop), mPingPong(pingpong), 
-    mFullScreen(fullScreen), mZoomOne(zoomOne), 
+    mFullScreen(fullScreen), mZoomOne(zoomOne), mNoScreensaver(noScreensaver),
     mScreenHeight(screenHeight), mScreenWidth(screenWidth), 
     mScreenXpos(screenXpos), mScreenYpos(screenYpos), 
     mImageHeight(imageHeight),  mImageWidth(imageWidth),
@@ -346,7 +348,7 @@ struct MovieSnapshot {
   int32_t mSnapshotType; //e.g., MOVIE_SNAPSHOT_ENDFRAME, etc.
   QString mFilename; 
   float mFrameRate, mTargetFPS, mZoom;
-  int32_t mLOD, mPlayStep, mStartFrame, mEndFrame, mNumFrames, mFrameNumber, mLoop, mPingPong, mFullScreen, mZoomOne, mScreenHeight, mScreenWidth, mScreenXpos, mScreenYpos, mImageHeight, mImageWidth, mImageXpos, mImageYpos; 
+  int32_t mLOD, mPlayStep, mStartFrame, mEndFrame, mNumFrames, mFrameNumber, mLoop, mPingPong, mFullScreen, mZoomOne, mNoScreensaver, mScreenHeight, mScreenWidth, mScreenXpos, mScreenYpos, mImageHeight, mImageWidth, mImageXpos, mImageYpos; 
 };
 
 #endif

@@ -466,10 +466,15 @@ void XWindow::fakeMouseClick(void)
     XQueryPointer(display, event.xbutton.window, &event.xbutton.root, &event.xbutton.subwindow, &event.xbutton.x_root, &event.xbutton.y_root, &event.xbutton.x, &event.xbutton.y, &event.xbutton.state);
   }
   
-  if(XSendEvent(display, PointerWindow, True, 0xfff, &event) == 0)  {
+  /*
+    if(XSendEvent(display, PointerWindow, True, 0xfff, &event) == 0)  {
     fprintf(stderr, "Warning: Error with XSendEvent in fakeMouseClick()\n");
   }
-  
+  */
+  if(XSendEvent(display, window, True, 0xfff, &event) == 0)  {
+    fprintf(stderr, "Warning: Error with XSendEvent in fakeMouseClick()\n");
+  }
+
   XFlush(display);
   
   //usleep(100*000); // ? Why is this included? 
@@ -477,7 +482,12 @@ void XWindow::fakeMouseClick(void)
   event.type = ButtonRelease;
   event.xbutton.state = 0x100;
   
-  if(XSendEvent(display, PointerWindow, True, 0xfff, &event) == 0) {
+  /*
+    if(XSendEvent(display, PointerWindow, True, 0xfff, &event) == 0) {
+    fprintf(stderr, "Warning: Error with XSendEvent in fakeMouseClick()\n");
+  }
+  */
+  if(XSendEvent(display, window, True, 0xfff, &event) == 0) {
     fprintf(stderr, "Warning: Error with XSendEvent in fakeMouseClick()\n");
   }
   return; 
