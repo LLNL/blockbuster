@@ -161,7 +161,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   float currentZoom = 1.0, newZoom, startZoom, oldZoom; // actual zoom factor
   int lod = 0, maxLOD, baseLOD = 0, lodBias = options->LOD;
   bool usingDmx = (QString(options->rendererName) == "dmx"); 
-
+  long sleepAmt=1; // for incremental backoff during idle
   /* Region Of Interest of the image */
   Rectangle roi;
   int destX, destY; // position on canvas to render the image
@@ -797,7 +797,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       //===============================================================
       /* END SWITCH on type of event */
       //===================================================================
-      
+
       if (options->noscreensaver) {
         // Generate mouse click to defeat the screen saver
         double currentTime = GetCurrentTime();
@@ -826,6 +826,11 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
       }
       
       if (event.eventType == MOVIE_NONE && !playDirection) {
+        // We have no useful work that we are doing, sleep a bit.
+        usleep(sleepAmt); 
+        if (sleepAmt < 100*1000)
+          sleepAmt *= 2; // sleep more next time
+        // dbprintf(0, "sleeping %ld\n", sleepAmt);       
         //dbprintf(5, " start back up at outer loop\n"); 
         continue;
       }
@@ -833,7 +838,12 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         dbprintf(5, "break from the outer loop too\n"); 
         break;
       }
-      
+      else {
+        // We are doing something useful -- don't sleep; allow framerate to climb. 
+        // dbprintf(0, "Not sleeping because swapBuffers=%d, eventType=%d, frameNumber=%d, previousFrame=%d\n", swapBuffers, event.eventType, frameNumber, previousFrame);
+        sleepAmt = 1; 
+      }
+  
 
       if (!oldPlay && playDirection) {
         /* We're starting playback now so reset counters and timers */
@@ -1103,7 +1113,7 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         }
         /* Compute next targetted swap time */
         nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
-      }
+       }
        dbprintf(5, "check to swap buffers\n"); 
        if ( 1 ) {
          /* ( swapBuffers == true ||
@@ -1112,9 +1122,9 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
             oldXOffset != xOffset ||
             oldYOffset != yOffset)  {
          */
-        canvas->preloadFrames = preloadFrames; 
-        canvas->playDirection = playDirection;
-        canvas->startFrame = startFrame; 
+         canvas->preloadFrames = preloadFrames; 
+         canvas->playDirection = playDirection;
+         canvas->startFrame = startFrame; 
         canvas->endFrame = endFrame; 
         canvas->SwapBuffers();
         if (playDirection && options->speedTest) {
@@ -1146,12 +1156,12 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
           DEBUGMSG("Preload frame %d", frame); 
           canvas->Preload(frame, &roi, lod);
         }
-      }
-      
-      if (frameNumber != previousFrame) {
-        DEBUGMSG("frameNumber changed to %d during non-switch logic", frameNumber); 
-        canvas->ReportFrameChange(frameNumber);
-      }
+       }
+       
+       if (frameNumber != previousFrame) {
+         DEBUGMSG("frameNumber changed to %d during non-switch logic", frameNumber); 
+         canvas->ReportFrameChange(frameNumber);
+       }
       previousFrame = frameNumber; 
       oldZoom = currentZoom; 
       oldXOffset = xOffset;
