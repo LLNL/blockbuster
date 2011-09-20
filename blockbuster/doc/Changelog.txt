@@ -5,6 +5,8 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 ===============================================================================
 VERSION 2.7.1b (rxxx) 
 -- Added "noscreensaver" option to sidecar GUI and blockbuster command line/environment parser, which generates a fake mouse click every 90 seconds to prevent screensavers from activating.
+-- Throttle back CPU usage when blockbuster is idle. 
+
 ===============================================================================
 VERSION 2.7.1a (r510) Tue Jul 12 16:59:29 PDT 2011
 -- fixed a bug preventing slaves from communicating errors to frontend.  Errors on backends are now much clearer and easier to understand.  
