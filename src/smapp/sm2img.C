@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <libgen.h>
 
 #include "sm/smRLE.h"
 #include "sm/smGZ.h"

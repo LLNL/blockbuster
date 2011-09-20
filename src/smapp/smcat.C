@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <libgen.h>
 
  #define SM_VERBOSE 1
 #include "sm/smRLE.h"
