@@ -43,8 +43,6 @@
 #include <libgen.h>
 #include "xwindow.h"
 #include "canvas.h"
-
-
 /* ---------------------------------------------*/ 
 
 static void FrameListModified(Canvas *canvas, FrameList *frameList)
@@ -166,9 +164,9 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
   Rectangle roi;
   int destX, destY; // position on canvas to render the image
 
+  
  /* We'll need this for timing */
   Hertz = sysconf(_SC_CLK_TCK);
-
 
   /* Insert splash screen code here. 
    */

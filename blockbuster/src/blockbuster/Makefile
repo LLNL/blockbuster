@@ -28,9 +28,10 @@ include ../config/config
 
 ifeq ($(shell uname),Darwin)
 	blockbuster = blockbuster.app/Contents/MacOS/blockbuster
-	X11_LIBS += -lXext 
+	X11_LIBS += -lXext -lXtst
 	GPROF_HELPER=
 else
+	X11_LIBS +=  -lXtst
 	blockbuster = blockbuster 
 	GPROF_HELPER=$(INSTALL_DIR)/lib/gprof-helper.so
 endif
