@@ -33,6 +33,8 @@
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 #include "xwindow.h"
+#include <X11/extensions/XTest.h>
+
 #define DEFAULT_WIDTH 800
 #define DEFAULT_HEIGHT 600
 
@@ -443,6 +445,28 @@ void XWindow::Move(int newX, int newY, int cameFromX) {
 */ 
 void XWindow::fakeMouseClick(void)
 {
+  int event_base; int error_base; int major_version; int minor_version;
+  if (! XTestQueryExtension(display, &event_base, &error_base, &major_version, &minor_version)) { 
+    dbprintf(0, "Warning:  No fake mouse movement is possible:  XTest X11 extension is not installed\n"); 
+    return; 
+  } else {
+    dbprintf(1, "Simulating  moving the mouse by 1 pixel in X and Y using XTest extension...\n"); 
+  }
+  XTestFakeRelativeMotionEvent(display,  1, 1, CurrentTime);
+
+  return; 
+  /*
+  KeyCode dcode = XKeysymToKeycode(display, XStringToKeysym('$'));
+
+  XTestFakeKeyEvent(display, dcode, True, CurrentTime);
+  usleep(100);
+  XTestFakeKeyEvent(display, dcode, False, CurrentTime);
+
+  return;
+  */
+
+  // =============================================================           
+  //  OLD CODE BELOW:  
   XEvent event;
   
   if(display == NULL)  {
@@ -490,6 +514,7 @@ void XWindow::fakeMouseClick(void)
   if(XSendEvent(display, window, True, 0xfff, &event) == 0) {
     fprintf(stderr, "Warning: Error with XSendEvent in fakeMouseClick()\n");
   }
+
   return; 
 }
 /*
