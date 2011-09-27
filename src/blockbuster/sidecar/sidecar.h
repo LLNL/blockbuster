@@ -196,6 +196,7 @@ class SideCar: public QMainWindow, public Ui::SideCarWindow {
 
   QApplication *mApp; 
   Preferences *mPrefs; 
+  class BlockbusterLaunchDialog *mLaunchDialog;
   QProcess *mBlockbusterProcess; 
   KeyPressIntercept mKeyPressIntercept; 
   bool mDoStressTests; 
