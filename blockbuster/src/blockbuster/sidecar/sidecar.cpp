@@ -62,7 +62,7 @@ bool CompareHostProfiles(const HostProfile * h1, const HostProfile * h2) {
 
 //===============================================================
 SideCar::SideCar(QApplication *app, Preferences *prefs, QWidget *parent)
-  : QMainWindow(parent), mApp(app), mPrefs(prefs), mBlockbusterProcess(NULL), mKeyPressIntercept(NULL), mDoStressTests(false), mState(BB_DISCONNECTED), 
+  : QMainWindow(parent), mApp(app), mPrefs(prefs), mLaunchDialog(NULL), mBlockbusterProcess(NULL), mKeyPressIntercept(NULL), mDoStressTests(false), mState(BB_DISCONNECTED), 
     mBlockbusterSocket(NULL),
     mNextCommandID(1), 
     mCueManager(NULL),
@@ -233,6 +233,7 @@ void SideCar::setState(connectionState state){
     if (state == BB_ERROR) {
       state = BB_DISCONNECTED; 
     }
+    if (mLaunchDialog) mLaunchDialog->hide(); 
     break;
   case BB_STARTING:
   case BB_WAIT_CONNECTION:
@@ -481,6 +482,10 @@ void SideCar::blockbusterProcessError(QProcess::ProcessError ) {
 
 //=======================================================================
 void SideCar::blockbusterProcessExit(int, QProcess::ExitStatus ) {
+  if (mState == BB_WAIT_CONNECTION || mState == BB_STARTING) {
+    QMessageBox::warning(this,  "Blockbuster exit",
+                         "Blockbuster process exited.");
+  }
   dbprintf(5, "Process exited."); 
   blockbusterReadStdErr(); 
   blockbusterReadStdOut(); 
@@ -501,7 +506,7 @@ void SideCar::blockbusterReadStdErr() {
       dbprintf(3,"got null line from stderr\n"); 
       return; 
     }  
-    if (line.contains("ERROR")) {
+    if (line.contains("ERROR") || line.contains("not found")) {
       QMessageBox::warning(this, "Blockbuster Error:", line); 
       setState(BB_ERROR); 
     } else if (line.contains("sidecar port:")) {
@@ -673,12 +678,12 @@ void SideCar::askLaunchBlockbuster(QString iMovieName, bool fromMain) {
  } else {    
     dialog.on_launchButton_clicked(); 
   }
+  mLaunchDialog = &dialog; 
   while (mState == BB_WAIT_CONNECTION || mState == BB_STARTING) {
     gCoreApp->processEvents(); 
     usleep(10*1000); //10 ms
   }
-  
-     
+       
   if (mState != BB_CONNECTED ) {
     QMessageBox::warning(this,  "Not connected",
                          QString("Blockbuster was not launched"));       
@@ -686,8 +691,9 @@ void SideCar::askLaunchBlockbuster(QString iMovieName, bool fromMain) {
     mBlockbusterProcess = NULL; 
     mBlockbusterServer.close(); 
   }  
+  mLaunchDialog = NULL; 
     
-   return; 
+  return; 
 }
 
 //===============================================================
@@ -1374,7 +1380,7 @@ void BlockbusterLaunchDialog::on_launchButton_clicked(){
 
   mProcess = mSidecar->createNewBlockbusterProcess(); 
   mProcess->start(cmd); 
-    
+  
   return; 
   
 }
