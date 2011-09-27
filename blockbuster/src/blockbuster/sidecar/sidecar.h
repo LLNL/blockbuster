@@ -71,6 +71,16 @@ class SideCar: public QMainWindow, public Ui::SideCarWindow {
       mBlockbusterProcess -> kill(); 
     }
   } 
+
+  void endBlockbusterProcess(void) {
+    if (mBlockbusterProcess) {
+      dbprintf(1, "Ending blockbuster process\n"); 
+      mBlockbusterProcess->kill(); 
+      mBlockbusterProcess->deleteLater(); 
+      mBlockbusterProcess = NULL; 
+    }
+    return;
+  }
   //prefs:
   void doStressTests(void) {mDoStressTests = true; }
   void ReadCueFile(std::string filename); 
