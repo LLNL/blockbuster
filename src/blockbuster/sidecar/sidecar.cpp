@@ -230,6 +230,7 @@ void SideCar::setState(connectionState state){
       mBlockbusterSocket->deleteLater(); 
       mBlockbusterSocket = NULL; 
     }
+    endBlockbusterProcess();
     if (state == BB_ERROR) {
       state = BB_DISCONNECTED; 
     }
@@ -489,8 +490,7 @@ void SideCar::blockbusterProcessExit(int, QProcess::ExitStatus ) {
   dbprintf(5, "Process exited."); 
   blockbusterReadStdErr(); 
   blockbusterReadStdOut(); 
-  mBlockbusterProcess->deleteLater(); 
-  mBlockbusterProcess = NULL; 
+  endBlockbusterProcess(); 
   //disconnectFromBlockbuster(); 
   setState(BB_DISCONNECTED); 
 }
@@ -506,15 +506,16 @@ void SideCar::blockbusterReadStdErr() {
       dbprintf(3,"got null line from stderr\n"); 
       return; 
     }  
-    if (line.contains("ERROR") || line.contains("not found")) {
+    dbprintf(1, "Got blockbuster stderr: %s\n", line.toStdString().c_str()); 
+    if (line.contains("ERROR") || line.contains("not found") || (line.contains("Unknown host") && !line.contains("squeue"))) {
       QMessageBox::warning(this, "Blockbuster Error:", line); 
+      endBlockbusterProcess(); 
       setState(BB_ERROR); 
     } else if (line.contains("sidecar port:")) {
       QStringList tokens = line.split(" ",QString::SkipEmptyParts); 
       dbprintf(5, QString("blockbuster sidecar port detected: \"%1\", tokens = %2\n").arg(line).arg(tokens.size())); 
       setBlockbusterPort(tokens[3]); 
    } else {                             
-      dbprintf(1, "Got blockbuster stderr: %s\n", line.toStdString().c_str()); 
       if (line.contains(QRegExp("[Nn]o such file")) && 
           !line.contains("scanning")) {
         QMessageBox::warning(this, "Error", 
@@ -602,10 +603,7 @@ void SideCar::on_HostField_returnPressed() {
 
 //===============================================================
 QProcess *SideCar::createNewBlockbusterProcess(void) {
-  if (mBlockbusterProcess) {
-    delete mBlockbusterProcess;
-    mBlockbusterProcess = NULL; 
-  }
+  endBlockbusterProcess(); 
 
   mBlockbusterProcess = new QProcess;
   //qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
@@ -687,8 +685,7 @@ void SideCar::askLaunchBlockbuster(QString iMovieName, bool fromMain) {
   if (mState != BB_CONNECTED ) {
     QMessageBox::warning(this,  "Not connected",
                          QString("Blockbuster was not launched"));       
-    mBlockbusterProcess->deleteLater(); 
-    mBlockbusterProcess = NULL; 
+    endBlockbusterProcess(); 
     mBlockbusterServer.close(); 
   }  
   mLaunchDialog = NULL; 

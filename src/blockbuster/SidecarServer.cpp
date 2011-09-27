@@ -102,7 +102,8 @@ void SidecarServer::incomingSidecarData() {
 
 //============================================================
 void SidecarServer::socketError(QAbstractSocket::SocketError /*err*/) {
-  dbprintf(1, QString("socket error: %1\n").arg(mSidecarSocket->errorString())); 
+  dbprintf(1, QString("socket error: %1.  Unable to communicate with sidecar.  Blockbuster will now exit.\n").arg(mSidecarSocket->errorString())); 
+  exit(0); 
   return; 
 } 
 
