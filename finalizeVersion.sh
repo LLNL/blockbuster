@@ -6,10 +6,13 @@
 #  checks in version.h and Changelog to the trunk, 
 #  creates a tarball in the current directory with proper naming scheme.  
 
+tmpdir=$(pwd)/finalizeVersion-tmp
+
 # requires a version as an argument.  
 #=================================
 function errexit() {
     echo "$0: $1"
+    rm -rf $tmpdir
     exit ${2:-1}
 }
 
@@ -130,7 +133,6 @@ svn commit -m "Version $version, automatic checkin by finalizeVersion.sh, by use
 #======================================================
 # Update and install on LC cluster
 echo "Creating temp directory to work in for tarball creation..." 
-tmpdir=$(pwd)/finalizeVersion-tmp
 rm -rf $tmpdir
 mkdir $tmpdir || errexit "Could not create tmp directory for tarball"
 cd $tmpdir || errexit "Could not cd into new tmp directory!?" 
