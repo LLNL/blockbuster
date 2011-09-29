@@ -447,7 +447,7 @@ static void ParseOptions(int &argc, char *argv[])
 	// an unparsed arg means just return the number of args parsed...
 	else break; 
   }
-
+  
   if (doStereo) {
     if (opt->rendererName == "dmx") {
       opt->backendRendererName = "gl_stereo";
@@ -731,15 +731,24 @@ int main(int argc, char *argv[])
     INFO("Done with slave loop.\n");
   }
   else {
-    /* The display loop will destroy the frames for us (it has to, because it
-     * must be able to change the frames too.)
-     */
-    if (!opt->stereoSwitchDisable) {
-      if ((allFrames->stereo && opt->rendererName != "gl_stereo")) {
-        opt->rendererName = "gl_stereo";
-      }
-      if (!allFrames->stereo && opt->rendererName == "gl_stereo") {
-        opt->rendererName = "gl";
+    // We are not a DMX slave if we are here. 
+    if (!opt->stereoSwitchDisable) { 
+      // auto-switch stereo based on detected movie type     
+      if (opt->rendererName != "dmx") { 
+        // No DMX: switch frontend renderer as needed
+        if ((allFrames->stereo && opt->rendererName != "gl_stereo")) {
+          opt->rendererName = "gl_stereo";
+        }
+        if (!allFrames->stereo && opt->rendererName == "gl_stereo") {
+          opt->rendererName = "gl";
+        }
+      } else { // DMX case: switch backend renderer as needed
+        if ((allFrames->stereo && opt->backendRendererName != "gl_stereo")) {
+          opt->backendRendererName = "gl_stereo";
+        }
+        if (!allFrames->stereo && opt->backendRendererName == "gl_stereo") {
+          opt->backendRendererName = "gl";
+        }
       }
     } 
     while (DisplayLoop(allFrames, opt)) {

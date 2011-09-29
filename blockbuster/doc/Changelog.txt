@@ -3,6 +3,10 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 
 
 ===============================================================================
+VERSION 2.7.1c (r525) Fri Sep 23 18:42:50 PDT 2011
+-- Bugfix:  Rendering in stereo when using DMX was broken since the auto-detect feature was added in version 2.6.3n.  It now works. 
+
+===============================================================================
 VERSION 2.7.1b (r528) Mon Sep 26 18:45:19 PDT 2011
 -- Added "noscreensaver" option to sidecar GUI and blockbuster command line/environment parser, which generates a fake mouse click every 90 seconds to prevent screensavers from activating.
 -- Throttle back CPU usage when blockbuster is idle. 
