@@ -3,7 +3,7 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 
 
 ===============================================================================
-VERSION 2.7.1c (r525) Fri Sep 23 18:42:50 PDT 2011
+VERSION 2.7.1c (r532) Thu Sep 29 16:06:14 PDT 2011
 -- Bugfix:  Rendering in stereo when using DMX was broken since the auto-detect feature was added in version 2.6.3n.  It now works. 
 
 ===============================================================================
