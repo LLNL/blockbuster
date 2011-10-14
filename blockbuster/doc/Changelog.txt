@@ -3,6 +3,11 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 
 
 ===============================================================================
+VERSION 2.7.1d (rxxx) to be released maybe sometime in 2011
+-- Fixed nonoperative "stereo" checkbox in sidecar's Blockbuster Remote Control GUI.  
+-- Fixed crashing bug in opening new second movie while first is running.  
+
+===============================================================================
 VERSION 2.7.1c (r532) Thu Sep 29 16:06:14 PDT 2011
 -- Bugfix:  Rendering in stereo when using DMX was broken since the auto-detect feature was added in version 2.6.3n.  It now works. 
 
