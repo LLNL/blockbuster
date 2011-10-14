@@ -126,8 +126,9 @@ void ClampStartEndFrames(FrameList *allFrames,
  * Main UI / image display loop
  * XXX this should get moved to a new file.
  */
-int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
+int DisplayLoop(FrameList **allFramesPtr, ProgramOptions *options)
 {
+  FrameList *allFrames = *allFramesPtr; 
   int32_t previousFrame = -1, cueEndFrame = 0;
   uint totalFrameCount = 0, recentFrameCount = 0;
   FrameInfo *frameInfo = NULL;
@@ -662,14 +663,14 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
         /* Done with the canvas */
         delete canvas;
         if (event.number) {// TURN ON STEREO
-          cerr << "TURN ON STEREO" << endl; 
+          dbprintf(1, "TURN ON STEREO\n"); 
           if (options->rendererName == "dmx") {
             options->backendRendererName = "gl_stereo";
           } else {
             options->rendererName = "gl_stereo"; 
           }
         } else { // TURN OFF STEREO
-          cerr << "TURN OFF STEREO" << endl; 
+          dbprintf(1, "TURN OFF STEREO\n"); 
           if (options->rendererName == "dmx") {
             options->backendRendererName = "gl";
           } else {
@@ -689,13 +690,15 @@ int DisplayLoop(FrameList *allFrames, ProgramOptions *options)
 	  DEBUGMSG("Got Open_File command"); 
 	  QStringList filenames; 
 	  filenames.append(event.mString);
-	  FrameList *newFrameList = new FrameList; 
- 	  if (newFrameList->LoadFrames(filenames)) {
-	    canvas->mRenderer->DestroyImageCache();
-	    allFrames->DeleteFrames(); 
-	    delete allFrames;
+
+      canvas->mRenderer->DestroyImageCache();
+
+      allFrames->DeleteFrames(); 
+      delete allFrames;
+	  allFrames = new FrameList; 
+ 	  if (allFrames->LoadFrames(filenames)) {
 	    
-	    allFrames = newFrameList;
+	    *allFramesPtr = allFrames;  // for when we exit and return
 	    allFrames->GetInfo(maxWidth, maxHeight, maxDepth, maxLOD, targetFPS);
 	    FrameListModified(canvas, allFrames);
 	    canvas->ReportRateChange(targetFPS); 

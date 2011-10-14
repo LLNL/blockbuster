@@ -751,7 +751,7 @@ int main(int argc, char *argv[])
         }
       }
     } 
-    while (DisplayLoop(allFrames, opt)) {
+    while (DisplayLoop(&allFrames, opt)) {
       continue; 
     }
   }
