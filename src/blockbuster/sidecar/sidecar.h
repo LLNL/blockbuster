@@ -144,6 +144,7 @@ class SideCar: public QMainWindow, public Ui::SideCarWindow {
   // remote controls for blockbuster
   void quitButton_clicked();
   void openButton_clicked();   
+  void stereoCheckBox_stateChanged(int);  
   void centerButton_clicked();   
   void fullSizeButton_clicked();   
   void fitButton_clicked();   

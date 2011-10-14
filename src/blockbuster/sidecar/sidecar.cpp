@@ -108,6 +108,8 @@ SideCar::SideCar(QApplication *app, Preferences *prefs, QWidget *parent)
           this, SLOT(quitButton_clicked())); 
   connect(mRemoteControl->openButton, SIGNAL(clicked()), 
           this, SLOT(openButton_clicked())); 
+  connect(mRemoteControl->stereoCheckBox, SIGNAL(stateChanged(int)), 
+          this, SLOT(stereoCheckBox_stateChanged(int))); 
   connect(mRemoteControl->centerButton, SIGNAL(clicked()), 
           this, SLOT(centerButton_clicked())); 
   connect(mRemoteControl->fullSizeButton, SIGNAL(clicked()), 
@@ -875,6 +877,12 @@ void SideCar::openButton_clicked(){
   }
    
   return;
+}
+
+//================================================================
+void SideCar::stereoCheckBox_stateChanged(int state){
+  SendEvent(MovieEvent(MOVIE_SET_STEREO, state)); 
+  return; 
 }
 
 //================================================================
