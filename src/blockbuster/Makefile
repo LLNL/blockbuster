@@ -71,7 +71,7 @@ endif
 $(warning QMAKE is $(QMAKE))
 
 # no matter what, this is a good idea:
-export OPT=-g
+export OPT = -g -Wl,-rpath,$(INSTALL_DIR)/lib
 ifdef GPROF
 export OPT = -g -pg
 endif
@@ -135,9 +135,9 @@ blockbuster.pro :   $(FORMS)
 
 qmake-force:
 	$(QMAKE) 
-	$(call SEDFILES,s/-O2/$(OPT) /g,Makefile.qt.include)
-	$(call SEDFILES,s/-O1/$(OPT) /g,Makefile.qt.include)
-	$(call SEDFILES,s/-g /$(OPT) /g,Makefile.qt.include)
+	$(call SEDFILES,s~-O2~$(OPT) ~g,Makefile.qt.include)
+	$(call SEDFILES,s~-O1~$(OPT) ~g,Makefile.qt.include)
+	$(call SEDFILES,s~-g ~$(OPT) ~g,Makefile.qt.include)
 	$(call SEDFILES,s/CC.*=.*gcc/CC = $(CC) /g,Makefile.qt.include)
 	$(call SEDFILES,s/CXX.*=.*g++/CXX = $(CXX) /g,Makefile.qt.include)
 	$(call SEDFILES,s/LINK.*=.*g++/LINK = $(CXX) /g,Makefile.qt.include)
@@ -178,6 +178,4 @@ clean:
 	rm -f blockbuster blockbuster.pro ui_*.h *.o moc_*
 	rm -f libdmx/*.{o,a}
 	cd sidecar && $(MAKE) clean
-
-
 
