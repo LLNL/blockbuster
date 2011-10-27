@@ -7,11 +7,13 @@ if [ $(uname) == Linux ]; then
     chmod 755 blockbuster-install/install.sh
     tar -czf blockbuster-install.tgz blockbuster-install
     rm -rf blockbuster-install
-    echo "Created blockbuster-install.tgz in current directory." 
+    echo "Created blockbuster-install.tgz containing Linux installer in current directory." 
 elif [ $(uname) == Darwin ]; then 
     macdeployqt src/blockbuster/blockbuster.app -dmg
-    mv src/blockbuster/blockbuster.dmg ./
-    echo "Created blocbuster.dmg in current directory." 
+    macdeployqt src/blockbuster/sidecar/sidecar.app -dmg
+    mv src/blockbuster/blockbuster.dmg src/blockbuster/sidecar/sidecar.dmg ./
+    tar -czf blockbuster-install.tgz blockbuster.dmg sidecar.dmg
+    echo "Created blockbuster-install.tgz containing blocbuster.dmg and sidecar.dmg in current directory." 
 else
     echo "Error: Unrecognized uname results: $(uname).  Nothing done."
     exit 1
