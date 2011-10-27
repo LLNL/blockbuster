@@ -111,7 +111,9 @@ ui_%.h: %.ui
 $(sidecar): Makefile.qt.include FORCE $(UI_HEADERS) $(COPYFILES)
 	$(MAKE)  -f Makefile.qt
 	cp -r $(sidecar) $(INSTALL_DIR)/bin/
-
+	if [ $(shell uname) == Darwin ]; then \
+		macdeployqt sidecar.app; \
+	fi
 
 clean:
 	rm -rf sidecar  ui_*.h Makefile.qt.include moc_*cpp *.o $(xxCOPYFILES)
