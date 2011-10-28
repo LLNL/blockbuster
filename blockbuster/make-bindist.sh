@@ -22,8 +22,8 @@ elif [ $(uname) == Darwin ]; then
     macdeployqt src/blockbuster/blockbuster.app -dmg
     macdeployqt src/blockbuster/sidecar/sidecar.app -dmg
     mv src/blockbuster/blockbuster.dmg src/blockbuster/sidecar/sidecar.dmg ./
-    tar -czf blockbuster-install-mac-v$version.tgz blockbuster.dmg sidecar.dmg README-install.txt
-    echo "Created blockbuster-install.tgz containing blocbuster.dmg and sidecar.dmg in current directory." 
+    tar -czf blockbuster-install-mac-v$version.tgz blockbuster.dmg sidecar.dmg bindist-src/README-install.txt || errexit "Cannot tar up the files" 
+    echo "Created blockbuster-install-mac-v$version.tgz containing blocbuster.dmg and sidecar.dmg in current directory." 
 else
     errexit "Error: Unrecognized uname results: $(uname).  Nothing done."
 fi
