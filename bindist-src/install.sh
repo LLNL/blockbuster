@@ -16,7 +16,7 @@ done
 mkdir -p $INSTALL_DIR
 
 srcdir=$(dirname $0)
-for dir in $srcdir/{bin,lib,man,share,doc}; do
+for dir in $srcdir/{bin,doc,include,lib,man}; do
     cp -r $dir $INSTALL_DIR  || errexit "Cannot copy $dir to $INSTALL_DIR"
 done
 
