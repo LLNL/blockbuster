@@ -2,7 +2,9 @@
 #include "Renderer.h"
 #include "common.h"
 #include "glRenderer.h"
+#ifndef NO_DMX
 #include "dmxRenderer.h"
+#endif
 #include "settings.h"
 
 Renderer * Renderer::CreateRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow) {
@@ -14,8 +16,9 @@ Renderer * Renderer::CreateRenderer(ProgramOptions *opt, Canvas *canvas, Window 
   if (name == "gl" || name == "") renderer = new glRenderer(opt, canvas, parentWindow); 
   if (name == "gl_stereo") renderer = new glStereoRenderer(opt, canvas, parentWindow); 
   if (name == "gltexture") renderer = new glTextureRenderer(opt, canvas, parentWindow); 
+#ifdef USE_DMX
   if (name == "dmx") renderer = new dmxRenderer(opt, canvas, parentWindow); 
-  
+#endif  
   // this has to be called after ChooseVisual() virtual functions are in place
   renderer->FinishInit(opt, canvas, parentWindow); 
   return renderer;

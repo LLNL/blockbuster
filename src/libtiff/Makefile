@@ -38,7 +38,10 @@ all: install
 
 install: $(INSTALL_DIR)/lib/libtiff.a
 
-$(INSTALL_DIR)/lib/libtiff.a:
+$(INSTALL_DIR)/lib/libtiff.a: tiff-3.9.1/libtiff/.libs/libtiff.a
+	cp $< $@
+
+tiff-3.9.1/libtiff/.libs/libtiff.a:
 	rm -rf tiff-3.9.1
 	tar -xvzf tiff-3.9.1.tar.gz
 	cd tiff-3.9.1 && CC="$(CC)" CFLAGS="$$(echo $(CFLAGS) |sed s/O2/O3/g) -O3" \

@@ -1,5 +1,6 @@
 #ifndef DMXNEWRENDERER_H
 #define DMXNEWRENDERER_H yes
+#ifdef USE_DMX
 
 #include <QTcpSocket>
 #include "Renderer.h" // not "Renderers.h"
@@ -272,4 +273,5 @@ class dmxRenderer: public QObject, public Renderer {
   
 } ; // end dmxRenderer
 
-  #endif
+#endif
+#endif

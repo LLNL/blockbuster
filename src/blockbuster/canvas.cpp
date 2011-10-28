@@ -244,25 +244,31 @@ void Canvas::reportMovieCueComplete(void){
 //============================================
 void Canvas::DMXSendHeartbeat(void) { 
   // this is probably better done with QTimer. 
+#ifdef USE_DMX
   if (mRenderer->mName == "dmx") {
     dynamic_cast<dmxRenderer *>(mRenderer)->SendHeartbeatToSlaves(); 
   }
+#endif
   return; 
 }
 
 //============================================
 void Canvas::DMXSpeedTest(void) {
+#ifdef USE_DMX
   if (mRenderer->mName == "dmx") {
     dynamic_cast<dmxRenderer*>(mRenderer)->SpeedTest(); 
   }
+#endif
   return; 
 }
 
 //============================================
 void Canvas::DMXCheckNetwork(void) {
+#ifdef USE_DMX
   if (mRenderer->mName == "dmx") {
     dynamic_cast<dmxRenderer*>(mRenderer)->CheckNetwork(); 
   }
+#endif
   return; 
 }
 
