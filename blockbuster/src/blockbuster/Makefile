@@ -156,10 +156,6 @@ relink: $(DEPENDENT_LIBS)
 # for now, have to copy blockbuster up to allow command line usage
 $(blockbuster): relink Makefile.qt.include  .force
 	INSTALL_DIR=$(INSTALL_DIR) $(MAKE)  -f Makefile.qt
-	if [ $(shell uname) == Darwin ]; then \
-		cp -f $(blockbuster) ./blockbuster; \
-		macdeployqt blockbuster.app; \
-	fi	
 	mkdir -p $(INSTALL_DIR)/bin && cp $(blockbuster) $(INSTALL_DIR)/bin/
 
 $(blockbuster_srun): blockbuster_srun.sh 
