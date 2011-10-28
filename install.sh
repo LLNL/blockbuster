@@ -30,9 +30,9 @@ libs=$(ldd $INSTALL_DIR/bin/blockbuster | grep Qt | awk '{print $3}')
 
 cp -f $libs $INSTALL_DIR/lib
 
-echo "Setting rpath for installed executables to find Qt libraries." 
-for exe in $INSTALL_DIR/bin/blockbuster $INSTALL_DIR/bin/sidecar; do
-    rpath=$(chrpath -l $exe | awk ' {print $2}' | sed 's/RPATH=//' | sed 's~:[^:]*Trolltech[^:]*:~:~' | sed "s:$OLD_INSTALL_DIR:$INSTALL_DIR:" )
-    chrpath -r $rpath $exe 
-done
+#echo "Setting rpath for installed executables to find Qt libraries." 
+#for exe in $INSTALL_DIR/bin/blockbuster $INSTALL_DIR/bin/sidecar; do
+#    rpath=$(chrpath -l $exe | awk ' {print $2}' | sed 's/RPATH=//' | sed 's~:[^:]*Trolltech[^:]*:~:~' | sed "s:$OLD_INSTALL_DIR:$INSTALL_DIR:" )
+#    chrpath -r $rpath $exe 
+#done
  

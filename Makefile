@@ -14,6 +14,7 @@ all:
 	[ -d $(INSTALL_DIR) ] && cd src  && $(MAKE) -e all
 	mkdir -p $(INSTALL_DIR)/doc/blockbuster && \
 		cp -rf doc/* $(INSTALL_DIR)/doc/blockbuster
+	echo "Setting rpath for installed executables to find Qt libraries." 
 
 bindist: all
 	INSTALL_DIR=$(INSTALL_DIR) ./make-bindist.sh
