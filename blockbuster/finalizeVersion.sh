@@ -109,6 +109,9 @@ cd $(dirname $0)
 echo "Setting version in src/config/version.h..." 
 sedfiles -e "s/#define BLOCKBUSTER_VERSION.*/#define BLOCKBUSTER_VERSION \"$version -- $(date)\"/" src/config/version.h  || errexit "sedfiles failed"
 
+echo "Saving version in src/config/versionstring.txt"
+echo $version > src/config/versionstring.txt || errexit "Could not echo string to file!"
+
 #======================================================
 # Update Changelog
 revision=$(svn update | sed 's/At revision \(.*\)\./\1/')
