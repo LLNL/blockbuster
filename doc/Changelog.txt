@@ -3,9 +3,10 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 
 
 ===============================================================================
-VERSION 2.7.1d (rxxx) to be released maybe sometime in 2011
+VERSION 2.7.2 (r) Thu Oct 27 17:27:49 PDT 2011
 -- Fixed nonoperative "stereo" checkbox in sidecar's Blockbuster Remote Control GUI.  
 -- Fixed crashing bug in opening new second movie while first is running.  
+-- Blockbuster is now available as a binary release for certain platforms. 
 
 ===============================================================================
 VERSION 2.7.1c (r532) Thu Sep 29 16:06:14 PDT 2011
