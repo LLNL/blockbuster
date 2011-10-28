@@ -4,13 +4,13 @@ function errexit() {
     echo $1
     exit 1
 }
-
+version="$(cat src/config/versionstring.txt)"
 if [ $(uname) == Linux ]; then 
     for buildarg in all nodmx; do 
         if [ $buildarg == all ]; then
-            export INSTALL_DIR=linux-dmx
+            export INSTALL_DIR=linux-dmx-v$version
         else
-            export INSTALL_DIR=linux-basic-nodmx 
+            export INSTALL_DIR=linux-basic-nodmx-v$version
         fi
         INSTALL_DIR=$(pwd)/$INSTALL_DIR remake.sh $buildarg || errexit "build failed for $INSTALL_DIR"
         cp -fp bindist-src/README-install.txt bindist-src/install.sh ${INSTALL_DIR}
@@ -22,7 +22,7 @@ elif [ $(uname) == Darwin ]; then
     macdeployqt src/blockbuster/blockbuster.app -dmg
     macdeployqt src/blockbuster/sidecar/sidecar.app -dmg
     mv src/blockbuster/blockbuster.dmg src/blockbuster/sidecar/sidecar.dmg ./
-    tar -czf blockbuster-install-mac.tgz blockbuster.dmg sidecar.dmg README-install.txt
+    tar -czf blockbuster-install-mac-v$version.tgz blockbuster.dmg sidecar.dmg README-install.txt
     echo "Created blockbuster-install.tgz containing blocbuster.dmg and sidecar.dmg in current directory." 
 else
     errexit "Error: Unrecognized uname results: $(uname).  Nothing done."
