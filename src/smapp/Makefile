@@ -102,16 +102,3 @@ depend: $(SFILES)
 	makedepend -Y. -Y.. $(INCLUDES) $(SFILES)
 
 # DO NOT DELETE
-
-smmake.o: ../sm/smRaw.h ../sm/smBase.h ../sm/smRLE.h
-smtest.o: ../sm/smBase.h ../common/timer.h ../common/stringutil.h
-img2sm.o: ../sm/smLZO.h ../sm/smBase.h ../sm/smRLE.h ../sm/smGZ.h
-img2sm.o: ../sm/smRaw.h ../sm/smJPG.h ../libimage/sgilib.h
-img2sm.o: ../libpnmrw/libpnmrw.h simple_jpeg.h ../pt/pt.h
-sm2img.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smGZ.h ../sm/smLZO.h
-sm2img.o: ../sm/smRaw.h ../libimage/sgilib.h ../libpnmrw/libpnmrw.h
-sm2img.o: simple_jpeg.h
-smcat.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smGZ.h ../sm/smLZO.h
-smcat.o: ../sm/smRaw.h ../sm/smJPG.h ../pt/pt.h
-smevo.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smGZ.h ../sm/smLZO.h
-smevo.o: ../sm/smRaw.h ../sm/smJPG.h

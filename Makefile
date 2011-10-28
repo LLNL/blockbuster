@@ -14,12 +14,21 @@ all:
 	[ -d $(INSTALL_DIR) ] && cd src  && $(MAKE) -e all
 	mkdir -p $(INSTALL_DIR)/doc/blockbuster && \
 		cp -rf doc/* $(INSTALL_DIR)/doc/blockbuster
+	echo "Setting rpath for installed executables to find Qt libraries." 
 
-bindist: all
-	INSTALL_DIR=$(INSTALL_DIR) ./make-bindist.sh
+bindist: 
+	./make-bindist.sh 
+
+old-bindist-deleteme: 
+	INSTALL_DIR=linux-dmx remake.sh all
+	INSTALL_DIR=install-linux-DMX ./make-bindist.sh 
+	rm -rf linux-dmx
+	INSTALL_DIR=linux-basic-nodmx remake.sh nodmx
+	INSTALL_DIR=install-linux-basic ./make-bindist.sh 
+	rm -rf linux-basic-nodmx
 
 nodmx:
-	NO_DMX=1 $(MAKE) all
+	NO_DMX=1 NO_MPI=true $(MAKE) all 
 
 debug:
 	DEBUG=1 $(MAKE) all
@@ -28,7 +37,7 @@ gprof:
 	DEBUG=1 GPROF=1 $(MAKE) all
 
 nompi: 
-	NO_MPI=true $(MAKE) all
+	NO_MPI=true $(MAKE) all 
 
 clean: 
 	cd src &&	$(MAKE) clean

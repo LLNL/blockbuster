@@ -40,11 +40,11 @@ MANLINKFILES = pt_gate_init.3 pt_gate_destroy.3 pt_gate_sync.3 \
 	pt_rw_write_lock.3 pt_rw_write_unlock.3 pt_rw_destroy.3 \
 	pt_pool_init.3 pt_pool_destroy.3 pt_pool_add_work.3
 
-all:  libptutil.a CPMANPAGES
+all:  $(INSTALL_DIR)/lib/libptutil.a CPMANPAGES
 
-libptutil.a: $(OFILES) $(HFILES)
+$(INSTALL_DIR)/lib/libptutil.a: $(OFILES) $(HFILES)
+	mkdir -p $(INSTALL_DIR)/lib
 	$(AR) rsc $@ $(OFILES)
-	cp $@ $(INSTALL_DIR)/lib
 	mkdir -p $(INSTALL_DIR)/include/pt
 	cp $(HFILES) $(INSTALL_DIR)/include/pt
 
