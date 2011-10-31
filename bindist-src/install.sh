@@ -20,15 +20,15 @@ for dir in $srcdir/{bin,doc,include,lib,man}; do
     cp -r $dir $INSTALL_DIR  || errexit "Cannot copy $dir to $INSTALL_DIR"
 done
 
-set -xv
+#set -xv
 # make INSTALL_DIR a full pathname
-pushd $INSTALL_DIR 
-INSTALL_DIR=$(pwd)
-popd
+#pushd $INSTALL_DIR 
+#INSTALL_DIR=$(pwd)
+#popd
 
-libs=$(ldd $INSTALL_DIR/bin/blockbuster | grep Qt | awk '{print $3}')
+#libs=$(ldd $INSTALL_DIR/bin/blockbuster | grep Qt | awk '{print $3}')
 
-cp -f $libs $INSTALL_DIR/lib
+#cp -f $libs $INSTALL_DIR/lib
 
 #echo "Setting rpath for installed executables to find Qt libraries." 
 #for exe in $INSTALL_DIR/bin/blockbuster $INSTALL_DIR/bin/sidecar; do
