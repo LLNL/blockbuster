@@ -352,10 +352,11 @@ int smBase::newFile(const char *_fname, u_int _width, u_int _height,
    mResFDs.push_back(mThreadData[0].fd); 
    mResFileBytes.resize(mNumResolutions, 0); 
    if (mNumResolutions > 1) {
-     char filename[] = "/tmp/smBase-tmpfileXXXXXX";
      int res = 1;
      while (res < mNumResolutions) {
+       char filename[] = "/tmp/smBase-tmpfileXXXXXX";
        int fd = mkstemp(filename); 
+       smdbprintf(5, "Res file %d is named %s", res, filename); 
        mResFileNames.push_back(filename); 
        mResFDs.push_back(fd); 
        ++res; 
@@ -1160,7 +1161,7 @@ void smBase::combineResolutionFiles(void) {
     // we are going to place this resolution at the end of the movie file, 
     // so adjust the offsets by the current movie file length
     uint64_t offsetAdjust = LSEEK64(mResFDs[0], 0, SEEK_END); // get file length
-    smdbprintf(4, "offsetAdjust is %d\n", offsetAdjust); 
+    smdbprintf(4, "offsetAdjust is %lld\n", offsetAdjust); 
     smdbprintf(1, "combining Resolution level %d from file %s into final movie, which has size of %ld bytes...\n", res, mResFileNames[res].c_str(), offsetAdjust); 
     uint32_t frame = 0, resframe = res*mNumFrames; 
     while (frame++ < mNumFrames) { 
@@ -1196,12 +1197,12 @@ void smBase::combineResolutionFiles(void) {
         abort(); 
       }       
       bytesRemaining -= bytesRead;
-      smdbprintf(5, "After writing %d bytes, offset in file is %d\n", 
+      smdbprintf(5, "After writing %lld bytes, offset in file is %lld\n", 
                  inputFileSize - bytesRemaining, 
                  LSEEK64(mResFDs[0], 0, SEEK_END)); 
                  
     }
-    smdbprintf(1, "Finished copying %ld bytes from res %d file %s to movie file, which is now %d bytes. Unlinking res file\n", inputFileSize, res, mResFileNames[res].c_str(), LSEEK64(mResFDs[0], 0, SEEK_END)); 
+    smdbprintf(1, "Finished copying %lld bytes from res %d file %s to movie file, which is now %d bytes. Unlinking res file\n", inputFileSize, res, mResFileNames[res].c_str(), LSEEK64(mResFDs[0], 0, SEEK_END)); 
     close (fd); 
     unlink (mResFileNames[res].c_str() ); 
     ++ res; 
