@@ -133,17 +133,24 @@ echo "Saving version in src/config/versionstring.txt"
 echo $version > src/config/versionstring.txt || errexit "Could not echo string to file!"
 
 #======================================================
+# Remove duplicate version from repo if it exists. 
+if ! testbool $skipcheckin; then
+    echo "Removing version $version from SVN if it exists..." 
+    versiondir=https://blockbuster.svn.sourceforge.net/svnroot/blockbuster/tags/blockbuster-v$version
+    svn rm -m "Removing version $version if it exists..."  $versiondir
+fi
+
+#======================================================
 # Update Changelog
 revision=$(svn update | sed 's/At revision \(.*\)\./\1/')
 newrevision=$(expr $revision + 2)
-
 echo "Current SVN revision is $revision and new revision will be $newrevision..." 
 
 echo "Checking Changelog to make sure you have done your housekeeping..." 
 if ! grep $version doc/Changelog.txt >/dev/null; then 
     errexit "Could not find version $version in Changelog.txt.  Please update the Changelog and I will continue."
 fi
-sedfiles -e "s/VERSION $version .*/VERSION $version (r$newrevision) $(date)/" doc/Changelog.txt || errexit "Could not place version in doc/Changelog.txt.  Please check the Changelog file for errors."  
+sedfiles -e "s/VERSION $version.*/VERSION $version (r$newrevision) $(date)/" doc/Changelog.txt || errexit "Could not place version in doc/Changelog.txt.  Please check the Changelog file for errors."  
 
 if testbool $skipcheckin; then
     echo "Version updated.  No checkin will be performed"
@@ -151,10 +158,6 @@ if testbool $skipcheckin; then
 fi
 #======================================================
 # Update Subversion repository
-echo "Removing version $version from SVN if it exists..." 
-versiondir=https://blockbuster.svn.sourceforge.net/svnroot/blockbuster/tags/blockbuster-v$version
-svn rm -m "Removing version $version if it exists..."  $versiondir
-
 echo "Checking in source..."
 svn commit -m "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)" doc/Changelog.txt src/config/version.h  src/config/versionstring.txt || errexit "svn commit failed"
 
