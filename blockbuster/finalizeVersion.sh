@@ -1,21 +1,41 @@
 #!/usr/bin/env bash
-# This script creates a new version, 
-# This means: 
-#  updates version.h 
-#  greps Changelog to make sure there is an entry there.  Updates the Changelog entry. 
-#  checks in version.h and Changelog to the trunk, 
-#  creates a tarball in the current directory with proper naming scheme.  
+
+function usage() {
+    echo "usage: finalizeVersion.h <-temp/-final> versionstring"
+    echo "This script creates a new version, either with or without committing the changes.  "
+    echo "This means: "
+    echo "updates version.h "
+    echo "greps Changelog to make sure there is an entry there.  Updates the Changelog entry. "
+    echo "If -temp is given, then stops here without checking in anything. "
+    echo "If -final is given, then continues:  "
+    echo " checks in version.h and Changelog to the trunk, "
+    echo " creates a tarball in the current directory with proper naming scheme.  "
+}
+
 
 tmpdir=$(pwd)/finalizeVersion-tmp
 
 # requires a version as an argument.  
 #=================================
 function errexit() {
+    echo 
+    echo '*******************************************************'
     echo "$0: $1"
     rm -rf $tmpdir
     exit ${2:-1}
 }
 
+# must give either -temp or -final: 
+if echo $1 | grep -- -temp >/dev/null; then
+    skipcheckin=true
+    shift 1
+elif echo $1 | grep -- -final >/dev/null; then
+    skipcheckin=false
+    shift 1
+else
+    usage
+    errexit "ERROR:  You must give either -temp or -final as an argument"
+fi
 #=================================
 function testbool () {
     (nonnull "$1" && [ "$1" != false ] && [ "$1" != no ] && [ "$1" != 0 ] && return 0) || return 1
@@ -116,6 +136,7 @@ echo $version > src/config/versionstring.txt || errexit "Could not echo string t
 # Update Changelog
 revision=$(svn update | sed 's/At revision \(.*\)\./\1/')
 newrevision=$(expr $revision + 2)
+
 echo "Current SVN revision is $revision and new revision will be $newrevision..." 
 
 echo "Checking Changelog to make sure you have done your housekeeping..." 
@@ -124,6 +145,10 @@ if ! grep $version doc/Changelog.txt >/dev/null; then
 fi
 sedfiles -e "s/VERSION $version .*/VERSION $version (r$newrevision) $(date)/" doc/Changelog.txt || errexit "Could not place version in doc/Changelog.txt.  Please check the Changelog file for errors."  
 
+if testbool $skipcheckin; then
+    echo "Version updated.  No checkin will be performed"
+    exit 0
+fi
 #======================================================
 # Update Subversion repository
 echo "Removing version $version from SVN if it exists..." 
