@@ -156,7 +156,7 @@ versiondir=https://blockbuster.svn.sourceforge.net/svnroot/blockbuster/tags/bloc
 svn rm -m "Removing version $version if it exists..."  $versiondir
 
 echo "Checking in source..."
-svn commit -m "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)" doc/Changelog.txt src/config/version.h || errexit "svn commit failed"
+svn commit -m "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)" doc/Changelog.txt src/config/version.h  src/config/versionstring.txt || errexit "svn commit failed"
 
 #======================================================
 # Update and install on LC cluster
