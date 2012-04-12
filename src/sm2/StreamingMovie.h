@@ -38,12 +38,17 @@
 // smBase.h - base class for "streamed movies"
 //
 
+#include "CImg.h"
+using namespace cimg_library;
+
+#include "SMGZCodec.h" 
+#include "../common/stringutil.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h> 
 #include <sys/types.h>
-#include "../common/stringutil.h"
 #include <sys/mman.h>
 #include <unistd.h>
 
@@ -62,7 +67,7 @@
 
 #define SM_FLAGS_FPS_MASK	0xffc00000 // 10 bits at the top
 #define SM_FLAGS_FPS_SHIFT	22 // 32 bits minus 10 bit fps
-#define SM_FLAGS_FPS_BASE	20.0
+#define SM_FLAGS_FPS_BASE	(20.0)
 
 #define SM_MAGIC_VERSION1	0x0f1e2d3c
 #define SM_MAGIC_VERSION2	0x0f1e2d3d
@@ -73,6 +78,7 @@
 #include <stdarg.h>
 #include "../common/timer.h"
 #include "../common/stringutil.h"
+
 void smSetVerbose(int level);
 
 struct smMsgStruct {
@@ -125,7 +131,9 @@ class StreamingMovie {
   }
 
   float GetFrameRate(void) {
-    return 0; 
+    int ifps20 = (mRawFlags & SM_FLAGS_FPS_MASK) >> SM_FLAGS_FPS_SHIFT;
+    if (ifps20 == 0) return(30.0);
+    return ((float)ifps20)/SM_FLAGS_FPS_BASE;
   }
   
   int GetVersion (void) {
@@ -134,7 +142,7 @@ class StreamingMovie {
   } 
 
   bool ReadHeader(void);
-
+  bool FetchFrame(uint32_t framenum, CImg<unsigned char> &cimg);
   private:
 
   uint32_t mRawMagic, mRawFlags; 
@@ -168,6 +176,7 @@ class StreamingMovie {
   //path to movie file
   string mFileName;
     
+  SMCodec *mCodec; 
 }; 
 
 #endif

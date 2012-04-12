@@ -60,7 +60,22 @@ static void  byteswap(void *buffer,off64_t len,int swapsize)
         return;
 }
 
+/*
+  FetchFrame()
+  param framenum -- which frame to fetch
+  param cimg -- the output vehicle to modify and return
 
+  return value false if it failes, true on success
+*/ 
+bool StreamingMovie::FetchFrame(uint32_t framenum, CImg<unsigned char> &cimg) {
+  
+  return false; 
+}
+
+/*
+  ReadHeader()
+  Read the Streaming Movie file header and save the information
+*/ 
 bool StreamingMovie::ReadHeader(void) {
    uint32_t magic, flags;
    //uint32_t maxtilesize;
