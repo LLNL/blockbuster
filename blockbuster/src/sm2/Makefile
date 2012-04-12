@@ -30,12 +30,22 @@
 #
 include ../config/config
 
-SRC_FILES = sm2.C # smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C 
-OFILES = sm2.o # smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o 
-HFILES = sm2.h # smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h
+SRC_FILES = getframe.C # sm2.C # smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C 
+OFILES = getframe.o # sm2.o # smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o 
+HFILES = # sm2.h # smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h
 
-CPPFLAGS += -g
-all: lib doc include
+MAGICK_DIR= /opt/local
+
+CPPFLAGS += -g -Dcimg_use_magick $(shell $(MAGICK_DIR)/bin/Magick++-config --cppflags) $(shell $(MAGICK_DIR)/bin/Magick++-config --cxxflags) -I../CImg-1.5.0_beta/
+LDFLAGS += $(shell $(MAGICK_DIR)/bin/Magick++-config --ldflags) $(shell $(MAGICK_DIR)/bin/Magick++-config --libs) -lX11
+# all: lib doc include
+all: getframe
+
+getframe: getframe.o
+	$(CXX) $(LDFLAGS)  -o $@ $<
+
+getframe.o: getframe.C
+	$(CXX) $(CPPFLAGS) -c -o $@ $< 
 
 lib: $(INSTALL_DIR)/lib/libsm2.a
 
