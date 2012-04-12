@@ -30,8 +30,8 @@
 #
 include ../config/config
 
-SRC_FILES = getframe.C # sm2.C # smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C 
-OFILES = getframe.o # sm2.o # smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o 
+SRC_FILES = StreamingMovie.C getframe.C # sm2.C # smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C 
+OFILES = StreamingMovie.o getframe.o # sm2.o # smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o 
 HFILES = # sm2.h # smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h
 
 MAGICK_DIR= /opt/local
@@ -41,11 +41,11 @@ LDFLAGS += $(shell $(MAGICK_DIR)/bin/Magick++-config --ldflags) $(shell $(MAGICK
 # all: lib doc include
 all: getframe
 
-getframe: getframe.o
-	$(CXX) $(LDFLAGS)  -o $@ $<
+getframe: $(OFILES)
+	$(CXX) $(LDFLAGS)  -o $@ $^
 
-getframe.o: getframe.C
-	$(CXX) $(CPPFLAGS) -c -o $@ $< 
+%.o: %.C
+	$(CXX) $(CPPFLAGS) -c -o $@ $<
 
 lib: $(INSTALL_DIR)/lib/libsm2.a
 
