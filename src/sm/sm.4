@@ -52,9 +52,9 @@ The low order 8 bits of the Flags field specifies the compression
 type: 0=none, 1=RLE, 2=zlib, 3=lzo, 4=jpg.  The upper bits are
 generic flags.  Currently defined flags: 0x00000100 = Stereo.
 .PP
-The upper 12bits (mask 0xffc00000) of the Flags field specifies
+The upper 10 bits (mask 0xffc00000) of the Flags field specifies
 a desired framerate for the movies.  The actual FPS number is
-computed by extracting the 12bit integer and dividing by 20.0.
+computed by extracting the 10 bit integer and dividing by 20.0.
 .PP
 SM supports multiple resolutions of the movie in the same file.
 The number of resolutions are listed in the file headeri, to a
