@@ -3,7 +3,7 @@
 */
 #include "CImg.h"
 #include <iostream>
-
+#include "StreamingMovie.h"
 using namespace cimg_library;
 using namespace std;
 // 
@@ -16,6 +16,10 @@ void getFrame(string filename, CImg<unsigned char> &cimg) {
 
 int main (int argc, char *argv[]){
 
+  // First we need to get a single frame from an SM file
+  smSetVerbose(5); 
+  StreamingMovie sm("/Users/cook47/dataAndImages/langer.sm"); 
+  sm.ReadHeader(); 
 
   // PNG image frame capture from langer movie: 
   string filename = "/Users/cook47/dataAndImages/testm.png";
@@ -38,7 +42,5 @@ int main (int argc, char *argv[]){
   displayer.wait(5*1000); 
   
   //  usleep(15*1000*1000); 
-  // OK, now we need to get a single frame from an SM file
-  
   return 0; 
 }
