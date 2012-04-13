@@ -67,8 +67,31 @@ static void  byteswap(void *buffer,off64_t len,int swapsize)
 
   return value false if it failes, true on success
 */ 
-bool StreamingMovie::FetchFrame(uint32_t framenum, CImg<unsigned char> &cimg) {
+
+// TO DO:  deal with concurrency and shared_ptrs when threading
+// TO DO:  how do I choose the right buffer size? 
+bool StreamingMovie::FetchFrame(uint32_t framenum, int lod, CImg<unsigned char> &cimg, boost::shared_ptr<unsigned char> readbuffer) {
+  int lfd = open(mFileName.c_str(), O_RDONLY);
+
+
+  // seek to frame beginning
+  uint32_t virtualFrame = lod * mNumFrames + framenum;
+  LSEEK64(lfd, mFrameOffsets[virtualFrame], SEEK_SET);
+
+  // read compressed tile sizes
+  int numTiles = mTileNxNy[lod][0] * mTileNxNy[lod][1];
+  vector<uint32_t> tilesizes(numTiles); 
+  read(lfd, &tilesizes[0], numTiles*sizeof(uint32_t));     
+ 
+  //read the whole frame off disk: 
+  read(lfd, readbuffer.get(), mFrameLengths[virtualFrame]);   
   
+  // decompress each tile into the image:
+  int tilenum = 0; 
+  /* while (tilenum < numTiles) {
+    mCodec->Decompress(blah blah); 
+  }
+  */
   return false; 
 }
 
@@ -85,7 +108,7 @@ bool StreamingMovie::ReadHeader(void) {
    int lfd = open(mFileName.c_str(), O_RDONLY);
 
    // the file size is needed for the size of the last frame
-   filesize = LSEEK64(lfd,0,SEEK_END);
+   mFileSize = LSEEK64(lfd,0,SEEK_END);
 
    // read a version 2 header, which has version 1 as a subset
    uint32_t header[SM_HDR_SIZE];
@@ -112,7 +135,7 @@ bool StreamingMovie::ReadHeader(void) {
    // read(lfd, &mNumFrames, sizeof(uint32_t));
    mNumFrames = header[2]; 
    mNumFrames = mNumFrames;
-   smdbprintf(4,"open file, mNumFrames = %d", mNumFrames);
+   smdbprintf(4,"open file, mNumFrames = %d\n", mNumFrames);
    
    // read(lfd, &i, sizeof(uint32_t));   
    mFrameSizes[0][0] = header[3];
@@ -125,8 +148,8 @@ bool StreamingMovie::ReadHeader(void) {
    memcpy(mTileSizes,mFrameSizes,sizeof(mFrameSizes));
    mNumResolutions = 1;
    
-   smdbprintf(4,"image size: %d %d", mFrameSizes[0][0], mFrameSizes[0][1]);
-   smdbprintf(4,"mNumFrames=%d",mNumFrames);
+   smdbprintf(4,"image size: %d %d\n", mFrameSizes[0][0], mFrameSizes[0][1]);
+   smdbprintf(4,"mNumFrames=%d\n",mNumFrames);
    
    // Version 2 header is bigger...
    if (mVersion == 2) {
@@ -146,9 +169,9 @@ bool StreamingMovie::ReadHeader(void) {
        if(mMaxNumTiles < (mTileNxNy[i][0] * mTileNxNy[i][1])) {
 	 mMaxNumTiles = mTileNxNy[i][0] * mTileNxNy[i][1];
        }
-       smdbprintf(5,"mTileNxNy[%ld,%ld] : maxnumtiles %ld", mTileNxNy[i][0], mTileNxNy[i][1],mMaxNumTiles);
+       smdbprintf(5,"mTileNxNy[%ld,%ld] : maxnumtiles %ld\n", mTileNxNy[i][0], mTileNxNy[i][1],mMaxNumTiles);
      }
-     smdbprintf(5,"mMaxTileSize = %ld, maxnumtiles = %ld",mMaxTileSize,mMaxNumTiles);
+     smdbprintf(5,"mMaxTileSize = %ld, maxnumtiles = %ld\n",mMaxTileSize,mMaxNumTiles);
      
    }
    else {
@@ -162,10 +185,11 @@ bool StreamingMovie::ReadHeader(void) {
    }
    
    // Get the framestart offsets
-   mFrameOffsets.resize((mNumFrames+1)*mNumResolutions, 0); 
+   mFrameOffsets.resize(mNumResolutions*mNumFrames+1); 
+   // it's ok to read into a std::vector exactly as an array per the standard:
    read(lfd, &mFrameOffsets[0], sizeof(off64_t)*mNumFrames*mNumResolutions);
    byteswap(&mFrameOffsets[0],sizeof(off64_t)*mNumFrames*mNumResolutions,sizeof(off64_t));
-   mFrameOffsets[mNumFrames*mNumResolutions] = filesize;
+   mFrameOffsets[mNumFrames*mNumResolutions] = mFileSize;
 
    // Get the compressed frame lengths...
    mFrameLengths.resize(mNumFrames*mNumResolutions, 0); 
@@ -188,7 +212,7 @@ bool StreamingMovie::ReadHeader(void) {
      smdbprintf(5,"window %d: %d size %d\n", w, (int)mFrameOffsets[w],mFrameLengths[w]);
    }
 #endif
-   smdbprintf(4,"maximum frame size is %d", maxFrameSize);
+   smdbprintf(4,"maximum frame size is %d\n", maxFrameSize);
    
    CLOSE(lfd);
 
