@@ -1,3 +1,25 @@
+2012-04-13
+Threading is now the major obstacle to blockbuster performance.  I think the easiest way to proceed is a major rewrite, because the code is very creaky. 
+
+My 8 week plan to rule the world.  7 Steps to rewrite blockbuster.
+
+1)  write my own threadsafe getframe() function that can retrieve an image of any format and put it into a frame class (2 weeks)    
+
+2) display the frame into a window (1 week)  DONE
+
+3) play a sequence of frames into the window. (1 week)
+
+4) make #4 threaded (1 week)
+
+5) drop in the blockbuster GUI with "stop and play" functionality enabled (1 week)
+
+6) Implement the rest of the GUI (1 week)
+
+7) Add sidecar functionality (1 week)
+
+
+
+
 2011-03-04
 Rich Cook
 Let's make this library more modern.  
