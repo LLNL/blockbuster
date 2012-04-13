@@ -43,7 +43,7 @@ using namespace cimg_library;
 
 #include "SMGZCodec.h" 
 #include "../common/stringutil.h"
-
+#include <boost/shared_ptr.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -105,7 +105,7 @@ inline void sm_real_dbprintf(const smMsgStruct msg, int level, const char *fmt, 
   va_start(ap, fmt);
   vfprintf(stderr,fmt,ap);
   va_end(ap);
-  //cerr << endl; 
+  // cerr << endl; 
   return; 
 }
 
@@ -115,6 +115,9 @@ inline void sm_real_dbprintf(int , const char * ...) {
 }
 #define smdbprintf if(0) sm_real_dbprintf
 #endif
+
+
+
 //===============================================
 
 class StreamingMovie {
@@ -142,7 +145,7 @@ class StreamingMovie {
   } 
 
   bool ReadHeader(void);
-  bool FetchFrame(uint32_t framenum, CImg<unsigned char> &cimg);
+  bool FetchFrame(uint32_t framenum, int lod, CImg<unsigned char> &cimg, boost::shared_ptr<unsigned char> readbuffer);
   private:
 
   uint32_t mRawMagic, mRawFlags; 
@@ -164,14 +167,12 @@ class StreamingMovie {
   uint32_t mMaxTileSize; 
 
   // 64-bit offset of each compressed frame
-  vector<off64_t>mFrameOffsets;
-  // 32-bit length of each compressed frame
+  vector<off64_t> mFrameOffsets; // note: mFrameOffsets[mNumFrames*mNumResolutions] = mFileSize;
+  // 32-bit length of each compressed frame in bytes
   vector<unsigned int>mFrameLengths;
     
   
-  // global file descriptor
-  //int *fd;
-  off64_t filesize;
+  off64_t mFileSize;
   
   //path to movie file
   string mFileName;
