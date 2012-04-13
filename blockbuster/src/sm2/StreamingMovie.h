@@ -123,6 +123,7 @@ inline void sm_real_dbprintf(int , const char * ...) {
 class StreamingMovie {
  public:
   StreamingMovie(string filename):mFileName(filename) {    
+    mCodec = new SMGZCodec(); 
     return; 
   }
   ~StreamingMovie() {
@@ -145,7 +146,7 @@ class StreamingMovie {
   } 
 
   bool ReadHeader(void);
-  bool FetchFrame(uint32_t framenum, int lod, CImg<unsigned char> &cimg, boost::shared_ptr<unsigned char> readbuffer);
+  bool FetchFrame(uint32_t framenum, int lod, CImg<unsigned char> &cimg, vector<unsigned char> &readbuffer);
   private:
 
   uint32_t mRawMagic, mRawFlags; 

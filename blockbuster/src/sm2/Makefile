@@ -79,3 +79,8 @@ depend:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
+StreamingMovie.o: StreamingMovie.h SMGZCodec.h SMCodec.h
+StreamingMovie.o: ../common/stringutil.h ../common/timer.h
+StreamingMovie.o: ../common/stringutil.h iodefines.h
+getframe.o: StreamingMovie.h SMGZCodec.h SMCodec.h ../common/stringutil.h
+getframe.o: ../common/timer.h ../common/stringutil.h

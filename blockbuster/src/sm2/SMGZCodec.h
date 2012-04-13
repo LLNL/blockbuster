@@ -9,6 +9,7 @@
 
 
 class SMGZCodec:public SMCodec {
+ public:
   SMGZCodec() {
     return; 
   }
@@ -18,11 +19,11 @@ class SMGZCodec:public SMCodec {
   }
 
 
-  void Compress(void *in, void *out, uint32_t inputSize, uint32_t outputSize) {
+  void Compress(void *in, void *out, uint32_t inputSize, uint32_t &outputSize) {
     return;
   }
 
-  void Decompress(void *in, void *out, uint32_t inputSize) {
+  void Decompress(void *in, void *out, uint32_t inputSize, uint32_t outputSize) {
     return;
   }
 
