@@ -17,27 +17,32 @@ void getFrame(string filename, CImg<unsigned char> &cimg) {
 int main (int argc, char *argv[]){
 
   // First we need to get a single frame from an SM file
-  smSetVerbose(5); 
+  smSetVerbose(4); 
   StreamingMovie sm("/Users/cook47/dataAndImages/langer.sm"); 
   sm.ReadHeader(); 
+
 
   // PNG image frame capture from langer movie: 
   string filename = "/Users/cook47/dataAndImages/testm.png";
   CImg<unsigned char> cimg(filename.c_str()); 
-
-  CImgDisplay displayer(cimg, "Testing");
   int64_t w = cimg.width(),
     h = cimg.height(),
     d = cimg.depth(),
     s = cimg.size();     
   int64_t computed = h*w*d * 3; 
-
+  cimg.crop(200,200,600,450); 
+  CImgDisplay displayer(cimg, "Testing");
   cerr << "Image " << filename << ", displayer w,h,d, computed size, size = (" << w << ", " << h << ", " << d << ", " << computed << ", " << s << ")"<< endl; 
-  displayer.wait(5*1000); 
+  displayer.wait(3*1000); 
+
+  cerr << "Resizing to new size"<< endl; 
+  displayer.resize(w,h); 
+
+  displayer.wait(3*1000); 
 
   cerr << "Changing image" << endl; 
   unsigned char *ptr = cimg.data(); 
-  memset(ptr, 255, s); 
+  memset(ptr, 255, cimg.size()); 
   displayer.display(cimg); 
   displayer.wait(5*1000); 
   
