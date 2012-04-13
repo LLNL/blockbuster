@@ -19,11 +19,11 @@ class SMGZCodec:public SMCodec {
   }
 
 
-  void Compress(void *in, void *out, uint32_t inputSize, uint32_t &outputSize) {
+  void Compress(void *in, uint32_t inputSize, std::vector<unsigned char> &out) {
     return;
   }
 
-  void Decompress(void *in, void *out, uint32_t inputSize, uint32_t outputSize) {
+  void Decompress(void *in, uint32_t inputSize, std::vector<unsigned char> &out) { 
     return;
   }
 

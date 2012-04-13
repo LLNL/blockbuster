@@ -166,6 +166,7 @@ class StreamingMovie {
   uint32_t mTileNxNy[8][2];
   uint32_t mMaxNumTiles; // the maximum number of tiles at any resolution
   uint32_t mMaxTileSize; 
+  vector<unsigned char>mRawTileBuf; 
 
   // 64-bit offset of each compressed frame
   vector<off64_t> mFrameOffsets; // note: mFrameOffsets[mNumFrames*mNumResolutions] = mFileSize;

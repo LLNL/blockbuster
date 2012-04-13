@@ -10,6 +10,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <vector>
+using namespace std; 
+
 int smVerbose = 0; 
 void smSetVerbose(int level) {
   smVerbose = level;
@@ -91,13 +94,12 @@ bool StreamingMovie::FetchFrame(uint32_t framenum, int lod, CImg<unsigned char> 
   read(lfd, &readbuffer[0], mFrameLengths[virtualFrame]);   
   
   // decompress each tile into the image:
-  uint32_t rawTileDims[2] = {512, 512};
-  uint32_t rawTileSize = rawTileDims[0] * rawTileDims[1]; 
-  vector<unsigned char> rawTileBuf(rawTileSize); 
-
+  if (mRawTileBuf.size() < mMaxTileSize) {
+    mRawTileBuf.resize(mMaxTileSize); 
+  }
   uint32_t tilenum = 0, tileOffset = 0; 
   while (tilenum < numTiles) {    
-    mCodec->Decompress(&readbuffer[tileOffset], &rawTileBuf[0], tilesizes[tilenum], rawTileSize); 
+    mCodec->Decompress(&readbuffer[tileOffset], tilesizes[tilenum], mRawTileBuf); 
     
     tileOffset += tilesizes[tilenum++];
   }
@@ -163,7 +165,6 @@ bool StreamingMovie::ReadHeader(void) {
    
    // Version 2 header is bigger...
    if (mVersion == 2) {
-     mMaxTileSize = 0;
      mMaxNumTiles = 0;
      mNumResolutions = header[5];
      //smdbprintf(5,"mNumResolutions : %d",mNumResolutions);
@@ -173,14 +174,12 @@ bool StreamingMovie::ReadHeader(void) {
        mTileNxNy[i][0] = (uint32_t)ceil((double)mFrameSizes[i][0]/(double)mTileSizes[i][0]);
        mTileNxNy[i][1] = (uint32_t)ceil((double)mFrameSizes[i][1]/(double)mTileSizes[i][1]);
        
-       if (mMaxTileSize < (mTileSizes[i][1] * mTileSizes[i][0])) {
-	 mMaxTileSize = mTileSizes[i][1] * mTileSizes[i][0];
-       }
        if(mMaxNumTiles < (mTileNxNy[i][0] * mTileNxNy[i][1])) {
 	 mMaxNumTiles = mTileNxNy[i][0] * mTileNxNy[i][1];
        }
        smdbprintf(5,"mTileNxNy[%ld,%ld] : maxnumtiles %ld\n", mTileNxNy[i][0], mTileNxNy[i][1],mMaxNumTiles);
      }
+     mMaxTileSize = mTileSizes[0][1] * mTileSizes[0][0];;
      smdbprintf(5,"mMaxTileSize = %ld, maxnumtiles = %ld\n",mMaxTileSize,mMaxNumTiles);
      
    }

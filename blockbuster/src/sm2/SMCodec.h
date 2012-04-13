@@ -1,5 +1,6 @@
 #ifndef SM_DECOMPRESSOR_H
 #define SM_DECOMPRESSOR_H
+#include <vector>
 /*
   This seems overdesigned, but for some decompressors it probably needs a whole file to talk about compressing and decompressing. 
   There is no internal buffering to keep things threadsafe. 
@@ -16,9 +17,9 @@ class SMCodec {
     return; 
   }
 
-  virtual void Compress(void *in, void *out, uint32_t inputSize, uint32_t &outputSize)=0;
+  virtual void Compress(void *in, uint32_t inputSize, std::vector<unsigned char> &out)=0;
 
-  virtual void Decompress(void *in, void *out, uint32_t inputSize, uint32_t outputSize)=0;
+  virtual void Decompress(void *in, uint32_t inputSize, std::vector<unsigned char> &out)=0;
 
 
 };
