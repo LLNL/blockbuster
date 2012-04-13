@@ -33,10 +33,11 @@ include ../config/config
 SRC_FILES = StreamingMovie.C getframe.C # sm2.C # smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C 
 OFILES = StreamingMovie.o getframe.o # sm2.o # smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o 
 HFILES = # sm2.h # smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h
-
+INSTALL_DIR = ../../$(SYS_TYPE)/
+$(warning INSTALL_DIR is $(INSTALL_DIR))
 MAGICK_DIR= /opt/local
-
-CPPFLAGS += -g -Dcimg_use_magick $(shell $(MAGICK_DIR)/bin/Magick++-config --cppflags) $(shell $(MAGICK_DIR)/bin/Magick++-config --cxxflags) -I../CImg-1.5.0_beta/
+BOOST_DIR=$(INSTALL_DIR)
+CPPFLAGS += -g -Dcimg_use_magick $(shell $(MAGICK_DIR)/bin/Magick++-config --cppflags) $(shell $(MAGICK_DIR)/bin/Magick++-config --cxxflags) -I../CImg-1.5.0_beta -I$(BOOST_DIR)/include
 LDFLAGS += $(shell $(MAGICK_DIR)/bin/Magick++-config --ldflags) $(shell $(MAGICK_DIR)/bin/Magick++-config --libs) -lX11
 # all: lib doc include
 all: getframe
