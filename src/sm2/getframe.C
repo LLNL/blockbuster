@@ -20,11 +20,14 @@ int main (int argc, char *argv[]){
   smSetVerbose(4); 
   StreamingMovie sm("/Users/cook47/dataAndImages/langer.sm"); 
   sm.ReadHeader(); 
-
+  CImg<unsigned char> cimg; 
+  uint32_t framenum = 100, lod = 0; 
+  vector<unsigned char> readbuffer; 
+  sm.FetchFrame(framenum, lod, cimg, readbuffer);
 
   // PNG image frame capture from langer movie: 
   string filename = "/Users/cook47/dataAndImages/testm.png";
-  CImg<unsigned char> cimg(filename.c_str()); 
+  cimg.load(filename.c_str()); 
   int64_t w = cimg.width(),
     h = cimg.height(),
     d = cimg.depth(),

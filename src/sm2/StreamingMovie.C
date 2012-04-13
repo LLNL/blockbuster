@@ -68,11 +68,15 @@ static void  byteswap(void *buffer,off64_t len,int swapsize)
   return value false if it failes, true on success
 */ 
 
+void SwizzleTileIntoFrame(uint32_t tileDims[2], uint32_t frameOffset[2], vector<unsigned char> &tilebuf, CImg<unsigned char> &cimg){
+
+  return; 
+}
+
 // TO DO:  deal with concurrency and shared_ptrs when threading
 // TO DO:  how do I choose the right buffer size? 
-bool StreamingMovie::FetchFrame(uint32_t framenum, int lod, CImg<unsigned char> &cimg, boost::shared_ptr<unsigned char> readbuffer) {
+bool StreamingMovie::FetchFrame(uint32_t framenum, int lod, CImg<unsigned char> &cimg, vector<unsigned char> &readbuffer) {
   int lfd = open(mFileName.c_str(), O_RDONLY);
-
 
   // seek to frame beginning
   uint32_t virtualFrame = lod * mNumFrames + framenum;
@@ -84,14 +88,20 @@ bool StreamingMovie::FetchFrame(uint32_t framenum, int lod, CImg<unsigned char> 
   read(lfd, &tilesizes[0], numTiles*sizeof(uint32_t));     
  
   //read the whole frame off disk: 
-  read(lfd, readbuffer.get(), mFrameLengths[virtualFrame]);   
+  read(lfd, &readbuffer[0], mFrameLengths[virtualFrame]);   
   
   // decompress each tile into the image:
-  int tilenum = 0; 
-  /* while (tilenum < numTiles) {
-    mCodec->Decompress(blah blah); 
+  uint32_t rawTileDims[2] = {512, 512};
+  uint32_t rawTileSize = rawTileDims[0] * rawTileDims[1]; 
+  vector<unsigned char> rawTileBuf(rawTileSize); 
+
+  uint32_t tilenum = 0, tileOffset = 0; 
+  while (tilenum < numTiles) {    
+    mCodec->Decompress(&readbuffer[tileOffset], &rawTileBuf[0], tilesizes[tilenum], rawTileSize); 
+    
+    tileOffset += tilesizes[tilenum++];
   }
-  */
+  
   return false; 
 }
 
