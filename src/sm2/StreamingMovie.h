@@ -143,6 +143,8 @@ class StreamingMovie {
     if (mRawMagic == SM_MAGIC_VERSION1) return 1; 
     if (mRawMagic == SM_MAGIC_VERSION2) return 2;
   } 
+  uint32_t Width(int lod) { return mFrameSizes[lod][0]; }
+  uint32_t Height(int lod) { return mFrameSizes[lod][1]; }
 
   bool ReadHeader(void);
   bool SwizzleTileIntoCImg(uint32_t tilenum, int lod, CImg<unsigned char> &cimg, uint32_t cimgFrameOffset[2]);

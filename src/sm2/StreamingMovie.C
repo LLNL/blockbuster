@@ -77,37 +77,52 @@ static void  byteswap(void *buffer,off64_t len,int swapsize)
 */ 
 bool StreamingMovie::SwizzleTileIntoCImg(uint32_t tilenum, int lod, CImg<unsigned char> &cimg, uint32_t cimgFrameOffset[2]){
   
-  int32_t tileIJ[2] = { tilenum % mTileNxNy[lod][1], 
+  int32_t tileIJ[2] = { tilenum % mTileNxNy[lod][0], 
 			tilenum / mTileNxNy[lod][0] }; 
   int32_t tilePosInFrame[2] = { tileIJ[0]*mTileSizes[lod][0], 
 				tileIJ[1]*mTileSizes[lod][1] };
   // may be negative: 
   int32_t tileOffsetInCImg[2] = { tilePosInFrame[0] - cimgFrameOffset[0], 
 			       tilePosInFrame[1] - cimgFrameOffset[1] }; 
-  int32_t tilei=0, tilej=0, 
+  int32_t starti=0, startj=0,
     stopi = mTileSizes[lod][0], stopj = mTileSizes[lod][1];
-  if (tileOffsetInCImg[0] < 0) tilei = -tileOffsetInCImg[0];
-  if (tileOffsetInCImg[1] < 0) tilej = -tileOffsetInCImg[1];
+  if (tileOffsetInCImg[0] < 0) starti = -tileOffsetInCImg[0];
+  if (tileOffsetInCImg[1] < 0) startj = -tileOffsetInCImg[1];
   if (stopi + tileOffsetInCImg[0] > cimg.width()) {
     stopi =  cimg.width() - tileOffsetInCImg[0]; 
   }
   if (stopj + tileOffsetInCImg[1] > cimg.height()) {
     stopj =  cimg.height() - tileOffsetInCImg[1]; 
   }
-  
+  int32_t cimgstarti = tileOffsetInCImg[0] + starti, 
+    cimgstartj = tileOffsetInCImg[1] + startj; 
   unsigned char *cimgbuf = cimg.data(); 
+  uint32_t isize = cimg.size(); 
   unsigned char *cimgbufrp, *cimgbufgp, *cimgbufbp; 
   unsigned char *tilebufp; 
+  int32_t tilei=starti, tilej = startj, 
+    cimagei= cimgstarti, cimagej = cimgstartj;
+  
   while (tilej < stopj) {
-    cimgbufrp = cimgbuf + tilej * cimg.width(); 
-    cimgbufgp = cimgbufrp + cimg.size(); 
-    cimgbufbp = cimgbufgp + cimg.size(); 
-    tilebufp = &mRawTileBuf[0]; 
-    while (tilei < stopi) {
-      ; 
-      //increment tile and cimg pointers
-    }
-    
+    tilei = starti; 
+    cimagei = cimgstarti; 
+    // cimgbufrp = cimgbuf + tilej * cimg.width(); 
+    // cimgbufgp = cimgbufrp + isize; 
+    // cimgbufbp = cimgbufgp + isize; 
+    tilebufp = &mRawTileBuf[0] + 3*(mTileSizes[lod][0]*tilej + tilei); 
+    while (tilei++ < stopi) { // deinterleave: 
+      cimg(cimagei, cimagej, 0, 0) = *tilebufp; tilebufp++; 
+      cimg(cimagei, cimagej, 0, 1) = *tilebufp; tilebufp++; 
+      cimg(cimagei, cimagej, 0, 2) = *tilebufp; tilebufp++; 
+      cimagei++; 
+      /*
+       *cimgbufrp =  *tilebufp;  cimgbufrp++; tilebufp++; 
+       *cimgbufgp =  *tilebufp;  cimgbufgp++; tilebufp++; 
+       *cimgbufbp =  *tilebufp;  cimgbufbp++; tilebufp++;    
+       */ 
+    }    
+    tilej++; 
+    cimagej++; 
   }
   return true; 
 }
@@ -123,7 +138,7 @@ bool StreamingMovie::SwizzleTileIntoCImg(uint32_t tilenum, int lod, CImg<unsigne
 // TO DO:  how do I choose the right buffer size? 
 bool StreamingMovie::FetchFrame(uint32_t framenum, int lod, CImg<unsigned char> &cimg) {
   int lfd = open(mFileName.c_str(), O_RDONLY);
-
+  
   // seek to frame beginning
   uint32_t virtualFrame = lod * mNumFrames + framenum;
   uint64_t pos = LSEEK64(lfd, mFrameOffsets[virtualFrame], SEEK_SET);
@@ -157,11 +172,14 @@ bool StreamingMovie::FetchFrame(uint32_t framenum, int lod, CImg<unsigned char> 
   //cerr << "After frame, pos is "<< pos << endl; 
 
 
-  while (tilenum < numTiles) {    
+  uint32_t cimgFrameOffset[2]={0};
+  while (tilenum < numTiles) {  
     mCodec->Decompress(&mFrameReadBuffer[tileOffset], tilesizes[tilenum], mRawTileBuf, mTileSizes[lod]); 
-    
+    SwizzleTileIntoCImg(tilenum, lod, cimg, cimgFrameOffset); 
     tileOffset += tilesizes[tilenum++];
   }
+
+  cimg.mirror('y'); 
   
   return false; 
 }

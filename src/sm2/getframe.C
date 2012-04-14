@@ -18,13 +18,31 @@ int main (int argc, char *argv[]){
 
   // First we need to get a single frame from an SM file
   smSetVerbose(4); 
-  StreamingMovie sm("/Users/cook47/dataAndImages/langer.sm"); 
+  StreamingMovie sm("/Users/cook47/dataAndImages/langerGZ.sm"); 
   sm.ReadHeader(); 
-  CImg<unsigned char> cimg; 
+  cerr << "sm width and height are " << sm.Width(0) << ", "<< sm.Height(0) << endl; 
+  CImg<unsigned char> cimg(sm.Width(0), sm.Height(0),1,3); 
+  int i=0, j=0; 
+  while (j<480) {
+    i=0; 
+    while (i<640) {
+      
+      cimg(i,j,0,0) = (i/640.0)*255.0;
+      i++;
+    }
+    j++; 
+  }
+  CImgDisplay displayer(cimg, "Testing");
+  displayer.wait(3*1000); 
+  
+  //CImg<unsigned char> cimg(640, 480,3); 
   uint32_t framenum = 100, lod = 0; 
   // vector<unsigned char> readbuffer; 
   sm.FetchFrame(framenum, lod, cimg);
-  CImgDisplay displayer(cimg, "Testing");
+  cerr << "after sm fetch frame, cimg has width,height size of " << cimg.width() << ", " << cimg.height() << ", " << cimg.size() << endl; 
+  displayer.display(cimg);
+  displayer.show(); 
+  displayer.wait(3*1000); 
 
   // PNG image frame capture from langer movie: 
   string filename = "/Users/cook47/dataAndImages/testm.png";
