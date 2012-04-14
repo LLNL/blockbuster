@@ -1,5 +1,7 @@
 #include "StreamingMovie.h"
 #include "iodefines.h"
+#include "SMJpegCodec.h" 
+#include "SMGZCodec.h" 
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -63,6 +65,53 @@ static void  byteswap(void *buffer,off64_t len,int swapsize)
         return;
 }
 
+
+/*
+  SwizzleTileIntoFrame()
+  Copy data from the internal mRawTileBuf to the given cimg object, converting from RGB interleaved to block data to make CImg library happy. 
+  param tilenum -- which tile to insert 
+  param cimg -- the output vehicle to modify and return, which also defines the size of the frame region of interest implicitly with its size
+  param frameOffset -- start X and Y of CImg into the frame
+
+  return false if fails
+*/ 
+bool StreamingMovie::SwizzleTileIntoCImg(uint32_t tilenum, int lod, CImg<unsigned char> &cimg, uint32_t cimgFrameOffset[2]){
+  
+  int32_t tileIJ[2] = { tilenum % mTileNxNy[lod][1], 
+			tilenum / mTileNxNy[lod][0] }; 
+  int32_t tilePosInFrame[2] = { tileIJ[0]*mTileSizes[lod][0], 
+				tileIJ[1]*mTileSizes[lod][1] };
+  // may be negative: 
+  int32_t tileOffsetInCImg[2] = { tilePosInFrame[0] - cimgFrameOffset[0], 
+			       tilePosInFrame[1] - cimgFrameOffset[1] }; 
+  int32_t tilei=0, tilej=0, 
+    stopi = mTileSizes[lod][0], stopj = mTileSizes[lod][1];
+  if (tileOffsetInCImg[0] < 0) tilei = -tileOffsetInCImg[0];
+  if (tileOffsetInCImg[1] < 0) tilej = -tileOffsetInCImg[1];
+  if (stopi + tileOffsetInCImg[0] > cimg.width()) {
+    stopi =  cimg.width() - tileOffsetInCImg[0]; 
+  }
+  if (stopj + tileOffsetInCImg[1] > cimg.height()) {
+    stopj =  cimg.height() - tileOffsetInCImg[1]; 
+  }
+  
+  unsigned char *cimgbuf = cimg.data(); 
+  unsigned char *cimgbufrp, *cimgbufgp, *cimgbufbp; 
+  unsigned char *tilebufp; 
+  while (tilej < stopj) {
+    cimgbufrp = cimgbuf + tilej * cimg.width(); 
+    cimgbufgp = cimgbufrp + cimg.size(); 
+    cimgbufbp = cimgbufgp + cimg.size(); 
+    tilebufp = &mRawTileBuf[0]; 
+    while (tilei < stopi) {
+      ; 
+      //increment tile and cimg pointers
+    }
+    
+  }
+  return true; 
+}
+
 /*
   FetchFrame()
   param framenum -- which frame to fetch
@@ -70,36 +119,46 @@ static void  byteswap(void *buffer,off64_t len,int swapsize)
 
   return value false if it failes, true on success
 */ 
-
-void SwizzleTileIntoFrame(uint32_t tileDims[2], uint32_t frameOffset[2], vector<unsigned char> &tilebuf, CImg<unsigned char> &cimg){
-
-  return; 
-}
-
 // TO DO:  deal with concurrency and shared_ptrs when threading
 // TO DO:  how do I choose the right buffer size? 
-bool StreamingMovie::FetchFrame(uint32_t framenum, int lod, CImg<unsigned char> &cimg, vector<unsigned char> &readbuffer) {
+bool StreamingMovie::FetchFrame(uint32_t framenum, int lod, CImg<unsigned char> &cimg) {
   int lfd = open(mFileName.c_str(), O_RDONLY);
 
   // seek to frame beginning
   uint32_t virtualFrame = lod * mNumFrames + framenum;
-  LSEEK64(lfd, mFrameOffsets[virtualFrame], SEEK_SET);
-
+  uint64_t pos = LSEEK64(lfd, mFrameOffsets[virtualFrame], SEEK_SET);
+  //cerr << "Current pos is "<< pos << endl; 
   // read compressed tile sizes
   int numTiles = mTileNxNy[lod][0] * mTileNxNy[lod][1];
   vector<uint32_t> tilesizes(numTiles); 
-  read(lfd, &tilesizes[0], numTiles*sizeof(uint32_t));     
- 
+  if (numTiles > 1) {
+    read(lfd, &tilesizes[0], numTiles*sizeof(uint32_t));     
+    byteswap(&tilesizes[0], numTiles*sizeof(uint32_t), sizeof(uint32_t)); 
+    int i=0; 
+    pos = 0; 
+    while (i<numTiles) {
+      pos += tilesizes[i++]; 
+    }
+    // cerr << "Total tile sizes is "<< pos << endl; 
+  } else {
+    tilesizes[0] = mFrameLengths[virtualFrame];
+  }
   //read the whole frame off disk: 
-  read(lfd, &readbuffer[0], mFrameLengths[virtualFrame]);   
-  
+  pos =  LSEEK64(lfd, 0, SEEK_CUR);
+  //smcdbprintf("After tilesizes, pos is %d\n", pos); 
+  pos = read(lfd, &mFrameReadBuffer[0], mFrameLengths[virtualFrame]);   
+  //cerr << "Read " << pos << " bytes from frame and mFrameLengths[virtualFrame] is " << mFrameLengths[virtualFrame] << endl; 
   // decompress each tile into the image:
   if (mRawTileBuf.size() < mMaxTileSize) {
-    mRawTileBuf.resize(mMaxTileSize); 
+    mRawTileBuf.resize(mMaxTileSize*3); 
   }
   uint32_t tilenum = 0, tileOffset = 0; 
+  pos=  LSEEK64(lfd, 0, SEEK_CUR);
+  //cerr << "After frame, pos is "<< pos << endl; 
+
+
   while (tilenum < numTiles) {    
-    mCodec->Decompress(&readbuffer[tileOffset], tilesizes[tilenum], mRawTileBuf); 
+    mCodec->Decompress(&mFrameReadBuffer[tileOffset], tilesizes[tilenum], mRawTileBuf, mTileSizes[lod]); 
     
     tileOffset += tilesizes[tilenum++];
   }
@@ -114,7 +173,6 @@ bool StreamingMovie::FetchFrame(uint32_t framenum, int lod, CImg<unsigned char> 
 bool StreamingMovie::ReadHeader(void) {
    uint32_t magic, flags;
    //uint32_t maxtilesize;
-   uint32_t maxFrameSize;
 
    int i, w;
    int lfd = open(mFileName.c_str(), O_RDONLY);
@@ -143,7 +201,20 @@ bool StreamingMovie::ReadHeader(void) {
    flags = header[1];
    mRawFlags = flags & SM_FLAGS_MASK;
    mCompressionType = flags & SM_COMPRESSION_TYPE_MASK;
-   
+   switch (mCompressionType) {
+   case 2:
+     mCodec = new SMGZCodec(); 
+     break; 
+   case 4:
+     mCodec = new SMJpegCodec(); 
+     break; 
+   case 0: 
+   case 1:
+   case 3:
+   default:
+     cerr << "Unimplemented compression type: "<< mCompressionType << endl;
+     exit(1); 
+   }
    // read(lfd, &mNumFrames, sizeof(uint32_t));
    mNumFrames = header[2]; 
    mNumFrames = mNumFrames;
@@ -202,26 +273,30 @@ bool StreamingMovie::ReadHeader(void) {
 
    // Get the compressed frame lengths...
    mFrameLengths.resize(mNumFrames*mNumResolutions, 0); 
-   maxFrameSize = 0; //maximum frame size
+   mMaxCompressedFrameSize = 0; //maximum frame size
    if (mVersion == 2) {
      read(lfd, &mFrameLengths[0], sizeof(uint32_t)*mNumFrames*mNumResolutions);
      byteswap(&mFrameLengths[0],sizeof(uint32_t)*mNumFrames*mNumResolutions,sizeof(uint32_t));
      for (w=0; w<mNumFrames*mNumResolutions; w++) {
-       if (mFrameLengths[w] > maxFrameSize) maxFrameSize = mFrameLengths[w];
+       if (mFrameLengths[w] > mMaxCompressedFrameSize) mMaxCompressedFrameSize = mFrameLengths[w];
      }
    } else {
      // Compute this for older format files...
      for (w=0; w<mNumFrames*mNumResolutions; w++) {
 	   mFrameLengths[w] = (mFrameOffsets[w+1] - mFrameOffsets[w]);
-       if (mFrameLengths[w] > maxFrameSize) maxFrameSize = mFrameLengths[w];
+       if (mFrameLengths[w] > mMaxCompressedFrameSize)  mMaxCompressedFrameSize = mFrameLengths[w];
      }
    }
+   if ( mFrameReadBuffer.size() < mMaxCompressedFrameSize + 2) {
+     mFrameReadBuffer.resize(mMaxCompressedFrameSize + 2);
+   }
+
 #if SM_VERBOSE
    for (w=0; w<mNumFrames; w++) {
      smdbprintf(5,"window %d: %d size %d\n", w, (int)mFrameOffsets[w],mFrameLengths[w]);
    }
 #endif
-   smdbprintf(4,"maximum frame size is %d\n", maxFrameSize);
+   smdbprintf(4,"maximum compressed frame size is %d\n", mMaxCompressedFrameSize);
    
    CLOSE(lfd);
 
