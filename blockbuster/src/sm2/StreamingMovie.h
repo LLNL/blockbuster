@@ -1,5 +1,5 @@
 /*
-** $RCSfile: smBase.h,v $
+** $RCSfile: .h,v $
 ** $Name:  $
 **
 ** ASCI Visualization Project 
@@ -19,7 +19,6 @@
 **
 ** 	or man llnl_copyright
 **
-** $Id: smBase.h,v 1.13 2009/05/19 02:52:19 wealthychef Exp $
 **
 */
 /*
@@ -41,7 +40,7 @@
 #include "CImg.h"
 using namespace cimg_library;
 
-#include "SMGZCodec.h" 
+#include "SMCodec.h" 
 #include "../common/stringutil.h"
 #include <boost/shared_ptr.hpp>
 #include <stdio.h>
@@ -123,7 +122,7 @@ inline void sm_real_dbprintf(int , const char * ...) {
 class StreamingMovie {
  public:
   StreamingMovie(string filename):mFileName(filename) {    
-    mCodec = new SMGZCodec(); 
+    //  mCodec = new SMJpegCodec(); 
     return; 
   }
   ~StreamingMovie() {
@@ -146,7 +145,8 @@ class StreamingMovie {
   } 
 
   bool ReadHeader(void);
-  bool FetchFrame(uint32_t framenum, int lod, CImg<unsigned char> &cimg, vector<unsigned char> &readbuffer);
+  bool SwizzleTileIntoCImg(uint32_t tilenum, int lod, CImg<unsigned char> &cimg, uint32_t cimgFrameOffset[2]);
+  bool FetchFrame(uint32_t framenum, int lod, CImg<unsigned char> &cimg);
   private:
 
   uint32_t mRawMagic, mRawFlags; 
@@ -166,7 +166,9 @@ class StreamingMovie {
   uint32_t mTileNxNy[8][2];
   uint32_t mMaxNumTiles; // the maximum number of tiles at any resolution
   uint32_t mMaxTileSize; 
+  uint32_t mMaxCompressedFrameSize; 
   vector<unsigned char>mRawTileBuf; 
+  vector<unsigned char> mFrameReadBuffer;
 
   // 64-bit offset of each compressed frame
   vector<off64_t> mFrameOffsets; // note: mFrameOffsets[mNumFrames*mNumResolutions] = mFileSize;

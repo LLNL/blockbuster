@@ -17,9 +17,9 @@ class SMCodec {
     return; 
   }
 
-  virtual void Compress(void *in, uint32_t inputSize, std::vector<unsigned char> &out)=0;
+  virtual bool Compress(unsigned char *in, uint32_t inputSize, std::vector<unsigned char> &out, uint32_t blockDims[2])=0;
 
-  virtual void Decompress(void *in, uint32_t inputSize, std::vector<unsigned char> &out)=0;
+  virtual bool Decompress(unsigned char *in, uint32_t inputSize, std::vector<unsigned char> &out, uint32_t blockDims[2])=0;
 
 
 };

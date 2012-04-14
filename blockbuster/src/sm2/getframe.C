@@ -22,8 +22,9 @@ int main (int argc, char *argv[]){
   sm.ReadHeader(); 
   CImg<unsigned char> cimg; 
   uint32_t framenum = 100, lod = 0; 
-  vector<unsigned char> readbuffer; 
-  sm.FetchFrame(framenum, lod, cimg, readbuffer);
+  // vector<unsigned char> readbuffer; 
+  sm.FetchFrame(framenum, lod, cimg);
+  CImgDisplay displayer(cimg, "Testing");
 
   // PNG image frame capture from langer movie: 
   string filename = "/Users/cook47/dataAndImages/testm.png";
@@ -33,10 +34,19 @@ int main (int argc, char *argv[]){
     d = cimg.depth(),
     s = cimg.size();     
   int64_t computed = h*w*d * 3; 
-  cimg.crop(200,200,600,450); 
-  CImgDisplay displayer(cimg, "Testing");
+
   cerr << "Image " << filename << ", displayer w,h,d, computed size, size = (" << w << ", " << h << ", " << d << ", " << computed << ", " << s << ")"<< endl; 
+  cimg.crop(200,200,600,450); 
+  displayer.display(cimg); 
   displayer.wait(3*1000); 
+
+  cerr << "After cropping to 400x250: " << endl; 
+  cerr << "Image offset(0,0,0,0) = "<< cimg.offset(0,0,0,0)<< endl; 
+  cerr << "Image offset(0,0,0,1) = "<< cimg.offset(0,0,0,1)<< endl; 
+  cerr << "Image offset(0,0,0,2) = "<< cimg.offset(0,0,0,2)<< endl; 
+  cerr << "Image offset(1,0,0,0) = "<< cimg.offset(1,0,0,0)<< endl; 
+  cerr << "Image offset(1,0,0,1) = "<< cimg.offset(1,0,0,1)<< endl; 
+  cerr << "Image offset(0,1,0,0) = "<< cimg.offset(0,1,0,0)<< endl; 
 
   cerr << "Resizing to new size"<< endl; 
   displayer.resize(w,h); 
