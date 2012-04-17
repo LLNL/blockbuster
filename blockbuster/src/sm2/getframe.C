@@ -23,6 +23,7 @@ int main (int argc, char *argv[]){
   sm.ReadHeader(); 
   cerr << "sm width and height are " << sm.Width(0) << ", "<< sm.Height(0) << endl; 
   CImg<unsigned char> cimg(sm.Width(0), sm.Height(0),1,3); 
+  CImgDisplay displayer;
   /*  int i=0, j=0; 
       while (j<480) {
       i=0; 
@@ -37,30 +38,65 @@ int main (int argc, char *argv[]){
       displayer.wait(3*1000); 
   */
 
+  
   // play a movie
-  timer theTimer; 
-  theTimer.start(); 
   //CImg<unsigned char> cimg(640, 480,3); 
   uint32_t framenum = 0, lod = 0, numframes = sm.NumFrames(); 
   if (numframes < 0) {
     cerr << "Error:  bad movie -- numframes is < 0" << endl;
     exit(1); 
   }
-  sm.FetchFrame(framenum, lod, cimg);
-  CImgDisplay displayer(cimg, "Testing");
-  cerr << "after sm fetch frame, cimg has width,height size of " << cimg.width() << ", " << cimg.height() << ", " << cimg.size() << endl; 
-  // vector<unsigned char> readbuffer; 
-  while (framenum < numframes ) {
-    sm.FetchFrame(framenum++, lod, cimg); 
-    displayer.display(cimg);     
-  } 
-  theTimer.stop(); 
-  float t = theTimer.total_time(); 
-  cerr << "displayed "<<numframes << " frames in " << t << " seconds for FPS of " << numframes/t << endl; 
 
-  // displayer.display(cimg);
-  // displayer.show(); 
-  displayer.wait(3*1000); 
+
+  // play a movie with optimal buffering to see what that does for us
+#define BUFFER_MOVIE 0
+  timer bufferTimer, chunkTimer; 
+  if (BUFFER_MOVIE) {
+    vector<CImg<unsigned char> > cimglist; 
+    while (framenum < numframes ) {
+      sm.FetchFrame(framenum++, lod, cimg); 
+      cimglist.push_back(cimg); 
+    }
+    CImgDisplay bufdisplayer(cimglist[0], "blah"); 
+    // display all frames: 
+    framenum = 0;
+    bufferTimer.start(); 
+    chunkTimer.start(); 
+    float buft = 0; 
+    while (framenum < numframes ) {
+      bufdisplayer.display(cimglist[framenum]); 
+      framenum++; 
+      if (framenum % 50 == 0) {
+	buft = chunkTimer.total_time(); 
+	cerr << "displayed "<< 50 << " frames in " << buft << " seconds for FPS of " << 50/buft << endl; 
+	chunkTimer.restart(); 
+      }
+    }
+    buft = bufferTimer.total_time(); 
+    cerr << "displayed "<<numframes << " frames in " << buft << " seconds for FPS of " << numframes/buft << endl; 
+  } 
+#define PLAY_MOVIE 0
+  if (PLAY_MOVIE) {
+    // unbuffered version: 
+    timer theTimer; 
+    theTimer.start(); 
+    sm.FetchFrame(framenum, lod, cimg);
+    displayer.display(cimg);
+    cerr << "after sm fetch frame, cimg has width,height size of " << cimg.width() << ", " << cimg.height() << ", " << cimg.size() << endl; 
+    // vector<unsigned char> readbuffer; 
+    while (framenum < numframes ) {
+      sm.FetchFrame(framenum++, lod, cimg); 
+      displayer.display(cimg);     
+    } 
+    theTimer.stop(); 
+    float t = theTimer.total_time(); 
+    cerr << "displayed "<<numframes << " frames in " << t << " seconds for FPS of " << numframes/t << endl; 
+    
+    // displayer.display(cimg);
+    // displayer.show(); 
+    displayer.wait(3*1000); 
+  }
+
 
   // PNG image frame capture from langer movie: 
   string filename = "/Users/cook47/dataAndImages/testm.png";
