@@ -115,8 +115,6 @@ inline void sm_real_dbprintf(int , const char * ...) {
 #define smdbprintf if(0) sm_real_dbprintf
 #endif
 
-
-
 //===============================================
 
 class StreamingMovie {
@@ -133,28 +131,31 @@ class StreamingMovie {
     mFileName = filename; 
   }
 
-  float GetFrameRate(void) {
+  uint32_t NumFrames(void) { return mNumFrames; }
+
+  float FrameRate(void) {
     int ifps20 = (mRawFlags & SM_FLAGS_FPS_MASK) >> SM_FLAGS_FPS_SHIFT;
     if (ifps20 == 0) return(30.0);
     return ((float)ifps20)/SM_FLAGS_FPS_BASE;
   }
   
-  int GetVersion (void) {
+  int  GetVersion (void) {
     if (mRawMagic == SM_MAGIC_VERSION1) return 1; 
     if (mRawMagic == SM_MAGIC_VERSION2) return 2;
   } 
   uint32_t Width(int lod) { return mFrameSizes[lod][0]; }
   uint32_t Height(int lod) { return mFrameSizes[lod][1]; }
-
+  
   bool ReadHeader(void);
   bool SwizzleTileIntoCImg(uint32_t tilenum, int lod, CImg<unsigned char> &cimg, uint32_t cimgFrameOffset[2]);
   bool FetchFrame(uint32_t framenum, int lod, CImg<unsigned char> &cimg);
-  private:
 
+ private:
+  
   uint32_t mRawMagic, mRawFlags; 
-   // version
+  // version
   int mVersion;
- // number of frames in the movie
+  // number of frames in the movie
   uint32_t mNumFrames;
   // number of Levels of Detail
   uint32_t mNumResolutions;
@@ -177,7 +178,6 @@ class StreamingMovie {
   // 32-bit length of each compressed frame in bytes
   vector<unsigned int>mFrameLengths;
     
-  
   off64_t mFileSize;
   
   //path to movie file

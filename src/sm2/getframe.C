@@ -4,6 +4,7 @@
 #include "CImg.h"
 #include <iostream>
 #include "StreamingMovie.h"
+#include "timer.h"
 using namespace cimg_library;
 using namespace std;
 // 
@@ -22,26 +23,43 @@ int main (int argc, char *argv[]){
   sm.ReadHeader(); 
   cerr << "sm width and height are " << sm.Width(0) << ", "<< sm.Height(0) << endl; 
   CImg<unsigned char> cimg(sm.Width(0), sm.Height(0),1,3); 
-  int i=0, j=0; 
-  while (j<480) {
-    i=0; 
-    while (i<640) {
+  /*  int i=0, j=0; 
+      while (j<480) {
+      i=0; 
+      while (i<640) {
       
       cimg(i,j,0,0) = (i/640.0)*255.0;
       i++;
-    }
-    j++; 
-  }
-  CImgDisplay displayer(cimg, "Testing");
-  displayer.wait(3*1000); 
-  
+      }
+      j++; 
+      }
+      CImgDisplay displayer(cimg, "Testing");
+      displayer.wait(3*1000); 
+  */
+
+  // play a movie
+  timer theTimer; 
+  theTimer.start(); 
   //CImg<unsigned char> cimg(640, 480,3); 
-  uint32_t framenum = 100, lod = 0; 
-  // vector<unsigned char> readbuffer; 
+  uint32_t framenum = 0, lod = 0, numframes = sm.NumFrames(); 
+  if (numframes < 0) {
+    cerr << "Error:  bad movie -- numframes is < 0" << endl;
+    exit(1); 
+  }
   sm.FetchFrame(framenum, lod, cimg);
+  CImgDisplay displayer(cimg, "Testing");
   cerr << "after sm fetch frame, cimg has width,height size of " << cimg.width() << ", " << cimg.height() << ", " << cimg.size() << endl; 
-  displayer.display(cimg);
-  displayer.show(); 
+  // vector<unsigned char> readbuffer; 
+  while (framenum < numframes ) {
+    sm.FetchFrame(framenum++, lod, cimg); 
+    displayer.display(cimg);     
+  } 
+  theTimer.stop(); 
+  float t = theTimer.total_time(); 
+  cerr << "displayed "<<numframes << " frames in " << t << " seconds for FPS of " << numframes/t << endl; 
+
+  // displayer.display(cimg);
+  // displayer.show(); 
   displayer.wait(3*1000); 
 
   // PNG image frame capture from langer movie: 
