@@ -37,7 +37,7 @@ INSTALL_DIR = ../../$(SYS_TYPE)/
 $(warning INSTALL_DIR is $(INSTALL_DIR))
 MAGICK_DIR= /opt/local
 
-CPPFLAGS = -g -Dcimg_use_magick $(shell $(MAGICK_DIR)/bin/Magick++-config --cppflags) $(shell $(MAGICK_DIR)/bin/Magick++-config --cxxflags) -I../CImg-1.5.0_beta -I$(INSTALL_DIR)/include 
+CPPFLAGS = -g -Dcimg_use_magick $(shell $(MAGICK_DIR)/bin/Magick++-config --cppflags) $(shell $(MAGICK_DIR)/bin/Magick++-config --cxxflags) -I../CImg-1.5.0_beta -I$(INSTALL_DIR)/include -I../common
 LDFLAGS = -L$(INSTALL_DIR)/lib $(shell $(MAGICK_DIR)/bin/Magick++-config --ldflags) $(shell $(MAGICK_DIR)/bin/Magick++-config --libs)  -lX11 -lz $(INSTALL_DIR)/lib/libjpeg.a
 # all: lib doc include
 all: getframe
