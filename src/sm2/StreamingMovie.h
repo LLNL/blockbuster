@@ -119,6 +119,7 @@ inline void sm_real_dbprintf(int , const char * ...) {
 
 class StreamingMovie {
  public:
+  StreamingMovie() {}
   StreamingMovie(string filename):mFileName(filename) {    
     //  mCodec = new SMJpegCodec(); 
     return; 
