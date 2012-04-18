@@ -31,17 +31,22 @@ include ../config/config
 
 INSTALL_DIR ?= $(shell pwd)
 
+INSTALL_EVIDENCE = $(INSTALL_DIR)/include/boost/random.hpp # random header :-)
+
 default: install
 
 all: install
 
-install: $(INSTALL_DIR)/lib/libboost_date_time.so # random choice
+install: $(INSTALL_EVIDENCE)
 
-$(INSTALL_DIR)/lib/libboost_date_time.so: 
+$(INSTALL_EVIDENCE): boost_1_49_0/boost/random.hpp
+	echo apparently $< is older than $@; ls -l $<; ls -l $@
+	cd boost_1_49_0 && ./bootstrap.sh --with-libraries=thread && ./bjam install --prefix=$(INSTALL_DIR)
+
+boost_1_49_0/boost/random.hpp:
 	rm -rf boost_1_49_0
-	tar -xvzf boost_1_49_0.tar.gz
-	cp -r boost_1_49_0/boost $(INSTALL_DIR)/include
-# cd boost_1_49_0 && ./bootstrap.sh && ./bjam install --prefix=$(INSTALL_DIR)
+	tar -xvf boost_1_49_0.tar.gz
+#	cp -r boost_1_49_0/boost $(INSTALL_DIR)/include
 
 clean:
 	rm -rf boost_1_49_0 $(INSTALL_DIR)/lib/libboost* $(INSTALL_DIR)/include/boost
