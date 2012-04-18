@@ -102,7 +102,6 @@ bool smGZ::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
       return false;
    }
 
-
    return true;
 }
 

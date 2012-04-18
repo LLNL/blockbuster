@@ -63,10 +63,11 @@ number of actual compressed frames in the file is equal to the
 number of frames listed in the header field times the number
 of resolutions in the file.  Each frame can be decomposed into
 tiles. The compression algorithm is executed independently on
-each tile. The size of each tile is stored in the "Tile size"
+each tile. The size of each uncompressed tile is stored in the "Tile size"
 table in the header.  The X and Y sizes are both 16bit 
 unsigned integers, stored as a 32bit integer in the table.
-The X size is stored in the high-order 16bits of the 32.
+The X size is stored in the high-order 16bits of the 32. 
+
 .PP
 The header is followed by a table of offsets from the beginning of
 the sm file to the data for a given frame.  These offsets are 64bit
@@ -80,6 +81,13 @@ There are no ordering constraints on the fames in the file. Individual
 frames are not necessarily stored in a contiguous or sequential
 fashion. 
 .PP
+At the beginning of each frame is an ordered list of uint32_t values giving 
+the length of each compressed tile in the frame.  Following that table 
+are the compressed tiles in order.  There are no "partial tiles."  If a tile 
+"goes off the edge" of an image, e.g., the number of tiles in the X direction 
+times the tile width is greater than the image width, then it is still 
+compressed as a complete tile, with the useless pixel values compressed and 
+saved to disk.  
 Frames are considered to be 24bits/pixel.  A given frame is considered
 to be 3bytes*frame width*frame height in size.  Data are laid out
 in pixel interleaved format (e.g. RGBRGBRGB...) from right to left
