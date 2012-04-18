@@ -77,6 +77,11 @@ depend:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
+BufferedStreamingMovie.o: BufferedStreamingMovie.h StreamingMovie.h SMCodec.h
+BufferedStreamingMovie.o: ../common/stringutil.h ../common/timer.h
+BufferedStreamingMovie.o: ../common/stringutil.h
+playmovie.o: BufferedStreamingMovie.h StreamingMovie.h SMCodec.h
+playmovie.o: ../common/stringutil.h ../common/timer.h ../common/stringutil.h
 StreamingMovie.o: StreamingMovie.h SMCodec.h ../common/stringutil.h
 StreamingMovie.o: ../common/timer.h ../common/stringutil.h iodefines.h
 StreamingMovie.o: SMJpegCodec.h SMGZCodec.h
