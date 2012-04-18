@@ -95,8 +95,9 @@ class DoubleIOBuffer {
 };
 
 
+
 //===============================================
-class Renderer {
+  class Renderer {
  public:
   Renderer() {}
   ~Renderer() {}
@@ -114,7 +115,6 @@ class Renderer {
 
   // Current frame info: 
   RenderState mRenderState; 
-
   boost::shared_mutex mFrameViewMutex; 
 }; 
 
@@ -126,7 +126,7 @@ class Renderer {
 
 class Reader {
  public:
-  Reader(){}
+  Reader(){ }
   Reader(std::string filename):mFileName(filename){}
   ~Reader(){}
 
@@ -134,30 +134,66 @@ class Reader {
     mFileName = filename; 
   }
 
-  // this function starts a new thread
-  void run(); 
-  
- private:
-  std::string mFileName; 
+  void StartThread(int threadID) {
+    mThreadID = threadID; 
+    mThread = boost::thread(&Reader::run, this); 
+  }
 
+ 
+  // this function starts a new thread
+  void run(){
+    mKeepRunning=true; 
+    while (mKeepRunning) {
+      ; 
+    }
+  } 
+  
+  bool mKeepRunning; 
+  int mThreadID; 
+  boost::thread mThread; 
+  std::string mFileName; 
 };
 
 //===============================================
 /*
   Consumes raw frames and produces decompressed frames
+  This is a functor to work with 
 */ 
 class Decompressor { 
  public:
-  Decompressor() {}
+  Decompressor(){
+    return; 
+  }
+  Decompressor(const Decompressor &other) {
+    *this = other; 
+  }
+
+  Decompressor &operator =(const Decompressor &other) {
+    this->mThreadID = other.mThreadID; 
+    this->mKeepRunning = other.mKeepRunning; 
+    return *this; 
+  }
+
   ~Decompressor() {
     // stop thread and clean up memory
     return; 
   }
-
-  // this function starts a new thread
-  void run() {
-  }
   
+  void StartThread(int threadID) {
+    mThreadID = threadID; 
+    mThread = boost::thread(&Decompressor::run, this); 
+  }
+
+  void run(){
+    mKeepRunning=true; 
+    while (mKeepRunning) {
+      ; 
+    }
+  } 
+  
+  bool mKeepRunning; 
+  int mThreadID; 
+  boost::thread mThread; 
 };
 
 //===============================================
@@ -184,12 +220,29 @@ class BufferedStreamingMovie:public StreamingMovie {
     mDoubleIOBuffer.SetBufferSizes(bufsize); 
   }
 
+  void StartThreads (int numthreads) {
+    mDecompressors.clear(); 
+    //mDecompressors.resize(numthreads); 
+    int i=numthreads; 
+    while (i<numthreads) {
+      mDecompressors.push_back(Decompressor()) ;
+      mDecompressors[i].StartThread(i); 
+    }
+    return; 
+  }
+
+  // use own CImgDisplay to show the frame -- no copy needed
+  bool DisplayFrame(uint32_t framenum){
+    return false; 
+  }
+
  private:
     Reader mReader; 
-    vector<Decompressor> mDecompressors; 
+    std::vector<Decompressor> mDecompressors; 
     DoubleIOBuffer mDoubleIOBuffer; 
     RenderBuffer mRenderBuffer; 
 
+    CImgDisplay mDisplay; 
 }; 
 
 
