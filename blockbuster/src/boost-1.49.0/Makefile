@@ -40,8 +40,9 @@ install: $(INSTALL_DIR)/lib/libboost_date_time.so # random choice
 $(INSTALL_DIR)/lib/libboost_date_time.so: 
 	rm -rf boost_1_49_0
 	tar -xvzf boost_1_49_0.tar.gz
-	cd boost_1_49_0 && ./bootstrap.sh && ./bjam install --prefix=$(INSTALL_DIR)
+	cp -r boost_1_49_0/boost $(INSTALL_DIR)/include
+# cd boost_1_49_0 && ./bootstrap.sh && ./bjam install --prefix=$(INSTALL_DIR)
 
 clean:
-	rm -rf boost_1_49_0 $(INSTALL_DIR)/lib/libboost* $(INSTALL_DIR)/include/boost*.h
+	rm -rf boost_1_49_0 $(INSTALL_DIR)/lib/libboost* $(INSTALL_DIR)/include/boost
 
