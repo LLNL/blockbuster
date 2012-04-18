@@ -1,5 +1,7 @@
 # Makefile for blockbuster project top level "src" directory
 # Richard Cook, June 1, 2007
+export INSTALL_DIR ?= $(shell pwd)/../$(SYS_TYPE)
+
 include config/config
 
 # if you wish to build with DMX, set DMX in your environment:
@@ -16,7 +18,7 @@ debug:
 	DEBUG=1 $(MAKE) all
 
 
-export INSTALL_DIR ?= $(shell pwd)/$(SYS_TYPE)
+$(warning INSTALL_DIR is $(INSTALL_DIR)) 
 QTHOME ?= /usr/mic/dvsviz/Trolltech/latest/$(SYS_TYPE)
 export PATH=$(QTHOME)/bin:$(shell echo $${PATH})
 export BUILD_ROOT ?= $(shell pwd)
