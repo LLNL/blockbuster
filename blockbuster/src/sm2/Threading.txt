@@ -6,7 +6,7 @@ I/O producer-consumer chain:
 
 
 SMReader:
-	Produces raw frames in buffer
+	Produces raw frames in buffer	
 
 Decompressor: 
 	Consumes raw frames 
@@ -15,3 +15,8 @@ Decompressor:
 SMRenderer:
 	Consumes decompressed frames
 
+
+Actions: 
+	 Reader and Decompressors do all their work based on the demands of their product buffers.  
+	 When view changes, renderer notifies renderer buffer then IO buffers, which then modify their input filters, which prevents incorrect work from continuing to flow into them, and thus serves as notification to the reader and decompressors.  
+	 

@@ -10,6 +10,7 @@ My 8 week plan to rule the world.  7 Steps to rewrite blockbuster.
 3) play a sequence of frames into the window and get timings for large movies. (1 week) 
    For langerGZ.sm, with blockbuster, I sometimes get 100-150 FPS using 85% of a CPU, and sometimes get 60 FPS using 45% of a CPU.  Could be thread timing issues?  
    OK -- the first pass completely serial, I get  51.6134 FPS using 85% of a CPU. Hmm WTF? 
+   I notice that the fully buffered speed is 140 FPS, slowing to perhaps 130 if I add a crop() operation before each display();  So I can use crop and not recompute subimages when displaying movies.  
 
 4) make #4 threaded (1 week)
 
