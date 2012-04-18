@@ -49,7 +49,7 @@ int main (int argc, char *argv[]){
 
 
   // play a movie with optimal buffering to see what that does for us
-#define BUFFER_MOVIE 0
+#define BUFFER_MOVIE 1
   timer bufferTimer, chunkTimer; 
   if (BUFFER_MOVIE) {
     vector<CImg<unsigned char> > cimglist; 
@@ -63,8 +63,8 @@ int main (int argc, char *argv[]){
     bufferTimer.start(); 
     chunkTimer.start(); 
     float buft = 0; 
-    while (framenum < numframes ) {
-      bufdisplayer.display(cimglist[framenum]); 
+    while (framenum < numframes ) {      
+      bufdisplayer.display(cimglist[framenum].get_crop(200,200,600,450)); 
       framenum++; 
       if (framenum % 50 == 0) {
 	buft = chunkTimer.total_time(); 
