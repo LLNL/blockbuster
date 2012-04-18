@@ -1,0 +1,17 @@
+
+Reading movie with threads.  
+Buffer: 
+
+I/O producer-consumer chain:
+
+
+SMReader:
+	Produces raw frames in buffer
+
+Decompressor: 
+	Consumes raw frames 
+	Produces decompressed frames. 
+
+SMRenderer:
+	Consumes decompressed frames
+

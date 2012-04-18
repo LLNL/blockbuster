@@ -30,9 +30,10 @@
 #
 include ../config/config
 
-SRC_FILES = StreamingMovie.C SMJpegCodec.C getframe.C # sm2.C # smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C 
-OFILES = StreamingMovie.o SMJpegCodec.o getframe.o # sm2.o # smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o 
-HFILES = # sm2.h # smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h
+MKDEPEND_SRC_FILES = BufferedStreamingMovie.C playmovie.C StreamingMovie.C SMJpegCodec.C getframe.C 
+GETFRAME_OFILES = StreamingMovie.o SMJpegCodec.o getframe.o
+BUFFERED_OFILES = BufferedStreamingMovie.o StreamingMovie.o SMJpegCodec.o playmovie.o
+MKDEPEND_HFILES = StreamingMovie.h 
 INSTALL_DIR = ../../$(SYS_TYPE)/
 $(warning INSTALL_DIR is $(INSTALL_DIR))
 MAGICK_DIR= /opt/local
@@ -40,9 +41,12 @@ MAGICK_DIR= /opt/local
 CPPFLAGS = -g -Dcimg_use_magick $(shell $(MAGICK_DIR)/bin/Magick++-config --cppflags) $(shell $(MAGICK_DIR)/bin/Magick++-config --cxxflags) -I../CImg-1.5.0_beta -I$(INSTALL_DIR)/include -I../common
 LDFLAGS = -L$(INSTALL_DIR)/lib $(shell $(MAGICK_DIR)/bin/Magick++-config --ldflags) $(shell $(MAGICK_DIR)/bin/Magick++-config --libs)  -lX11 -lz $(INSTALL_DIR)/lib/libjpeg.a
 # all: lib doc include
-all: getframe
+all: playmovie getframe
 
-getframe: $(OFILES)
+playmovie: $(BUFFERED_OFILES) 
+	$(CXX) $(LDFLAGS)  -o $@ $^
+
+getframe: $(GETFRAME_OFILES)
 	$(CXX) $(LDFLAGS)  -o $@ $^
 
 %.o: %.C
@@ -63,19 +67,13 @@ $(INSTALL_DIR)/include/sm2.h: $(HFILES)
 	cp $(HFILES) $(INSTALL_DIR)/include/sm2
 
 
-#$(OFILES): $(HFILES) $(SRC_FILES)
-
-libsm2.a: $(OFILES)
-	$(AR) rsc $@ $(OFILES)
-
-
 clean: 
 	rm -rf $(CC_CACHE) *.o core *.a
 	rm -rf $(INSTALL_DIR)/lib/libsm2.a $(INSTALL_DIR)/sm2
 
 #use with caution:
 depend: 
-	makedepend -Y. -Y.. $(INCLUDES) $(SRC_FILES)
+	makedepend -Y. -Y.. $(INCLUDES) $(MKDEPEND_SRC_FILES)
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
