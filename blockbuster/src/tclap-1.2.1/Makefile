@@ -29,8 +29,6 @@
 #
 include ../config/config
 
-LIBTARGET=$(INSTALL_DIR)/lib/libsrwpng.a
-
 INSTALL_HEADER = $(INSTALL_DIR)/include/tclap/CmdLine.h
 
 all:  install
