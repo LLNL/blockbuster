@@ -33,9 +33,11 @@ LIBTARGET=$(INSTALL_DIR)/lib/libsrwpng.a
 
 INSTALL_HEADER = $(INSTALL_DIR)/include/tclap/CmdLine.h
 
-all:  $(INSTALL_HEADER)
+all:  install
 
-$(INSTALL_HEADER) 
+install: $(INSTALL_HEADER)
+
+$(INSTALL_HEADER): 
 	tar -xzf tclap-1.2.1.tar.gz
 	pushd tclap-1.2.1; \
 	 	./configure --prefix=$(INSTALL_DIR); \
