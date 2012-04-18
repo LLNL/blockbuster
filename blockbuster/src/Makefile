@@ -1,6 +1,4 @@
-
-
-# Makefile for blockbuster project "src" directory
+# Makefile for blockbuster project top level "src" directory
 # Richard Cook, June 1, 2007
 include config/config
 
@@ -23,9 +21,9 @@ QTHOME ?= /usr/mic/dvsviz/Trolltech/latest/$(SYS_TYPE)
 export PATH=$(QTHOME)/bin:$(shell echo $${PATH})
 export BUILD_ROOT ?= $(shell pwd)
 
-BLOCKBUSTERBUILDDIRS =  zlib lzolib pt  sndplay \
+BLOCKBUSTERBUILDDIRS =  boost-1.49.0 tclap-1.2.1 zlib lzolib pt  sndplay \
 	libimage libpnmrw libpng libjpeg libtiff mpegdir \
-	evolib sm  smapp blockbuster
+	evolib sm sm2 smapp blockbuster
 
 
 BUILD-ALL = \
