@@ -3,25 +3,24 @@
 
 #include "StreamingMovie.h"
 #include <boost/thread.hpp>
-
+#include "CImg.h"
 //===============================================
 /* 
-   Intended to allow atomic encapsulation of view state for image creation, decompression and viewing. 
-   The atomicity is enforced by the SMRenderer.  
- */ 
-struct RenderState {
-  uint32_t mCurrentDisplayFrame;
-  // also will include image size, LOD, image location, etc. 
-}; 
-
-//===============================================
-/* 
-   Contains everything needed to store a frame in the RenderBuffer, including the view that it was created in. 
+   struct Image
+   Useful base class for Rendered and Raw images, as well as queries
 */ 
-struct RenderedFrame {
-  RenderedFrame(){}
-  ~RenderedFrame(){}
-  RenderState mRenderState; 
+struct Image {
+  uint32_t mFrameNumber; 
+  uint32_t mImageSize[2], mImagePos[2]; // what part of the frame is this image
+}; 
+//===============================================
+/* 
+   Contains everything needed to store a frame in the RenderBuffer, including the state that the Renderer was in when it was created. 
+*/ 
+struct RenderedImage:public Image {
+  RenderedImage(){}
+  ~RenderedImage(){}
+  CImg<unsigned char> mCimg; // container for the data
 }; 
 
 //===============================================
@@ -30,18 +29,20 @@ class RenderBuffer {
   RenderBuffer() {}
   ~RenderBuffer() {}
 
-  // mutexed function to allow renderer to change the view
-  void SetState(const RenderState &view); 
+  // synchronous mutexed function to store request and get an image back
+  bool RequestImage(const Image &image, CImg<unsigned char> &cimg); 
 
-  // grab a shared lock and get a copy of the current render view: 
-  void GetRenderState(RenderState &query) const; 
+  // grab a shared lock find out what is needed next in this buffer
+  void NextRequestedImage(Image &query) const; 
+
 
   // mutexed function.  Returns false if the current view doesn't match the frame or the frame is otherwise undesirable.  
-  bool DepositFrame(RenderedFrame &frame); 
+  bool DepositFrame(RenderedImage &frame); 
  private: 
-  RenderState mRenderState; 
+  Image mRequestedImage; // what the Renderer last requested -- each complete frame will have its own state based on what mRequestedState was when it was begun.  
 
   boost::mutex mMutex; 
+  boost::condition_variable mWaitingForImage; 
 }; 
 
 //===============================================
@@ -56,7 +57,7 @@ class RenderBuffer {
 #define BUFFER_SIZE (10*1000*1000)
 
 struct IOBuffer {
-  IOBuffer() {}
+  IOBuffer():mNumFrames(0) {}
   ~IOBuffer() {}
 
   void init(void) {
@@ -64,6 +65,7 @@ struct IOBuffer {
   }
   
   int mLOD; // level of detail
+  vector<uint32_t> mFrameOffsets; // offsets into our raw data to find frames
   uint32_t mFirstFrameNum, mNumFrames; // describes what the Reader put here
   uint32_t mNextFrameNum; // Tells us how much work has been taken by Decompressors
   vector<unsigned char> mRawData; // raw data from disk
@@ -86,8 +88,11 @@ class DoubleIOBuffer {
     mDoubleBuffer[1].mRawData.resize(size); 
   }
 
-  
+    void RequestImage(const Image &image); 
+
  private: 
+  Image mRequestedImage; // what the Renderer last requested
+
   IOBuffer mDoubleBuffer[2]; 
   IOBuffer *mFrontBuffer, *mBackBuffer; 
   boost::shared_mutex mMutex; 
@@ -102,19 +107,12 @@ class DoubleIOBuffer {
   Renderer() {}
   ~Renderer() {}
   
-  RenderState GetRenderState(void) {
-    boost::shared_lock<boost::shared_mutex> lock(mFrameViewMutex);
-    return mRenderState;
-  }
 
  private:
-  void SetCurrentDisplayFrame(uint32_t f) {
-    boost::lock_guard<boost::shared_mutex> lock(mFrameViewMutex);
-    mRenderState.mCurrentDisplayFrame = f; 
-  }
 
   // Current frame info: 
-  RenderState mRenderState; 
+  Image mCurrentImage;  // what's being displayed right now
+  
   boost::shared_mutex mFrameViewMutex; 
 }; 
 
@@ -134,8 +132,7 @@ class Reader {
     mFileName = filename; 
   }
 
-  void StartThread(int threadID) {
-    mThreadID = threadID; 
+  void StartThread(void) {
     mThread = boost::thread(&Reader::run, this); 
   }
 
@@ -149,7 +146,6 @@ class Reader {
   } 
   
   bool mKeepRunning; 
-  int mThreadID; 
   boost::thread mThread; 
   std::string mFileName; 
 };
@@ -171,6 +167,7 @@ class Decompressor {
   Decompressor &operator =(const Decompressor &other) {
     this->mThreadID = other.mThreadID; 
     this->mKeepRunning = other.mKeepRunning; 
+    // this->mThread = other.mThread; // NOT ALLOWED
     return *this; 
   }
 
@@ -228,6 +225,7 @@ class BufferedStreamingMovie:public StreamingMovie {
       mDecompressors.push_back(Decompressor()) ;
       mDecompressors[i].StartThread(i); 
     }
+    mReader.StartThread(); 
     return; 
   }
 
