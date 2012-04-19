@@ -4,6 +4,8 @@
 #include "StreamingMovie.h"
 #include <boost/thread.hpp>
 #include "CImg.h"
+
+#define BUFFER_SIZE (10*1000*1000)
 //===============================================
 /* 
    struct Image
@@ -27,10 +29,24 @@ struct RenderedImage:public Image {
 //===============================================
 struct RenderBuffer {
  public:
-  RenderBuffer() {}
+  RenderBuffer() {
+    SetBufferSize(2*BUFFER_SIZE);
+  }
   ~RenderBuffer() {}
 
-  vector<RenderedImage> mRenderedImages; 
+  void SetBufferSize(uint64_t numbytes) {
+    mBufferSize = numbytes; 
+  }
+
+  void SetFrameSize(uint32_t numbytes) {
+    mFrameSize = numbytes; 
+  }
+
+  int mLOD; // level of detail
+  uint64_t mBufferSize; // maximum size in bytes
+  uint32_t mFrameSize; // computed bytes per frame at mLOD
+  vector<boost::shared_ptr<RenderedImage> > mFrameSlots; // quick lookup table
+  vector<RenderedImage> mRenderedImages; // actual frame storage
   boost::mutex mMutex; 
 }; 
  
@@ -43,7 +59,6 @@ struct RenderBuffer {
   IO Buffer
   No mutex here because that's taken care of in the DoubleIOBuffer class
 */ 
-#define BUFFER_SIZE (10*1000*1000)
 
 struct IOBuffer {
   IOBuffer():mNumFrames(0) {}
@@ -191,12 +206,15 @@ class BufferedStreamingMovie:public StreamingMovie {
     return; 
   }
 
+  bool ReadHeader(void); // virtual function
+
   void SetFileName(std::string filename) {    
     mFrameReader.SetFileName(filename); 
   }
 
   void SetBufferSizes(uint32_t bufsize) {
     mDoubleIOBuffer.SetBufferSizes(bufsize); 
+    mRenderBuffer.SetBufferSize(bufsize*2); 
   }
 
   void StartThreads (int numthreads) {
@@ -220,7 +238,7 @@ class BufferedStreamingMovie:public StreamingMovie {
     DoubleIOBuffer mDoubleIOBuffer; 
     RenderBuffer mRenderBuffer; 
 
-    CImgDisplay mDisplay; 
+    CImgDisplay mDisplayer; 
     // Current frame info: 
     Image mCurrentImage;  // what's being displayed right now
     

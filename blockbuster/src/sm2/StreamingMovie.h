@@ -119,15 +119,24 @@ inline void sm_real_dbprintf(int , const char * ...) {
 
 class StreamingMovie {
  public:
-  StreamingMovie() {}
+  StreamingMovie() {
+    init(); 
+  }
   StreamingMovie(string filename):mFileName(filename) {    
-    //  mCodec = new SMJpegCodec(); 
+    init(); 
     return; 
   }
   ~StreamingMovie() {
     return; 
   }
-  
+  void init() {
+    mLOD = 0;
+  }
+
+  void SetLOD(uint8_t lod) {
+    mLOD = lod; 
+  }
+
   void SetFilename(string filename) {
     mFileName = filename; 
   }
@@ -144,15 +153,17 @@ class StreamingMovie {
     if (mRawMagic == SM_MAGIC_VERSION1) return 1; 
     if (mRawMagic == SM_MAGIC_VERSION2) return 2;
   } 
-  uint32_t Width(int lod) { return mFrameSizes[lod][0]; }
-  uint32_t Height(int lod) { return mFrameSizes[lod][1]; }
+  uint32_t Width(void) { return mFrameSizes[mLOD][0]; }
+  uint32_t Height(void) { return mFrameSizes[mLOD][1]; }
   
-  bool ReadHeader(void);
-  bool SwizzleTileIntoCImg(uint32_t tilenum, int lod, CImg<unsigned char> &cimg, uint32_t cimgFrameOffset[2]);
-  bool FetchFrame(uint32_t framenum, int lod, CImg<unsigned char> &cimg);
+  virtual bool ReadHeader(void);
+  bool SwizzleTileIntoCImg(uint32_t tilenum, CImg<unsigned char> &cimg, uint32_t cimgFrameOffset[2]);
+  bool FetchFrame(uint32_t framenum, CImg<unsigned char> &cimg);
 
- private:
+ protected:
   
+  uint8_t mLOD; 
+
   uint32_t mRawMagic, mRawFlags; 
   // version
   int mVersion;

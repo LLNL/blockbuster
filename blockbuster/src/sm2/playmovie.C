@@ -27,14 +27,14 @@ int main (int argc, char *argv[]){
     exit(1); 
   }
 
-  cerr << "sm width and height are " << sm.Width(0) << ", "<< sm.Height(0) << endl; 
+  cerr << "sm width and height are " << sm.Width() << ", "<< sm.Height() << endl; 
 
   sm.SetBufferSizes(10*1000*1000);
 
   
   // play a buffered threaded movie
   //CImg<unsigned char> cimg(640, 480,3); 
-  uint32_t framenum = 0, lod = 0, numframes = sm.NumFrames(); 
+  uint32_t framenum = 0, numframes = sm.NumFrames(); 
   if (numframes < 0) {
     cerr << "Error:  bad movie -- numframes is < 0" << endl;
     exit(1); 
@@ -48,7 +48,7 @@ int main (int argc, char *argv[]){
     ++ framenum; 
   }
 
-  CImg<unsigned char> cimg(sm.Width(0), sm.Height(0),1,3); 
+  CImg<unsigned char> cimg(sm.Width(), sm.Height(),1,3); 
   CImgDisplay displayer;
   // play a movie with optimal buffering to see what that does for us
 #define BUFFER_MOVIE 0
@@ -56,7 +56,7 @@ int main (int argc, char *argv[]){
   if (BUFFER_MOVIE) {
     vector<CImg<unsigned char> > cimglist; 
     while (framenum < numframes ) {
-      sm.FetchFrame(framenum++, lod, cimg); 
+      sm.FetchFrame(framenum++, cimg); 
       cimglist.push_back(cimg); 
     }
     CImgDisplay bufdisplayer(cimglist[0], "blah"); 
@@ -82,12 +82,12 @@ int main (int argc, char *argv[]){
     // unbuffered version: 
     timer theTimer; 
     theTimer.start(); 
-    sm.FetchFrame(framenum, lod, cimg);
+    sm.FetchFrame(framenum,  cimg);
     displayer.display(cimg);
     cerr << "after sm fetch frame, cimg has width,height size of " << cimg.width() << ", " << cimg.height() << ", " << cimg.size() << endl; 
     // vector<unsigned char> readbuffer; 
     while (framenum < numframes ) {
-      sm.FetchFrame(framenum++, lod, cimg); 
+      sm.FetchFrame(framenum++,  cimg); 
       displayer.display(cimg);     
     } 
     theTimer.stop(); 
