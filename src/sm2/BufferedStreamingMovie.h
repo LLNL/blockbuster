@@ -21,30 +21,19 @@ struct RenderedImage:public Image {
   RenderedImage(){}
   ~RenderedImage(){}
   CImg<unsigned char> mCimg; // container for the data
+  bool mValid; // 
 }; 
 
 //===============================================
-class RenderBuffer {
+struct RenderBuffer {
  public:
   RenderBuffer() {}
   ~RenderBuffer() {}
 
-  // synchronous mutexed function to store request and get an image back
-  bool RequestImage(const Image &image, CImg<unsigned char> &cimg); 
-
-  // grab a shared lock find out what is needed next in this buffer
-  void NextRequestedImage(Image &query) const; 
-
-
-  // mutexed function.  Returns false if the current view doesn't match the frame or the frame is otherwise undesirable.  
-  bool DepositFrame(RenderedImage &frame); 
- private: 
-  Image mRequestedImage; // what the Renderer last requested -- each complete frame will have its own state based on what mRequestedState was when it was begun.  
-
+  vector<RenderedImage> mRenderedImages; 
   boost::mutex mMutex; 
-  boost::condition_variable mWaitingForImage; 
 }; 
-
+ 
 //===============================================
 /* 
    IOBuffer:  Buffers for frames.  
@@ -66,7 +55,7 @@ struct IOBuffer {
   
   int mLOD; // level of detail
   vector<uint32_t> mFrameOffsets; // offsets into our raw data to find frames
-  uint32_t mFirstFrameNum, mNumFrames; // describes what the Reader put here
+  uint32_t mFirstFrameNum, mNumFrames; // describes what the FrameReader put here
   uint32_t mNextFrameNum; // Tells us how much work has been taken by Decompressors
   vector<unsigned char> mRawData; // raw data from disk
 
@@ -76,7 +65,7 @@ struct IOBuffer {
 /* 
    Encapsulates the IO Buffers and their mutexes
 */ 
-class DoubleIOBuffer {
+struct DoubleIOBuffer {
  public:
   DoubleIOBuffer(){}
   ~DoubleIOBuffer(){}
@@ -87,11 +76,6 @@ class DoubleIOBuffer {
     mDoubleBuffer[0].mRawData.resize(size); 
     mDoubleBuffer[1].mRawData.resize(size); 
   }
-
-    void RequestImage(const Image &image); 
-
- private: 
-  Image mRequestedImage; // what the Renderer last requested
 
   IOBuffer mDoubleBuffer[2]; 
   IOBuffer *mFrontBuffer, *mBackBuffer; 
@@ -107,13 +91,10 @@ class DoubleIOBuffer {
   Renderer() {}
   ~Renderer() {}
   
-
+  boost::shared_ptr <RenderedImage> GetImage(uint32_t framenum); 
+  
  private:
 
-  // Current frame info: 
-  Image mCurrentImage;  // what's being displayed right now
-  
-  boost::shared_mutex mFrameViewMutex; 
 }; 
 
 //===============================================
@@ -122,18 +103,18 @@ class DoubleIOBuffer {
   Read the movie in multi-megabyte chunks, buffer it. 
 */ 
 
-class Reader {
+class FrameReader {
  public:
-  Reader(){ }
-  Reader(std::string filename):mFileName(filename){}
-  ~Reader(){}
+  FrameReader(){ }
+  FrameReader(std::string filename):mFileName(filename){}
+  ~FrameReader(){}
 
   void SetFileName(std::string filename) {
     mFileName = filename; 
   }
 
   void StartThread(void) {
-    mThread = boost::thread(&Reader::run, this); 
+    mThread = boost::thread(&FrameReader::run, this); 
   }
 
  
@@ -196,13 +177,14 @@ class Decompressor {
 //===============================================
 /* 
    This class encapsulates the entire Streaming Movie system in a convenient container. 
+   It contains the display, rendering and movie reading pieces, basically all of the "main thread" activities.  Contains and controls the buffers and threads.  
 */ 
 class BufferedStreamingMovie:public StreamingMovie {
  public: 
   BufferedStreamingMovie() {
     return; 
   }
-  BufferedStreamingMovie(std::string filename):StreamingMovie(filename),mReader(filename) {
+  BufferedStreamingMovie(std::string filename):StreamingMovie(filename),mFrameReader(filename) {
     return;
   }
   ~BufferedStreamingMovie(){
@@ -210,7 +192,7 @@ class BufferedStreamingMovie:public StreamingMovie {
   }
 
   void SetFileName(std::string filename) {    
-    mReader.SetFileName(filename); 
+    mFrameReader.SetFileName(filename); 
   }
 
   void SetBufferSizes(uint32_t bufsize) {
@@ -225,22 +207,24 @@ class BufferedStreamingMovie:public StreamingMovie {
       mDecompressors.push_back(Decompressor()) ;
       mDecompressors[i].StartThread(i); 
     }
-    mReader.StartThread(); 
+    mFrameReader.StartThread(); 
     return; 
   }
 
   // use own CImgDisplay to show the frame -- no copy needed
-  bool DisplayFrame(uint32_t framenum){
-    return false; 
-  }
+  bool DisplayFrame(uint32_t framenum);
 
  private:
-    Reader mReader; 
+    FrameReader mFrameReader; 
     std::vector<Decompressor> mDecompressors; 
     DoubleIOBuffer mDoubleIOBuffer; 
     RenderBuffer mRenderBuffer; 
 
     CImgDisplay mDisplay; 
+    // Current frame info: 
+    Image mCurrentImage;  // what's being displayed right now
+    
+    boost::shared_mutex mFrameViewMutex; 
 }; 
 
 
