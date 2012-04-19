@@ -33,7 +33,7 @@ include ../config/config
 MKDEPEND_SRC_FILES = BufferedStreamingMovie.C playmovie.C StreamingMovie.C SMJpegCodec.C getframe.C 
 GETFRAME_OFILES = StreamingMovie.o SMJpegCodec.o getframe.o
 BUFFERED_OFILES = BufferedStreamingMovie.o StreamingMovie.o SMJpegCodec.o playmovie.o
-MKDEPEND_HFILES = StreamingMovie.h 
+MKDEPEND_HFILES = BufferedStreamingMovie.h StreamingMovie.h 
 INSTALL_DIR = ../../$(SYS_TYPE)/
 $(warning INSTALL_DIR is $(INSTALL_DIR))
 MAGICK_DIR= /opt/local

@@ -75,17 +75,17 @@ static void  byteswap(void *buffer,off64_t len,int swapsize)
 
   return false if fails
 */ 
-bool StreamingMovie::SwizzleTileIntoCImg(uint32_t tilenum, int lod, CImg<unsigned char> &cimg, uint32_t cimgFrameOffset[2]){
+bool StreamingMovie::SwizzleTileIntoCImg(uint32_t tilenum, CImg<unsigned char> &cimg, uint32_t cimgFrameOffset[2]){
   
-  int32_t tileIJ[2] = { tilenum % mTileNxNy[lod][0], 
-			tilenum / mTileNxNy[lod][0] }; 
-  int32_t tilePosInFrame[2] = { tileIJ[0]*mTileSizes[lod][0], 
-				tileIJ[1]*mTileSizes[lod][1] };
+  int32_t tileIJ[2] = { tilenum % mTileNxNy[mLOD][0], 
+			tilenum / mTileNxNy[mLOD][0] }; 
+  int32_t tilePosInFrame[2] = { tileIJ[0]*mTileSizes[mLOD][0], 
+				tileIJ[1]*mTileSizes[mLOD][1] };
   // may be negative: 
   int32_t tileOffsetInCImg[2] = { tilePosInFrame[0] - cimgFrameOffset[0], 
 			       tilePosInFrame[1] - cimgFrameOffset[1] }; 
   int32_t starti=0, startj=0,
-    stopi = mTileSizes[lod][0], stopj = mTileSizes[lod][1];
+    stopi = mTileSizes[mLOD][0], stopj = mTileSizes[mLOD][1];
   if (tileOffsetInCImg[0] < 0) starti = -tileOffsetInCImg[0];
   if (tileOffsetInCImg[1] < 0) startj = -tileOffsetInCImg[1];
   if (stopi + tileOffsetInCImg[0] > cimg.width()) {
@@ -109,7 +109,7 @@ bool StreamingMovie::SwizzleTileIntoCImg(uint32_t tilenum, int lod, CImg<unsigne
     // cimgbufrp = cimgbuf + tilej * cimg.width(); 
     // cimgbufgp = cimgbufrp + isize; 
     // cimgbufbp = cimgbufgp + isize; 
-    tilebufp = &mRawTileBuf[0] + 3*(mTileSizes[lod][0]*tilej + tilei); 
+    tilebufp = &mRawTileBuf[0] + 3*(mTileSizes[mLOD][0]*tilej + tilei); 
     while (tilei++ < stopi) { // deinterleave: 
       cimg(cimagei, cimagej, 0, 0) = *tilebufp; tilebufp++; 
       cimg(cimagei, cimagej, 0, 1) = *tilebufp; tilebufp++; 
@@ -136,15 +136,15 @@ bool StreamingMovie::SwizzleTileIntoCImg(uint32_t tilenum, int lod, CImg<unsigne
 */ 
 // TO DO:  deal with concurrency and shared_ptrs when threading
 // TO DO:  how do I choose the right buffer size? 
-bool StreamingMovie::FetchFrame(uint32_t framenum, int lod, CImg<unsigned char> &cimg) {
+bool StreamingMovie::FetchFrame(uint32_t framenum, CImg<unsigned char> &cimg) {
   int lfd = open(mFileName.c_str(), O_RDONLY);
   
   // seek to frame beginning
-  uint32_t virtualFrame = lod * mNumFrames + framenum;
+  uint32_t virtualFrame = mLOD * mNumFrames + framenum;
   uint64_t pos = LSEEK64(lfd, mFrameOffsets[virtualFrame], SEEK_SET);
   //cerr << "Current pos is "<< pos << endl; 
   // read compressed tile sizes
-  int numTiles = mTileNxNy[lod][0] * mTileNxNy[lod][1];
+  int numTiles = mTileNxNy[mLOD][0] * mTileNxNy[mLOD][1];
   vector<uint32_t> tilesizes(numTiles); 
   if (numTiles > 1) {
     read(lfd, &tilesizes[0], numTiles*sizeof(uint32_t));     
@@ -174,8 +174,8 @@ bool StreamingMovie::FetchFrame(uint32_t framenum, int lod, CImg<unsigned char> 
 
   uint32_t cimgFrameOffset[2]={0};
   while (tilenum < numTiles) {  
-    mCodec->Decompress(&mFrameReadBuffer[tileOffset], tilesizes[tilenum], mRawTileBuf, mTileSizes[lod]); 
-    SwizzleTileIntoCImg(tilenum, lod, cimg, cimgFrameOffset); 
+    mCodec->Decompress(&mFrameReadBuffer[tileOffset], tilesizes[tilenum], mRawTileBuf, mTileSizes[mLOD]); 
+    SwizzleTileIntoCImg(tilenum, cimg, cimgFrameOffset); 
     tileOffset += tilesizes[tilenum++];
   }
 
