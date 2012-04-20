@@ -22,8 +22,12 @@ bool BufferedStreamingMovie::ReadHeader(void) {
   } 
   mDecompressorThreads.clear(); 
 
-  return  StreamingMovie::ReadHeader(); 
- 
+  bool retval =  StreamingMovie::ReadHeader(); 
+  mRenderedFrameLookup.clear(); 
+  mRenderedFrameLookup.resize(mNumFrames);
+  mCurrentImage.mFrameNumber = 0;
+  mRenderedImages.resize(mUserPrefs.mBufferSize/(mFrameSizes[mUserPrefs.mLOD][0]*mFrameSizes[mUserPrefs.mLOD][1]*3)); 
+  return retval; 
 } 
 
 /*
@@ -31,8 +35,7 @@ bool BufferedStreamingMovie::ReadHeader(void) {
  */ 
 void BufferedStreamingMovie::StartThreads(int numthreads){
 
-  boost::lock_guard<boost::shared_mutex> lock(mRenderBuffer.mMutex); 
-  mRenderBuffer.SetFrameSize(mFrameSizes[mLOD][0]*mFrameSizes[mLOD][1]*3); 
+  boost::lock_guard<boost::mutex> lock(mRenderMutex);   
 
   // start reading frames... 
   mReaderThread = boost::thread(&BufferedStreamingMovie::ReaderThread, this); 
@@ -42,7 +45,7 @@ void BufferedStreamingMovie::StartThreads(int numthreads){
     mDecompressorThreads.push_back(boost::make_shared<boost::thread>(&BufferedStreamingMovie::DecompressorThread, this, id) ); 
     id++; 
   }
-
+  return; 
 }
 
 
@@ -50,15 +53,15 @@ bool BufferedStreamingMovie::DisplayFrame(uint32_t framenum){
 
   bool found=false; 
   mCurrentImage.mFrameNumber = framenum; // no mutex required
-
+ 
   {   // if the render buffer has the image, then display it.  
-    boost::lock_guard<boost::shared_mutex> lock(mRenderBuffer.mMutex); 
-    if (mRenderBuffer.mFrameSlots[framenum]) {
-      mDisplayer.display(mRenderBuffer.mFrameSlots[framenum]->mCimg); 
+    boost::lock_guard<boost::mutex> lock(mRenderMutex); 
+    if (mRenderedFrameLookup[framenum]) {
+      mDisplayer.display(mRenderedFrameLookup[framenum]->mCimg); 
       found=true; 
     } 
   }
-  mRenderBuffer.mCondition.notify_all(); 
-  mDoubleIOBuffer.mCondition.notify_all(); 
+  mRenderCondition.notify_all(); 
+  mIOBufferCondition.notify_all(); 
   return found; 
 }
