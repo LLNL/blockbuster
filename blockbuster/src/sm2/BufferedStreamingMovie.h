@@ -47,7 +47,8 @@ struct RenderBuffer {
   uint32_t mFrameSize; // computed bytes per frame at mLOD
   vector<boost::shared_ptr<RenderedImage> > mFrameSlots; // quick lookup table
   vector<RenderedImage> mRenderedImages; // actual frame storage
-  boost::mutex mMutex; 
+  boost::shared_mutex mMutex; 
+  boost::condition_variable mCondition; 
 }; 
  
 //===============================================
@@ -95,6 +96,7 @@ struct DoubleIOBuffer {
   IOBuffer mDoubleBuffer[2]; 
   IOBuffer *mFrontBuffer, *mBackBuffer; 
   boost::shared_mutex mMutex; 
+  boost::condition_variable mCondition; 
 
 };
 
@@ -112,82 +114,6 @@ struct DoubleIOBuffer {
 
 }; 
 
-//===============================================
-/*
-  Producer half of the producer/consumer I/O model. 
-  Read the movie in multi-megabyte chunks, buffer it. 
-*/ 
-
-class FrameReader {
- public:
-  FrameReader(){ }
-  FrameReader(std::string filename):mFileName(filename){}
-  ~FrameReader(){}
-
-  void SetFileName(std::string filename) {
-    mFileName = filename; 
-  }
-
-  void StartThread(void) {
-    mThread = boost::thread(&FrameReader::run, this); 
-  }
-
- 
-  // this function starts a new thread
-  void run(){
-    mKeepRunning=true; 
-    while (mKeepRunning) {
-      ; 
-    }
-  } 
-  
-  bool mKeepRunning; 
-  boost::thread mThread; 
-  std::string mFileName; 
-};
-
-//===============================================
-/*
-  Consumes raw frames and produces decompressed frames
-  This is a functor to work with 
-*/ 
-class Decompressor { 
- public:
-  Decompressor(){
-    return; 
-  }
-  Decompressor(const Decompressor &other) {
-    *this = other; 
-  }
-
-  Decompressor &operator =(const Decompressor &other) {
-    this->mThreadID = other.mThreadID; 
-    this->mKeepRunning = other.mKeepRunning; 
-    // this->mThread = other.mThread; // NOT ALLOWED
-    return *this; 
-  }
-
-  ~Decompressor() {
-    // stop thread and clean up memory
-    return; 
-  }
-  
-  void StartThread(int threadID) {
-    mThreadID = threadID; 
-    mThread = boost::thread(&Decompressor::run, this); 
-  }
-
-  void run(){
-    mKeepRunning=true; 
-    while (mKeepRunning) {
-      ; 
-    }
-  } 
-  
-  bool mKeepRunning; 
-  int mThreadID; 
-  boost::thread mThread; 
-};
 
 //===============================================
 /* 
@@ -199,7 +125,7 @@ class BufferedStreamingMovie:public StreamingMovie {
   BufferedStreamingMovie() {
     return; 
   }
-  BufferedStreamingMovie(std::string filename):StreamingMovie(filename),mFrameReader(filename) {
+  BufferedStreamingMovie(std::string filename):StreamingMovie(filename) {
     return;
   }
   ~BufferedStreamingMovie(){
@@ -209,7 +135,7 @@ class BufferedStreamingMovie:public StreamingMovie {
   bool ReadHeader(void); // virtual function
 
   void SetFileName(std::string filename) {    
-    mFrameReader.SetFileName(filename); 
+    mFileName = filename; 
   }
 
   void SetBufferSizes(uint32_t bufsize) {
@@ -217,32 +143,43 @@ class BufferedStreamingMovie:public StreamingMovie {
     mRenderBuffer.SetBufferSize(bufsize*2); 
   }
 
-  void StartThreads (int numthreads) {
-    mDecompressors.clear(); 
-    //mDecompressors.resize(numthreads); 
-    int i=numthreads; 
-    while (i<numthreads) {
-      mDecompressors.push_back(Decompressor()) ;
-      mDecompressors[i].StartThread(i); 
+  // this function lives in its own thread
+  void ReaderThread(){
+    mKeepReading=true; 
+    while (mKeepReading) {
+      ; 
     }
-    mFrameReader.StartThread(); 
-    return; 
+  } 
+
+  // this function lives in its own thread
+  void DecompressorThread(int threadID) {
+    mKeepDecompressing = true; 
+    while (mKeepDecompressing) {
+      ; 
+    }
   }
+
+
+  void StartThreads(int numthreads) ;
 
   // use own CImgDisplay to show the frame -- no copy needed
   bool DisplayFrame(uint32_t framenum);
 
  private:
-    FrameReader mFrameReader; 
-    std::vector<Decompressor> mDecompressors; 
-    DoubleIOBuffer mDoubleIOBuffer; 
-    RenderBuffer mRenderBuffer; 
+  boost::thread mReaderThread; 
+  bool mKeepReading; 
 
-    CImgDisplay mDisplayer; 
-    // Current frame info: 
-    Image mCurrentImage;  // what's being displayed right now
-    
-    boost::shared_mutex mFrameViewMutex; 
+  int mNumDecompressorThreads; 
+  std::vector<boost::shared_ptr<boost::thread> > mDecompressorThreads; 
+  bool mKeepDecompressing; 
+
+  DoubleIOBuffer mDoubleIOBuffer; 
+  RenderBuffer mRenderBuffer; 
+  
+  CImgDisplay mDisplayer; 
+  // Current frame info: 
+  Image mCurrentImage;  // what's being displayed right now
+  
 }; 
 
 
