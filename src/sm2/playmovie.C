@@ -40,7 +40,7 @@ int main (int argc, char *argv[]){
     exit(1); 
   }
   
-  sm.StartThreads(4); 
+  sm.SetNumThreads(4); 
 
   // full speed ahead!  
   while (framenum < numframes) {

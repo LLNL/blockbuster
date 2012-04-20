@@ -69,24 +69,17 @@ class BufferedStreamingMovie:public StreamingMovie {
     return true; 
   }
   
-  // this function lives in its own thread
-  void ReaderThread(){
-    mKeepReading=true; 
-    while (mKeepReading) {
-      ; 
-    }
-  } 
-
-  // this function lives in its own thread
-  void DecompressorThread(int threadID) {
-    mKeepDecompressing = true; 
-    while (mKeepDecompressing) {
-      ; 
-    }
+  void SetNumThreads(int numthreads) {
+    mNumDecompressorThreads = numthreads; 
   }
 
+  void StartThreads(void);
 
-  void StartThreads(int numthreads) ;
+  // this function lives in its own thread
+  void ReaderThread();
+
+  // this function lives in its own thread
+  void DecompressorThread(int threadID);
 
   // use own CImgDisplay to show the frame -- no copy needed
   bool DisplayFrame(uint32_t framenum);
@@ -122,7 +115,7 @@ class BufferedStreamingMovie:public StreamingMovie {
   CImgDisplay mDisplayer; 
   // Current frame info: 
   Image mCurrentImage;  // what's being displayed right now
-  
+  Image mNextImage; // what is going to be displayed soon. 
 }; 
 
 
