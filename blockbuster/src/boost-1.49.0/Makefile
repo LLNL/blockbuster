@@ -40,7 +40,7 @@ all: install
 install: $(INSTALL_EVIDENCE)
 
 $(INSTALL_EVIDENCE): boost_1_49_0/boost/random.hpp
-	echo apparently $< is older than $@; ls -l $<; ls -l $@
+	-echo apparently $< is older than $@; ls -l $<; ls -l $@
 	cd boost_1_49_0 && ./bootstrap.sh --with-libraries=thread && ./bjam install --prefix=$(INSTALL_DIR)
 
 boost_1_49_0/boost/random.hpp:
