@@ -39,7 +39,7 @@ endif
 include ../../config/config
 
 ifeq ($(shell uname),Darwin)
-	sidecar = sidecar.app/Contents/MacOS/sidecar
+	sidecar = sidecar.app 
 else
 	sidecar = sidecar
 endif
