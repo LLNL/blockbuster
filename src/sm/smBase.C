@@ -62,6 +62,8 @@
 #include <stdlib.h>
 #endif
 #include "stringutil.h"
+#include <boost/make_shared.hpp>
+#include <boost/shared_array.hpp>
 
 using namespace std; 
 
@@ -356,7 +358,7 @@ int smBase::newFile(const char *_fname, u_int _width, u_int _height,
      while (res < mNumResolutions) {
        char filename[] = "/tmp/smBase-tmpfileXXXXXX";
        int fd = mkstemp(filename); 
-       smdbprintf(5, "Res file %d is named %s", res, filename); 
+       smdbprintf(2, "Res file %d is named %s", res, filename); 
        mResFileNames.push_back(filename); 
        mResFDs.push_back(fd); 
        ++res; 
@@ -955,7 +957,7 @@ uint32_t smBase::getFrameBlock(int frame, void *data, int threadnum,  int destRo
      return 0;
    if (_dim[0] + _pos[0] > getWidth(0) ||
        _dim[1] + _pos[1] > getHeight(0)) {
-     fprintf(stderr, "dim(%d,%d) + _pos(%d,%d) > dims(%lu, %lu)\n", 
+     fprintf(stderr, "dim(%d,%d) + _pos(%d,%d) > dims(%u, %u)\n", 
              _dim[0], _dim[1], _pos[0], _pos[1], getWidth(0), getHeight(0));
      abort(); 
    }
@@ -1150,19 +1152,21 @@ void smBase::stopWriteThread(void) {
   2) reopen each resolution file  and cat onto the end of our movie.  
   3) Fix all file offsets at this point from relative to absolute
 */
-#define CHUNK_SIZE 5*1000*1000
+//#define CHUNK_SIZE (50*1000*1000)
+#define CHUNK_SIZE (50*1000*1000)
 
 void smBase::combineResolutionFiles(void) {
   smdbprintf(1, "combining Resolution Files into final movie...\n"); 
   if (mResFDs.size() < 2) return; 
-  u_char buf[CHUNK_SIZE+1]; 
+  boost::shared_array<char> bufptr(new char[CHUNK_SIZE+1]); 
+  char *buf = bufptr.get(); 
   int res = 1; 
   while (res < mNumResolutions) {
     // we are going to place this resolution at the end of the movie file, 
     // so adjust the offsets by the current movie file length
     uint64_t offsetAdjust = LSEEK64(mResFDs[0], 0, SEEK_END); // get file length
     smdbprintf(4, "offsetAdjust is %lld\n", offsetAdjust); 
-    smdbprintf(1, "combining Resolution level %d from file %s into final movie, which has size of %ld bytes...\n", res, mResFileNames[res].c_str(), offsetAdjust); 
+    smdbprintf(1, "combining Resolution level %d from file %s into final movie, which has size of %lld bytes...\n", res, mResFileNames[res].c_str(), offsetAdjust); 
     uint32_t frame = 0, resframe = res*mNumFrames; 
     while (frame++ < mNumFrames) { 
       mFrameOffsets[resframe++] += offsetAdjust; 
@@ -1170,7 +1174,12 @@ void smBase::combineResolutionFiles(void) {
 
     // close the res file and reopen as readonly:
     int fd = mResFDs[res]; 
-    close(fd); 
+    if (close(fd) == -1) {
+      smdbprintf(0, "ERROR: failed to close res file %s.\n", mResFileNames[res].c_str());
+      perror("combineResolutionFiles"); 
+      abort(); 
+    }
+      
     fd = open(mResFileNames[res].c_str(), O_RDONLY); 
     if (fd == -1) {
       smdbprintf(0, "ERROR: failed to open res file %s for reading.\n", mResFileNames[res].c_str());
@@ -1178,11 +1187,18 @@ void smBase::combineResolutionFiles(void) {
       abort(); 
     }
     // spin through the file and grab bytes and copy to "real" movie
-    uint64_t inputFileSize = mResFileBytes[res];   
+    uint64_t inputFileSize = mResFileBytes[res], actualFileBytes = LSEEK64(fd, 0, SEEK_END);   
+    if (actualFileBytes != inputFileSize) {
+      smdbprintf(0, "ERROR: Res file %s has %lld bytes but we expect %lld bytes.\n", mResFileNames[res].c_str(), actualFileBytes, inputFileSize);    
+      perror("combineResolutionFiles"); 
+      abort(); 
+    }
+    LSEEK64(fd, 0, SEEK_SET); 
     uint64_t  bytesRemaining = inputFileSize; 
     while (bytesRemaining) {
       uint64_t bytesToRead = bytesRemaining; 
       if (bytesToRead > CHUNK_SIZE) bytesToRead = CHUNK_SIZE; 
+      smdbprintf(3, "bytesRemaining: %lld, bytesToRead = %lld\n", bytesRemaining, bytesToRead); 
       uint64_t bytesRead = read(fd, buf, bytesToRead); 
       if (bytesRead <= 0) {
         smdbprintf(0, "Error: failed read from res file %s\n", mResFileNames[res].c_str()); 
@@ -1197,9 +1213,9 @@ void smBase::combineResolutionFiles(void) {
         abort(); 
       }       
       bytesRemaining -= bytesRead;
-      smdbprintf(5, "After writing %lld bytes, offset in file is %lld\n", 
-                 inputFileSize - bytesRemaining, 
-                 LSEEK64(mResFDs[0], 0, SEEK_END)); 
+      smdbprintf(1, "After writing %lld MB, size of movie file is %lld MB\n", 
+                 (inputFileSize - bytesRemaining)/(1000*1000), 
+                 LSEEK64(mResFDs[0], 0, SEEK_CUR)/(1000*1000)); 
                  
     }
     smdbprintf(1, "Finished copying %lld bytes from res %d file %s to movie file, which is now %d bytes. Unlinking res file\n", inputFileSize, res, mResFileNames[res].c_str(), LSEEK64(mResFDs[0], 0, SEEK_END)); 
@@ -1254,7 +1270,7 @@ bool smBase::flushFrames(bool force) {
     string filename = mResFileNames[res]; 
     int fd =  mResFDs[res];   
     // figure out the offset to the first frame in the resolution:
-    uint32_t firstFileOffset = 0; // true for res!=0 and firstFrame == 0, as they write to temp files
+    uint64_t firstFileOffset = 0; // true for res!=0 and firstFrame == 0, as they write to temp files
     uint32_t frame = firstFrame;   
     uint32_t resFrame = frame + res*mNumFrames; 
     
@@ -1266,7 +1282,7 @@ bool smBase::flushFrames(bool force) {
         firstFileOffset = mFrameOffsets[0]; // already pre-computed
       }
     }
-    uint32_t fileOffset = firstFileOffset; 
+    uint64_t fileOffset = firstFileOffset; 
 
     // setup some other variables for loop
     int numTiles = getTileNx(res)*getTileNy(res);
@@ -1308,7 +1324,7 @@ bool smBase::flushFrames(bool force) {
     LSEEK64(fd, firstFileOffset, SEEK_SET); 
     WRITE(fd, &mWriteBuffer[0], buffBytes); 
     mResFileBytes[res] += buffBytes; 
-    smdbprintf(3, "flushFrames( is writing resolution frames to buffer:  Res=%d, startFrame=%d, numFrames=%d, bufbytes = %d , requiredBytes=%d, firstFileOffset = %d, mResFileBytes = %d, actual res file length = %d, filename=%s.\n", res, firstFrame, stopFrame-firstFrame, buffBytes, mOutputBuffer->mRequiredWriteBufferSize, firstFileOffset, mResFileBytes[res], LSEEK64(fd, 0, SEEK_END), filename.c_str()); 
+    smdbprintf(3, "flushFrames( is writing resolution frames to buffer:  Res=%d, startFrame=%d, numFrames=%d, bufbytes = %d , requiredBytes=%d, firstFileOffset = %lld, mResFileBytes = %lld, actual res file length = %lld, filename=%s.\n", res, firstFrame, stopFrame-firstFrame, buffBytes, mOutputBuffer->mRequiredWriteBufferSize, firstFileOffset, mResFileBytes[res], LSEEK64(fd, 0, SEEK_END), filename.c_str()); 
     ++res; 
   }
   uint32_t f = mOutputBuffer->mFrameBuffer.size(); 
@@ -1623,7 +1639,7 @@ void smBase::closeFile(void)
    smdbprintf(3, "smBase::closeFile"); 
 
    if (bModFile == TRUE) {
-     combineResolutionFiles(); 
+     this->combineResolutionFiles(); 
 	int i;
 
    	LSEEK64(mThreadData[0].fd, 0, SEEK_SET);
