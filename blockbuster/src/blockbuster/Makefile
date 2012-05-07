@@ -27,7 +27,7 @@
 include ../config/config
 
 ifeq ($(shell uname),Darwin)
-	blockbuster = blockbuster.app/Contents/MacOS/blockbuster
+	blockbuster = blockbuster.app
 	X11_LIBS += -lXext -lXtst
 	GPROF_HELPER=
 else
@@ -156,7 +156,7 @@ relink: $(DEPENDENT_LIBS)
 # for now, have to copy blockbuster up to allow command line usage
 $(blockbuster): relink Makefile.qt.include  .force
 	INSTALL_DIR=$(INSTALL_DIR) $(MAKE)  -f Makefile.qt
-	mkdir -p $(INSTALL_DIR)/bin && cp $(blockbuster) $(INSTALL_DIR)/bin/
+	mkdir -p $(INSTALL_DIR)/bin && cp -r $(blockbuster) $(INSTALL_DIR)/bin/
 
 $(blockbuster_srun): blockbuster_srun.sh 
 	cp $< $@
