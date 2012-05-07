@@ -80,12 +80,17 @@ depend:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-smBase.o: smBaseP.h smBase.h smdfc/smdfc.h smRaw.h smRLE.h smGZ.h smLZO.h
-smBase.o: smJPG.h ../common/timer.h ../common/stringutil.h
-smBase.o: ../common/stringutil.h
-smRLE.o: smRLE.h smBase.h
-smRaw.o: smRaw.h smBase.h
-smGZ.o: smGZ.h smBase.h
-smLZO.o: smLZO.h smBase.h
-smJPG.o: smJPG.h smBase.h
+smBase.o: smBaseP.h smBase.h ../common/stringutil.h ../common/timer.h
+smBase.o: ../common/stringutil.h smdfc/smdfc.h smRaw.h smRLE.h smGZ.h smLZO.h
+smBase.o: smJPG.h
+smRLE.o: smRLE.h smBase.h ../common/stringutil.h ../common/timer.h
+smRLE.o: ../common/stringutil.h
+smRaw.o: smRaw.h smBase.h ../common/stringutil.h ../common/timer.h
+smRaw.o: ../common/stringutil.h
+smGZ.o: smGZ.h smBase.h ../common/stringutil.h ../common/timer.h
+smGZ.o: ../common/stringutil.h
+smLZO.o: smLZO.h smBase.h ../common/stringutil.h ../common/timer.h
+smLZO.o: ../common/stringutil.h
+smJPG.o: smJPG.h smBase.h ../common/stringutil.h ../common/timer.h
+smJPG.o: ../common/stringutil.h
 smdfc/smdfc.o: smdfc/smdfcP.h smdfc/smdfc.h
