@@ -78,7 +78,7 @@ depend:
 
 BufferedStreamingMovie.o: BufferedStreamingMovie.h StreamingMovie.h SMCodec.h
 BufferedStreamingMovie.o: ../common/stringutil.h ../common/timer.h
-BufferedStreamingMovie.o: ../common/stringutil.h
+BufferedStreamingMovie.o: ../common/stringutil.h iodefines.h
 playmovie.o: BufferedStreamingMovie.h StreamingMovie.h SMCodec.h
 playmovie.o: ../common/stringutil.h ../common/timer.h ../common/stringutil.h
 StreamingMovie.o: StreamingMovie.h SMCodec.h ../common/stringutil.h
