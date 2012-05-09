@@ -1141,8 +1141,8 @@ int DisplayLoop(FrameList **allFramesPtr, ProgramOptions *options)
          * THIS IS ICKY.  But it is going away when I rewrite the cache.  
          */
         int32_t i, preloadmax = preloadFrames;
-        if (preloadmax > startFrame-endFrame) {
-           preloadmax = startFrame-endFrame;
+        if (preloadmax > endFrame-startFrame) {
+           preloadmax = endFrame-startFrame;
         }
         for (i = 1; i <= preloadmax; i++) {
           int offset = (playDirection == -1) ? -i : i;
