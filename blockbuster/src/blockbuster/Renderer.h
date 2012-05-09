@@ -49,6 +49,11 @@ class Renderer: public XWindow {
   // from Canvas class 
   virtual void Preload(uint32_t frameNumber,
                        const Rectangle *imageRegion, uint32_t levelOfDetail);
+
+  // this calls Preload.  It's not overloaded for DMX therefore. 
+  void Preload(uint32_t frameNumber, uint32_t preloadFrames, 
+               int playDirection, uint32_t minFrame, uint32_t maxFrame,
+               const Rectangle *imageRegion, uint32_t levelOfDetail);
   
  public:
   QString mName; 

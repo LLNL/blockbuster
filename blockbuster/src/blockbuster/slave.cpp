@@ -453,22 +453,25 @@ int Slave::Loop(void)
 #endif
             /* send ack */
             SendMessage(QString("SwapBuffers complete %1 %2").arg(messageList[1]).arg(messageList[2])); 
-            if (preload && mCanvas && mCanvas->frameList) {
-              int32_t i;
-              for (i = 1; i <= preload; i++) {
-                int offset = (playDirection == -1) ? -i : i;
-                int frame = (lastImageRendered + offset);
-                if (frame > endFrame) {
-                  frame = startFrame + (frame - endFrame);// preload for loops
-                } 
-                if (frame < startFrame) {
-                  frame = endFrame - (startFrame - frame); // for loops
-                } 
-                DEBUGMSG("Preload frame %d", frame); 
-                mCanvas->Preload(frame, &currentRegion, lod);
-              }
+            mCanvas->Preload(lastImageRendered, preload, playDirection, 
+                            startFrame, endFrame, &currentRegion, lod); 
+            /* if (preload && mCanvas && mCanvas->frameList) {
+               int32_t i;
+               for (i = 1; i <= preload; i++) {
+               int offset = (playDirection == -1) ? -i : i;
+               int frame = (lastImageRendered + offset);
+               if (frame > endFrame) {
+               frame = startFrame + (frame - endFrame);// preload for loops
+               } 
+               if (frame < startFrame) {
+               frame = endFrame - (startFrame - frame); // for loops
+               } 
+               DEBUGMSG("Preload frame %d", frame); 
+               mCanvas->Preload(frame, &currentRegion, lod);
+               }
                
-            } 
+               }
+            */ 
           } // end "SwapBuffers"
           else if (token == "Preload") {
             if (messageList.size() != 2) {

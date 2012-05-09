@@ -1140,25 +1140,9 @@ int DisplayLoop(FrameList **allFramesPtr, ProgramOptions *options)
          * directly.)
          * THIS IS ICKY.  But it is going away when I rewrite the cache.  
          */
-        int32_t i, preloadmax = preloadFrames;
-        if (preloadmax > endFrame-startFrame) {
-           preloadmax = endFrame-startFrame;
-        }
-        for (i = 1; i <= preloadmax; i++) {
-          int offset = (playDirection == -1) ? -i : i;
-          int frame = (frameNumber + offset);
-          if (frame > endFrame) {
-            frame = startFrame + (frame - endFrame);// preload for loops
-          } 
-          if (frame < startFrame) {
-            frame = endFrame - (startFrame - frame); // for loops
-          } 
-          // for very short movies, this can be a problem
-          DEBUGMSG("Preload frame %d", frame); 
-          canvas->Preload(frame, &roi, lod);
-        }
+        canvas->Preload(frameNumber, preloadFrames, playDirection, 
+                        startFrame, endFrame, &roi, lod); 
        }
-       
        if (frameNumber != previousFrame) {
          DEBUGMSG("frameNumber changed to %d during non-switch logic", frameNumber); 
          canvas->ReportFrameChange(frameNumber);
