@@ -2,6 +2,11 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
+VERSION 2.7.3a (r634) Wed May  9 09:36:00 PDT 2012
+-- Fixed a long standing blockbuster bug that limited multithreaded performance
+
+  
+===============================================================================
 VERSION 2.7.2b (r581) Fri Feb 10 15:12:27 PST 2012
 -- Fixed a bug in img2sm when creating multires SM files.   
 
