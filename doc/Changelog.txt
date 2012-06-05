@@ -2,9 +2,9 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.7.3a (r634) Wed May  9 09:36:00 PDT 2012
+VERSION 2.7.3a (r642) Tue Jun  5 14:27:58 PDT 2012
 -- Fixed a long standing blockbuster bug that limited multithreaded performance
-
+-- Use 4 threads by default is number of processors supports it. 
   
 ===============================================================================
 VERSION 2.7.2b (r581) Fri Feb 10 15:12:27 PST 2012
