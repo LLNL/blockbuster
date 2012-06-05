@@ -7,6 +7,8 @@
 #include "QDataStream"
 #include "QTcpServer"
 #include "QThread"
+#include <unistd.h>
+#include <stdint.h>
 //#include "blockbuster_qt.h"
 class BlockbusterInterface; 
 

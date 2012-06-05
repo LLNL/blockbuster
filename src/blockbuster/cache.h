@@ -162,40 +162,40 @@ class OldImageCache {
   void Print(void); 
 #define PrintJobQueue(q) __PrintJobQueue(#q,q)
   void __PrintJobQueue(QString name, deque<OldImageCacheJob *>&q); 
-  void  lock(char *reason, char *file="unknown file", int line=0) {
+  void  lock(string reason, string file="unknown file", int line=0) {
     CACHEDEBUG("%s: %d: locking image cache (%s)", 
-               file, line, reason); 
+               file.c_str(), line, reason.c_str()); 
     imageCacheLock.lock(); 
     /* CACHEDEBUG("%s: %d: locked image cache (%s)", 
        file, line, reason); 
     */
   }
-  void unlock(char *reason, char *file="unknown file", int line=0) {
+  void unlock(string reason, string file="unknown file", int line=0) {
     imageCacheLock.unlock(); 
     CACHEDEBUG("%s: %d: unlocked image cache (%s)", 
-               file, line, reason); 
+               file.c_str(), line, reason.c_str()); 
   }
   
-  void WaitForJobReady(char *reason, char *file="unknown file", int line=0) {
+  void WaitForJobReady(string reason, string file="unknown file", int line=0) {
     CACHEDEBUG("%s: %d: worker waiting job ready (%s)", 
-               file, line, reason); 
+               file.c_str(), line, reason.c_str()); 
     jobReady.wait(&imageCacheLock, 100); 
   }
   
-  void WaitForJobDone(char *reason, char *file="unknown file", int line=0) {
+  void WaitForJobDone(string reason, string file="unknown file", int line=0) {
     CACHEDEBUG("%s: %d: main thread waiting job done (%s)", 
-               file, line, reason); 
+               file.c_str(), line, reason.c_str()); 
     jobDone.wait(&imageCacheLock, 100); 
-    CACHEDEBUG("%s: %d: main thread Woke up (%s)", file, line, reason); 
+    CACHEDEBUG("%s: %d: main thread Woke up (%s)", file.c_str(), line, reason.c_str()); 
   }
-  void WakeAllJobReady(char *reason, char *file="unknown file", int line=0) {
+  void WakeAllJobReady(string reason, string file="unknown file", int line=0) {
     CACHEDEBUG("%s: %d: main thread signaling job ready (%s)", 
-               file, line, reason); 
+               file.c_str(), line, reason.c_str()); 
     jobReady.wakeAll(); 
   }
-  void WakeAllJobDone(char *reason, char *file="unknown file", int line=0) {
+  void WakeAllJobDone(string reason, string file="unknown file", int line=0) {
     CACHEDEBUG("%s: %d: worker thread signaling job done (%s)", 
-               file, line, reason); 
+               file.c_str(), line, reason.c_str()); 
     jobDone.wakeAll(); 
   }
   
