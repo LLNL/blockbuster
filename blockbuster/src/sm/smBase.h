@@ -47,6 +47,7 @@
 #ifndef WIN32
 #include <sys/mman.h>
 #include <unistd.h>
+#include <stdint.h>
 #else
 #define off64_t __int64
 #endif
