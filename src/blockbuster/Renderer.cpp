@@ -89,3 +89,29 @@ void Renderer::Preload(uint32_t frameNumber,
   }   
   return; 
 }
+
+//=====================================================================
+/* 
+   Preload a length of frames
+   startFrame -- 
+*/ 
+void Renderer::Preload(uint32_t frameNumber, uint32_t preloadFrames, 
+                       int playDirection, 
+                       uint32_t minFrame, uint32_t maxFrame,
+                       const Rectangle *imageRegion, 
+                       uint32_t levelOfDetail) {
+  
+  uint32_t preloadmax = maxFrame-minFrame, 
+    frame=frameNumber, preloaded=0;
+  if (preloadmax > preloadFrames) {
+    preloadmax = preloadFrames;
+  }
+  while (preloaded++ < preloadmax) {
+    frame += playDirection; 
+    if (frame > maxFrame) frame = minFrame; 
+    if (frame < minFrame) frame = maxFrame; 
+    DEBUGMSG("Preload frame %d", frame); 
+    this->Preload(frame, imageRegion, levelOfDetail);
+  }
+  return; 
+}

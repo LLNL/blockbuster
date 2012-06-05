@@ -37,6 +37,13 @@ struct Canvas {
                const Rectangle *imageRegion, uint32_t levelOfDetail){
     mRenderer->Preload(frameNumber, imageRegion, levelOfDetail); 
   }
+
+  void Preload(uint32_t frameNumber, uint32_t preloadFrames, 
+               int playDirection, uint32_t minFrame, uint32_t maxFrame,
+               const Rectangle *imageRegion, uint32_t levelOfDetail){
+    mRenderer->Preload(frameNumber, preloadFrames, playDirection,
+                       minFrame, maxFrame, imageRegion, levelOfDetail); 
+  }
   
   
   /* This really should be part of Renderer.  It is set by the Renderer.

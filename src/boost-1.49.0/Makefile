@@ -33,19 +33,20 @@ INSTALL_DIR ?= $(shell pwd)
 
 INSTALL_EVIDENCE = $(INSTALL_DIR)/include/boost/random.hpp # random header :-)
 
-default: install
-
 all: install
 
 install: $(INSTALL_EVIDENCE)
 
 $(INSTALL_EVIDENCE): boost_1_49_0/boost/random.hpp
 	-echo apparently $< is older than $@; ls -l $<; ls -l $@
+# export INSTALL_DIR=$(INSTALL_DIR); if ! find_boost.sh; then cd boost_1_49_0 && ./bootstrap.sh --with-libraries=thread && ./bjam install --prefix=$(INSTALL_DIR); fi
 	cd boost_1_49_0 && ./bootstrap.sh --with-libraries=thread && ./bjam install --prefix=$(INSTALL_DIR)
 
 boost_1_49_0/boost/random.hpp:
-	rm -rf boost_1_49_0
-	tar -xvf boost_1_49_0.tar.gz
+#	export INSTALL_DIR=$(INSTALL_DIR); if ! find_boost.sh; then \
+# rm -rf boost_1_49_0 
+	tar -xf boost_1_49_0.tar.gz 
+#	fi
 #	cp -r boost_1_49_0/boost $(INSTALL_DIR)/include
 
 clean:

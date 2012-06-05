@@ -50,6 +50,7 @@ using namespace cimg_library;
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <stdint.h>
 
 #include <string>
 #include <vector>

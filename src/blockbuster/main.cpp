@@ -170,7 +170,7 @@ void checkarg(int argc, const char *argname) {
 // =====================================================================
 bool  CHECK_STRING_ARG(const char *flag, int &argc, char *argv[], QString &str)	{
 
-  char *found = strstr(flag, argv[1]); 
+  const char *found = strstr(flag, argv[1]); 
   if (found != flag) return false;
 
   checkarg(argc, flag); // exits on error-- bad but no time to fix
@@ -521,8 +521,8 @@ static void ParseOptions(int &argc, char *argv[])
   return  ; 
 }
 
-void printargs(char *description, char *args[], int argc) {
-  QString arglist = QString("PRINTARGS: %1: ").arg(description); 
+void printargs(string description, char *args[], int argc) {
+  QString arglist = QString("PRINTARGS: %1: ").arg(description.c_str()); 
   int argnum=0; 
   while (argnum < argc) {
     arglist += QString(" %1").arg(args[argnum]); 
@@ -582,7 +582,8 @@ int main(int argc, char *argv[])
   signal(SIGINT, InterruptHandler);
 
   /* This hack should prevent Qt 4.2.3 from segfaulting: */
-  putenv("QT_NO_GLIB=1"); 
+  char noglib[] = "QT_NO_GLIB=1";
+  putenv(noglib); 
 
   /* This is the master list of frames, and some stats about the list */
   FrameList *allFrames = NULL;

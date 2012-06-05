@@ -1,6 +1,7 @@
 #ifndef SM_DECOMPRESSOR_H
 #define SM_DECOMPRESSOR_H
 #include <vector>
+#include <stdint.h>
 /*
   This seems overdesigned, but for some decompressors it probably needs a whole file to talk about compressing and decompressing. 
   There is no internal buffering to keep things threadsafe. 

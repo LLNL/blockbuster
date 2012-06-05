@@ -2,6 +2,7 @@
 #define SM_Jpeg_DECOMPRESSOR_H
 #include "SMCodec.h"
 #include "setjmp.h"
+#include <stdio.h>
 extern "C" {
 #include "jpeglib.h"
 #include "jerror.h"

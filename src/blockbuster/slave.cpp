@@ -196,37 +196,38 @@ void Slave::SendError(QString msg) {
 
 bool Slave::LoadFrames(const char *files)
 {
+  
   DEBUGMSG("LoadFrames"); 
     FrameList *frames;
     int numFiles = 0;
-    const char *start, *lastChar;
+    char *start, *lastChar;
 
     QStringList fileList; 
-    lastChar = files + strlen(files);
+    start = strdup(files);
+    lastChar = start + strlen(start);
 
-    start = files;
     while (1) {
-        char *end = strchr(start, ' ');
-        if (!end)
-            end = (char *) lastChar;
-        if (end && end > start) {
-            /* found a filename between <start> and <end> */
-            char save = *end;
-            *end = 0;
-            /* save this filename */
-            fileList.append(start); 
-            numFiles++;
-            /* restore character at <end> */
-            *end = save;
-            if (end == lastChar)
-                break;
-            start = end + 1;
-         }
-        else {
-            break;
-        }
+      char *end = strchr(start, ' ');
+      if (!end)
+        end = (char *) lastChar;
+      if (end && end > start) {
+        /* found a filename between <start> and <end> */
+        char save = *end;
+        *end = 0;
+        /* save this filename */
+        fileList.append(start); 
+        numFiles++;
+        /* restore character at <end> */
+        *end = save;
+        if (end == lastChar)
+          break;
+        start = end + 1;
+      }
+      else {
+        break;
+      }
     }
-
+    free(start);
     /* debug */
     if (0) {
         int i;
@@ -453,22 +454,25 @@ int Slave::Loop(void)
 #endif
             /* send ack */
             SendMessage(QString("SwapBuffers complete %1 %2").arg(messageList[1]).arg(messageList[2])); 
-            if (preload && mCanvas && mCanvas->frameList) {
-              int32_t i;
-              for (i = 1; i <= preload; i++) {
-                int offset = (playDirection == -1) ? -i : i;
-                int frame = (lastImageRendered + offset);
-                if (frame > endFrame) {
-                  frame = startFrame + (frame - endFrame);// preload for loops
-                } 
-                if (frame < startFrame) {
-                  frame = endFrame - (startFrame - frame); // for loops
-                } 
-                DEBUGMSG("Preload frame %d", frame); 
-                mCanvas->Preload(frame, &currentRegion, lod);
-              }
+            mCanvas->Preload(lastImageRendered, preload, playDirection, 
+                            startFrame, endFrame, &currentRegion, lod); 
+            /* if (preload && mCanvas && mCanvas->frameList) {
+               int32_t i;
+               for (i = 1; i <= preload; i++) {
+               int offset = (playDirection == -1) ? -i : i;
+               int frame = (lastImageRendered + offset);
+               if (frame > endFrame) {
+               frame = startFrame + (frame - endFrame);// preload for loops
+               } 
+               if (frame < startFrame) {
+               frame = endFrame - (startFrame - frame); // for loops
+               } 
+               DEBUGMSG("Preload frame %d", frame); 
+               mCanvas->Preload(frame, &currentRegion, lod);
+               }
                
-            } 
+               }
+            */ 
           } // end "SwapBuffers"
           else if (token == "Preload") {
             if (messageList.size() != 2) {
