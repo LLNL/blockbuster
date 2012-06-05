@@ -135,12 +135,12 @@ int DisplayDialog(const char *message) {
  */
 
 struct MessageLevel messageLevels[] = {
-  {"quiet", "Emit no messages (verbosity 0)", MINMESSAGE - 1},
-  {"syserr", "Only emit system-level error messages (verbosity 1)", M_SYSERROR},
-  {"error", "Emit system and program error messages (verbosity 2)", M_ERROR},
-  {"warning", "Emit all errors and program warnings (verbosity 3)", M_WARNING},
-  {"info", "Emit errors, warnings, and progress information (verbosity 4)", M_INFO},
-  {"debug", "Emit debugging information (verbosity 5)", M_DEBUG},
+  {(char*)"quiet", (char*)"Emit no messages (verbosity 0)", MINMESSAGE - 1},
+  {(char*)"syserr", (char*)"Only emit system-level error messages (verbosity 1)", M_SYSERROR},
+  {(char*)"error", (char*)"Emit system and program error messages (verbosity 2)", M_ERROR},
+  {(char*)"warning", (char*)"Emit all errors and program warnings (verbosity 3)", M_WARNING},
+  {(char*)"info", (char*)"Emit errors, warnings, and progress information (verbosity 4)", M_INFO},
+  {(char*)"debug", (char*)"Emit debugging information (verbosity 5)", M_DEBUG},
   {NULL, NULL, 0},
 };
  

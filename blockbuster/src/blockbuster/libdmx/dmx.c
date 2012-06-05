@@ -62,7 +62,7 @@ static const char     *dmx_extension_name = DMX_EXTENSION_NAME;
  *                                                                           *
  *****************************************************************************/
 
-static int close_display(Display *dpy, XExtCodes *extCodes);
+static int close_display(Display *dpy, XExtCodes */*extCodes*/);
 static /* const */ XExtensionHooks dmx_extension_hooks = {
     NULL,				/* create_gc */
     NULL,				/* copy_gc */

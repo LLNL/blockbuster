@@ -200,10 +200,11 @@ static int LoadSplashScreen(Image *image, FrameInfo *,
  * and using the "s" movie control function should be appended
  * here.
  */
+char splash[] = "SPLASH"; 
 static FrameInfo frameInfo
 (300, 103, 24, /* width, height, depth */
  0, /* maxLOD */
- "SPLASH", /* filename */
+ splash, /* filename */
  NULL, /* privateData */
  1, /* enable */
  LoadSplashScreen, /* loadImageFunc */

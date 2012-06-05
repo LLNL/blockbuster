@@ -196,37 +196,38 @@ void Slave::SendError(QString msg) {
 
 bool Slave::LoadFrames(const char *files)
 {
+  
   DEBUGMSG("LoadFrames"); 
     FrameList *frames;
     int numFiles = 0;
-    const char *start, *lastChar;
+    char *start, *lastChar;
 
     QStringList fileList; 
-    lastChar = files + strlen(files);
+    start = strdup(files);
+    lastChar = start + strlen(start);
 
-    start = files;
     while (1) {
-        char *end = strchr(start, ' ');
-        if (!end)
-            end = (char *) lastChar;
-        if (end && end > start) {
-            /* found a filename between <start> and <end> */
-            char save = *end;
-            *end = 0;
-            /* save this filename */
-            fileList.append(start); 
-            numFiles++;
-            /* restore character at <end> */
-            *end = save;
-            if (end == lastChar)
-                break;
-            start = end + 1;
-         }
-        else {
-            break;
-        }
+      char *end = strchr(start, ' ');
+      if (!end)
+        end = (char *) lastChar;
+      if (end && end > start) {
+        /* found a filename between <start> and <end> */
+        char save = *end;
+        *end = 0;
+        /* save this filename */
+        fileList.append(start); 
+        numFiles++;
+        /* restore character at <end> */
+        *end = save;
+        if (end == lastChar)
+          break;
+        start = end + 1;
+      }
+      else {
+        break;
+      }
     }
-
+    free(start);
     /* debug */
     if (0) {
         int i;
