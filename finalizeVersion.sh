@@ -192,9 +192,14 @@ rm -rf $tmpdir
 echo "Installing software..." 
 cd $installdir
 rm -rf chaos*
-mkdir -p chaos_4_x86_64_ib
-ln -s chaos_4_x86_64_ib chaos_4_x86_64
-cd chaos_4_x86_64_ib || errexit "Cannot cd to install directory chaos_4_x86_64_ib"
+
+mkdir -p $SYS_TYPE
+if echo $SYS_TYPE | grep _ib>/dev/null; then 
+    ln -s $SYS_TYPE $(echo $SYS_TYPE | sed 's/_ib//')
+else 
+    ln -s $SYS_TYPE ${SYS_TYPE}_ib
+fi
+cd $SYS_TYPE || errexit "Cannot cd to install directory $SYS_TYPE"
 tar -xzf ../blockbuster-v${version}.tgz || errexit "Cannot untar tarball!?" 
 cd blockbuster-v${version} || errexit "Cannot cd to blockbuster source directory" 
 make || errexit "Could not make software" 
