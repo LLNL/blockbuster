@@ -7,17 +7,23 @@ function errexit() {
     exit 1
 }
 
+function runecho() {
+    echo "$@";
+    "$@"
+}
+
 echo "Welcome to the linux binary installer for blockbuster and sidecar.  You can set INSTALL_DIR or give an directory as an argument, or just type one in if you haven't yet done that." 
 INSTALL_DIR=${1:-$INSTALL_DIR}
 while [ x$INSTALL_DIR == x ]; do
     echo "Please enter the install directory.  New bin, lib, share, include and man directories will be created there and populated appropriately.  Type Control-C to exit without continuing."
     read INSTALL_DIR
 done
-mkdir -p $INSTALL_DIR
+echo "Installing... please wait." 
+runecho mkdir -p $INSTALL_DIR
 
 srcdir=$(dirname $0)
-for dir in $srcdir/{bin,doc,include,lib,man}; do
-    cp -r $dir $INSTALL_DIR  || errexit "Cannot copy $dir to $INSTALL_DIR"
+for dir in $srcdir/{bin,doc,include,lib,man}; do    
+    runecho cp -r $dir $INSTALL_DIR  || errexit "Cannot copy $dir to $INSTALL_DIR"
 done
 
 #set -xv
@@ -36,3 +42,4 @@ done
 #    chrpath -r $rpath $exe 
 #done
  
+echo "Installation completed.  You might want to add $INSTALL_DIR/bin to your PATH environment variable if you are on Linux."
