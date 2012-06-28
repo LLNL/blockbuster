@@ -91,7 +91,7 @@ void usage(void) {
   fprintf(stderr, "'file' is an optional file name, or a prefix of a set of file names\n");
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "   Note: substrings are also matched, so -h is the same as -help, but beware of non-unique prefixes!\n");
-  fprintf(stderr, "-cache <num> specifies how many frames to cache\n");
+  fprintf(stderr, "-cache <num> Probably best not to set this.  It specifies maximum number of frames to cache.  Use -preload instead and -cache will be automatically set.\n");
   fprintf(stderr, "-DecorationsDisable (or -no-decorations): same as -fullscreen\n");
   fprintf(stderr, "-display <display> specifies X display\n");
   fprintf(stderr, "-font <fontname> specifies X font\n");
@@ -259,11 +259,10 @@ static void ParseOptions(int &argc, char *argv[])
 {
   ProgramOptions *opt = GetGlobalOptions(); 
   int numProcessors;
-  char *value;
   /* defaults */
   opt->executable = gCoreApp->applicationFilePath(); 
-  value = GetSetting(opt->settings, "splashScreen");
-  if (value != NULL && atoi(value) == 0) {
+  string value = GetSetting(opt->settings, "splashScreen");
+  if (atoi(value.c_str()) == 0) {
     opt->splashScreen = 0;
   }
  
@@ -459,7 +458,7 @@ static void ParseOptions(int &argc, char *argv[])
   numProcessors = GetNumProcessors();
   if (opt->readerThreads == -1) {
     if (numProcessors > 1) {
-      opt->readerThreads = 2; // too many might be problematic    
+      opt->readerThreads = min(numProcessors,4); // too many might be problematic 
     }
   }
   DEBUGMSG("Using %d threads", opt->readerThreads); 
