@@ -78,12 +78,6 @@ class Preferences {
   //========================
   //saving and restoring from disk
   void SaveToFile(bool createDir=true, bool clobber=true); //open the file, read and remember previous sections, read and discard my section, read and remember sections after me, then write previous section, my section, and trailing sections, then close the file.  Optionally create the needed directory for the file. 
-  void SaveToFile(vector<string> saveKeys, bool createDir=false, bool clobber=false) {
-    //same as SaveToFile() above, but only save keys listed in saveKeys
-    mSaveKeys = saveKeys; 
-    SaveToFile(createDir, clobber); 
-    mSaveKeys.clear(); 
-  }
   void SaveToFile(string filename, bool createDir=false) {
     //convenience function
     SetFile(filename); 
@@ -163,16 +157,22 @@ class Preferences {
     return value == "true" || value == "1" || value == "on"; 
   }
   
+  void SetValidArgs(std::vector<argType> &args) {
+    mValidArgs = args; 
+  }
  protected:
   std::string NextKey(std::ifstream&theFile);
   std::map<std::string, std::string> ReadNextSection(std::ifstream &theFile);
+
+  bool KeyValid(std::string key); //true if key is in mValidArgs
+
   void SaveSectionToFile(std::ofstream &outfile, std::map<std::string, std::string> &section);
 
   // there is no copy constructor, so be sure these shallow copy:
   //vector< pair< string, vector<string> > > mEquivalents; 
   std::map<std::string, std::string>  mPrefs; 
-  std::vector<std::string> mSaveKeys; // only save these keys if given
   std::string mFilename;
+  std::vector<argType> mValidArgs; // only save these args or look for them in environment etc. if given
   char _dirty; 
   char _writtenToDisk;
 };

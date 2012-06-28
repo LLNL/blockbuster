@@ -2,6 +2,7 @@
 #define BLOCKBUSTER_SETTINGS_H
 #include <QApplication>
 #include "common.h"
+#include <string>
 class Renderer; 
 struct RendererSpecificGlue; 
 
@@ -10,9 +11,11 @@ class ProgramOptions *GetGlobalOptions(void);
 void ConsumeArg(int &argc, char *argv[], int position); 
 
 struct Setting {
-  char *variable;
+  std::string variable, origin, value; 
+  /* char *variable;
   char *origin;
   char *value;
+  */
   int changed;
   struct Setting *next;
 } ;
@@ -107,9 +110,9 @@ struct ProgramOptions {
 void *CreateBlankSettings(void);
 void DestroySettings(void *settings);
 void ReadSettingsFromFile(void *settings, const char *filename);
-void WriteSettingsToFile(void *settings, const char *filename, unsigned int flags);
-void ChangeSetting(void *settings, const char *variable, const char *value);
- char *GetSetting(void *settings, const char *variable);
+void WriteSettingsToFile(void *settings, std::string filename, unsigned int flags);
+void ChangeSetting(void *settings, std::string variable,std::string value);
+std::string GetSetting(void *settings, std::string variable);
 void SetRecentFileSetting(void *settings,  const char *filename);
 
 #endif
