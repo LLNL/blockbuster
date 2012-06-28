@@ -1605,7 +1605,7 @@ void BlockbusterLaunchDialog::setupGuiAndCurrentProfile(int index){
 //=======================================================================
 void BlockbusterLaunchDialog::on_hostProfilesComboBox_currentIndexChanged
 (int index) {
-  cerr << "on_hostProfilesComboBox_currentIndexChanged( " << index << " )" << endl;
+  // cerr << "on_hostProfilesComboBox_currentIndexChanged( " << index << " )" << endl;
   if (hostProfileModified()) {
     if (mCurrentProfile->mReadOnly) {
       QMessageBox::StandardButton answer = QMessageBox::question
