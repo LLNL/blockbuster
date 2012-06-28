@@ -88,6 +88,7 @@ void ParseOptions(int &argc, char *argv[]) {
   args.push_back(argType("-rsh", "rsh", "string")); 
   args.push_back(argType("-stresstest", "stresstest", "bool")); 
   args.push_back(argType("-v", "verbose", "long")); 
+  gPrefs.SetValidArgs(args); 
   gPrefs.GetFromArgs(argc, argv, args); 
 }
 

@@ -209,8 +209,12 @@ map<string, string> Preferences::ReadNextSection(ifstream &theFile){
     }
     if (key == "ENDRECORD")
       break;
-    theFile.getline(buf, 2048);
+    theFile.getline(buf, 2048); // get the rest of the line
     string value(buf);
+    if (value == "") {
+      prefsdebug<< "No valid value found for line, skipping..."<<endl;
+      continue; 
+    }
     string::size_type idx = value.find_first_not_of(" \t\n\r");
     value = value.substr(idx);
     theMap[key] =value;    
@@ -274,6 +278,16 @@ void Preferences::ReadFromFile(bool throw_exceptions){
   return;
 }
 
+//====================================================
+bool Preferences::KeyValid(string key) {
+  vector<argType>::iterator pos = mValidArgs.begin(), endpos = mValidArgs.end(); 
+  while (pos != endpos) {
+    if (key == pos->mKey) return true; 
+    ++pos; 
+  }
+
+  return false; 
+}
 
 //====================================================
 void Preferences::SaveSectionToFile(ofstream &outfile, map<string, string> &section){
@@ -281,15 +295,15 @@ void Preferences::SaveSectionToFile(ofstream &outfile, map<string, string> &sect
   outfile << "prefs_label\t" << section["prefs_label"]<<endl;
   map<string, string>::iterator pos = section.begin();
   while (pos != section.end()){
-    if (! mSaveKeys.size() || 
-        find(mSaveKeys.begin(), mSaveKeys.end(), pos->first) != mSaveKeys.end() ) {
-      if (pos->first != "prefs_label"){
-        outfile << pos->first << "\t" ;
-        if (!(pos->second).size())
-          outfile << "(nil)"<<endl;
-        else
-          outfile << pos->second << endl;
-      }
+    if (KeyValid(pos->first)) {
+      outfile << pos->first << "\t" ;
+      if (!(pos->second).size())
+        outfile << "(nil)"<<endl;
+      else {
+        string clean = pos->second; 
+        replace(clean.begin(), clean.end(), '\n', '\t'); 
+        outfile << clean << endl;
+      }      
     }
     ++pos;
   }
@@ -358,8 +372,8 @@ void ConsumeArg(int argnum, int &argc, char *argv[]){
   argv[argnum] = NULL; 
   argc--; 
 }
-void Preferences::GetFromArgs(int &argc, char *argv[], vector<argType> &types) {
-
+void Preferences::GetFromArgs(int &argc, char *argv[], vector<argType>& types) {
+  
   // first, initialize all keys in "types" array to defaults if not already set to some value
   vector<argType>::iterator argPos = types.begin(), endpos = types.end(); 
   while (argPos != endpos) {

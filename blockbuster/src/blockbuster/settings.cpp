@@ -27,6 +27,9 @@
 #include <stdarg.h>
 #include "settings.h"
 #include "errmsg.h"
+#include <algorithm>
+#include <boost/format.hpp>
+using namespace std; 
 
 static ProgramOptions gProgramOptions ; // global options
 
@@ -85,7 +88,8 @@ static Setting *FindSetting(Settings *settings, const char *variable)
 
     setting = settings->head;
     while (setting != NULL) {
-	if (strcmp(setting->variable, variable) == 0) {
+      if (setting->variable == variable) {
+        //	if (strcmp(setting->variable, variable) == 0) {
 	    return setting;
 	}
 	setting = setting->next;
@@ -103,72 +107,79 @@ static void Set(Settings *settings, const char *variable, const char *value,
     if (value == NULL) return;
 
     setting = FindSetting(settings, variable);
-    if (setting != NULL && strcmp(setting->value, value) == 0) {
-	/* Setting back to the original value = do nothing */
-	return;
-    }
+    /*   
+         if (setting != NULL && strcmp(setting->value, value) == 0) {
+         // Setting back to the original value = do nothing 
+         return;
+         }*/ 
     if (setting == NULL) {
 	/* We have to create our own setting.  Set up the
 	 * structure and link it in; we'll allocate the 
 	 * value later.
 	 */
-	setting = (Setting *)calloc(1, sizeof(Setting));
-	if (setting == NULL) {
+      setting = (Setting *)calloc(1, sizeof(Setting));
+      if (setting == NULL) {
 	    WARNING("Could not allocate new setting");
 	    return;
-	}
-	setting->variable = (char *)malloc(strlen(variable) + 1);
+      }
+    /*	setting->variable = (char *)malloc(strlen(variable) + 1);
 	if (setting->variable == NULL) {
 	    WARNING("could not allocate new setting name");
 	    free(setting);
 	    return;
 	}
 	strcpy(setting->variable, variable);
-
-	if (origin == NULL) {
-	    setting->origin = NULL;
-	}
-	else {
-	    setting->origin = (char *)malloc(strlen(origin) + 1);
-	    if (setting->origin == NULL) {
-		WARNING("could not allocate setting origin");
-		free(setting->variable);
-		free(setting);
-		return;
-	    }
-	    strcpy(setting->origin, origin);
-	}
-
-	setting->next = NULL;
-	if (settings->head == NULL) {
+    */
+      setting->variable = variable; 
+      if (origin == NULL) {
+	    setting->origin = "";
+      }
+      else {
+        /*
+          setting->origin = (char *)malloc(strlen(origin) + 1);
+          if (setting->origin == NULL) {
+          WARNING("could not allocate setting origin");
+          free(setting->variable);
+          free(setting);
+          return;
+          }
+          strcpy(setting->origin, origin);
+        */
+        setting->origin = origin;
+      }
+      
+      setting->next = NULL;
+      if (settings->head == NULL) {
 	    settings->head = setting;
 	    settings->tail = setting;
-	}
-	else {
+      }
+      else {
 	    settings->tail->next = setting;
 	    settings->tail = setting;
-	}
+      }
     }
     else {
-	/* We found the setting; its name and origin don't change,
-	 * but we have to free and reallocate the value.
-	 */
-	if (setting->value != NULL) {
+      /* We found the setting; its name and origin don't change,
+       * but we have to free and reallocate the value.
+       */
+      /*	if (setting->value != NULL) {
 	    free(setting->value);
-	}
-    }
-
-    if (value == NULL) {
-	setting->value = NULL;
-    }
-    else {
-	setting->value = (char *)malloc(strlen(value) + 1);
-	if (setting->value == NULL) {
+        }
+        }
+        
+        if (value == NULL) {
+        setting->value = NULL;
+        }
+        else {
+        setting->value = (char *)malloc(strlen(value) + 1);
+        if (setting->value == NULL) {
 	    WARNING("could not allocate setting value; using NULL");
-	}
-	else {
+        }
+        else {
 	    strcpy(setting->value, value);
-	}
+        }
+      */
+      setting->value = value;
     }
     setting->changed = 1;
 }
@@ -177,7 +188,7 @@ static void DestroySetting(Setting *setting)
 {
     if (setting == NULL) return;
 
-    if (setting->variable != NULL) {
+    /* if (setting->variable != NULL) {
 	free(setting->variable);
     }
     if (setting->origin != NULL) {
@@ -185,7 +196,7 @@ static void DestroySetting(Setting *setting)
     }
     if (setting->value != NULL) {
 	free(setting->value);
-    }
+    }*/
     free(setting);
 }
 
@@ -247,9 +258,10 @@ void ReadSettingsFromFile(void *s, const char *filename)
 
 	    /* Eliminate the trailing newline, if any */
 	    endOfLine = value;
-	    while (*endOfLine != '\0' && *endOfLine != '\n') endOfLine++;
-	    if (*endOfLine == '\n') {
-		*endOfLine = '\0';
+	    while (*endOfLine) {
+          if (*endOfLine == '\n') 
+            *endOfLine = '\t';
+          ++endOfLine;
 	    }
 
 	    Set(settings, variable, value, filename);
@@ -268,7 +280,7 @@ void ReadSettingsFromFile(void *s, const char *filename)
  * file.
  */
 
-void WriteSettingsToFile(void *s, const char *filename, unsigned int flags)
+void WriteSettingsToFile(void *s, string filename, unsigned int flags)
 {
     Setting *setting;
     Settings *settings = (Settings *)s;
@@ -287,26 +299,27 @@ void WriteSettingsToFile(void *s, const char *filename, unsigned int flags)
 	/* See if this setting is one of the ones we want. */
 	if (
 	    ((flags & SETTINGS_CHANGED) && setting->changed) ||
-	    ((flags & SETTINGS_FROM_PROGRAM) && setting->origin == NULL) ||
-	    ((flags & SETTINGS_FROM_FILE) && setting->origin != NULL && strcmp(setting->origin, filename) == 0) ||
-	    ((flags & SETTINGS_FROM_ALL_FILES) && setting->origin != NULL)
+	    ((flags & SETTINGS_FROM_PROGRAM) && setting->origin == "") ||
+	    ((flags & SETTINGS_FROM_FILE) && setting->origin == filename) ||
+	    ((flags & SETTINGS_FROM_ALL_FILES) && setting->origin != "")
 	) {
 	    /* This setting was requested.  Write it out if it has
 	     * a valid value.
 	     */
-	    if (setting->value != NULL) {
+	    if (setting->value != "") {
 		/* We need to write out the setting (woohoo!).  But
 		 * first we must open the file, if we haven't already.
 		 */
 		if (f == NULL) {
-		    f = fopen(filename, "w");
+          f = fopen(filename.c_str(), "w");
 		    if (f == NULL) {
-			ERROR("could not open file '%s' for writing", filename);
+              ERROR("could not open file '%s' for writing", filename.c_str());
 			return;
 		    }
 		}
-
-		fprintf(f, "%s=%s\n", setting->variable, setting->value);
+        string cleaned = setting->value; 
+        std::replace(cleaned.begin(), cleaned.end(), '\n', '\t'); 
+		fprintf(f, "%s=%s\n", setting->variable.c_str(), cleaned.c_str());
 	    }
 	}
 
@@ -320,58 +333,58 @@ void WriteSettingsToFile(void *s, const char *filename, unsigned int flags)
     }
 }
 
-void ChangeSetting(void *s, const char *variable, const char *value)
+void ChangeSetting(void *s, string variable, string value)
 {
     Settings *settings = (Settings *)s;
     if (settings == NULL) return;
 
     /* A NULL origin shows that it came from the program while running */
-    Set(settings, variable, value, NULL);
+    Set(settings, variable.c_str(), value.c_str(), NULL);
 }
 
-char *GetSetting(void *s, const char *variable)
+string GetSetting(void *s, string variable)
 {
     Setting *setting;
     Settings *settings = (Settings *)s;
-    if (settings == NULL) return NULL;
+    if (settings == NULL) return "";
 
-    setting = FindSetting(settings, variable);
+    setting = FindSetting(settings, variable.c_str());
     if (setting == NULL) {
-	return NULL;
+      return "";
     }
-    else {
-	return setting->value;
-    }
+
+    return setting->value;
+     
 }
 
 /* This is a special setting operation */
 void SetRecentFileSetting(void *settings, const char *filename)
 {
-    char buffer[100];
-    char *recentFileNames[NUM_RECENT_FILES];
-    int i;
+  //char buffer[100];
+    vector<string> recentFileNames; 
+    recentFileNames.push_back(filename); 
+
+    uint32_t i;
 
     /* Look to see if the given filename is already within the
      * list of recent files.
      */
     for (i = 0; i < NUM_RECENT_FILES; i++) {
-	sprintf(buffer, "recentFile%d", i);
-	recentFileNames[i] = GetSetting(settings, buffer);
-	if (recentFileNames[i] != NULL && 
-		strcmp(recentFileNames[i], filename) == 0) {
+      string found =  str(boost::format("recentFile%d")%i);   
+      found = GetSetting(settings, found); 
+      if (found == filename) {
 	    /* Match.  Go no further. */
 	    return;
-	}
+      }
+      if (found == "") 
+        break; // out of items, stop.
+      recentFileNames.push_back(found);
     }
-
-    /* No match here.  Slide all the other recent file names down by
-     * one, and add ours at the beginning.  The order is important;
-     * when we set recentFileX, the pointer to its value will be 
-     * freed, so we have to start at the top and work down.
+    /* No match.  Store the new list of filenames
      */
-    for (i = NUM_RECENT_FILES; --i > 0; ) {
-	sprintf(buffer, "recentFile%d", i);
-	ChangeSetting(settings, buffer, recentFileNames[i - 1]);
+    for (i = 0; i< NUM_RECENT_FILES && i<recentFileNames.size(); i++) {      
+      ChangeSetting(settings, str(boost::format("recentFile%d")%i), recentFileNames[i]);
     }
-    ChangeSetting(settings, "recentFile0", filename);
+    return; 
+    
 }
