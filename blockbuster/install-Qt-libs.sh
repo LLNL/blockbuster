@@ -12,8 +12,10 @@ elif [ $(uname) == Linux ]; then
     for exe in ${INSTALL_DIR}/bin/blockbuster ${INSTALL_DIR}/bin/sidecar; do 
         cp -f $(ldd $exe | grep Qt | awk '{print $3}') ${INSTALL_DIR}/lib; 
         rpath='${ORIGIN}/../lib:'$(chrpath -l $exe | awk ' {print $2}' | sed 's/RPATH=//' | sed 's~[^:]*Trolltech[^:]*~:~' | sed "s:$INSTALL_DIR::"); 
-        rpath=$(echo $rpath | sed 's~::~:~g' ); 
+        #rpath=$(echo $rpath | sed 's~::~:~g' ); 
+        rpath='${ORIGIN}/../lib:'
         chrpath -r $rpath $exe ; 
+        # patchelf --set-rpath $rpath $exe
     done
 fi
 	
