@@ -139,7 +139,7 @@ void glRenderer::Render(int frameNumber,
            frameNumber,
            imageRegion->width, imageRegion->height,
            imageRegion->x, imageRegion->y, zoom, lod);
-
+  float t1 = GetExactSecondsDouble(), t2=0; 
   /*
    * Compute possibly reduced-resolution image region to display.
    */
@@ -242,7 +242,7 @@ void glRenderer::Render(int frameNumber,
     glPixelZoom(zoom, -zoom);
   }
   TIMER_PRINT("before draw"); 
-  /*fprintf(stderr,"Region %d %d %d %d : LodScale %d : Zoom %f\n",region.x,region.y,region.width,region.height,lodScale,zoom);*/
+  DEBUGMSG("Region %d %d %d %d : LodScale %d : Zoom %f\n",region.x,region.y,region.width,region.height,lodScale,zoom);
   
   //glRasterPos2i(destX, destY); 
   // use glBitMap to set raster position
@@ -252,6 +252,10 @@ void glRenderer::Render(int frameNumber,
   glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 
                 mCanvas->requiredImageFormat.scanlineByteMultiple);
+  DEBUGMSG("glPixelStorei(GL_UNPACK_ROW_LENGTH, %d)\n", image->width);
+  DEBUGMSG("glPixelStorei(GL_UNPACK_SKIP_ROWS,  %d)\n", saveSkip);
+  DEBUGMSG("glPixelStorei(GL_UNPACK_SKIP_PIXELS,  %d)\n",  region.x);
+  DEBUGMSG("glPixelStorei(GL_UNPACK_ALIGNMENT,  %d)\n", mCanvas->requiredImageFormat.scanlineByteMultiple);
 
   DEBUGMSG("Buffer for frame %d is %dw x %dh, region is %dw x %dh, destX = %d, destY = %d\n", frameNumber, image->width, image->height, region.width, region.height, destX, destY); 
 
@@ -273,7 +277,12 @@ void glRenderer::Render(int frameNumber,
   
   /* This is bad, we are managing the cache in the render thread.  Sigh.  Anyhow, have to release the image, or the cache will fill up */  
   //mCanvas->imageCache->ReleaseImage(image);
-  TIMER_PRINT("glRenderer::Render end"); 
+#if 0
+  t2 = GetExactSecondsDouble(); 
+  timeSamples.push_back(t2-t1); 
+  DEBUGMSG("glRenderer::Render end (took %f secs (%f-%f))\n", t2-t1, t2, t1); 
+#endif
+  TIMER_PRINT("glRenderer::Render end \n"); 
 }
 
 //***********************************************************************

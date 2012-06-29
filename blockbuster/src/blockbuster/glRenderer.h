@@ -26,6 +26,7 @@ class glRenderer: public Renderer {
   // from WindowInfo struct in xwindow.cpp  
   GLXContext context;
   GLuint fontBase;
+  vector<float> timeSamples; 
 } ;
 
 class glStereoRenderer: public glRenderer {
