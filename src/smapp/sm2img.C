@@ -278,7 +278,7 @@ int main(int argc,char **argv)
           len_u += (double)(gSm->getWidth(res)*gSm->getHeight(res)*3);
         }
       }
-      printf("Compression ratio: %0.4f%%\n",(len/len_u)*100.0);
+      printf("Compression ratio: %0.4f%% (%0.0f compressed, %0.0f uncompressed)\n",(len/len_u)*100.0, len, len_u);
       printf("Number of resolutions: %d\n",gSm->getNumResolutions());
       for(res=0;res<gSm->getNumResolutions();res++) {
         printf("    Level: %d : size %d x %d : tile %d x %d\n",
