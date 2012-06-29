@@ -1293,7 +1293,7 @@ void BlockbusterLaunchDialog::on_saveProfilePushButton_clicked(){
   mCurrentProfile->mRsh = rshCommandField->text(); 
   mCurrentProfile->mSetDisplay = setDisplayCheckBox->isChecked(); 
   mCurrentProfile->mDisplay = blockbusterDisplayField->text(); 
-  mCurrentProfile->mBlockbusterPath = blockbusterPathField->text(); 
+  mCurrentProfile->mBlockbusterPath = blockbusterPathField->text();
   mCurrentProfile->mAutoSidecarHost = autoSidecarHostCheckBox->isChecked(); 
   mCurrentProfile->mSidecarHost = sidecarHostNameField->text(); 
   mCurrentProfile->mPlay = playCheckBox->isChecked(); 
@@ -1435,7 +1435,7 @@ bool BlockbusterLaunchDialog::hostProfileModified(void){
      verboseField->text() != mCurrentProfile->mVerbosity ||
      rshCommandField->text() != mCurrentProfile->mRsh ||
      blockbusterDisplayField->text() != mCurrentProfile->mDisplay ||
-     blockbusterPathField->text() != mCurrentProfile->mBlockbusterPath||
+     blockbusterPathField->text()  != mCurrentProfile->mBlockbusterPath ||
      setDisplayCheckBox->isChecked() != mCurrentProfile->mSetDisplay ||
      autoSidecarHostCheckBox->isChecked() != mCurrentProfile->mAutoSidecarHost ||
      (!autoSidecarHostCheckBox->isChecked() && sidecarHostNameField->text() != mCurrentProfile->mSidecarHost) ||
@@ -1584,7 +1584,7 @@ void BlockbusterLaunchDialog::setupGuiAndCurrentProfile(int index){
   rshCommandField->setText(mCurrentProfile->mRsh); 
   setDisplayCheckBox->setChecked(mCurrentProfile->mSetDisplay); 
   blockbusterDisplayField->setText(mCurrentProfile->mDisplay); 
-  blockbusterDisplayField->setEnabled(setDisplayCheckBox->isChecked()); 
+  blockbusterDisplayField->setEnabled(setDisplayCheckBox->isChecked());
   blockbusterPathField->setText(mCurrentProfile->mBlockbusterPath); 
   autoSidecarHostCheckBox->setChecked(mCurrentProfile->mAutoSidecarHost); 
   if (mCurrentProfile->mAutoSidecarHost || mCurrentProfile->mSidecarHost == ""){
