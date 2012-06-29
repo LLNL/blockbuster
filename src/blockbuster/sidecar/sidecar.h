@@ -44,6 +44,8 @@
 #include <QTimer>
 #include "Prefs.h"
 #include "../errmsg.h"
+#include <boost/algorithm/string.hpp>
+
 extern Preferences gPrefs; 
 
 typedef enum {
@@ -315,7 +317,7 @@ struct HostProfile {
     if (tokens.size() > 4)  mRsh = tokens[4]; 
     if (tokens.size() > 5)  mSetDisplay = (tokens[5] == "setDisplay=true"); 
     if (tokens.size() > 6)  mDisplay = tokens[6]; 
-    if (tokens.size() > 7)  mBlockbusterPath = tokens[7]; 
+    if (tokens.size() > 7)  mBlockbusterPath = QString(tokens[7]).replace("%20", " "); 
     if (tokens.size() > 8)  mAutoSidecarHost = (tokens[8] == "autoSidecarHost=true"); 
     if (tokens.size() > 9)  mSidecarHost = tokens[9]; 
     if (tokens.size() > 10)  mPlay = (tokens[10] == "play=true"); 
@@ -336,7 +338,7 @@ struct HostProfile {
       .arg(mRsh)
       .arg(mSetDisplay?"true":"false")
       .arg(mDisplay)
-      .arg(mBlockbusterPath)
+      .arg(QString(mBlockbusterPath).replace(" ", "%20"))
       .arg(mAutoSidecarHost?"true":"false")
       .arg(mSidecarHost)
       .arg(mPlay?"true":"false")
@@ -345,7 +347,7 @@ struct HostProfile {
 .arg(mUseDMX?"true":"false")
       .arg(mMpiFrameSync?"true":"false"); 
   }
-  QString toProfileString(void) const {    
+  QString toProfileString(void) const {  
     return QString("%1 %2 %3 %4 %5 setDisplay=%6 %7 %8 autoSidecarHost=%9 %10 play=%11 fullScreen=%12 showControls=%13 useDMX=%14 mpiFrameSync=%15")
       .arg(mName)
       .arg(mHostName)
@@ -354,7 +356,7 @@ struct HostProfile {
       .arg(mRsh)
       .arg(mSetDisplay?"true":"false")
       .arg(mDisplay)
-      .arg(mBlockbusterPath)
+      .arg(QString(mBlockbusterPath).replace(" ", "%20"))
       .arg(mAutoSidecarHost?"true":"false")
       .arg(mSidecarHost)
       .arg(mPlay?"true":"false")
