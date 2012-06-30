@@ -139,7 +139,9 @@ void glRenderer::Render(int frameNumber,
            frameNumber,
            imageRegion->width, imageRegion->height,
            imageRegion->x, imageRegion->y, zoom, lod);
+#ifdef RENDER_TIMING
   float t1 = GetExactSecondsDouble(), t2=0; 
+#endif
   /*
    * Compute possibly reduced-resolution image region to display.
    */
@@ -277,7 +279,7 @@ void glRenderer::Render(int frameNumber,
   
   /* This is bad, we are managing the cache in the render thread.  Sigh.  Anyhow, have to release the image, or the cache will fill up */  
   //mCanvas->imageCache->ReleaseImage(image);
-#if 0
+#ifdef RENDER_TIMING
   t2 = GetExactSecondsDouble(); 
   timeSamples.push_back(t2-t1); 
   DEBUGMSG("glRenderer::Render end (took %f secs (%f-%f))\n", t2-t1, t2, t1); 
