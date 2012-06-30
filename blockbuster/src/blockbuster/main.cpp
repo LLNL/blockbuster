@@ -270,7 +270,7 @@ static void ParseOptions(int &argc, char *argv[])
    * there's not a lot of sense in setting up threads
    * if they'll steal time from the main thread.
    */
-  opt->preloadFrames = 4;
+  opt->preloadFrames = 100;
 
   /* Figure out which user interface and renderer we're
    * using right now (the defaults), so we can give
