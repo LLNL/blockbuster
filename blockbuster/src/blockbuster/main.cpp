@@ -376,7 +376,8 @@ static void ParseOptions(int &argc, char *argv[])
       continue;
     }
 	else if (SET_BOOL_ARG("-stereo", argc, argv, doStereo, 1)) continue;
-    else if (CHECK_ATOI_ARG("-threads", argc, argv,  opt->readerThreads)) continue; 
+    else if (CHECK_ATOI_ARG("-threads", argc, argv, opt->readerThreads)) 
+      continue; 
 	//else if (SET_BOOL_ARG("-timer", argc, argv, gTimerOn, 0)) continue;
 	else if (CHECK_ATOI_ARG("-verbose", argc, argv,maxMessageLevel))  {
       opt->messageLevel = FindMessageLevel(maxMessageLevel);
@@ -458,8 +459,9 @@ static void ParseOptions(int &argc, char *argv[])
   numProcessors = GetNumProcessors();
   if (opt->readerThreads == -1) {
     if (numProcessors > 1) {
-      opt->readerThreads = min(numProcessors,4); // too many might be problematic 
+      opt->readerThreads = max(numProcessors-2,1);
     }
+    WARNING("User did not specify thread count; using %d\n", opt->readerThreads); 
   }
   DEBUGMSG("Using %d threads", opt->readerThreads); 
 
