@@ -2,7 +2,7 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.7.3b (r) Sun Jul  1 13:12:21 PDT 2012
+VERSION 2.7.3b (r665) Mon Jul  2 09:32:40 PDT 2012
 -- Allow whitespace in "blockbuster path" in sidecar's "blockbuster launch" dialog, thus enabling special args to be saved as needed
 -- sminfo now reports exact bytes compressed and uncompressed
 -- use two less than the number of processors for threads by default.  Also preload 100 frames by default. 
