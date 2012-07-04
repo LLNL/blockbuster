@@ -72,7 +72,7 @@ void ConsumeArg(int &argc, char *argv[], int position) {
 void *CreateBlankSettings(void)
 {
     Settings *settings;
-    settings = (Settings *)calloc(1, sizeof(Settings));
+    settings = new Settings; 
     if (settings == NULL) {
 	return NULL;
     }
@@ -89,8 +89,7 @@ static Setting *FindSetting(Settings *settings, const char *variable)
     setting = settings->head;
     while (setting != NULL) {
       if (setting->variable == variable) {
-        //	if (strcmp(setting->variable, variable) == 0) {
-	    return setting;
+ 	    return setting;
 	}
 	setting = setting->next;
     }
@@ -107,11 +106,6 @@ static void Set(Settings *settings, const char *variable, const char *value,
     if (value == NULL) return;
 
     setting = FindSetting(settings, variable);
-    /*   
-         if (setting != NULL && strcmp(setting->value, value) == 0) {
-         // Setting back to the original value = do nothing 
-         return;
-         }*/ 
     if (setting == NULL) {
 	/* We have to create our own setting.  Set up the
 	 * structure and link it in; we'll allocate the 
@@ -122,30 +116,12 @@ static void Set(Settings *settings, const char *variable, const char *value,
 	    WARNING("Could not allocate new setting");
 	    return;
       }
-    /*	setting->variable = (char *)malloc(strlen(variable) + 1);
-	if (setting->variable == NULL) {
-	    WARNING("could not allocate new setting name");
-	    free(setting);
-	    return;
-	}
-	strcpy(setting->variable, variable);
-    */
-      setting->variable = variable; 
+    setting->variable = variable; 
       if (origin == NULL) {
 	    setting->origin = "";
       }
       else {
-        /*
-          setting->origin = (char *)malloc(strlen(origin) + 1);
-          if (setting->origin == NULL) {
-          WARNING("could not allocate setting origin");
-          free(setting->variable);
-          free(setting);
-          return;
-          }
-          strcpy(setting->origin, origin);
-        */
-        setting->origin = origin;
+       setting->origin = origin;
       }
       
       setting->next = NULL;
@@ -159,27 +135,7 @@ static void Set(Settings *settings, const char *variable, const char *value,
       }
     }
     else {
-      /* We found the setting; its name and origin don't change,
-       * but we have to free and reallocate the value.
-       */
-      /*	if (setting->value != NULL) {
-	    free(setting->value);
-        }
-        }
-        
-        if (value == NULL) {
-        setting->value = NULL;
-        }
-        else {
-        setting->value = (char *)malloc(strlen(value) + 1);
-        if (setting->value == NULL) {
-	    WARNING("could not allocate setting value; using NULL");
-        }
-        else {
-	    strcpy(setting->value, value);
-        }
-      */
-      setting->value = value;
+       setting->value = value;
     }
     setting->changed = 1;
 }
@@ -188,15 +144,6 @@ static void DestroySetting(Setting *setting)
 {
     if (setting == NULL) return;
 
-    /* if (setting->variable != NULL) {
-	free(setting->variable);
-    }
-    if (setting->origin != NULL) {
-	free(setting->origin);
-    }
-    if (setting->value != NULL) {
-	free(setting->value);
-    }*/
     free(setting);
 }
 
@@ -213,7 +160,7 @@ void DestroySettings(void *s)
 	setting = nextSetting;
     }
 
-    free(settings);
+    delete settings; 
 }
 
 void ReadSettingsFromFile(void *s, const char *filename)
