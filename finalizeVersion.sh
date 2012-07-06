@@ -13,7 +13,7 @@ function usage() {
 }
 
 
-tmpdir=$(pwd)/finalizeVersion-tmp
+tmpdir=/nfs/tmp2/rcook/blockbuster-install-tmp/finalizeVersion-tmp
 
 # requires a version as an argument.  
 #=================================
@@ -165,8 +165,8 @@ svn commit -m "Version $version, automatic checkin by finalizeVersion.sh, by use
 # Update and install on LC cluster
 echo "Creating temp directory to work in for tarball creation..." 
 rm -rf $tmpdir
-mkdir $tmpdir || errexit "Could not create tmp directory for tarball"
-cd $tmpdir || errexit "Could not cd into new tmp directory!?" 
+mkdir -p $tmpdir || errexit "Could not create tmp directory for tarball"
+pushd $tmpdir || errexit "Could not cd into new tmp directory!?" 
 
 echo "Creating new version in SVN repo from trunk" 
 svn cp -m "Version $version, automatic version creation by finalizeVersion.sh, by user $(whoami)" https://blockbuster.svn.sourceforge.net/svnroot/blockbuster/trunk/blockbuster  $versiondir || errexit "could not create version in svn" 
@@ -185,30 +185,34 @@ rm -f $installdir/blockbuster-v${version}.tgz
 echo "Creating actual tarball..." 
 tar -czf ${installdir}/blockbuster-v${version}.tgz blockbuster-v${version}
 
+popd
 echo "Cleaning up tempdir..." 
-cd $tmpdir/..
 rm -rf $tmpdir
 
 echo "Installing software..." 
-cd $installdir
-rm -rf chaos*
-
-mkdir -p $SYS_TYPE
-if echo $SYS_TYPE | grep _ib>/dev/null; then 
-    ln -s $SYS_TYPE $(echo $SYS_TYPE | sed 's/_ib//')
+if echo $SYS_TYPE | grep _ib>/dev/null; then
+    altsystype=$(echo $SYS_TYPE | sed 's/_ib//')
 else 
-    ln -s $SYS_TYPE ${SYS_TYPE}_ib
+    altsystype=${SYS_TYPE}_ib
 fi
-cd $SYS_TYPE || errexit "Cannot cd to install directory $SYS_TYPE"
+
+rm -rf $installdir/$SYS_TYPE $installdir/$altsystype
+mkdir -p $installdir/$SYS_TYPE 
+ln -s $installdir/$SYS_TYPE $installdir/$altsystype
+
+pushd $installdir/$SYS_TYPE || errexit "Cannot cd to install directory $SYS_TYPE"
 tar -xzf ../blockbuster-v${version}.tgz || errexit "Cannot untar tarball!?" 
-cd blockbuster-v${version} || errexit "Cannot cd to blockbuster source directory" 
+pushd blockbuster-v${version} || errexit "Cannot cd to blockbuster source directory" 
 make || errexit "Could not make software" 
+popd
+popd
 
 echo "Creating symlink of new version to /usr/gapps/asciviz/blockbuster/test"
 
-cd /usr/gapps/asciviz/blockbuster/ || errexit "Could not cd to blockbuster public area"
+pushd /usr/gapps/asciviz/blockbuster/ || errexit "Could not cd to blockbuster public area"
 rm -f test
 ln -s $version test
+popd
 echo "Done.  Tarball is $installdir/blockbuster-v${version}.tgz.  To use the new version, type \"use asciviz-test\""
 exit 0
 
