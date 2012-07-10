@@ -40,6 +40,9 @@ $(warning INSTALL_DIR is $(INSTALL_DIR))
 CPPFLAGS = -g -Dcimg_use_magick $(shell Magick++-config --cppflags) $(shell Magick++-config --cxxflags) -I../CImg-1.5.0_beta -I$(INSTALL_DIR)/include -I../common
 LDFLAGS = -L$(INSTALL_DIR)/lib $(shell Magick++-config --ldflags --libs)  -lX11 -lz $(INSTALL_DIR)/lib/libjpeg.a $(INSTALL_DIR)/lib/libboost_thread.a
 # all: lib doc include
+
+default: all
+
 all: getframe playmovie 
 
 playmovie: $(BUFFERED_OFILES) 

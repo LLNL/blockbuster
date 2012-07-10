@@ -31,23 +31,25 @@ include ../config/config
 
 INSTALL_DIR ?= $(shell pwd)
 
-INSTALL_EVIDENCE = $(INSTALL_DIR)/include/boost/random.hpp # random header :-)
+HEADER_EVIDENCE = $(INSTALL_DIR)/include/boost/random.hpp 
+LIB_EVIDENCE = $(INSTALL_DIR)/lib/libboost_thread.a # random header :-)
 
-all: install
+all: lib
 
-install: $(INSTALL_EVIDENCE)
+header: $(HEADER_EVIDENCE)
 
-$(INSTALL_EVIDENCE): boost_1_49_0/boost/random.hpp
+$(HEADER_EVIDENCE): boost_1_49_0/boost/random.hpp
+	cp -r boost_1_49_0/boost $(INSTALL_DIR)/include/
+
+lib: $(LIB_EVIDENCE)
+
+$(LIB_EVIDENCE): boost_1_49_0/boost/random.hpp
 	-echo apparently $< is older than $@; ls -l $<; ls -l $@
 # export INSTALL_DIR=$(INSTALL_DIR); if ! find_boost.sh; then cd boost_1_49_0 && ./bootstrap.sh --with-libraries=thread && ./bjam install --prefix=$(INSTALL_DIR); fi
 	cd boost_1_49_0 && ./bootstrap.sh --with-libraries=thread && ./bjam install --prefix=$(INSTALL_DIR)
 
 boost_1_49_0/boost/random.hpp:
-#	export INSTALL_DIR=$(INSTALL_DIR); if ! find_boost.sh; then \
-# rm -rf boost_1_49_0 
 	tar -xf boost_1_49_0.tar.gz 
-#	fi
-#	cp -r boost_1_49_0/boost $(INSTALL_DIR)/include
 
 clean:
 	rm -rf boost_1_49_0 $(INSTALL_DIR)/lib/libboost* $(INSTALL_DIR)/include/boost
