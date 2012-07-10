@@ -16,8 +16,11 @@ all:
 		cp -rf doc/* $(INSTALL_DIR)/doc/blockbuster
 	INSTALL_DIR=$(INSTALL_DIR) ./install-Qt-libs.sh
 
-bindist: 
-	./make-bindist.sh 
+remake: 
+	SYS_TYPE=$(SYS_TYPE) ./remake.sh
+
+bindist: all
+	SYS_TYPE=$(SYS_TYPE) ./make-bindist.sh 
 
 old-bindist-deleteme: 
 	INSTALL_DIR=linux-dmx remake.sh all

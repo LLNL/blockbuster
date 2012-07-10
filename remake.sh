@@ -1,6 +1,11 @@
 #!/usr/bin/env bash 
 # purpose:  to make sure the blockbuster and sidecar builds are properly up to date, after e.g. removing or adding headers or source files
 set -x
+
+if [ $(uname) == Darwin ]; then 
+    rm -rf $INSTALL_DIR/bin/{blockbuster,sidecar}.app src/blockbuster/sidecar/sidecar.app src/blockbuster/blockbuster.app
+fi
+
 for dir in src/blockbuster/ src/blockbuster/sidecar/; do 
     pushd $dir; 
     rm -f blockbuster.pro Makefile.qt.include moc_*{cpp,o} *.o ui_*h
