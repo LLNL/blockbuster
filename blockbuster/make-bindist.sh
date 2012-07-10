@@ -19,9 +19,8 @@ if [ $(uname) == Linux ]; then
         echo "Created ${INSTALL_DIR}.tgz containing Linux installer in current directory." 
     done
 elif [ $(uname) == Darwin ]; then 
-    macdeployqt src/blockbuster/blockbuster.app -dmg
-    macdeployqt src/blockbuster/sidecar/sidecar.app -dmg
-    mv src/blockbuster/blockbuster.dmg src/blockbuster/sidecar/sidecar.dmg ./
+    # make || errexit "make failed"
+    cp $INSTALL_DIR/bin/blockbuster.dmg $INSTALL_DIR/bin/sidecar.dmg ./
     tar -czf blockbuster-install-mac-v$version.tgz blockbuster.dmg sidecar.dmg bindist-src/README-install.txt || errexit "Cannot tar up the files" 
     echo "Created blockbuster-install-mac-v$version.tgz containing blocbuster.dmg and sidecar.dmg in current directory." 
 else
