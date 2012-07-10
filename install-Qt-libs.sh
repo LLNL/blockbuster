@@ -6,8 +6,9 @@ fi
 set -x
 
 if [ $(uname) == Darwin ]; then 
-    macdeployqt ${INSTALL_DIR}/bin/blockbuster.app; 
-    macdeployqt ${INSTALL_DIR}/bin/sidecar.app; 
+    rm -f ${INSTALL_DIR}/bin/*.app/Contents/PlugIns/*/*dylib*
+    macdeployqt ${INSTALL_DIR}/bin/blockbuster.app -dmg; 
+    macdeployqt ${INSTALL_DIR}/bin/sidecar.app -dmg; 
 elif [ $(uname) == Linux ]; then 
     for exe in ${INSTALL_DIR}/bin/blockbuster ${INSTALL_DIR}/bin/sidecar; do 
         cp -f $(ldd $exe | grep -e Qt -e mpi | awk '{print $3}') ${INSTALL_DIR}/lib; 
