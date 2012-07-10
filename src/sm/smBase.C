@@ -1213,8 +1213,10 @@ void smBase::combineResolutionFiles(void) {
         abort(); 
       }       
       bytesRemaining -= bytesRead;
-      smdbprintf(1, "After writing %lld MB, size of movie file is %lld MB\n", 
-                 (inputFileSize - bytesRemaining)/(1000*1000), 
+      smdbprintf(1, "Res %d: Wrote %lld MB, %0.1f%%, size of movie file is %lld MB\n", 
+                 res, 
+		 (inputFileSize - bytesRemaining)/(1000*1000), 
+		 ((float)inputFileSize - bytesRemaining)/(float)inputFileSize, 
                  LSEEK64(mResFDs[0], 0, SEEK_CUR)/(1000*1000)); 
                  
     }
