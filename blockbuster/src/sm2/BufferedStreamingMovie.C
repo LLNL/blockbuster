@@ -2,6 +2,15 @@
 #include "BufferedStreamingMovie.h"
 #include <boost/make_shared.hpp>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include "iodefines.h"
+
 // using namespace boost; 
 
 bool BufferedStreamingMovie::ReadHeader(void) {  
@@ -54,15 +63,83 @@ void BufferedStreamingMovie::StartThreads(void){
   return; 
 }
 
+//=======================================================
+/*
+  BufferFrames():  
+  buffer from firstFrame to end or maximum capacity.
+  Always buffer to back buffer
+*/ 
+void BufferedStreamingMovie::BufferFrames(int fd, uint32_t firstFrame) { 
+  uint32_t virtualFrame = mLOD * mNumFrames + firstFrame, 
+    lastFrameToRead = (mLOD+1) * mNumFrames - 1;
+  uint64_t endOfLOD = mFrameOffsets[mNumFrames*(mLOD+1)]; // always OK, no segfault
+  uint64_t bytesToRead = endOfLOD - mFrameOffsets[virtualFrame]; 
+  
+  while (bytesToRead > mBackIOBuffer->mData.size()) {
+    bytesToRead -= mFrameOffsets[lastFrameToRead--]; 
+  }
+  
+  uint64_t pos = LSEEK64(fd, mFrameOffsets[virtualFrame], SEEK_SET);
+
+  read(fd, &mBackIOBuffer->mData[0], bytesToRead); 
+  mBackIOBuffer->mFirstFrame = firstFrame; 
+  mBackIOBuffer->mNumFrames = lastFrameToRead - firstFrame + 1; 
+  return; 
+}
+
 // this function lives in its own thread
 void BufferedStreamingMovie::ReaderThread(){
   mKeepReading=true; 
+  int IOfd = open(mFileName.c_str(), O_RDONLY);
+  
+  // PRIMARY GOAL: PLACE DATA FOR mNextFrame INTO THE FRONT BUFFER
+  // SECONDARY GOAL:  FILL THE BACK BUFFER
+  
   while (mKeepReading) {
-    // Find out if the buffer states make sense
-    boost::shared_lock<boost::shared_mutex> lock(mIOBufferMutex); 
-    // Check to see if there is anything in the IOFrontBuffer
-    ; 
+    // first see if all is well, in which case we can sleep until needed 
+    // we mutex this one because a mistake could cause deadlock
+    { 
+      boost::unique_lock<boost::mutex> lock(mIOBufferMutex); 
+      if (mFrontIOBuffer->HasFrame(mNextImage.mFrameNumber)) {
+	uint32_t backBufferFirstFrame = mFrontIOBuffer->mFirstFrame + mFrontIOBuffer->mNumFrames; 
+	if (backBufferFirstFrame == mNumFrames) {
+	  backBufferFirstFrame = 0; 
+	}
+	if (mBackIOBuffer->HasFrame(backBufferFirstFrame)) {
+	  mIOBufferCondition.wait(lock); 
+	}
+      }
+    }
+    // Someone woke us up or we noticed a buffer needs repair.  
+    while (!mFrontIOBuffer->HasFrame(mNextImage.mFrameNumber)) {
+      // If the front IO buffer doesn't have the next frame, then it couldn't be decompressed.  
+      while (!mBackIOBuffer->HasFrame(mNextImage.mFrameNumber)) {
+	// This is the worst case.  We must read the needed frame right now.  
+	// The good thing is no mutexes are needed.  :-) 
+	// Assume no special pipeline is needed for just the first frame -- spend the time to read the whole buffer rather than try to do one at a time.  
+
+	BufferFrames(IOfd, mNextImage.mFrameNumber); 
+      }
+      // now it's in the back buffer -- we need to swap buffers
+      boost::unique_lock<boost::mutex> lock(mIOBufferMutex); 
+      IOBuffer *tmp = mFrontIOBuffer; 
+      mFrontIOBuffer= mBackIOBuffer; 
+      mBackIOBuffer = tmp; 
+    } 
+    // we have the next frame in the front buffer, so wake up decompressors if they are waiting
+    mIOBufferCondition.notify_all();  
+    
+    // Now let's take care of the back buffer while we're awake
+    uint32_t nextFrame = mFrontIOBuffer->mFirstFrame + mFrontIOBuffer->mNumFrames; 
+    if (nextFrame == mNumFrames) {
+      nextFrame = 0; 
+    }
+    if (!mBackIOBuffer->HasFrame(nextFrame)) {
+      BufferFrames(IOfd, nextFrame); 
+    } 
   }
+    
+  close(IOfd); 
 } 
 
 // this function lives in its own thread
