@@ -10,7 +10,7 @@ if [ $(uname) == Linux ]; then
         if [ $buildarg == all ]; then
             export INSTALL_DIR=linux-dmx-v$version-$(uname -r)
         else
-            export INSTALL_DIR=linux-basic-nodmx-v$version
+            export INSTALL_DIR=linux-basic-nodmx-v$version-$(uname -r)
         fi
         INSTALL_DIR=$(pwd)/$INSTALL_DIR remake.sh $buildarg || errexit "build failed for $INSTALL_DIR"
         cp -fp bindist-src/README-install.txt bindist-src/install.sh ${INSTALL_DIR}

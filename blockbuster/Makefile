@@ -19,7 +19,7 @@ all:
 remake: 
 	SYS_TYPE=$(SYS_TYPE) ./remake.sh
 
-bindist: all
+bindist: 
 	SYS_TYPE=$(SYS_TYPE) ./make-bindist.sh 
 
 old-bindist-deleteme: 
