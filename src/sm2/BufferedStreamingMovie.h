@@ -27,6 +27,20 @@ struct RenderedImage:public Image {
 }; 
 
 //===============================================
+/*
+  IOBuffer:  a convenient encapsulation
+*/ 
+struct IOBuffer  {
+  bool HasFrame(uint32_t framenum) {
+    return (mNumFrames != 0) && 
+      (framenum >= mFirstFrame) && 
+      (framenum - mFirstFrame < mNumFrames); 
+  }
+  vector<unsigned char> mData; 
+  uint32_t mFirstFrame, mNumFrames; 
+};
+
+//===============================================
 /* 
    This class encapsulates the entire Streaming Movie system in a convenient container. 
    It contains the display, rendering and movie reading pieces, basically all of the "main thread" activities.  Contains and controls the buffers and threads.  
@@ -38,6 +52,7 @@ class BufferedStreamingMovie:public StreamingMovie {
     return; 
   }
   BufferedStreamingMovie(std::string filename):StreamingMovie(filename) {
+    init(); 
     return;
   }
   ~BufferedStreamingMovie(){
@@ -75,6 +90,9 @@ class BufferedStreamingMovie:public StreamingMovie {
 
   void StartThreads(void);
 
+  // buffer into back buffer from file. 
+  void BufferFrames(int fd, uint32_t firstFrame);
+
   // this function lives in its own thread
   void ReaderThread();
 
@@ -98,12 +116,10 @@ class BufferedStreamingMovie:public StreamingMovie {
     int mLOD; // defaults to 0
   } mUserPrefs; 
 
-
   // IO Buffering:
-  vector<unsigned char> mIOBuffers[2],  // raw data from disk, double buffered
+  IOBuffer mIOBuffers[2],  // raw data from disk, double buffered
     *mFrontIOBuffer, *mBackIOBuffer;
-  uint32_t mIOBufferFirstFrame, mIOBufferNumFrames; 
-  boost::shared_mutex mIOBufferMutex; 
+  boost::mutex mIOBufferMutex; 
   boost::condition_variable mIOBufferCondition; 
 
   // Decompressed frame Buffering (RenderBuffer):  

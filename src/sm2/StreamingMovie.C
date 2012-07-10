@@ -191,6 +191,7 @@ bool StreamingMovie::FetchFrame(uint32_t framenum, CImg<unsigned char> &cimg) {
 */ 
 bool StreamingMovie::ReadHeader(void) {
    uint32_t magic, flags;
+
    //uint32_t maxtilesize;
 
    int i, w;
