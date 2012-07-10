@@ -22,7 +22,7 @@ echo "Installing... please wait."
 runecho mkdir -p $INSTALL_DIR
 
 srcdir=$(dirname $0)
-for dir in $srcdir/{bin,doc,include,lib,man}; do    
+for dir in $srcdir/{bin,doc,lib,man}; do    
     runecho cp -r $dir $INSTALL_DIR  || errexit "Cannot copy $dir to $INSTALL_DIR"
 done
 
