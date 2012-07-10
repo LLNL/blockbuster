@@ -8,7 +8,7 @@ version="$(cat src/config/versionstring.txt)"
 if [ $(uname) == Linux ]; then 
     for buildarg in all nodmx; do 
         if [ $buildarg == all ]; then
-            export INSTALL_DIR=linux-dmx-v$version
+            export INSTALL_DIR=linux-dmx-v$version-$(uname -r)
         else
             export INSTALL_DIR=linux-basic-nodmx-v$version
         fi
@@ -21,7 +21,7 @@ if [ $(uname) == Linux ]; then
 elif [ $(uname) == Darwin ]; then 
     # make || errexit "make failed"
     cp $INSTALL_DIR/bin/blockbuster.dmg $INSTALL_DIR/bin/sidecar.dmg ./
-    tar -czf blockbuster-install-mac-v$version.tgz blockbuster.dmg sidecar.dmg bindist-src/README-install.txt || errexit "Cannot tar up the files" 
+    tar -czf blockbuster-install-mac-v$version-$(uname -r).tgz blockbuster.dmg sidecar.dmg bindist-src/README-install.txt || errexit "Cannot tar up the files" 
     echo "Created blockbuster-install-mac-v$version.tgz containing blocbuster.dmg and sidecar.dmg in current directory." 
 else
     errexit "Error: Unrecognized uname results: $(uname).  Nothing done."
