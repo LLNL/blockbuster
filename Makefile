@@ -20,6 +20,8 @@ remake:
 	SYS_TYPE=$(SYS_TYPE) ./remake.sh
 
 bindist: 
+	rm -rf *dmg $(INSTALL_DIR)/bin/{blockbuster,sidecar}*
+	$(MAKE) all 
 	SYS_TYPE=$(SYS_TYPE) ./make-bindist.sh 
 
 old-bindist-deleteme: 

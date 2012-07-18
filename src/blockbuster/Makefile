@@ -94,7 +94,7 @@ SOURCES=main.cpp blockbuster_qt.cpp movie.cpp  timer.C \
 	Renderer.cpp x11Renderer.cpp glRenderer.cpp dmxRenderer.cpp 
 
 HEADERS= errmsg.h events.h remotecommands.h  \
-	../common/stringutil.h ../common/timer.h\
+	../common/stringutil.h ../common/timer.h ../config/version.h \
 	MovieCues.h errmsg.h pure_C.h util.h blockbuster_qt.h  \
 	Renderer.h glRenderer.h dmxRenderer.h 
 
@@ -131,10 +131,10 @@ DEPENDENT_LIBS = $(INSTALL_DIR)/lib/libboost_thread.a $(INSTALL_DIR)/lib/libz.a 
 
 blockbuster.pro :   $(FORMS)
 	echo QMAKE IS \"$(QMAKE)\" and INSTALL_DIR is $(INSTALL_DIR)
-	INSTALL_DIR=$(INSTALL_DIR) $(QMAKE) -project -nopwd 'LIBS += $(DEPENDENT_LIBS) $(LDFLAGS) -L$(INSTALL_DIR)/lib -L/sw/lib  $(X11_LIBS) $(GL_LIBS) $(PTHREADS_LIBS) -lsmovie  -lsrwpng -ljpeg -llzo2 -lz  -lm ' "INCLUDEPATH += libdmx ../common ../config $(INSTALL_DIR)/include  $$(echo $(X11_INCLUDES)  | sed -e s/-I//g ) " "MAKEFILE = Makefile.qt.include" "DEFINES +=  NO_BOOST $(MPI_DEFINES) $(USE_DMX) USE_QT $(DEBUG)" "QT += network"  "QT += opengl" "HEADERS = $(HEADERS)" "FORMS += $(FORMS)" "$(DEBUG_QT)"  "RESOURCES += images.qrc"  $(SOURCES)  
+	INSTALL_DIR=$(INSTALL_DIR) $(QMAKE) -project -nopwd -Wall 'LIBS += $(DEPENDENT_LIBS) $(LDFLAGS) -L$(INSTALL_DIR)/lib -L/sw/lib  $(X11_LIBS) $(GL_LIBS) $(PTHREADS_LIBS) -lsmovie  -lsrwpng -ljpeg -llzo2 -lz  -lm ' "INCLUDEPATH += libdmx ../common ../config $(INSTALL_DIR)/include  $$(echo $(X11_INCLUDES)  | sed -e s/-I//g ) " "MAKEFILE = Makefile.qt.include" "DEFINES +=  NO_BOOST $(MPI_DEFINES) $(USE_DMX) USE_QT $(DEBUG)" "QT += network"  "QT += opengl" "HEADERS = $(HEADERS)" "FORMS += $(FORMS)" "$(DEBUG_QT)"  "RESOURCES += images.qrc"  $(SOURCES)  
 
 qmake-force:
-	$(QMAKE) 
+	$(QMAKE) -Wall 
 	$(call SEDFILES,s~-O2~$(OPT) ~g,Makefile.qt.include)
 	$(call SEDFILES,s~-O1~$(OPT) ~g,Makefile.qt.include)
 	$(call SEDFILES,s~-g ~$(OPT) ~g,Makefile.qt.include)
@@ -146,7 +146,7 @@ qmake-force:
 Makefile.qt.include: blockbuster.pro
 	echo running qmake because $@
 	$(MAKE) qmake-force
-
+	makedepend -I../config -I../common -fMakefile.qt.include -Y. $(SOURCES)  
 
 .force:
 

@@ -85,6 +85,7 @@ UI_HEADERS = ui_MovieCueWidget.h ui_BlockbusterControl.h ui_InfoWindow.h ui_side
 Makefile.qt.include: 
 	$(QMAKE) 
 	../sedfiles.sh "s:INSTALLDIR_PLACEHOLDER:$(INSTALL_DIR):" Makefile.qt.include
+	makedepend -fMakefile.qt.include -I../../config -I../../common -Y. $(SOURCES) 
 
 
 %.h : ../%.h
