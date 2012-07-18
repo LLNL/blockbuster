@@ -111,7 +111,7 @@ static void Set(Settings *settings, const char *variable, const char *value,
 	 * structure and link it in; we'll allocate the 
 	 * value later.
 	 */
-      setting = (Setting *)calloc(1, sizeof(Setting));
+      setting = new Setting;
       if (setting == NULL) {
 	    WARNING("Could not allocate new setting");
 	    return;
@@ -144,7 +144,7 @@ static void DestroySetting(Setting *setting)
 {
     if (setting == NULL) return;
 
-    free(setting);
+    delete setting;
 }
 
 void DestroySettings(void *s)
