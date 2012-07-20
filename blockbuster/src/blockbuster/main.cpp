@@ -461,7 +461,7 @@ static void ParseOptions(int &argc, char *argv[])
     if (numProcessors > 1) {
       opt->readerThreads = max(numProcessors-2,1);
     }
-    WARNING("User did not specify thread count; using %d\n", opt->readerThreads); 
+    dbprintf(1, "User did not specify thread count; using %d\n", opt->readerThreads); 
   }
   DEBUGMSG("Using %d threads", opt->readerThreads); 
 
