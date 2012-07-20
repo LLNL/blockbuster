@@ -2,9 +2,10 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.7.3c (r681) Wed Jul 18 16:43:08 PDT 2012
+VERSION 2.7.3c (r683) Fri Jul 20 16:21:34 PDT 2012
 -- Fix a segfault in settings.
 -- improve packaging mechanism for distribution
+-- Suppress a warning dialog about threads and make it go to stderr instead. 
 
 ===============================================================================
 VERSION 2.7.3b (r665) Mon Jul  2 09:32:40 PDT 2012
