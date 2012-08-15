@@ -118,8 +118,8 @@ XVisualInfo *glRenderer::ChooseVisual(void)
 //=============================================================
 void glRenderer::DrawString(int row, int column, const char *str)
 {
-  const int x = (column + 1) * mCanvas->mRenderer->fontHeight;
-  const int y = (row + 1) * mCanvas->mRenderer->fontHeight;
+  const int x = (column + 1) * /*mCanvas->mRenderer->*/fontHeight;
+  const int y = (row + 1) * /*mCanvas->mRenderer->*/fontHeight;
   glPushAttrib(GL_CURRENT_BIT);
   glBitmap(0, 0, 0, 0, x, mCanvas->height - y - 1, NULL);
   glCallLists(strlen(str), GL_UNSIGNED_BYTE, (GLubyte *) str);
@@ -194,7 +194,7 @@ void glRenderer::Render(int frameNumber,
 
 
   TIMER_PRINT("Pull the image from our cache "); 
-  image = mCanvas->mRenderer->GetImage(localFrameNumber, &region, lod);
+  image = /* mCanvas->mRenderer->*/ GetImage(localFrameNumber, &region, lod);
   TIMER_PRINT("Got image"); 
   if (image == NULL) {
     /* error has already been reported */
@@ -361,7 +361,7 @@ void glStereoRenderer::Render(int frameNumber,
   zoom *= (float) lodScale;
 
   /* Pull the image from our cache */
-  image = mCanvas->mRenderer->GetImage(localFrameNumber, &region, lod);
+  image = /*mCanvas->mRenderer->*/GetImage(localFrameNumber, &region, lod);
 
   if (image == NULL) {
     /* error has already been reported */
@@ -428,14 +428,14 @@ void glStereoRenderer::Render(int frameNumber,
   glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
   
   /* Have to release the image, or the cache will fill up */
-  //mCanvas->mRenderer->ReleaseImage(image);
+  ///*mCanvas->mRenderer->*/ReleaseImage(image);
   
   if(mCanvas->frameList->stereo) {
     glDrawBuffer(GL_BACK_RIGHT);
     localFrameNumber++;
     
     /* Pull the image from our cache */
-    image = mCanvas->mRenderer->GetImage(localFrameNumber, &region, lod);
+    image = /*mCanvas->mRenderer->*/GetImage(localFrameNumber, &region, lod);
     if (image == NULL) {
       /* error has already been reported */
       return;
@@ -478,7 +478,7 @@ void glStereoRenderer::Render(int frameNumber,
     glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
     
     /* Have to release the image, or the cache will fill up */
-    //mCanvas->mRenderer->ReleaseImage(image);
+    ///*mCanvas->mRenderer->*/ReleaseImage(image);
     
   }
   
