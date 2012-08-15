@@ -1,0 +1,35 @@
+
+The Preload() mechanism was used before.  This basically just told the cache through a torturous set of calls to preload some frames.  Dumb.  
+
+Every time a frame was rendered, just afterward, movie.cpp told Canvas to tell the Renderer to ask the Cache to preload some frames.  
+
+The sequence was
+1. canvas->Render() (which calls glRenderer->Render() which calls Renderer->GetImage() which calls ImageCache->GetImage()!!!)
+2. canvas->ReleaseFrame()
+3. canvas->Preload()
+4. canvas->SwapBuffers()
+
+The pertinent code was as follows
+
+Renderer.cpp:92 & 99 decides how many frames to preload. 
+ void Renderer::Preload(uint32_t frameNumber,
+                     const Rectangle *imageRegion, uint32_t levelOfDetail) {
+AND
+   void Renderer::Preload(uint32_t frameNumber, uint32_t preloadFrames, 
+                       int playDirection, 
+                       uint32_t minFrame, uint32_t maxFrame,
+                       const Rectangle *imageRegion, 
+                       uint32_t levelOfDetail) {
+
+cache.cpp:1046 actually preloads the images.  
+void ImageCache::PreloadImage(uint32_t frameNumber, 
+	const Rectangle *region, uint32_t levelOfDetail)
+
+GetImage() is in cache.cpp:686
+Image *ImageCache::GetImage(uint32_t frameNumber,
+                            const Rectangle *newRegion, uint32_t levelOfDetail)
+
+Instead of this, we should just tell the cache when the play direction and speed changes.  Let the cache manage the rest.  The cache can tell the main loop how many frames it has buffered and the movie loop can throttle the speed as needed.  
+
+First step:  move all preload junk from everywhere into ImageCache->GetImage().  Also take care of releasing frames from the cache in ImageCache.  Otherwise act exactly the same.  
+
