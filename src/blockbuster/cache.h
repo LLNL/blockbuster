@@ -17,59 +17,27 @@
 #include <deque>
 using namespace std; 
 
-#define ImageCache OldImageCache
+#define ImageCache ImageCache
 
-
-class NewImageCache {
-  friend class CacheThread; 
- public:
-  NewImageCache(int numthreads, int numimages, Canvas *c);
-  ~NewImageCache(); 
-  
-  Image *GetImage(uint32_t frameNumber,
-                  const Rectangle *newRegion, uint32_t levelOfDetail);
-
-  void ManageFrameList(FrameList *frameList);
-  
-  // I do not like that these are called outside of the cache.  This is a huge design flaw.  The cache needs to manage how items are cached!  
-
-  // PreloadImage is called from Renderer
-  void PreloadImage(uint32_t , 
-                    const Rectangle *, uint32_t ) {
-    return; 
-  }
-
- 
-  void ReleaseImage(Image *){
-    // called from glRenderer, x11Renderer and splash.cpp
-    return; 
-  }
-  void ReleaseFrame(int ) {
-    // called from movie.cpp and slave.cpp
-    return; 
-  }
-
-  
-};
 
 /*! 
   ==================================================================
   old code:  BADLY BEHAVING OLD CACHE and associated stuff
   ==================================================================
 */
-class OldImageCache; 
+class ImageCache; 
 
-//! OldImageCacheJob:  a request for the workers to get an image
-struct OldImageCacheJob {
-  OldImageCacheJob(): frameNumber(0), levelOfDetail(0), requestNumber(0) {}
-  OldImageCacheJob(uint32_t frame, const Rectangle *reg, 
+//! ImageCacheJob:  a request for the workers to get an image
+struct ImageCacheJob {
+  ImageCacheJob(): frameNumber(0), levelOfDetail(0), requestNumber(0) {}
+  ImageCacheJob(uint32_t frame, const Rectangle *reg, 
                 uint32_t  lod, uint32_t reqnum): 
     frameNumber(frame),  levelOfDetail(lod), requestNumber(reqnum)
   { region = *reg; }
     
-  ~OldImageCacheJob() {}
+  ~ImageCacheJob() {}
   QString toString(void) {
-    return QString("{ OldImageCacheJob: frameNumber = %1, region = %2, LOD = %3, request = %4, frameInfo = %5 }").arg(frameNumber).arg(region.toString()).arg(levelOfDetail).arg(requestNumber).arg(frameInfo.toString());
+    return QString("{ ImageCacheJob: frameNumber = %1, region = %2, LOD = %3, request = %4, frameInfo = %5 }").arg(frameNumber).arg(region.toString()).arg(levelOfDetail).arg(requestNumber).arg(frameInfo.toString());
   }
 
   FrameInfo frameInfo; /* Local copy needed in case FrameList changes while we're working */
@@ -92,7 +60,7 @@ struct CachedImage{
 class CacheThread: public QThread {
   Q_OBJECT
     public:
-  CacheThread(OldImageCache *incache): 
+  CacheThread(ImageCache *incache): 
     cache(incache), mStop(false) {
     CACHEDEBUG("CacheThread constructor");     
     RegisterThread(this); 
@@ -102,7 +70,7 @@ class CacheThread: public QThread {
 
   void run(void); 
   void stop(void) { mStop = true; }
-  OldImageCache *cache;
+  ImageCache *cache;
   bool mStop; 
 };
 
@@ -114,21 +82,21 @@ class CacheThread: public QThread {
  * to be preloaded, loaded upon request, retrieved quickly if they're
  * already loaded, etc.
  *
- * The OldImageCache handles the basic threading operations required
+ * The ImageCache handles the basic threading operations required
  * by the application, by handing off work to child threads and
  * waiting on them appropriately.  (If no threads are specified,
- * the OldImageCache can also run simply as an abstraction layer.)
+ * the ImageCache can also run simply as an abstraction layer.)
  * Most of the information in here is owned by the "boss" thread,
  * if there's more than one thread.  It should not be accessed
  * or changed by the child threads, except where specifically
  * allowed, because access is not, in general, controlled by
  * mutexes (mutices? :-).
  */
-class OldImageCache {
+class ImageCache {
   friend class CacheThread; 
  public:
-  OldImageCache(int numthreads, int numimages, Canvas *c);
-  ~OldImageCache(); 
+  ImageCache(int numthreads, int numimages, Canvas *c);
+  ~ImageCache(); 
   
   Image *GetImage(uint32_t frameNumber,
                   const Rectangle *newRegion, uint32_t levelOfDetail);
@@ -139,29 +107,28 @@ class OldImageCache {
   // PreloadImage is called from Renderer
   void PreloadImage(uint32_t frameNumber, 
                     const Rectangle *region, uint32_t levelOfDetail);
-
  
   void ReleaseImage(Image *image); // called from glRenderer, x11Renderer and splash.cpp
   void ReleaseFrame(int framenum); // called from movie.cpp and slave.cpp
  protected:
   CachedImage *GetCachedImageSlot(uint32_t newFrameNumber);
   
-  void RemoveJobFromPendingQueue(OldImageCacheJob *job) {
+  void RemoveJobFromPendingQueue(ImageCacheJob *job) {
     RemoveJobFromQueue(mPendingQueue, job); 
   }
   
-  void RemoveJobFromQueue(deque<OldImageCacheJob*> &queue, OldImageCacheJob *job);
+  void RemoveJobFromQueue(deque<ImageCacheJob*> &queue, ImageCacheJob *job);
   
-  OldImageCacheJob *FindJobInQueue
-    (deque<OldImageCacheJob*> &queue,  unsigned int frameNumber, 
+  ImageCacheJob *FindJobInQueue
+    (deque<ImageCacheJob*> &queue,  unsigned int frameNumber, 
      const Rectangle *region, unsigned int levelOfDetail); 
-  void ClearQueue(deque<OldImageCacheJob*> &queue); 
+  void ClearQueue(deque<ImageCacheJob*> &queue); 
   void ClearImages(void); 
   void ClearJobQueue(void);
   CachedImage *FindImage(uint32_t frame, uint32_t lod);
   void Print(void); 
 #define PrintJobQueue(q) __PrintJobQueue(#q,q)
-  void __PrintJobQueue(QString name, deque<OldImageCacheJob *>&q); 
+  void __PrintJobQueue(QString name, deque<ImageCacheJob *>&q); 
   void  lock(string reason, string file="unknown file", int line=0) {
     CACHEDEBUG("%s: %d: locking image cache (%s)", 
                file.c_str(), line, reason.c_str()); 
@@ -217,16 +184,16 @@ class OldImageCache {
   std::vector<CacheThread *> mThreads;
   QMutex imageCacheLock; 
   QWaitCondition jobReady, jobDone; 
-  deque<OldImageCacheJob *> mJobQueue;
-  deque<OldImageCacheJob *> mPendingQueue;
-  deque<OldImageCacheJob *> mErrorQueue;
+  deque<ImageCacheJob *> mJobQueue;
+  deque<ImageCacheJob *> mPendingQueue;
+  deque<ImageCacheJob *> mErrorQueue;
 } ;
 
 /* Image Cache management from cache.c.  These utilities are expected to be
  * used by Renderer modules to manage their images (because each renderer
  * is responsible for its own image management).
  */
-OldImageCache *CreateImageCache(int numReaderThreads, int maxCachedImages, Canvas *canvas);
+ImageCache *CreateImageCache(int numReaderThreads, int maxCachedImages, Canvas *canvas);
 void CachePreload(Canvas *canvas, uint32_t frameNumber, 
                   const Rectangle *imageRegion, uint32_t levelOfDetail);
 
