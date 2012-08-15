@@ -62,7 +62,7 @@
 
 //! returns true if first is MORE important than second, even though this functor implements "less than".  This sorts the queue in reverse order, meaning that most important job is always next in the queue. 
 uint32_t gCurrentFrame, gLastFrame; 
-bool jobComparer(const OldImageCacheJob *first, const OldImageCacheJob *second){
+bool jobComparer(const ImageCacheJob *first, const ImageCacheJob *second){
   int64_t diff1 = first->frameNumber - gCurrentFrame, 
     diff2 = second->frameNumber - gCurrentFrame; 
   if (diff1 < 0) diff1 += gLastFrame; 
@@ -182,7 +182,7 @@ static unsigned int Distance(unsigned int oldFrame, unsigned int newFrame,
 
 void CacheThread::run() {
     Image *image;
-    OldImageCacheJob *job =NULL;
+    ImageCacheJob *job =NULL;
     CachedImage *imageSlot;
     CACHEDEBUG("CacheThread::run() (thread = %p)", QThread::currentThread()); 
 
@@ -330,23 +330,23 @@ void CacheThread::run() {
 }
 
 //==================================================================
-OldImageCache *CreateImageCache(int numReaderThreads, int maxCachedImages, Canvas *canvas)
+ImageCache *CreateImageCache(int numReaderThreads, int maxCachedImages, Canvas *canvas)
 {
-  OldImageCache *newCache = 
-    new OldImageCache(numReaderThreads, maxCachedImages, canvas);
+  ImageCache *newCache = 
+    new ImageCache(numReaderThreads, maxCachedImages, canvas);
   if (newCache == NULL) {
 	SYSERROR("cannot allocate image cache");
   }
   return newCache; 
 }
 //==================================================================
-OldImageCache::OldImageCache(int numthreads, int numimages, Canvas *c): 
+ImageCache::ImageCache(int numthreads, int numimages, Canvas *c): 
   mNumReaderThreads(numthreads), mMaxCachedImages(numimages), 
   mCanvas(c), mRequestNumber(0), mValidRequestThreshold(0) {
-  CACHEDEBUG("OldImageCache constructor"); 
+  CACHEDEBUG("ImageCache constructor"); 
   
   register int i;
-  CACHEDEBUG("CreateOldImageCache(mNumReaderThreads = %d, mMaxCachedImages = %d, mCanvas)", mNumReaderThreads, mMaxCachedImages);
+  CACHEDEBUG("CreateImageCache(mNumReaderThreads = %d, mMaxCachedImages = %d, mCanvas)", mNumReaderThreads, mMaxCachedImages);
   mCachedImages = (CachedImage *)calloc(1, mMaxCachedImages * sizeof(CachedImage));
   if (mCachedImages == NULL) {
 	ERROR("cannot allocate %d cached images", mMaxCachedImages);
@@ -384,11 +384,11 @@ OldImageCache::OldImageCache(int numthreads, int numimages, Canvas *c):
   return;
 }
 
-OldImageCache::~OldImageCache() {
+ImageCache::~ImageCache() {
  /* If we have reader threads, we have to clear the cache
    * work queue and cancel all the reader threads.
    */
-  CACHEDEBUG("DestroyOldImageCache");
+  CACHEDEBUG("DestroyImageCache");
   if (mNumReaderThreads > 0) {
 	register int i;
     
@@ -432,7 +432,7 @@ OldImageCache::~OldImageCache() {
  * insert into the cache.  We use this to determine which entry to discard
  * if the cache is full.
  */
-CachedImage *OldImageCache::GetCachedImageSlot(uint32_t newFrameNumber)
+CachedImage *ImageCache::GetCachedImageSlot(uint32_t newFrameNumber)
 {
     register CachedImage *cachedImage;
     register int i;
@@ -503,8 +503,8 @@ CachedImage *OldImageCache::GetCachedImageSlot(uint32_t newFrameNumber)
     return imageSlot;
 }
 //=============================================================
-void OldImageCache::ClearQueue(deque<OldImageCacheJob *> &queue) {
-  deque<OldImageCacheJob *>::iterator pos = queue.begin(), endpos = queue.end(); 
+void ImageCache::ClearQueue(deque<ImageCacheJob *> &queue) {
+  deque<ImageCacheJob *>::iterator pos = queue.begin(), endpos = queue.end(); 
   while (pos != endpos) {
     delete (*pos); 
     ++pos; 
@@ -513,10 +513,10 @@ void OldImageCache::ClearQueue(deque<OldImageCacheJob *> &queue) {
 }
 
 //=============================================================
-OldImageCacheJob *OldImageCache::
-FindJobInQueue(deque<OldImageCacheJob*> &queue,  unsigned int frameNumber,
+ImageCacheJob *ImageCache::
+FindJobInQueue(deque<ImageCacheJob*> &queue,  unsigned int frameNumber,
                const Rectangle *region,  unsigned int levelOfDetail) {
-  deque<OldImageCacheJob *>::iterator pos = queue.begin(), endpos = queue.end(); 
+  deque<ImageCacheJob *>::iterator pos = queue.begin(), endpos = queue.end(); 
   while (pos != endpos) {
     if ((*pos)->frameNumber == frameNumber &&
         (*pos)->levelOfDetail == levelOfDetail) {
@@ -530,9 +530,9 @@ FindJobInQueue(deque<OldImageCacheJob*> &queue,  unsigned int frameNumber,
 }
 
 //=============================================================
-void OldImageCache::
-RemoveJobFromQueue(deque<OldImageCacheJob *> &queue, OldImageCacheJob *job) {
-  deque<OldImageCacheJob *>::iterator pos = queue.begin(), endpos = queue.end(); 
+void ImageCache::
+RemoveJobFromQueue(deque<ImageCacheJob *> &queue, ImageCacheJob *job) {
+  deque<ImageCacheJob *>::iterator pos = queue.begin(), endpos = queue.end(); 
   while (pos != endpos) {
     if (*pos == job) {
       queue.erase(pos); 
@@ -550,11 +550,11 @@ RemoveJobFromQueue(deque<OldImageCacheJob *> &queue, OldImageCacheJob *job) {
  * intrinsic FrameList is changed (thus invalidating all frame
  * numbers and potentially the images as well).
  */
-void OldImageCache::ClearImages(void)
+void ImageCache::ClearImages(void)
 {
     register int i;
 
-    CACHEDEBUG("OldImageCache::ClearImages"); 
+    CACHEDEBUG("ImageCache::ClearImages"); 
     /* Any images in the cache must be released */
     for (i = 0; i < this->mMaxCachedImages; i++) {
 	/* There shouldn't be any locked images.  If there are,
@@ -577,7 +577,7 @@ void OldImageCache::ClearImages(void)
 
 
 //=============================================================
-void OldImageCache::ClearJobQueue(void)
+void ImageCache::ClearJobQueue(void)
 {
   /* All pending work jobs must be cancelled */
   lock("clearJobQueue", __FILE__, __LINE__); 
@@ -603,7 +603,7 @@ void OldImageCache::ClearJobQueue(void)
  * This must be called from the main thread; it is not safe
  * for more than one thread to call at once.
  */
-void OldImageCache::ManageFrameList(FrameList *frameList)
+void ImageCache::ManageFrameList(FrameList *frameList)
 {
     /* If we've got worker threads, there may already be work that
      * is being done with the current framelist.  Clear all the
@@ -632,7 +632,7 @@ void OldImageCache::ManageFrameList(FrameList *frameList)
  * Note: we don't care about the loaded image region at this point.
  */
   
-CachedImage *OldImageCache::FindImage(uint32_t frame, uint32_t lod) {
+CachedImage *ImageCache::FindImage(uint32_t frame, uint32_t lod) {
   register CachedImage *cachedImage;
   register int i;
   CACHEDEBUG("FindImage frame %d", frame); 
@@ -681,7 +681,7 @@ CachedImage *OldImageCache::FindImage(uint32_t frame, uint32_t lod) {
  * So it might pay off to play a game of "add two pixels to each edge." 
  */
 
-Image *OldImageCache::GetImage(uint32_t frameNumber,
+Image *ImageCache::GetImage(uint32_t frameNumber,
                             const Rectangle *newRegion, uint32_t levelOfDetail)
 {
   Image *image;
@@ -691,7 +691,7 @@ Image *OldImageCache::GetImage(uint32_t frameNumber,
   Rectangle region = *newRegion;
   gCurrentFrame = frameNumber; 
   
-  CACHEDEBUG("OldImageCache::GetImage frame %d\n",frameNumber); 
+  CACHEDEBUG("ImageCache::GetImage frame %d\n",frameNumber); 
   
   /* Keep track of highest frame number.  We need it for cache
    * replacement.
@@ -779,7 +779,7 @@ Image *OldImageCache::GetImage(uint32_t frameNumber,
        * matches our requirements.
        */
       CACHEDEBUG("Looking in pending queue for frame %d", frameNumber); 
-      OldImageCacheJob *job = 
+      ImageCacheJob *job = 
         FindJobInQueue(mPendingQueue, frameNumber, &region,levelOfDetail);
       
       if (job != NULL) {
@@ -954,7 +954,7 @@ Image *OldImageCache::GetImage(uint32_t frameNumber,
  * if the cache is destroyed or if the space is required
  * for another image.  This makes it hard to know when an image is actually released.  
  */
-void OldImageCache::ReleaseImage(Image *image)
+void ImageCache::ReleaseImage(Image *image)
 {
   register int i;
   register CachedImage *cachedImage;
@@ -997,7 +997,7 @@ void OldImageCache::ReleaseImage(Image *image)
 /*!
   Replaces ReleaseImage -- releases all images associated with the given frame number.  Does not know about stereo, uses actual frame numbers, not stereo frame numbers.
 */ 
-void OldImageCache::ReleaseFrame(int frameNumber) {
+void ImageCache::ReleaseFrame(int frameNumber) {
   register int i, numreleased = 0;
   register CachedImage *cachedImage;
   CACHEDEBUG("ReleaseFrame %d", frameNumber); 
@@ -1041,11 +1041,11 @@ void OldImageCache::ReleaseFrame(int frameNumber) {
  * It should only be called from the main thread, since it accesses the
  * frameList field (which is unprotected).
  */
-void OldImageCache::PreloadImage(uint32_t frameNumber, 
+void ImageCache::PreloadImage(uint32_t frameNumber, 
 	const Rectangle *region, uint32_t levelOfDetail)
 {
   CACHEDEBUG("PreloadImage() frame %d", frameNumber); 
-  OldImageCacheJob *job = NULL, *newJob = NULL;
+  ImageCacheJob *job = NULL, *newJob = NULL;
   CachedImage *cachedImage = NULL;
 
   /* Keep track of highest frame number.  We need it for cache
@@ -1097,7 +1097,7 @@ void OldImageCache::PreloadImage(uint32_t frameNumber,
    * job in the queue, so add a new one.
    */
   newJob = 
-    new OldImageCacheJob(frameNumber, region, levelOfDetail, mRequestNumber);
+    new ImageCacheJob(frameNumber, region, levelOfDetail, mRequestNumber);
   
   /* This counts as an additional cache request; the job will take
    * on the request number, so we can determine which entries are the
@@ -1133,7 +1133,7 @@ void OldImageCache::PreloadImage(uint32_t frameNumber,
 
 
 /* For debugging */
-void OldImageCache::Print(void)
+void ImageCache::Print(void)
 {
   register CachedImage *cachedImage;
   register int i, numlocked=0;
@@ -1160,9 +1160,9 @@ void OldImageCache::Print(void)
 /*!
   You probably want to call the macro, PrintJobQueue(q)
 */
-void OldImageCache::__PrintJobQueue(QString name, deque<OldImageCacheJob *>&q) {
-  deque<OldImageCacheJob *>::iterator pos = q.begin(), endpos = q.end(); 
-  CACHEDEBUG(QString(" deque<OldImageCacheJob *>%1 (length %2): ").arg(name).arg(q.size())); 
+void ImageCache::__PrintJobQueue(QString name, deque<ImageCacheJob *>&q) {
+  deque<ImageCacheJob *>::iterator pos = q.begin(), endpos = q.end(); 
+  CACHEDEBUG(QString(" deque<ImageCacheJob *>%1 (length %2): ").arg(name).arg(q.size())); 
   while (pos != endpos){
     CACHEDEBUG((*pos)->toString()); 
     ++pos; 
