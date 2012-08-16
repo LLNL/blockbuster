@@ -170,7 +170,7 @@ Image *ConvertImageToFormat(const Image *image, Canvas *canvas)
     /* Otherwise, we suffer a non-trivial conversion. Create a new
      * image from scratch.
      */
-
+    //destImage = new Image(
     destImage = (Image *)calloc(1, sizeof(Image));
     if (destImage == NULL) {
 	ERROR("could not allocate Image structure");

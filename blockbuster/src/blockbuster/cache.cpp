@@ -342,7 +342,9 @@ ImageCache *CreateImageCache(int numReaderThreads, int maxCachedImages, Canvas *
 //==================================================================
 ImageCache::ImageCache(int numthreads, int numimages, Canvas *c): 
   mNumReaderThreads(numthreads), mMaxCachedImages(numimages), 
-  mCanvas(c), mRequestNumber(0), mValidRequestThreshold(0) {
+  mCanvas(c), mRequestNumber(0), mValidRequestThreshold(0), 
+  mPreloadFrames(0),  mCurrentPlayDirection(0),
+  mCurrentStartFrame(0),  mCurrentEndFrame(0) {
   CACHEDEBUG("ImageCache constructor"); 
   
   register int i;
@@ -684,6 +686,7 @@ CachedImage *ImageCache::FindImage(uint32_t frame, uint32_t lod) {
 Image *ImageCache::GetImage(uint32_t frameNumber,
                             const Rectangle *newRegion, uint32_t levelOfDetail)
 {
+
   Image *image;
   CachedImage *cachedImage = NULL;
   CachedImage *imageSlot = NULL;
@@ -942,6 +945,25 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
     if (mNumReaderThreads > 0) {
       unlock("image stored and locked successfully", __FILE__, __LINE__); 
     }
+    
+    /* Steal Preload code right from Renderer */ 
+    uint32_t preloadmax = mCurrentEndFrame-mCurrentStartFrame, 
+      frame=frameNumber, preloaded=0;
+    if (preloadmax > mPreloadFrames) {
+      preloadmax = mPreloadFrames;
+    }
+
+    /* Check to see how much room we have in the cache and free up any if needed or just return without more preloading.  */
+    // if ((mJobQueue.size() + mPendingQueue.size() + preloadmax) * mAverageFrameBytes > mMaxCacheBytes) {
+      
+    while (preloaded++ < preloadmax) {
+      frame += mCurrentPlayDirection; 
+      if (frame > mCurrentEndFrame) frame = mCurrentEndFrame; 
+      if (frame < mCurrentStartFrame) frame = mCurrentStartFrame; 
+      DEBUGMSG("Preload frame %d", frame); 
+      PreloadImage(frame, newRegion, levelOfDetail);
+    }
+    
     return image;
 }
 
