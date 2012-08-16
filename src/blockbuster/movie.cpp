@@ -1065,7 +1065,10 @@ int DisplayLoop(FrameList **allFramesPtr, ProgramOptions *options)
        */
       
        TIMER_PRINT("before render"); 
+       canvas->mRenderer->mCache->PreloadHint(preloadFrames, playDirection, 
+                                              startFrame, endFrame);
        canvas->Render(frameNumber, &roi, destX, destY, currentZoom, lod);
+       
        if (!usingDmx && frameNumber != previousFrame && previousFrame >= 0) {
          if (allFrames->stereo) {
            canvas->mRenderer->mCache->ReleaseFrame(previousFrame*2); 
@@ -1140,11 +1143,11 @@ int DisplayLoop(FrameList **allFramesPtr, ProgramOptions *options)
          * directly.)
          * THIS IS ICKY.  But it is going away when I rewrite the cache.  
          */
-        canvas->Preload(frameNumber, preloadFrames, playDirection, 
+        /* canvas->Preload(frameNumber, preloadFrames, playDirection, 
                         startFrame, endFrame, &roi, lod); 
+        */
        }
        if (frameNumber != previousFrame) {
-         DEBUGMSG("frameNumber changed to %d during non-switch logic", frameNumber); 
          canvas->ReportFrameChange(frameNumber);
        }
       previousFrame = frameNumber; 

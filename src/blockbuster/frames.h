@@ -65,19 +65,29 @@ struct ImageFormat{
 } ;
 
 struct Image {
-  Image():width(0), height(0),  levelOfDetail(0), 
+  /*  Image():width(0), height(0),  levelOfDetail(0), 
           frameNumber(0), imageDataBytes(0), imageData(NULL), 
-          mManageData(false){}
+          mManageData(false){
+    init(); 
+    }*/ 
   Image(uint32_t w, uint32_t h, 
         ImageFormat &form, Rectangle &region, int lod, uint32_t frame, 
         unsigned int idb, void *data, bool manageData=false) :
     width(w), height(h), imageFormat(form), loadedRegion(region), 
     levelOfDetail(lod), 
     frameNumber(frame), imageDataBytes(idb), imageData(data), 
-    mManageData(manageData) {}
+    mManageData(manageData) {
+    init(); 
+  } 
 
+  void init(void) {
+    if (mManageData) {
+      imageData = new char[imageDataBytes]; 
+    }
+  }
+    
   ~Image() {
-    if (mManageData && imageData) free(imageData); 
+    if (mManageData && imageData) delete[] (char*)imageData; 
     return; 
   }
   

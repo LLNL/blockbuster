@@ -91,7 +91,7 @@ void usage(void) {
   fprintf(stderr, "'file' is an optional file name, or a prefix of a set of file names\n");
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "   Note: substrings are also matched, so -h is the same as -help, but beware of non-unique prefixes!\n");
-  fprintf(stderr, "-cache <num> Probably best not to set this.  It specifies maximum number of frames to cache.  Use -preload instead and -cache will be automatically set.\n");
+  fprintf(stderr, "-cachesize <num> specifies cache limit in megabytes (you can leave this unset unless you are running out of memory) (default 500MB) \n");
   fprintf(stderr, "-DecorationsDisable (or -no-decorations): same as -fullscreen\n");
   fprintf(stderr, "-display <display> specifies X display\n");
   fprintf(stderr, "-font <fontname> specifies X font\n");
@@ -110,7 +110,7 @@ void usage(void) {
   fprintf(stderr, "-no-stereo-switch suppresses automatic stereo or mono mode switches based on movie being stereo or mono\n");
   fprintf(stderr, "-play (or -Play) automatically starts the movie after loading\n");
   fprintf(stderr, "-playexit framenum: play one time until frame given, then exit.  Useful for testing.  If framenum == -1, play all the way to end.\n");
-  fprintf(stderr, "-preload <num> specifies how many frames to preload\n");
+  // fprintf(stderr, "-preload <num> specifies how many frames to preload\n");
   fprintf(stderr, "-renderer <name> specifies the method used to render images\n");
   fprintf(stderr, "\tgl: Render using OpenGL glDrawPixels to an X11 window\n");
   fprintf(stderr, "\t    (supported in 'gtk', 'x11' user interfaces)\n");
@@ -270,7 +270,7 @@ static void ParseOptions(int &argc, char *argv[])
    * there's not a lot of sense in setting up threads
    * if they'll steal time from the main thread.
    */
-  opt->preloadFrames = 100;
+  //opt->preloadFrames = 100; // ignored now. 
 
   /* Figure out which user interface and renderer we're
    * using right now (the defaults), so we can give
@@ -358,8 +358,11 @@ static void ParseOptions(int &argc, char *argv[])
       opt->play = 1; 
       continue;
     }
-	else if (CHECK_ATOI_ARG("-preload", argc, argv,  opt->preloadFrames)) {
-      DEBUGMSG("preload caught"); 
+    /* 	else if (CHECK_ATOI_ARG("-preload", argc, argv,  opt->preloadFrames)) {
+      continue;
+    }
+    */ 
+	else if (CHECK_ATOI_ARG("-cachesize", argc, argv,  opt->cacheMegabytes)) {
       continue;
     }
 	else if (CHECK_STRING_ARG("-renderer", argc, argv, opt->rendererName)) continue;

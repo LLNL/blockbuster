@@ -377,6 +377,7 @@ int Slave::Loop(void)
             if (mCanvas->frameList) {
               mCanvas->Render(imageNum, &currentRegion, 
                              destX, destY, zoom, lod);
+              
               if (imageNum != lastImageRendered && lastImageRendered >= 0) {
                 if (mCanvas->frameList->stereo) {
                   mCanvas->mRenderer->mCache->ReleaseFrame(lastImageRendered*2); 
@@ -384,8 +385,8 @@ int Slave::Loop(void)
                 } else {
                   mCanvas->mRenderer->mCache->ReleaseFrame(lastImageRendered); 
                 }
-              }
-               lastImageRendered = imageNum; 
+              } 
+              lastImageRendered = imageNum; 
             }
             else {
               SendError("No frames to render\n");
@@ -436,7 +437,7 @@ int Slave::Loop(void)
               continue; 
             }
 #ifdef USE_MPI
-            DEBUGMSG("frame %d, mCanvas %d: MPI_Barrier", lastImageRendered, mCanvas); 
+            DEBUGMSG("frame %d, mCanvas %d: MPI_Barrier", currentFrame, mCanvas); 
             /*!
               TOXIC:  disable MPI for right now during testing
             */ 
@@ -445,17 +446,18 @@ int Slave::Loop(void)
 #endif
             if (mCanvas && mCanvas->frameList) { 
               // only swap if there is a valid frame  
-              DEBUGMSG("frame %d: mCanvas->SwapBuffers", lastImageRendered); 
+              DEBUGMSG("frame %d: mCanvas->SwapBuffers", currentFrame); 
               mCanvas->SwapBuffers();
               updateAndReportFPS(); 
             }
 #ifdef USE_MPI
-            DEBUGMSG("frame %d: Finished MPI_Barrier", lastImageRendered); 
+            DEBUGMSG("frame %d: Finished MPI_Barrier", currentFrame); 
 #endif
             /* send ack */
             SendMessage(QString("SwapBuffers complete %1 %2").arg(messageList[1]).arg(messageList[2])); 
-            mCanvas->Preload(lastImageRendered, preload, playDirection, 
+            /*  mCanvas->Preload(lastImageRendered, preload, playDirection, 
                             startFrame, endFrame, &currentRegion, lod); 
+            */
             /* if (preload && mCanvas && mCanvas->frameList) {
                int32_t i;
                for (i = 1; i <= preload; i++) {
@@ -598,24 +600,24 @@ int Slave::Loop(void)
                          destX, destY, zoom, lod);
         }
         lastImageRendered = playFrame; 
-        playFrame ++; 
-        if (playFrame > playLastFrame) {
-          playStep = 0; 
-        }
 #ifdef USE_MPI
         if (mOptions->useMPI) { 
-          DEBUGMSG("frame %d, %d:  MPI_Barrier",lastImageRendered, mCanvas); 
+          DEBUGMSG("frame %d, %d:  MPI_Barrier", playFrame, mCanvas); 
           MPI_Barrier(workers); 
         }
 #endif
         if (mCanvas && mCanvas->frameList) { 
           // only swap if there is a valid frame  
-          DEBUGMSG( "frame %d: mCanvas->SwapBuffers\n", lastImageRendered); 
+          DEBUGMSG( "frame %d: mCanvas->SwapBuffers\n", playFrame); 
           mCanvas->SwapBuffers();
         }
 #ifdef USE_MPI
-        DEBUGMSG( "frame %d: Finished MPI_Barrier\n", lastImageRendered); 
+        DEBUGMSG( "frame %d: Finished MPI_Barrier\n", playFrame); 
 #endif
+        playFrame ++; 
+        if (playFrame > playLastFrame) {
+          playStep = 0; 
+        }
       }
       
       /*!
@@ -636,17 +638,17 @@ int Slave::Loop(void)
           }
 #ifdef USE_MPI
           if (mOptions->useMPI) { 
-            DEBUGMSG("speedTest: frame %d, %d:  MPI_Barrier",lastImageRendered, mCanvas); 
+            DEBUGMSG("speedTest: frame %d, %d:  MPI_Barrier",playFrame, mCanvas); 
             MPI_Barrier(workers); 
           }
 #endif
           if (mCanvas && mCanvas->frameList) { 
             // only swap if there is a valid frame  
-            DEBUGMSG( "speedTest: frame %d: mCanvas->SwapBuffers\n", lastImageRendered); 
+            DEBUGMSG( "speedTest: frame %d: mCanvas->SwapBuffers\n",playFrame ); 
             mCanvas->SwapBuffers();
           }
 #ifdef USE_MPI
-          DEBUGMSG( "speedTest: frame %d: Finished MPI_Barrier\n", lastImageRendered); 
+          DEBUGMSG( "speedTest: frame %d: Finished MPI_Barrier\n",playFrame ); 
 #endif
           /* send ack */
           // SendMessage(QString("SwapBuffers complete %1 %2").arg(messageList[1]).arg(messageList[2])); 

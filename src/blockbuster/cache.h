@@ -105,6 +105,13 @@ class ImageCache {
   // I do not like that these are called outside of the cache.  This is a huge design flaw.  The cache needs to manage how items are cached!  
 
   // PreloadImage is called from Renderer
+  void PreloadHint(uint32_t preloadFrames, int playDirection, 
+                   uint32_t startFrame, uint32_t endFrame){
+    mPreloadFrames = preloadFrames;
+    mCurrentPlayDirection = playDirection; 
+    mCurrentStartFrame = startFrame; 
+    mCurrentEndFrame = endFrame; 
+  } 
   void PreloadImage(uint32_t frameNumber, 
                     const Rectangle *region, uint32_t levelOfDetail);
  
@@ -178,15 +185,24 @@ class ImageCache {
   CachedImage *mCachedImages;
   unsigned int mHighestFrameNumber;
   
+  /* New approach:  start managing preloads from the cache */ 
+  uint32_t mPreloadFrames;
+  int32_t mCurrentPlayDirection; 
+  uint32_t mCurrentStartFrame; // the first frame the user wants played
+  uint32_t mCurrentEndFrame;  // the last frame the user wants played
+
+  uint64_t mMaxCacheBytes; 
+  uint64_t mCurrentCacheBytes; 
+
   /* Thread management; none of these fields are used or examined
    * unless numReaderThreads is greater than 0.
    */
   std::vector<CacheThread *> mThreads;
   QMutex imageCacheLock; 
   QWaitCondition jobReady, jobDone; 
-  deque<ImageCacheJob *> mJobQueue;
-  deque<ImageCacheJob *> mPendingQueue;
-  deque<ImageCacheJob *> mErrorQueue;
+  deque<ImageCacheJob *> mJobQueue; // jobs ready for the workers to take
+  deque<ImageCacheJob *> mPendingQueue; // jobs being worked on by a worker
+  deque<ImageCacheJob *> mErrorQueue;  // FAILs
 } ;
 
 /* Image Cache management from cache.c.  These utilities are expected to be
