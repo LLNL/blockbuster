@@ -31,9 +31,9 @@
 
 include ../config/config
 
-SRC_FILES = smBase.C smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C smdfc/smdfc.c
-OFILES = smBase.o smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o smdfc.o
-HFILES = smBase.h smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h
+SRC_FILES = smBase.C smXZ.C smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C smdfc/smdfc.c
+OFILES = smBase.o smXZ.o smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o smdfc.o
+HFILES = smBase.h smXZ.h smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h
 
 all: lib doc include
 
