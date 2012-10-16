@@ -50,7 +50,7 @@ $(INSTALL_DIR)/lib/libptutil.a: $(OFILES) $(HFILES)
 
 clean:
 	rm -rf $(CC_CACHE) *.o libptutil.a $(MANLINKFILES)
-	@list='$(MANFILES)'; \
+	list='$(MANFILES)'; \
 	for j in $$list; do \
 		grep LINK $$j | cut -d ' ' -f2- | xargs -n 1 rm -f ; \
 	done
@@ -63,10 +63,8 @@ CPMANPAGES: $(MANLINKFILES)
 	date > CPMANPAGES
 
 $(MANLINKFILES):
-	@list='$(MANFILES)'; \
-	for j in $$list; do \
-		grep LINK $$j | cut -d ' ' -f2- | xargs -n 1 ln -s $$j ; \
-	done
+	basename=$$(echo $@ | sed -e 's/\(pt_gate_\).*/\1intro.3/' -e 's/\(pt_rw_\).*/\1intro.3/'  -e 's/\(pt_pool_\).*/\1intro.3/'); \
+	ln -f -s $$basename $@; echo linked $$basename to $@
 
 depend:
 	makedepend -Y. -Y.. $(INCLUDES) $(SRC_FILES)
