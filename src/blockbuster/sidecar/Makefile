@@ -105,11 +105,11 @@ images: ../images
 	mkdir -p images
 	cp -f ../images/*png images/
 
-ui_%.h: %.ui
-	echo making $@ due to $^
-	make -j 20 -f Makefile.qt $@
+ui_%.h: Makefile.qt.include %.ui 
+	echo making $@ due to $?
+	make -f Makefile.qt $@
 
-$(sidecar): Makefile.qt.include FORCE $(UI_HEADERS) $(COPYFILES)
+$(sidecar): Makefile.qt.include $(UI_HEADERS) $(COPYFILES) FORCE 
 	$(MAKE) -j 20  -f Makefile.qt
 	cp -r $(sidecar) $(INSTALL_DIR)/bin/
 
