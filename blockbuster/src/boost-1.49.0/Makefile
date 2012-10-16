@@ -46,10 +46,10 @@ lib: $(LIB_EVIDENCE)
 $(LIB_EVIDENCE): boost_1_49_0/boost/random.hpp
 	-echo apparently $< is older than $@; ls -l $<; ls -l $@
 # export INSTALL_DIR=$(INSTALL_DIR); if ! find_boost.sh; then cd boost_1_49_0 && ./bootstrap.sh --with-libraries=thread && ./bjam install --prefix=$(INSTALL_DIR); fi
-	cd boost_1_49_0 && ./bootstrap.sh --with-libraries=thread && ./bjam install --prefix=$(INSTALL_DIR)
+	cd boost_1_49_0 && ./bootstrap.sh --with-libraries=thread && ./bjam -j 20 install --prefix=$(INSTALL_DIR)
 
 boost_1_49_0/boost/random.hpp:
-	tar -xf boost_1_49_0.tar.gz 
+	tar -xzf boost_1_49_0.tar.gz 
 
 clean:
 	rm -rf boost_1_49_0 $(INSTALL_DIR)/lib/libboost* $(INSTALL_DIR)/include/boost

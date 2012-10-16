@@ -60,7 +60,7 @@ libpng-1.2.8/.libs/libpng.a:
 	export CC="$(CC)"; export CFLAGS="$(CFLAGS)"; \
 	export CPPFLAGS="$(CPPFLAGS)"; \
 	./configure --prefix=$(INSTALL_DIR) && \
-	CC="$(CC)" CFLAGS="$(CFLAGS)"  $(MAKE) 
+	CC="$(CC)" CFLAGS="$(CFLAGS)"  $(MAKE) -j 20 
 
 $(INSTALL_DIR)/include/pngsimple.h: pngsimple.h
 	cp $< $@

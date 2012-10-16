@@ -38,7 +38,7 @@ all: $(INSTALL_LIB)
 
 
 $(INSTALL_LIB): $(LZODIR)/src/.libs/liblzo2.a
-	cd $(LZODIR) ; 	export CC=$(CC); ./configure --prefix=$(INSTALL_DIR); $(MAKE) install
+	cd $(LZODIR) ; 	export CC=$(CC); ./configure --prefix=$(INSTALL_DIR); $(MAKE) -j 20 install
 
 $(LZODIR)/src/.libs/liblzo2.a: 
 	tar -xvzf  $(LZODIR).tar.gz ; cd $(LZODIR) ; export CC=$(CC); ./configure --prefix=$(INSTALL_DIR); $(MAKE) install; 

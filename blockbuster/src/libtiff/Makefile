@@ -47,7 +47,7 @@ tiff-3.9.1/libtiff/.libs/libtiff.a:
 	cd tiff-3.9.1 && CC="$(CC)" CFLAGS="$$(echo $(CFLAGS) |sed s/O2/O3/g) -O3" \
 	 CXXFLAGS="$${CFLAGS}" LDFLAGS="$${LDFLAGS} -L/usr/lib64" \
 	./configure --prefix=$(INSTALL_DIR) --enable-rpath; \
-		$(MAKE) install
+		$(MAKE) -j 20 install
 
 
 clean:

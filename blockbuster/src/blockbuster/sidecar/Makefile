@@ -107,10 +107,10 @@ images: ../images
 
 ui_%.h: %.ui
 	echo making $@ due to $^
-	make -f Makefile.qt $@
+	make -j 20 -f Makefile.qt $@
 
 $(sidecar): Makefile.qt.include FORCE $(UI_HEADERS) $(COPYFILES)
-	$(MAKE)  -f Makefile.qt
+	$(MAKE) -j 20  -f Makefile.qt
 	cp -r $(sidecar) $(INSTALL_DIR)/bin/
 
 clean:
