@@ -54,7 +54,7 @@ jpeg-6b/libjpeg.a:
 	tar -xvzf jpeg-6b.tgz
 	cd jpeg-6b && CC="$(CC)" CFLAGS="$(CFLAGS)" \
 	./configure --prefix=$(INSTALL_DIR) && \
-	$(MAKE) install 
+	$(MAKE) -j 20 install 
 
 
 clean:

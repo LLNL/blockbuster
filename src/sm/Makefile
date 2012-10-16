@@ -62,7 +62,7 @@ $(INSTALL_DIR)/include/smBase.h: $(HFILES)
 libsmovie.a: $(OFILES)
 	$(AR) rsc $@ $(OFILES)
 	if [ $(HAS_MPI) ]; then \
-		cd smdfc; $(MAKE); \
+		cd smdfc; $(MAKE) -j 8; \
 	fi
 
 smdfc.o: smdfc/smdfc.c smdfc/smdfcP.h

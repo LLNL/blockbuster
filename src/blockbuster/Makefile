@@ -48,7 +48,6 @@ endif
 
 blockbuster_srun = $(INSTALL_DIR)/bin/blockbuster_srun.sh $(GPROF_HELPER)
 
-
 all: $(blockbuster) sidecar $(blockbuster_srun) 
 
 sidecar: FORCE
@@ -155,7 +154,7 @@ relink: $(DEPENDENT_LIBS)
 
 # for now, have to copy blockbuster up to allow command line usage
 $(blockbuster): relink Makefile.qt.include  .force
-	INSTALL_DIR=$(INSTALL_DIR) $(MAKE)  -f Makefile.qt
+	INSTALL_DIR=$(INSTALL_DIR) $(MAKE) -j 20 -f Makefile.qt
 	mkdir -p $(INSTALL_DIR)/bin && cp -r $(blockbuster) $(INSTALL_DIR)/bin/
 
 $(blockbuster_srun): blockbuster_srun.sh 
@@ -167,7 +166,7 @@ qmake-clean:
 	rm -f blockbuster.pro
 	$(MAKE) blockbuster.pro
 	rm -f Makefile.qt.include
-	INSTALL_DIR=$(INSTALL_DIR) $(MAKE) Makefile.qt.include 
+	INSTALL_DIR=$(INSTALL_DIR) $(MAKE) -j 20 -f Makefile.qt.include 
 
 project-clean:
 

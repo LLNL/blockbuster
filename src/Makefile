@@ -23,7 +23,7 @@ QTHOME ?= /usr/mic/dvsviz/Trolltech/latest/$(SYS_TYPE)
 export PATH=$(QTHOME)/bin:$(shell echo $${PATH})
 export BUILD_ROOT ?= $(shell pwd)
 
-BLOCKBUSTERBUILDDIRS =  boost-1.49.0 tclap-1.2.1 zlib lzolib pt  sndplay \
+BLOCKBUSTERBUILDDIRS =  boost-1.49.0 tclap-1.2.1 xzlib zlib lzolib pt  sndplay \
 	libimage libpnmrw libpng libjpeg libtiff mpegdir \
 	evolib sm sm2 smapp blockbuster
 
@@ -32,7 +32,7 @@ BUILD-ALL = \
 	export INSTALL_DIR=$${INSTALL_DIR}; \
 	for dir in $(BLOCKBUSTERBUILDDIRS); do \
 		echo building dir $$dir; \
-		if ! cd $(BUILD_ROOT)/$${dir} || ! $(MAKE) $(1);  then \
+		if ! cd $(BUILD_ROOT)/$${dir} || ! $(MAKE) -j 20 $(1);  then \
 						echo Make failed in $${dir}; \
 			exit 1; \
 		fi; \
