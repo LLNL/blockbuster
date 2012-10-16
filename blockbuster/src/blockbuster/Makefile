@@ -50,7 +50,7 @@ blockbuster_srun = $(INSTALL_DIR)/bin/blockbuster_srun.sh $(GPROF_HELPER)
 
 all: $(blockbuster) sidecar $(blockbuster_srun) 
 
-sidecar: FORCE
+sidecar: $(blockbuster) FORCE
 	cd sidecar && $(MAKE) all
 
 FORCE: 
