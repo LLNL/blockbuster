@@ -41,6 +41,7 @@
 #include "sm/smLZO.h"
 #include "sm/smRLE.h"
 #include "sm/smGZ.h"
+#include "sm/smXZ.h"
 #include "sm/smRaw.h"
 #include "sm/smJPG.h"
 
@@ -134,6 +135,7 @@ void cmdline(char *app)
   fprintf(stderr,"Options:\n");
   fprintf(stderr,"\t-rle Selects RLE compression\n");
   fprintf(stderr,"\t-gz Selects gzip compression\n");
+  fprintf(stderr,"\t-lzma Selects LZMA (XZ) compression\n");
   fprintf(stderr,"\t-lzo Selects LZO compression\n");
   fprintf(stderr,"\t-jpg Selects JPG compression\n");
   fprintf(stderr,"\t-jqual [qual] Selects JPG quality (default:75)\n");
@@ -476,6 +478,8 @@ int main(int argc,char **argv)
       iRLE = 3;
     } else if (strcmp(argv[i],"-jpg")==0) {
       iRLE = 4;
+   } else if (strcmp(argv[i],"-lzma")==0) {
+      iRLE = 5;
     } else if (strcmp(argv[i],"-planar")==0) {
       iPlanar = 1;
     } else if (strcmp(argv[i],"-v")==0) {
@@ -726,8 +730,8 @@ int main(int argc,char **argv)
       if (iVerb) fprintf(stderr,"JPEG input format detected\n");
       iType = 5; /* JPEG */
     } else {
-      if (iVerb) fprintf(stderr,"Assuming PNM format\n");
-      iType = 2;
+      if (iVerb) fprintf(stderr,"Assuming PNG format\n");
+      iType = 4;
     }
   }
   // get the frame size
@@ -831,6 +835,8 @@ int main(int argc,char **argv)
     } else if (iRLE == 4) {
       sm = smJPG::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes);
       ((smJPG *)sm)->setQuality(iQual);
+    } else if (iRLE == 5) {
+      sm = smXZ::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes);
     } else {
       sm = smRaw::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes);
     }

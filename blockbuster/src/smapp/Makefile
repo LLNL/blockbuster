@@ -31,7 +31,7 @@
 export OPT = -g
 include ../config/config
 
-LIBS = $(LDFLAGS) -L$(INSTALL_DIR)/lib -lsmovie -lptutil $(IFL_LIBS) -lpthread -ljpeg $(PNG_LIBS) -lm -ltiff -lpnmrw -lsrwpng -lz -llzo2
+LIBS = $(LDFLAGS) -L$(INSTALL_DIR)/lib -lsmovie -lptutil $(IFL_LIBS) -lpthread -ljpeg $(PNG_LIBS) -lm -ltiff -lpnmrw -lsrwpng -lz -llzo2 -llzma
 
 SMOFILES =  smmake.o
 SMTOFILES =  smtest.o
@@ -47,7 +47,10 @@ OFILES = smmake smtest ifl2sm img2sm sm2img rename smcat smevo
 
 CPPFLAGS += -g 
 
-default: smmake smtest ifl2sm img2sm rename sm2img smcat smevo sm2qt manpages
+default: $(INSTALL_DIR)/bin/smmake $(INSTALL_DIR)/bin/smtest $(INSTALL_DIR)/bin/ifl2sm $(INSTALL_DIR)/bin/img2sm $(INSTALL_DIR)/bin/rename $(INSTALL_DIR)/bin/sm2img $(INSTALL_DIR)/bin/smcat $(INSTALL_DIR)/bin/smevo $(INSTALL_DIR)/bin/sm2qt manpages
+
+$(INSTALL_DIR)/bin/%: %
+	cp $? $@
 
 manpages:
 	mkdir -p $(INSTALL_DIR)/man/man1
@@ -73,10 +76,10 @@ ifl2sm: $(IFL2SMFILES) $(SMLIB)
 	$(CXX)  $(IFL2SMFILES) -o $@ $(LIBS) $(CXXFLAGS) $(GZIP_LIBS)
 	cp $@ $(INSTALL_DIR)/bin
 
-img2sm: $(IMG2SMFILES) $(SMLIB)
+img2sm: $(IMG2SMFILES) $(SMLIB)  
 	$(CXX)  $(IMG2SMFILES) -o $@ $(LIBS) $(CXXFLAGS) $(GZIP_LIBS) \
 		$(TIFF_LIBS) $(PNM_LIBS) -limage -lm
-	cp $@ $(INSTALL_DIR)/bin
+	cp -f $@ $(INSTALL_DIR)/bin
 
 sm2img: $(SM2IMGFILES) $(SMLIB)
 	$(CXX)  $(SM2IMGFILES) -o $@ $(LIBS) $(CXXFLAGS) $(GZIP_LIBS) \
@@ -102,3 +105,19 @@ depend: $(SFILES)
 	makedepend -Y. -Y.. $(INCLUDES) $(SFILES)
 
 # DO NOT DELETE
+
+smmake.o: ../sm/smRaw.h ../sm/smBase.h ../common/stringutil.h ../sm/smRLE.h
+smtest.o: ../sm/smBase.h ../common/stringutil.h ../common/timer.h
+smtest.o: ../common/stringutil.h ../config/version.h
+img2sm.o: ../sm/smLZO.h ../sm/smBase.h ../common/stringutil.h ../sm/smRLE.h
+img2sm.o: ../sm/smGZ.h ../sm/smXZ.h ../sm/smRaw.h ../sm/smJPG.h
+img2sm.o: ../libimage/sgilib.h ../libpnmrw/libpnmrw.h simple_jpeg.h
+img2sm.o: ../config/version.h ../pt/pt.h
+sm2img.o: ../sm/smRLE.h ../sm/smBase.h ../common/stringutil.h ../sm/smGZ.h
+sm2img.o: ../sm/smLZO.h ../sm/smRaw.h ../pt/pt.h ../libimage/sgilib.h
+sm2img.o: ../libpnmrw/libpnmrw.h simple_jpeg.h ../config/version.h
+smcat.o: ../sm/smRLE.h ../sm/smBase.h ../common/stringutil.h ../sm/smGZ.h
+smcat.o: ../sm/smLZO.h ../sm/smRaw.h ../sm/smJPG.h ../config/version.h
+smcat.o: ../pt/pt.h
+smevo.o: ../sm/smRLE.h ../sm/smBase.h ../common/stringutil.h ../sm/smGZ.h
+smevo.o: ../sm/smLZO.h ../sm/smRaw.h ../sm/smJPG.h ../config/version.h
