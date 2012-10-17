@@ -43,6 +43,7 @@
 #include "lzma.h"
 
 #define lzmadbprintf fprintf(stderr, "%s line %d: ", __FILE__, __LINE__); fprintf
+#define smcerr if (0) cerr 
 
 u_int smXZ::typeID = 5;
 
@@ -67,6 +68,7 @@ smBase *smXZ::create(const char *_fname, int _nwin)
 
 bool smXZ::decompBlock(u_char *in,u_char *out,int size,int *dim)
 {
+  smcerr << "smXZ::decompBlock("<<size<<", ["<<dim[0]<<", "<<dim[1]<<"])" << endl;
    int  dlen = dim[0]*dim[1]*sizeof(u_char[3]);
    lzma_stream  stream = LZMA_STREAM_INIT;
    lzma_ret err = lzma_stream_decoder(&stream, UINT64_MAX, LZMA_CONCATENATED);
@@ -86,15 +88,15 @@ bool smXZ::decompBlock(u_char *in,u_char *out,int size,int *dim)
 
 
    while(err == LZMA_OK) {
-      err = lzma_code(&stream, LZMA_RUN);
+     err = lzma_code(&stream, LZMA_RUN);
    }
-   if (err != LZMA_STREAM_END) {
+   if (err != LZMA_BUF_ERROR && err != LZMA_OK) {
      lzmadbprintf(stderr,"XZ decompression error: %d\n",err);
       return false;
    }
 
    lzma_end(&stream);
-
+   smcerr << "decoded " << stream.total_out << " bytes" << endl; 
    return true;
 }
 
@@ -113,35 +115,35 @@ smXZ *smXZ::newFile(const char *_fname,
    return(r);
 }
 
-void smXZ::compBlock(void *in, void *out, int &size,int *dim)
+void smXZ::compBlock(void *in, void *out, int &outsize,int *dim)
 {
-  size = 0; 
-   lzma_stream  stream = LZMA_STREAM_INIT;
-   lzma_ret err = lzma_easy_encoder(&stream, 9, LZMA_CHECK_CRC64);
-   if (err != LZMA_OK) {
-     lzmadbprintf(stderr,"XZ compression init error: %d\n",err);
-      return ;
+  smcerr << "smXZ::compBlock("<<in<<", "<<out<<", "<<outsize<<", ["<<dim[0]<<", "<<dim[1]<<"])" << endl;
+   long insize = dim[0]*dim[1]*sizeof(u_char[3]);
+   outsize = ((float)insize * 1.1)+12; // estimate output length
+   if (out) {
+     lzma_stream  stream = LZMA_STREAM_INIT;
+     lzma_ret err = lzma_easy_encoder(&stream, 9, LZMA_CHECK_CRC64);
+     if (err != LZMA_OK) {
+       lzmadbprintf(stderr,"XZ compression init error: %d\n",err);
+       return ;
+     }
+     stream.next_in = (const uint8_t*)in;
+     stream.avail_in = insize;
+     stream.next_out = ( uint8_t*)out;
+     stream.avail_out = outsize;
+     
+     while(err == LZMA_OK) {
+       err = lzma_code(&stream, LZMA_FULL_FLUSH /*LZMA_RUN*/);
+     }
+     if (err != LZMA_BUF_ERROR && err != LZMA_STREAM_END) {
+       lzmadbprintf(stderr,"XZ compression error: %d\n",err);
+       return ;
+     }
+     smcerr << "stream: avail_in = " << stream.avail_in << ", total_in = " << stream.total_in << ", avail_out = " << stream.avail_out << ", total_out = " << stream.total_out << endl; 
+     outsize = outsize - stream.avail_out; 
+     lzma_end(&stream);
    }
-
-   long len = dim[0]*dim[1]*sizeof(u_char[3]);
-   long dlen = ((float)len * 1.1)+12; // estimate output length
-
-   stream.next_in = (const uint8_t*)in;
-   stream.avail_in = len;
-   stream.next_out = ( uint8_t*)out;
-   stream.avail_out = dlen;
-
-   while(err == LZMA_OK) {
-      err = lzma_code(&stream, LZMA_RUN);
-   }
-   if (err != LZMA_STREAM_END) {
-     lzmadbprintf(stderr,"XZ decompression error: %d\n",err);
-      return ;
-   }
-
-   size = stream.avail_out;
-
-   lzma_end(&stream);
+   smcerr << "insize = "<<insize<<", outsize = " << outsize<<endl<<endl;
 
    return ;
 

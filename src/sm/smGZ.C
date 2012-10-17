@@ -43,6 +43,7 @@
 #include "zlib.h"
 
 #define gzdbprintf fprintf(stderr, "%s line %d: ", __FILE__, __LINE__); fprintf
+#define smcerr if (0) cerr 
 
 u_int smGZ::typeID = 2;
 
@@ -67,6 +68,7 @@ smBase *smGZ::create(const char *_fname, int _nwin)
 
 bool smGZ::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
 {
+  smcerr << "smGZ::decompBlock("<<size<<", ["<<dim[0]<<", "<<dim[1]<<"])" << endl;
    int 	err;
    int  dlen;
    z_stream  stream;
@@ -101,6 +103,7 @@ bool smGZ::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
       gzdbprintf(stderr,"GZ decompression end error: %d\n",err);
       return false;
    }
+   smcerr << "decoded " << stream.total_out << " bytes" << endl; 
 
    return true;
 }
@@ -122,11 +125,12 @@ smGZ *smGZ::newFile(const char *_fname,
 
 void smGZ::compBlock(void *data, void *cdata, int &size,int *dim)
 {
-   int status;
+  smcerr << "smGZ::compBlock("<<data<<", "<<cdata<<", "<<size<<", ["<<dim[0]<<", "<<dim[1]<<"])" << endl;
+  int status;
    uLongf dlen,len;
 
    len = dim[0]*dim[1]*sizeof(u_char[3]);
-   dlen = (len * (uLongf)1.1)+12; // estimate length
+   dlen = (len * 1.1)+12; // estimate length
    if (cdata) {
        status = compress((Bytef *)cdata,&dlen,(Bytef *)data,len);
        if (status != Z_OK) {
@@ -134,5 +138,6 @@ void smGZ::compBlock(void *data, void *cdata, int &size,int *dim)
          exit(1); 
        }
    }
+   smcerr << "insize = "<<len<<", outsize = " << dlen<<endl<<endl;
    size = dlen;
 }

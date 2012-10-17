@@ -72,6 +72,7 @@ using namespace std;
 #include "smRaw.h"
 #include "smRLE.h"
 #include "smGZ.h"
+#include "smXZ.h"
 #include "smLZO.h"
 #include "smJPG.h"
 
@@ -142,6 +143,7 @@ void smBase::init(void)
   smJPG::init();
   smLZO::init();
   smGZ::init();
+  smXZ::init();
   smRLE::init();
   smRaw::init();
 
@@ -1552,7 +1554,6 @@ int smBase::compFrame(void *in, void *out, int *outsizes, int res)
    frameDims[0] = getWidth(res);
    frameDims[1] = getHeight(res);
 
-   //smdbprintf(5,"frameDims[%d,%d] , tileDims[%d,%d]\n",frameDims[0],frameDims[1],tileDims[0],tileDims[1]);
    
    if (mVersion == 1 || numTiles == 1) {
      if (!out) {
@@ -1570,6 +1571,7 @@ int smBase::compFrame(void *in, void *out, int *outsizes, int res)
    tileDims[0] = getTileWidth(res);
    tileDims[1] = getTileHeight(res);
 
+   smdbprintf(5,"smBase::compFrame: frameDims[%d,%d] , tileDims[%d,%d]\n",frameDims[0],frameDims[1],tileDims[0],tileDims[1]);
    
    uint32_t tilepixelbytes = tileDims[0] * tileDims[1] * 3;
    char *tilebuf = new char[tilepixelbytes];
@@ -1580,10 +1582,9 @@ int smBase::compFrame(void *in, void *out, int *outsizes, int res)
    for(uint32_t j=0;j<ny;j++) {
      for(uint32_t i=0;i<nx;i++) {
        int size =0, tileLineBytes=tileDims[0]*3; 
-       if(out == NULL) {
-         //smdbprintf(5,"compFrame tile index[%d,%d]\n",i,j);
-       }
-       base = (char*)in + (((j * tileDims[1] * frameDims[0]) + (i * tileDims[0]))*3) ;
+       long offset =  (((j * tileDims[1] * frameDims[0]) + (i * tileDims[0]))*3); 
+       smdbprintf(5,"compFrame tile index[%d,%d], offset = %d\n",i,j,offset);
+       base = (char*)in + offset;
        if(((i+1) * tileDims[0]) > frameDims[0]) {
          tileLineBytes = (frameDims[0] - (i*tileDims[0])) * 3;
          memset(tilebuf,0,tilepixelbytes);
@@ -1629,7 +1630,7 @@ int smBase::compFrame(void *in, void *out, int *outsizes, int res)
        smdbprintf(5," %d ",p[dd]);
    }
 #endif 
-   free(tilebuf);
+   delete [] tilebuf;
    return compressedSize;
 }
 

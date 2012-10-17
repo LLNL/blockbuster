@@ -68,7 +68,7 @@ char gNameTemplate[4096];
 char gSmFilename[4096]; 
 vector<unsigned char *>gBuffers;
 int	gVerbosity = 0;
-int	gType = 1;
+int	gType = -1;
 int	gFirstFrame = 0;
 int	gLastFrame = -1;
 int	gFrameStep = 1;
@@ -97,7 +97,7 @@ void cmdline(char *app,int binfo)
       fprintf(stderr,"\t-step num Select frame number step factor. Default:1.\n");
       fprintf(stderr,"\t-quality num Select JPEG output quality (0-100). Default: 75\n");
       fprintf(stderr,"\t-threads num Use num threads for work. Default: 1\n");
-      fprintf(stderr,"\t-form [\"tiff\"|\"sgi\"|\"pnm\"|\"png\"|\"jpg\"|\"YUV\"] Output file format (default:sgi)\n");
+      fprintf(stderr,"\t-form [\"tiff\"|\"sgi\"|\"pnm\"|\"png\"|\"jpg\"|\"YUV\"] Output file format (default:use template suffix or png)\n");
       fprintf(stderr,"\t-region offsetX offsetY sizeX sizeY -- Output will be the given subregion of the input.  Default: offsets 0 0, original size .  \n");
       fprintf(stderr,"\t-mipmap Extract frame from mipmap level. Default: 0\n");
       fprintf(stderr,"\tNote: without an output template, movie stats will be displayed.\n");
@@ -233,8 +233,10 @@ int main(int argc,char **argv)
 	}
     
   }
-  
-  smBase::init(); 
+    
+
+  smBase::init();
+  sm_setVerbose(gVerbosity);  
 
   if ((argc - argnum) == 1) {
     getinfo = true; // even for sm2img, a single arg is a request for info
@@ -435,7 +437,26 @@ void workproc(void *vp) {
   else {
     gSm->getFrame(work->frameNum, img, threadnum);
   }
-  
+
+  if (gType == -1) {
+    string templatestr = gNameTemplate; 
+    string::size_type idx = templatestr.rfind('.'); 
+    if (idx == string::npos) {
+      cerr << "Error:  Cannot find a file type suffix in your output template.  Please use -form to tell me what to do if you're not going to give a suffix." << endl; 
+      exit(1); 
+    }
+    string suffix = templatestr.substr(idx+1,3); 
+    if (suffix == "tif" || suffix == "TIF")  gType = 0; 
+    else if (suffix == "sgi" || suffix == "SGI")  gType = 1; 
+    else if (suffix == "pnm" || suffix == "PNM")  gType = 2; 
+    else if (suffix == "yuv" || suffix == "YUV")  gType = 3; 
+    else if (suffix == "png" || suffix == "PNG")  gType = 4; 
+    else if (suffix == "jpg" || suffix == "JPG" || suffix == "jpe" || suffix == "JPE")  gType = 5; 
+    else  {
+      cerr << "Warning:  Cannot deduce format from input files.  Using PNG format but leaving filenames unchanged." << endl; 
+      gType = 4;
+    }
+  }
   sprintf(nameTemplate,gNameTemplate,work->frameNum);
   switch(gType) {
   case 0: {  // TIFF
