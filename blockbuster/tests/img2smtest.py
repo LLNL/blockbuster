@@ -24,7 +24,7 @@ if "-bindir" in sys.argv:
 # RUN TESTS:
 testdir = "/tmp/"+os.getenv("USER")+"/img2smtest/"
 shutil.rmtree(testdir, ignore_errors=True) 
-os.mkdir(testdir)
+os.makedirs(testdir)
 if not os.path.exists(testdir):
     errexit("Cannot create test output directory "+testdir)
 
