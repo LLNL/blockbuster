@@ -26,11 +26,17 @@ systype = os.getenv("SYS_TYPE")
    
 if not bindir:
     # try ../$SYS_TYPE/bin (usual case) and ../../$SYS_TYPE/bin (dev on LC)
-    for dots in ['..','../..']:
-        trydir = 'os.path.abspath(sys.argv[0])/%s/%s/bin'%(dots,systype)
+    for dots in ['..','../..','../../..']:
+        trydir = "%s/%s/%s/bin"%(os.path.abspath(os.path.dirname(sys.argv[0])),dots,systype)
+        sys.stderr.write( "trying directory: %s\n"%trydir)
         if  os.path.exists(trydir+'/sm2img'):
             bindir=trydir
             break
+if bindir:
+    sys.stderr.write( "found bindir : %s\n"%trydir)
+else:
+    sys.stderr.write("Could not find bindir\n")
+    sys.exit(1)
     
 # if user chose bindir, then fix relative paths and stuff:
 if bindir:
@@ -54,7 +60,7 @@ except:
     raise
 
 bindir = os.path.abspath(os.path.dirname(img2sm))
-sys.stderr.write( "bindir is: "+bindir)
+sys.stderr.write( "bindir is: %s\n"%bindir)
 sys.stderr.write( "Found img2sm at %s"% img2sm)
 
 # FIND DATA DIR
@@ -100,8 +106,8 @@ def testrun(cmd,outfile, timeout=5):
         errmsg = "File %s was not created as expected.\n"%outfile 
 
     elif outfile[-3:] == ".sm":
-        if  Popen("sminfo %s"%outfile, shell=True).wait():
-            errmsg = "sminfo does not like the file %s"%outfile
+        if  Popen("%s/sminfo %s"%(bindir,outfile), shell=True).wait():
+            errmsg = "%s/sminfo does not like the file %s"%(bindir,outfile)
         else:
             success = True            
     else:
@@ -112,7 +118,7 @@ def testrun(cmd,outfile, timeout=5):
     if success:
         sys.stderr.write("\nSuccess!\n" )
     else:
-        sys.stderr.write("Failed.  Return code %s, reason: %s\n"%(str(retval),str(errmsg)))
+        sys.stderr.write("Failed.  Return code %s, reason: %s\n"%(str(proc.returncode),str(errmsg)))
     sys.stderr.write("\n************************************************\n\n" )
     return success
 
