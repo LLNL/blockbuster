@@ -12,7 +12,7 @@ def usage():
     print "Options:"
     print " -bindir dirnam:  path to the directory containing sm2img for disambiguation -- typically this will be $INSTALL_DIR/bin"
 
-bindir=""
+bindir=None
 # PARSE ARGUMENTS:
 if "-bindir" in sys.argv:
     pos = sys.argv.index('-bindir')
@@ -21,10 +21,29 @@ if "-bindir" in sys.argv:
         sys.exit(-1)
     bindir=sys.argv[pos+1]
 
+# SET UP BINDIR
+systype = os.getenv("SYS_TYPE")
+   
+if not bindir:
+    # try ../$SYS_TYPE/bin (usual case) and ../../$SYS_TYPE/bin (dev on LC)
+    for dots in ['..','../..']:
+        trydir = 'os.path.abspath(sys.argv[0])/%s/%s/bin'%(dots,systype)
+        if  os.path.exists(trydir+'/sm2img'):
+            bindir=trydir
+            break
+    
+# if user chose bindir, then fix relative paths and stuff:
+if bindir:
+    if bindir[-1] != '/':
+        bindir = bindir + "/" 
+    if bindir[0] != '/':
+        bindir = os.getcwd() + '/' + bindir
+
+
 # FIND IMG2SM
 img2sm = "img2sm"
-if bindir != "":
-    img2sm = bindir + '/img2sm'
+if bindir:
+    img2sm = bindir + 'img2sm'
     
 try:
     p = Popen("which %s"%img2sm, shell=True, stdout=PIPE, stderr=STDOUT)
@@ -34,16 +53,9 @@ except:
     print "Error:  could not find img2sm in PATH or bindir"
     raise
 
-sys.stderr.write( "Found img2sm at %s"% img2sm)
-# SET UP BINDIR
-if bindir == "":
-    bindir = os.path.abspath(sys.argv[0])
-if bindir[-1] != '/':
-    bindir = bindir + "/" 
-if bindir[0] != '/':
-    bindir = os.getcwd() + '/' + bindir
-
+bindir = os.path.abspath(os.path.dirname(img2sm))
 sys.stderr.write( "bindir is: "+bindir)
+sys.stderr.write( "Found img2sm at %s"% img2sm)
 
 # FIND DATA DIR
 datadir = os.path.abspath(os.path.dirname(sys.argv[0])+'/../sample-data')
