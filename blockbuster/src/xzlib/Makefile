@@ -36,7 +36,7 @@ all: $(libname).so
 $(libname).so:
 	[ -d ${xzname} ] || tar -xjf ${xzname}.tar.bz2
 	cd  ${xzname}; \
-	CC="$(CC)" CFLAGS="$(CFLAGS)" ./configure --prefix=$(INSTALL_DIR) --enable-debug; \
+	CC="$(CC)" CFLAGS="$(CFLAGS)" ./configure --prefix=$(INSTALL_DIR); \
 		$(MAKE) -j 20 install
 
 clean:
