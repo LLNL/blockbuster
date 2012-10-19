@@ -122,12 +122,26 @@ def testrun(cmd,outfile, timeout=5):
     sys.stderr.write("\n************************************************\n\n" )
     return success
 
+tests = [ ["-v -ignore -form tiff  %s/mountains.tiff"%datadir, "%s/mountains-ignore.sm"%testdir],
+          ["-v -form png -first 084 -last 084 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png "%datadir, "%s/quicksand-single-template.sm"%testdir],
+          ["-v -form png -gz -first 20 -last 30 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png "%datadir, "%s/quicksand-all-template-gz.sm"%testdir],
+          ["-v -form png -lzma -first 20 -last 30 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png "%datadir, "%s/quicksand-all-template-lzma.sm"%testdir]
+          ]
+successes = 0
+results = []
+for test in tests:
+    result = testrun(test[0],test[1])
+    results.append(result)
+    successes = successes + result
 
-testrun("-v -ignore -form tiff  %s/mountains.tiff"%datadir, "%s/mountains-ignore.sm"%testdir)
-testrun("-v -form png -first 084 -last 084 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png "%datadir, "%s/quicksand-single-template.sm"%testdir)
-testrun("-v -form png -gz -first 20 -last 30 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png "%datadir, "%s/quicksand-all-template-gz.sm"%testdir)
-testrun("-v -form png -lzma -first 20 -last 30 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png "%datadir, "%s/quicksand-all-template-lzma.sm"%testdir)
+print "****************************************************\n"
+print "successes:  %d out of %d tests\n"%(successes, len(tests))
+print "results:", results
+print "\n****************************************************\n"
 
+if successes != len(tests):
+    sys.exit(1)
+    
 sys.exit(0)
 
 
