@@ -150,6 +150,11 @@ void cmdline(char *app)
   fprintf(stderr,"\t-fps [fps] Set preferred frame rate.  Default is 30, max is 50.  (-FPS is deprecated) \n");
   fprintf(stderr,"\t-buffersize [nt] Number of frames to buffer.  Default is 200.  Using lower values saves memory but may decrease performance, and vice versa.\n");
   fprintf(stderr,"\t-threads [nt] Number of threads to use. Default is 1.\n");
+  fprintf(stderr,"\t-title 'quoted string' Store the given title in the movie metadata.\n");
+  fprintf(stderr,"\t-author 'quoted string' Store the given author in the movie metadata.\n");
+  fprintf(stderr,"\t-description 'quoted string' Store the given description in the movie metadata.\n");
+  fprintf(stderr,"\t-date 'quoted string' Store the given date in the movie metadata.\n");
+  fprintf(stderr,"\t-nometadata Do not store any metadata. \n");
   fprintf(stderr,"\t-mipmaps [n] Number of mipmap levels. Default is 1.\n");
   fprintf(stderr,"\t-v Verbose mode (same as -verbose 1).\n");
   fprintf(stderr,"\t-verbose n Sets verbose level to n.\n");
@@ -462,10 +467,12 @@ int main(int argc,char **argv)
   int tiled = 1;
   //unsigned char	*inputBuf = NULL;
   smBase 		*sm = NULL;
-
+  bool noMetadata = false; 
   TIFF		*tiff = NULL;
   sgi_t		*libi = NULL;
   unsigned short spp;
+
+  string title, author, date, description; 
 
   /* parse the command line ... */
   i = 1;
@@ -511,6 +518,16 @@ int main(int argc,char **argv)
       i++; bufferSize = atoi(argv[i]);
     } else if ((strcmp(argv[i],"-threads")==0) && (i+1 < argc))  {
       i++; nThreads = atoi(argv[i]);
+    } else if ((strcmp(argv[i],"-nometadata")==0))  {
+      i++; noMetadata = true;  
+     } else if ((strcmp(argv[i],"-title")==0) && (i+1 < argc))  {
+      i++; title = argv[i]; 
+    } else if ((strcmp(argv[i],"-author")==0) && (i+1 < argc))  {
+      i++; author = argv[i]; 
+    } else if ((strcmp(argv[i],"-description")==0) && (i+1 < argc))  {
+      i++; description = argv[i]; 
+    } else if ((strcmp(argv[i],"-date")==0) && (i+1 < argc))  {
+      i++; date = argv[i]; 
     } else if (strcmp(argv[i],"-form")==0) {
       if ((argc-i) > 1) {
 	if (strcmp(argv[i+1],"tiff") == 0) {
@@ -714,8 +731,10 @@ int main(int argc,char **argv)
 
   // Check the file type
   sprintf(filename,sTemplate,iStart);
+  TIFFErrorHandler prev = TIFFSetErrorHandler(NULL); // suppress error messages
   if (iType == -1) {
-    if (tiff = TIFFOpen(filename,"r")) {
+    if ((tiff = TIFFOpen(filename,"r"))!=0) {
+      TIFFSetErrorHandler(prev); //restore diagnostics -- we want them now. 
       if (iVerb) fprintf(stderr,"TIFF input format detected\n");
       iType = 0;
       TIFFClose(tiff);
@@ -908,15 +927,29 @@ int main(int argc,char **argv)
     pt_pool_add_work(pool, workproc, (void *)wrk);
   }
   pt_pool_destroy(pool,1);
- 
   // Done..
   sm->stopWriteThread(); 
   sm->flushFrames(true); 
+
+  if (! noMetadata) {
+    if (description != "") {
+      sm->AddMetaData("description", description); 
+    } 
+    if (author != "") {
+      sm->AddMetaData("author", author); 
+    } 
+    if (date != "") {
+      sm->AddMetaData("date", date); 
+    } 
+    if (title != "") {
+      sm->AddMetaData("title", title); 
+    } 
+    sm->WriteMetaData(); 
+  }
+
   sm->closeFile();
   
-  //free(gInputBuf);
-  //if (rowbuf) free(rowbuf);
-
+  cerr << endl << "img2sm completed successfully."<< endl << endl; 
   exit(0);
 }
  

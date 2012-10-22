@@ -33,6 +33,7 @@
 
 
 // Utility to combine image files into movie
+// Also used as sminfo.  
 #include <stdio.h>
 
 #include <stdlib.h>
@@ -397,6 +398,9 @@ int main(int argc,char **argv)
   
   pt_pool_destroy(pool,1);
   delete gSm; 
+  if (!strstr(argv[0],"sminfo")) {
+    cerr << "Successful completion" << endl; 
+  }
   return 0; 
 }
 

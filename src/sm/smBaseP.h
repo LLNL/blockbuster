@@ -38,8 +38,6 @@
 // smBaseP.h - private, internal cross platform header/defines
 //
 
-#include "smBase.h"
-#include "smdfc/smdfc.h"
 
 // Assume all platforms have 64bit seeks
 #define HAS_LSEEK64
