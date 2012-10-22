@@ -30,10 +30,10 @@
 #
 
 include ../config/config
-
+export CPPFLAGS += -Ismdfc
 SRC_FILES = smBase.C smXZ.C smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C smdfc/smdfc.c
 OFILES = smBase.o smXZ.o smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o smdfc.o
-HFILES = smBase.h smXZ.h smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h
+HFILES = smBase.h smBaseP.h smXZ.h smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h smdfc/smdfc.h
 
 all: lib doc include
 
@@ -80,17 +80,18 @@ depend:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-smBase.o: smBaseP.h smBase.h ../common/stringutil.h ../common/timer.h
-smBase.o: ../common/stringutil.h smdfc/smdfc.h smRaw.h smRLE.h smGZ.h smLZO.h
-smBase.o: smJPG.h
-smRLE.o: smRLE.h smBase.h ../common/stringutil.h ../common/timer.h
+smBase.o: smBaseP.h smRaw.h smBase.h ../common/stringutil.h ../common/timer.h
+smBase.o: ../common/stringutil.h smRLE.h smGZ.h smXZ.h smLZO.h smJPG.h
+smXZ.o: smXZ.h smBase.h smBaseP.h ../common/stringutil.h ../common/timer.h
+smXZ.o: ../common/stringutil.h
+smRLE.o: smRLE.h smBase.h smBaseP.h ../common/stringutil.h ../common/timer.h
 smRLE.o: ../common/stringutil.h
-smRaw.o: smRaw.h smBase.h ../common/stringutil.h ../common/timer.h
+smRaw.o: smRaw.h smBase.h smBaseP.h ../common/stringutil.h ../common/timer.h
 smRaw.o: ../common/stringutil.h
-smGZ.o: smGZ.h smBase.h ../common/stringutil.h ../common/timer.h
+smGZ.o: smGZ.h smBase.h smBaseP.h ../common/stringutil.h ../common/timer.h
 smGZ.o: ../common/stringutil.h
-smLZO.o: smLZO.h smBase.h ../common/stringutil.h ../common/timer.h
+smLZO.o: smLZO.h smBase.h smBaseP.h ../common/stringutil.h ../common/timer.h
 smLZO.o: ../common/stringutil.h
-smJPG.o: smJPG.h smBase.h ../common/stringutil.h ../common/timer.h
+smJPG.o: smJPG.h smBase.h smBaseP.h ../common/stringutil.h ../common/timer.h
 smJPG.o: ../common/stringutil.h
 smdfc/smdfc.o: smdfc/smdfcP.h smdfc/smdfc.h
