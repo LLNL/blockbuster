@@ -262,17 +262,19 @@ int main(int argc,char **argv)
       printf("-----------------------------------------\n"); 
       printf("File: %s\n",gSmFilename);
       printf("Streaming movie version: %d\n",gSm->getVersion());
-      if (gSm->getType() == 1) {   // smRLE::typeID
+      if (gSm->getType() == 0) {   // smRaw::typeID
+        printf("Format: RAW uncompressed\n");
+      } else if (gSm->getType() == 1) {   // smRLE::typeID
         printf("Format: RLE compressed\n");
       } else if (gSm->getType() == 2) {   // smGZ::typeID
         printf("Format: gzip compressed\n");
-      } else if (gSm->getType() == 4) {   // smJPG::typeID
-        printf("Format: JPG compressed\n");
       } else if (gSm->getType() == 3) {   // smLZO::typeID
         printf("Format: LZO compressed\n");
-      } else if (gSm->getType() == 0) {   // smRaw::typeID
-        printf("Format: RAW uncompressed\n");
-      } else {
+      } else if (gSm->getType() == 4) {   // smJPG::typeID
+        printf("Format: JPG compressed\n");
+      } else if (gSm->getType() == 5) {   // smJPG::typeID
+        printf("Format: LZMA compressed\n");
+     } else {
         printf("Format: unknown\n");
       }
       printf("Size: %d %d\n",gSm->getWidth(),gSm->getHeight());
