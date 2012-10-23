@@ -83,7 +83,7 @@ void sm_setVerbose(int level) {
   if (level) std::cerr << "sm_setVerbose level " << level << std::endl; 
   smVerbose = level; 
 }
-
+#define smdebug cerr
 
 const int SM_MAGIC_1=SM_MAGIC_VERSION1;
 const int SM_MAGIC_2=SM_MAGIC_VERSION2;
@@ -97,8 +97,8 @@ string SM_MetaData::toString(void) {
   s += string("mName: ") + mName + "\n"; 
   s += string("mType: ");
   if (mType == METADATA_TYPE_ASCII) {
-    s += "ASCII: value: \n"; 
-    s += mAscii + "\n"; 
+    s += "ASCII: value: \""; 
+    s += (mAscii + "\"\n"); 
   } 
   else if (mType == METADATA_TYPE_DOUBLE) {
     s += "DOUBLE: value = "; 
@@ -146,8 +146,9 @@ off64_t ReadAndSwap(int fd, T *ptr, W numelems, bool needswap) {
 template <class T, class W> 
 off64_t SwapAndWrite(int fd, T *ptr, W numelems, bool needswap) {
   if (needswap) SwapEndian(ptr, numelems); 
-  return  WRITE(fd,ptr,numelems*sizeof(T)); 
-  
+  uint64_t bytes = WRITE(fd,ptr,numelems*sizeof(T)); 
+  if (needswap) SwapEndian(ptr, numelems); //unswap after write
+  return bytes; 
 }
 
 ///==========================================================================
@@ -156,16 +157,23 @@ bool SM_MetaData::Write(int lfd) {
     smdbprintf(0, "FIXME!  ERROR!  Cannot properly write metadata object since a double is not 8 bytes!\n"); 
     return false; 
   } 
-
   uint32_t endianTest = 500; 
   bool needswap = (ntohl(endianTest) != endianTest); 
-  
+
+  off64_t filepos = LSEEK64(lfd,0,SEEK_CUR); 
+  smdbprintf(5, "SM_MetaData::Write() writing payload type %lu of %s at pos %d\n", mType, toString().c_str(), filepos); 
+  SwapAndWrite(lfd, &mType, 1, needswap);
+  filepos = LSEEK64(lfd,0,SEEK_CUR); 
+    
   uint64_t payloadLength = 8; 
   if (mType == METADATA_TYPE_ASCII) {
     uint64_t stringlen = mAscii.size()+1; 
     SwapAndWrite(lfd, &stringlen, 1, needswap);
-        
-    WRITE(lfd, &mAscii[0], stringlen+1); 
+    smdbprintf(5, "SM_MetaData::Write() wrote stringlen %d  at pos %d\n",stringlen, filepos); 
+    
+    filepos = LSEEK64(lfd,0,SEEK_CUR); 
+    WRITE(lfd, &mAscii[0], stringlen); 
+    smdbprintf(5, "SM_MetaData::Write() wrote string \"%s\" at pos %d\n", mAscii.c_str(), filepos ); 
     payloadLength += stringlen;
   }
   else if (mType == METADATA_TYPE_DOUBLE) {
@@ -176,14 +184,19 @@ bool SM_MetaData::Write(int lfd) {
     SwapAndWrite(lfd, &mInt64,  1, needswap);    
     payloadLength += 8;
   }
+  filepos = LSEEK64(lfd,0,SEEK_CUR); 
   SwapAndWrite(lfd, &payloadLength,  1, needswap);   
+  smdbprintf(5, "SM_MetaData::Write() wrote payloadLength %lu  at pos %d\n",payloadLength, filepos); 
   
   mName.resize(1015); // avoid segfaults I hope! 
+  filepos = LSEEK64(lfd,0,SEEK_CUR); 
   WRITE(lfd, &mName[0], 1014); 
+  smdbprintf(5, "SM_MetaData::Write() wrote name \"%s\"  at pos %d\n",mName.c_str(), filepos); 
   
   uint64_t MAGIC = METADATA_MAGIC; 
   SwapAndWrite(lfd, &MAGIC, 1, needswap);
-  
+  filepos = LSEEK64(lfd,0,SEEK_CUR); 
+  smdbprintf(5, "SM_MetaData::Write() exiting at pos %d\n", filepos ); 
   return true;
 }
 
@@ -193,40 +206,51 @@ bool SM_MetaData::Read(int lfd) {
     smdbprintf(0, "FIXME!  Error!  Cannot properly read metadata object since a double is not 8 bytes!\n"); 
     return false; 
   } 
-
+  off64_t filepos = LSEEK64(lfd,0,SEEK_CUR); 
+  smdbprintf(5, "SM_MetaData::Read() at pos %d\n", filepos); 
   uint32_t endianTest = 500; 
   bool needswap = (ntohl(endianTest) != endianTest); 
 
   uint64_t mdmagic; 
-  uint64_t payloadLength; 
+  uint64_t payloadLength, 
+    headerLength=sizeof(payloadLength)+sizeof(mdmagic) + 1014; 
   char namebuf[1014]; 
-  off64_t filepos = LSEEK64(lfd,-1030,SEEK_CUR); // to beginning of payload length
+
+  filepos = LSEEK64(lfd,-headerLength,SEEK_CUR); // to beginning of header, at payload length
+  smdbprintf(5, "seeked to beginning of header at pos %d\n", filepos); 
   off64_t headerpos = filepos; 
   
-  off64_t headerlength = sizeof(mdmagic) + sizeof(payloadLength) + sizeof(namebuf); 
   
   filepos += ReadAndSwap(lfd, &payloadLength, 1, needswap);
   
+
   filepos += READ(lfd, namebuf, 1014);
   namebuf[1013] = 0; // be safe
   mName = namebuf; 
   
   filepos += ReadAndSwap(lfd, &mdmagic, 1, needswap);
   if (mdmagic != METADATA_MAGIC) {
-    smdbprintf(1, "Found bad magic %d at pos %d (expected %d)\n", mdmagic, filepos-8, METADATA_MAGIC); 
+    smdbprintf(1, "Found bad magic %ld at pos %d (expected %ld)\n", mdmagic, filepos-8, METADATA_MAGIC); 
     return false; 
   }
   
-  // we have to seek backwards -- the price to pay for a "linked list" approach for metadata
-  filepos = LSEEK64(lfd,-(headerlength+payloadLength),SEEK_CUR);
+  // we need the payload now, so have to seek backwards -- the price to pay for a "linked list" approach for metadata
+  smdbprintf(5, "payloadLength is %ld, headerLength is %ld, so have to seek backwards %ld \n", payloadLength, headerLength, payloadLength+headerLength); 
+  filepos = LSEEK64(lfd,-(payloadLength + headerLength + 8),SEEK_CUR);
+
   ReadAndSwap(lfd, &mType, 1, needswap);
+  smdbprintf(5, "read payload type %lu at pos %d\n", mType, filepos); 
+  filepos = LSEEK64(lfd,0,SEEK_CUR);
 
   if (mType == METADATA_TYPE_ASCII) {
     uint64_t stringlen; 
     ReadAndSwap(lfd, &stringlen, 1, needswap);
-        
-    mAscii.resize(stringlen+1); 
-    READ(lfd, &mAscii[0], stringlen); 
+    smdbprintf(5, "read stringlen %d at pos %d\n", stringlen, filepos); 
+    filepos = LSEEK64(lfd,0,SEEK_CUR);
+    char buf[stringlen+1];
+    READ(lfd, buf, stringlen+1); 
+    mAscii = buf; 
+    smdbprintf(5, "read string %s at pos %d\n", &mAscii[0], filepos); 
   }
   else if (mType == METADATA_TYPE_DOUBLE) {
     ReadAndSwap(lfd, &mDouble,  1, needswap);    
@@ -235,7 +259,9 @@ bool SM_MetaData::Read(int lfd) {
     ReadAndSwap(lfd, &mInt64,  1, needswap);    
   }
    
-  smdbprintf(1, "Metadata found.\n");  
+  filepos = LSEEK64(lfd,0,SEEK_CUR); 
+  smdbprintf(5, "exiting at pos %d\n", filepos); 
+  smdbprintf(5, "Metadata found: %s.\n", toString().c_str());  
   return true; 
 }
 

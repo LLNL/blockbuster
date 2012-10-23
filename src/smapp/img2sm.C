@@ -932,6 +932,7 @@ int main(int argc,char **argv)
   sm->flushFrames(true); 
 
   if (! noMetadata) {
+    smdbprintf(1, "Adding metadata...\n"); 
     if (description != "") {
       sm->AddMetaData("description", description); 
     } 

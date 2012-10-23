@@ -33,7 +33,7 @@ ifdef DEBUG
 export OPT ?= -g
 else
 ifneq ($(shell uname),Darwin)
-export OPT ?= -g -O2
+export OPT ?= -g 
 else
 export OPT ?= -g
 endif

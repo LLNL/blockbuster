@@ -445,6 +445,9 @@ class smBase {
   int getVersion(void) { return(mVersion); };
   
   void computeTileOverlap(int *blockDim, int* blockPos, int res, int thread);
+
+  // metadata
+  vector <SM_MetaData> mMetaData; 
   
  protected:
   
@@ -498,8 +501,6 @@ class smBase {
   //path to movie file
   char *mMovieName;
   
-  // metadata
-  vector <SM_MetaData> mMetaData; 
   
   vector<int> mResFDs; // for mipmap files written in "parallel" 
   vector<string> mResFileNames; //  they have to be written to, then read
