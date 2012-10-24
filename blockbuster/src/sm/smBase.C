@@ -75,21 +75,199 @@ using namespace std;
 #include "smXZ.h"
 #include "smLZO.h"
 #include "smJPG.h"
+#include <stringutil.h>
 
 //#undef  SM_VERBOSE
 int smVerbose = 0; 
 void sm_setVerbose(int level) {
-  std::cerr << "sm_setVerbose level " << level << std::endl; 
+  if (level) std::cerr << "sm_setVerbose level " << level << std::endl; 
   smVerbose = level; 
 }
-
+#define smdebug cerr
 
 const int SM_MAGIC_1=SM_MAGIC_VERSION1;
 const int SM_MAGIC_2=SM_MAGIC_VERSION2;
+const int SM_MAGIC_3=SM_MAGIC_VERSION3;
 const int DIO_DEFAULT_SIZE = 1024L*1024L*4;
 
 #define SM_HDR_SIZE 64
 
+string SM_MetaData::toString(void) {
+  string s = "SM_MetaData: { \n"; 
+  s += string("mName: ") + mName + "\n"; 
+  s += string("mType: ");
+  if (mType == METADATA_TYPE_ASCII) {
+    s += "ASCII: value: \""; 
+    s += (mAscii + "\"\n"); 
+  } 
+  else if (mType == METADATA_TYPE_DOUBLE) {
+    s += "DOUBLE: value = "; 
+    s += doubleToString(mDouble) + "\n"; 
+  } 
+  else if (mType == METADATA_TYPE_INT64) {
+    s += "INT64: value = "; 
+    s += intToString(mInt64) + "\n"; 
+  } 
+  else {
+    s += "UKNOWN ("+intToString(mType)+")\n"; 
+  }
+  s += "}"; 
+  return s;
+}
+
+///==========================================================================
+// switch byte ordering 
+template <class T, class W> 
+void SwapEndian(T *ptr, W numelems) {
+  //debug5 << "swapping endianism..." << endl;
+  W elemsize = sizeof(T); 
+  char tmp[32];
+  char *target = (char*)ptr;
+  
+  W i, j;
+  for (i=0; i<numelems; i++, target += elemsize){
+    memcpy(tmp, target, elemsize);
+    for (j=0; j<elemsize; j++)
+      target[j] = tmp[elemsize - 1 - j];      
+  }
+  //delete[] tmp; 
+  return;
+}
+
+///==========================================================================
+template <class T, class W> 
+off64_t ReadAndSwap(int fd, T *ptr, W numelems, bool needswap) {
+  uint64_t bytes = READ(fd,ptr,numelems*sizeof(T)); 
+  if (needswap) SwapEndian(ptr, numelems); 
+  return bytes; 
+}
+
+///==========================================================================
+template <class T, class W> 
+off64_t SwapAndWrite(int fd, T *ptr, W numelems, bool needswap) {
+  if (needswap) SwapEndian(ptr, numelems); 
+  uint64_t bytes = WRITE(fd,ptr,numelems*sizeof(T)); 
+  if (needswap) SwapEndian(ptr, numelems); //unswap after write
+  return bytes; 
+}
+
+///==========================================================================
+bool SM_MetaData::Write(int lfd) {
+  if (sizeof(double) != 8) {
+    smdbprintf(0, "FIXME!  ERROR!  Cannot properly write metadata object since a double is not 8 bytes!\n"); 
+    return false; 
+  } 
+  uint32_t endianTest = 500; 
+  bool needswap = (ntohl(endianTest) != endianTest); 
+
+  off64_t filepos = LSEEK64(lfd,0,SEEK_CUR); 
+  smdbprintf(5, "SM_MetaData::Write() writing payload type %lu of %s at pos %d\n", mType, toString().c_str(), filepos); 
+  SwapAndWrite(lfd, &mType, 1, needswap);
+  filepos = LSEEK64(lfd,0,SEEK_CUR); 
+    
+  uint64_t payloadLength = 8; 
+  if (mType == METADATA_TYPE_ASCII) {
+    uint64_t stringlen = mAscii.size()+1; 
+    SwapAndWrite(lfd, &stringlen, 1, needswap);
+    smdbprintf(5, "SM_MetaData::Write() wrote stringlen %d  at pos %d\n",stringlen, filepos); 
+    
+    filepos = LSEEK64(lfd,0,SEEK_CUR); 
+    WRITE(lfd, &mAscii[0], stringlen); 
+    smdbprintf(5, "SM_MetaData::Write() wrote string \"%s\" at pos %d\n", mAscii.c_str(), filepos ); 
+    payloadLength += stringlen;
+  }
+  else if (mType == METADATA_TYPE_DOUBLE) {
+    SwapAndWrite(lfd, &mDouble,  1, needswap);    
+    payloadLength += 8;
+  }
+  else if (mType == METADATA_TYPE_INT64) {
+    SwapAndWrite(lfd, &mInt64,  1, needswap);    
+    payloadLength += 8;
+  }
+  filepos = LSEEK64(lfd,0,SEEK_CUR); 
+  SwapAndWrite(lfd, &payloadLength,  1, needswap);   
+  smdbprintf(5, "SM_MetaData::Write() wrote payloadLength %lu  at pos %d\n",payloadLength, filepos); 
+  
+  mName.resize(1015); // avoid segfaults I hope! 
+  filepos = LSEEK64(lfd,0,SEEK_CUR); 
+  WRITE(lfd, &mName[0], 1014); 
+  smdbprintf(5, "SM_MetaData::Write() wrote name \"%s\"  at pos %d\n",mName.c_str(), filepos); 
+  
+  uint64_t MAGIC = METADATA_MAGIC; 
+  SwapAndWrite(lfd, &MAGIC, 1, needswap);
+  filepos = LSEEK64(lfd,0,SEEK_CUR); 
+  smdbprintf(5, "SM_MetaData::Write() exiting at pos %d\n", filepos ); 
+  return true;
+}
+
+///==========================================================================
+bool SM_MetaData::Read(int lfd) {
+  if (sizeof(double) != 8) {
+    smdbprintf(0, "FIXME!  Error!  Cannot properly read metadata object since a double is not 8 bytes!\n"); 
+    return false; 
+  } 
+  off64_t filepos = LSEEK64(lfd,0,SEEK_CUR); 
+  smdbprintf(5, "SM_MetaData::Read() at pos %d\n", filepos); 
+  uint32_t endianTest = 500; 
+  bool needswap = (ntohl(endianTest) != endianTest); 
+
+  uint64_t mdmagic; 
+  uint64_t payloadLength, 
+    headerLength=sizeof(payloadLength)+sizeof(mdmagic) + 1014; 
+  char namebuf[1014]; 
+
+  filepos = LSEEK64(lfd,-headerLength,SEEK_CUR); // to beginning of header, at payload length
+  smdbprintf(5, "seeked to beginning of header at pos %d\n", filepos); 
+  off64_t headerpos = filepos; 
+  
+  
+  filepos += ReadAndSwap(lfd, &payloadLength, 1, needswap);
+  
+
+  filepos += READ(lfd, namebuf, 1014);
+  namebuf[1013] = 0; // be safe
+  mName = namebuf; 
+  
+  filepos += ReadAndSwap(lfd, &mdmagic, 1, needswap);
+  if (mdmagic != METADATA_MAGIC) {
+    smdbprintf(1, "Found bad magic %ld at pos %d (expected %ld)\n", mdmagic, filepos-8, METADATA_MAGIC); 
+    return false; 
+  }
+  
+  // we need the payload now, so have to seek backwards -- the price to pay for a "linked list" approach for metadata
+  smdbprintf(5, "payloadLength is %ld, headerLength is %ld, so have to seek backwards %ld \n", payloadLength, headerLength, payloadLength+headerLength); 
+  filepos = LSEEK64(lfd,-(payloadLength + headerLength + 8),SEEK_CUR);
+
+  ReadAndSwap(lfd, &mType, 1, needswap);
+  smdbprintf(5, "read payload type %lu at pos %d\n", mType, filepos); 
+  filepos = LSEEK64(lfd,0,SEEK_CUR);
+
+  if (mType == METADATA_TYPE_ASCII) {
+    uint64_t stringlen; 
+    ReadAndSwap(lfd, &stringlen, 1, needswap);
+    smdbprintf(5, "read stringlen %d at pos %d\n", stringlen, filepos); 
+    filepos = LSEEK64(lfd,0,SEEK_CUR);
+    char buf[stringlen+1];
+    READ(lfd, buf, stringlen+1); 
+    mAscii = buf; 
+    smdbprintf(5, "read string %s at pos %d\n", &mAscii[0], filepos); 
+  }
+  else if (mType == METADATA_TYPE_DOUBLE) {
+    ReadAndSwap(lfd, &mDouble,  1, needswap);    
+  }
+  else if (mType == METADATA_TYPE_INT64) {
+    ReadAndSwap(lfd, &mInt64,  1, needswap);    
+  }
+   
+  filepos = LSEEK64(lfd,0,SEEK_CUR); 
+  smdbprintf(5, "exiting at pos %d\n", filepos); 
+  smdbprintf(5, "Metadata found: %s.\n", toString().c_str());  
+  return true; 
+}
+
+
+
+///==========================================================================
 string TileInfo::toString(void) {
   // return string("{{ TileInfo: frame ") + intToString(frame)
   //  + ", tile = "+intToString(tileNum)
@@ -251,7 +429,7 @@ smBase *smBase::openFile(const char *_fname, int numthreads)
    READ(fd, &type, sizeof(u_int));
    type = ntohl(type) & SM_TYPE_MASK;
 
-   if ((SM_MAGIC_2 != magic)  && (SM_MAGIC_1 != magic)) {
+   if ((SM_MAGIC_3 != magic)  && (SM_MAGIC_2 != magic)  && (SM_MAGIC_1 != magic)) {
       CLOSE(fd);
       return(NULL);
    }
@@ -415,22 +593,20 @@ void smBase::registerType(u_int id, smBase *(*create)(const char *, int))
 */   
 void smBase::readHeader(void)
 {
-   int lfd;
+
+  int lfd; /* local file descriptor for movie file */ 
    u_int magic, type;
    u_int maxtilesize;
    u_int maxFrameSize;
 
    int i, w;
 
-   // the file size is needed for the size of the last frame
-   filesize = LSEEK64(mThreadData[0].fd,0,SEEK_END);
-
    lfd = OPEN(mMovieName, O_RDONLY);
    READ(lfd, &magic, sizeof(u_int));
    magic = ntohl(magic);
    if (magic == SM_MAGIC_1) mVersion = 1;
    if (magic == SM_MAGIC_2) mVersion = 2;
-   
+
    READ(lfd, &type, sizeof(u_int));
    setFlags(ntohl(type) & SM_FLAGS_MASK);
    type = ntohl(type) & SM_TYPE_MASK;
@@ -494,7 +670,6 @@ void smBase::readHeader(void)
    mFrameOffsets.resize((mNumFrames+1)*mNumResolutions, 0); 
    READ(lfd, &mFrameOffsets[0], sizeof(off64_t)*mNumFrames*mNumResolutions);
    byteswap(&mFrameOffsets[0],sizeof(off64_t)*mNumFrames*mNumResolutions,sizeof(off64_t));
-   mFrameOffsets[mNumFrames*mNumResolutions] = filesize;
 
    // Get the compressed frame lengths...
    mFrameLengths.resize(mNumFrames*mNumResolutions, 0); 
@@ -512,6 +687,18 @@ void smBase::readHeader(void)
        if (mFrameLengths[w] > maxFrameSize) maxFrameSize = mFrameLengths[w];
      }
    }
+   /* locate the end of the last frame */ 
+   mFrameOffsets[mNumFrames*mNumResolutions] = mFrameOffsets[mNumFrames*mNumResolutions-1] + mFrameLengths[mNumFrames*mNumResolutions-1];
+
+   // Read the metadata if present   
+   off64_t filepos = LSEEK64(lfd,0,SEEK_END);
+   SM_MetaData md; 
+   while (md.Read(lfd)) {
+     mMetaData.push_back(md); 
+     smdbprintf(5, "Read metadata: %s\n", md.toString().c_str());
+   }
+
+
 #if SM_VERBOSE
    for (w=0; w<mNumFrames; w++) {
      smdbprintf(5,"window %d: %d size %d", w, (int)mFrameOffsets[w],mFrameLengths[w]);
@@ -521,6 +708,8 @@ void smBase::readHeader(void)
    
    // bump up the size to the next multiple of the DIO requirements
    maxFrameSize += 2;
+
+   
    CLOSE(lfd);
    for (i=0; i<mThreadData.size(); i++) {
      unsigned long w;

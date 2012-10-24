@@ -34,6 +34,9 @@
 #ifndef _SM_BASE_H
 #define _SM_BASE_H
 
+#include "smBaseP.h"
+#include "smdfc.h"
+
 //
 // smBase.h - base class for "streamed movies"
 //
@@ -78,10 +81,11 @@ void sm_setVerbose(int level);  // 0-5, 0 is quiet, 5 is verbose
 
 #define SM_FLAGS_FPS_MASK	0xffc00000
 #define SM_FLAGS_FPS_SHIFT	22
-#define SM_FLAGS_FPS_BASE	20.0
+#define SM_FLAGS_FPS_BASE	20.0  /* hack! */
 
 #define SM_MAGIC_VERSION1	0x0f1e2d3c
 #define SM_MAGIC_VERSION2	0x0f1e2d3d
+#define SM_MAGIC_VERSION3	0x0f1e2d3e 
 
 /*!
   ===============================================
@@ -130,9 +134,53 @@ inline void sm_real_dbprintf(int , const char * ...) {
 }
 #define smdbprintf if(0) sm_real_dbprintf
 #endif
+
 //===============================================
+/* struct SM_MetaData */
 
+#define METADATA_MAGIC       0x0088BBeecc113399
 
+#define METADATA_TYPE_UNKNOWN  0x0
+#define METADATA_TYPE_ASCII  0xA5C11A5C11A5C11A
+#define METADATA_TYPE_DOUBLE  0xF10A7F10A7F10A7F
+#define METADATA_TYPE_INT64    0x4244224442244442
+/* SM Meta data contents on disk.  The intention is this will be read backward.  In this way, you seek to the end of the file, read the last 8 bytes to confirm a tag, then read preceding 1016 bytes to see what you have, then read the payload.  No table is needed.  
+         (1) n bytes: <data payload: see below>
+         (2) 8 bytes: uint64: payload length
+         (3) 1014 bytes: <tag name: null terminated ASCII sequence> 
+         (4) 8 bytes: uint64 : a binary signature constant 0x0088BBeecc113399
+
+         supported payloads: 
+         METADATA_TYPE_ASCII:  8 bytes: magic number 0xA5C11A5C11A5C11A
+                               8 bytes: uint64_t giving  length of null-terminated string
+                               n bytes: null-terminated ASCII string,             
+         METADATA_TYPE_DOUBLE: 8 bytes: magic number 0xF10A7F10A7F10A7F
+                               8 bytes: double (FP64)
+         METADATA_TYPE_INT64:    8 bytes: magic number 0x4244224442244442
+                               8 bytes: long long (int64_t)
+
+*/ 
+struct SM_MetaData {
+  string mName;
+  uint64_t mType; 
+  string mAscii;
+  double mDouble; //assuming 8 bytes here; checked in Read and Write functions for safety)
+  int64_t mInt64; 
+
+  SM_MetaData():mType(METADATA_TYPE_UNKNOWN) {}
+  SM_MetaData(string tag) {
+    mName = tag; 
+  }
+  SM_MetaData(string tag, string s): mName(tag), mType(METADATA_TYPE_ASCII), mAscii(s) {}
+  SM_MetaData(string tag, int64_t i): mName(tag), mType(METADATA_TYPE_INT64), mInt64(i) {}
+  SM_MetaData(string tag, double d): mName(tag), mType(METADATA_TYPE_DOUBLE), mDouble(d) {}
+
+  bool Read(int filedescr); // read backward from current point in file, leave file ready for another read
+  bool Write(int filedescr); 
+  string toString(void) ; 
+};
+  
+//===============================================
 struct TileInfo {  
   std::string toString(void); 
   u_int tileNum;
@@ -358,6 +406,25 @@ class smBase {
 #else
   static smBase *openFile(const char *fname, int numthreads=1);
 #endif
+
+  void AddMetaData(string tag, string value) {
+    mMetaData.push_back(SM_MetaData(tag, value)); 
+  }
+  void AddMetaData(string tag, double value)  {
+    mMetaData.push_back(SM_MetaData(tag, value)); 
+  }
+  void AddMetaData(string tag, int64_t value) {
+    mMetaData.push_back(SM_MetaData(tag, value)) ; 
+  }
+  void WriteMetaData(void) { 
+    LSEEK64(mThreadData[0].fd, 0, SEEK_END);
+    vector<SM_MetaData>::iterator pos = mMetaData.begin(), endpos = mMetaData.end(); 
+    while (pos != endpos) {
+      pos->Write(mThreadData[0].fd); 
+      ++pos; 
+    }
+    return; 
+  }
   // close a movie
   void closeFile(void);
   
@@ -378,6 +445,9 @@ class smBase {
   int getVersion(void) { return(mVersion); };
   
   void computeTileOverlap(int *blockDim, int* blockPos, int res, int thread);
+
+  // metadata
+  vector <SM_MetaData> mMetaData; 
   
  protected:
   
@@ -418,6 +488,7 @@ class smBase {
   
   // 64-bit offset of each compressed frame
   vector<off64_t>mFrameOffsets;
+
   // 32-bit length of each compressed frame
   vector<unsigned int>mFrameLengths;
   
@@ -426,11 +497,7 @@ class smBase {
   
   // version
   int mVersion;
-  
-  // global file descriptor
-  //int *fd;
-  off64_t filesize;
-  
+    
   //path to movie file
   char *mMovieName;
   

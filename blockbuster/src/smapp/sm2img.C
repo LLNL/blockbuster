@@ -33,6 +33,7 @@
 
 
 // Utility to combine image files into movie
+// Also used as sminfo.  
 #include <stdio.h>
 
 #include <stdlib.h>
@@ -83,8 +84,11 @@ struct Work {
 void cmdline(char *app,int binfo)
 {
     if (binfo) {
-      fprintf(stderr,"%s (%s) usage: %s smfile\n",
+      fprintf(stderr,"%s (%s) usage: %s [options] smfile\n",
               basename(app), BLOCKBUSTER_VERSION, basename(app));
+      fprintf(stderr,"Options:\n");
+      fprintf(stderr,"\t-v Verbose mode. Equivalent to -verbose 1\n");
+      fprintf(stderr, "\t-verbose n Set verbosity to n.\n"); 
     } else {      
       fprintf(stderr,"%s (%s) usage: %s [options] smfile [outputtemplate]\n",
               basename(app), BLOCKBUSTER_VERSION, basename(app));
@@ -124,6 +128,9 @@ int main(int argc,char **argv)
     while ((argnum<argc) && (argv[argnum][0] == '-')) {
       if (strcmp(argv[argnum],"-v")==0) {
         gVerbosity = 1;
+      } else if (strcmp(argv[argnum],"-verbose")==0) {
+        gVerbosity = atoi(argv[argnum+1]);
+        argnum++; 
       } else {
         cmdline(argv[0],bIsInfo);
       }
@@ -255,17 +262,19 @@ int main(int argc,char **argv)
       printf("-----------------------------------------\n"); 
       printf("File: %s\n",gSmFilename);
       printf("Streaming movie version: %d\n",gSm->getVersion());
-      if (gSm->getType() == 1) {   // smRLE::typeID
+      if (gSm->getType() == 0) {   // smRaw::typeID
+        printf("Format: RAW uncompressed\n");
+      } else if (gSm->getType() == 1) {   // smRLE::typeID
         printf("Format: RLE compressed\n");
       } else if (gSm->getType() == 2) {   // smGZ::typeID
         printf("Format: gzip compressed\n");
-      } else if (gSm->getType() == 4) {   // smJPG::typeID
-        printf("Format: JPG compressed\n");
       } else if (gSm->getType() == 3) {   // smLZO::typeID
         printf("Format: LZO compressed\n");
-      } else if (gSm->getType() == 0) {   // smRaw::typeID
-        printf("Format: RAW uncompressed\n");
-      } else {
+      } else if (gSm->getType() == 4) {   // smJPG::typeID
+        printf("Format: JPG compressed\n");
+      } else if (gSm->getType() == 5) {   // smJPG::typeID
+        printf("Format: LZMA compressed\n");
+     } else {
         printf("Format: unknown\n");
       }
       printf("Size: %d %d\n",gSm->getWidth(),gSm->getHeight());
@@ -301,7 +310,16 @@ int main(int argc,char **argv)
           }
         }
       }
-
+      printf("Metadata: \n"); 
+      vector <SM_MetaData>::iterator pos = gSm->mMetaData.begin(), endpos = gSm->mMetaData.end(); 
+      if (pos == endpos) {
+        printf ("No meta data found in movie.\n"); 
+      } else {
+        while (pos != endpos) {
+          printf("%s\n", pos->toString().c_str()); 
+          ++pos;
+        }
+      }
       delete gSm;
     }
     exit(0);
@@ -397,6 +415,9 @@ int main(int argc,char **argv)
   
   pt_pool_destroy(pool,1);
   delete gSm; 
+  if (!strstr(argv[0],"sminfo")) {
+    cerr << "Successful completion" << endl; 
+  }
   return 0; 
 }
 
