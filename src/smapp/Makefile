@@ -47,10 +47,13 @@ OFILES = smmake smtest ifl2sm img2sm sm2img rename smcat smevo
 
 CPPFLAGS += -g 
 
-default: $(INSTALL_DIR)/bin/smmake $(INSTALL_DIR)/bin/smtest $(INSTALL_DIR)/bin/ifl2sm $(INSTALL_DIR)/bin/img2sm $(INSTALL_DIR)/bin/rename $(INSTALL_DIR)/bin/sm2img $(INSTALL_DIR)/bin/smcat $(INSTALL_DIR)/bin/smevo $(INSTALL_DIR)/bin/sm2qt manpages
+default: $(INSTALL_DIR)/bin/smevo  $(INSTALL_DIR)/bin/smmake $(INSTALL_DIR)/bin/smtest $(INSTALL_DIR)/bin/ifl2sm $(INSTALL_DIR)/bin/img2sm $(INSTALL_DIR)/bin/rename $(INSTALL_DIR)/bin/sm2img $(INSTALL_DIR)/bin/sminfo $(INSTALL_DIR)/bin/smcat $(INSTALL_DIR)/bin/smevo $(INSTALL_DIR)/bin/sm2qt $(INSTALL_DIR)/bin/ps2sm $(INSTALL_DIR)/bin/sm2mpg  manpages
 
 $(INSTALL_DIR)/bin/%: %
-	cp $? $@
+	cp  $? $@
+
+$(INSTALL_DIR)/bin/sminfo: sm2img
+	rm $@; ln -s sm2img $@
 
 manpages:
 	mkdir -p $(INSTALL_DIR)/man/man1
@@ -58,39 +61,30 @@ manpages:
 
 sm2qt: smcat.o $(SMLIB)
 	touch sm2qt
-	cp ps2sm sm2mpg $@ $(INSTALL_DIR)/bin
 
 smevo: $(SMEVOFILES) $(SMLIB)
 	$(CXX)  $(SMEVOFILES) -o $@ -levomovie $(LIBS) $(CXXFLAGS) $(GZIP_LIBS)
-	cp $@ $(INSTALL_DIR)/bin
 
 smmake: $(SMOFILES) $(SMLIB)
 	$(CXX)  $(SMOFILES) -o $@ $(LIBS) $(CXXFLAGS) $(GZIP_LIBS)
-	cp $@ $(INSTALL_DIR)/bin
 
 smtest: $(SMTOFILES) $(SMLIB)
 	$(CXX)  $(SMTOFILES) -o $@ $(LIBS) $(CXXFLAGS) $(GZIP_LIBS)
-	cp $@ $(INSTALL_DIR)/bin
 
 ifl2sm: $(IFL2SMFILES) $(SMLIB)
 	$(CXX)  $(IFL2SMFILES) -o $@ $(LIBS) $(CXXFLAGS) $(GZIP_LIBS)
-	cp $@ $(INSTALL_DIR)/bin
 
 img2sm: $(IMG2SMFILES) $(SMLIB)  
 	$(CXX)  $(IMG2SMFILES) -o $@ $(LIBS) $(CXXFLAGS) $(GZIP_LIBS) \
 		$(TIFF_LIBS) $(PNM_LIBS) -limage -lm
-	cp -f $@ $(INSTALL_DIR)/bin
 
-sm2img: $(SM2IMGFILES) $(SMLIB)
+sm2img: $(SM2IMGFILES) $(SMLIB) 
 	$(CXX)  $(SM2IMGFILES) -o $@ $(LIBS) $(CXXFLAGS) $(GZIP_LIBS) \
 		$(TIFF_LIBS) $(PNM_LIBS) -limage -lm
-	cp $@ sminfo
-	cp $@ sminfo $(INSTALL_DIR)/bin
 
 smcat: $(SMCATFILES) $(SMLIB)
 	$(CXX)  $(SMCATFILES) -o $@ $(LIBS) $(CXXFLAGS) $(GZIP_LIBS) \
 		$(TIFF_LIBS) $(PNM_LIBS) -limage -lm
-	cp $@ $(INSTALL_DIR)/bin
 
 rename: rename.o $(SMLIB)
 	$(CXX)  rename.o -o $@ $(CXXFLAGS) -lm
