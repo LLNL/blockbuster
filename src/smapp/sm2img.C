@@ -57,261 +57,188 @@ extern "C" {
 }
 //undef int32
 
+#include <tclap_utils.h>
+// using namespace TCLAP; 
 #include "libimage/sgilib.h"
 #include "libpnmrw/libpnmrw.h"
 #include "simple_jpeg.h"
 #include "../config/version.h"
+#include <boost/format.hpp>
 
 void workproc(void *work);
-int gBlocksize[3] = {0,0,3}, gBlockOffset[2]= {0,0}; 
-int gMipmap=0; 
-char gNameTemplate[4096]; 
-char gSmFilename[4096]; 
-vector<unsigned char *>gBuffers;
-int	gVerbosity = 0;
-int	gType = -1;
-int	gFirstFrame = 0;
-int	gLastFrame = -1;
-int	gFrameStep = 1;
-int		gQuality = 75;
-smBase *gSm; 
 
 struct Work {
   // int threadNum, numThreads;
   uint32_t frameNum; 
+  smBase *sm; 
+  int blockSize[3]; 
+  int blockOffset[2]; 
+  int lod; 
+  string nameTemplate; 
+  int imageType; 
+  int jqual; 
+  int verbosity; 
 }; 
 
-void cmdline(char *app,int binfo)
-{
-    if (binfo) {
-      fprintf(stderr,"%s (%s) usage: %s [options] smfile\n",
-              basename(app), BLOCKBUSTER_VERSION, basename(app));
-      fprintf(stderr,"Options:\n");
-      fprintf(stderr,"\t-v Verbose mode. Equivalent to -verbose 1\n");
-      fprintf(stderr, "\t-verbose n Set verbosity to n.\n"); 
-    } else {      
-      fprintf(stderr,"%s (%s) usage: %s [options] smfile [outputtemplate]\n",
-              basename(app), BLOCKBUSTER_VERSION, basename(app));
-      fprintf(stderr,"Options:\n");
-      fprintf(stderr,"\t-v Verbose mode. Equivalent to -verbose 1\n");
-      fprintf(stderr, "\t-verbose n Set verbosity to n.\n"); 
-      fprintf(stderr,"\t-ignore Ignore invalid output templates. Default:check.\n");
-      fprintf(stderr,"\t-first num Select first frame number to extract. Default:0.\n");
-      fprintf(stderr,"\t-last num Select last frame number to extract. Default:last frame.\n");
-      fprintf(stderr,"\t-step num Select frame number step factor. Default:1.\n");
-      fprintf(stderr,"\t-quality num Select JPEG output quality (0-100). Default: 75\n");
-      fprintf(stderr,"\t-threads num Use num threads for work. Default: 1\n");
-      fprintf(stderr,"\t-form [\"tiff\"|\"sgi\"|\"pnm\"|\"png\"|\"jpg\"|\"YUV\"] Output file format (default:use template suffix or png)\n");
-      fprintf(stderr,"\t-region offsetX offsetY sizeX sizeY -- Output will be the given subregion of the input.  Default: offsets 0 0, original size .  \n");
-      fprintf(stderr,"\t-mipmap Extract frame from mipmap level. Default: 0\n");
-      fprintf(stderr,"\tNote: without an output template, movie stats will be displayed.\n");
-    }
-    exit(1);
+void errexit(TCLAP::CmdLine &cmd, string msg) {
+  cerr << endl << "*** ERROR *** : " << msg  << endl<< endl;
+  cmd.getOutput()->usage(cmd); 
+  cerr << endl << "*** ERROR *** : " << msg << endl << endl;
+  exit(1); 
 }
 
 int main(int argc,char **argv)
 {
+  TCLAP::CmdLine  cmd(str(boost::format("%1% converts movies to images, sets movie meta data, and reports on movie information.  If no template is given, then acts as if it is sminfo")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
+  TCLAP::ValueArg<int> firstFrame("f", "first", "First frame number",false, 0, "integer", cmd); 
+  TCLAP::ValueArg<int> lastFrame("l", "last", "Last frame number",false, -1, "integer", cmd); 
+  TCLAP::ValueArg<int> frameStep("s", "step", "Frame step size",false, 1, "integer", cmd); 
+  TCLAP::ValueArg<int> mipmap("m", "mipmap", "Which mipmap level to extract from",false, 0, "integer", cmd); 
+  TCLAP::ValueArg<int> quality("q", "quality", "Jpeg compression quality, from 0-100",false, 75, "integer", cmd); 
+  TCLAP::ValueArg<int> threads("t", "threads", "Number of threads to use",false, 4, "integer", cmd); 
+
+  TCLAP::ValueArg<VectFromString<int> > region("r", "region", "Image pixel subregion to extract",false, VectFromString<int>(), "'Xoffset Yoffset Xsize Ysize'", cmd); 
+  region.getValue().expectedElems = 4; 
+
+
+  vector<string> allowedformats; 
+  allowedformats.push_back("tiff"); allowedformats.push_back("TIFF"); 
+  allowedformats.push_back("sgi"); allowedformats.push_back("SGI");  
+  allowedformats.push_back("pnm"); allowedformats.push_back("PNM");  
+  allowedformats.push_back("png"); allowedformats.push_back("PNG");  
+  allowedformats.push_back("jpg"); allowedformats.push_back("JPG");  
+  allowedformats.push_back("yuv"); allowedformats.push_back("YUV"); 
+  TCLAP::ValuesConstraint<string> allowed(allowedformats); 
+  TCLAP::ValueArg<string>format("F", "Format", "Format of output files (use if name does not make this clear)", false, "default", &allowed); 
+  cmd.add(format); 
+
+
+  TCLAP::SwitchArg verbose("v", "verbose", "Sets verbosity to level 1", cmd, false); 
+  TCLAP::ValueArg<int> verbosity("V", "Verbosity", "Verbosity level",false, 0, "integer", cmd);   
+
+  TCLAP::ValueArg<string> nameTemplate("o", "outfile", "A C-style string containing %d notation for specifying multiple movie files.  For a single frame, need not use %d notation", false, "", "template", cmd); 
+
+  TCLAP::UnlabeledMultiArg<string> movienames("moviename", "Name of the movie(s) to analyze or convert",true, "list of movies", cmd); 
+  try {
+	cmd.parse(argc, argv);
+  } catch(std::exception &e) {
+	std::cout << e.what() << std::endl;
+	return 1;
+  }
+
   //smBase *sm = NULL; 
-  int	iIgnore = 0;
   int	originalImageSize[2];
+  int blockSize[3] = {0,0,3}; 
+  int blockOffset[2] = {0,0}; 
   int		bIsInfo = 0;
   //int	i,j,x,y;
   int argnum; 
-  char		nametemplate[1024],nametemplate2[1024];
-  int nThreads=1; 
+  int nThreads=threads.getValue(); 
   bool getinfo = false; 
+  int imageType = -1; 
+  
+  if (region.getValue().valid && region.getValue()[0] != -1) {
+    for (int i=0; i<2; i++) blockSize[i] = region.getValue()[i+2]; 
+  }
 
-  if (strstr(argv[0],"sminfo")) {
+  if (strstr(argv[0],"sminfo") || nameTemplate.getValue() == "") {
     getinfo = true; 
     bIsInfo = 1;
-    argnum = 1;
-    while ((argnum<argc) && (argv[argnum][0] == '-')) {
-      if (strcmp(argv[argnum],"-v")==0) {
-        gVerbosity = 1;
-      } else if (strcmp(argv[argnum],"-verbose")==0) {
-        gVerbosity = atoi(argv[argnum+1]);
-        argnum++; 
-      } else {
-        cmdline(argv[0],bIsInfo);
-      }
-      argnum++;
-    }
-    //if ((argc - argnum) != 1) cmdline(argv[0],bIsInfo);
     
   } else {
-    
-	/* parse the command line ... */
-	argnum = 1;
-	while ((argnum<argc) && (argv[argnum][0] == '-')) {
-      if (strcmp(argv[argnum],"-v")==0) {
-        gVerbosity = 1;
-      } else if (strcmp(argv[argnum],"-verbose")==0) {
-        gVerbosity = atoi(argv[argnum+1]);
-        argnum++; 
-      } else if (strcmp(argv[argnum],"-ignore")==0) {
-        iIgnore = 1;
-      } else if (strcmp(argv[argnum],"-quality")==0) {
-        if ((argc-argnum) > 1) {
-          gQuality = atoi(argv[argnum+1]);
-        } else {
-          cmdline(argv[0],bIsInfo);
-        }
-        argnum++;
-      } else if (strcmp(argv[argnum],"-first")==0) {
-        if ((argc-argnum) > 1) {
-          gFirstFrame = atoi(argv[argnum+1]);
-        } else {
-          cmdline(argv[0],bIsInfo);
-        }
-        argnum++;
-      } else if (strcmp(argv[argnum],"-last")==0) {
-        if ((argc-argnum) > 1) {
-          gLastFrame = atoi(argv[argnum+1]);
-        } else {
-          cmdline(argv[0],bIsInfo);
-        }
-        argnum++;
-      } else if (strcmp(argv[argnum],"-step")==0) {
-        if ((argc-argnum) > 1) {
-          gFrameStep = atoi(argv[argnum+1]);
-        } else { 
-          cmdline(argv[0],bIsInfo);
-        }
-        argnum++;
-      } else if (strcmp(argv[argnum],"-threads")==0) {
-        if ((argc-argnum) > 1) {
-          nThreads = atoi(argv[argnum+1]);
-        } else {
-          cmdline(argv[0],bIsInfo);
-        }
-        argnum++;
-      } else if (strcmp(argv[argnum],"-region")==0) {
-        if ((argc-argnum) > 4) {
-          gBlockOffset[0] = atoi(argv[++argnum]);
-          gBlockOffset[1] = atoi(argv[++argnum]);
-          gBlocksize[0] = atoi(argv[++argnum]);
-          gBlocksize[1] = atoi(argv[++argnum]);
-          if (gBlocksize[0] <= 0 || gBlocksize[1] <= 0){
-            fprintf(stderr, "Error: image size must be greater than zero.\n");
-            exit(1);
-          }
-          if (gBlockOffset[0] < 0 || gBlockOffset[1] < 0){
-            fprintf(stderr, "Error: image offsets must be nonnegative.\n");
-            exit(1);
-          }
-        } else {
-          cmdline(argv[0],bIsInfo);
-        }
-      } else if (strcmp(argv[argnum],"-mipmap")==0) {
-        if ((argc-argnum) > 1) {
-          gMipmap = atoi(argv[++argnum]);
-		  
-        } else {
-          cmdline(argv[0],bIsInfo);
-        }
-      } else if (strcmp(argv[argnum],"-form")==0) {
-        if ((argc-argnum) > 1) {
-          if (strcmp(argv[argnum+1],"tiff") == 0) {
-            gType = 0;
-          } else if (strcmp(argv[argnum+1],"sgi") == 0) {
-            gType = 1;
-          } else if (strcmp(argv[argnum+1],"pnm") == 0) {
-            gType = 2;
-          } else if (strcmp(argv[argnum+1],"YUV") == 0) {
-            gType = 3;
-          } else if (strcmp(argv[argnum+1],"png") == 0) {
-            gType = 4;
-          } else if (strcmp(argv[argnum+1],"jpg") == 0) {
-            gType = 5;
-          } else {
-            fprintf(stderr,"Invalid format: %s\n",
-                    argv[argnum+1]);
-            exit(1);
-          }
-          argnum++;
-        } else {
-          cmdline(argv[0],bIsInfo);
-        }
-      } else {
-        fprintf(stderr,"Unknown option: %s\n\n",argv[argnum]);
-        cmdline(argv[0],bIsInfo);
+    string suffix = format.getValue();
+    if (suffix == "") {
+      string templatestr = nameTemplate.getValue(); 
+      string::size_type idx = templatestr.rfind('.'); 
+      if (idx == string::npos) {
+        cerr << "Error:  Cannot find a file type suffix in your output template.  Please use -form to tell me what to do if you're not going to give a suffix." << endl; 
+        exit(1); 
       }
-      argnum++;
-	}
-    
+      suffix = templatestr.substr(idx+1,3); 
+    } 
+    if (suffix == "tif" || suffix == "TIF")  imageType = 0; 
+    else if (suffix == "sgi" || suffix == "SGI")  imageType = 1; 
+    else if (suffix == "pnm" || suffix == "PNM")  imageType = 2; 
+    else if (suffix == "yuv" || suffix == "YUV")  imageType = 3; 
+    else if (suffix == "png" || suffix == "PNG")  imageType = 4; 
+    else if (suffix == "jpg" || suffix == "JPG" || 
+             suffix == "jpe" || suffix == "JPE")  imageType = 5; 
+    else  {
+      cerr << "Warning:  Cannot deduce format from input files.  Using PNG format but leaving filenames unchanged." << endl; 
+      imageType = 4;
+    }
   }
-    
 
   smBase::init();
-  sm_setVerbose(gVerbosity);  
+  sm_setVerbose(verbose.getValue()?1:verbosity.getValue());  
 
   if ((argc - argnum) == 1) {
     getinfo = true; // even for sm2img, a single arg is a request for info
   }
   // Movie info case... (both sminfo and sm2img file)
   if (getinfo) {
-    while (argc-argnum) {
-      strncpy(gSmFilename, argv[argnum++], 4095); 
-      
-      gSm = smBase::openFile(gSmFilename, nThreads);
-      if (!gSm) {
-        fprintf(stderr,"Unable to open the file: %s\n",gSmFilename);
+    vector<string> filenames = movienames.getValue(); 
+    for (vector<string>::iterator pos = filenames.begin();  pos != filenames.end(); ++pos) {
+      string filename = *pos; 
+      smBase *sm = smBase::openFile(filename.c_str(), nThreads);
+      if (!sm) {
+        fprintf(stderr,"Unable to open the file: %s\n",filename.c_str());
         exit(1);
       }
       
       printf("-----------------------------------------\n"); 
-      printf("File: %s\n",gSmFilename);
-      printf("Streaming movie version: %d\n",gSm->getVersion());
-      if (gSm->getType() == 0) {   // smRaw::typeID
+      printf("File: %s\n",filename.c_str());
+      printf("Streaming movie version: %d\n",sm->getVersion());
+      if (sm->getType() == 0) {   // smRaw::typeID
         printf("Format: RAW uncompressed\n");
-      } else if (gSm->getType() == 1) {   // smRLE::typeID
+      } else if (sm->getType() == 1) {   // smRLE::typeID
         printf("Format: RLE compressed\n");
-      } else if (gSm->getType() == 2) {   // smGZ::typeID
+      } else if (sm->getType() == 2) {   // smGZ::typeID
         printf("Format: gzip compressed\n");
-      } else if (gSm->getType() == 3) {   // smLZO::typeID
+      } else if (sm->getType() == 3) {   // smLZO::typeID
         printf("Format: LZO compressed\n");
-      } else if (gSm->getType() == 4) {   // smJPG::typeID
+      } else if (sm->getType() == 4) {   // smJPG::typeID
         printf("Format: JPG compressed\n");
-      } else if (gSm->getType() == 5) {   // smJPG::typeID
+      } else if (sm->getType() == 5) {   // smJPG::typeID
         printf("Format: LZMA compressed\n");
      } else {
         printf("Format: unknown\n");
       }
-      printf("Size: %d %d\n",gSm->getWidth(),gSm->getHeight());
-      printf("Frames: %d\n",gSm->getNumFrames());
-      printf("FPS: %0.2f\n",gSm->getFPS());
+      printf("Size: %d %d\n",sm->getWidth(),sm->getHeight());
+      printf("Frames: %d\n",sm->getNumFrames());
+      printf("FPS: %0.2f\n",sm->getFPS());
       double len = 0;
       double len_u = 0;
       int frame, res;
-      for(res=0;res<gSm->getNumResolutions();res++) {
-        for(frame=0;frame<gSm->getNumFrames();frame++) {
-          len += (double)(gSm->getCompFrameSize(frame,res));
-          len_u += (double)(gSm->getWidth(res)*gSm->getHeight(res)*3);
+      for(res=0;res<sm->getNumResolutions();res++) {
+        for(frame=0;frame<sm->getNumFrames();frame++) {
+          len += (double)(sm->getCompFrameSize(frame,res));
+          len_u += (double)(sm->getWidth(res)*sm->getHeight(res)*3);
         }
       }
       printf("Compression ratio: %0.4f%% (%0.0f compressed, %0.0f uncompressed)\n",(len/len_u)*100.0, len, len_u);
-      printf("Number of resolutions: %d\n",gSm->getNumResolutions());
-      for(res=0;res<gSm->getNumResolutions();res++) {
+      printf("Number of resolutions: %d\n",sm->getNumResolutions());
+      for(res=0;res<sm->getNumResolutions();res++) {
         printf("    Level: %d : size %d x %d : tile %d x %d\n",
-               res,gSm->getWidth(res),gSm->getHeight(res),
-               gSm->getTileWidth(res),gSm->getTileHeight(res));
+               res,sm->getWidth(res),sm->getHeight(res),
+               sm->getTileWidth(res),sm->getTileHeight(res));
         
       }
       printf("Flags: ");
-      if (gSm->getFlags() & SM_FLAGS_STEREO) printf("Stereo ");
+      if (sm->getFlags() & SM_FLAGS_STEREO) printf("Stereo ");
       printf("\n");
       
-      if (gVerbosity) {
+      if (verbosity.getValue()) {
         printf("Frame\tOffset\tLength\n");
         int res = 0; 
-        for (res=0; res < gSm->getNumResolutions(); res++) {
-          for(frame=0;frame<gSm->getNumFrames();frame++) {
-            gSm->printFrameDetails(stdout,frame, res);
+        for (res=0; res < sm->getNumResolutions(); res++) {
+          for(frame=0;frame<sm->getNumFrames();frame++) {
+            sm->printFrameDetails(stdout,frame, res);
           }
         }
       }
-      printf("Metadata: \n"); 
-      vector <SM_MetaData>::iterator pos = gSm->mMetaData.begin(), endpos = gSm->mMetaData.end(); 
+      printf("Metadata: (%d entries)\n", sm->mMetaData.size()); 
+      vector <SM_MetaData>::iterator pos = sm->mMetaData.begin(), endpos = sm->mMetaData.end(); 
       if (pos == endpos) {
         printf ("No meta data found in movie.\n"); 
       } else {
@@ -320,70 +247,67 @@ int main(int argc,char **argv)
           ++pos;
         }
       }
-      delete gSm;
+      delete sm;
     }
     exit(0);
   }
   
-  if ((argc - argnum) != 2) cmdline(argv[0],bIsInfo);
   
-  // get the arguments
-  strncpy(gSmFilename, argv[argnum], 4095); 
-  strncpy(gNameTemplate, argv[argnum+1], 2047); 
-  
-  if (!iIgnore) {
-    // Bad template name?
-    sprintf(nametemplate,gNameTemplate,0);
-    sprintf(nametemplate2,gNameTemplate,1);
-    if (strcmp(gNameTemplate,nametemplate2) == 0) {
-      fprintf(stderr,"Output specification is not a sprintf template (see -ignore)\n");
-      exit(1);
-    }
-  }
-  
-  gSm = smBase::openFile(gSmFilename, nThreads);
-  if (!gSm) {
-    fprintf(stderr,"Unable to open the file: %s\n",gSmFilename);
+  smBase *sm = smBase::openFile(movienames.getValue()[0].c_str(), nThreads);
+  if (!sm) {
+    fprintf(stderr,"Unable to open the file: %s\n",movienames.getValue()[0].c_str());
     exit(1);
   }
-  
-  if(gSm->getVersion() == 1) {
-    gMipmap = 0;
+  int lod = mipmap.getValue(); 
+
+  if(sm->getVersion() == 1) {
+    lod = 0;
   }
-  if(gMipmap >= gSm->getNumResolutions()) {
-    fprintf(stderr,"Error: Mipmap Level %d Not Available : Choose Levels 0->%d\n",gMipmap,gSm->getNumResolutions()-1);
+  if(lod >= sm->getNumResolutions()) {
+    fprintf(stderr,"Error: Mipmap Level %d Not Available : Choose Levels 0->%d\n",lod,sm->getNumResolutions()-1);
     exit(1);
   }
   /* originalImageSize[2] = 3; unused */
-  originalImageSize[0] = gSm->getWidth(gMipmap);
-  originalImageSize[1] = gSm->getHeight(gMipmap);
+  originalImageSize[0] = sm->getWidth(lod);
+  originalImageSize[1] = sm->getHeight(lod);
   
   /* check user inputs for consistency with image size*/
-  if (gBlocksize[0]+gBlockOffset[0] > originalImageSize[0]) {
+  if (blockSize[0]+blockOffset[0] > originalImageSize[0]) {
     fprintf(stderr, "Error: X size (%d) + X offset (%d) cannot be greater than image width (%d)\n", 
-            gBlocksize[0], gBlockOffset[0], originalImageSize[0]);
+            blockSize[0], blockOffset[0], originalImageSize[0]);
     exit(1);
   }
-  if (gBlocksize[1]+gBlockOffset[1] > originalImageSize[1]) {
+  if (blockSize[1]+blockOffset[1] > originalImageSize[1]) {
     fprintf(stderr, "Error: Y size (%d) + Y offset (%d) cannot be greater than image height (%d)\n", 
-            gBlocksize[1], gBlockOffset[1], originalImageSize[1]);
+            blockSize[1], blockOffset[1], originalImageSize[1]);
     exit(1);
   }
   
-  if (!gBlocksize[0] && !gBlocksize[1]){ /* no size given -- use image size minus offsets*/
-    gBlocksize[0] = originalImageSize[0] - gBlockOffset[0];
-    gBlocksize[1] = originalImageSize[1] - gBlockOffset[1];
+  if (!blockSize[0] && !blockSize[1]){ /* no size given -- use image size minus offsets*/
+    blockSize[0] = originalImageSize[0] - blockOffset[0];
+    blockSize[1] = originalImageSize[1] - blockOffset[1];
   }
   
   
-  if (gLastFrame < 0) gLastFrame = gSm->getNumFrames() - 1;
-  if (gLastFrame < gFirstFrame) cmdline(argv[0],bIsInfo);
-  if (gFirstFrame < 0) cmdline(argv[0],bIsInfo);
-  if (gLastFrame >= gSm->getNumFrames())  cmdline(argv[0],bIsInfo);
+  if (lastFrame.getValue() < 0) lastFrame.getValue() = sm->getNumFrames() - 1;
+  if (lastFrame.getValue() < firstFrame.getValue()) errexit(cmd, "first frame cannot be greater than last"); 
+  if (firstFrame.getValue() < 0) errexit(cmd, "first frame cannot be less than zero"); 
+  if (lastFrame.getValue() >= sm->getNumFrames()) errexit(cmd, str(boost::format("last frame is %1%, but movie only has %2% frames in it")% lastFrame.getValue() % sm->getNumFrames()));
   
-  if (gFrameStep < 1) {
+  if (frameStep.getValue() < 1) {
     fprintf(stderr,"Error, frame stepping must be >= 1\n");
     exit(1);
+  }
+  int numFrames = (lastFrame.getValue() - firstFrame.getValue())/frameStep.getValue() + 1; 
+  
+  if (numFrames > 1) {
+    // Bad template name?
+    try {
+      string test = str(boost::format(nameTemplate.getValue()) % 1);
+    } catch(...) {
+      fprintf(stderr,"If you are outputting multiple frames, then the output specification must be a C-style sprintf template\n");
+      exit(1);
+    }
   }
   
   // here we go...
@@ -391,30 +315,24 @@ int main(int argc,char **argv)
   pt_pool_t       pool = &thepool;
   pt_pool_init(pool, nThreads, nThreads*2, 0);
 
-  /*  prepare some reusable buffers */
-  int threadnum = 0; 
-  while (threadnum<nThreads) {
-    gBuffers.push_back(new unsigned char [3*gBlocksize[0]*gBlocksize[1]]);
-    threadnum ++; 
-  }
-  /*
-    Work *wrk = new Work; 
-    wrk->threadNum = threadnum; 
-    wrk->numThreads = nThreads; 
-    pt_pool_add_work(pool, workproc, wrk);
-    threadnum++; 
-    }
-  */ 
-  int framenum = gFirstFrame; 
-  while (framenum <= gLastFrame) {
+  int framenum = firstFrame.getValue(); 
+  while (framenum <= lastFrame.getValue()) {
     Work *wrk = new Work; 
     wrk->frameNum = framenum; 
+    wrk->sm = sm; 
+    memcpy(wrk->blockSize, blockSize, sizeof(blockSize)); 
+    memcpy(wrk->blockOffset, blockOffset, sizeof(blockOffset)); 
+    wrk->lod = lod; 
+    wrk->nameTemplate = nameTemplate.getValue(); 
+    wrk->imageType = imageType; 
+    wrk->jqual = quality.getValue(); 
+    wrk->verbosity = verbosity.getValue(); 
     pt_pool_add_work(pool, workproc, wrk);
-    framenum+= gFrameStep;
+    framenum+= frameStep.getValue();
   }
   
   pt_pool_destroy(pool,1);
-  delete gSm; 
+  delete sm; 
   if (!strstr(argv[0],"sminfo")) {
     cerr << "Successful completion" << endl; 
   }
@@ -430,81 +348,64 @@ void workproc(void *vp) {
   int framenum; 
   Work *work = (Work*)vp; 
   int threadnum = pt_pool_threadnum(); 
-  unsigned char *img = gBuffers[threadnum]; 
+  //unsigned char *img = gBuffers[threadnum]; 
+  vector<unsigned char> img(3*work->blockSize[0]*work->blockSize[1], 0); 
 
-  /*  smBase *sm = smBase::openFile(gSmFilename, work->numThreads);
+  /*  smBase *sm = smBase::openFile(smFilename, work->numThreads);
 	if (!sm) {
-		fprintf(stderr,"Unable to open the file: %s\n",gSmFilename);
+		fprintf(stderr,"Unable to open the file: %s\n",smFilename);
 		exit(1);
 	}
   */
-  char nameTemplate[2048]; 
-  /*  int framestep = gFrameStep*work->numThreads;
-  int firstframe = gFirstFrame + work->threadNum*gFrameStep; 
+  //char nameTemplate[2048]; 
+  /*  int framestep = frameStep.getValue()*work->numThreads;
+  int firstframe = firstFrame.getValue() + work->threadNum*frameStep.getValue(); 
   fprintf(stderr, "Thread %d of %d: firstframe = %d, framestep = %d, verbosity = %d\n", 
           work->threadNum, work->numThreads,
           firstframe, framestep, gVerbosity); 
   for(framenum =  firstframe;
-      framenum <= gLastFrame;
+      framenum <= lastFrame.getValue();
       framenum += framestep ) {	
   */ 
-  if (gVerbosity) fprintf(stderr, "Thread %d working on frame %d)\n",
+  if (work->verbosity) fprintf(stderr, "Thread %d working on frame %d)\n",
                           threadnum, work->frameNum); 
   
-  if(gSm->getVersion() > 1) {
+  if(work->sm->getVersion() > 1) {
     int destRowStride = 0;
-    gSm->getFrameBlock(work->frameNum, img, threadnum, destRowStride,&gBlocksize[0],&gBlockOffset[0],NULL,gMipmap);
+    work->sm->getFrameBlock(work->frameNum, &img[0], threadnum, destRowStride,&work->blockSize[0],&work->blockOffset[0],NULL,work->lod);
   }
   else {
-    gSm->getFrame(work->frameNum, img, threadnum);
+    work->sm->getFrame(work->frameNum, &img[0], threadnum);
   }
+  
+  string filename = str(boost::format(work->nameTemplate) % work->frameNum);
 
-  if (gType == -1) {
-    string templatestr = gNameTemplate; 
-    string::size_type idx = templatestr.rfind('.'); 
-    if (idx == string::npos) {
-      cerr << "Error:  Cannot find a file type suffix in your output template.  Please use -form to tell me what to do if you're not going to give a suffix." << endl; 
-      exit(1); 
-    }
-    string suffix = templatestr.substr(idx+1,3); 
-    if (suffix == "tif" || suffix == "TIF")  gType = 0; 
-    else if (suffix == "sgi" || suffix == "SGI")  gType = 1; 
-    else if (suffix == "pnm" || suffix == "PNM")  gType = 2; 
-    else if (suffix == "yuv" || suffix == "YUV")  gType = 3; 
-    else if (suffix == "png" || suffix == "PNG")  gType = 4; 
-    else if (suffix == "jpg" || suffix == "JPG" || suffix == "jpe" || suffix == "JPE")  gType = 5; 
-    else  {
-      cerr << "Warning:  Cannot deduce format from input files.  Using PNG format but leaving filenames unchanged." << endl; 
-      gType = 4;
-    }
-  }
-  sprintf(nameTemplate,gNameTemplate,work->frameNum);
-  switch(gType) {
+  switch(work->imageType) {
   case 0: {  // TIFF
     unsigned char *p;
-      tif = TIFFOpen(nameTemplate,"w");
+    tif = TIFFOpen(filename.c_str(),"w");
       if (tif) {
         // Header stuff 
 #ifdef Tru64
-        TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, (uint32)gBlocksize[0]);
-        TIFFSetField(tif, TIFFTAG_IMAGELENGTH, (uint32)gBlocksize[1]);
+        TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, (uint32)work->blockSize[0]);
+        TIFFSetField(tif, TIFFTAG_IMAGELENGTH, (uint32)work->blockSize[1]);
 #else
-        TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, (unsigned int)gBlocksize[0]);
-        TIFFSetField(tif, TIFFTAG_IMAGELENGTH, (unsigned int)gBlocksize[1]);
+        TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, (unsigned int)work->blockSize[0]);
+        TIFFSetField(tif, TIFFTAG_IMAGELENGTH, (unsigned int)work->blockSize[1]);
 #endif
         TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8);
         TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
         TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
         TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
         TIFFSetField(tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
-        TIFFSetField(tif, TIFFTAG_DOCUMENTNAME, nameTemplate);
+        TIFFSetField(tif, TIFFTAG_DOCUMENTNAME, filename.c_str());
         TIFFSetField(tif, TIFFTAG_IMAGEDESCRIPTION, "sm2img TIFF image");
         TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 3);
         TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, 1);
         TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
         
-        for(y=0;y<gBlocksize[1];y++) {
-          p = img + (gBlocksize[0]*3)*(gBlocksize[1]-y-1);
+        for(y=0;y<work->blockSize[1];y++) {
+          p = &img[0] + (work->blockSize[0]*3)*(work->blockSize[1]-y-1);
           TIFFWriteScanline(tif,p,y,0);
         }
         TIFFFlushData(tif);
@@ -513,41 +414,41 @@ void workproc(void *vp) {
     }
       break;
     case 1: {  // SGI
-      unsigned short   buf[8192];
-      libi = sgiOpen(nameTemplate,SGI_WRITE,SGI_COMP_RLE,1,
-                     gBlocksize[0],gBlocksize[1],3);
+      vector<unsigned short>   buf(work->blockSize[0]+1);
+      libi = sgiOpen((char*)filename.c_str(),SGI_WRITE,SGI_COMP_RLE,1,
+                     work->blockSize[0],work->blockSize[1],3);
       if (libi) {
-        for(y=0;y<gBlocksize[1];y++) {
+        for(y=0;y<work->blockSize[1];y++) {
           for(j=0;j<3;j++) {
-            for(x=0;x<gBlocksize[0];x++) {
-              buf[x]=img[(x+(y*gBlocksize[0]))*3+j];
+            for(x=0;x<work->blockSize[0];x++) {
+              buf[x]=img[(x+(y*work->blockSize[0]))*3+j];
             }
-            sgiPutRow(libi,buf,y,j);
+            sgiPutRow(libi,&buf[0],y,j);
           }
         }
-				    sgiClose(libi);
+        sgiClose(libi);
       }
     }
       break;
     case 2: {  // PNM
-      fp = pm_openw(nameTemplate);
+      fp = pm_openw((char*)filename.c_str());
       if (fp) {
         xel* xrow;
         xel* xp;
-        xrow = pnm_allocrow( gBlocksize[0] );
-        pnm_writepnminit( fp, gBlocksize[0], gBlocksize[1], 
+        xrow = pnm_allocrow( work->blockSize[0] );
+        pnm_writepnminit( fp, work->blockSize[0], work->blockSize[1], 
                           255, PPM_FORMAT, 0 );
-        for(y=gBlocksize[1]-1;y>=0;y--) {
+        for(y=work->blockSize[1]-1;y>=0;y--) {
           xp = xrow;
-          for(x=0;x<gBlocksize[0];x++) {
+          for(x=0;x<work->blockSize[0];x++) {
             int r1,g1,b1;
-            r1 = img[(x+(y*gBlocksize[0]))*3+0];
-            g1 = img[(x+(y*gBlocksize[0]))*3+1];
-            b1 = img[(x+(y*gBlocksize[0]))*3+2];
+            r1 = img[(x+(y*work->blockSize[0]))*3+0];
+            g1 = img[(x+(y*work->blockSize[0]))*3+1];
+            b1 = img[(x+(y*work->blockSize[0]))*3+2];
             PPM_ASSIGN( *xp, r1, g1, b1 );
             xp++;
           }
-          pnm_writepnmrow( fp, xrow, gBlocksize[0], 
+          pnm_writepnmrow( fp, xrow, work->blockSize[0], 
                            255, PPM_FORMAT, 0 );
         }
         pnm_freerow(xrow);
@@ -556,8 +457,8 @@ void workproc(void *vp) {
     }
       break;
     case 3: {  // YUV
-      int dx = gBlocksize[0] & 0xfffffe;
-      int dy = gBlocksize[1] & 0xfffffe;
+      int dx = work->blockSize[0] & 0xfffffe;
+      int dy = work->blockSize[1] & 0xfffffe;
       unsigned char *buf = (unsigned char *)malloc(
                                                    (unsigned int)(1.6*dx*dy));
       unsigned char *Ybuf = buf;
@@ -565,9 +466,9 @@ void workproc(void *vp) {
       unsigned char *Vbuf = Ubuf + (dx*dy)/4;
       
       /* convert RGB to YUV  */
-      unsigned char *p = img;
-      for(y=0;y<gBlocksize[1];y++) {
-        for(x=0;x<gBlocksize[0];x++) {
+      unsigned char *p = &img[0];
+      for(y=0;y<work->blockSize[1];y++) {
+        for(x=0;x<work->blockSize[0];x++) {
           float rd=p[0];
           float gd=p[1];
           float bd=p[2];
@@ -592,7 +493,7 @@ void workproc(void *vp) {
       /* pull apart into Y,U,V buffers */
       /* down-sample U/V */
       for(y=0;y<dy;y++) {
-        p = img + (gBlocksize[1]-y-1)*3*gBlocksize[0];
+        p = &img[0] + (work->blockSize[1]-y-1)*3*work->blockSize[0];
         for(x=0;x<dx;x++) {
           *Ybuf++ = *p++;
           if ((x&1) || (y&1)) {
@@ -605,24 +506,23 @@ void workproc(void *vp) {
       }
       
       /* write the 3 files */
-      char	yuvnametemplate[4096];
+      string yuvname = filename + ".Y"; 
       p = buf;
-      sprintf(yuvnametemplate,"%s.Y",nameTemplate);
-      fp = fopen(yuvnametemplate,"wb");
+      fp = fopen(yuvname.c_str(),"wb");
       if (fp) {
         fwrite(p,dx*dy,1,fp);
         fclose(fp);
       }
       p += dx*dy;
-      sprintf(yuvnametemplate,"%s.U",nameTemplate);
-      fp = fopen(yuvnametemplate,"wb");
+      yuvname = filename + ".U"; 
+      fp = fopen(yuvname.c_str(),"wb");
       if (fp) {
         fwrite(p,dx*dy/4,1,fp);
         fclose(fp);
       }
       p += dx*dy/4;
-      sprintf(yuvnametemplate,"%s.V",nameTemplate);
-      fp = fopen(yuvnametemplate,"wb");
+      yuvname = filename + ".V"; 
+      fp = fopen(yuvname.c_str(),"wb");
       if (fp) {
         fwrite(p,dx*dy/4,1,fp);
         fclose(fp);
@@ -632,15 +532,15 @@ void workproc(void *vp) {
     }
       break;
     case 4: {  // PNG
-      write_png_file(nameTemplate, img,gBlocksize);
+      write_png_file((char*)filename.c_str(), &img[0],work->blockSize);
     }
       break;
     case 5: {  // JPEG
-      write_jpeg_image(nameTemplate, img,gBlocksize,gQuality);
+      write_jpeg_image((char*)filename.c_str(), &img[0],work->blockSize,work->jqual);
     }
       break;
     }
-    /*if (gVerbosity) fprintf(stderr, "Thread %d done with frame %d)\n",
+    /*if (work->verbosity) fprintf(stderr, "Thread %d done with frame %d)\n",
                             threadnum, framenum); 
     */
   

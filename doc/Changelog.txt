@@ -2,11 +2,13 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.7.3d (r683) Fri Jul 20 16:21:34 PDT 2012
+VERSION 2.8.0 (r683) Fri Jul 20 16:21:34 PDT 2012
+-- Added metadata support to smtools and blockbuster. 
 -- Added LZMA compression option for movies.  
 -- Build is now more parallel.     
 -- Input and output files for sm2img and img2sm are now recognized by extension when possible, or defaults to PNG -- don't need -form argument for most cases.
 -- Improved unit tests
+-- Changed the way img2sm and sm2img parse arguments.
 
 ===============================================================================
 VERSION 2.7.3c (r683) Fri Jul 20 16:21:34 PDT 2012
