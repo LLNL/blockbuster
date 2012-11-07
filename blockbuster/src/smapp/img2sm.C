@@ -70,11 +70,18 @@ void errexit(string msg) {
   exit(1);
 }
 
+
 void errexit(TCLAP::CmdLine &cmd, string msg) {
   cerr << endl << "*** ERROR *** : " << msg  << endl<< endl;
   cmd.getOutput()->usage(cmd); 
   cerr << endl << "*** ERROR *** : " << msg << endl << endl;
   exit(1); 
+}
+
+/* applying a filename template to a number */ 
+string getFilename(string filenameTemplate, int num, bool useTemplate) {
+  if (useTemplate)  return str(boost::format(filenameTemplate)%num);
+  else return filenameTemplate;
 }
 
 
@@ -466,22 +473,26 @@ int main(int argc,char **argv)
   allowedformats.push_back("jpg"); allowedformats.push_back("JPG");  
   allowedformats.push_back("yuv"); allowedformats.push_back("YUV"); 
   TCLAP::ValuesConstraint<string> *allowed = new TCLAP::ValuesConstraint<string>(allowedformats); 
+  if (!allowed) 
+    errexit("Cannot create values constraint for formats\n"); 
   TCLAP::ValueArg<string>format("F", "Format", "Format of output files (use if name does not make this clear)", false, "default", allowed); 
   cmd.add(format); 
-  delete allowed; 
+  //delete allowed; 
 
-  allowedformats.clear(); 
-  allowedformats.push_back("gz"); allowedformats.push_back("GZ"); 
-  allowedformats.push_back("jpeg"); allowedformats.push_back("JPEG"); 
-  allowedformats.push_back("jpg"); allowedformats.push_back("JPG"); 
-  allowedformats.push_back("lzma"); allowedformats.push_back("LZMA"); 
-  allowedformats.push_back("lzo"); allowedformats.push_back("LZO"); 
-  allowedformats.push_back("raw"); allowedformats.push_back("RAW"); 
-  allowedformats.push_back("rle"); allowedformats.push_back("RLE"); 
-  allowed = new TCLAP::ValuesConstraint<string>(allowedformats); 
+  vector<string> allowedcompression; 
+  allowedcompression.push_back("gz"); allowedcompression.push_back("GZ"); 
+  allowedcompression.push_back("jpeg"); allowedcompression.push_back("JPEG"); 
+  allowedcompression.push_back("jpg"); allowedcompression.push_back("JPG"); 
+  allowedcompression.push_back("lzma"); allowedcompression.push_back("LZMA"); 
+  allowedcompression.push_back("lzo"); allowedcompression.push_back("LZO"); 
+  allowedcompression.push_back("raw"); allowedcompression.push_back("RAW"); 
+  allowedcompression.push_back("rle"); allowedcompression.push_back("RLE"); 
+  allowed = new TCLAP::ValuesConstraint<string>(allowedcompression); 
+  if (!allowed) 
+    errexit("Cannot create values constraint for compression\n"); 
   TCLAP::ValueArg<string>compression("c", "compression", "Compression to use on movie", false, "gz", allowed); 
   cmd.add(compression); 
-  delete allowed; 
+  //delete allowed; 
 
   TCLAP::SwitchArg noMetadata("N", "nometadata", "Do not include any metadata, even if -tag or other is given", cmd, false); 
 
@@ -629,13 +640,26 @@ int main(int argc,char **argv)
     errexit(str(boost::format("Invalid Step parameter (%1%)\n")%frameStep.getValue()));
   }
 
+  // see if we have a templated argument: 
+  string filename; 
+  bool haveTemplate = false; 
+
+
+  try {
+    filename = str(boost::format(nameTemplate.getValue())%0);
+    haveTemplate = true; 
+  } catch (...) {
+    smdbprintf(0,"Filename template has no format string for numbers; assuming a single file is meant\n");
+    haveTemplate = false; 
+    iStart = iEnd = 0; 
+  }
+
   // count the files...
   int i = 0;
   if (iStart < 0) {
     FILE *fp = NULL; 
-    string filename; 
     while (i < 10000) {
-      filename = str(boost::format(nameTemplate.getValue())%i);
+      filename = getFilename(nameTemplate.getValue(), i, haveTemplate); 
       fp = fopen(filename.c_str(),"r");
       if (fp) break;
       i += 1;
@@ -650,7 +674,7 @@ int main(int argc,char **argv)
     i = iStart + frameStep.getValue();
   }
   while (iEnd < 0) {
-    FILE *fp = fopen(str(boost::format(nameTemplate.getValue())%i).c_str(),"r");
+    FILE *fp = fopen(getFilename(nameTemplate.getValue(), i, haveTemplate).c_str(),"r");
     if (fp) {
       fclose(fp);
       i += frameStep.getValue();
@@ -660,26 +684,26 @@ int main(int argc,char **argv)
   }
 
   // Check the file type
-  string filename = str(boost::format(nameTemplate.getValue())%iStart);
+  filename = getFilename(nameTemplate.getValue(), iStart, haveTemplate); 
   TIFFErrorHandler prev = TIFFSetErrorHandler(NULL); // suppress error messages
   if (imageType == -1) {
     if ((tiff = TIFFOpen((char*)filename.c_str(),"r"))!=0) {
       TIFFSetErrorHandler(prev); //restore diagnostics -- we want them now. 
-      if (iVerb) fprintf(stderr,"TIFF input format detected\n");
+      smdbprintf(1,"TIFF input format detected\n");
       imageType = 0;
       TIFFClose(tiff);
     } else if (libi = sgiOpen((char*)filename.c_str(),SGI_READ,0,0,0,0,0)) {
-      if (iVerb) fprintf(stderr,"SGI input format detected\n");
+      smdbprintf(1,"SGI input format detected\n");
       imageType = 1;
       sgiClose(libi);
     } else if (check_if_png((char*)filename.c_str(),NULL)) { 
-      if (iVerb) fprintf(stderr,"PNG input format detected\n");
+      smdbprintf(1,"PNG input format detected\n");
       imageType = 4; /* PNG */
     } else if (check_if_jpeg((char*)filename.c_str(),NULL)) { 
-      if (iVerb) fprintf(stderr,"JPEG input format detected\n");
+      smdbprintf(1,"JPEG input format detected\n");
       imageType = 5; /* JPEG */
     } else {
-      if (iVerb) fprintf(stderr,"Assuming PNG format\n");
+      smdbprintf(1,"Assuming PNG format\n");
       imageType = 4;
     }
   }
@@ -818,7 +842,7 @@ int main(int argc,char **argv)
     CHECK(wrk);
 
     // Get the filename
-    wrk->filename = str(boost::format(nameTemplate.getValue())%i); 
+    wrk->filename = getFilename(nameTemplate.getValue(), i, haveTemplate);
     wrk->filetype = imageType; 
     // Compress and save (in parallel)
     wrk->Dims = iInDims;
