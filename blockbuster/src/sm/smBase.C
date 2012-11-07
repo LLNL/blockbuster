@@ -195,18 +195,18 @@ bool SM_MetaData::Write(int lfd) {
   
   uint64_t MAGIC = METADATA_MAGIC; 
   SwapAndWrite(lfd, &MAGIC, 1, needswap);
-  filepos = LSEEK64(lfd,0,SEEK_CUR); 
+  filepos = LSEEK64(lfd,0,SEEK_SET); 
   smdbprintf(5, "SM_MetaData::Write() exiting at pos %d\n", filepos ); 
   return true;
 }
 
 ///==========================================================================
-bool SM_MetaData::Read(int lfd) {
+off64_t SM_MetaData::Read(int lfd) {
   if (sizeof(double) != 8) {
     smdbprintf(0, "FIXME!  Error!  Cannot properly read metadata object since a double is not 8 bytes!\n"); 
-    return false; 
+    return 0; 
   } 
-  off64_t filepos = LSEEK64(lfd,0,SEEK_CUR); 
+  off64_t filepos = LSEEK64(lfd,0,SEEK_CUR), startpos = 0; 
   smdbprintf(5, "SM_MetaData::Read() at pos %d\n", filepos); 
   uint32_t endianTest = 500; 
   bool needswap = (ntohl(endianTest) != endianTest); 
@@ -219,10 +219,8 @@ bool SM_MetaData::Read(int lfd) {
   filepos = LSEEK64(lfd,-headerLength,SEEK_CUR); // to beginning of header, at payload length
   smdbprintf(5, "seeked to beginning of header at pos %d\n", filepos); 
   off64_t headerpos = filepos; 
-  
-  
-  filepos += ReadAndSwap(lfd, &payloadLength, 1, needswap);
-  
+    
+  filepos += ReadAndSwap(lfd, &payloadLength, 1, needswap);  
 
   filepos += READ(lfd, namebuf, 1014);
   namebuf[1013] = 0; // be safe
@@ -231,12 +229,13 @@ bool SM_MetaData::Read(int lfd) {
   filepos += ReadAndSwap(lfd, &mdmagic, 1, needswap);
   if (mdmagic != METADATA_MAGIC) {
     smdbprintf(1, "Found bad magic %ld at pos %d (expected %ld)\n", mdmagic, filepos-8, METADATA_MAGIC); 
-    return false; 
+    return 0; 
   }
   
   // we need the payload now, so have to seek backwards -- the price to pay for a "linked list" approach for metadata
   smdbprintf(5, "payloadLength is %ld, headerLength is %ld, so have to seek backwards %ld \n", payloadLength, headerLength, payloadLength+headerLength); 
-  filepos = LSEEK64(lfd,-(payloadLength + headerLength + 8),SEEK_CUR);
+  filepos =  LSEEK64(lfd,-(payloadLength + headerLength + 8),SEEK_CUR);
+  startpos = filepos; 
 
   ReadAndSwap(lfd, &mType, 1, needswap);
   smdbprintf(5, "read payload type %lu at pos %d\n", mType, filepos); 
@@ -258,11 +257,12 @@ bool SM_MetaData::Read(int lfd) {
   else if (mType == METADATA_TYPE_INT64) {
     ReadAndSwap(lfd, &mInt64,  1, needswap);    
   }
-   
-  filepos = LSEEK64(lfd,0,SEEK_CUR); 
+  
+  
+  filepos = LSEEK64(lfd,startpos,SEEK_SET); 
   smdbprintf(5, "exiting at pos %d\n", filepos); 
   smdbprintf(5, "Metadata found: %s.\n", toString().c_str());  
-  return true; 
+  return startpos; 
 }
 
 

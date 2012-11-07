@@ -175,7 +175,7 @@ struct SM_MetaData {
   SM_MetaData(string tag, int64_t i): mName(tag), mType(METADATA_TYPE_INT64), mInt64(i) {}
   SM_MetaData(string tag, double d): mName(tag), mType(METADATA_TYPE_DOUBLE), mDouble(d) {}
 
-  bool Read(int filedescr); // read backward from current point in file, leave file ready for another read
+  off64_t Read(int filedescr); // read backward from current point in file, leave file ready for another read
   bool Write(int filedescr); 
   string toString(void) ; 
 };

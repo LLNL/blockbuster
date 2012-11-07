@@ -10,14 +10,14 @@
 ** Livermore, CA 94551-0808
 **
 ** For information about this project see:
-** 	http://www.llnl.gov/sccd/lc/img/
+**  http://www.llnl.gov/sccd/lc/img/
 **
 **      or contact: asciviz@llnl.gov
 **
 ** For copyright and disclaimer information see:
 **      $(ASCIVIS_ROOT)/copyright_notice_1.txt
 **
-** 	or man llnl_copyright
+**  or man llnl_copyright
 **
 ** $Id: img2sm.C,v 1.3 2008/07/08 02:43:20 dbremer Exp $
 **
@@ -48,11 +48,14 @@
 #include "zlib.h"
 #include "pngsimple.h"
 
-
 #include "libimage/sgilib.h"
 #include "../libpnmrw/libpnmrw.h"
 #include "simple_jpeg.h"
 #include "../config/version.h"
+#include <tclap_utils.h>
+#include <boost/format.hpp>
+#include <boost/tokenizer.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "pt/pt.h"
 #define int32 int32hack
@@ -61,6 +64,20 @@ extern "C" {
 #include <tiffio.h>
 }
 #undef int32
+
+void errexit(string msg) {
+  cerr << "ERROR: "  << msg << endl; 
+  exit(1);
+}
+
+void errexit(TCLAP::CmdLine &cmd, string msg) {
+  cerr << endl << "*** ERROR *** : " << msg  << endl<< endl;
+  cmd.getOutput()->usage(cmd); 
+  cerr << endl << "*** ERROR *** : " << msg << endl << endl;
+  exit(1); 
+}
+
+
 // Prototypes 
 int rotate_img(unsigned char *img,int dx,int dy,float rot);
 void rotate_dims(float rot,int *dx,int *dy);
@@ -71,27 +88,28 @@ int check_if_png(char *file_name,int *size);
 int read_png_image(char *file_name,int *iSize,unsigned char *buf);
 
 struct Work {
-  char filename[2048];
+  string filename;
   smBase *sm;
   int frame;
   int filetype; 
   u_char *buffer; // allocate externally to permit copyless buffering
   int iFlipx;
   int iFlipy;
-  int *iInDims;
-  float	fRot;
+  vector<int> Dims;
+  vector<int> Size; 
+  bool planar; 
+  float rotation;
 };
 
 // GLOBALS FOR NOW
 //unsigned char *gInputBuf = NULL; 
-int	iInDims[4];
-unsigned short	bitsPerSample, tiffPhoto;
-int	iMin = -1;
-int	iMax = -1;
-int	iSize[4] = {-1,-1,0,0};
-int	iVerb = 0;
-int	iPlanar = 0;
-//unsigned short	*rowbuf = NULL;
+unsigned short  bitsPerSample, tiffPhoto;
+int iMin = -1;
+int iMax = -1;
+//int   iSize[4] = {-1,-1,0,0};
+int iVerb = 0;
+//int   iPlanar = 0;
+//unsigned short    *rowbuf = NULL;
 
 
 #ifdef DMALLOC
@@ -103,7 +121,7 @@ int	iPlanar = 0;
 if(v == NULL) \
 img2sm_fail_check(__FILE__,__LINE__)
 
-void img2sm_fail_check(char *file,int line)
+void img2sm_fail_check(const char *file,int line)
 {
   perror("fail_check");
   fprintf(stderr,"Failed at line %d in file %s\n",line,file);
@@ -133,34 +151,11 @@ void cmdline(char *app)
           basename(app), BLOCKBUSTER_VERSION, basename(app));
   fprintf(stderr, "  Example template for 4-digits in a filename:  filename%04d.sm Also see -ignore option to specify a single file.\n"); 
   fprintf(stderr,"Options:\n");
-  fprintf(stderr,"\t-rle Selects RLE compression\n");
-  fprintf(stderr,"\t-gz Selects gzip compression\n");
-  fprintf(stderr,"\t-lzma Selects LZMA (XZ) compression\n");
-  fprintf(stderr,"\t-lzo Selects LZO compression\n");
-  fprintf(stderr,"\t-jpg Selects JPG compression\n");
   fprintf(stderr,"\t-jqual [qual] Selects JPG quality (default:75)\n");
   fprintf(stderr,"\t-minmax [min] [max]  16bit TIFF min and max values (default: from file)\n");
-  fprintf(stderr,"\t-flipx Flip the image over the x axis\n");
-  fprintf(stderr,"\t-flipy Flip the image over the y axis\n");
   fprintf(stderr,"\t-rotate [ang] Angle to rotate source (0,90,180,270) (default:0)\n");
-  fprintf(stderr,"\t-size [width height depth header] Select raw img dims\n");
-  fprintf(stderr,"\t-first [first] First image number.  Default is search from 0.\n");
-  fprintf(stderr,"\t-last [last] Last image number. Default is to search.\n");
-  fprintf(stderr,"\t-step [step] Image number step.  Default is 1.\n");
-  fprintf(stderr,"\t-fps [fps] Set preferred frame rate.  Default is 30, max is 50.  (-FPS is deprecated) \n");
+   fprintf(stderr,"\t-size [width height depth header] Select raw img dims\n");
   fprintf(stderr,"\t-buffersize [nt] Number of frames to buffer.  Default is 200.  Using lower values saves memory but may decrease performance, and vice versa.\n");
-  fprintf(stderr,"\t-threads [nt] Number of threads to use. Default is 1.\n");
-  fprintf(stderr,"\t-title 'quoted string' Store the given title in the movie metadata.\n");
-  fprintf(stderr,"\t-author 'quoted string' Store the given author in the movie metadata.\n");
-  fprintf(stderr,"\t-description 'quoted string' Store the given description in the movie metadata.\n");
-  fprintf(stderr,"\t-date 'quoted string' Store the given date in the movie metadata.\n");
-  fprintf(stderr,"\t-nometadata Do not store any metadata. \n");
-  fprintf(stderr,"\t-mipmaps [n] Number of mipmap levels. Default is 1.\n");
-  fprintf(stderr,"\t-v Verbose mode (same as -verbose 1).\n");
-  fprintf(stderr,"\t-verbose n Sets verbose level to n.\n");
-  fprintf(stderr,"\t-stereo Specify the output file is L/R stereo.\n");
-  fprintf(stderr,"\t-form [\"tiff\"|\"raw\"|\"sgi\"|\"pnm\"|\"png\"|\"jpg\"] Selects the input file format\n");
-  fprintf(stderr,"\t-planar Raw img is planar interleaved (default: pixel interleave).\n");
   fprintf(stderr,"\t-tilesizes Specify tile sizes per mipmap level. Comma separated.  Non-square tiles can be given as e.g. 128x512. A single value would apply to all mipmaps (default: 512).\n");
   fprintf(stderr,"\t-ignore Allows invalid templates.\n");
   exit(1);
@@ -169,9 +164,9 @@ void cmdline(char *app)
 //=================================================
 void FillInputBuffer(Work *wrk) {
   
-  FILE		*fp = NULL;
-  TIFF		*tiff = NULL;
-  sgi_t		*libi = NULL;
+  FILE      *fp = NULL;
+  TIFF      *tiff = NULL;
+  sgi_t     *libi = NULL;
   
   // read the file...
   switch(wrk->filetype) {
@@ -179,15 +174,15 @@ void FillInputBuffer(Work *wrk) {
     {
       uint32 *temp;
       unsigned int w, h;
-      tiff = TIFFOpen(wrk->filename,"r");
+      tiff = TIFFOpen(wrk->filename.c_str(),"r");
       if (!tiff) {
-        fprintf(stderr,"Error: Unable to open TIFF: %s\n",wrk->filename);
+        fprintf(stderr,"Error: Unable to open TIFF: %s\n",wrk->filename.c_str());
         exit(1);
       }
       TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH, &w);
       TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, &h);
-      if ((w != iInDims[0]) || (h != iInDims[1])) {
-        fprintf(stderr,"Error: image size changed: %s\n",wrk->filename);
+      if ((w != wrk->Dims[0]) || (h != wrk->Dims[1])) {
+        fprintf(stderr,"Error: image size changed: %s\n",wrk->filename.c_str());
         exit(1);
       }
       
@@ -204,23 +199,23 @@ void FillInputBuffer(Work *wrk) {
                                 TIFFTAG_MAXSAMPLEVALUE, &tt);
           iMax = tt;
         }
-        temp = (uint32 *)malloc(iInDims[0]*iSize[2]*2);
+        temp = (uint32 *)malloc(wrk->Dims[0]*wrk->Size[2]*2);
         CHECK(temp);
         unsigned short *ss = (unsigned short *)temp;
         int x,y;
         float mult = 255.0/(float)(iMax-iMin);
-        unsigned char	*p = wrk->buffer;
+        unsigned char   *p = wrk->buffer;
         unsigned int mm[2] = {200000,0};
-        for(y=0;y<iInDims[1];y++) {
+        for(y=0;y<wrk->Dims[1];y++) {
           TIFFReadScanline(tiff,(unsigned char *)ss,y,0);
-          for(x=0;x<iInDims[0]*iSize[2];x++) {
+          for(x=0;x<wrk->Dims[0]*wrk->Size[2];x++) {
             if (ss[x] < mm[0]) mm[0] = ss[x];
             if (ss[x] > mm[1]) mm[1] = ss[x];
             if (ss[x] < iMin) ss[x] = iMin;
             if (ss[x] > iMax) ss[x] = iMax;
           }
-          for(x=0;x<iInDims[0];x++) {
-            if (iSize[2] == 1) {
+          for(x=0;x<wrk->Dims[0];x++) {
+            if (wrk->Size[2] == 1) {
               unsigned char tt=(unsigned char)((ss[x]-iMin)*mult);
               if (tiffPhoto==PHOTOMETRIC_MINISWHITE) {
                 tt=255-tt;
@@ -239,10 +234,10 @@ void FillInputBuffer(Work *wrk) {
           printf("Image min,max=%d %d\n",mm[0],mm[1]);
         }
       } else {
-        temp = (uint32 *)malloc(iInDims[0]*iInDims[1]*4);  // Caution deferred free under IRIX
+        temp = (uint32 *)malloc(wrk->Dims[0]*wrk->Dims[1]*4);  // Caution deferred free under IRIX
         CHECK(temp);
         TIFFReadRGBAImage(tiff,w,h,temp,0);
-        unsigned char	*p = wrk->buffer;
+        unsigned char   *p = wrk->buffer;
         for(int x=0;x<w*h;x++) {
           *p++ = TIFFGetR(temp[x]);
           *p++ = TIFFGetG(temp[x]);
@@ -256,93 +251,93 @@ void FillInputBuffer(Work *wrk) {
     break;
   case 1: // SGI
     {
-      unsigned char	*p = wrk->buffer;
-      unsigned short *rowbuf = new unsigned short[iInDims[0]];
+      unsigned char *p = wrk->buffer;
+      unsigned short *rowbuf = new unsigned short[wrk->Dims[0]];
       CHECK(rowbuf);
-      libi = sgiOpen(wrk->filename,SGI_READ,0,0,0,0,0);
+      libi = sgiOpen((char*)wrk->filename.c_str(),SGI_READ,0,0,0,0,0);
       if (!libi) {
-        fprintf(stderr,"Error: Unable to open SGI: %s\n",wrk->filename);
+        fprintf(stderr,"Error: Unable to open SGI: %s\n",wrk->filename.c_str());
         exit(1);
       }
-      if ((libi->xsize != iInDims[0]) || 
-          (libi->ysize != iInDims[1])) {
-        fprintf(stderr,"Error: image size changed: %s\n",wrk->filename);
+      if ((libi->xsize != wrk->Dims[0]) || 
+          (libi->ysize != wrk->Dims[1])) {
+        fprintf(stderr,"Error: image size changed: %s\n",wrk->filename.c_str());
         exit(1);
       }
-      for(unsigned int y=0;y<iInDims[1];y++) {
-        int	x;
-        if (iSize[2] >= 3) {
+      for(unsigned int y=0;y<wrk->Dims[1];y++) {
+        int x;
+        if (wrk->Size[2] >= 3) {
           sgiGetRow(libi,rowbuf,y,0);
-          for(x=0;x<iInDims[0];x++) {
+          for(x=0;x<wrk->Dims[0];x++) {
             p[x*3+0] = rowbuf[x];
           }
           sgiGetRow(libi,rowbuf,y,1);
-          for(x=0;x<iInDims[0];x++) {
+          for(x=0;x<wrk->Dims[0];x++) {
             p[x*3+1] = rowbuf[x];
           }
           sgiGetRow(libi,rowbuf,y,2);
-          for(x=0;x<iInDims[0];x++) {
+          for(x=0;x<wrk->Dims[0];x++) {
             p[x*3+2] = rowbuf[x];
           }
         } else {
           sgiGetRow(libi,rowbuf,y,0);
-          for(x=0;x<iInDims[0];x++) {
+          for(x=0;x<wrk->Dims[0];x++) {
             p[x*3+0] = rowbuf[x];
             p[x*3+1] = rowbuf[x];
             p[x*3+2] = rowbuf[x];
           }
         }
-        p += 3*iInDims[0];
+        p += 3*wrk->Dims[0];
       }
       sgiClose(libi);
       delete rowbuf; 
     }
     break;
-  case 2: // RAW
+  case 2: // raw apparently means GZ for this!  
     {
-      unsigned char	*p = wrk->buffer;
+      unsigned char *p = wrk->buffer;
       
-      gzFile	fpz;
-      fpz = gzopen(wrk->filename,"r");
+      gzFile    fpz;
+      fpz = gzopen(wrk->filename.c_str(),"r");
       if (!fpz) {
-        fprintf(stderr,"Error: Unable to open RAW compressed: %s\n",wrk->filename);
+        fprintf(stderr,"Error: Unable to open RAW compressed: %s\n",wrk->filename.c_str());
         exit(1);
       }
       // Header
-      if (iSize[3]) {
-        void *b = malloc(iSize[3]);
+      if (wrk->Size[3]) {  // I don't believe this ever happens
+        void *b = malloc(wrk->Size[3]);
         CHECK(b);
-        gzread(fpz,b,iSize[3]);
+        gzread(fpz,b,wrk->Size[3]);
         free(b);
       }
       // Scan lines
-      if (iPlanar && (iSize[2] == 3)) {
-        char *b = (char *)malloc(iInDims[0]*iInDims[1]*3);
+      if (wrk->planar && (wrk->Size[2] == 3)) {
+        char *b = (char *)malloc(wrk->Dims[0]*wrk->Dims[1]*3);
         CHECK(b);
         char *p0 = b;
-        char *p1 = p0 + iInDims[0]*iInDims[1];
-        char *p2 = p1 + iInDims[0]*iInDims[1];
-        gzread(fpz,b,iInDims[0]*iInDims[1]*3);
-        for(int x=0;x<iInDims[0]*iInDims[1];x++) {
+        char *p1 = p0 + wrk->Dims[0]*wrk->Dims[1];
+        char *p2 = p1 + wrk->Dims[0]*wrk->Dims[1];
+        gzread(fpz,b,wrk->Dims[0]*wrk->Dims[1]*3);
+        for(int x=0;x<wrk->Dims[0]*wrk->Dims[1];x++) {
           *p++ = *p0++;
           *p++ = *p1++;
           *p++ = *p2++;
         }
         free(b); 
       } else {
-        for(unsigned int y=0;y<iInDims[1];y++) {
+        for(unsigned int y=0;y<wrk->Dims[1];y++) {
           int  x;
-          if (iSize[2] == 3) {
-            gzread(fpz,p,iInDims[0]*3);
+          if (wrk->Size[2] == 3) {
+            gzread(fpz,p,wrk->Dims[0]*3);
           } else {
-            gzread(fpz,p,iInDims[0]);
-            for(x=iInDims[0]-1;x>=0;x--) {
+            gzread(fpz,p,wrk->Dims[0]);
+            for(x=wrk->Dims[0]-1;x>=0;x--) {
               p[x*3+2] = p[x];
               p[x*3+1] = p[x];
               p[x*3+0] = p[x];
             }
           }
-          p += 3*iInDims[0];
+          p += 3*wrk->Dims[0];
         }
       }
       // done
@@ -351,24 +346,24 @@ void FillInputBuffer(Work *wrk) {
     break;
   case 3: // PNM
     {  
-      int 	dx,dy,fmt,f;
-      xelval	value;
+      int   dx,dy,fmt,f;
+      xelval    value;
       
-      unsigned char	*p = wrk->buffer;
+      unsigned char *p = wrk->buffer;
       
-      fp = pm_openr(wrk->filename);
+      fp = pm_openr((char*)wrk->filename.c_str());
       if (!fp) {
-        fprintf(stderr,"Unable to open the file: %s\n",wrk->filename);
+        fprintf(stderr,"Unable to open the file: %s\n",wrk->filename.c_str());
         exit(1);
       }
       if (pnm_readpnminit(fp, &dx,&dy,&value,&fmt) == -1) {
-        fprintf(stderr,"The file is not in PNM format: %s.\n",wrk->filename);
+        fprintf(stderr,"The file is not in PNM format: %s.\n",wrk->filename.c_str());
         pm_closer(fp);
         exit(1);
       }
-      if ((dx != iInDims[0]) || 
-          (dy != iInDims[1])) {
-        fprintf(stderr,"Error: image size changed: %s\n",wrk->filename);
+      if ((dx != wrk->Dims[0]) || 
+          (dy != wrk->Dims[1])) {
+        fprintf(stderr,"Error: image size changed: %s\n",wrk->filename.c_str());
         pm_closer(fp);
         exit(1);
       }
@@ -378,19 +373,19 @@ void FillInputBuffer(Work *wrk) {
       } else if(PNM_FORMAT_TYPE(fmt) == PGM_TYPE) {
         f = 1;
       } else {
-        fprintf(stderr,"Error: file type not supported:%s\n",wrk->filename);
+        fprintf(stderr,"Error: file type not supported:%s\n",wrk->filename.c_str());
         pm_closer(fp);
         exit(1);
       }
-      if (f != iSize[2]) {
-        fprintf(stderr,"Error: file type changed:%s\n",wrk->filename);
+      if (f != wrk->Size[2]) {
+        fprintf(stderr,"Error: file type changed:%s\n",wrk->filename.c_str());
         pm_closer(fp);
         exit(1);
       }
       
-      xel*	xrow;
-      xel*	xp;
-      int	rp,gp,bp;
+      xel*  xrow;
+      xel*  xp;
+      int   rp,gp,bp;
       
 #define NORM(x,mx) ((float)(x)/(float)(mx))*255.0
       
@@ -398,7 +393,7 @@ void FillInputBuffer(Work *wrk) {
       for(int y=0;y<dy;y++) {
         p = wrk->buffer + (dy-y-1)*dx*3;
         pnm_readpnmrow( fp, xrow, dx, value, fmt );
-        if (iSize[2] == 3) {
+        if (wrk->Size[2] == 3) {
           xp = xrow;
           for(int x=0;x<dx;x++) {
             rp = (int)(NORM(PPM_GETR(*xp),value));
@@ -426,339 +421,273 @@ void FillInputBuffer(Work *wrk) {
     }
     break;
   case 4: // PNG
-    if (!read_png_image(wrk->filename,iInDims,wrk->buffer)) {
-      fprintf(stderr,"Unable to read PNG file: %s\n",wrk->filename);
+    if (!read_png_image((char*)wrk->filename.c_str(),&wrk->Dims[0],wrk->buffer)) {
+      fprintf(stderr,"Unable to read PNG file: %s\n",wrk->filename.c_str());
       exit(1);
     }
     break;
   case 5: // JPEG
-    if (!read_jpeg_image(wrk->filename,iInDims,wrk->buffer)) {
-      fprintf(stderr,"Unable to read JPEG file: %s\n",wrk->filename);
+    if (!read_jpeg_image((char*)wrk->filename.c_str(),&wrk->Dims[0],wrk->buffer)) {
+      fprintf(stderr,"Unable to read JPEG file: %s\n",wrk->filename.c_str());
       exit(1);
     }
-    break;
+    break; 
   }
   return; 
 } // end FillInputBuffer()
 
 int main(int argc,char **argv)
 {
-  int	iRLE = 0;
-  int	iType = -1;
-  char		*sTemplate = NULL;
-  char		*sOutput = NULL;
-  int	iFlipx = 0;
-  int	iFlipy = 0;
-  int	iStereo = 0;
-  int	iQual = 75;
-  int	iIgnore = 0;
-  float		fFPS = 30.0;
-  float		fRotate = 0.0;
-  int           bufferSize = 100;
-  int           nThreads = 1;
-  int		nRes = 1;
+  TCLAP::CmdLine  cmd(str(boost::format("%1% converts a set of images into a streaming movie, optionally setting movie meta data. ")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
+  
+  TCLAP::ValueArg<int> firstFrame("f", "first", "First frame number",false, -1, "integer", cmd);   
+  TCLAP::ValueArg<int> lastFrame("l", "last", "Last frame number",false, -1, "integer", cmd); 
+  TCLAP::ValueArg<int> frameStep("s", "step", "Frame step size",false, 1, "integer", cmd); 
 
-  int	iStart=-1,iEnd=-1,iStep=1;
-  int	i,count;
-  FILE		*fp = NULL;
-  char		filename[1024],filename2[1024];
-  char          tsizestr[1024] = "512";
-  unsigned int  tsizes[8][2];
-  int tiled = 1;
-  //unsigned char	*inputBuf = NULL;
-  smBase 		*sm = NULL;
-  bool noMetadata = false; 
-  TIFF		*tiff = NULL;
-  sgi_t		*libi = NULL;
+  TCLAP::ValueArg<int> buffersize("", "buffersize", "Number of frames to buffer.  Default is 200.  Using lower values saves memory but may decrease performance, and vice versa.",false, 200, "integer", cmd); 
+  TCLAP::ValueArg<int> mipmaps("m", "mipmaps", "Number of mipmaps (levels of detail) to create",false, 1, "integer", cmd); 
+  TCLAP::ValueArg<string> tilesizes("", "tilesizes", "Size of tiles in movie", false, "512", "M for square tiles, MxN for rectangular tiles", cmd); 
+
+  TCLAP::ValueArg<float> rotate("", "rotate", " Set rotation of image. ",false, 0, "0,30,60 or 90", cmd); 
+  TCLAP::ValueArg<float> frameRate("r", "framerate", " Set preferred frame rate.  Default is 30, max is 50.",false, 30, "float", cmd); 
+
+  TCLAP::ValueArg<int> quality("q", "quality", "Jpeg compression quality, from 0-100",false, 75, "integer", cmd); 
+  TCLAP::ValueArg<int> threads("t", "threads", "Number of threads to use",false, 4, "integer", cmd); 
+  
+  TCLAP::ValueArg<VectFromString<int> > region("R", "Region", "Image pixel subregion to extract",false, VectFromString<int>(), "'Xoffset Yoffset Xsize Ysize'"); 
+  region.getValue().expectedElems = 4; 
+  cmd.add(region);
+
+  vector<string> allowedformats; 
+  allowedformats.push_back("tiff"); allowedformats.push_back("TIFF"); 
+  allowedformats.push_back("sgi"); allowedformats.push_back("SGI");  
+  allowedformats.push_back("pnm"); allowedformats.push_back("PNM");  
+  allowedformats.push_back("png"); allowedformats.push_back("PNG");  
+  allowedformats.push_back("jpg"); allowedformats.push_back("JPG");  
+  allowedformats.push_back("yuv"); allowedformats.push_back("YUV"); 
+  TCLAP::ValuesConstraint<string> *allowed = new TCLAP::ValuesConstraint<string>(allowedformats); 
+  TCLAP::ValueArg<string>format("F", "Format", "Format of output files (use if name does not make this clear)", false, "default", allowed); 
+  cmd.add(format); 
+  delete allowed; 
+
+  allowedformats.clear(); 
+  allowedformats.push_back("gz"); allowedformats.push_back("GZ"); 
+  allowedformats.push_back("jpeg"); allowedformats.push_back("JPEG"); 
+  allowedformats.push_back("jpg"); allowedformats.push_back("JPG"); 
+  allowedformats.push_back("lzma"); allowedformats.push_back("LZMA"); 
+  allowedformats.push_back("lzo"); allowedformats.push_back("LZO"); 
+  allowedformats.push_back("raw"); allowedformats.push_back("RAW"); 
+  allowedformats.push_back("rle"); allowedformats.push_back("RLE"); 
+  allowed = new TCLAP::ValuesConstraint<string>(allowedformats); 
+  TCLAP::ValueArg<string>compression("c", "compression", "Compression to use on movie", false, "gz", allowed); 
+  cmd.add(compression); 
+  delete allowed; 
+
+  TCLAP::SwitchArg noMetadata("N", "nometadata", "Do not include any metadata, even if -tag or other is given", cmd, false); 
+
+  TCLAP::ValueArg<VectFromString<string> > Tag("", "Tag", "Store given string in given tag", false, VectFromString<string>(), "space delimited, quoted 'tagname value'"); 
+  Tag.getValue().expectedElems = 2; 
+  cmd.add(Tag); 
+
+  TCLAP::ValueArg<string>Description("", "Description", "Store given string in 'Description' tag", false, "", "quoted descriptive text", cmd); 
+  TCLAP::ValueArg<string>Author("", "Author", "Store given string in 'Author' tag", false, "", "quoted author name", cmd); 
+  TCLAP::ValueArg<string>Date("", "Date", "Store given string in 'Date' tag", false, "", "quoted date", cmd); 
+  TCLAP::ValueArg<string>Title("", "Title", "Store given string in 'Title' tag", false, "", "quoted title", cmd); 
+
+  TCLAP::SwitchArg planar("p", "planar", "Raw img is planar interleaved (default: pixel interleave)", cmd, false); 
+  TCLAP::SwitchArg flipx("X", "flipx", "Flip the image over the X axis", cmd, false); 
+  TCLAP::SwitchArg flipy("Y", "flipy", "Flip the image over the Y axis", cmd, false); 
+
+  TCLAP::ValueArg<VectFromString<int32_t> > size("", "size", "Specify raw img dims", false, VectFromString<int32_t>(), "space delimited, quoted 'width height depth header'"); 
+  size.getValue().expectedElems = 4; 
+  cmd.add(size); 
+
+  TCLAP::SwitchArg stereo("S", "Stereo", "Specify the output file is L/R stereo.", cmd, false); 
+
+  TCLAP::SwitchArg verbose("v", "verbose", "Sets verbosity to level 1", cmd, false); 
+  TCLAP::ValueArg<int> verbosity("V", "Verbosity", "Verbosity level",false, 0, "integer", cmd);   
+
+  TCLAP::UnlabeledValueArg<string> nameTemplate("infiles", "A C-style string containing %d notation for specifying multiple movie frame files.  For a single frame, need not use %d notation", true, "", "input filename template"); 
+  cmd.add(nameTemplate);
+
+  TCLAP::UnlabeledValueArg<string> moviename("moviename", "Name of the movie to create",true, "changeme", "output movie name"); 
+  cmd.add(moviename); 
+
+  try {
+    cmd.parse(argc, argv);
+  } catch(std::exception &e) {
+    std::cout << e.what() << std::endl;
+    return 1;
+  }
+
+  int imageType = -1;
+  string suffix = format.getValue();
+  if (suffix == "default") {
+    string::size_type idx = nameTemplate.getValue().rfind('.'); 
+    if (idx == string::npos) {
+      cerr << "Error:  Cannot find a file type suffix in your output template.  Please use -form to tell me what to do if you're not going to give a suffix." << endl; 
+      exit(1); 
+    }
+    suffix = nameTemplate.getValue().substr(idx+1,3); 
+  } 
+  if (suffix == "tif" || suffix == "TIF")  imageType = 0; 
+  else if (suffix == "sgi" || suffix == "SGI")  imageType = 1; 
+  else if (suffix == "pnm" || suffix == "PNM")  imageType = 2; 
+  else if (suffix == "yuv" || suffix == "YUV")  imageType = 3; 
+  else if (suffix == "png" || suffix == "PNG")  imageType = 4; 
+  else if (suffix == "jpg" || suffix == "JPG" || 
+           suffix == "jpe" || suffix == "JPE")  imageType = 5; 
+  else  {
+    cerr << "Warning:  Cannot deduce format from input files.  Using PNG format but leaving filenames unchanged." << endl; 
+    imageType = 4;
+  }
+
+  
+  if ((rotate.getValue() != 0) && (rotate.getValue() != 90) && 
+      (rotate.getValue() != 180) && (rotate.getValue() != 270)) {
+    errexit(cmd, str(boost::format("Invalid rotation: %1%.  Only 0,90,180,270 allowed.\n")% rotate.getValue()));
+  }
+
+  sm_setVerbose(verbose.getValue()?1:verbosity.getValue());  
+
+  if (mipmaps.getValue() < 1 || mipmaps.getValue() > 8) {
+    errexit(cmd, str(boost::format("Invalid mipmap level: %1%.  Must be from 1 to 8.\n")% mipmaps.getValue()));
+  }
+    
+  
+  //  char      *sTemplate = NULL;
+  //  char      *sOutput = NULL;
+  //int iIgnore = 0;
+  // int           bufferSize = 100;
+
+  int   iStart=firstFrame.getValue(),
+    iEnd=lastFrame.getValue();
+  if ((iStart > iEnd && frameStep.getValue() > 0) ||
+      (iStart < iEnd && frameStep.getValue() < 0)) {
+    int tmp = iEnd; 
+    iEnd = iStart; 
+    iStart = tmp; 
+  }
+
+  TIFF      *tiff = NULL;
+  sgi_t     *libi = NULL;
   unsigned short spp;
 
-  string title, author, date, description; 
-
-  /* parse the command line ... */
-  i = 1;
-  while ((i<argc) && (argv[i][0] == '-')) {
-    if (strcmp(argv[i],"-rle")==0) {
-      iRLE = 1;
-    } else if (strcmp(argv[i],"-gz")==0) {
-      iRLE = 2;
-    } else if (strcmp(argv[i],"-lzo")==0) {
-      iRLE = 3;
-    } else if (strcmp(argv[i],"-jpg")==0) {
-      iRLE = 4;
-   } else if (strcmp(argv[i],"-lzma")==0) {
-      iRLE = 5;
-    } else if (strcmp(argv[i],"-planar")==0) {
-      iPlanar = 1;
-    } else if (strcmp(argv[i],"-v")==0) {
-      iVerb = 1; 
-      sm_setVerbose(iVerb); 
-    } else if (strcmp(argv[i],"-verbose")==0) {
-      iVerb = atoi(argv[++i]);
-      sm_setVerbose(iVerb); 
-    } else if (strcmp(argv[i],"-ignore")==0) {
-      iIgnore = 1;
-    } else if (strcmp(argv[i],"-flipx")==0) {
-      iFlipx = 1;
-    } else if (strcmp(argv[i],"-flipy")==0) {
-      iFlipy = 1;
-    } else if (strcmp(argv[i],"-stereo")==0) {
-      iStereo = SM_FLAGS_STEREO;
-    } else if ((strcmp(argv[i],"-rotate")==0) && (i+1 < argc))  {
-      i++; fRotate = atof(argv[i]);
-      if ((fRotate != 0) && (fRotate != 90) && 
-          (fRotate != 180) && (fRotate != 270)) {
-         fprintf(stderr,"Invalid rotation: %f.  Only 0,90,180,270 allowed.\n",
-	 	fRotate);
-      }
-    } else if ((strcmp(argv[i],"-mipmaps")==0) && (i+1 < argc))  {
-      i++; nRes = atoi(argv[i]);
-      if (nRes < 1) nRes = 1;
-      if (nRes > 8) nRes = 8;
-    } else if ((strcmp(argv[i],"-buffersize")==0) && (i+1 < argc))  {
-      i++; bufferSize = atoi(argv[i]);
-    } else if ((strcmp(argv[i],"-threads")==0) && (i+1 < argc))  {
-      i++; nThreads = atoi(argv[i]);
-    } else if ((strcmp(argv[i],"-nometadata")==0))  {
-      i++; noMetadata = true;  
-     } else if ((strcmp(argv[i],"-title")==0) && (i+1 < argc))  {
-      i++; title = argv[i]; 
-    } else if ((strcmp(argv[i],"-author")==0) && (i+1 < argc))  {
-      i++; author = argv[i]; 
-    } else if ((strcmp(argv[i],"-description")==0) && (i+1 < argc))  {
-      i++; description = argv[i]; 
-    } else if ((strcmp(argv[i],"-date")==0) && (i+1 < argc))  {
-      i++; date = argv[i]; 
-    } else if (strcmp(argv[i],"-form")==0) {
-      if ((argc-i) > 1) {
-	if (strcmp(argv[i+1],"tiff") == 0) {
-	  iType = 0;
-	} else if (strcmp(argv[i+1],"sgi") == 0) {
-	  iType = 1;
-	} else if (strcmp(argv[i+1],"raw") == 0) {
-	  iType = 2;
-	} else if (strcmp(argv[i+1],"pnm") == 0) {
-	  iType = 3;
-	  pnm_init2(argv[0]);
-	} else if (strcmp(argv[i+1],"png") == 0) {
-	  iType = 4;
-	} else if (strcmp(argv[i+1],"jpg") == 0) {
-	  iType = 5;
-	} else {
-	  fprintf(stderr,"Invalid format: %s\n",
-		  argv[i+1]);
-	  exit(1);
-	}
-	i++;
-      } else {
-	cmdline(argv[0]);
-      }
-    } else if (strcmp(argv[i],"-jqual")==0) {
-      if ((argc-i) > 1) {
-	iQual = atoi(argv[i+1]);
-	i++;
-      } else {
-	cmdline(argv[0]);
-      }
-    } else if ((strcmp(argv[i],"-FPS")==0) || (strcmp(argv[i],"-fps")==0)) {
-      if ((argc-i) > 1) {
-	fFPS = atof(argv[i+1]);
-	if (fFPS > 50) {
-	  fprintf(stderr,"50 FPS max.\n");
-	  exit(1);
-	}
-	i++;
-      } else {
-	cmdline(argv[0]);
-      }
-    } else if (strcmp(argv[i],"-minmax")==0) {
-      if ((argc-i) > 2) {
-	iMin = atoi(argv[i+1]);
-	iMax = atoi(argv[i+2]);
-	i += 2;
-      } else {
-	cmdline(argv[0]);
-      }
-    } else if (strcmp(argv[i],"-first")==0) {
-      if ((argc-i) > 1) {
-	iStart = atoi(argv[i+1]);
-	i++;
-      } else {
-	cmdline(argv[0]);
-      }
-    } else if (strcmp(argv[i],"-last")==0) {
-      if ((argc-i) > 1) {
-	iEnd = atoi(argv[i+1]);
-	i++;
-      } else {
-	cmdline(argv[0]);
-      }
-    } else if (strcmp(argv[i],"-step")==0) {
-      if ((argc-i) > 1) {
-	iStep = atoi(argv[i+1]);
-	i++;
-      } else {
-	cmdline(argv[0]);
-      }
-    } else if (strcmp(argv[i],"-size")==0) {
-      if ((argc-i) > 4) {
-	iSize[0] = atoi(argv[++i]);
-	iSize[1] = atoi(argv[++i]);
-	iSize[2] = atoi(argv[++i]);
-	iSize[3] = atoi(argv[++i]);
-      } else {
-	cmdline(argv[0]);
-      }
-    } else if (strcmp(argv[i],"-tilesizes")==0) {
-      if ((argc-i) > 1) {
-	strcpy(tsizestr,argv[++i]);
-	tiled = 1;
-      } else {
-	cmdline(argv[0]);
-      }
-    } else {
-      fprintf(stderr,"Unknown option: %s\n", argv[i]);
-      cmdline(argv[0]);
-    }
-    i++;
+  vector<int>   iInDims, iSize(4);
+  iSize[0] = iSize[1] = -1; 
+  if (size.getValue().valid) {
+    iSize = size.getValue().elems; 
   }
-  // parse tile sizes 
-  {
-    char *tok;
-    char *str;
-   
-    int count = 0;
-    int parsed = 0;
-    int xsize,ysize;
 
-    str = &tsizestr[0];
-   
-    tok = strtok(str,(const char *)",");
-    while(tok != NULL) {
-      parsed=1;
-
-      xsize = ysize = 0;
-      if(strchr(tok,'x')) {
-	sscanf(tok,"%dx%d",&xsize,&ysize);
-	if((xsize > 0)&&(ysize > 0)){
-	  tsizes[count][0] = xsize;
-	  tsizes[count][1] = ysize;
-	  count++;
-	}
+  smdbprintf(5, "parsing tile sizes \n"); 
+  unsigned int  tsizes[8][2];
+  int count = 0;
+  int parsed = 0;
+  int xsize=0,ysize=0;
+  try {
+    xsize = boost::lexical_cast<int32_t>(tilesizes.getValue());
+    ysize = xsize; 
+  }
+  catch(boost::bad_lexical_cast &) {
+    smdbprintf(5, str(boost::format("Could not make %1% into an integer.  Trying MxN format.")%tilesizes.getValue()).c_str());       
+    typedef boost::tokenizer<boost::char_separator<char> >  tokenizer;
+    boost::char_separator<char> sep("x"); 
+    tokenizer tok(tilesizes.getValue(), sep);
+    tokenizer::iterator pos = tok.begin(), endpos = tok.end(); 
+    try {
+      if (pos != endpos) {
+        xsize = boost::lexical_cast<int32_t>(*pos);
+        ++pos; 
+      } if (pos != endpos) {
+        ysize = boost::lexical_cast<int32_t>(*pos);
+      } else {
+        throw; 
       }
-      else {
-	sscanf(tok,"%d",&xsize);
-	if(xsize > 0) {
-	  ysize = xsize;
-	  tsizes[count][0] = xsize;
-	  tsizes[count][1] = ysize;
-	  count++;
-	}
-      }
-     
-      tok = strtok((char*)NULL,(const char *)",");
-     
     }
-
-    while( (count < nRes) && parsed) {
-      if(count == 0)
-	break;
-      tsizes[count][0] = tsizes[count-1][0];
-      tsizes[count][1] = tsizes[count-1][1];
-      count++; 
-    } 
-    int n=0; 
-    if(parsed) {
-      for(n=0; n< nRes; n++) {
-        smdbprintf(1,"Resolution[%d] Tilesize=[%dx%d]\n",n,tsizes[n][0],tsizes[n][1]);
-      }
+    catch(...) {
+      errexit(str(boost::format("Bad format string %1%.")%tilesizes.getValue()));  
     }
   }
-  if ((argc - i) != 2) cmdline(argv[0]);
+  tsizes[0][0] = xsize; 
+  tsizes[0][1] = ysize; 
+
+  for (int count = 1; count < mipmaps.getValue(); ++count) {
+    tsizes[count][0] = tsizes[count-1][0];
+    tsizes[count][1] = tsizes[count-1][1];
+  }
+  for(int n=0; n < mipmaps.getValue(); n++) {
+    smdbprintf(1,"Resolution[%d] Tilesize=[%dx%d]\n",n,tsizes[n][0],tsizes[n][1]);
+  }
+  
+  
 
   // get the arguments
-  sTemplate = argv[i];
-  sOutput = argv[i+1];
+  //sTemplate = argv[i];
+  //sOutput = argv[i+1];
 
-  if (iStep == 0) {
-    fprintf(stderr,"Invalid Step parameter (%d)\n",iStep);
-    exit(1);
+  if (frameStep.getValue() == 0) {
+    errexit(str(boost::format("Invalid Step parameter (%1%)\n")%frameStep.getValue()));
   }
 
-  // Bad template name?
-  if (!iIgnore) {
-    sprintf(filename,sTemplate,0);
-    sprintf(filename2,sTemplate,1);
-    if (strcmp(filename,filename2) == 0) {
-      fprintf(stderr,"Invalid sprintf filename template: %s\n",
-              sTemplate);
-      exit(1);
-    }
-  } 
-
   // count the files...
+  int i = 0;
   if (iStart < 0) {
-    i = 0;
+    FILE *fp = NULL; 
+    string filename; 
     while (i < 10000) {
-      sprintf(filename,sTemplate,i);
-      fp = fopen(filename,"r");
+      filename = str(boost::format(nameTemplate.getValue())%i);
+      fp = fopen(filename.c_str(),"r");
       if (fp) break;
       i += 1;
     }
     if (!fp) {
-      fprintf(stderr,"Unable to find initial file: %s\n",
-	      sTemplate);
-      exit(1);
+      errexit(str(boost::format("Unable to find initial file: %s\n")%nameTemplate.getValue()));
     }
     fclose(fp);
     iStart = i;
     i += 1;
   } else {
-    i = iStart + iStep;
-  }
-  if (iIgnore) {
-    iEnd = iStart; 
+    i = iStart + frameStep.getValue();
   }
   while (iEnd < 0) {
-    sprintf(filename,sTemplate,i);
-    fp = fopen(filename,"r");
+    FILE *fp = fopen(str(boost::format(nameTemplate.getValue())%i).c_str(),"r");
     if (fp) {
       fclose(fp);
-      i += iStep;
+      i += frameStep.getValue();
     } else {
-      iEnd = i - iStep;
+      iEnd = i - frameStep.getValue();
     }
   }
 
   // Check the file type
-  sprintf(filename,sTemplate,iStart);
+  string filename = str(boost::format(nameTemplate.getValue())%iStart);
   TIFFErrorHandler prev = TIFFSetErrorHandler(NULL); // suppress error messages
-  if (iType == -1) {
-    if ((tiff = TIFFOpen(filename,"r"))!=0) {
+  if (imageType == -1) {
+    if ((tiff = TIFFOpen((char*)filename.c_str(),"r"))!=0) {
       TIFFSetErrorHandler(prev); //restore diagnostics -- we want them now. 
       if (iVerb) fprintf(stderr,"TIFF input format detected\n");
-      iType = 0;
+      imageType = 0;
       TIFFClose(tiff);
-    } else if (libi = sgiOpen(filename,SGI_READ,0,0,0,0,0)) {
+    } else if (libi = sgiOpen((char*)filename.c_str(),SGI_READ,0,0,0,0,0)) {
       if (iVerb) fprintf(stderr,"SGI input format detected\n");
-      iType = 1;
+      imageType = 1;
       sgiClose(libi);
-    } else if (check_if_png(filename,NULL)) { 
+    } else if (check_if_png((char*)filename.c_str(),NULL)) { 
       if (iVerb) fprintf(stderr,"PNG input format detected\n");
-      iType = 4; /* PNG */
-    } else if (check_if_jpeg(filename,NULL)) { 
+      imageType = 4; /* PNG */
+    } else if (check_if_jpeg((char*)filename.c_str(),NULL)) { 
       if (iVerb) fprintf(stderr,"JPEG input format detected\n");
-      iType = 5; /* JPEG */
+      imageType = 5; /* JPEG */
     } else {
       if (iVerb) fprintf(stderr,"Assuming PNG format\n");
-      iType = 4;
+      imageType = 4;
     }
   }
   // get the frame size
-  if (iType == 0) {  // TIFF
-    tiff = TIFFOpen(filename,"r");
+  if (imageType == 0) {  // TIFF
+    tiff = TIFFOpen((char*)filename.c_str(),"r");
     if (!tiff) {
-      fprintf(stderr,"Error: %s is not a TIFF format file.\n",filename);
-      exit(1);
+      errexit(str(boost::format("Error: %s is not a TIFF format file.\n")%filename));
     }
     if (!TIFFGetField(tiff,TIFFTAG_BITSPERSAMPLE,&bitsPerSample)) bitsPerSample = 1;
     if (!TIFFGetField(tiff,TIFFTAG_SAMPLESPERPIXEL,&spp)) spp = 1;
@@ -767,162 +696,142 @@ int main(int argc,char **argv)
     TIFFGetField(tiff,TIFFTAG_IMAGELENGTH,&(iSize[1]));
     TIFFClose(tiff);
     if ((bitsPerSample != 8) && (bitsPerSample != 16)) {
-      fprintf(stderr,"Only 8 and 16 bits/sample TIFF files allowed\n");
-      exit(1);
+      errexit("Only 8 and 16 bits/sample TIFF files allowed\n");
     }
     if ((spp != 1) && (spp != 3)) {
-      fprintf(stderr,"Only 1 and 3 sample TIFF files allowed\n");
-      exit(1);
+      errexit("Only 1 and 3 sample TIFF files allowed\n");
     }
     iSize[2] = spp;
-  } else if (iType == 1) { // SGI
+  } else if (imageType == 1) { // SGI
 
-    libi = sgiOpen(filename,SGI_READ,0,0,0,0,0);
+    libi = sgiOpen((char*)filename.c_str(),SGI_READ,0,0,0,0,0);
     if (!libi) {
-      fprintf(stderr,"Error: %s is not an SGI libimage format file.\n",filename);
-      exit(1);
+      errexit(str(boost::format("Error: %s is not an SGI libimage format file.\n")%filename));
     }
     iSize[0] = libi->xsize;
     iSize[1] = libi->ysize;
     iSize[2] = libi->zsize;
     sgiClose(libi);
-  } else if (iType == 2) { // RAW
+  } else if (imageType == 2) { // RAW compressed with GZip -- weird
     if (iSize[0] < 0) cmdline(argv[0]);
     if ((iSize[2] != 1) && (iSize[2] != 3)) cmdline(argv[0]);
     if (iSize[0] < 0) cmdline(argv[0]);
     if (iSize[1] < 0) cmdline(argv[0]);
     if (iSize[3] < 0) cmdline(argv[0]);
-  } else if (iType == 3) { // PNM
-    int 	dx,dy,fmt;
-    xelval	value;
+  } else if (imageType == 3) { // PNM
+    int     dx,dy,fmt;
+    xelval  value;
 
-    fp = pm_openr(filename);
+    FILE *fp = pm_openr((char*)filename.c_str());
     if (!fp) {
-      fprintf(stderr,"Unable to open the file: %s\n",filename);
-      exit(1);
+      errexit(str(boost::format("Unable to open the file: %s\n")%filename));
     }
     if (pnm_readpnminit(fp, &dx,&dy,&value,&fmt) == -1) {
-      fprintf(stderr,"The file is not in PNM format.\n");
       pm_closer(fp);
-      exit(1);
+      errexit(str(boost::format("%s is not in PNM format\n")%filename));
     }
     pm_closer(fp);
-
+    
     /* set up our params */
     iSize[2] = 1;
     if (PNM_FORMAT_TYPE(fmt) == PBM_TYPE) {
-      fprintf(stderr,"Bitmap files are not supported.\n");
-      exit(1);
+      errexit("Bitmap files are not supported.\n");
     } else if (PNM_FORMAT_TYPE(fmt) == PPM_TYPE) {
       iSize[2] = 3;
     }
     iSize[0] = dx;
     iSize[1] = dy;
-  } else if (iType == 4) { // PNG
-    if (!check_if_png(filename,iSize)) {
-      fprintf(stderr, "Could not open the first PNG image -- it is either corrupt, nonexistent, or not a PNG file\n"); 
-      exit(1); 
+  } else if (imageType == 4) { // PNG
+    if (!check_if_png((char*)filename.c_str(),&iSize[0])) {
+      errexit("Could not open the first PNG image -- it is either corrupt, nonexistent, or not a PNG file\n");
     }
-  } else if (iType == 5) { // JPEG
-    if (!check_if_jpeg(filename,iSize)) {
-      fprintf(stderr, "Could not open the first JPEG image -- it is either corrupt, nonexistent, or not a JPEG file\n"); 
-      exit(1); 
+  } else if (imageType == 5) { // JPEG
+    if (!check_if_jpeg((char*)filename.c_str(),&iSize[0])) {
+      errexit("Could not open the first JPEG image -- it is either corrupt, nonexistent, or not a JPEG file\n"); 
     }
   }
+  
+  // we may need to swap the dims  
+  iInDims = iSize;
+  rotate_dims(rotate.getValue(),&iSize[0],&iSize[1]);
 
   // count the files
-  count = 0;
-  for(i=iStart;;i+=iStep) {
-    if ((iStep > 0) && (i>iEnd)) break;
-    if ((iStep < 0) && (i<iEnd)) break;
-    count++;
-  }
-
-  // we may need to swap the dims
-  memcpy(iInDims,iSize,sizeof(iSize));
-  rotate_dims(fRotate,iSize+0,iSize+1);
+  count = abs((iEnd-iStart)/frameStep.getValue()) + 1; 
 
   // Open the sm file...
   smBase::init();
-  if(tiled) {
-    if (iRLE == 1) {
-      sm = smRLE::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes);
-    } else if (iRLE == 2) {
-      sm = smGZ::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes);
-    } else if (iRLE == 3) {
-      sm = smLZO::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes);
-    } else if (iRLE == 4) {
-      sm = smJPG::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes);
-      ((smJPG *)sm)->setQuality(iQual);
-    } else if (iRLE == 5) {
-      sm = smXZ::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes);
-    } else {
-      sm = smRaw::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes);
-    }
+  uint32_t *tsizes_ptr = NULL; 
+  tsizes_ptr = &tsizes[0][0]; 
+ 
+  smBase  *sm = NULL;
+  if (compression.getValue() == "raw" || compression.getValue() == "RAW") {
+    sm = smRaw::newFile(moviename.getValue().c_str(),iSize[0],iSize[1],count,tsizes_ptr,mipmaps.getValue());
+  } else if (compression.getValue() == "rle" || compression.getValue() == "RLE") {
+    sm = smRLE::newFile(moviename.getValue().c_str(),iSize[0],iSize[1],count,tsizes_ptr,mipmaps.getValue());
+  } else if (compression.getValue() == "gz" || compression.getValue() == "GZ") {
+    sm = smGZ::newFile(moviename.getValue().c_str(),iSize[0],iSize[1],count,tsizes_ptr,mipmaps.getValue());
+  } else if (compression.getValue() == "lzo" || compression.getValue() == "LZO") {
+    sm = smLZO::newFile(moviename.getValue().c_str(),iSize[0],iSize[1],count,tsizes_ptr,mipmaps.getValue());
+  } else if (compression.getValue() == "jpg" || compression.getValue() == "JPG") {
+    sm = smJPG::newFile(moviename.getValue().c_str(),iSize[0],iSize[1],count,tsizes_ptr,mipmaps.getValue());
+    ((smJPG *)sm)->setQuality(quality.getValue());
+  } else if (compression.getValue() == "lzma" || compression.getValue() == "LZMA") {
+    sm = smXZ::newFile(moviename.getValue().c_str(),iSize[0],iSize[1],count,tsizes_ptr,mipmaps.getValue());
+  } else {
+    errexit(str(boost::format("Bad encoding type: %1%")%compression.getValue())); 
   }
-  else {
-    if (iRLE == 1) {
-      sm = smRLE::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes);
-    } else if (iRLE == 2) {
-      sm = smGZ::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes);
-    } else if (iRLE == 3) {
-      sm = smLZO::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes);
-    } else if (iRLE == 4) {
-      sm = smJPG::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes);
-      ((smJPG *)sm)->setQuality(iQual);
-    } else {
-      sm = smRaw::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes);
-    }
-  }
+
   // set the flags...
-  sm->setFlags(iStereo);
-  sm->setFPS(fFPS);
-  sm->setBufferSize(bufferSize); 
+  sm->setFlags(stereo.getValue() ? SM_FLAGS_STEREO : 0);
+    
+  sm->setFPS(frameRate.getValue());
+  sm->setBufferSize(buffersize.getValue()); 
   /* init the parallel tools */
 
-  int numsteps = (iEnd-iStart+1)/iStep; 
-  if (numsteps < nThreads) {
-    nThreads = numsteps; 
+  int numsteps = (iEnd-iStart)/frameStep.getValue() + 1; 
+  int numThreads = threads.getValue();  
+  if (numsteps < threads.getValue()) {
+    numThreads = numsteps; 
   }
     
   pt_pool         thepool;
   pt_pool_t       pool = &thepool;
-  pt_pool_init(pool, nThreads, nThreads*2, 0);
+  pt_pool_init(pool, threads.getValue(), threads.getValue()*2, 0);
   sm->startWriteThread(); 
     
   // memory buffer for frame input
-  /*gInputBuf = (unsigned char *)malloc(iSize[0]*iSize[1]*3L); 
-    CHECK(gInputBuf);*/
-  smdbprintf(1, "Creating streaming movie file from...\n");
-  smdbprintf(1, "Template: %s\n",sTemplate);
-  smdbprintf(1, "First, Last, Step: %d %d %d\n",iStart,iEnd,iStep);
-  smdbprintf(1, "%d images of size %d %d\n",count,iSize[0],iSize[1]);
+  smdbprintf(1, "Creating streaming movie file from:\n");
+  smdbprintf(1, str(boost::format("Template: %s\n")%nameTemplate.getValue()).c_str());
+  smdbprintf(1, str(boost::format("First, Last, Step: %d %d %d\n")%iStart%iEnd%frameStep.getValue()).c_str());
+  smdbprintf(1, str(boost::format("%d images of size %d %d\n")%count%iSize[0]%iSize[1]).c_str());
 
   
   
   // Walk the input files...
-  for(i=iStart;;i+=iStep) {
+  for(i=iStart;;i+=frameStep.getValue()) {
 
     // terminate??
-    if ((iStep > 0) && (i>iEnd)) break;
-    if ((iStep < 0) && (i<iEnd)) break;
+    if ((frameStep.getValue() > 0) && (i>iEnd)) break;
+    if ((frameStep.getValue() < 0) && (i<iEnd)) break;
 
     Work *wrk = new Work; 
     CHECK(wrk);
 
     // Get the filename
-    sprintf(wrk->filename,sTemplate,i);
-    wrk->filetype = iType; 
+    wrk->filename = str(boost::format(nameTemplate.getValue())%i); 
+    wrk->filetype = imageType; 
     // Compress and save (in parallel)
-    wrk->iInDims = iInDims;
-    wrk->fRot = fRotate;
+    wrk->Dims = iInDims;
+    wrk->Size = iSize; 
+    wrk->rotation = rotate.getValue();
     wrk->sm = sm;
-    wrk->iFlipx = iFlipx;
-    wrk->iFlipy = iFlipy;
-    wrk->frame = (i-iStart)/iStep;
+    wrk->iFlipx = flipx.getValue();
+    wrk->iFlipy = flipy.getValue();
+    wrk->frame = (i-iStart)/frameStep.getValue();
+    wrk->planar = planar.getValue(); 
     wrk->buffer = new u_char[iSize[0]*iSize[1]*3]; 
     smdbprintf(1, "Adding work: %s : (%d) %d to %d\n",
-               wrk->filename,i,iStart,iEnd);
+               wrk->filename.c_str(),i,iStart,iEnd);
   
     pt_pool_add_work(pool, workproc, (void *)wrk);
   }
@@ -931,19 +840,19 @@ int main(int argc,char **argv)
   sm->stopWriteThread(); 
   sm->flushFrames(true); 
 
-  if (! noMetadata) {
+  if (! noMetadata.getValue()) {
     smdbprintf(1, "Adding metadata...\n"); 
-    if (description != "") {
-      sm->AddMetaData("description", description); 
+    if (Description.getValue() != "") {
+      sm->AddMetaData("description", Description.getValue()); 
     } 
-    if (author != "") {
-      sm->AddMetaData("author", author); 
+    if (Author.getValue() != "") {
+      sm->AddMetaData("author", Author.getValue()); 
     } 
-    if (date != "") {
-      sm->AddMetaData("date", date); 
+    if (Date.getValue() != "") {
+      sm->AddMetaData("date", Date.getValue()); 
     } 
-    if (title != "") {
-      sm->AddMetaData("title", title); 
+    if (Title.getValue() != "") {
+      sm->AddMetaData("title", Title.getValue()); 
     } 
     sm->WriteMetaData(); 
   }
@@ -958,12 +867,12 @@ void workproc(void *arg)
 {
   Work *wrk = (Work *)arg;
   smdbprintf(3, "Thread %d working on %s : frame %d\n",
-          pt_pool_threadnum(), wrk->filename, wrk->frame);
+             pt_pool_threadnum(), wrk->filename.c_str(), wrk->frame);
 
   FillInputBuffer(wrk); 
 
   // rotate 
-  rotate_img(wrk->buffer,wrk->iInDims[0],wrk->iInDims[1],wrk->fRot);
+  rotate_img(wrk->buffer,wrk->Dims[0],wrk->Dims[1],wrk->rotation);
 
   // flipping...
   if (wrk->iFlipx) flipx(wrk->buffer,wrk->sm->getWidth(),wrk->sm->getHeight());
@@ -983,7 +892,7 @@ void workproc(void *arg)
 
 void flipx(unsigned char *img,int dx,int dy)
 {
-  unsigned char	*junk = (unsigned char*)malloc(dx*dy*3);
+  unsigned char *junk = (unsigned char*)malloc(dx*dy*3);
   CHECK(junk);
   memcpy(junk,img,dx*dy*3);
 
@@ -997,7 +906,7 @@ void flipx(unsigned char *img,int dx,int dy)
 
 void flipy(unsigned char *img,int dx,int dy)
 {
-  unsigned char	*junk = (unsigned char*)malloc(dx*dy*3);
+  unsigned char *junk = (unsigned char*)malloc(dx*dy*3);
   CHECK(junk);
   memcpy(junk,img,dx*dy*3);
 
@@ -1014,77 +923,77 @@ void flipy(unsigned char *img,int dx,int dy)
 
 void rotate_dims(float rot,int *dx,int *dy)
 {
-	if ((rot == 90) || (rot == 270)) {
-		int i = *dx;
-		*dx = *dy;
-		*dy = i;
-	}
-	return;
+    if ((rot == 90) || (rot == 270)) {
+        int i = *dx;
+        *dx = *dy;
+        *dy = i;
+    }
+    return;
 }
 
 int rotate_img(unsigned char *img,int dx,int dy,float rot)
 {
-	unsigned char *pSrc,*pDst,*tmp;
-	int	i,j,rowbytes;
-	int	d = 0;
+    unsigned char *pSrc,*pDst,*tmp;
+    int i,j,rowbytes;
+    int d = 0;
 
-	// What are we going to do?
-	if (rot == 90) {
-		d = 1;
-	}
-	if (rot == 180) {
-		d = 2;
-	}
-	if (rot == 270) {
-		d = 3;
-	}
-	if (d == 0) return(-1);
+    // What are we going to do?
+    if (rot == 90) {
+        d = 1;
+    }
+    if (rot == 180) {
+        d = 2;
+    }
+    if (rot == 270) {
+        d = 3;
+    }
+    if (d == 0) return(-1);
 
-	// Work from a copy
+    // Work from a copy
         tmp = (unsigned char*)malloc(dx*dy*3);
-	CHECK(tmp);
-	memcpy(tmp,img,dx*dy*3);
+    CHECK(tmp);
+    memcpy(tmp,img,dx*dy*3);
 
-	// Do it
-	rowbytes = dx*3;
-	pDst = img;
-	switch(d) {
-		case 3:  /* 270 */
-			for(j=0;j<dx;j++) {
-				pSrc = tmp+(rowbytes*(dy-1))+(3*j);
-				for(i=0;i<dy;i++) {
-					*pDst++ = pSrc[0];
-					*pDst++ = pSrc[1];
-					*pDst++ = pSrc[2];
-					pSrc -= rowbytes;
-				}
-			}
-			break;
-		case 2:  /* 180 */
-			for(j=0;j<dy;j++) {
-				pSrc = tmp+(rowbytes*(dy-1-j))+(3*(dx-1));
-				for(i=0;i<dx;i++) {
-					*pDst++ = pSrc[0];
-					*pDst++ = pSrc[1];
-					*pDst++ = pSrc[2];
-					pSrc -= 3;
-				}
-			}
-			break;
-		case 1:  /* 90 */
-			for(j=0;j<dx;j++) {
-				pSrc = tmp+(rowbytes-3)-j*3;
-				for(i=0;i<dy;i++) {
-					*pDst++ = pSrc[0];
-					*pDst++ = pSrc[1];
-					*pDst++ = pSrc[2];
-					pSrc += rowbytes;
-				}
-			}
-			break;
-	}
+    // Do it
+    rowbytes = dx*3;
+    pDst = img;
+    switch(d) {
+        case 3:  /* 270 */
+            for(j=0;j<dx;j++) {
+                pSrc = tmp+(rowbytes*(dy-1))+(3*j);
+                for(i=0;i<dy;i++) {
+                    *pDst++ = pSrc[0];
+                    *pDst++ = pSrc[1];
+                    *pDst++ = pSrc[2];
+                    pSrc -= rowbytes;
+                }
+            }
+            break;
+        case 2:  /* 180 */
+            for(j=0;j<dy;j++) {
+                pSrc = tmp+(rowbytes*(dy-1-j))+(3*(dx-1));
+                for(i=0;i<dx;i++) {
+                    *pDst++ = pSrc[0];
+                    *pDst++ = pSrc[1];
+                    *pDst++ = pSrc[2];
+                    pSrc -= 3;
+                }
+            }
+            break;
+        case 1:  /* 90 */
+            for(j=0;j<dx;j++) {
+                pSrc = tmp+(rowbytes-3)-j*3;
+                for(i=0;i<dy;i++) {
+                    *pDst++ = pSrc[0];
+                    *pDst++ = pSrc[1];
+                    *pDst++ = pSrc[2];
+                    pSrc += rowbytes;
+                }
+            }
+            break;
+    }
 
-	free(tmp);
-	return(0);
+    free(tmp);
+    return(0);
 }
 
