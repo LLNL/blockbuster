@@ -79,6 +79,8 @@ using namespace std;
 
 //#undef  SM_VERBOSE
 int smVerbose = 0; 
+double gBaseTime = -1; 
+
 void sm_setVerbose(int level) {
   if (level) std::cerr << "sm_setVerbose level " << level << std::endl; 
   smVerbose = level; 

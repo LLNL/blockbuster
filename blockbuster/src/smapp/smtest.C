@@ -235,7 +235,7 @@ void ConvertFraction(float &fraction, float refValue) {
   return; 
 }
 
-void ConvertFractions(char *name, float ffpos[2], float ffdim[2], float ffstep[2]) {
+void ConvertFractions(const char *name, float ffpos[2], float ffdim[2], float ffstep[2]) {
   if (0.0 < ffpos[0]  && ffpos[0]  <= 1.001) 
     ffpos[0]  = ffpos[0]*sm->getWidth()-1;
 

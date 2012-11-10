@@ -134,7 +134,7 @@ void smGZ::compBlock(void *data, void *cdata, int &size,int *dim)
    if (cdata) {
        status = compress((Bytef *)cdata,&dlen,(Bytef *)data,len);
        if (status != Z_OK) {
-         gzdbprintf(stderr,"GZ compression error: %d\n",status);
+         fprintf(stderr,"GZ compression error: %d\n",status);
          exit(1); 
        }
    }
