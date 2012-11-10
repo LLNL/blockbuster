@@ -51,7 +51,7 @@
 if(v == NULL) \
 lzo_fail_check(__FILE__,__LINE__)
 
-void lzo_fail_check(char *file,int line)
+void lzo_fail_check(const char *file,int line)
 {
   perror("fail_check");
   fprintf(stderr,"Failed at line %d in file %s\n",line,file);

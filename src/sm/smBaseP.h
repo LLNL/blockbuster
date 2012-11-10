@@ -54,9 +54,9 @@
 #ifdef linux
 #ifndef _LFS_LARGEFILE
 #undef HAS_LSEEK64
-#warning "**********************************************"
-#warning "64bit file support disabled, no _LFS_LARGEFILE"
-#warning "**********************************************"
+/* #warning "**********************************************"
+   #warning "64bit file support disabled, no _LFS_LARGEFILE"
+   #warning "**********************************************"*/
 #endif
 #endif
 

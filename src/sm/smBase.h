@@ -99,6 +99,7 @@ void sm_setVerbose(int level);  // 0-5, 0 is quiet, 5 is verbose
 #include "../common/timer.h"
 #include "../common/stringutil.h"
 void sm_setVerbose(int level);
+  
 
 struct smMsgStruct {
   smMsgStruct(int l, string fi, string func) :
@@ -115,11 +116,15 @@ struct smMsgStruct {
   sm_real_dbprintf( smMsgStruct(__LINE__,__FILE__,__FUNCTION__), args)   
 //  gMsgStruct.line = __LINE__, gMsgStruct.file=__FILE__, gMsgStruct.function=__FUNCTION__, sm_real_dbprintf
 
-
+extern double gBaseTime; /* initialized to -1 in constructor */  
+inline void sm_initTimer(void) {
+  gBaseTime = GetExactSecondsDouble(); 
+} 
 extern int smVerbose;
 inline void sm_real_dbprintf(const smMsgStruct msg, int level, const char *fmt, ...) {  
   if (smVerbose < level) return; 
-  cerr << " SMDEBUG [" << msg.file << ":"<< msg.function << "(), line "<< msg.line << ", time=" << GetExactSeconds() << "]: " ;
+  if (gBaseTime == -1) sm_initTimer(); 
+  cerr << " SMDEBUG [" << msg.file << ":"<< msg.function << "(), line "<< msg.line << ", time=" << doubleToString(GetExactSecondsDouble() - gBaseTime, 3) << "]: " ;
   va_list ap;
   va_start(ap, fmt);
   vfprintf(stderr,fmt,ap);

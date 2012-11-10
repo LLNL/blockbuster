@@ -71,6 +71,7 @@
 
 //===============================================
 // Here is a nice quick way to do it, which does not require a global member 
+  
 
 inline double GetExactSecondsDouble(void) {
   struct timeval t; 
