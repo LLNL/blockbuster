@@ -166,19 +166,23 @@ inline void sm_real_dbprintf(int , const char * ...) {
 
 */ 
 struct SM_MetaData {
-  string mName;
+  string mTag;
   uint64_t mType; 
   string mAscii;
-  double mDouble; //assuming 8 bytes here; checked in Read and Write functions for safety)
+  double mDouble; //assuming 8 bytes here; checked in Read and Write functions for safety
   int64_t mInt64; 
 
   SM_MetaData():mType(METADATA_TYPE_UNKNOWN) {}
   SM_MetaData(string tag) {
-    mName = tag; 
+    mTag = tag; 
   }
-  SM_MetaData(string tag, string s): mName(tag), mType(METADATA_TYPE_ASCII), mAscii(s) {}
-  SM_MetaData(string tag, int64_t i): mName(tag), mType(METADATA_TYPE_INT64), mInt64(i) {}
-  SM_MetaData(string tag, double d): mName(tag), mType(METADATA_TYPE_DOUBLE), mDouble(d) {}
+  SM_MetaData(string tag, string s): mTag(tag), mType(METADATA_TYPE_ASCII), mAscii(s) {}
+  SM_MetaData(string tag, int64_t i): mTag(tag), mType(METADATA_TYPE_INT64), mInt64(i) {}
+  SM_MetaData(string tag, double d): mTag(tag), mType(METADATA_TYPE_DOUBLE), mDouble(d) {}
+
+  bool operator == (const SM_MetaData&other) const {
+    return other.mTag == mTag; 
+  }
 
   off64_t Read(int filedescr); // read backward from current point in file, leave file ready for another read
   bool Write(int filedescr); 
@@ -412,6 +416,15 @@ class smBase {
   static smBase *openFile(const char *fname, int numthreads=1);
 #endif
 
+  void DeleteMetaData(string tag = "") {
+    if (tag == "") { // dangerous but actually sensible  
+      mMetaData.clear(); 
+      return; 
+    }
+    vector<SM_MetaData>::iterator pos = mMetaData.begin(), endpos = mMetaData.end(); 
+    mMetaData.erase(remove(mMetaData.begin(), mMetaData.end(), tag), mMetaData.end()); 
+  }
+        
   void AddMetaData(string tag, string value) {
     mMetaData.push_back(SM_MetaData(tag, value)); 
   }
