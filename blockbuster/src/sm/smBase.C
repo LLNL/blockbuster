@@ -96,7 +96,7 @@ const int DIO_DEFAULT_SIZE = 1024L*1024L*4;
 
 string SM_MetaData::toString(void) {
   string s = "SM_MetaData: { \n"; 
-  s += string("mName: ") + mName + "\n"; 
+  s += string("mTag: ") + mTag + "\n"; 
   s += string("mType: ");
   if (mType == METADATA_TYPE_ASCII) {
     s += "ASCII: value: \""; 
@@ -190,10 +190,10 @@ bool SM_MetaData::Write(int lfd) {
   SwapAndWrite(lfd, &payloadLength,  1, needswap);   
   smdbprintf(5, "SM_MetaData::Write() wrote payloadLength %lu  at pos %d\n",payloadLength, filepos); 
   
-  mName.resize(1015); // avoid segfaults I hope! 
+  mTag.resize(1015); // avoid segfaults I hope! 
   filepos = LSEEK64(lfd,0,SEEK_CUR); 
-  WRITE(lfd, &mName[0], 1014); 
-  smdbprintf(5, "SM_MetaData::Write() wrote name \"%s\"  at pos %d\n",mName.c_str(), filepos); 
+  WRITE(lfd, &mTag[0], 1014); 
+  smdbprintf(5, "SM_MetaData::Write() wrote name \"%s\"  at pos %d\n",mTag.c_str(), filepos); 
   
   uint64_t MAGIC = METADATA_MAGIC; 
   SwapAndWrite(lfd, &MAGIC, 1, needswap);
@@ -226,7 +226,7 @@ off64_t SM_MetaData::Read(int lfd) {
 
   filepos += READ(lfd, namebuf, 1014);
   namebuf[1013] = 0; // be safe
-  mName = namebuf; 
+  mTag = namebuf; 
   
   filepos += ReadAndSwap(lfd, &mdmagic, 1, needswap);
   if (mdmagic != METADATA_MAGIC) {
