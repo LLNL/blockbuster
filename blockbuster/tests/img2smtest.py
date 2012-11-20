@@ -76,7 +76,7 @@ if not os.path.exists(testdir):
 
 proc = None
     
-def runcmd(cmd,outfile):
+def run_img2sm(cmd,outfile):
     global proc
     cmd="%s %s %s"%(img2sm, cmd,outfile) 
     sys.stderr.write( "Running test: \"%s\\n"%cmd)
@@ -84,10 +84,12 @@ def runcmd(cmd,outfile):
     proc = Popen(cmd.split(), bufsize=-1)
     proc.wait()
     return
-    
-def testrun(cmd,outfile, timeout=5):
+
+def test_img2sm(test, timeout=5):
     global success, errmsg, proc
-    theThread = threading.Thread(target=runcmd,args=(cmd,outfile))
+    args = test['args']
+    outfile = test['output']
+    theThread = threading.Thread(target=run_img2sm,args=(args,outfile))
     success=False
     theThread.start()
     sys.stderr.write("Waiting for thread to finish...\n")
@@ -122,15 +124,23 @@ def testrun(cmd,outfile, timeout=5):
     sys.stderr.write("\n************************************************\n\n" )
     return success
 
-tests = [ ["-v   %s/mountains.tiff"%datadir, "%s/mountains-ignore.sm"%testdir],
-          ["-v  --first 084 --last 084 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png "%datadir, "%s/quicksand-single-template.sm"%testdir],
-          ["-v  -c gz --first 20 -l 30 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png "%datadir, "%s/quicksand-all-template-gz.sm"%testdir],
-          ["-v --compression lzma --first 20 --last 30 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png "%datadir, "%s/quicksand-all-template-lzma.sm"%testdir]
+tests = [ {"name": "mountains-single",
+           "args": "-v   %s/mountains.tiff"%datadir,
+           "output": "%s/mountains-ignore.sm"%testdir},
+          {"name": "quicksand-single-gz",
+           "args": "-v  --first 084 --last 084 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png "%datadir, 
+           "output": "%s/quicksand-single-template.sm"%testdir},
+          {"name": "quicksand-11frames-gz",
+           "args": "-v  -c gz --first 20 -l 30 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png "%datadir, 
+           "output": "%s/quicksand-all-template-gz.sm"%testdir},
+          {"name": "quicksand-11frames-lzma",
+           "args": "-v --compression lzma --first 20 --last 30 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png "%datadir, 
+           "output": "%s/quicksand-all-template-lzma.sm"%testdir}
           ]
 successes = 0
 results = []
 for test in tests:
-    result = testrun(test[0],test[1])
+    result = test_img2sm(test)
     results.append(result)
     successes = successes + result
 
@@ -141,7 +151,10 @@ print "\n****************************************************\n"
 
 if successes != len(tests):
     sys.exit(1)
-    
+
+
+# Next:  sm2img
+
 sys.exit(0)
 
 
