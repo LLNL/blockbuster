@@ -197,7 +197,7 @@ bool SM_MetaData::Write(int lfd) {
   
   uint64_t MAGIC = METADATA_MAGIC; 
   SwapAndWrite(lfd, &MAGIC, 1, needswap);
-  filepos = LSEEK64(lfd,0,SEEK_SET); 
+  filepos = LSEEK64(lfd,0,SEEK_CUR); 
   smdbprintf(5, "SM_MetaData::Write() exiting at pos %d\n", filepos ); 
   return true;
 }

@@ -424,22 +424,25 @@ class smBase {
     vector<SM_MetaData>::iterator pos = mMetaData.begin(), endpos = mMetaData.end(); 
     mMetaData.erase(remove(mMetaData.begin(), mMetaData.end(), tag), mMetaData.end()); 
   }
-        
-  void AddMetaData(string tag, string value) {
-    mMetaData.push_back(SM_MetaData(tag, value)); 
+
+  template <class T> 
+    void SetMetaData(const string tag, const T &value) {
+    SM_MetaData md(tag,value); 
+    if (find(mMetaData.begin(), mMetaData.end(), md) == mMetaData.end()) {
+      //cerr << "pushing back: " << md.toString() << endl;
+      mMetaData.push_back(md); 
+    } else {
+      //cerr << "replacing: " << md.toString() << endl;
+      replace(mMetaData.begin(), mMetaData.end(), md, md);  
+    }
   }
-  void AddMetaData(string tag, double value)  {
-    mMetaData.push_back(SM_MetaData(tag, value)); 
-  }
-  void AddMetaData(string tag, int64_t value) {
-    mMetaData.push_back(SM_MetaData(tag, value)) ; 
-  }
+
   void WriteMetaData(void) { 
     LSEEK64(mThreadData[0].fd, 0, SEEK_END);
     vector<SM_MetaData>::iterator pos = mMetaData.begin(), endpos = mMetaData.end(); 
     while (pos != endpos) {
       pos->Write(mThreadData[0].fd); 
-      ++pos; 
+      ++pos;  
     }
     return; 
   }

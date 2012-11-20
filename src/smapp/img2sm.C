@@ -496,20 +496,19 @@ int main(int argc,char **argv)
 
   TCLAP::SwitchArg noMetadata("N", "nometadata", "Do not include any metadata, even if -tag or other is given", cmd, false); 
 
-  TCLAP::ValueArg<VectFromString<string> > Tag("", "Tag", "Store given string in given tag", false, VectFromString<string>(), "space delimited, quoted 'tagname value'"); 
-  Tag.getValue().expectedElems = 2; 
+  TCLAP::MultiArg<VectFromString<string> > Tag("T", "Tag", "Store given string in given tag.  Can be given multiple times to create multiple tags.", false, "quoted pair: 'tagname value'"); 
   cmd.add(Tag); 
 
-  TCLAP::ValueArg<string>Description("", "Description", "Store given string in 'Description' tag", false, "", "quoted descriptive text", cmd); 
+  /*  TCLAP::ValueArg<string>Description("", "Description", "Store given string in 'Description' tag", false, "", "quoted descriptive text", cmd); 
   TCLAP::ValueArg<string>Author("", "Author", "Store given string in 'Author' tag", false, "", "quoted author name", cmd); 
   TCLAP::ValueArg<string>Date("", "Date", "Store given string in 'Date' tag", false, "", "quoted date", cmd); 
   TCLAP::ValueArg<string>Title("", "Title", "Store given string in 'Title' tag", false, "", "quoted title", cmd); 
-
+  */ 
   TCLAP::SwitchArg planar("p", "planar", "Raw img is planar interleaved (default: pixel interleave)", cmd, false); 
   TCLAP::SwitchArg flipx("X", "flipx", "Flip the image over the X axis", cmd, false); 
   TCLAP::SwitchArg flipy("Y", "flipy", "Flip the image over the Y axis", cmd, false); 
 
-  TCLAP::ValueArg<VectFromString<int32_t> > size("", "size", "Specify raw img dims", false, VectFromString<int32_t>(), "space delimited, quoted 'width height depth header'"); 
+  TCLAP::ValueArg<VectFromString<int32_t> > size("", "size", "Specify raw img dims", false, VectFromString<int32_t>(), "four nums in quotes: 'width height depth header'"); 
   size.getValue().expectedElems = 4; 
   cmd.add(size); 
 
@@ -865,18 +864,11 @@ int main(int argc,char **argv)
   sm->flushFrames(true); 
 
   if (! noMetadata.getValue()) {
-    smdbprintf(1, "Adding metadata...\n"); 
-    if (Description.getValue() != "") {
-      sm->AddMetaData("description", Description.getValue()); 
-    } 
-    if (Author.getValue() != "") {
-      sm->AddMetaData("author", Author.getValue()); 
-    } 
-    if (Date.getValue() != "") {
-      sm->AddMetaData("date", Date.getValue()); 
-    } 
-    if (Title.getValue() != "") {
-      sm->AddMetaData("title", Title.getValue()); 
+    smdbprintf(1, "Adding metadata (%d entries)...\n", Tag.getValue().size()); 
+    vector<VectFromString<string> >::const_iterator pos = Tag.begin(), endpos = Tag.end(); 
+    while (pos != endpos) {
+      sm->SetMetaData((*pos)[0], (*pos)[1]); 
+      ++pos; 
     } 
     sm->WriteMetaData(); 
   }
