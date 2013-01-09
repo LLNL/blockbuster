@@ -1,0 +1,43 @@
+We are now supporting the use of metadata in movies.  This does not require a new file format per se, just an extension to the current format.  We shall store the metadata at the end of SM 2.0 movies.  OK, so it's a new format.  So sue me.    
+
+       METADATA TOOLS
+       We will use the metadata to identify, list and describe our movies on the clusters. 
+       We need a single list of all movies, merged but separable, with a way to view them.  
+       A Qt GUI listing all movies would be a good start.  We could use metadata within the
+       movies to characterize them more deeply. 
+       I think that collecting the list of movies on each cluster into a database on a regular 
+       basis would enable this to work.  
+
+       METADATA FORMAT IN STREAMING MOVIES
+       The metadata section shall begin at the first byte following the last frame of the 
+       movie and continues to the end of the movie.  Metadata is a general term and can 
+       include any arbitrary information, including binary payloads, that one might want
+       to include with a movie.  The metadata is written  as follows. 
+       Naturally, fields (2) and (4)  are big-endian.  
+
+         (1) n bytes: <data payload: see below>
+         (2) 8 bytes: uint64: payload length
+         (3) 1014 bytes: <tag name: null terminated ASCII sequence> 
+         (4) 8 bytes: uint64 : a binary signature constant 0x0088BBeecc113399
+
+ 
+       This allows the metadata to be found simply by reading the last 8 bytes of the file, 
+       confirming the binary signature (4), and reading field (3) to check if the tag is of
+       interest.         
+       If the tag name is not understood by the reader, the metadata item shall simply be 
+       skipped.  
+       You then can read the payload by seeking backwards and reading the data.  The next 
+       metadata item is found by reading the   8 bytes preceding this one, and so on.  This
+       backwards flow is convenient, flexible, and eliminates the need to store any more
+       than just the metadata itself.  
+       
+       The data payload may theoretically in the future be of any format, including binary, 
+       compressed,  "wrong" endian, etc.  However, currently supported payloads are all big 
+       endian and start with a magic number and have the following formats: 
+         METADATA_TYPE_ASCII:  8 bytes: magic number 0xA5C11A5C11A5C11A
+                               8 bytes: uint64_t giving  length of null-terminated string
+                               n bytes: null-terminated ASCII string,             
+         METADATA_TYPE_DOUBLE: 8 bytes: magic number 0xF10A7F10A7F10A7F
+                               8 bytes: double (FP64)
+         METADATA_TYPE_INT64:  8 bytes: magic number 0x4244224442244442
+                               8 bytes: long long (int64_t)
