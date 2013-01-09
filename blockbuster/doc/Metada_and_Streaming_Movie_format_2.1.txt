@@ -1,5 +1,18 @@
 We are now supporting the use of metadata in movies.  This does not require a new file format per se, just an extension to the current format.  We shall store the metadata at the end of SM 2.0 movies.  OK, so it's a new format.  So sue me.    
 
+USE CASES: 
+    Eventually, we would like movie information to be available in the Lorenz Web toolkit.  To that end, we will need a tool that sets and gets tags, and also can work with thumbnails.  
+    Scott Miller and other experts should be able to add metadata and query both files, directories, and lists of files for metadata.  
+    Examples: SMquery --taglist --listfiles *sm  --- gives a list of unique tags found in the given list of movies.  For each tag, list the movies that contain the tag.  
+              SMquery --tag Author --listfiles *sm --- gives the unique list of values for movies in the list that contain metadata labeled by the tag "Author."  For each value, list the movies that have that value. 
+              SMquery --tag Author --match '.*Streitz.*' *sm --- lists the movies in the given list that match the expression ".*Streitz.*" in the value for tag "Author".  
+              SMquery --thumbnail *sm -- extract the "thumbnail" frame for each movie in the list, saving as Moviename_thumbnail.png
+              (FUTURE) SMquery --thumbnail --res 100x100 *sm -- extract the thumbnail for each movie in the list, saving as Moviename_thumbnail.png, at a resolution of 100x100
+              (FUTURE) SMquery --host rzbeast --list '*sm' -- list all the movies on rzbeast in /usr/dvstmp/Movies or whatever canonical location
+              SMtag --set Author 'Fred Streitz' *Streitz*sm  --- sets the Author tag in the given movies to "Fred Streitz"
+              SMtag --thumbnail 50 --res 50x50 movie.sm -- set the thumbnail for the movie to be the image in frame 50, resolution 50x50
+              
+
        METADATA TOOLS
        We will use the metadata to identify, list and describe our movies on the clusters. 
        We need a single list of all movies, merged but separable, with a way to view them.  
