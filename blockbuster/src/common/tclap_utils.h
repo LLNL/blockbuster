@@ -1,6 +1,6 @@
 #ifndef TCLAP_UTILS_H
 #define TCLAP_UTILS_H 1 
-
+#include <vector>
 #include <tclap/CmdLine.h>
 #include <iterator>
 
@@ -8,7 +8,7 @@ template <class T>
 struct VectFromString {
   VectFromString() { valid = false; expectedElems = 0; }
 
-  vector<T> elems;
+  std::vector<T> elems;
   // operator= will be used to assign to the vector
   VectFromString operator=(const std::string &str)
   {
