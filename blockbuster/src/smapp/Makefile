@@ -66,7 +66,6 @@ rename: rename.o $(SMLIB)
 
 clean:
 	rm -rf $(CC_CACHE) *.o core $(OFILES) sminfo
-	makedepend
 
 # use this carefully!  
 depend: $(SFILES)
