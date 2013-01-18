@@ -33,7 +33,7 @@ include ../config/config
 export CPPFLAGS += -Ismdfc
 SRC_FILES = smBase.C smXZ.C smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C smdfc/smdfc.c
 OFILES = smBase.o smXZ.o smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o smdfc.o
-HFILES = smBase.h smBaseP.h smXZ.h smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h smdfc/smdfc.h
+HFILES = sm.h smBase.h smBaseP.h smXZ.h smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h smdfc/smdfc.h
 
 all: lib doc include
 
