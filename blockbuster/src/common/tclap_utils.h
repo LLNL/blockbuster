@@ -23,7 +23,7 @@ struct VectFromString {
     return *this;
   }
   
-  T operator [] (int i) {return elems[i]; }
+  T operator [] (int i) const {return elems[i]; }
 
   std::ostream& print(std::ostream &os) const
   {
