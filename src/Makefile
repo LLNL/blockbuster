@@ -32,7 +32,7 @@ BUILD-ALL = \
 	export INSTALL_DIR=$${INSTALL_DIR}; \
 	for dir in $(BLOCKBUSTERBUILDDIRS); do \
 		echo building dir $$dir; \
-		if ! cd $(BUILD_ROOT)/$${dir} || ! $(MAKE) -j 20 $(1);  then \
+		if ! cd $(BUILD_ROOT)/$${dir} || ! $(MAKE) $(1);  then \
 						echo Make failed in $${dir}; \
 			exit 1; \
 		fi; \
