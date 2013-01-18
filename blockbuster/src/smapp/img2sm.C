@@ -38,12 +38,7 @@
 #include <string.h>
 #include <math.h>
 #include <libgen.h>
-#include "sm/smLZO.h"
-#include "sm/smRLE.h"
-#include "sm/smGZ.h"
-#include "sm/smXZ.h"
-#include "sm/smRaw.h"
-#include "sm/smJPG.h"
+#include <sm/sm.h>
 
 #include "zlib.h"
 #include "pngsimple.h"
@@ -51,7 +46,7 @@
 #include "libimage/sgilib.h"
 #include "../libpnmrw/libpnmrw.h"
 #include "simple_jpeg.h"
-#include "../config/version.h"
+#include "version.h"
 #include <tclap_utils.h>
 #include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
@@ -152,7 +147,7 @@ void workerThreadFunction(void *workerData) {
 
 void workproc(void *arg);
 
-void cmdline(char *app)
+ void cmdline(char *app)
 {  
   fprintf(stderr,"%s (%s) usage: %s [options] template output\n",
           basename(app), BLOCKBUSTER_VERSION, basename(app));
