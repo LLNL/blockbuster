@@ -53,6 +53,7 @@ extern "C" {
 #endif
 
 #include <sys/types.h>
+#include <sys/dtrace.h>
 
 #ifndef WIN32
 #include <unistd.h>
