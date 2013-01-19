@@ -17,8 +17,8 @@ export CPPFLAGS += -I../common -I../config -I$(INSTALL_DIR)/include -I$(INSTALL_
 export LDFLAGS += -L$(INSTALL_DIR)/lib
 export X11_INCLUDES += -I/usr/X11R6/include
 ifeq ($(shell uname),Darwin)
-export CPPFLAGS += -I/sw/include -I/usr/X11R6/include
-export LDFLAGS += -L/sw/lib -L/usr/X11R6/lib
+export CPPFLAGS += -I/opt/local/include -I/sw/include -I/usr/X11R6/include
+export LDFLAGS += -L/opt/local/lib -L/sw/lib -L/usr/X11R6/lib
 export X11_LIBS +=  -lX11 -lGL
 endif
 
