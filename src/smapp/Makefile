@@ -51,14 +51,9 @@ manpages:
 	mkdir -p $(INSTALL_DIR)/man/man1
 	cp *.1 $(INSTALL_DIR)/man/man1
 
-sm%: sm%.o $(SMLIB) simple_jpeg.o
+$(OFILES) : % : %.o $(SMLIB) simple_jpeg.o
 	@echo executing generic build line
-	$(CXX)  $^ -o $@ $(CXXFLAGS) $(LIBS) 
-
-
-img2sm: img2sm.o $(SMLIB) simple_jpeg.o 
-	$(CXX)  -o $@ $^ $(CXXFLAGS) -limage -lm -levomovie $(LIBS)
-
+		$(CXX)  $^ -o $@ $(CXXFLAGS) $(LIBS) 
 
 rename: rename.o $(SMLIB)
 	$(CXX)  rename.o -o $@ $(CXXFLAGS) -lm
