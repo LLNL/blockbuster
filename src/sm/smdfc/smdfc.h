@@ -42,6 +42,7 @@
 **  calling application.
 **
 **  Author: rjf, LLNL
+**  Mods: Rich Cook
 **
 */
 
@@ -53,7 +54,10 @@ extern "C" {
 #endif
 
 #include <sys/types.h>
+
+#if defined(__APPLE__) && defined(__MACH__)
 #include <sys/dtrace.h>
+#endif
 
 #ifndef WIN32
 #include <unistd.h>
