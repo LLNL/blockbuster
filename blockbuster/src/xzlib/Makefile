@@ -31,9 +31,9 @@ xzname=xz-5.0.4
 libname=$(INSTALL_DIR)/lib/liblzma
 include ../config/config
 
-all: $(libname).so
+all: $(libname).a
 
-$(libname).so:
+$(libname).a:
 	[ -d ${xzname} ] || tar -xjf ${xzname}.tar.bz2
 	cd  ${xzname}; \
 	CC="$(CC)" CFLAGS="$(CFLAGS)" ./configure --prefix=$(INSTALL_DIR); \
