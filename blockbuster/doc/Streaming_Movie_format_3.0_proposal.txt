@@ -1,8 +1,10 @@
+        For metadata plans, please see Streaming_Movie_format_2.1.txt
+
         Version 2.0 is in the man page.  As of version 3.0, the streaming movie format 
         shall be as follows: 
 
       The  format consists of a header, a table of resolutions, a frameoffset table and 
-      image data, optionally followed by arbitrary information we shall call "metadata."
+      image data. 
 
       The file is to written as big endian to ensure cross-platform compatibility.  
 
@@ -61,39 +63,6 @@
        organization for a given compression scheme may be found be referencing the appro-
        priate subclass.
 
-       METADATA
-       The metadata section shall begin at the first byte following the last frame of the 
-       movie and continues to the end of the movie.  Metadata is a general term and can 
-       include any arbitrary information, including binary payloads, that one might want
-       to include with a movie.  The metadata is written  as follows. 
-       Naturally, fields (2) and (4)  are big-endian.  
-
-         (1) n bytes: <data payload: see below>
-         (2) 8 bytes: uint64: payload length
-         (3) 1014 bytes: <tag name: null terminated ASCII sequence> 
-         (4) 8 bytes: uint64 : a binary signature constant 0x0088BBeecc113399
-
- 
-       This allows the metadata to be found simply by reading the last 8 bytes of the file, 
-       confirming the binary signature (4), and reading field (3) to check if the tag is of
-       interest.         
-       If the tag name is not understood by the reader, the metadata item shall simply be 
-       skipped.  
-       You then can read the payload by seeking backwards and reading the data.  The next 
-       metadata item is found by reading the   8 bytes preceding this one, and so on.  This
-       backwards flow is convenient, flexible, and eliminates the need to store any more
-       than just the metadata itself.  
-       
-       The data payload may theoretically in the future be of any format, including binary, 
-       compressed,  "wrong" endian, etc.  However, currently supported payloads are all big 
-       endian and start with a magic number and have the following formats: 
-         METADATA_TYPE_ASCII:  8 bytes: magic number 0xA5C11A5C11A5C11A
-                               8 bytes: uint64_t giving  length of null-terminated string
-                               n bytes: null-terminated ASCII string,             
-         METADATA_TYPE_DOUBLE: 8 bytes: magic number 0xF10A7F10A7F10A7F
-                               8 bytes: double (FP64)
-         METADATA_TYPE_INT64:  8 bytes: magic number 0x4244224442244442
-                               8 bytes: long long (int64_t)
 
 
 
