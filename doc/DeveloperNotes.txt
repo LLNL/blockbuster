@@ -5,7 +5,7 @@ DEVELOPMENT TASKS:all now tracked on sourceforge website
 FEATURES: all now tracked on sourceforge website
 
 ----------------------------------------------------------------------------------------------------------
-BUGS: all are now in blockbuster.sourceforge.net/tracker
+BUGS: all are now in http://blockbuster.sourceforge.net/tracker
 
 -------------------------------------------------------------
 VERSION RELEASE MANAGEMENT: 

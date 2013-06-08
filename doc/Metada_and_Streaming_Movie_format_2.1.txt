@@ -1,17 +1,57 @@
-We are now supporting the use of metadata in movies.  This does not require a new file format per se, just an extension to the current format.  We shall store the metadata at the end of SM 2.0 movies.  OK, so it's a new format.  So sue me.    
+We are now supporting the use of metadata in movies.  This does not require a new file format per se, just an extension to the current format.  We shall store the metadata at the end of SM 2.0 movies.  OK, so it's a new format.  So sue me.  
 
 USE CASES: 
     Eventually, we would like movie information to be available in the Lorenz Web toolkit.  To that end, we will need a tool that sets and gets tags, and also can work with thumbnails.  
     Scott Miller and other experts should be able to add metadata and query both files, directories, and lists of files for metadata.  
-    Examples: SMquery --taglist --listfiles *sm  --- gives a list of unique tags found in the given list of movies.  For each tag, list the movies that contain the tag.  
-              SMquery --tag Author --listfiles *sm --- gives the unique list of values for movies in the list that contain metadata labeled by the tag "Author."  For each value, list the movies that have that value. 
-              SMquery --tag Author --match '.*Streitz.*' *sm --- lists the movies in the given list that match the expression ".*Streitz.*" in the value for tag "Author".  
-              SMquery --thumbnail *sm -- extract the "thumbnail" frame for each movie in the list, saving as Moviename_thumbnail.png
-              (FUTURE) SMquery --thumbnail --res 100x100 *sm -- extract the thumbnail for each movie in the list, saving as Moviename_thumbnail.png, at a resolution of 100x100
-              (FUTURE) SMquery --host rzbeast --list '*sm' -- list all the movies on rzbeast in /usr/dvstmp/Movies or whatever canonical location
-              SMtag --set Author 'Fred Streitz' *Streitz*sm  --- sets the Author tag in the given movies to "Fred Streitz"
-              SMtag --thumbnail 50 --res 50x50 movie.sm -- set the thumbnail for the movie to be the image in frame 50, resolution 50x50
-              
+    Tag values shall be of three types for now:  
+             1.  a simple text string with zero or more chars
+             2.  a list of text strings, for storing keywords, or authors or other "list" types.  This will just be stored as a string starting with the special 9-char sequence: '[SM_LIST]', followed by a series of list elements, delimited by the 13-char sequence '[SM_LITEM]'.  Example:  "[SM_LIST]This is item 1[SM_LITEM]This is the second item[SM_LITEM]This is the 3rd and final item."  In this way, list items can contain any sequence of ASCII characters.  
+             3.  a thumbnail (an image file stored in its entirety)
+
+    There will be a canonical list of tags, and ways to set them.  
+    Also need to be able to see if a tag is missing.   
+
+    CANONICAL SET OF DESCRIPTIVE TAGS SET AT WILL
+    Title         -- a string 
+    Authors       -- a list of strings
+    Description   -- a string 
+    ScienceType   -- a list of strings
+    UCRL          -- a string 
+    CodeName      -- a string 
+    SimStartTime  -- a string entered implicitly as local time in flexible format ("3 hours ago", etc), stored as UTC, regurgitated explicitly in local time e.g "Mon Jan 14 17:18:12 PST 2013"
+    SimDuration   -- days:hours:minutes
+    SimCPUs       -- a string 
+    SimCluster    -- a string 
+    Keywords      -- a list of strings  
+    
+    CANONICAL SET OF DESCRIPTIVE TAGS SET AT MOVIE CREATION TIME
+    Creator  (Ideally, using the username of the user and information from the finger command if available)
+    CreateDate      
+    CreateHost
+    CreateCommand
+
+    QUERIES: (smquery)
+
+    Probably most desirable:  "Tell me all the movies that match keyword pattern X"
+                              "Tell me all the movies made by author A"
+                              "Tell me all the movies made with code C"
+                              "All movies made on machine M"
+                              Need to be able to filter by date.  
+
+    smquery --canonical                             --- lists the canonical list of tags.  
+    smquery --missing *sm                           --- tells which canonical tags are missing from which of the given movies.
+    smquery --listtags *sm                          --- gives a list of unique tags found in the given list of movies.  For each tag, also lists the movies that contain the tag.  
+    smquery --tag Author *sm                        --- gives the unique list of values for movies in the list that contain metadata labeled by the tag "Author."  For each value, list the movies that have that value. 
+    smquery --match Author '.*Streitz.*' *sm        --- lists the movies in the given list whose Author tag values match the expression ".*Streitz.*"
+    smquery --thumbnail *sm                         --- extract the "thumbnail" frame for each movie in the list, saving as Moviename_thumbnail.png
+    (FUTURE) smquery --thumbnail --res 100x100 *sm  --- extract the thumbnail for each movie in the list, saving as Moviename_thumbnail.png, at a resolution of 100x100
+    (FUTURE) smquery --host rzbeast --list '*sm'    --- list all the movies on rzbeast in /usr/dvstmp/Movies or whatever canonical location
+
+    SETTING AND CHANGING TAGS: (smtag) 
+    smtag --tag Author --value 'Fred Streitz' *Streitz*sm   --- sets the Author tag in the given movies to "Fred Streitz"
+    smtag --thumbnail 50 --xres 50 movie.sm                 --- set the thumbnail for the movie to be the image in frame 50, with X resolution 50 pixels and Y resolution automatically set appropriately
+    smtag --canonical                                       --- prompt for all canonical tags, one by one. 
+
 
        METADATA TOOLS
        We will use the metadata to identify, list and describe our movies on the clusters. 
