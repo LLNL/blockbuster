@@ -85,7 +85,7 @@ int rotate_img(unsigned char *img,int dx,int dy,float rot);
 void rotate_dims(float rot,int *dx,int *dy);
 void flipx(unsigned char *img,int dx,int dy);
 void flipy(unsigned char *img,int dx,int dy);
-void cmdline(char *app);
+//void cmdline(char *app);
 int check_if_png(char *file_name,int *size);
 int read_png_image(char *file_name,int *iSize,unsigned char *buf);
 
@@ -147,6 +147,7 @@ void workerThreadFunction(void *workerData) {
 
 void workproc(void *arg);
 
+/*
  void cmdline(char *app)
 {  
   fprintf(stderr,"%s (%s) usage: %s [options] template output\n",
@@ -162,7 +163,7 @@ void workproc(void *arg);
   fprintf(stderr,"\t-ignore Allows invalid templates.\n");
   exit(1);
 }
-
+*/ 
 //=================================================
 void FillInputBuffer(Work *wrk) {
   
@@ -494,11 +495,6 @@ int main(int argc,char **argv)
   TCLAP::MultiArg<VectFromString<string> > Tag("T", "Tag", "Store given string in given tag.  Can be given multiple times to create multiple tags.", false, "quoted pair: 'tagname value'"); 
   cmd.add(Tag); 
 
-  /*  TCLAP::ValueArg<string>Description("", "Description", "Store given string in 'Description' tag", false, "", "quoted descriptive text", cmd); 
-  TCLAP::ValueArg<string>Author("", "Author", "Store given string in 'Author' tag", false, "", "quoted author name", cmd); 
-  TCLAP::ValueArg<string>Date("", "Date", "Store given string in 'Date' tag", false, "", "quoted date", cmd); 
-  TCLAP::ValueArg<string>Title("", "Title", "Store given string in 'Title' tag", false, "", "quoted title", cmd); 
-  */ 
   TCLAP::SwitchArg planar("p", "planar", "Raw img is planar interleaved (default: pixel interleave)", cmd, false); 
   TCLAP::SwitchArg flipx("X", "flipx", "Flip the image over the X axis", cmd, false); 
   TCLAP::SwitchArg flipy("Y", "flipy", "Flip the image over the Y axis", cmd, false); 
@@ -731,11 +727,16 @@ int main(int argc,char **argv)
     iSize[2] = libi->zsize;
     sgiClose(libi);
   } else if (imageType == 2) { // RAW compressed with GZip -- weird
-    if (iSize[0] < 0) cmdline(argv[0]);
-    if ((iSize[2] != 1) && (iSize[2] != 3)) cmdline(argv[0]);
-    if (iSize[0] < 0) cmdline(argv[0]);
-    if (iSize[1] < 0) cmdline(argv[0]);
-    if (iSize[3] < 0) cmdline(argv[0]);
+    if (iSize[0] < 0) 
+      errexit("Error: X size cannot be negative for RAW format."); 
+    if (iSize[1] < 0)  
+      errexit("Error: Y size cannot be negative for RAW format."); 
+    if ((iSize[2] != 1) && (iSize[2] != 3)) {
+      cerr << "Warning: for RAW format, depth must be either 1 or 3.  Ignoring your values and using 1 instead." << endl;
+      iSize[2] = 1; 
+    }
+    if (iSize[3] < 0) 
+      errexit("Error: 'header' value cannot be negative for RAW format."); 
   } else if (imageType == 3) { // PNM
     int     dx,dy,fmt;
     xelval  value;

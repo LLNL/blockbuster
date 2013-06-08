@@ -147,7 +147,7 @@ int main(int argc,char **argv)
     
   } else {
     string suffix = format.getValue();
-    if (suffix == "") {
+    if (suffix == "default") {
       string templatestr = nameTemplate.getValue(); 
       string::size_type idx = templatestr.rfind('.'); 
       if (idx == string::npos) {
@@ -168,9 +168,12 @@ int main(int argc,char **argv)
       imageType = 4;
     }
   }
+  int verbosityValue = verbosity.getValue(); 
+  if (!verbosityValue && verbose.getValue()) 
+    verbosityValue = 1; 
 
   smBase::init();
-  sm_setVerbose(verbose.getValue()?1:verbosity.getValue());  
+  sm_setVerbose(verbose.getValue()?1:verbosityValue);  
 
   if ((argc - argnum) == 1) {
     getinfo = true; // even for sm2img, a single arg is a request for info
@@ -228,7 +231,7 @@ int main(int argc,char **argv)
       if (sm->getFlags() & SM_FLAGS_STEREO) printf("Stereo ");
       printf("\n");
       
-      if (verbosity.getValue()) {
+      if (verbosityValue) {
         printf("Frame\tOffset\tLength\n");
         int res = 0; 
         for (res=0; res < sm->getNumResolutions(); res++) {
@@ -326,7 +329,7 @@ int main(int argc,char **argv)
     wrk->nameTemplate = nameTemplate.getValue(); 
     wrk->imageType = imageType; 
     wrk->jqual = quality.getValue(); 
-    wrk->verbosity = verbosity.getValue(); 
+    wrk->verbosity = verbosityValue; 
     pt_pool_add_work(pool, workproc, wrk);
     framenum+= frameStep.getValue();
   }
@@ -367,7 +370,7 @@ void workproc(void *vp) {
       framenum <= lastFrame.getValue();
       framenum += framestep ) {	
   */ 
-  if (work->verbosity) fprintf(stderr, "Thread %d working on frame %d)\n",
+  if (work->verbosity) fprintf(stderr, "Thread %d working on frame %d\n",
                           threadnum, work->frameNum); 
   
   if(work->sm->getVersion() > 1) {
