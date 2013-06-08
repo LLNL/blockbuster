@@ -219,7 +219,7 @@ off64_t SM_MetaData::Read(int lfd) {
   char namebuf[1014]; 
 
   filepos = LSEEK64(lfd,-headerLength,SEEK_CUR); // to beginning of header, at payload length
-  smdbprintf(5, "seeked to beginning of header at pos %d\n", filepos); 
+  smdbprintf(5, "SM_MetaData::Read(): seeked to beginning of metadata header at pos %d\n", filepos); 
   off64_t headerpos = filepos; 
     
   filepos += ReadAndSwap(lfd, &payloadLength, 1, needswap);  
@@ -230,7 +230,7 @@ off64_t SM_MetaData::Read(int lfd) {
   
   filepos += ReadAndSwap(lfd, &mdmagic, 1, needswap);
   if (mdmagic != METADATA_MAGIC) {
-    smdbprintf(1, "Found bad magic %ld at pos %d (expected %ld)\n", mdmagic, filepos-8, METADATA_MAGIC); 
+    smdbprintf(4, "SM_MetaData::Read(): Found bad magic %ld at pos %d (expected %ld), so no (more) metadata is forthcoming\n", mdmagic, filepos-8, METADATA_MAGIC); 
     return 0; 
   }
   
@@ -420,7 +420,7 @@ smBase *smBase::openFile(const char *_fname, int numthreads)
    int fd;
    int i;
 
-   smdbprintf(5, "smBase::openFile(%s, %d)", _fname, numthreads);
+   smdbprintf(5, "smBase::openFile(%s, %d)\n", _fname, numthreads);
 
    if ((fd = OPEN(_fname, O_RDONLY)) == -1)
       return(NULL);
@@ -608,14 +608,15 @@ void smBase::readHeader(void)
    magic = ntohl(magic);
    if (magic == SM_MAGIC_1) mVersion = 1;
    if (magic == SM_MAGIC_2) mVersion = 2;
-
+   
+   
    READ(lfd, &type, sizeof(u_int));
    setFlags(ntohl(type) & SM_FLAGS_MASK);
    type = ntohl(type) & SM_TYPE_MASK;
 
    READ(lfd, &mNumFrames, sizeof(u_int));
    mNumFrames = ntohl(mNumFrames);
-   smdbprintf(4,"open file, mNumFrames = %d", mNumFrames);
+   smdbprintf(4,"smBase::readHeader(): opened file, magic says file version = %d, mNumFrames = %d\n", mVersion, mNumFrames);
 
    READ(lfd, &i, sizeof(u_int));
    framesizes[0][0] = ntohl(i);
@@ -628,8 +629,8 @@ void smBase::readHeader(void)
    memcpy(tilesizes,framesizes,sizeof(framesizes));
    mNumResolutions = 1;
 
-   smdbprintf(4,"image size: %d %d", framesizes[0][0], framesizes[0][1]);
-   smdbprintf(4,"mNumFrames=%d",mNumFrames);
+   smdbprintf(4,"smBase::readHeader(): image size: %d %d\n", framesizes[0][0], framesizes[0][1]);
+   smdbprintf(4,"smBase::readHeader(): mNumFrames=%d\n",mNumFrames);
 
    // Version 2 header is bigger...
    if (mVersion == 2) {
@@ -653,9 +654,9 @@ void smBase::readHeader(void)
        if(maxNumTiles < (tileNxNy[i][0] * tileNxNy[i][1])) {
 	 maxNumTiles = tileNxNy[i][0] * tileNxNy[i][1];
        }
-       smdbprintf(5,"tileNxNy[%ld,%ld] : maxnumtiles %ld", tileNxNy[i][0], tileNxNy[i][1],maxNumTiles);
+       smdbprintf(5,"smBase::readHeader(): tileNxNy[%ld,%ld] : maxnumtiles %ld\n", tileNxNy[i][0], tileNxNy[i][1],maxNumTiles);
      }
-     smdbprintf(5,"maxtilesize = %ld, maxnumtiles = %ld",maxtilesize,maxNumTiles);
+     smdbprintf(5,"smBase::readHeader(): maxtilesize = %ld, maxnumtiles = %ld\n",maxtilesize,maxNumTiles);
      
    }
    else {
@@ -697,17 +698,21 @@ void smBase::readHeader(void)
    SM_MetaData md; 
    while (md.Read(lfd)) {
      mMetaData.push_back(md); 
-     smdbprintf(5, "Read metadata: %s\n", md.toString().c_str());
+     smdbprintf(5, "smBase::readHeader(): Read metadata: %s\n", md.toString().c_str());
    }
 
 
 #if SM_VERBOSE
    for (w=0; w<mNumFrames; w++) {
-     smdbprintf(5,"window %d: %d size %d", w, (int)mFrameOffsets[w],mFrameLengths[w]);
+     smdbprintf(5,"smBase::readHeader(): window %d: %d size %ld\n", w, (int)mFrameOffsets[w],mFrameLengths[w]);
    }
 #endif
-   smdbprintf(4,"maximum frame size is %d", maxFrameSize);
-   
+   smdbprintf(4,"smBase::readHeader(): maximum frame size is %ld\n", maxFrameSize);
+   if (maxFrameSize < 0) {
+     smdbprintf(0,"smBase::readHeader(): Error! maximum frame size is %ld\n", maxFrameSize);
+     exit(1); 
+   }
+     
    // bump up the size to the next multiple of the DIO requirements
    maxFrameSize += 2;
 
@@ -715,7 +720,7 @@ void smBase::readHeader(void)
    CLOSE(lfd);
    for (i=0; i<mThreadData.size(); i++) {
      unsigned long w;
-     if(mVersion == 2) {
+     //if(mVersion == 2) {
        // put preallocated tilebufs and tile info support here as well
        mThreadData[i].io_buf.clear(); 
        mThreadData[i].io_buf.resize(maxFrameSize, 0);
@@ -723,7 +728,7 @@ void smBase::readHeader(void)
        mThreadData[i].tile_buf.resize(maxtilesize*3, 0);
        mThreadData[i].tile_infos.clear(); 
        mThreadData[i].tile_infos.resize(maxNumTiles);
-     }
+       //}
    }
    return; 
 }
@@ -786,12 +791,13 @@ uint32_t smBase::readFrame(u_int f, int threadnum)
   
   smdbprintf(5,"readCompressedFrame frame %d, thread %d, %lu bytes at offset %lu\n", f, threadnum, size, mFrameOffsets[f]);
   
-  if (LSEEK64(fd, mFrameOffsets[f], SEEK_SET) < 0){
-    smdbprintf(0, "Error seeking to frame %d\n", f);
+  long offset = LSEEK64(fd, mFrameOffsets[f], SEEK_SET); 
+  if (offset < 0 || offset != mFrameOffsets[f]){
+    smdbprintf(0, "Error seeking to frame %d, offset is %d\n", f, offset);
   }
 
   
-  u_char *buf = &mThreadData[threadnum].io_buf[0]; 
+  u_char *buf = &(mThreadData[threadnum].io_buf[0]); 
   mThreadData[threadnum].currentFrame = f; 
   
   int r = readData(fd, buf, size); 
