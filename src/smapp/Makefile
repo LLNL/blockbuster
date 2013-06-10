@@ -34,7 +34,7 @@ include ../config/config
 LIBS = $(LDFLAGS) -L$(INSTALL_DIR)/lib -lsmovie -lptutil  -levomovie $(IFL_LIBS) -lpthread -lm -ltiff -lpnmrw -lsrwpng -lz -llzo2 -llzma -limage -lm $(GZIP_LIBS) $(TIFF_LIBS) $(PNG_LIBS) $(PNM_LIBS) -ljpeg 
 
 SMLIB = $(INSTALL_DIR)/lib/libsmovie.a $(INSTALL_DIR)/lib/libptutil.a
-SFILES = smtag.C smquery.C smmake.C smtest.C ifl2sm.C img2sm.C sm2img.C rename.C smcat.C smevo.C
+SFILES = smtag.C smquery.C smmake.C smtest.C ifl2sm.C img2sm.C sm2img.C rename.C smcat.C smevo.C debugutil.c
 OFILES = smtag smquery smmake smtest ifl2sm img2sm sm2img rename smcat smevo
 
 CPPFLAGS += -g 
@@ -55,6 +55,9 @@ $(OFILES) : % : %.o $(SMLIB) simple_jpeg.o
 	@echo executing generic build line
 		$(CXX)  $^ -o $@ $(CXXFLAGS) $(LIBS) 
 
+smtag: smtag.o debugutil.o
+		$(CXX)  $^ -o $@ $(CXXFLAGS) $(LIBS) 
+
 rename: rename.o $(SMLIB)
 	$(CXX)  rename.o -o $@ $(CXXFLAGS) -lm
 	cp $@ $(INSTALL_DIR)/bin
@@ -68,6 +71,7 @@ depend: $(SFILES)
 
 # DO NOT DELETE
 
+smtag.o: ../sm/smBase.h ../sm/smBaseP.h ../common/stringutil.h
 smquery.o: ../sm/sm.h ../sm/smLZO.h ../sm/smBase.h ../sm/smBaseP.h
 smquery.o: ../common/stringutil.h ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h
 smquery.o: ../sm/smRaw.h ../sm/smJPG.h
@@ -89,3 +93,4 @@ smcat.o: ../config/version.h ../pt/pt.h
 smevo.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smBaseP.h ../common/stringutil.h
 smevo.o: ../sm/smGZ.h ../sm/smLZO.h ../sm/smRaw.h ../sm/smJPG.h
 smevo.o: ../config/version.h
+debugutil.o: debugutil.h
