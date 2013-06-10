@@ -101,7 +101,11 @@ int main(int argc, char *argv[]) {
         ++pos; 
       } 
       dbprintf(1, str(boost::format("Got tag %1% and value %2%\n") % tokens[0] % tokens[1]).c_str()); 
+      sm->SetMetaData(tokens[0], tokens[1]); 
+      
     }
+    sm->WriteMetaData(); 
+    sm->closeFile(); 
   }
      
   return 0;

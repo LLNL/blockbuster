@@ -75,7 +75,6 @@ using namespace std;
 #include "smXZ.h"
 #include "smLZO.h"
 #include "smJPG.h"
-#include <stringutil.h>
 
 //#undef  SM_VERBOSE
 int smVerbose = 0; 
@@ -358,7 +357,7 @@ smBase::smBase(const char *_fname, int numthreads, uint32_t bufferSize):mNumThre
     mMovieName = strdup(_fname);
     int threadnum = mNumThreads;
     while (threadnum--) {
-      mThreadData[threadnum].fd = OPEN(mMovieName, O_RDONLY);
+      mThreadData[threadnum].fd = OPEN(mMovieName, O_RDWR);
     }
     readHeader();
     initWin(); // only does something for version 1.0
@@ -422,7 +421,7 @@ smBase *smBase::openFile(const char *_fname, int numthreads)
 
    smdbprintf(5, "smBase::openFile(%s, %d)\n", _fname, numthreads);
 
-   if ((fd = OPEN(_fname, O_RDONLY)) == -1)
+   if ((fd = OPEN(_fname, O_RDONLY )) == -1)
       return(NULL);
 
  

@@ -98,7 +98,7 @@ void sm_setVerbose(int level);  // 0-5, 0 is quiet, 5 is verbose
 #include <stdarg.h>
 #include "../common/timer.h"
 #include "../common/stringutil.h"
-void sm_setVerbose(int level);
+extern void sm_setVerbose(int level);
   
 
 struct smMsgStruct {
