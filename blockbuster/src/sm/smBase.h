@@ -181,7 +181,7 @@ struct SM_MetaData {
   SM_MetaData(string tag, double d): mTag(tag), mType(METADATA_TYPE_DOUBLE), mDouble(d) {}
 
   bool operator == (const SM_MetaData&other) const {
-    return other.mTag == mTag; 
+    return (other.mTag == mTag); 
   }
 
   off64_t Read(int filedescr); // read backward from current point in file, leave file ready for another read
@@ -438,7 +438,7 @@ class smBase {
   }
 
   void WriteMetaData(void) { 
-    LSEEK64(mThreadData[0].fd, 0, SEEK_END);
+    LSEEK64(mThreadData[0].fd, mFrameOffsets[mNumFrames*mNumResolutions], SEEK_SET);
     vector<SM_MetaData>::iterator pos = mMetaData.begin(), endpos = mMetaData.end(); 
     while (pos != endpos) {
       pos->Write(mThreadData[0].fd); 
