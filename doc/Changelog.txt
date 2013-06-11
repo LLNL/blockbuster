@@ -2,6 +2,10 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
+VERSION 2.7.3d (r748) Mon Jun 10 17:03:30 PDT 2013
+-- Fixed a crashing bug in handling version 1 movies.  
+
+===============================================================================
 VERSION 2.7.3c (r683) Fri Jul 20 16:21:34 PDT 2012
 -- Fix a segfault in settings.
 -- improve packaging mechanism for distribution
