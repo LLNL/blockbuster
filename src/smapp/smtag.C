@@ -39,6 +39,14 @@ typedef boost::tokenizer<boost::char_separator<char> >  tokenizer;
 
 using namespace std; 
 
+void  GetTagsFromFile(string tagfile, vector<vector<string> > &tagvec){ 
+  return; 
+}
+
+void GetCanonicalTagValuesFromUser(vector<vector<string> > &tagvec) {
+
+  return; 
+}
 int main(int argc, char *argv[]) {
  
   TCLAP::CmdLine  cmd(str(boost::format("%1% sets and changes tags in movies.")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
@@ -49,7 +57,7 @@ int main(int argc, char *argv[]) {
 
   TCLAP::ValueArg<string> tagfile("f", "tagfile", "a file containing name:value pairs to be set", false, "", "filename", cmd); 
   
-  TCLAP::MultiArg<string> taglist("t", "tag", "a name:value pair for a tag being set", false, "tagname:value (value may contain spaces)", cmd); 
+  TCLAP::MultiArg<string> taglist("t", "tag", "a name:value pair for a tag being set or added.", false, "tagname:value (value may contain spaces)", cmd); 
 
   TCLAP::ValueArg<int> thumbnail("n", "thumbnail", "set frame number of thumbnail", false, -1, "frameNum", cmd); 
 
@@ -73,18 +81,17 @@ int main(int argc, char *argv[]) {
   sm_setVerbose(verbosity.getValue());  
   dbg_setverbose(verbosity.getValue()); 
 
-
-  smBase *sm = smBase::openFile(movienames.getValue()[0].c_str(), 1);
-  if (!sm) {
-    fprintf(stderr,"Unable to open the file: %s\n",movienames.getValue()[0].c_str());
-    exit(1);
+  
+  vector<vector<string> >tagvec; 
+  // First, if there is a file, populate the vector from that.
+  if (tagfile.getValue() != "") {
+    GetTagsFromFile(tagfile.getValue(), tagvec); 
   }
- 
+  // Now, add any canonical tags if the user wants to use that interface
   if (canonical.getValue()) {
-    cerr << "canonical tag not implemented yet." << endl; 
-    exit(0); 
+    GetCanonicalTagValuesFromUser(tagvec);   
   }
-
+  // Finally, set any tags explicitly from the command line. 
   if (taglist.getValue().size()) {
     for (uint tagnum = 0; tagnum < taglist.getValue().size(); tagnum++) {
       string arg = taglist.getValue()[tagnum]; 
@@ -100,13 +107,37 @@ int main(int argc, char *argv[]) {
         tokens.push_back(*pos); 
         ++pos; 
       } 
-      dbprintf(1, str(boost::format("Got tag %1% and value %2%\n") % tokens[0] % tokens[1]).c_str()); 
-      sm->SetMetaData(tokens[0], tokens[1]); 
-      
+      dbprintf(2, str(boost::format("Adding tag %1% and value %2% to list of tags to apply\n") % tokens[0] % tokens[1]).c_str()); 
+      tagvec.push_back(tokens); 
     }
-    sm->WriteMetaData(); 
-    sm->closeFile(); 
   }
+
+  
+  for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {  
+    string moviename = movienames.getValue()[0]; 
+    dbprintf(1, str(boost::format("Opening movie file %1%\n")% moviename).c_str()); 
+    smBase *sm = smBase::openFile(moviename.c_str(), 1);
+    if (!sm) {
+      dbprintf(0,"smtag: Error: Unable to open the file: %s\n", moviename.c_str());
+      continue;
+    }
+    if (tagvec.size()) {
+      for (uint tagnum =0; tagnum < tagvec.size(); tagnum++) {
+        dbprintf(2, str(boost::format("Applying tag %1% and value %2%\n") % tagvec[tagnum][0] % tagvec[tagnum][1]).c_str()); 
+        sm->SetMetaData(tagvec[tagnum][0], tagvec[tagnum][1]); 
+        
+      }
+      dbprintf(2, str(boost::format("All tags applied for movie %1%\n") % moviename).c_str()); 
+      sm->WriteMetaData(); 
+      sm->closeFile(); 
+    } // end loop over taglist
+    else if (thumbnail.getValue() != -1)  {
+      int64_t thumbframe =  thumbnail.getValue(); 
+      dbprintf(1, str(boost::format("Setting thumbnail frame to %1%, FWIW.\n")%thumbnail.getValue()).c_str()); 
+      sm->SetMetaData("thumbframe", thumbframe); 
+    }
+    dbprintf(1, "Done with movie %1%\n", moviename.c_str()); 
+  } // end loop over movienames
      
   return 0;
 }
