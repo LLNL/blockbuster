@@ -522,15 +522,15 @@ void smBase::readHeader(void)
    CLOSE(lfd);
    for (i=0; i<mThreadData.size(); i++) {
      unsigned long w;
-     if(mVersion == 2) {
-       // put preallocated tilebufs and tile info support here as well
-       mThreadData[i].io_buf.clear(); 
-       mThreadData[i].io_buf.resize(maxFrameSize, 0);
-       mThreadData[i].tile_buf.clear();
-       mThreadData[i].tile_buf.resize(maxtilesize*3, 0);
-       mThreadData[i].tile_infos.clear(); 
-       mThreadData[i].tile_infos.resize(maxNumTiles);
-     }
+     //if(mVersion == 2) {
+     // put preallocated tilebufs and tile info support here as well
+     mThreadData[i].io_buf.clear(); 
+     mThreadData[i].io_buf.resize(maxFrameSize, 0);
+     mThreadData[i].tile_buf.clear();
+     mThreadData[i].tile_buf.resize(maxtilesize*3, 0);
+     mThreadData[i].tile_infos.clear(); 
+     mThreadData[i].tile_infos.resize(maxNumTiles);
+     //}
    }
    return; 
 }
