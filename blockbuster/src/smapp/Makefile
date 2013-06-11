@@ -56,7 +56,10 @@ $(OFILES) : % : %.o $(SMLIB) simple_jpeg.o
 		$(CXX)  $^ -o $@ $(CXXFLAGS) $(LIBS) 
 
 smtag: smtag.o debugutil.o
-		$(CXX)  $^ -o $@ $(CXXFLAGS) $(LIBS) 
+		$(CXX)  $^ -o $@ $(CXXFLAGS) $(LIBS)
+
+smquery: smquery.o debugutil.o
+		$(CXX)  $^ -o $@ $(CXXFLAGS) $(LIBS) -lboost_regex
 
 rename: rename.o $(SMLIB)
 	$(CXX)  rename.o -o $@ $(CXXFLAGS) -lm

@@ -32,7 +32,7 @@
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
 #include "version.h"
-#include "sm/smBase.h"
+#include "sm/sm.h"
 #include "debugutil.h"
 
 typedef boost::tokenizer<boost::char_separator<char> >  tokenizer;
@@ -70,6 +70,7 @@ int main(int argc, char *argv[]) {
   TCLAP::ValueArg<int> thumbres("r", "thumbres", "the X resolution of the thumbnail (Y res will be autoscaled based on X res)", false, 0, "numpixels", cmd); 
   
   TCLAP::ValueArg<int> verbosity("v", "verbosity", "set verbosity (0-5)", false, 0, "int", cmd); 
+
 
   try {
 	cmd.parse(argc, argv);
@@ -139,9 +140,12 @@ int main(int argc, char *argv[]) {
       }
     } // end loop over taglist
     if (thumbnail.getValue() != -1)  {
-      int64_t thumbframe =  thumbnail.getValue(); 
       dbprintf(1, str(boost::format("Setting thumbnail frame to %1%, FWIW.\n")%thumbnail.getValue()).c_str()); 
-      sm->SetMetaData("thumbframe", thumbframe); 
+      sm->SetMetaData("SM__thumbframe", (int64_t)thumbnail.getValue()); 
+      if (thumbres.getValue() != -1) {
+        dbprintf(1, str(boost::format("Setting thumbnail resolution to %1%, FWIW.\n")%thumbres.getValue()).c_str()); 
+        sm->SetMetaData("SM__thumbres", (int64_t)thumbres.getValue()); 
+      }        
     }
     sm->WriteMetaData(); 
     sm->closeFile(); 
