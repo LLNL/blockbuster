@@ -40,13 +40,19 @@ typedef boost::tokenizer<boost::char_separator<char> >  tokenizer;
 using namespace std; 
 
 void  GetTagsFromFile(string tagfile, vector<vector<string> > &tagvec){ 
+  dbprintf(0, "Tagfiles are not yet supported. :-( \n"); 
+  exit(1); 
   return; 
 }
 
 void GetCanonicalTagValuesFromUser(vector<vector<string> > &tagvec) {
+  dbprintf(0, "--canonical flag is not yet supported. :-( \n"); 
+  exit(1); 
 
   return; 
 }
+
+
 int main(int argc, char *argv[]) {
  
   TCLAP::CmdLine  cmd(str(boost::format("%1% sets and changes tags in movies.")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
@@ -112,6 +118,11 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  if (!tagvec.size() && thumbnail.getValue() == -1) {
+    // this should not be possible due to earlier error checking
+    dbprintf(0,"smtag: Error (programming error?): It appears there's nothing to do.\n");
+    exit(1); 
+  }
   
   for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {  
     string moviename = movienames.getValue()[0]; 
@@ -124,19 +135,17 @@ int main(int argc, char *argv[]) {
     if (tagvec.size()) {
       for (uint tagnum =0; tagnum < tagvec.size(); tagnum++) {
         dbprintf(2, str(boost::format("Applying tag %1% and value %2%\n") % tagvec[tagnum][0] % tagvec[tagnum][1]).c_str()); 
-        sm->SetMetaData(tagvec[tagnum][0], tagvec[tagnum][1]); 
-        
+        sm->SetMetaData(tagvec[tagnum][0], tagvec[tagnum][1]);         
       }
-      dbprintf(2, str(boost::format("All tags applied for movie %1%\n") % moviename).c_str()); 
-      sm->WriteMetaData(); 
-      sm->closeFile(); 
     } // end loop over taglist
-    else if (thumbnail.getValue() != -1)  {
+    if (thumbnail.getValue() != -1)  {
       int64_t thumbframe =  thumbnail.getValue(); 
       dbprintf(1, str(boost::format("Setting thumbnail frame to %1%, FWIW.\n")%thumbnail.getValue()).c_str()); 
       sm->SetMetaData("thumbframe", thumbframe); 
     }
-    dbprintf(1, "Done with movie %1%\n", moviename.c_str()); 
+    sm->WriteMetaData(); 
+    sm->closeFile(); 
+    dbprintf(1, str(boost::format("All flags applied for movie %1%\n") % moviename).c_str()); 
   } // end loop over movienames
      
   return 0;
