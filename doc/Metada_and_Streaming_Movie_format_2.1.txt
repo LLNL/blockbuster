@@ -66,12 +66,14 @@ USE CASES:
        movie and continues to the end of the movie.  Metadata is a general term and can 
        include any arbitrary information, including binary payloads, that one might want
        to include with a movie.  The metadata is written  as follows. 
-       Naturally, fields (2) and (4)  are big-endian.  
+       Naturally, fields (2) - (4)  are big-endian.  
+       Note that Field 3 is the beginning of the header, always 24 bytes before the end of the metadata.
 
-         (1) n bytes: <data payload: see below>
-         (2) 8 bytes: uint64: payload length
-         (3) 1014 bytes: <tag name: null terminated ASCII sequence> 
-         (4) 8 bytes: uint64 : a binary signature constant 0x0088BBeecc113399
+         (1) n bytes: <tag name: null terminated ASCII sequence> 
+         (2) p bytes: <data payload: see below>
+         (3) 8 bytes: uint64 : a binary signature constant 0x0088BBeecc113399
+         (4) 8 bytes: uint64 : tag name length (n)
+         (5) 8 bytes: uint64 : payload length (p)  BEGINNING OF "HEADER" 
 
  
        This allows the metadata to be found simply by reading the last 8 bytes of the file, 
