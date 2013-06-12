@@ -133,6 +133,7 @@ int main(int argc, char *argv[]) {
       dbprintf(0,"smtag: Error: Unable to open the file: %s\n", moviename.c_str());
       continue;
     }
+    dbprintf(5, "Before setting metadata, there are %d metadata items\n", sm->mMetaData.size()); 
     if (tagvec.size()) {
       for (uint tagnum =0; tagnum < tagvec.size(); tagnum++) {
         dbprintf(2, str(boost::format("Applying tag %1% and value %2%\n") % tagvec[tagnum][0] % tagvec[tagnum][1]).c_str()); 
@@ -140,13 +141,17 @@ int main(int argc, char *argv[]) {
       }
     } // end loop over taglist
     if (thumbnail.getValue() != -1)  {
-      dbprintf(1, str(boost::format("Setting thumbnail frame to %1%, FWIW.\n")%thumbnail.getValue()).c_str()); 
-      sm->SetMetaData("SM__thumbframe", (int64_t)thumbnail.getValue()); 
+      int64_t f = thumbnail.getValue(); 
+      dbprintf(1, str(boost::format("Setting thumbnail frame to %1%, FWIW.\n")%f).c_str()); 
+      sm->SetMetaData("SM__thumbframe", f); 
       if (thumbres.getValue() != -1) {
-        dbprintf(1, str(boost::format("Setting thumbnail resolution to %1%, FWIW.\n")%thumbres.getValue()).c_str()); 
-        sm->SetMetaData("SM__thumbres", (int64_t)thumbres.getValue()); 
+        int64_t r = thumbres.getValue(); 
+        dbprintf(1, str(boost::format("Setting thumbnail resolution to %1%, FWIW.\n")%r).c_str()); 
+        sm->SetMetaData("SM__thumbres", r); 
       }        
     }
+    dbprintf(5, "After setting metadata, there are %d metadata items\n", sm->mMetaData.size()); 
+
     sm->WriteMetaData(); 
     sm->closeFile(); 
     dbprintf(1, str(boost::format("All flags applied for movie %1%\n") % moviename).c_str()); 

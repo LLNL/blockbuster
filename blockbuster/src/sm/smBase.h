@@ -46,6 +46,7 @@
 #include <string.h>
 #include <math.h> 
 #include <sys/types.h>
+#include <boost/format.hpp>
 #include "../common/stringutil.h"
 #ifndef WIN32
 #include <sys/mman.h>
@@ -72,7 +73,6 @@
 #endif
 
 //#define SM_VERBOSE
-void sm_setVerbose(int level);  // 0-5, 0 is quiet, 5 is verbose
 
 // On top of the movie "type".  Room for 256 "types".
 #define SM_FLAGS_MASK	0xffffff00
@@ -93,6 +93,9 @@ void sm_setVerbose(int level);  // 0-5, 0 is quiet, 5 is verbose
   output the file, line, time of execution for each statement. 
   Incredibly useful
 */ 
+
+#define SM_VERBOSE 1
+//#undef  SM_VERBOSE
 
 #ifdef SM_VERBOSE 
 #include <stdarg.h>
@@ -149,6 +152,9 @@ inline void sm_real_dbprintf(int , const char * ...) {
 #define METADATA_TYPE_ASCII  0xA5C11A5C11A5C11A
 #define METADATA_TYPE_DOUBLE  0xF10A7F10A7F10A7F
 #define METADATA_TYPE_INT64    0x4244224442244442
+
+extern string payloadTypeToString(uint64_t pt);
+
 /* SM Meta data contents on disk.  The intention is this will be read backward.  In this way, you seek to the end of the file, read the last 8 bytes to confirm a tag, then read preceding 1016 bytes to see what you have, then read the payload.  No table is needed.  
          (1) n bytes: <data payload: see below>
          (2) 8 bytes: uint64: payload length
@@ -183,10 +189,20 @@ struct SM_MetaData {
   bool operator == (const SM_MetaData&other) const {
     return (other.mTag == mTag); 
   }
+  static string payloadTypeToString(uint64_t pt) {
+    if (pt == METADATA_TYPE_UNKNOWN) return "METADATA_TYPE_UNKNOWN"; 
+    if (pt == METADATA_TYPE_ASCII) return "METADATA_TYPE_ASCII"; 
+    if (pt == METADATA_TYPE_DOUBLE) return "METADATA_TYPE_DOUBLE"; 
+    if (pt == METADATA_TYPE_INT64) return "METADATA_TYPE_INT64"; 
+    else return "GARBAGE???"; 
+  }
+  
 
   off64_t Read(int filedescr); // read backward from current point in file, leave file ready for another read
   bool Write(int filedescr); 
   string toString(void) ; 
+  string TypeAsString(void);
+  string ValueAsString(void); 
 };
   
 //===============================================
@@ -425,14 +441,19 @@ class smBase {
     mMetaData.erase(remove(mMetaData.begin(), mMetaData.end(), tag), mMetaData.end()); 
   }
 
+  bool FindInMetaData(const SM_MetaData &md) {
+    bool found = (find(mMetaData.begin(), mMetaData.end(), md) != mMetaData.end());
+    return found; 
+  }
+
   template <class T> 
     void SetMetaData(const string tag, const T &value) {
     SM_MetaData md(tag,value); 
-    if (find(mMetaData.begin(), mMetaData.end(), md) == mMetaData.end()) {
-      //cerr << "pushing back: " << md.toString() << endl;
-      mMetaData.push_back(md); 
+    if (!FindInMetaData(md)) {
+      smdbprintf(5, str(boost::format("SetMetaData(): pushing back: %1%\n")%md.toString()).c_str());
+      mMetaData.push_back(md);  
     } else {
-      //cerr << "replacing: " << md.toString() << endl;
+      smdbprintf(5, str(boost::format("SetMetaData(): replacing old with: %1%\n")%md.toString()).c_str());
       replace(mMetaData.begin(), mMetaData.end(), md, md);  
     }
   }
@@ -446,6 +467,8 @@ class smBase {
     }
     return; 
   }
+
+        
   // close a movie
   void closeFile(void);
   
