@@ -39,10 +39,18 @@ string MetaDataValueAsString(SM_MetaData &smdata) {
 }
 
 //===================================================================
-bool MatchesAPattern(const vector<boost::regex> &patterns, string &s) {
+bool MatchesAPattern(const vector<boost::regex> &patterns, string &s) { 
+  dbprintf(5, "MatchesAPattern: %d patterns to check\n", patterns.size()); 
+
   for (uint patno=0; patno < patterns.size(); patno++) {
-    if (regex_match(s, patterns[patno])) return true; 
+    dbprintf(5, "MatchesAPattern: Comparing string \"%s\" to pattern \"%s\"\n",
+             s.c_str(), patterns[patno].str().c_str()); 
+    if (regex_match(s, patterns[patno])) {
+      dbprintf(5, "\n *** Found match. *** \n"); 
+      return true; 
+    }
   }
+  dbprintf(5, "Found no matches for string \"%s\".\n", s.c_str()); 
   return false; 
 }
 
@@ -82,11 +90,13 @@ int main(int argc, char *argv[]) {
   }
 
   vector<boost::regex> tagPatterns, valuePatterns; 
-  for (uint patno; patno < tagPatternStrings.getValue().size(); patno++) {
-    tagPatterns.push_back(boost::regex(tagPatternStrings.getValue()[patno])); 
+  vector<string> patternStrings = tagPatternStrings.getValue(); 
+  for (uint patno = 0; patno < patternStrings.size(); patno++) {
+    tagPatterns.push_back(boost::regex(patternStrings[patno])); 
   }
-  for (uint patno; patno < valuePatternStrings.getValue().size(); patno++) {
-    tagPatterns.push_back(boost::regex(valuePatternStrings.getValue()[patno])); 
+  patternStrings = valuePatternStrings.getValue(); 
+  for (uint patno = 0; patno < patternStrings.size(); patno++) {
+    valuePatterns.push_back(boost::regex(patternStrings[patno])); 
   }
   
   smBase::init();
@@ -96,11 +106,10 @@ int main(int argc, char *argv[]) {
   for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {
     string filename = movienames.getValue()[fileno]; 
     smBase *sm = smBase::openFile(filename.c_str(), 1);
-    printf("Metadata: (%d entries)\n", sm->mMetaData.size()); 
+    dbprintf(3, "Metadata for %s: (%d entries)\n", filename.c_str(), sm->mMetaData.size()); 
     for (vector <SM_MetaData>::iterator pos = sm->mMetaData.begin();
          pos != sm->mMetaData.end(); pos++) {
       string mdtag = pos->mTag, mdvalue = MetaDataValueAsString(*pos); 
-
       bool tagmatch = MatchesAPattern(tagPatterns, mdtag), 
         valuematch = MatchesAPattern(valuePatterns, mdvalue); 
       if (filenameOnly.getValue()) {
@@ -112,7 +121,7 @@ int main(int argc, char *argv[]) {
       }
       else {
         if (tagmatch) {
-          cout << str(boost::format("%1%: Tag Match: %1%") % filename % mdtag) << endl;
+          cout << str(boost::format("%1%: Tag Match: %2%") % filename % mdtag) << endl;
         }  
         if (valuematch) {
           cout << str(boost::format("%1%: Value Match: %2%") % filename % mdvalue) << endl;
