@@ -459,7 +459,9 @@ class smBase {
   }
 
   void WriteMetaData(void) { 
-    LSEEK64(mThreadData[0].fd, mFrameOffsets[mNumFrames*mNumResolutions], SEEK_SET);
+    ftruncate(mThreadData[0].fd, mFrameOffsets[mNumFrames*mNumResolutions]); 
+    uint64_t filepos = LSEEK64(mThreadData[0].fd, 0, SEEK_END);
+    smdbprintf(5, "Truncated file to %ld bytes, writing new meta data section.\n", filepos); 
     vector<SM_MetaData>::iterator pos = mMetaData.begin(), endpos = mMetaData.end(); 
     while (pos != endpos) {
       pos->Write(mThreadData[0].fd); 
