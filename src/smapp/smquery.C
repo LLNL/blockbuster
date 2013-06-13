@@ -52,6 +52,8 @@ int main(int argc, char *argv[]) {
 
   TCLAP::SwitchArg thumbnailInfo("n", "thumbnail-info", "get number of thumbnail and resolution", cmd); 
 
+  TCLAP::SwitchArg singleLine("s", "single-line", "report each match as tag, type and value on a line together.", cmd); 
+
   TCLAP::SwitchArg extractThumb("e", "extract-thumbnail", "extract thumbnail frame", cmd); 
 
   TCLAP::ValueArg<int> verbosity("v", "verbosity", "set verbosity (0-5)", false, 0, "int", cmd); 
@@ -96,12 +98,15 @@ int main(int argc, char *argv[]) {
     smBase *sm = smBase::openFile(filename.c_str(), 1);
     dbprintf(3, "Metadata for %s: (%d entries)\n", filename.c_str(), sm->mMetaData.size()); 
     int32_t thumbnum = -1, thumbres = -1;
-    
+    int numMatches = 0; 
     for (vector <SM_MetaData>::iterator pos = sm->mMetaData.begin();
          pos != sm->mMetaData.end(); pos++) {
       string mdtag = pos->mTag, mdvalue = pos->ValueAsString(); 
       bool tagmatch = MatchesAPattern(tagPatterns, mdtag), 
-        valuematch = MatchesAPattern(valuePatterns, mdvalue); 
+        valuematch = MatchesAPattern(valuePatterns, mdvalue);
+
+      if (tagmatch || valuematch) numMatches ++; 
+
       if (filenameOnly.getValue()) {
 
         if (tagmatch || valuematch) {
@@ -110,11 +115,26 @@ int main(int argc, char *argv[]) {
         }
       }
       else {
-        if (tagmatch) {
-          cout << str(boost::format("%1%: Tag Match: %2%") % filename % mdtag) << endl;
-        }  
-        if (valuematch) {
-          cout << str(boost::format("%1%: Value Match: %2%") % filename % mdvalue) << endl;
+        if (singleLine.getValue() && (tagmatch || valuematch)) {
+          string matchtype; 
+          if (matchAll.getValue()) {
+            matchtype = str(boost::format("Item %1%")%numMatches); 
+          } else if (tagmatch && valuematch) {
+            matchtype = "Tag and Value Match"; 
+          } else if (tagmatch) {
+            matchtype = "Tag Match";
+          } else if (valuematch) {
+            matchtype = "Value Match";
+          }
+          cout << str(boost::format("%1%: %2%: Tag = %3%, Type = %4%, Value = \"%5%\"") % filename % matchtype % mdtag % pos->TypeAsString() % mdvalue) << endl; 
+        }
+        else {
+          if (tagmatch) {
+            cout << str(boost::format("%1%: Tag Match: %2%") % filename % mdtag) << endl;
+          }  
+          if (valuematch) {
+            cout << str(boost::format("%1%: Value Match: %2%") % filename % mdvalue) << endl;
+          }
         }
       }
       if (thumbnailInfo.getValue()) {
