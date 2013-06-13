@@ -57,10 +57,12 @@ int main(int argc, char *argv[]) {
  
   TCLAP::CmdLine  cmd(str(boost::format("%1% sets and changes tags in movies.")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
 
-  TCLAP::SwitchArg canonical("c", "canonical", "Enter the canonical metadata for a movie interactively." , cmd); 
-
   TCLAP::UnlabeledMultiArg<string> movienames("movienames", "movie name(s)", true, "movie name(s)", cmd); 
 
+  TCLAP::SwitchArg canonical("c", "canonical", "Enter the canonical metadata for a movie interactively." , cmd); 
+
+  TCLAP::SwitchArg deleteMD("d", "delete-metadata", "Delete all meta data in the file before applying any other tags.  If given alone, then the file will have no metadata when finished.", cmd); 
+  
   TCLAP::ValueArg<string> tagfile("f", "tagfile", "a file containing name:value pairs to be set", false, "", "filename", cmd); 
   
   TCLAP::MultiArg<string> taglist("t", "tag", "a name:value pair for a tag being set or added.", false, "tagname:value (value may contain spaces)", cmd); 
@@ -68,6 +70,8 @@ int main(int argc, char *argv[]) {
   TCLAP::ValueArg<int> thumbnail("n", "thumbnail", "set frame number of thumbnail", false, -1, "frameNum", cmd); 
 
   TCLAP::ValueArg<int> thumbres("r", "thumbres", "the X resolution of the thumbnail (Y res will be autoscaled based on X res)", false, 0, "numpixels", cmd); 
+
+  TCLAP::SwitchArg report("R", "report", "After all operations are complete, list all the tags in the file.", cmd); 
   
   TCLAP::ValueArg<int> verbosity("v", "verbosity", "set verbosity (0-5)", false, 0, "int", cmd); 
 
@@ -79,8 +83,8 @@ int main(int argc, char *argv[]) {
 	return 1;
   }
 
-  if (!canonical.getValue() && !taglist.getValue().size() && tagfile.getValue() == "" && thumbnail.getValue() == -1) {
-    cerr << "ERROR: You must provide either the --tag (-t), --tagfile (-f), --thumbnail (-n), or --canonical (-c) option." << endl; 
+  if (!canonical.getValue() && !deleteMD.getValue() && tagfile.getValue() == "" && !taglist.getValue().size() && thumbnail.getValue() == -1) {
+    cerr << "ERROR: You must provide either the --canonical (-c), --delete (-d), --tagfile (-f), --tag (-t), or --thumbnail (-n)  option." << endl; 
     exit(1); 
   }
 
@@ -119,7 +123,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (!tagvec.size() && thumbnail.getValue() == -1) {
+  if (!tagvec.size() && thumbnail.getValue() == -1 && !deleteMD.getValue()) {
     // this should not be possible due to earlier error checking
     dbprintf(0,"smtag: Error (programming error?): It appears there's nothing to do.\n");
     exit(1); 
@@ -134,6 +138,10 @@ int main(int argc, char *argv[]) {
       continue;
     }
     dbprintf(5, "Before setting metadata, there are %d metadata items\n", sm->mMetaData.size()); 
+    if (deleteMD.getValue()) {
+      sm->DeleteMetaData(); 
+      cout << "Deleted metadata from " << moviename << endl; 
+    }
     if (tagvec.size()) {
       for (uint tagnum =0; tagnum < tagvec.size(); tagnum++) {
         dbprintf(2, str(boost::format("Applying tag %1% and value %2%\n") % tagvec[tagnum][0] % tagvec[tagnum][1]).c_str()); 
@@ -151,7 +159,16 @@ int main(int argc, char *argv[]) {
       }        
     }
     dbprintf(5, "After setting metadata, there are %d metadata items\n", sm->mMetaData.size()); 
-
+    if (report.getValue()) {
+      cout << "After setting metadata, there are " << sm->mMetaData.size() << " metadata items in movie." << endl; 
+      for (uint i = 0; i < sm->mMetaData.size(); i++) {
+        cout << str(boost::format("Item %1%: tag = \"%2%\", type = \"%3%\", value = \"%4%\"\n")
+                    % (i+1)
+                    % sm->mMetaData[i].mTag 
+                    % sm->mMetaData[i].TypeAsString() 
+                    % sm->mMetaData[i].ValueAsString()); 
+      }
+    }
     sm->WriteMetaData(); 
     sm->closeFile(); 
     dbprintf(1, str(boost::format("All flags applied for movie %1%\n") % moviename).c_str()); 
