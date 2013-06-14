@@ -7,7 +7,7 @@
 #include <vector>
 #include "version.h"
 #include "debugutil.h"
-
+#include "tags.h" 
 using namespace std; 
 
 //===================================================================
@@ -40,6 +40,8 @@ bool MatchesAPattern(const vector<boost::regex> &patterns, string &s) {
 int main(int argc, char *argv[]) {
   TCLAP::CmdLine  cmd(str(boost::format("%1% sets and changes tags in movies.")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
 
+  TCLAP::SwitchArg canonical("c", "canonical", "List all canonical tags for each movie", cmd); 
+
   TCLAP::SwitchArg filenameOnly("f", "only-filename", "Only print the filename of the matching movie(s).", cmd); 
 
   TCLAP::UnlabeledMultiArg<string> movienames("movienames", "movie name(s)", true, "movie name(s)", cmd); 
@@ -66,7 +68,7 @@ int main(int argc, char *argv[]) {
 	return 1;
   }
   
-  if (!thumbnailInfo.getValue() && !extractThumb.getValue() && !tagPatternStrings.getValue().size() && !valuePatternStrings.getValue().size() && !matchAll.getValue()) {
+  if (!canonical.getValue() && !thumbnailInfo.getValue() && !extractThumb.getValue() && !tagPatternStrings.getValue().size() && !valuePatternStrings.getValue().size() && !matchAll.getValue()) {
     cerr << "*************************************************" << endl; 
     cerr << "ERROR: You must provide either the --Tag (-T), --Value (-V), --thumbnail-info (-n), or --extract-thumbnail (-e) option." << endl; 
     cerr << "*************************************************" << endl; 
@@ -78,6 +80,8 @@ int main(int argc, char *argv[]) {
   if (matchAll.getValue()) {
     tagPatterns.push_back(boost::regex(".*")); 
     valuePatterns.push_back(boost::regex(".*")); 
+  } else if (canonical.getValue()) {
+    
   } else {
     vector<string> patternStrings = tagPatternStrings.getValue(); 
     for (uint patno = 0; patno < patternStrings.size(); patno++) {
@@ -111,7 +115,7 @@ int main(int argc, char *argv[]) {
 
         if (tagmatch || valuematch) {
           cout << filename << endl; 
-          continue; 
+          break; 
         }
       }
       else {

@@ -13,16 +13,16 @@ USE CASES:
 
     CANONICAL SET OF DESCRIPTIVE TAGS SET AT WILL
     Title         -- a string 
-    Authors       -- a list of strings
+    Authors       -- a comma-delimited list of names
     Description   -- a string 
-    ScienceType   -- a list of strings
+    ScienceType   -- a comma-delimited list
     UCRL          -- a string 
     CodeName      -- a string 
     SimStartTime  -- a string entered implicitly as local time in flexible format ("3 hours ago", etc), stored as UTC, regurgitated explicitly in local time e.g "Mon Jan 14 17:18:12 PST 2013"
     SimDuration   -- days:hours:minutes
     SimCPUs       -- a string 
     SimCluster    -- a string 
-    Keywords      -- a list of strings  
+    Keywords      -- a comma-delimited list of phrases  
     
     CANONICAL SET OF DESCRIPTIVE TAGS SET AT MOVIE CREATION TIME
     Creator  (Ideally, using the username of the user and information from the finger command if available)
