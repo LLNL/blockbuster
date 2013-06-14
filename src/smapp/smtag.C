@@ -28,37 +28,125 @@
 **
 */
 #include <tclap_utils.h>
+#include <boost/algorithm/string.hpp>
+#include <boost/regex.hpp>
 #include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
 #include "version.h"
 #include "sm/sm.h"
 #include "debugutil.h"
-
+#include "tags.h"
+#include <stdio.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+#include <map>
 typedef boost::tokenizer<boost::char_separator<char> >  tokenizer;
+
 
 using namespace std; 
 
-void  GetTagsFromFile(string tagfile, vector<vector<string> > &tagvec){ 
+// =====================================================================
+void  GetTagsFromFile(string tagfile, map<string,string> &tagvec){ 
   dbprintf(0, "Tagfiles are not yet supported. :-( \n"); 
   exit(1); 
   return; 
 }
 
-void GetCanonicalTagValuesFromUser(vector<vector<string> > &tagvec) {
-  dbprintf(0, "--canonical flag is not yet supported. :-( \n"); 
-  exit(1); 
+// =====================================================================
+string ResponseSummary(vector<string> &tags, vector<string> &values) {
+  string summary = "SUMMARY OF RESPONSES\n";
+  for (uint num = 0; num < tags.size(); num++) {
+    string value = values[num]; 
+    if (value == "") {
+      value = "(no response yet)"; 
+    }
+    summary += str(boost::format("%1$2d) %2$-33s: current value = \"%3%\"\n") % num % tags[num] % values[num]); 
+  }
+  return summary;   
+}
+#define APPLY_ALL_STRING "Apply To All Movies [y/n]?"
+#define USE_TEMPLATE_STRING "Use As Template [y/n]?"
+// =====================================================================
+void GetCanonicalTagValuesFromUser(map<string,string> &canonicals) {
+  vector<string> tags = GetCanonicalTagList(), values; 
+  tags.push_back(APPLY_ALL_STRING); 
+  tags.push_back(USE_TEMPLATE_STRING); 
+  values.resize(tags.size()); 
+  values[tags.size()-2] = "no"; 
+  values[tags.size()-1] = "no"; 
 
+  // synchronize tags/values and canonicals to start up
+  if (!canonicals.size() || canonicals[USE_TEMPLATE_STRING] == "no") {
+    for (uint i = 0; i<tags.size(); i++) {
+       canonicals[tags[i]] = values[i]; 
+    }
+  } 
+  for (uint i = 0; i<tags.size(); i++) {
+    values[i] = canonicals[tags[i]]; 
+  }
+  
+
+  cout << "You will now be asked to supply values for the " << tags.size() << " 'canonical' tags.  At any time, you can enter 'e' or 'exit' to stop the input for this movie without saving your values, 's' or 'save' to stop the input and save your changes, 'm' or 'menu' to be presented with a menu, a number to choose a different tag to enter." << endl;
+  cout << ResponseSummary(tags, values) << endl; 
+
+  string response; 
+  int tagno = 0; 
+  while (true) {
+    if (response == "e" || response == "exit") {
+      cout << "Exiting without saving changes." << endl; 
+      return ; 
+    }
+    else if (response == "s" || response == "save" || tagno == tags.size()) {
+      cout << "Exiting and saving." << endl; 
+      for (uint i = 0; i<tags.size(); i++) {
+        canonicals[tags[i]] = values[i]; 
+      }
+      return ; 
+    } 
+    else if (response == "m" || response == "map") {
+      cout << ResponseSummary(tags, values) << endl; 
+      response = readline("Please enter a key number from the list (-1 to just continue): ");       
+      int rval = -1; 
+      if (response != "" && response != "-1") {
+        try {
+          rval = boost::lexical_cast<short>(response);
+          dbprintf(5, "Got good user response %d\n", rval); 
+        }
+        catch(boost::bad_lexical_cast &) {
+          dbprintf(5, "Got bad user response\n"); 
+          rval = -1; 
+        }
+        if (rval < 0 || rval >= tags.size()) {
+          cout << "Invalid value. "; 
+        } else {
+          tagno = rval; 
+        }
+      }
+    }
+    else if (response != "") {
+      if (boost::regex_match(response, boost::regex("[yY]e*s*"))) response = "yes"; 
+      if (boost::regex_match(response, boost::regex("[Nn]o*"))) response = "no"; 
+      values[tagno] = response; 
+      tagno++; 
+    } 
+    else if (values[tagno] != "") {
+      tagno++; 
+    }
+    response = readline(str(boost::format("Please enter a value for key %1% (default: \"%2%\"): ")%tags[tagno]%values[tagno]).c_str()); 
+  }
+  
   return; 
 }
 
 
+// =====================================================================
 int main(int argc, char *argv[]) {
  
   TCLAP::CmdLine  cmd(str(boost::format("%1% sets and changes tags in movies.")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
 
   TCLAP::UnlabeledMultiArg<string> movienames("movienames", "movie name(s)", true, "movie name(s)", cmd); 
-
+ 
   TCLAP::SwitchArg canonical("c", "canonical", "Enter the canonical metadata for a movie interactively." , cmd); 
 
   TCLAP::SwitchArg deleteMD("d", "delete-metadata", "Delete all meta data in the file before applying any other tags.  If given alone, then the file will have no metadata when finished.", cmd); 
@@ -93,14 +181,16 @@ int main(int argc, char *argv[]) {
   dbg_setverbose(verbosity.getValue()); 
 
   
-  vector<vector<string> >tagvec; 
+  map<string, string> tagvec; 
+  map<string,string> canonicalTags; 
+  
   // First, if there is a file, populate the vector from that.
   if (tagfile.getValue() != "") {
     GetTagsFromFile(tagfile.getValue(), tagvec); 
   }
   // Now, add any canonical tags if the user wants to use that interface
   if (canonical.getValue()) {
-    GetCanonicalTagValuesFromUser(tagvec);   
+    GetCanonicalTagValuesFromUser(canonicalTags);   
   }
   // Finally, set any tags explicitly from the command line. 
   if (taglist.getValue().size()) {
@@ -110,6 +200,7 @@ int main(int argc, char *argv[]) {
       tokenizer t(arg, sep);
       tokenizer::iterator pos = t.begin(), endpos = t.end(); 
       vector<string> tokens; 
+      
       while (tokens.size() < 2) {
         if (pos == endpos) {
           cerr << "Error in tag format:  must be a tag:value pair, separated by a colon." << endl; 
@@ -119,7 +210,7 @@ int main(int argc, char *argv[]) {
         ++pos; 
       } 
       dbprintf(2, str(boost::format("Adding tag %1% and value %2% to list of tags to apply\n") % tokens[0] % tokens[1]).c_str()); 
-      tagvec.push_back(tokens); 
+      tagvec[tokens[0]] = tokens[1]; 
     }
   }
 
@@ -142,13 +233,32 @@ int main(int argc, char *argv[]) {
       sm->DeleteMetaData(); 
       cout << "Deleted metadata from " << moviename << endl; 
     }
-    if (tagvec.size()) {
-      for (uint tagnum =0; tagnum < tagvec.size(); tagnum++) {
-        dbprintf(2, str(boost::format("Applying tag %1% and value %2%\n") % tagvec[tagnum][0] % tagvec[tagnum][1]).c_str()); 
-        sm->SetMetaData(tagvec[tagnum][0], tagvec[tagnum][1]);         
+
+    //--------------------------------------------------
+    if (canonical.getValue()) {
+      if (canonicalTags[APPLY_ALL_STRING] != "yes") {
+        GetCanonicalTagValuesFromUser(canonicalTags);   
       }
-    } // end loop over taglist
-    if (thumbnail.getValue() != -1)  {
+      for (map<string,string>::iterator pos = canonicalTags.begin(); 
+           pos != canonicalTags.end(); pos++) {
+        tagvec[pos->first] = canonicalTags[pos->first]; 
+      }    
+    }
+
+   //--------------------------------------------------
+     if (tagvec.size()) {
+      map<string,string>::iterator pos = tagvec.begin(), endpos = tagvec.end();
+      while (pos != endpos) {        
+        if (pos->first != APPLY_ALL_STRING && 
+            pos->first != USE_TEMPLATE_STRING) {
+          dbprintf(2, str(boost::format("Applying tag %1% and value %2%\n") % pos->first % pos->second).c_str()); 
+          sm->SetMetaData(pos->first, pos->second);         
+        }
+      }
+    } // end loop over tagvec
+
+   //--------------------------------------------------
+     if (thumbnail.getValue() != -1)  {
       int64_t f = thumbnail.getValue(); 
       dbprintf(1, str(boost::format("Setting thumbnail frame to %1%, FWIW.\n")%f).c_str()); 
       sm->SetMetaData("SM__thumbframe", f); 
@@ -158,7 +268,9 @@ int main(int argc, char *argv[]) {
         sm->SetMetaData("SM__thumbres", r); 
       }        
     }
-    dbprintf(5, "After setting metadata, there are %d metadata items\n", sm->mMetaData.size()); 
+
+     //--------------------------------------------------
+     dbprintf(5, "After setting metadata, there are %d metadata items\n", sm->mMetaData.size()); 
     if (report.getValue()) {
       cout << "After setting metadata, there are " << sm->mMetaData.size() << " metadata items in movie." << endl; 
       for (uint i = 0; i < sm->mMetaData.size(); i++) {
