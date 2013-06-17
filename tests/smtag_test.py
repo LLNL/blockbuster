@@ -4,7 +4,7 @@ import sys, os, shutil, time, threading, argparse, test_common
 from subprocess import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-b', '--bindir', help="set directory where img2sm lives", default=test_common.FindBinDir('img2sm'))
+parser.add_argument('-b', '--bindir', help="set directory where smtag lives", default=test_common.FindBinDir('smtag'))
 
 args = parser.parse_args()
 
@@ -15,7 +15,7 @@ bindir = fixed
 
 smtag = test_common.FindBinary(bindir, "smtag")
 
-bindir = os.path.abspath(os.path.dirname(img2sm))
+bindir = os.path.abspath(os.path.dirname(smtag))
 sys.stderr.write( "bindir is: %s\n"%bindir)
-sys.stderr.write( "Found smtag at %s"% smtag)
+sys.stderr.write( "Found smtag at %s\n"% smtag)
 

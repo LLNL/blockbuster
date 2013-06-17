@@ -28,24 +28,32 @@ def FindBinDir(progname):
                 return trydir
     return "%s/../%s/bin"%(testdir,systype)
 
-# =================================================================
-def CheckAndFixDir(theDir):
-    if not os.path.exists(theDir):
-        return None
-    theDir = os.path.realpath(theDir)
-    # fix relative paths and stuff:
-    if theDir[-1] != '/':
-        theDir = theDir + "/" 
-    if theDir[0] != '/':
-        theDir = os.getcwd() + '/' + theDir
-
-    return theDir
-
+# ============================================================================================
+def FindDataDir():
+    datadir = os.path.abspath(os.path.dirname(sys.argv[0])+'/../sample-data')
+    sys.stderr.write( "datadir is "+ datadir)
+    if not os.path.exists(datadir):
+        proc = Popen(("tar -C %s -xzf %s.tgz"%(datadir.replace('sample-data',''), datadir)).split())
+        proc.wait()
+    if not os.path.exists(datadir):
+        errexit("Cannot find or create data dir %s"%datadir)
+    return datadir
 
 # =================================================================
-def FindBinary(bindir, binary):    
+def FindBinary(bindir, binary):
+    # print "FindBinary(%s, %s)"%(bindir,binary)
     if bindir:
+        if not os.path.exists(bindir):
+            errexit("bindir %s does not exist."%bindir)
+        # fix relative paths and stuff:
+        if bindir[-1] != '/':
+            bindir = bindir + "/" 
+        if bindir[0] != '/':
+            bindir = os.getcwd() + '/' + bindir
+            
         binary = "%s/%s"%(bindir,binary)   
+        bindir = os.path.realpath(os.path.abspath(os.path.dirname(binary)))
+
     try:
         p = Popen("which %s"%binary, shell=True, stdout=PIPE, stderr=STDOUT)
         p.wait()
@@ -57,7 +65,7 @@ def FindBinary(bindir, binary):
     if not os.path.exists(binary):
         errexit( "Error: os.path() could not find binary %s"%binary)
 
-    return binary
+    return [bindir,binary,FindDataDir()]
 
 # ============================================================================================
 proc = None
