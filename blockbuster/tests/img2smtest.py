@@ -29,83 +29,39 @@ if not os.path.exists(datadir):
 if not os.path.exists(datadir):
     errexit("Cannot find or create data dir %s"%datadir)
     
-# RUN TESTS:
+# CREATE OUTPUT DIRECTORY
 testdir = "/tmp/"+os.getenv("USER")+"/img2smtest/"
 shutil.rmtree(testdir, ignore_errors=True) 
 os.makedirs(testdir)
 if not os.path.exists(testdir):
     errexit("Cannot create test output directory "+testdir)
 
-proc = None
-
-def run_img2sm(cmd,outfile):
-    global proc
-    cmd="%s %s %s"%(img2sm, cmd,outfile) 
-    sys.stderr.write( "Running test: \"%s\\n"%cmd)
-    sys.stderr.write("lengh of command: %d\n"%len(cmd))
-    proc = Popen(cmd.split(), bufsize=-1)
-    proc.wait()
-    return
-
-def test_img2sm(test, timeout=5):
-    global success, errmsg, proc
-    args = test['args']
-    outfile = test['output']
-    theThread = threading.Thread(target=run_img2sm,args=(args,outfile))
-    success=False
-    theThread.start()
-    sys.stderr.write("Waiting for thread to finish...\n")
-    theThread.join(timeout)
-
-    
-    if theThread.isAlive():  
-        sys.stderr.write( "ERROR: Command failed to exit within %d seconds!\n"%timeout)
-        os.kill(proc.pid,9)
-        errmsg = "Timeout"
-        
-    elif proc.returncode and proc.returncode < 0:
-        errmsg = "Command returned exit code %d."%proc.returncode
-
-    elif not os.path.exists(outfile):
-        errmsg = "File %s was not created as expected.\n"%outfile 
-
-    elif outfile[-3:] == ".sm":
-        if  Popen("%s/sminfo %s"%(bindir,outfile), shell=True).wait():
-            errmsg = "%s/sminfo does not like the file %s"%(bindir,outfile)
-        else:
-            success = True            
-    else:
-        success=True
-     
-    
-    sys.stderr.write("\n************************************************\n" )
-    if success:
-        sys.stderr.write("\nSuccess!\n" )
-    else:
-        sys.stderr.write("Failed.  Return code %s, reason: %s\n"%(str(proc.returncode),str(errmsg)))
-    sys.stderr.write("\n************************************************\n\n" )
-    return success
-
+# ============================================================================================
+# RUN TESTS
 tests = [ {"name": "mountains-single",
-           "args": "-v   %s/mountains.tiff"%datadir,
-           "output": "%s/mountains-ignore.sm"%testdir},
+           "cmd": "%s -v   %s/mountains.tiff %s"%(img2sm, datadir, "%s/mountains-ignore.sm"%testdir),
+           "output": "%s/mountains-ignore.sm"%testdir,
+           'check_cmd': "%s/sminfo %s"%(bindir,"%s/mountains-ignore.sm"%testdir)},
           {"name": "quicksand-single-gz",
-           "args": "-v  --first 084 --last 084 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png "%datadir, 
-           "output": "%s/quicksand-single-template.sm"%testdir},
+           "cmd": "%s -v  --first 084 --last 084 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png %s"%(img2sm, datadir, "%s/quicksand-single-template.sm"%testdir), 
+           "output": "%s/quicksand-single-template.sm"%testdir,
+           'check_cmd': "%s/sminfo %s"%(bindir,"%s/quicksand-single-template.sm"%testdir)},
           {"name": "quicksand-11frames-gz",
-           "args": "-v  -c gz --first 20 -l 30 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png "%datadir, 
-           "output": "%s/quicksand-all-template-gz.sm"%testdir},
+           "cmd": "%s -v  -c gz --first 20 -l 30 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png %s"%(img2sm, datadir, "%s/quicksand-all-template-gz.sm"%testdir), 
+           "output": "%s/quicksand-all-template-gz.sm"%testdir,
+           'check_cmd': "%s/sminfo %s"%(bindir,"%s/quicksand-all-template-gz.sm"%testdir)},
           {"name": "quicksand-11frames-lzma",
-           "args": "-v --compression lzma --first 20 --last 30 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png "%datadir, 
-           "output": "%s/quicksand-all-template-lzma.sm"%testdir}
+           "cmd": "%s -v --compression lzma --first 20 --last 30 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png %s"%(img2sm, datadir, "%s/quicksand-all-template-lzma.sm"%testdir), 
+           "output": "%s/quicksand-all-template-lzma.sm"%testdir,
+           'check_cmd': "%s/sminfo %s"%(bindir,"%s/quicksand-all-template-lzma.sm"%testdir)}
           ]
 successes = 0
 results = []
 for test in tests:
-    result = test_img2sm(test)
+    result = test_common.run_test(test)
     results.append(result)
-    successes = successes + result
-
+    successes = successes + result[0]
+    
 print "****************************************************\n"
 print "successes:  %d out of %d tests\n"%(successes, len(tests))
 print "results:", results
@@ -113,9 +69,6 @@ print "\n****************************************************\n"
 
 if successes != len(tests):
     sys.exit(1)
-
-
-# Next:  sm2img
 
 sys.exit(0)
 
