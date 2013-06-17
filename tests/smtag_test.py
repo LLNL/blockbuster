@@ -8,5 +8,27 @@ parser.add_argument('-b', '--bindir', help="set directory where smtag lives", de
 
 args = parser.parse_args()
 
-[bindir,img2sm,datadir] = test_common.FindPaths(args.bindir, "smtag")
+outdir = "/tmp/"+os.getenv("USER")+"/smtagtests/"
+test_common.CreateEmptyDir(outdir)
+
+[bindir,smtag,datadir] = test_common.FindPaths(args.bindir, "smtag")
+
+# ============================================================================================
+# DEFINE TESTS
+tests = [ {"name": "mountains-single",
+           "cmd": "%s -v %s/mountains.tiff %s"%(smtag, datadir, "%s/mountains-ignore.sm"%outdir),
+           "output": "%s/mountains-ignore.sm"%outdir,
+           'check_cmd': "%s/sminfo %s"%(bindir,"%s/mountains-ignore.sm"%outdir)}
+          ]
+
+# ============================================================================================
+# RUN TESTS
+[successes, results] = test_common.RunTests(tests)
+
+print "output is in", outdir
+
+if successes != len(tests):
+    sys.exit(1)
+
+sys.exit(0)
 

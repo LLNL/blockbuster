@@ -73,6 +73,14 @@ def FindPaths(bindir, binary):
     return [bindir,binary,datadir]
 
 # ============================================================================================
+def CreateEmptyDir(outdir):
+    # CREATE OUTPUT DIRECTORY
+    shutil.rmtree(outdir, ignore_errors=True) 
+    os.makedirs(outdir)
+    if not os.path.exists(outdir):
+        errexit("Cannot create test output directory "+outdir)
+
+# ============================================================================================
 proc = None
 def run_command(cmd):
     global proc
@@ -120,5 +128,21 @@ def run_test(test, timeout=15):
     else:
         sys.stderr.write("Failed.  Return code %s, reason: %s\n"%(str(proc.returncode),str(errmsg)))
     sys.stderr.write("\n************************************************\n\n" )
-    return  [success, errmsg, proc]
+    return  [success, errmsg]
+
+
+# ============================================================================================
+def RunTests(tests):
+    successes = 0
+    results = []
+    for test in tests:
+        result = run_test(test)
+        results.append(result)
+        successes = successes + result[0]
+    
+    print "****************************************************\n"
+    print "successes:  %d out of %d tests\n"%(successes, len(tests))
+    print "results:", results
+    print "\n****************************************************\n"
+    return [successes, results]
 
