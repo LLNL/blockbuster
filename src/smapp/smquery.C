@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
     } 
     if (singleLine) {
       dbprintf(0, "Matched tags for movie %s:\n", filename.c_str()); 
-      string formatString = str(boost::format("%%1$12s: %%2$%1%s (%%3$6s): ")%longestTagMatch);
+      string formatString = str(boost::format("%%1$12s: Tag \"%%2$%1%s\" (%%3$6s): ")%longestTagMatch);
       // dbprintf(0, "format string: \"%s\"\n", formatString.c_str()); 
       for (uint i = 0; i< tagMatches.size(); i++) {
         if (valueTypes[i] == "ASCII") 
