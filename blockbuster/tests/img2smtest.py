@@ -1,63 +1,19 @@
 #!/usr/bin/env python
 
-import sys, os, shutil, time, threading
+import sys, os, shutil, time, threading, argparse, test_common
 from subprocess import *
 
-def errexit (msg):
-    print msg
-    sys.exit(1)
+parser = argparse.ArgumentParser()
+parser.add_argument('-b', '--bindir', help="set directory where img2sm lives", default=test_common.FindBinDir('img2sm'))
 
-def usage():
-    print "Usage:  img2smtest.py [options]"
-    print "Options:"
-    print " -bindir dirnam:  path to the directory containing sm2img for disambiguation -- typically this will be $INSTALL_DIR/bin"
+args = parser.parse_args()
 
-bindir=None
-# PARSE ARGUMENTS:
-if "-bindir" in sys.argv:
-    pos = sys.argv.index('-bindir')
-    if len(sys.argv) < pos+2:
-        usage()
-        sys.exit(-1)
-    bindir=sys.argv[pos+1]
+fixed = test_common.CheckAndFixDir(args.bindir)
+if not fixed:
+    errexit("bindir %s does not exist.  Please use the --bindir argument."%bindir)
+bindir = fixed
 
-# SET UP BINDIR
-systype = os.getenv("SYS_TYPE")
-   
-if not bindir:
-    # try ../$SYS_TYPE/bin (usual case) and ../../$SYS_TYPE/bin (dev on LC)
-    for dots in ['..','../..','../../..']:
-        trydir = "%s/%s/%s/bin"%(os.path.abspath(os.path.dirname(sys.argv[0])),dots,systype)
-        sys.stderr.write( "trying directory: %s\n"%trydir)
-        if  os.path.exists(trydir+'/sm2img'):
-            bindir=trydir
-            break
-if bindir:
-    sys.stderr.write( "found bindir : %s\n"%trydir)
-else:
-    sys.stderr.write("Could not find bindir\n")
-    sys.exit(1)
-    
-# if user chose bindir, then fix relative paths and stuff:
-if bindir:
-    if bindir[-1] != '/':
-        bindir = bindir + "/" 
-    if bindir[0] != '/':
-        bindir = os.getcwd() + '/' + bindir
-
-
-# FIND IMG2SM
-img2sm = "img2sm"
-if bindir:
-    img2sm = bindir + 'img2sm'
-    
-try:
-    p = Popen("which %s"%img2sm, shell=True, stdout=PIPE, stderr=STDOUT)
-    p.wait()
-    img2sm = p.stdout.read().strip()
-except:
-    print "Error:  could not find img2sm in PATH or bindir"
-    raise
+img2sm = test_common.FindBinary(bindir, "img2sm")
 
 bindir = os.path.abspath(os.path.dirname(img2sm))
 sys.stderr.write( "bindir is: %s\n"%bindir)
@@ -66,7 +22,12 @@ sys.stderr.write( "Found img2sm at %s"% img2sm)
 # FIND DATA DIR
 datadir = os.path.abspath(os.path.dirname(sys.argv[0])+'/../sample-data')
 sys.stderr.write( "datadir is "+ datadir)
-
+if not os.path.exists(datadir):
+    proc = Popen(("tar -C %s -xzf %s.tgz"%(datadir.replace('sample-data',''), datadir)).split())
+    proc.wait()
+if not os.path.exists(datadir):
+    errexit("Cannot find or create data dir %s"%datadir)
+    
 # RUN TESTS:
 testdir = "/tmp/"+os.getenv("USER")+"/img2smtest/"
 shutil.rmtree(testdir, ignore_errors=True) 
@@ -75,7 +36,7 @@ if not os.path.exists(testdir):
     errexit("Cannot create test output directory "+testdir)
 
 proc = None
-    
+
 def run_img2sm(cmd,outfile):
     global proc
     cmd="%s %s %s"%(img2sm, cmd,outfile) 
