@@ -31,7 +31,6 @@ def FindBinDir(progname):
 # ============================================================================================
 def FindDataDir():
     datadir = os.path.abspath(os.path.dirname(sys.argv[0])+'/../sample-data')
-    sys.stderr.write( "datadir is "+ datadir)
     if not os.path.exists(datadir):
         proc = Popen(("tar -C %s -xzf %s.tgz"%(datadir.replace('sample-data',''), datadir)).split())
         proc.wait()
@@ -40,7 +39,7 @@ def FindDataDir():
     return datadir
 
 # =================================================================
-def FindBinary(bindir, binary):
+def FindPaths(bindir, binary):
     # print "FindBinary(%s, %s)"%(bindir,binary)
     if bindir:
         if not os.path.exists(bindir):
@@ -65,7 +64,13 @@ def FindBinary(bindir, binary):
     if not os.path.exists(binary):
         errexit( "Error: os.path() could not find binary %s"%binary)
 
-    return [bindir,binary,FindDataDir()]
+    datadir = FindDataDir()
+    
+    sys.stderr.write( "bindir is: %s\n"%bindir)
+    sys.stderr.write( "binary is: %s\n"% binary)
+    sys.stderr.write( "datadir is: %s\n"%datadir)
+    
+    return [bindir,binary,datadir]
 
 # ============================================================================================
 proc = None

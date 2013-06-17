@@ -8,11 +8,7 @@ parser.add_argument('-b', '--bindir', help="set directory where img2sm lives", d
 
 args = parser.parse_args()
 
-[bindir,img2sm,datadir] = test_common.FindBinary(args.bindir, "img2sm")
-
-sys.stderr.write( "bindir is: %s\n"%bindir)
-sys.stderr.write( "datadir is: %s\n"%datadir)
-sys.stderr.write( "Found img2sm at %s\n"% img2sm)
+[bindir,img2sm,datadir] = test_common.FindPaths(args.bindir, "img2sm")
 
 # CREATE OUTPUT DIRECTORY
 testdir = "/tmp/"+os.getenv("USER")+"/img2smtest/"
