@@ -8,27 +8,12 @@ parser.add_argument('-b', '--bindir', help="set directory where img2sm lives", d
 
 args = parser.parse_args()
 
-fixed = test_common.CheckAndFixDir(args.bindir)
-if not fixed:
-    errexit("bindir %s does not exist.  Please use the --bindir argument."%bindir)
-bindir = fixed
-print "found bindir", bindir
-
-img2sm = test_common.FindBinary(bindir, "img2sm")
-bindir = os.path.abspath(os.path.dirname(img2sm))
+[bindir,img2sm,datadir] = test_common.FindBinary(args.bindir, "img2sm")
 
 sys.stderr.write( "bindir is: %s\n"%bindir)
-sys.stderr.write( "Found img2sm at %s"% img2sm)
+sys.stderr.write( "datadir is: %s\n"%datadir)
+sys.stderr.write( "Found img2sm at %s\n"% img2sm)
 
-# FIND DATA DIR
-datadir = os.path.abspath(os.path.dirname(sys.argv[0])+'/../sample-data')
-sys.stderr.write( "datadir is "+ datadir)
-if not os.path.exists(datadir):
-    proc = Popen(("tar -C %s -xzf %s.tgz"%(datadir.replace('sample-data',''), datadir)).split())
-    proc.wait()
-if not os.path.exists(datadir):
-    errexit("Cannot find or create data dir %s"%datadir)
-    
 # CREATE OUTPUT DIRECTORY
 testdir = "/tmp/"+os.getenv("USER")+"/img2smtest/"
 shutil.rmtree(testdir, ignore_errors=True) 
