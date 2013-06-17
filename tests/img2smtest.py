@@ -12,10 +12,11 @@ fixed = test_common.CheckAndFixDir(args.bindir)
 if not fixed:
     errexit("bindir %s does not exist.  Please use the --bindir argument."%bindir)
 bindir = fixed
+print "found bindir", bindir
 
 img2sm = test_common.FindBinary(bindir, "img2sm")
-
 bindir = os.path.abspath(os.path.dirname(img2sm))
+
 sys.stderr.write( "bindir is: %s\n"%bindir)
 sys.stderr.write( "Found img2sm at %s"% img2sm)
 
