@@ -47,6 +47,31 @@ void  GetTagsFromFile(string tagfile, map<string,string> &tagvec){
 }
 
 // =====================================================================
+void WriteTagsToFile(string filename, map<string, string> &tagvec) {
+  using boost::property_tree::ptree; 
+  ptree pt;
+  for (map<string,string>::iterator pos = tagvec.begin(); 
+       pos != tagvec.end(); ++pos) {
+    pt.put(pos->first, pos->second); 
+  }    
+  write_json(filename, pt); 
+  return; 
+}
+
+// =====================================================================
+string TagSummary(map<string,string> &tagvec) {
+  vector<string> tags, values; 
+  for (map<string,string>::iterator pos = tagvec.begin(); 
+       pos != tagvec.end(); ++pos) {
+    if (pos->first != APPLY_ALL_TAG && 
+        pos->first != USE_TEMPLATE_TAG) {
+      tags.push_back(pos->first); 
+      values.push_back(pos->second); 
+    }
+  }
+  return TagSummary(tags,values); 
+}
+// =====================================================================
 string TagSummary(vector<string> &tags, vector<string> &values) {
   string summary = "TAG SUMMARY\n";
   for (uint num = 0; num < tags.size(); num++) {
