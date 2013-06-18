@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 
   TCLAP::SwitchArg thumbnailInfo("n", "thumbnail-info", "get number of thumbnail and resolution", cmd); 
 
-  TCLAP::SwitchArg singleLineFlag("s", "single-line", "report each match as tag, type and value on a line together.", cmd); 
+  TCLAP::SwitchArg singleLineFlag("s", "summary", "Summarize: For each movie, report each match as tag, type and value on a line together.", cmd); 
 
   TCLAP::SwitchArg extractThumb("e", "extract-thumbnail", "extract thumbnail frame", cmd); 
 
@@ -67,7 +67,8 @@ int main(int argc, char *argv[]) {
 	cmd.parse(argc, argv);
   } catch(std::exception &e) {
 	std::cout << e.what() << std::endl;
-	return 1;
+    usage(cmd, argv[0]); 
+	exit(1);
   }
   
   bool matchAll = matchAllFlag.getValue(), singleLine = singleLineFlag.getValue(); 
@@ -108,12 +109,19 @@ int main(int argc, char *argv[]) {
   for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {
     string filename = movienames.getValue()[fileno]; 
     smBase *sm = smBase::openFile(filename.c_str(), 1);
+    if (!sm) {
+      dbprintf(0, "\n***********************************************\n"); 
+      dbprintf(0, "ERROR: could not open file %s.  Did you make a mistake in your arguments?\n", filename.c_str()); 
+      dbprintf(0, "***********************************************\n"); 
+      usage(cmd, argv[0]); 
+      exit(1); 
+    }
     dbprintf(3, "Metadata for %s: (%d entries)\n", filename.c_str(), sm->mMetaData.size()); 
     int32_t thumbnum = -1, thumbres = -1;
     int numMatches = 0; 
      // for long list format:
     vector<string> tagMatches, valueMatches, valueTypes, matchTypes;
-    uint longestTagMatch = 0; 
+    uint longestTagMatch = 0, longestValueType = 5; 
     for (vector <SM_MetaData>::iterator pos = sm->mMetaData.begin();
          pos != sm->mMetaData.end(); pos++) {
       string mdtag = pos->mTag, mdvalue = pos->ValueAsString(); 
@@ -147,11 +155,14 @@ int main(int argc, char *argv[]) {
           } else if (valuematch) {
             matchtype = "Value Match";
           }
+          string valueType = pos->TypeAsString(); 
+          if (valueType.size() > longestValueType) 
+            longestValueType = valueType.size(); 
           if (mdtag.size() > longestTagMatch) 
             longestTagMatch = mdtag.size(); 
-          tagMatches.push_back(mdtag); 
+          tagMatches.push_back(str(boost::format("\"%s\"")%mdtag)); 
           valueMatches.push_back(mdvalue); 
-          valueTypes.push_back(pos->TypeAsString()); 
+          valueTypes.push_back(valueType); 
           matchTypes.push_back(matchtype); 
         }
         else {
@@ -188,8 +199,8 @@ int main(int argc, char *argv[]) {
     } 
     if (singleLine) {
       dbprintf(0, "Matched tags for movie %s:\n", filename.c_str()); 
-      string formatString = str(boost::format("%%1$12s: Tag \"%%2$%1%s\" (%%3$6s): ")%longestTagMatch);
-      // dbprintf(0, "format string: \"%s\"\n", formatString.c_str()); 
+      string formatString = str(boost::format("%%1$12s (%%3$%2%s) %%2$-%1%s = ")%(longestTagMatch+2) % longestValueType);
+      //dbprintf(0, "format string: \"%s\"\n", formatString.c_str()); 
       for (uint i = 0; i< tagMatches.size(); i++) {
         if (valueTypes[i] == "ASCII") 
           cout << str(boost::format(formatString + "\"%4%\"") % matchTypes[i] % tagMatches[i] % valueTypes[i] % valueMatches[i]) << endl; 
