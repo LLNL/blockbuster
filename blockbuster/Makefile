@@ -6,8 +6,13 @@ SYS_TYPE ?= $(shell uname)
 
 export INSTALL_DIR ?= $(shell if pwd | grep -e /viz/blockbuster -e /usr/gapps/asciviz>/dev/null;  then cd .. && echo `pwd`; else echo `pwd`/$(SYS_TYPE); fi)
 $(warning INSTALL_DIR is $(INSTALL_DIR) )
-export NO_DMX
-export DEBUG
+
+# hacky way to get configurations to stick
+GET_VAR_VALUE = $(shell [ -f src/config/$(1) ] && grep YES src/config/$(1))
+export NO_DMX ?= $(call GET_VAR_VALUE,nodmx)
+export DEBUG ?= $(call GET_VAR_VALUE,debug)
+export MPI ?= $(call GET_VAR_VALUE,mpi)
+export GPROF ?= $(call GET_VAR_VALUE,gprof)
 
 all:
 	mkdir -p $(INSTALL_DIR)/man/man1 
@@ -32,17 +37,29 @@ old-bindist-deleteme:
 	INSTALL_DIR=install-linux-basic ./make-bindist.sh 
 	rm -rf linux-basic-nodmx
 
-nodmx:
-	NO_DMX=1 NO_MPI=true $(MAKE) all 
+dmx: mpi
+	echo YES > src/config/dmx
+
+nodmx: nompi
+	echo  NO > src/config/dmx
 
 debug:
-	DEBUG=1 $(MAKE) all
+	echo YES > src/config/debug
 
-gprof: 
-	DEBUG=1 GPROF=1 $(MAKE) all
+opt:
+	echo  NO > src/config/debug
+
+gprof: debug
+	echo YES > src/config/gprof
+
+nogprof: 
+	echo  NO > src/config/gprof
+
+mpi: 
+	echo  NO > src/config/nompi
 
 nompi: 
-	NO_MPI=true $(MAKE) all 
+	echo YES > src/config/nompi
 
 clean: 
 	cd src &&	$(MAKE) clean
