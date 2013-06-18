@@ -34,8 +34,8 @@ include ../config/config
 LIBS = $(LDFLAGS) -L$(INSTALL_DIR)/lib -lsmovie -lptutil  -levomovie $(IFL_LIBS) -lpthread -lm -ltiff -lpnmrw -lsrwpng -lz -llzo2 -llzma -limage -lm $(GZIP_LIBS) $(TIFF_LIBS) $(PNG_LIBS) $(PNM_LIBS) -ljpeg 
 
 SMLIB = $(INSTALL_DIR)/lib/libsmovie.a $(INSTALL_DIR)/lib/libptutil.a
-SFILES = smtag.C smquery.C smmake.C smtest.C ifl2sm.C img2sm.C sm2img.C rename.C smcat.C smevo.C debugutil.c
-OFILES = smtag smquery smmake smtest ifl2sm img2sm sm2img rename smcat smevo
+SFILES = tags.C smtag.C smquery.C smmake.C smtest.C ifl2sm.C img2sm.C sm2img.C rename.C smcat.C smevo.C debugutil.c
+OFILES = smtag smquery smmake smtest ifl2sm img2sm sm2img rename smcat smevo tags
 
 CPPFLAGS += -g 
 
@@ -55,11 +55,11 @@ $(OFILES) : % : %.o $(SMLIB) simple_jpeg.o
 	@echo executing generic build line
 		$(CXX)  $^ -o $@ $(CXXFLAGS) $(LIBS) 
 
-smtag: smtag.o debugutil.o
+smtag: smtag.o tags.o debugutil.o
 		$(CXX)  $^ -o $@ $(CXXFLAGS) $(LIBS) -lboost_regex -lreadline
 
-smquery: smquery.o debugutil.o
-		$(CXX)  $^ -o $@ $(CXXFLAGS) $(LIBS) -lboost_regex 
+smquery: smquery.o tags.o debugutil.o
+		$(CXX)  $^ -o $@ $(CXXFLAGS) $(LIBS) -lboost_regex  -lreadline
 
 rename: rename.o $(SMLIB)
 	$(CXX)  rename.o -o $@ $(CXXFLAGS) -lm
@@ -74,26 +74,35 @@ depend: $(SFILES)
 
 # DO NOT DELETE
 
-smtag.o: ../sm/smBase.h ../sm/smBaseP.h ../common/stringutil.h
+tags.o: tags.h debugutil.h ../sm/sm.h ../sm/smLZO.h ../sm/smBase.h
+tags.o: ../sm/smBaseP.h ../common/stringutil.h ../common/timer.h
+tags.o: ../common/stringutil.h ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h
+tags.o: ../sm/smRaw.h ../sm/smJPG.h
+smtag.o: ../sm/sm.h ../sm/smLZO.h ../sm/smBase.h ../sm/smBaseP.h
+smtag.o: ../common/stringutil.h ../common/timer.h ../common/stringutil.h
+smtag.o: ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h ../sm/smRaw.h ../sm/smJPG.h
+smtag.o: debugutil.h tags.h
 smquery.o: ../sm/sm.h ../sm/smLZO.h ../sm/smBase.h ../sm/smBaseP.h
-smquery.o: ../common/stringutil.h ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h
-smquery.o: ../sm/smRaw.h ../sm/smJPG.h
+smquery.o: ../common/stringutil.h ../common/timer.h ../common/stringutil.h
+smquery.o: ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h ../sm/smRaw.h
+smquery.o: ../sm/smJPG.h debugutil.h tags.h
 smmake.o: ../sm/smRaw.h ../sm/smBase.h ../sm/smBaseP.h ../common/stringutil.h
-smmake.o: ../sm/smRLE.h
+smmake.o: ../common/timer.h ../common/stringutil.h ../sm/smRLE.h
 smtest.o: ../sm/smBase.h ../sm/smBaseP.h ../common/stringutil.h
 smtest.o: ../common/timer.h ../common/stringutil.h ../config/version.h
 img2sm.o: ../sm/sm.h ../sm/smLZO.h ../sm/smBase.h ../sm/smBaseP.h
-img2sm.o: ../common/stringutil.h ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h
-img2sm.o: ../sm/smRaw.h ../sm/smJPG.h ../libimage/sgilib.h
-img2sm.o: ../libpnmrw/libpnmrw.h simple_jpeg.h ../pt/pt.h
+img2sm.o: ../common/stringutil.h ../common/timer.h ../common/stringutil.h
+img2sm.o: ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h ../sm/smRaw.h ../sm/smJPG.h
+img2sm.o: ../libimage/sgilib.h ../libpnmrw/libpnmrw.h simple_jpeg.h
+img2sm.o: ../pt/pt.h
 sm2img.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smBaseP.h ../common/stringutil.h
-sm2img.o: ../sm/smGZ.h ../sm/smLZO.h ../sm/smRaw.h ../pt/pt.h
-sm2img.o: ../libimage/sgilib.h ../libpnmrw/libpnmrw.h simple_jpeg.h
-sm2img.o: ../config/version.h
+sm2img.o: ../common/timer.h ../common/stringutil.h ../sm/smGZ.h ../sm/smLZO.h
+sm2img.o: ../sm/smRaw.h ../pt/pt.h ../libimage/sgilib.h
+sm2img.o: ../libpnmrw/libpnmrw.h simple_jpeg.h ../config/version.h
 smcat.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smBaseP.h ../common/stringutil.h
-smcat.o: ../sm/smGZ.h ../sm/smLZO.h ../sm/smRaw.h ../sm/smJPG.h
-smcat.o: ../config/version.h ../pt/pt.h
+smcat.o: ../common/timer.h ../common/stringutil.h ../sm/smGZ.h ../sm/smLZO.h
+smcat.o: ../sm/smRaw.h ../sm/smJPG.h ../config/version.h ../pt/pt.h
 smevo.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smBaseP.h ../common/stringutil.h
-smevo.o: ../sm/smGZ.h ../sm/smLZO.h ../sm/smRaw.h ../sm/smJPG.h
-smevo.o: ../config/version.h
+smevo.o: ../common/timer.h ../common/stringutil.h ../sm/smGZ.h ../sm/smLZO.h
+smevo.o: ../sm/smRaw.h ../sm/smJPG.h ../config/version.h
 debugutil.o: debugutil.h
