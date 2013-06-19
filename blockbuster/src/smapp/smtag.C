@@ -37,9 +37,9 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include "version.h"
-#include "sm/sm.h"
+#include "sm/sm.h" 
 #include "debugutil.h"
-#include "tags.h"
+#include "sm/tags.h"
 #include <map> 
 typedef boost::tokenizer<boost::char_separator<char> >  tokenizer;
 
@@ -55,7 +55,6 @@ void usage(TCLAP::CmdLine &cmd, char *argv0, string msg="") {
   cmd.parse(argc, argv);
   return; 
 }
-
 // =====================================================================
 int main(int argc, char *argv[]) {
  
@@ -143,13 +142,17 @@ int main(int argc, char *argv[]) {
 
   // ------------------------------------------------------------------------------------
   if (exportTagfile.getValue() != "") {
-    using boost::property_tree::ptree; 
-    ptree pt;
-    for (map<string,string>::iterator pos = tagvec.begin(); 
-         pos != tagvec.end(); ++pos) {
-      pt.put(pos->first, pos->second); 
-    }    
-    write_json(exportTagfile.getValue(), pt); 
+    WriteTagsToFile(exportTagfile.getValue(), tagvec);
+
+    if (report.getValue()) {
+      for (map<string,string>::iterator pos = canonicalTags.begin(); 
+           pos != canonicalTags.end(); pos++) {
+        if (tagvec[pos->first] == "")
+          tagvec[pos->first] = canonicalTags[pos->first]; 
+      }
+      
+     cout << TagSummary(tagvec) << endl; 
+    } // if (report.getValue())
   }
   else {
     for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {  
@@ -171,62 +174,26 @@ int main(int argc, char *argv[]) {
         if (canonicalTags[APPLY_ALL_TAG] != "yes") {
           GetCanonicalTagValuesFromUser(canonicalTags);   
         }
-        for (map<string,string>::iterator pos = canonicalTags.begin(); 
-             pos != canonicalTags.end(); pos++) {
-          // in this case, overwrite the tagvec with any new values from the user: 
-          tagvec[pos->first] = canonicalTags[pos->first]; 
-        }
-      }
+        sm->AddTagValues(canonicalTags); 
+     }
       
       //--------------------------------------------------
-      if (tagvec.size()) {
-        map<string,string>::iterator pos = tagvec.begin(), endpos = tagvec.end();
-        while (pos != endpos) {        
-          if (pos->first != APPLY_ALL_TAG && 
-              pos->first != USE_TEMPLATE_TAG) {
-            dbprintf(2, str(boost::format("Applying tag %1% and value %2%\n") % pos->first % pos->second).c_str()); 
-            sm->SetMetaData(pos->first, pos->second);         
-          }
-        }
-      } // end loop over tagvec
+      sm->AddTagValues(tagvec); 
       
       //--------------------------------------------------
       if (thumbnail.getValue() != -1)  {
-        int64_t f = thumbnail.getValue(); 
-        dbprintf(1, str(boost::format("Setting thumbnail frame to %1%, FWIW.\n")%f).c_str()); 
-        sm->SetMetaData("SM__thumbframe", f); 
+        sm->SetThumbnailFrame(thumbnail.getValue()); 
         if (thumbres.getValue() != -1) {
-          int64_t r = thumbres.getValue(); 
-          dbprintf(1, str(boost::format("Setting thumbnail resolution to %1%, FWIW.\n")%r).c_str()); 
-          sm->SetMetaData("SM__thumbres", r); 
-        }        
+          sm->SetThumbnailRes(thumbres.getValue()); 
+        }
       }
       
       //--------------------------------------------------
       dbprintf(5, "After setting metadata, there are %d metadata items\n", sm->mMetaData.size()); 
-      if (report.getValue()) {
-        cout << "After setting metadata, there are " << sm->mMetaData.size() << " metadata items in movie." << endl; 
-        for (uint i = 0; i < sm->mMetaData.size(); i++) {
-          cout << str(boost::format("Item %1%: tag = \"%2%\", type = \"%3%\", value = \"%4%\"\n")
-                      % (i+1)
-                      % sm->mMetaData[i].mTag 
-                      % sm->mMetaData[i].TypeAsString() 
-                      % sm->mMetaData[i].ValueAsString()); 
-        }
-      }
-
+      
       // ----------------------------------------------
-      if (report.getValue()) {
-        vector<string> tags, values; 
-        for (map<string,string>::iterator pos = tagvec.begin(); 
-             pos != tagvec.end(); ++pos) {
-          if (pos->first != APPLY_ALL_TAG && 
-              pos->first != USE_TEMPLATE_TAG) {
-            tags.push_back(pos->first); 
-            values.push_back(pos->second); 
-          }
-        }
-        cout << TagSummary(tags, values) << endl; 
+      if (report.getValue()) {        
+        cout << TagSummary(tagvec) << endl; 
       }    
       sm->WriteMetaData(); 
       sm->closeFile(); 
@@ -234,25 +201,6 @@ int main(int argc, char *argv[]) {
     } // end loop over movienames
   } // end else (if doing movies instead of tagfile export)
   
-  if (!movienames.getValue().size() && report.getValue()) {
-    if (canonical.getValue()) {
-      for (map<string,string>::iterator pos = canonicalTags.begin(); 
-           pos != canonicalTags.end(); pos++) {
-        if (tagvec[pos->first] == "")
-          tagvec[pos->first] = canonicalTags[pos->first]; 
-      }
-    }    
-    vector<string> tags, values; 
-    for (map<string,string>::iterator pos = tagvec.begin(); 
-         pos != tagvec.end(); ++pos) {
-      if (pos->first != APPLY_ALL_TAG && 
-          pos->first != USE_TEMPLATE_TAG) {
-        tags.push_back(pos->first); 
-        values.push_back(pos->second); 
-      }
-    }
-    cout << TagSummary(tags, values) << endl; 
-  }
   
   return 0;
 }

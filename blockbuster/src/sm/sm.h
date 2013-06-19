@@ -8,6 +8,7 @@
 #include "sm/smXZ.h"
 #include "sm/smRaw.h"
 #include "sm/smJPG.h"
+#include "sm/tags.h"
 
 
 #endif

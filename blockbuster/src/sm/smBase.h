@@ -36,7 +36,7 @@
 
 #include "smBaseP.h"
 #include "smdfc.h"
-
+#include "tags.h"
 //
 // smBase.h - base class for "streamed movies"
 //
@@ -58,6 +58,8 @@
 
 #include <string>
 #include <vector>
+#include <map>
+using std::map;
 #include <deque>
 //#define DISABLE_PTHREADS 1
 #ifndef DISABLE_PTHREADS
@@ -441,34 +443,36 @@ class smBase {
     mMetaData.erase(remove(mMetaData.begin(), mMetaData.end(), tag), mMetaData.end()); 
   }
 
-  bool FindInMetaData(const SM_MetaData &md) {
-    bool found = (find(mMetaData.begin(), mMetaData.end(), md) != mMetaData.end());
-    return found; 
+  // Add the tag/value pairs from tagvec. 
+  void AddTagValues(map<string,string> &tagvec); 
+  void AddTagValue(string tag, int64_t value); 
+
+  void SetThumbnailFrame(int64_t f){
+    SetMetaData("SM__thumbframe", f); 
+    smdbprintf(1, str(boost::format("Setting thumbnail frame to %1%.\n")%f).c_str()); 
+  }
+
+  void SetThumbnailRes(int64_t r){
+    smdbprintf(4, str(boost::format("Setting thumbnail resolution to %1%.\n")%r).c_str()); 
+    SetMetaData("SM__thumbres", r); 
   }
 
   template <class T> 
     void SetMetaData(const string tag, const T &value) {
-    SM_MetaData md(tag,value); 
-    if (!FindInMetaData(md)) {
-      smdbprintf(5, str(boost::format("SetMetaData(): pushing back: %1%\n")%md.toString()).c_str());
-      mMetaData.push_back(md);  
-    } else {
-      smdbprintf(5, str(boost::format("SetMetaData(): replacing old with: %1%\n")%md.toString()).c_str());
-      replace(mMetaData.begin(), mMetaData.end(), md, md);  
-    }
+  SM_MetaData md(tag,value); 
+  bool found = (find(mMetaData.begin(), mMetaData.end(), md) != mMetaData.end());
+  if (!found) {
+    smdbprintf(5, str(boost::format("SetMetaData(): pushing back: %1%\n")%md.toString()).c_str());
+    mMetaData.push_back(md);  
+  } else {
+    smdbprintf(5, str(boost::format("SetMetaData(): replacing old with: %1%\n")%md.toString()).c_str());
+    replace(mMetaData.begin(), mMetaData.end(), md, md);  
   }
+  return; 
+}
 
-  void WriteMetaData(void) { 
-    ftruncate(mThreadData[0].fd, mFrameOffsets[mNumFrames*mNumResolutions]); 
-    uint64_t filepos = LSEEK64(mThreadData[0].fd, 0, SEEK_END);
-    smdbprintf(5, "Truncated file to %ld bytes, writing new meta data section.\n", filepos); 
-    vector<SM_MetaData>::iterator pos = mMetaData.begin(), endpos = mMetaData.end(); 
-    while (pos != endpos) {
-      pos->Write(mThreadData[0].fd); 
-      ++pos;  
-    }
-    return; 
-  }
+
+  void WriteMetaData(void);
 
         
   // close a movie

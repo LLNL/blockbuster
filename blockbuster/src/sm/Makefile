@@ -31,9 +31,9 @@
 
 include ../config/config
 export CPPFLAGS += -Ismdfc
-SRC_FILES = smBase.C smXZ.C smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C smdfc/smdfc.c
-OFILES = smBase.o smXZ.o smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o smdfc.o
-HFILES = sm.h smBase.h smBaseP.h smXZ.h smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h smdfc/smdfc.h
+SRC_FILES = smBase.C smXZ.C smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C smdfc/smdfc.c tags.C
+OFILES = smBase.o smXZ.o smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o smdfc.o tags.o
+HFILES = sm.h smBase.h smBaseP.h smXZ.h smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h smdfc/smdfc.h tags.h
 
 all: lib doc include
 
@@ -60,10 +60,13 @@ $(INSTALL_DIR)/include/smBase.h: $(HFILES)
 #$(OFILES): $(HFILES) $(SRC_FILES)
 
 libsmovie.a: $(OFILES)
+	@echo '***********************************************'
 	$(AR) rsc $@ $(OFILES)
+	@echo "libsmovie.a CREATED"
 	if [ $(HAS_MPI) ]; then \
 		cd smdfc; $(MAKE) -j 8; \
 	fi
+	@echo '***********************************************'
 
 smdfc.o: smdfc/smdfc.c smdfc/smdfcP.h
 	$(CC) $(CFLAGS) -Ismdfc -c smdfc/smdfc.c
@@ -80,18 +83,23 @@ depend:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-smBase.o: smBaseP.h smRaw.h smBase.h ../common/stringutil.h ../common/timer.h
-smBase.o: ../common/stringutil.h smRLE.h smGZ.h smXZ.h smLZO.h smJPG.h
-smXZ.o: smXZ.h smBase.h smBaseP.h ../common/stringutil.h ../common/timer.h
-smXZ.o: ../common/stringutil.h
-smRLE.o: smRLE.h smBase.h smBaseP.h ../common/stringutil.h ../common/timer.h
-smRLE.o: ../common/stringutil.h
-smRaw.o: smRaw.h smBase.h smBaseP.h ../common/stringutil.h ../common/timer.h
-smRaw.o: ../common/stringutil.h
-smGZ.o: smGZ.h smBase.h smBaseP.h ../common/stringutil.h ../common/timer.h
-smGZ.o: ../common/stringutil.h
-smLZO.o: smLZO.h smBase.h smBaseP.h ../common/stringutil.h ../common/timer.h
-smLZO.o: ../common/stringutil.h
-smJPG.o: smJPG.h smBase.h smBaseP.h ../common/stringutil.h ../common/timer.h
-smJPG.o: ../common/stringutil.h
+smBase.o: smBaseP.h smRaw.h smBase.h tags.h ../common/stringutil.h
+smBase.o: ../common/timer.h ../common/stringutil.h smRLE.h smGZ.h smXZ.h
+smBase.o: smLZO.h smJPG.h
+smXZ.o: smXZ.h smBase.h smBaseP.h tags.h ../common/stringutil.h
+smXZ.o: ../common/timer.h ../common/stringutil.h
+smRLE.o: smRLE.h smBase.h smBaseP.h tags.h ../common/stringutil.h
+smRLE.o: ../common/timer.h ../common/stringutil.h
+smRaw.o: smRaw.h smBase.h smBaseP.h tags.h ../common/stringutil.h
+smRaw.o: ../common/timer.h ../common/stringutil.h
+smGZ.o: smGZ.h smBase.h smBaseP.h tags.h ../common/stringutil.h
+smGZ.o: ../common/timer.h ../common/stringutil.h
+smLZO.o: smLZO.h smBase.h smBaseP.h tags.h ../common/stringutil.h
+smLZO.o: ../common/timer.h ../common/stringutil.h
+smJPG.o: smJPG.h smBase.h smBaseP.h tags.h ../common/stringutil.h
+smJPG.o: ../common/timer.h ../common/stringutil.h
 smdfc/smdfc.o: smdfc/smdfcP.h smdfc/smdfc.h
+tags.o: ../sm/sm.h ../sm/smLZO.h smBase.h smBaseP.h tags.h
+tags.o: ../common/stringutil.h ../common/timer.h ../common/stringutil.h
+tags.o: ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h ../sm/smRaw.h ../sm/smJPG.h
+tags.o: ../sm/tags.h

@@ -7,7 +7,7 @@
 #include <vector>
 #include "version.h"
 #include "debugutil.h"
-#include "tags.h" 
+#include "sm/tags.h" 
 using namespace std; 
 
 //===================================================================
