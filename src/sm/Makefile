@@ -35,7 +35,7 @@ SRC_FILES = smBase.C smXZ.C smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C smdfc/smdfc.c
 OFILES = smBase.o smXZ.o smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o smdfc.o tags.o
 HFILES = sm.h smBase.h smBaseP.h smXZ.h smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h smdfc/smdfc.h tags.h
 
-all: lib doc include
+all:  include lib doc
 
 lib: $(INSTALL_DIR)/lib/libsmovie.a
 
