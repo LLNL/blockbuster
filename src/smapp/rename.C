@@ -82,7 +82,7 @@ int main(int argc,char **argv)
 		if (argv[i][1] == '\0') break;
 		switch (argv[i][1]) {
 			case 'f':
-				istart = atoi(&(argv[i][2]));
+				istart = atoi(&(argv[i][2])); 
 				break;
 			case 'l':
 				iend = atoi(&(argv[i][2]));

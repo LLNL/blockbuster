@@ -1,10 +1,7 @@
-#include "tags.h"
-#include "debugutil.h"
 #include <stdio.h>
 #include <map>
 #include "version.h"
 #include "sm/sm.h"
-#include "debugutil.h"
 #include "tags.h"
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -41,7 +38,7 @@ vector<string> GetCanonicalTagList(void) {
 
 // =====================================================================
 void  GetTagsFromFile(string tagfile, map<string,string> &tagvec){ 
-  dbprintf(0, "Tagfiles are not yet supported. :-( \n"); 
+  smdbprintf(0, "Tagfiles are not yet supported. :-( \n"); 
   exit(1); 
   return; 
 }
@@ -54,19 +51,19 @@ void WriteTagsToFile(string filename, map<string, string> &tagvec) {
        pos != tagvec.end(); ++pos) {
     pt.put(pos->first, pos->second); 
   }    
-  write_json(filename, pt); 
+  write_json(filename, pt);
   return; 
-}
+} 
 
 // =====================================================================
 string TagSummary(map<string,string> &tagvec) {
-  vector<string> tags, values; 
+  vector<string> tags, values;
   for (map<string,string>::iterator pos = tagvec.begin(); 
        pos != tagvec.end(); ++pos) {
-    if (pos->first != APPLY_ALL_TAG && 
+    if (pos->first != APPLY_ALL_TAG &&
         pos->first != USE_TEMPLATE_TAG) {
-      tags.push_back(pos->first); 
-      values.push_back(pos->second); 
+      tags.push_back(pos->first);
+      values.push_back(pos->second);
     }
   }
   return TagSummary(tags,values); 
@@ -128,10 +125,10 @@ void GetCanonicalTagValuesFromUser(map<string,string> &canonicals) {
       if (response != "" && response != "-1") {
         try {
           rval = boost::lexical_cast<short>(response);
-          dbprintf(5, "Got good user response %d\n", rval); 
+          smdbprintf(5, "Got good user response %d\n", rval); 
         }
         catch(boost::bad_lexical_cast &) {
-          dbprintf(5, "Got bad user response\n"); 
+          smdbprintf(5, "Got bad user response\n"); 
           rval = -1; 
         }
         if (rval < 0 || rval >= tags.size()) {

@@ -74,6 +74,7 @@ using namespace std;
 #include "smXZ.h"
 #include "smLZO.h"
 #include "smJPG.h"
+#include "tags.h"
 
 int smVerbose = 0; 
 double gBaseTime = -1; 
@@ -1863,6 +1864,32 @@ int smBase::compFrame(void *in, void *out, int *outsizes, int res)
 #endif 
    delete [] tilebuf;
    return compressedSize;
+}
+ 
+// =====================================================================
+void smBase::AddTagValues(map<string,string> &tagvec) {
+  map<string,string>::iterator pos = tagvec.begin(), endpos = tagvec.end();
+  while (pos != endpos) {        
+    if (pos->first != APPLY_ALL_TAG && 
+        pos->first != USE_TEMPLATE_TAG) {
+      smdbprintf(2, str(boost::format("Applying tag %1% and value %2%\n") % pos->first % pos->second).c_str()); 
+      SetMetaData(pos->first, pos->second);         
+    }
+  }
+  return; 
+}
+
+// =====================================================================
+void smBase::WriteMetaData(void) { 
+  ftruncate(mThreadData[0].fd, mFrameOffsets[mNumFrames*mNumResolutions]); 
+  uint64_t filepos = LSEEK64(mThreadData[0].fd, 0, SEEK_END);
+  smdbprintf(5, "Truncated file to %ld bytes, writing new meta data section.\n", filepos); 
+  vector<SM_MetaData>::iterator pos = mMetaData.begin(), endpos = mMetaData.end(); 
+  while (pos != endpos) {
+    pos->Write(mThreadData[0].fd); 
+    ++pos;  
+  }
+  return; 
 }
 
 /* close the file and write out the header
