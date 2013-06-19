@@ -1873,7 +1873,7 @@ void smBase::AddTagValues(map<string,string> &tagvec) {
     if (pos->first != APPLY_ALL_TAG && 
         pos->first != USE_TEMPLATE_TAG) {
       smdbprintf(2, str(boost::format("Applying tag %1% and value %2%\n") % pos->first % pos->second).c_str()); 
-      SetMetaData(pos->first, pos->second);         
+      SetMetaData(pos->first, pos->second); 
     }
   }
   return; 

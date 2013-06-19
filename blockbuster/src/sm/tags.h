@@ -17,8 +17,9 @@ using std::vector;
 */ 
 vector<string> GetCanonicalTagList(void);
 void GetCanonicalTagValuesFromUser(map<string,string> &canonicals);
-void  GetTagsFromFile(string tagfile, map<string,string> &tagvec);
-void  WriteTagsToFile(string tagfile, map<string,string> &tagvec);
+
+bool GetTagsFromFile(string tagfile, map<string,string> &tagvec);
+bool  WriteTagsToFile(string tagfile, map<string,string> &tagvec);
 string TagSummary(map<string,string> &tagvalues);
 string TagSummary(vector<string> &tags, vector<string> &values);
 

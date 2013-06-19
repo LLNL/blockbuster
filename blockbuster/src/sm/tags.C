@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <map>
 #include "version.h"
-#include "sm/sm.h"
 #include "tags.h"
+#include "sm.h"
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <boost/algorithm/string.hpp>
@@ -37,22 +37,37 @@ vector<string> GetCanonicalTagList(void) {
 }
 
 // =====================================================================
-void  GetTagsFromFile(string tagfile, map<string,string> &tagvec){ 
-  smdbprintf(0, "Tagfiles are not yet supported. :-( \n"); 
-  exit(1); 
-  return; 
+bool GetTagsFromFile(string tagfile, map<string,string> &tagvec){ 
+  using boost::property_tree::ptree; 
+  ptree pt;
+  bool success = true; 
+  try {
+  read_json(tagfile, pt); 
+  } catch (...) {
+    success = false; 
+  }
+  ptree::iterator pos = pt.begin(), endpos = pt.end(); 
+  while (pos != endpos) {
+    string key = pos->first; 
+  }
+  return success; 
 }
 
 // =====================================================================
-void WriteTagsToFile(string filename, map<string, string> &tagvec) {
+bool WriteTagsToFile(string filename, map<string, string> &tagvec) {
   using boost::property_tree::ptree; 
   ptree pt;
   for (map<string,string>::iterator pos = tagvec.begin(); 
        pos != tagvec.end(); ++pos) {
     pt.put(pos->first, pos->second); 
   }    
-  write_json(filename, pt);
-  return; 
+  bool success = true; 
+  try {
+    write_json(filename, pt);
+  } catch (...) {
+    success = false; 
+  }
+  return success; 
 } 
 
 // =====================================================================
