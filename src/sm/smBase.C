@@ -62,8 +62,20 @@
 #include <stdlib.h>
 #endif
 #include "stringutil.h"
+
+#include <readline/readline.h>
+#include <readline/history.h>
+
 #include <boost/make_shared.hpp>
 #include <boost/shared_array.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/regex.hpp>
+#include <boost/format.hpp>
+#include <boost/tokenizer.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+typedef boost::tokenizer<boost::char_separator<char> >  tokenizer;
 
 using namespace std; 
 
@@ -74,7 +86,6 @@ using namespace std;
 #include "smXZ.h"
 #include "smLZO.h"
 #include "smJPG.h"
-#include "tags.h"
 
 int smVerbose = 0; 
 double gBaseTime = -1; 
@@ -92,6 +103,180 @@ const int DIO_DEFAULT_SIZE = 1024L*1024L*4;
 
 #define SM_HDR_SIZE 64
 
+vector<SM_MetaData> SM_MetaData::mCanonicalMetaData; 
+
+// =====================================================================
+void SM_MetaData::Init(void) {
+  if (!mCanonicalMetaData.size()) {
+    mCanonicalMetaData.push_back(SM_MetaData("Title", "")); 
+    mCanonicalMetaData.push_back(SM_MetaData("Authors", "")); 
+    mCanonicalMetaData.push_back(SM_MetaData("Description", "")); 
+    mCanonicalMetaData.push_back(SM_MetaData("Science Type", "")); 
+    mCanonicalMetaData.push_back(SM_MetaData("UCRL", "")); 
+    mCanonicalMetaData.push_back(SM_MetaData("Code Name", "")); 
+    mCanonicalMetaData.push_back(SM_MetaData("Sim Start Time", "")); 
+    mCanonicalMetaData.push_back(SM_MetaData("Sim Duration", "")); 
+    mCanonicalMetaData.push_back(SM_MetaData("Sim CPUs", (int64_t)0)); 
+    mCanonicalMetaData.push_back(SM_MetaData("Sim Cluster", "")); 
+    mCanonicalMetaData.push_back(SM_MetaData("Keywords", "")); 
+    mCanonicalMetaData.push_back(SM_MetaData("Movie Creator", "")); 
+    mCanonicalMetaData.push_back(SM_MetaData("Movie Create Date", "")); 
+    mCanonicalMetaData.push_back(SM_MetaData("Movie Create Host", "")); 
+    mCanonicalMetaData.push_back(SM_MetaData("Movie Create Command", "")); 
+    mCanonicalMetaData.push_back(SM_MetaData(APPLY_ALL_TAG, "no")); 
+    mCanonicalMetaData.push_back(SM_MetaData(USE_TEMPLATE_TAG, "no")); 
+  }
+  return ; 
+}
+
+TagMap SM_MetaData::CanonicalMetaDataAsMap(void) {
+  TagMap mdmap; 
+  for (uint i=0; i<mCanonicalMetaData.size(); i++) {
+    mdmap[mCanonicalMetaData[i].mTag] = mCanonicalMetaData[i];
+  }
+  return mdmap;
+}
+
+// =====================================================================
+bool SM_MetaData::GetMetaDataFromFile(string tagfile,  TagMap&mdmap){ 
+  using boost::property_tree::ptree; 
+  ptree pt;
+  bool success = true; 
+  string key, type, value; 
+  int keynum = 1; 
+  try {
+    read_json(tagfile, pt); 
+    for (ptree::iterator pos = pt.begin(); pos != pt.end(); ++keynum, ++pos) {
+      key = pos->first;
+      type = pos->second.get<string>("type");
+      value = pos->second.get<string>("value");
+      smdbprintf(4, str(boost::format("SM_MetaData::GetMetaDataFromFile(): Key \"%1%\", type \"%2%\", value \"%3%\"\n") % key % type % value).c_str()); 
+      SM_MetaData md(key, type, value); 
+      mdmap[key] = md;      
+    }
+  } catch (...) {
+    smdbprintf(0, str(boost::format("SM_MetaData::GetMetaDataFromFile(%1%): ERROR parsing key %2% : last known good Key \"%1%\", type \"%2%\", value \"%3%\"\n") % tagfile % keynum % key % type % value).c_str()); 
+    success = false; 
+  }
+  return success; 
+}
+
+// =====================================================================
+bool SM_MetaData::WriteMetaDataToFile(string filename, TagMap&mdmap) {
+  using boost::property_tree::ptree; 
+  ptree pt;
+  for (TagMap::iterator pos = mdmap.begin(); pos != mdmap.end(); pos++) {
+    string tag = pos->first; 
+    pt.put(str(boost::format("%1%.type")%pos->first), pos->second.TypeAsString()); 
+    pt.put(str(boost::format("%1%.value")%pos->first), pos->second.ValueAsString()); 
+  }    
+  bool success = true; 
+  try {
+    write_json(filename, pt);
+  } catch (...) {
+    success = false; 
+  }
+  return success; 
+} 
+
+// =====================================================================
+string SM_MetaData::CanonicalOrderMetaDataSummary(TagMap&mdmap) {
+  string summary = "TAG SUMMARY\n";
+  for (uint i = 0; i<mCanonicalMetaData.size(); i++) {
+    string tag = mCanonicalMetaData[i].mTag; 
+    summary += str(boost::format("(%1$6s) %2$-33s: current value = \"%3%\"\n") % mdmap[tag].TypeAsString() % mdmap[tag].mTag % mdmap[tag].ValueAsString()); 
+  }
+  return summary;   
+}
+
+// =====================================================================
+string SM_MetaData::MetaDataSummary(TagMap&mdmap) {
+  string summary = "TAG SUMMARY\n";
+  for (TagMap::iterator pos = mdmap.begin(); pos != mdmap.end(); pos++) {
+    summary += str(boost::format("(%1$6s) %2$-33s: current value = \"%3%\"\n") % pos->second.TypeAsString() % pos->second.mTag % pos->second.ValueAsString()); 
+  }
+  return summary;   
+}
+
+// =====================================================================
+void SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous) {
+  TagMap copied = previous; 
+
+  // synchronize tags/values and canonicals to start up
+  if (!copied.size() || copied[USE_TEMPLATE_TAG].mAscii == "" || copied[USE_TEMPLATE_TAG].mAscii == "no") {
+    
+    for (vector<SM_MetaData>::iterator pos = mCanonicalMetaData.begin(); 
+         pos != mCanonicalMetaData.end(); ++pos) {
+      copied[pos->mTag] = *pos; 
+    }
+  } 
+  
+
+  cout << "You will now be asked to supply values for the " << copied.size() << " 'canonical' tags.  At any time, you can enter 'e' or 'exit' to stop the input for this movie without saving your values, 's' or 'save' to stop the input and save your changes, 'm' or 'menu' to be presented with a menu, a number to choose a different tag to enter." << endl;
+  cout << CanonicalOrderMetaDataSummary(copied) << endl; 
+
+  string response; 
+  int tagno = 0; 
+  while (true) {
+    if (response == "e" || response == "exit") {
+      cout << "Exiting without saving changes." << endl; 
+      return ; 
+    }
+    else if (response == "s" || response == "save" || tagno == mCanonicalMetaData.size()) {
+      cout << "Exiting and saving." << endl; 
+      previous = copied; 
+      return ; 
+    } 
+    else if (response == "m" || response == "map") {
+      cout << CanonicalOrderMetaDataSummary(copied) << endl; 
+      response = readline("Please enter a key number from the list (-1 to just continue): ");       
+      int rval = -1; 
+      if (response != "" && response != "-1") {
+        try {
+          rval = boost::lexical_cast<short>(response);
+          smdbprintf(5, "Got good user response %d\n", rval); 
+        }
+        catch(boost::bad_lexical_cast &) {
+          smdbprintf(5, "Got bad user response\n"); 
+          rval = -1; 
+        }
+        if (rval < 0 || rval >= mCanonicalMetaData.size()) {
+          cout << "Invalid value. "; 
+        } else {
+          tagno = rval; 
+        }
+      }
+    }
+    else if (response != "") {
+      if (boost::regex_match(response, boost::regex("[yY]e*s*"))) response = "yes"; 
+      if (boost::regex_match(response, boost::regex("[Nn]o*"))) response = "no"; 
+      string tag = mCanonicalMetaData[tagno].mTag;  
+      uint64_t dtype = mCanonicalMetaData[tagno].mType;
+      try {
+        if (dtype == METADATA_TYPE_INT64) {
+          copied[tag]=SM_MetaData(tag, boost::lexical_cast<int64_t>(response));
+        } else if (dtype == METADATA_TYPE_DOUBLE) {
+          copied[tag]=SM_MetaData(tag, boost::lexical_cast<double>(response));
+        } else {
+          copied[tag]=SM_MetaData(tag, response); 
+        }
+        tagno++; 
+      } catch (...) {
+        smdbprintf(0, str(boost::format("Incorrect type response %1% for tag %2% (type %3% required)\n") % response % tag % mCanonicalMetaData[tagno].TypeAsString()).c_str()); 
+      }
+    } 
+    else  {
+      // The user hit 'enter', so skip over current
+      tagno++; 
+    }
+    string tag = mCanonicalMetaData[tagno].mTag;
+    response = readline(str(boost::format("Please enter a value for key %1% (default: \"%2%\"): ") % tag % copied[tag].ValueAsString()).c_str()); 
+  }
+  
+  return; 
+}
+
+//===================================================================
 string SM_MetaData::toString(void) {
   string s = "SM_MetaData: { \n"; 
   s += string("mTag: ") + mTag + "\n"; 
@@ -732,7 +917,7 @@ void smBase::readHeader(void)
    off64_t filepos = LSEEK64(lfd,0,SEEK_END);
    SM_MetaData md; 
    while (md.Read(lfd)) {
-     mMetaData.push_back(md); 
+     mMetaData[md.mTag] = md; 
      smdbprintf(5, "smBase::readHeader(): Read metadata: %s\n", md.toString().c_str());
    }
 
@@ -1866,15 +2051,24 @@ int smBase::compFrame(void *in, void *out, int *outsizes, int res)
    return compressedSize;
 }
  
-// =====================================================================
-void smBase::AddTagValues(map<string,string> &tagvec) {
-  map<string,string>::iterator pos = tagvec.begin(), endpos = tagvec.end();
-  while (pos != endpos) {        
-    if (pos->first != APPLY_ALL_TAG && 
-        pos->first != USE_TEMPLATE_TAG) {
-      smdbprintf(2, str(boost::format("Applying tag %1% and value %2%\n") % pos->first % pos->second).c_str()); 
-      SetMetaData(pos->first, pos->second); 
-    }
+//============================================================
+void smBase::SetMetaData(SM_MetaData &md) {
+  mMetaData[md.mTag] = md;  
+  return; 
+}
+
+//============================================================
+void smBase::SetMetaData(vector<SM_MetaData> &mdvec) {
+  for (uint i=0;  i<mdvec.size(); i++) {
+    SetMetaData(mdvec[i]); 
+  }
+  return; 
+}
+
+//============================================================
+void smBase::SetMetaData(TagMap &tagmap) {
+  for (TagMap::iterator pos = tagmap.begin(); pos != tagmap.end(); pos++) {
+    SetMetaData(pos->second); 
   }
   return; 
 }
@@ -1884,14 +2078,15 @@ void smBase::WriteMetaData(void) {
   ftruncate(mThreadData[0].fd, mFrameOffsets[mNumFrames*mNumResolutions]); 
   uint64_t filepos = LSEEK64(mThreadData[0].fd, 0, SEEK_END);
   smdbprintf(5, "Truncated file to %ld bytes, writing new meta data section.\n", filepos); 
-  vector<SM_MetaData>::iterator pos = mMetaData.begin(), endpos = mMetaData.end(); 
+  TagMap::iterator pos = mMetaData.begin(), endpos = mMetaData.end(); 
   while (pos != endpos) {
-    pos->Write(mThreadData[0].fd); 
+    pos->second.Write(mThreadData[0].fd); 
     ++pos;  
   }
   return; 
 }
 
+// =====================================================================
 /* close the file and write out the header
  */
 void smBase::closeFile(void)

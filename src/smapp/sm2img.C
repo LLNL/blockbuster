@@ -241,12 +241,12 @@ int main(int argc,char **argv)
         }
       }
       printf("Metadata: (%d entries)\n", sm->mMetaData.size()); 
-      vector <SM_MetaData>::iterator pos = sm->mMetaData.begin(), endpos = sm->mMetaData.end(); 
+      TagMap::iterator pos = sm->mMetaData.begin(), endpos = sm->mMetaData.end(); 
       if (pos == endpos) {
         printf ("No meta data found in movie.\n"); 
       } else {
         while (pos != endpos) {
-          printf("%s\n", pos->toString().c_str()); 
+          printf("%s\n", pos->second.toString().c_str()); 
           ++pos;
         }
       }
