@@ -36,7 +36,6 @@
 
 #include "smBaseP.h"
 #include "smdfc.h"
-#include "tags.h"
 //
 // smBase.h - base class for "streamed movies"
 //
@@ -47,6 +46,7 @@
 #include <math.h> 
 #include <sys/types.h>
 #include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
 #include "../common/stringutil.h"
 #ifndef WIN32
 #include <sys/mman.h>
@@ -145,6 +145,8 @@ inline void sm_real_dbprintf(int , const char * ...) {
 #define smdbprintf if(0) sm_real_dbprintf
 #endif
 
+
+
 //===============================================
 /* struct SM_MetaData */
 
@@ -154,6 +156,11 @@ inline void sm_real_dbprintf(int , const char * ...) {
 #define METADATA_TYPE_ASCII  0xA5C11A5C11A5C11A
 #define METADATA_TYPE_DOUBLE  0xF10A7F10A7F10A7F
 #define METADATA_TYPE_INT64    0x4244224442244442
+
+#define APPLY_ALL_TAG "Apply To All Movies [y/n]?"
+#define USE_TEMPLATE_TAG "Use As Template [y/n]?"
+
+typedef map<string,struct SM_MetaData> TagMap; 
 
 extern string payloadTypeToString(uint64_t pt);
 
@@ -179,15 +186,59 @@ struct SM_MetaData {
   string mAscii;
   double mDouble; //assuming 8 bytes here; checked in Read and Write functions for safety
   int64_t mInt64; 
+  
+  void Init(void);
 
-  SM_MetaData():mType(METADATA_TYPE_UNKNOWN) {}
-  SM_MetaData(string tag) {
-    mTag = tag; 
+  SM_MetaData():mType(METADATA_TYPE_UNKNOWN) {
+    Init(); 
   }
-  SM_MetaData(string tag, string s): mTag(tag), mType(METADATA_TYPE_ASCII), mAscii(s) {}
-  SM_MetaData(string tag, int64_t i): mTag(tag), mType(METADATA_TYPE_INT64), mInt64(i) {}
-  SM_MetaData(string tag, double d): mTag(tag), mType(METADATA_TYPE_DOUBLE), mDouble(d) {}
+  SM_MetaData(string tag): mTag(tag) {
+    Init(); 
+  }
+  SM_MetaData(string tag, string s): mTag(tag), mType(METADATA_TYPE_ASCII), mAscii(s) {    Init(); 
+  }
+  SM_MetaData(string tag, int64_t i):mTag(tag), mType(METADATA_TYPE_INT64), mInt64(i) {
+    Init(); 
+  }
+  SM_MetaData(string tag, double d): mTag(tag), mType(METADATA_TYPE_DOUBLE), mDouble(d) {   
+    Init(); 
+  }
 
+  SM_MetaData(string tag, string mdtype, string s) {   
+    Init(); 
+    Set(tag,mdtype,s); 
+    return;     
+  }
+  
+  void Set(string tag, string mdtype, string s) {   
+    mTag = tag; 
+    if (mdtype == "INT64") {
+      SetValue(boost::lexical_cast<int64_t>(s)); 
+    } else if  (mdtype == "DOUBLE") {
+      SetValue(boost::lexical_cast<double>(s)); 
+    } else if (mdtype == "ASCII") {
+      SetValue(s); 
+    } else {
+      mType = METADATA_TYPE_UNKNOWN; 
+    }
+    return;     
+  }
+
+  void SetValue(string s) {
+    mType = METADATA_TYPE_ASCII;
+    mAscii = s; 
+  } 
+   
+  void SetValue(double d) {
+    mType = METADATA_TYPE_DOUBLE;
+    mDouble = d; 
+  } 
+   
+  void SetValue(int64_t i) {
+    mType = METADATA_TYPE_INT64;
+    mInt64 = i; 
+  } 
+   
   bool operator == (const SM_MetaData&other) const {
     return (other.mTag == mTag); 
   }
@@ -199,12 +250,22 @@ struct SM_MetaData {
     else return "GARBAGE???"; 
   }
   
+  static vector<SM_MetaData> CanonicalMetaData(void) { return mCanonicalMetaData; }
+  static TagMap CanonicalMetaDataAsMap(void);
 
-  off64_t Read(int filedescr); // read backward from current point in file, leave file ready for another read
-  bool Write(int filedescr); 
+  static void GetCanonicalMetaDataValuesFromUser(TagMap &canonicals);
+  static bool GetMetaDataFromFile(string metadatafile, TagMap &metadatavec);
+  static bool  WriteMetaDataToFile(string metadatafile, TagMap &metadatavec);
+  static string MetaDataSummary(TagMap &metadatavalues);
+  static string CanonicalOrderMetaDataSummary(TagMap &metadatavalues);
+  
   string toString(void) ; 
   string TypeAsString(void);
   string ValueAsString(void); 
+  bool Write(int filedescr); 
+  off64_t Read(int filedescr); // read backward from current point in file, leave file ready for another read
+  private:
+  static vector<SM_MetaData> mCanonicalMetaData; 
 };
   
 //===============================================
@@ -434,18 +495,19 @@ class smBase {
   static smBase *openFile(const char *fname, int numthreads=1);
 #endif
 
-  void DeleteMetaData(string tag = "") {
-    if (tag == "") { // dangerous but actually sensible  
-      mMetaData.clear(); 
-      return; 
-    }
-    vector<SM_MetaData>::iterator pos = mMetaData.begin(), endpos = mMetaData.end(); 
+  void DeleteMetaData(void) {
+    mMetaData.clear(); 
+    return; 
+  }
+  void DeleteMetaData(string tag) {
+    mMetaData.erase(tag); 
+    /*    map<string,SM_MetaData>::iterator pos = mMetaData.begin(), endpos = mMetaData.end(); 
     mMetaData.erase(remove(mMetaData.begin(), mMetaData.end(), tag), mMetaData.end()); 
+    */ 
   }
 
   // Add the tag/value pairs from tagvec. 
-  void AddTagValues(map<string,string> &tagvec); 
-  void AddTagValue(string tag, int64_t value); 
+  //void AddTagValue(string tag, string mdtype, int64_t value); 
 
   void SetThumbnailFrame(int64_t f){
     SetMetaData("SM__thumbframe", f); 
@@ -457,20 +519,17 @@ class smBase {
     SetMetaData("SM__thumbres", r); 
   }
 
+
+  void SetMetaData(SM_MetaData &md);
+  void SetMetaData(TagMap &mdmap);
+  void SetMetaData(vector<SM_MetaData> &mdvec);
+
   template <class T> 
     void SetMetaData(const string tag, const T &value) {
-  SM_MetaData md(tag,value); 
-  bool found = (find(mMetaData.begin(), mMetaData.end(), md) != mMetaData.end());
-  if (!found) {
-    smdbprintf(5, str(boost::format("SetMetaData(): pushing back: %1%\n")%md.toString()).c_str());
-    mMetaData.push_back(md);  
-  } else {
-    smdbprintf(5, str(boost::format("SetMetaData(): replacing old with: %1%\n")%md.toString()).c_str());
-    replace(mMetaData.begin(), mMetaData.end(), md, md);  
+    SM_MetaData md(tag,value); 
+    SetMetaData(md); 
+    return; 
   }
-  return; 
-}
-
 
   void WriteMetaData(void);
 
@@ -497,7 +556,7 @@ class smBase {
   void computeTileOverlap(int *blockDim, int* blockPos, int res, int thread);
 
   // metadata
-  vector <SM_MetaData> mMetaData; 
+  map <string, SM_MetaData> mMetaData; 
   
  protected:
   

@@ -7,7 +7,6 @@
 #include <vector>
 #include "version.h"
 #include "debugutil.h"
-#include "sm/tags.h" 
 using namespace std; 
 
 //===================================================================
@@ -79,18 +78,12 @@ int main(int argc, char *argv[]) {
   }
 
   vector<boost::regex> tagPatterns, valuePatterns; 
-  vector<string> canonicalTags = GetCanonicalTagList(); 
-  map<string, string> canonicalValues; 
-  if (canonical.getValue()) {
-    for (uint i=0; i<canonicalTags.size(); i++) {
-      tagPatterns.push_back(boost::regex(canonicalTags[i])); 
-    }
-  }
-  else if (matchAll) {
+  TagMap canonicalTags;
+  if (matchAll) {
     tagPatterns.push_back(boost::regex(".*")); 
     valuePatterns.push_back(boost::regex(".*")); 
   } 
-  else {
+  else if (!canonical.getValue()) {
     vector<string> patternStrings = tagPatternStrings.getValue(); 
     for (uint patno = 0; patno < patternStrings.size(); patno++) {
       tagPatterns.push_back(boost::regex(patternStrings[patno])); 
@@ -99,7 +92,7 @@ int main(int argc, char *argv[]) {
     for (uint patno = 0; patno < patternStrings.size(); patno++) {
       valuePatterns.push_back(boost::regex(patternStrings[patno])); 
     }
-  }
+  }  
 
   smBase::init();
   sm_setVerbose(verbosity.getValue());  
@@ -107,6 +100,13 @@ int main(int argc, char *argv[]) {
 
 
   for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {
+    if (canonical.getValue()) {
+      canonicalTags = SM_MetaData::CanonicalMetaDataAsMap(); 
+      /*for (TagMap::iterator pos = canonicalTags.begin(); 
+        pos != canonicalTags.end(); ++pos) {
+        tagPatterns.push_back(boost::regex(pos->first)); 
+        }*/ 
+    }
     string filename = movienames.getValue()[fileno]; 
     smBase *sm = smBase::openFile(filename.c_str(), 1);
     if (!sm) {
@@ -122,17 +122,15 @@ int main(int argc, char *argv[]) {
      // for long list format:
     vector<string> tagMatches, valueMatches, valueTypes, matchTypes;
     uint longestTagMatch = 0, longestValueType = 5; 
-    for (vector <SM_MetaData>::iterator pos = sm->mMetaData.begin();
+    for (map <string,SM_MetaData>::iterator pos = sm->mMetaData.begin();
          pos != sm->mMetaData.end(); pos++) {
-      string mdtag = pos->mTag, mdvalue = pos->ValueAsString(); 
+      string mdtag = pos->first, mdvalue = pos->second.ValueAsString(), 
+        mdtype = pos->second.TypeAsString(); 
       bool tagmatch = MatchesAPattern(tagPatterns, mdtag), 
         valuematch = MatchesAPattern(valuePatterns, mdvalue);
 
-      if (canonical.getValue()) {
-        if (tagmatch) 
-          canonicalValues[mdtag] = mdvalue; 
-        else
-          canonicalValues[mdtag] = ""; 
+      if (canonicalTags.find(mdtag) != canonicalTags.end()) {
+        canonicalTags[mdtag].Set(mdtag,mdtype,mdvalue);                   
       }
 
       if (tagmatch || valuematch) numMatches ++; 
@@ -155,14 +153,13 @@ int main(int argc, char *argv[]) {
           } else if (valuematch) {
             matchtype = "Value Match";
           }
-          string valueType = pos->TypeAsString(); 
-          if (valueType.size() > longestValueType) 
-            longestValueType = valueType.size(); 
+           if (mdtype.size() > longestValueType) 
+            longestValueType = mdtype.size(); 
           if (mdtag.size() > longestTagMatch) 
             longestTagMatch = mdtag.size(); 
           tagMatches.push_back(str(boost::format("\"%s\"")%mdtag)); 
           valueMatches.push_back(mdvalue); 
-          valueTypes.push_back(valueType); 
+          valueTypes.push_back(mdtype); 
           matchTypes.push_back(matchtype); 
         }
         else {
@@ -176,11 +173,11 @@ int main(int argc, char *argv[]) {
       }
       if (thumbnailInfo.getValue()) {
         if (mdtag == "SM__thumbframe") {
-          thumbnum = pos->mInt64; 
+          thumbnum = pos->second.mInt64; 
           dbprintf(5, "Found thumbnail frame %d\n", thumbnum); 
        }
         else if (mdtag == "SM__thumbres") {
-          thumbres = pos->mInt64; 
+          thumbres = pos->second.mInt64; 
           dbprintf(5, "Found thumbnail res %d\n", thumbres); 
         }
       }
@@ -193,8 +190,9 @@ int main(int argc, char *argv[]) {
     }
     if (canonical.getValue()) {
       dbprintf(0, "Canonical tags for movie %s:\n", filename.c_str()); 
-      for (uint i = 0; i< canonicalTags.size(); i++) {
-        dbprintf(0, "%s: %s:\n", canonicalTags[i].c_str(), canonicalValues[canonicalTags[i]].c_str());
+      for (TagMap::iterator pos = canonicalTags.begin();
+           pos != canonicalTags.end(); pos++) {
+        dbprintf(0, str(boost::format("%1%: (%2%) %3%:\n") % pos->first % pos->second.TypeAsString() % pos->second.ValueAsString()).c_str());
       }
     } 
     if (singleLine) {

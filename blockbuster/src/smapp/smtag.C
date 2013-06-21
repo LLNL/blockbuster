@@ -39,7 +39,6 @@
 #include "version.h"
 #include "sm/sm.h" 
 #include "debugutil.h"
-#include "sm/tags.h"
 #include <map> 
 typedef boost::tokenizer<boost::char_separator<char> >  tokenizer;
 
@@ -106,19 +105,15 @@ int main(int argc, char *argv[]) {
   sm_setVerbose(verbosity.getValue());  
   dbg_setverbose(verbosity.getValue()); 
   
-  map<string, string> tagvec; 
-  map<string,string> canonicalTags; 
+  TagMap tagmap; 
+  TagMap canonicalTags; 
   
   // First, if there is a file, populate the vector from that.
   if (tagfile.getValue() != "") {
-    GetTagsFromFile(tagfile.getValue(), tagvec); 
+    SM_MetaData::GetMetaDataFromFile(tagfile.getValue(), tagmap); 
   }
-  // Now, add any canonical tags if the user wants to use that interface
-  if (canonical.getValue()) {
-    // this needs to be here to make sure the -t flags can override the canonical flags
-    GetCanonicalTagValuesFromUser(canonicalTags);   
-  }
-  // Finally, set any tags explicitly from the command line. 
+
+  // Next, override with any tags explicitly from the command line. 
   if (taglist.getValue().size()) {
     for (uint tagnum = 0; tagnum < taglist.getValue().size(); tagnum++) {
       string arg = taglist.getValue()[tagnum]; 
@@ -136,22 +131,28 @@ int main(int argc, char *argv[]) {
         ++pos; 
       } 
       dbprintf(2, str(boost::format("Adding tag %1% and value %2% to list of tags to apply\n") % tokens[0] % tokens[1]).c_str()); 
-      tagvec[tokens[0]] = tokens[1]; 
+      tagmap[tokens[0]] = tokens[1]; 
     }
   }
 
+  // Now, initialize canonical tags if the user wants to use that interface.
+  // This is a separate map because it can change from movie to movie.  
+  if (canonical.getValue()) {
+    // this needs to be here to make sure the -t flags can override the canonical flags
+    SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags);   
+  }
   // ------------------------------------------------------------------------------------
   if (exportTagfile.getValue() != "") {
-    WriteTagsToFile(exportTagfile.getValue(), tagvec);
+    SM_MetaData::WriteMetaDataToFile(exportTagfile.getValue(), tagmap);
 
     if (report.getValue()) {
-      for (map<string,string>::iterator pos = canonicalTags.begin(); 
+      for (TagMap::iterator pos = canonicalTags.begin(); 
            pos != canonicalTags.end(); pos++) {
-        if (tagvec[pos->first] == "")
-          tagvec[pos->first] = canonicalTags[pos->first]; 
+        if (tagmap.find(pos->first) == tagmap.end())
+          tagmap[pos->first] = canonicalTags[pos->first]; 
       }
       
-     cout << TagSummary(tagvec) << endl; 
+     cout << SM_MetaData::MetaDataSummary(tagmap) << endl; 
     } // if (report.getValue())
   }
   else {
@@ -171,14 +172,14 @@ int main(int argc, char *argv[]) {
       
       //--------------------------------------------------
       if (canonical.getValue()) {
-        if (canonicalTags[APPLY_ALL_TAG] != "yes") {
-          GetCanonicalTagValuesFromUser(canonicalTags);   
+        if (canonicalTags[APPLY_ALL_TAG].ValueAsString() != "yes") {
+          SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags);   
         }
-        sm->AddTagValues(canonicalTags); 
+        sm->SetMetaData(canonicalTags); 
      }
       
       //--------------------------------------------------
-      sm->AddTagValues(tagvec); 
+      sm->SetMetaData(tagmap); 
       
       //--------------------------------------------------
       if (thumbnail.getValue() != -1)  {
@@ -193,7 +194,7 @@ int main(int argc, char *argv[]) {
       
       // ----------------------------------------------
       if (report.getValue()) {        
-        cout << TagSummary(tagvec) << endl; 
+        cout << SM_MetaData::MetaDataSummary(tagmap) << endl; 
       }    
       sm->WriteMetaData(); 
       sm->closeFile(); 
