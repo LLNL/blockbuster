@@ -8,36 +8,61 @@ parser.add_argument('-b', '--bindir', help="set directory where img2sm lives", d
 
 args = parser.parse_args()
 
-outdir = "/tmp/"+os.getenv("USER")+"/img2smtest/"
-test_common.CreateEmptyDir(outdir)
+basedir = "/tmp/"+os.getenv("USER")+"/img2smtest/"
+test_common.SetBaseDir(basedir)
 
-[bindir,img2sm,datadir] = test_common.FindPaths(args.bindir, "img2sm")
+[bindir,[img2sm,sminfo],datadir] = test_common.FindPaths(args.bindir, ["img2sm","sminfo"])
 
 # ============================================================================================
 # DEFINE TESTS
+IMG2SM_SUCCESS = "img2sm completed successfully."
 tests = [ {"name": "mountains-single",
-           "cmd": "%s -v %s/mountains.tiff %s"%(img2sm, datadir, "%s/mountains-ignore.sm"%outdir),
-           "output": "%s/mountains-ignore.sm"%outdir,
-           'check_cmd': "%s/sminfo %s"%(bindir,"%s/mountains-ignore.sm"%outdir)},
+           "need_data": "mountains.tiff", 
+           "cmd": "%s -v mountains.tiff %s"%(img2sm, "mountains.sm"),
+           "output": "mountains.sm",
+           "expect_output": IMG2SM_SUCCESS},
+          {"name": "check-mountains-single", 
+           "need_data": "mountains.sm", 
+           'cmd': "%s mountains.sm"%sminfo,
+           "output": None,
+           "expect_output": None}, 
           {"name": "quicksand-single-gz",
-           "cmd": "%s -v --first 084 --last 084 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png %s"%(img2sm, datadir, "%s/quicksand-single-template.sm"%outdir), 
-           "output": "%s/quicksand-single-template.sm"%outdir,
-           'check_cmd': "%s/sminfo %s"%(bindir,"%s/quicksand-single-template.sm"%outdir)},
+           "need_data": "quicksand-short-6fps", 
+           "cmd": "%s -v --first 084 --last 084 quicksand-short-6fps/quicksand-short-6fps%%03d.png quicksand-single-gz.sm"%img2sm, 
+           "output": "quicksand-single-gz.sm",
+           "expect_output":  IMG2SM_SUCCESS}, 
+          {"name": "check-quicksand-single-gz", 
+           "need_data": "quicksand-single-gz.sm", 
+           'cmd': "%s quicksand-single-gz.sm"%sminfo,
+           "output": None,
+           "expect_output": None },           
           {"name": "quicksand-11frames-gz",
-           "cmd": "%s -v -c gz --first 20 -l 30 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png %s"%(img2sm, datadir, "%s/quicksand-all-template-gz.sm"%outdir), 
-           "output": "%s/quicksand-all-template-gz.sm"%outdir,
-           'check_cmd': "%s/sminfo %s"%(bindir,"%s/quicksand-all-template-gz.sm"%outdir)},
+           "need_data": "quicksand-short-6fps", 
+           "cmd": "%s -v -c gz --first 20 -l 30 quicksand-short-6fps/quicksand-short-6fps%%03d.png quicksand-11frames-gz.sm"%img2sm, 
+           "output": "quicksand-11frames-gz.sm",
+           "expect_output": IMG2SM_SUCCESS},           
+          {"name": "check-quicksand-11frames-gz",
+           "need_data": "quicksand-11frames-gz.sm", 
+           'cmd': "%s quicksand-11frames-gz.sm"%sminfo,
+           "output": None,
+           "expect_output": None },           
           {"name": "quicksand-11frames-lzma",
-           "cmd": "%s -v --compression lzma --first 20 --last 30 %s/quicksand-short-6fps/quicksand-short-6fps%%03d.png %s"%(img2sm, datadir, "%s/quicksand-all-template-lzma.sm"%outdir), 
-           "output": "%s/quicksand-all-template-lzma.sm"%outdir,
-           'check_cmd': "%s/sminfo %s"%(bindir,"%s/quicksand-all-template-lzma.sm"%outdir)}
-          ]
+           "need_data": "quicksand-short-6fps", 
+           "cmd": "%s -v --compression lzma --first 20 --last 30 quicksand-short-6fps/quicksand-short-6fps%%03d.png quicksand-11frames-lzma.sm"%img2sm,
+           "output": "quicksand-11frames-lzma.sm",
+           "expect_output": IMG2SM_SUCCESS },           
+          {"name": "check-quicksand-11frames-lzma",
+           "need_data": "quicksand-11frames-lzma.sm", 
+           'cmd': "%s quicksand-11frames-lzma.sm"%sminfo, 
+           "output": None,
+           "expect_output": None }         
+         ]
 
 # ============================================================================================
 # RUN TESTS
 [successes, results] = test_common.RunTests(tests)
 
-print "output is in", outdir
+print "output is in", basedir
 
 if successes != len(tests):
     sys.exit(1)
