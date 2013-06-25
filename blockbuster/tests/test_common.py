@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, shutil, time, threading, argparse, test_common
+import sys, os, shutil, time, threading, argparse
 from subprocess import *
 
 gTestdir = "/tmp/"+os.getenv("USER")
@@ -86,7 +86,7 @@ def FindPaths(bindir, binaries):
         i=len(binaries)
         while i:
             i = i-1
-            binary in binaries[i]
+            binary = gBindir + '/' + binaries[i]
             binary = CheckOutput("which %s"%binary).strip()
             if not os.path.exists(binary):
                 errexit( "Error: os.path() could not find binary %s"%binary)
@@ -98,7 +98,7 @@ def FindPaths(bindir, binaries):
     gDatadir = FindDataDir()
     
     sys.stderr.write( "bindir is: %s\n"%bindir)
-    sys.stderr.write( "binary is: %s\n"% binary)
+    sys.stderr.write( "binaries are: %s\n"% binaries)
     sys.stderr.write( "datadir is: %s\n"%gDatadir)
     
     return [bindir,binaries,gDatadir]
@@ -118,13 +118,13 @@ def CreateDir(outdir, clean=False):
 def SetBaseDir(basedir, clean=True):
     global gTestdir
     gTestdir = basedir
-    test_common.CreateDir(gTestdir, clean=clean)
+    CreateDir(gTestdir, clean=clean)
     return
 
 # ================================================================
 def run_test(test, timeout=15):
     global proc, gTestdir, gDatadir
-    errmsgs = []
+    errmsg = "SUCCESS"
     os.chdir(gTestdir)
     print "run_test, cwd is %s, running test: %s"%(os.getcwd(), str(test))
     need_data = test['need_data']
@@ -133,7 +133,7 @@ def run_test(test, timeout=15):
         if not os.path.exists(need_data):
             src_data = gDatadir+'/'+need_data
             if not os.path.exists(src_data):
-                errmsgs.append("Error: Cannot find or copy needed data %s"% need_data)
+                errmsg = "Error: Cannot find or copy needed data %s"% need_data
             else:
                 dest = gTestdir+"/"+need_data
                 print "copying", src_data, "to", dest
@@ -144,49 +144,59 @@ def run_test(test, timeout=15):
                 print "copied data to", dest
 
     outfilename = gTestdir+"%s.out"%test['name']
-    if not errmsgs:
-        outfile = open(outfilename, "w")
+    outfile = open(outfilename, "w")
+    outfile.write(test['cmd']+'\n')
+    outfile.flush()
+    if errmsg == "SUCCESS":
         theThread = threading.Thread(target=run_command, args=([test['cmd'], outfile]))
         theThread.start()
         sys.stderr.write("Waiting %d seconds for thread to finish...\n"%timeout)
         theThread.join(timeout)
-        outfile.close()
         if theThread.isAlive():
             os.kill(proc.pid,9)
-            errmsgs.append("ERROR: Command failed to exit within timeout %d seconds!\n"%timeout)            
+            errmsg = "ERROR: Command failed to exit within timeout %d seconds!\n"%timeout
         print "command output saved in", outfilename
     
         
-    if proc and proc.returncode and proc.returncode < 0:
-        errmsgs.append("Command returned exit code %d."%proc.returncode)
+    if errmsg == "SUCCESS" and proc and proc.returncode and proc.returncode < 0:
+        errmsg = "Command returned exit code %d."%proc.returncode
         
-    if test['output'] and not os.path.exists(test['output']):
-        errmsgs.append("Output file %s was not created as expected.\n"%test['output'])
-                       
-    if test['expect_output']:
+    if errmsg == "SUCCESS" and test['output'] and not os.path.exists(test['output']):
+        errmsg = "Output file %s was not created as expected.\n"%test['output']
+
+    outfile.write(errmsg+'\n')
+    outfile.close()
+    if errmsg == "SUCCESS" and test['success_pattern'] or test['failure_pattern']:
         outfile = open(outfilename, 'r')
-        found = False
-        while not found:
+        found_failure = False
+        found_success = False
+        while not found_success and not found_failure:
             line = outfile.readline()
             if not line:
                 break
-            if test['expect_output'] in line:
-                found=True
-                break
-        if not found:
-            errmsgs.append("Expected output \"%s\" not found in output."%test['expect_output'])
-
-    sys.stderr.write("\n************************************************\n" )
-    if not errmsgs:
-        sys.stderr.write("\nSuccess! \n" )
+            if test['success_pattern'] in line:
+                found_success=True
+            if test['failure_pattern'] in line:
+                found_failure=True                
+        if not found_success:
+            errmsg = "Expected success pattern \"%s\" not found in output."%test['success_pattern']
+        if found_failure:
+            errmsg = "Found failure pattern \"%s\" in output."%test['failure_pattern']
+            
+    if errmsg == "SUCCESS":
+        resultstring = errmsg
     else:
         returncode = None
         if proc:
             returncode = proc.returncode
-        sys.stderr.write("Failed.  Return code %s, reasons: %s\n"%(str(returncode),str(errmsgs)))
-    sys.stderr.write("\n************************************************\n\n" )
-    if errmsgs:
-        return  [False, errmsgs]
+        result = [False, errmsg]
+        resultstring = "Failed.  Return code %s, reason: \"%s\"\n"%(str(returncode),errmsg)
+        
+    sys.stderr.write("\n"+"*"*50+"\n" )
+    sys.stderr.write("%s\n"%resultstring)       
+    sys.stderr.write("\n"+"*"*50+"\n\n" )
+    
+    return  [errmsg == "SUCCESS", errmsg]
     return [True, ["No errors"]]
 
 # ============================================================================================
