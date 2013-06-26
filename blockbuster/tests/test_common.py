@@ -55,11 +55,10 @@ def run_command(cmd, outfile):
 # =================================================================
 # python 2.7 has check_output, but we are assuming 2.6 here
 def CheckOutput(cmd):
-    outfilename = "tmpfile.out"
-    outfile = open(outfilename, "w")
+    outfile = tempfile.NamedTemporaryFile()
     run_command(cmd, outfile)
-    outfile.close()
-    return open(outfilename, 'r').read()
+    outfile.seek(0)
+    return outfile.read()
 
 # ============================================================================================
 def FindDataDir():
