@@ -3,23 +3,27 @@
 import sys, os, shutil, time, threading, argparse, test_common
 from subprocess import *
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-b', '--bindir', help="set directory where smtag lives", default=test_common.FindBinDir('smtag'))
-
+parser = test_common.get_arg_parser()
 args = parser.parse_args()
-
-outdir = "/tmp/"+os.getenv("USER")+"/smtagtests/"
-test_common.CreateEmptyDir(outdir)
 
 [bindir,smtag,datadir] = test_common.FindPaths(args.bindir, "smtag")
 
 # ==========================================================================
 # DEFINE TESTS
-tests = [ {"name": "basic-tagging",
-           "cmd": "%s -v %s/mountains.tiff %s"%(smtag, datadir, "%s/mountains-ignore.sm"%outdir),
-           "output": "%s/mountains-ignore.sm"%outdir,
-           'check_cmd': "%s/sminfo %s"%(bindir,"%s/mountains-ignore.sm"%outdir)}
-          ]
+tests = [
+    {"name": "mountains-single",
+     "need_data": "mountains.tiff", 
+     "cmd": "%s -v mountains.tiff %s"%(img2sm, "mountains.sm"),
+     "output": "mountains.sm",
+     "failure_pattern": IMG2SM_FAILURE,
+     "success_pattern": IMG2SM_SUCCESS},
+    {"name": "mountains-single",
+     "need_data": "mountains.tiff", 
+     "cmd": "%s -v mountains.tiff %s"%(img2sm, "mountains.sm"),
+     "output": "mountains.sm",
+     "failure_pattern": IMG2SM_FAILURE,
+     "success_pattern": IMG2SM_SUCCESS}
+    ]
 
 # ==========================================================================
 # RUN TESTS
