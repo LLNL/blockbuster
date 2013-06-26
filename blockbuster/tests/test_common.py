@@ -3,9 +3,30 @@
 import sys, os, shutil, time, threading, argparse
 from subprocess import *
 
-gTestdir = "/tmp/"+os.getenv("USER")
+# =================================================================
+gTestdir = "/tmp/"+os.getenv("USER")+"/blockbuster_tests/"
 gBindir = "" # almost certainly bad
 gDatadir = "" # almost certainly bad
+
+# =================================================================
+def FindBinDir(progname):
+    global gBindir
+    # try ../$SYS_TYPE/bin (usual case) and ../../$SYS_TYPE/bin (dev on LC)
+    for dots in ['..','../..','../../..']:
+        for subdir in [systype, '.']:
+            trydir = "%s/%s/%s/bin"%(testdir,dots,subdir)
+            # sys.stderr.write( "trying directory: %s\n"%trydir)
+            if  os.path.exists(trydir+'/' + progname):
+                gBindir = trydir
+                return gBindir         
+    gBindir = "%s/../%s/bin"%(testdir,systype)
+    return gBindir
+
+# =================================================================
+def get_arg_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-b', '--bindir', help="set directory where smtools live", default=FindBinDir('smtag'))
+    return parser
 
 # =================================================================
 systype = os.getenv("SYS_TYPE")
@@ -40,20 +61,6 @@ def CheckOutput(cmd):
     outfile.close()
     return open(outfilename, 'r').read()
 
-# =================================================================
-def FindBinDir(progname):
-    global gBindir
-    # try ../$SYS_TYPE/bin (usual case) and ../../$SYS_TYPE/bin (dev on LC)
-    for dots in ['..','../..','../../..']:
-        for subdir in [systype, '.']:
-            trydir = "%s/%s/%s/bin"%(testdir,dots,subdir)
-            # sys.stderr.write( "trying directory: %s\n"%trydir)
-            if  os.path.exists(trydir+'/' + progname):
-                gBindir = trydir
-                return gBindir         
-    gBindir = "%s/../%s/bin"%(testdir,systype)
-    return gBindir
-
 # ============================================================================================
 def FindDataDir():
     global gDatadir
@@ -66,11 +73,8 @@ def FindDataDir():
     return gDatadir
 
 # =================================================================
-def FindPaths(bindir, binaries):
+def FindPaths(bindir):
     global gBindir, gDatadir
-    if type(binaries) != type((1,2)) and type(binaries) != type([1,2]):
-        binaries = [binaries]
-    # print "FindBinary(%s, %s)"%(bindir,binary)
     if bindir:
         if not os.path.exists(bindir):
             errexit("bindir %s does not exist."%bindir)
@@ -79,29 +83,16 @@ def FindPaths(bindir, binaries):
             bindir = bindir + "/" 
         if bindir[0] != '/':
             bindir = os.getcwd() + '/' + bindir
-        binary = "%s/%s"%(bindir,binaries[0])   
+        binary = "%s/img2sm"%bindir   
         bindir = os.path.realpath(os.path.abspath(os.path.dirname(binary)))
         gBindir = bindir
-    try:
-        i=len(binaries)
-        while i:
-            i = i-1
-            binary = gBindir + '/' + binaries[i]
-            binary = CheckOutput("which %s"%binary).strip()
-            if not os.path.exists(binary):
-                errexit( "Error: os.path() could not find binary %s"%binary)
-            binaries[i] = binary
-    except:
-        sys.stderr.write( "Error: 'which' could not find binary %s\n"%binary)        
-        raise
     
     gDatadir = FindDataDir()
     
     sys.stderr.write( "bindir is: %s\n"%bindir)
-    sys.stderr.write( "binaries are: %s\n"% binaries)
     sys.stderr.write( "datadir is: %s\n"%gDatadir)
     
-    return [bindir,binaries,gDatadir]
+    return
 
 # ===================================================================
 def CreateDir(outdir, clean=False):
@@ -125,12 +116,16 @@ def SetBaseDir(basedir, clean=True):
 def run_test(test, timeout=15):
     global proc, gTestdir, gDatadir
     errmsg = "SUCCESS"
+    if not os.path.exists(gTestdir):
+        CreateDir(gTestdir)
     os.chdir(gTestdir)
     print "run_test, cwd is %s, running test: %s"%(os.getcwd(), str(test))
-    need_data = test['need_data']
+    need_data = "%s/%s"%(gTestdir,test['need_data'])
     if need_data:
         print "need data:", need_data
-        if not os.path.exists(need_data):
+        if  os.path.exists(need_data):
+            print "data exists"
+        else:
             src_data = gDatadir+'/'+need_data
             if not os.path.exists(src_data):
                 errmsg = "Error: Cannot find or copy needed data %s"% need_data
@@ -144,11 +139,13 @@ def run_test(test, timeout=15):
                 print "copied data to", dest
 
     outfilename = gTestdir+"%s.out"%test['name']
+    fullcmd = "%s/%s %s"%(gBindir,test['cmd'],test['args'])
     outfile = open(outfilename, "w")
-    outfile.write(test['cmd']+'\n')
+    outfile.write(fullcmd+'\n')
+    outfile.write("Working directory: %s\n"%os.getcwd())
     outfile.flush()
     if errmsg == "SUCCESS":
-        theThread = threading.Thread(target=run_command, args=([test['cmd'], outfile]))
+        theThread = threading.Thread(target=run_command, args=([fullcmd, outfile]))
         theThread.start()
         sys.stderr.write("Waiting %d seconds for thread to finish...\n"%timeout)
         theThread.join(timeout)
