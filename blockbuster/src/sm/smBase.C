@@ -103,11 +103,14 @@ const int DIO_DEFAULT_SIZE = 1024L*1024L*4;
 
 #define SM_HDR_SIZE 64
 
+string SM_MetaData::mDelimiter = ":"; 
 vector<SM_MetaData> SM_MetaData::mCanonicalMetaData; 
+bool SM_MetaData::mInitialized = false; 
 
 // =====================================================================
 void SM_MetaData::Init(void) {
-  if (!mCanonicalMetaData.size()) {
+  if (!mInitialized) {
+    mInitialized = true; 
     mCanonicalMetaData.push_back(SM_MetaData("Title", "")); 
     mCanonicalMetaData.push_back(SM_MetaData("Authors", "")); 
     mCanonicalMetaData.push_back(SM_MetaData("Description", "")); 
@@ -129,6 +132,52 @@ void SM_MetaData::Init(void) {
   return ; 
 }
 
+// =====================================================================
+string SM_MetaData::GetCanonicalTagType(string tag) {  
+  for (vector<SM_MetaData>::iterator pos = mCanonicalMetaData.begin(); 
+       pos != mCanonicalMetaData.end(); ++pos){
+    if (tag == pos->mTag) {
+      return pos->TypeAsString(); 
+    }
+  }
+  return "UNKNOWN"; 
+}
+// =====================================================================
+void SM_MetaData::SetFromDelimitedString(string s) {
+
+  string badformat = str(boost::format("Error in tag format:  must be either tag%1%value tag%1%value[%1%type] triple, separated by a '%1%' delimiter.  \"type\" is one of 'ASCII', 'DOUBLE', or 'INT64', defaulting to 'ASCII' if not given.  For canonical values, types are ignored. ")%mDelimiter);
+
+  boost::char_separator<char> sep(mDelimiter.c_str()); 
+  tokenizer t(s, sep);
+  tokenizer::iterator pos = t.begin(), endpos = t.end(); 
+  string tag, mdtype="ASCII", value; 
+  if (pos == endpos) {
+    cerr << badformat << endl; 
+    exit(1); 
+  }
+  tag = *pos; 
+  ++pos; 
+  if (pos == endpos) {
+    cerr << badformat << endl; 
+    exit(1); 
+  }  
+  if (*pos == "ASCII" || *pos == "DOUBLE" || *pos == "INT64") {
+    mdtype = *pos; 
+    ++pos;
+  }
+  string canonicalType = GetCanonicalTagType(tag); 
+  if (canonicalType != "UNKNOWN") {
+    mdtype = canonicalType; 
+  }
+  if (pos == endpos) {
+    cerr << badformat << endl; 
+    exit(1); 
+  }  
+  value = *pos; 
+  Set(tag, mdtype, value); 
+  return; 
+}
+// =====================================================================
 TagMap SM_MetaData::CanonicalMetaDataAsMap(void) {
   TagMap mdmap; 
   for (uint i=0; i<mCanonicalMetaData.size(); i++) {
@@ -297,7 +346,7 @@ string SM_MetaData::TypeAsString(void) {
   else if (mType == METADATA_TYPE_INT64) {
     return "INT64"; 
   } 
-  return "UNKNOWN_TYPE"; 
+  return "UNKNOWN"; 
 }
 
 //===================================================================
@@ -368,7 +417,7 @@ bool SM_MetaData::Write(int lfd) {
   uint64_t payloadLength = 8; 
   filepos = LSEEK64(lfd,0,SEEK_CUR); 
   SwapAndWrite(lfd, &mType, 1, needswap);
-  smdbprintf(5, "SM_MetaData::Write() wrote (2a) payload type %s at pos %d\n", payloadTypeToString(mType).c_str(), filepos); 
+  smdbprintf(5, "SM_MetaData::Write() wrote (2a) payload type %s at pos %d\n", TypeAsString().c_str(), filepos); 
 
   filepos = LSEEK64(lfd,0,SEEK_CUR);     
   if (mType == METADATA_TYPE_ASCII) {
@@ -458,7 +507,7 @@ off64_t SM_MetaData::Read(int lfd) {
   smdbprintf(5, "SM_MetaData::Read(): read (1) name %s, %lu bytes, now at pos %d\n", mTag.c_str(), taglength, filepos); 
   
   ReadAndSwap(lfd, &mType, 1, needswap);
-  smdbprintf(5, "SM_MetaData::Read(): read (2a) payload type %s at pos %d\n", payloadTypeToString(mType).c_str(), filepos); 
+  smdbprintf(5, "SM_MetaData::Read(): read (2a) payload type %s at pos %d\n", TypeAsString().c_str(), filepos); 
   filepos = LSEEK64(lfd,0,SEEK_CUR);
 
   if (mType == METADATA_TYPE_ASCII) {

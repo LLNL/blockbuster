@@ -61,23 +61,25 @@ int main(int argc, char *argv[]) {
 
   TCLAP::UnlabeledMultiArg<string> movienames("movienames", "movie name(s)", false, "movie name(s)", cmd); 
  
-  TCLAP::SwitchArg canonical("c", "canonical", "Enter the canonical metadata for a movie interactively.", cmd); 
+  TCLAP::SwitchArg canonical("C", "canonical", "Enter the canonical metadata for a movie interactively.", cmd); 
 
-  TCLAP::SwitchArg deleteMD("d", "delete-metadata", "Delete all meta data in the file before applying any other tags.  If given alone, then the file will have no metadata when finished.", cmd); 
+  TCLAP::SwitchArg deleteMD("D", "delete-metadata", "Delete all meta data in the file before applying any other tags.  If given alone, then the file will have no metadata when finished.", cmd); 
   
-  TCLAP::ValueArg<string> exportTagfile("e", "export-tagfile", "Instead of applying tags to a movie, create a tag file from the current session which can be read with -f to start another smtag session.", false, "", "filename", cmd); 
+  TCLAP::ValueArg<string> exportTagfile("E", "export-tagfile", "Instead of applying tags to a movie, create a tag file from the current session which can be read with -f to start another smtag session.", false, "", "filename", cmd); 
   
-  TCLAP::ValueArg<string> tagfile("f", "tagfile", "a file containing name:value pairs to be set", false, "", "filename", cmd); 
+  TCLAP::ValueArg<string> tagfile("F", "tagfile", "a file containing name:value pairs to be set", false, "", "filename", cmd); 
   
-  TCLAP::MultiArg<string> taglist("t", "tag", "a name:value pair for a tag being set or added.", false, "tagname:value (value is a string, and may contain spaces)", cmd); 
+  TCLAP::MultiArg<string> taglist("T", "tag", "a name:value[:type] for a tag being set or added.  'type' can be 'ASCII', 'DOUBLE', or 'INT64' and defaults to 'ASCII'.", false, "tagname:value[:type]", cmd); 
 
-  TCLAP::ValueArg<int> thumbnail("n", "thumbnail", "set frame number of thumbnail", false, -1, "frameNum", cmd); 
+  TCLAP::ValueArg<string> delimiter("", "delimiter", "Sets the delimiter for all -T arguments.",false, ":", "string", cmd); 
 
-  TCLAP::ValueArg<int> thumbres("r", "thumbres", "the X resolution of the thumbnail (Y res will be autoscaled based on X res)", false, 0, "numpixels", cmd); 
+  TCLAP::ValueArg<int> thumbnail("N", "thumbnail", "set frame number of thumbnail", false, -1, "frameNum", cmd); 
 
-  TCLAP::SwitchArg report("R", "report", "After all operations are complete, list all the tags in the file.", cmd); 
+  TCLAP::ValueArg<int> thumbres("R", "thumbres", "the X resolution of the thumbnail (Y res will be autoscaled based on X res)", false, 0, "numpixels", cmd); 
+
+  TCLAP::SwitchArg report("L", "list", "After all operations are complete, list all the tags in the file.", cmd); 
   
-  TCLAP::ValueArg<int> verbosity("v", "verbosity", "set verbosity (0-5)", false, 0, "int", cmd); 
+  TCLAP::ValueArg<int> verbosity("V", "verbosity", "set verbosity (0-5)", false, 0, "int", cmd); 
 
   //------------------------------------------------------------
   try {
@@ -104,7 +106,9 @@ int main(int argc, char *argv[]) {
   smBase::init();
   sm_setVerbose(verbosity.getValue());  
   dbg_setverbose(verbosity.getValue()); 
-  
+
+  SM_MetaData::SetDelimiter(delimiter.getValue()); 
+
   TagMap tagmap; 
   TagMap canonicalTags; 
   

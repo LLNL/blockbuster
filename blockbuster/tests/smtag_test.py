@@ -13,7 +13,8 @@ args = parser.parse_args()
 tests = [
     {"name": "mountains-single",
      "need_data": "mountains.tiff", 
-     "cmd": "%s -v mountains.tiff %s"%(img2sm, "mountains.sm"),
+     "cmd": "smtag",
+     "args": "-v mountains.sm"),
      "output": "mountains.sm",
      "failure_pattern": IMG2SM_FAILURE,
      "success_pattern": IMG2SM_SUCCESS},

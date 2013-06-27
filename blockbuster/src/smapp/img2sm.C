@@ -119,10 +119,12 @@ int iVerb = 0;
 #endif
 
 
+// =======================================================================
 #define CHECK(v) \
 if(v == NULL) \
 img2sm_fail_check(__FILE__,__LINE__)
 
+// =======================================================================
 void img2sm_fail_check(const char *file,int line)
 {
   perror("fail_check");
@@ -130,6 +132,7 @@ void img2sm_fail_check(const char *file,int line)
   exit(1); 
 }
 
+// =======================================================================
 /*!
   To encapsulate what each worker needs to process its data
 */ 
@@ -137,6 +140,7 @@ struct WorkerData {
   int threadNum, numThreads, startFrame, endFrame, frameStep; 
 }; 
 
+// =======================================================================
 void workerThreadFunction(void *workerData) {
   WorkerData *myData = (WorkerData*)workerData; 
   //FillInputBuffer(myData); 
@@ -146,24 +150,6 @@ void workerThreadFunction(void *workerData) {
 
 
 void workproc(void *arg);
-
-/*
- void cmdline(char *app)
-{  
-  fprintf(stderr,"%s (%s) usage: %s [options] template output\n",
-          basename(app), BLOCKBUSTER_VERSION, basename(app));
-  fprintf(stderr, "  Example template for 4-digits in a filename:  filename%04d.sm Also see -ignore option to specify a single file.\n"); 
-  fprintf(stderr,"Options:\n");
-  fprintf(stderr,"\t-jqual [qual] Selects JPG quality (default:75)\n");
-  fprintf(stderr,"\t-minmax [min] [max]  16bit TIFF min and max values (default: from file)\n");
-  fprintf(stderr,"\t-rotate [ang] Angle to rotate source (0,90,180,270) (default:0)\n");
-   fprintf(stderr,"\t-size [width height depth header] Select raw img dims\n");
-  fprintf(stderr,"\t-buffersize [nt] Number of frames to buffer.  Default is 200.  Using lower values saves memory but may decrease performance, and vice versa.\n");
-  fprintf(stderr,"\t-tilesizes Specify tile sizes per mipmap level. Comma separated.  Non-square tiles can be given as e.g. 128x512. A single value would apply to all mipmaps (default: 512).\n");
-  fprintf(stderr,"\t-ignore Allows invalid templates.\n");
-  exit(1);
-}
-*/ 
 //=================================================
 void FillInputBuffer(Work *wrk) {
   
@@ -439,28 +425,62 @@ void FillInputBuffer(Work *wrk) {
   return; 
 } // end FillInputBuffer()
 
+// =======================================================================
 int main(int argc,char **argv)
 {
   TCLAP::CmdLine  cmd(str(boost::format("%1% converts a set of images into a streaming movie, optionally setting movie meta data. ")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
   
+  /*!
+    =====================================================
+    Metadata arguments
+    =====================================================
+  */ 
+  TCLAP::SwitchArg noMetadata("N", "nometadata", "Do not include any metadata, even if -tag or other is given", cmd, false); 
+
+  TCLAP::SwitchArg canonical("C", "canonical", "Enter the canonical metadata for a movie interactively.", cmd); 
+
+  TCLAP::ValueArg<string> exportTagfile("", "export-tagfile", "Instead of applying tags to a movie, create a tag file from the current session which can be read with -f to start another smtag session.", false, "", "filename", cmd); 
+  
+  TCLAP::ValueArg<string> tagfile("", "tagfile", "a file containing name:value pairs to be set", false, "", "filename", cmd); 
+  
+  TCLAP::MultiArg<string> taglist("T", "tag", "a name:value[:type] for a tag being set or added.  'type' can be 'ASCII', 'DOUBLE', or 'INT64' and defaults to 'ASCII'.", false, "tagname:value[:type]", cmd); 
+
+  TCLAP::ValueArg<string> delimiter("D", "delimiter", "Sets the delimiter for all -T arguments.",false, ":", "string", cmd); 
+
+  TCLAP::ValueArg<int> thumbnail("N", "thumbnail", "set frame number of thumbnail", false, -1, "frameNum", cmd); 
+
+  TCLAP::ValueArg<int> thumbres("R", "thumbres", "the X resolution of the thumbnail (Y res will be autoscaled based on X res)", false, 0, "numpixels", cmd); 
+
+  TCLAP::SwitchArg report("L", "list", "After all operations are complete, list all the tags in the file.", cmd); 
+  
+ 
+
+  /*!
+    =====================================================
+    Frame selection, region of interest, rotation
+    =====================================================
+  */ 
   TCLAP::ValueArg<int> firstFrame("f", "first", "First frame number",false, -1, "integer", cmd);   
   TCLAP::ValueArg<int> lastFrame("l", "last", "Last frame number",false, -1, "integer", cmd); 
   TCLAP::ValueArg<int> frameStep("s", "step", "Frame step size",false, 1, "integer", cmd); 
 
-  TCLAP::ValueArg<int> buffersize("", "buffersize", "Number of frames to buffer.  Default is 200.  Using lower values saves memory but may decrease performance, and vice versa.",false, 200, "integer", cmd); 
-  TCLAP::ValueArg<int> mipmaps("m", "mipmaps", "Number of mipmaps (levels of detail) to create",false, 1, "integer", cmd); 
-  TCLAP::ValueArg<string> tilesizes("", "tilesizes", "Size of tiles in movie", false, "512", "M for square tiles, MxN for rectangular tiles", cmd); 
-
-  TCLAP::ValueArg<float> rotate("", "rotate", " Set rotation of image. ",false, 0, "0,30,60 or 90", cmd); 
-  TCLAP::ValueArg<float> frameRate("r", "framerate", " Set preferred frame rate.  Default is 30, max is 50.",false, 30, "float", cmd); 
-
-  TCLAP::ValueArg<int> quality("q", "quality", "Jpeg compression quality, from 0-100",false, 75, "integer", cmd); 
-  TCLAP::ValueArg<int> threads("t", "threads", "Number of threads to use",false, 4, "integer", cmd); 
-  
-  TCLAP::ValueArg<VectFromString<int> > region("R", "Region", "Image pixel subregion to extract",false, VectFromString<int>(), "'Xoffset Yoffset Xsize Ysize'"); 
+  /* WHY IS THIS DISABLED NOW? 
+     TCLAP::ValueArg<VectFromString<int> > region("g", "Region", "Image pixel subregion to extract",false, VectFromString<int>(), "'Xoffset Yoffset Xsize Ysize'"); 
   region.getValue().expectedElems = 4; 
   cmd.add(region);
+  */ 
+  /*!
+    =====================================================
+    contents, quality
+    =====================================================
+  */ 
+  TCLAP::ValueArg<string> tilesizes("", "tilesizes", "Size of tiles in movie", false, "512", "M for square tiles, MxN for rectangular tiles", cmd); 
+  TCLAP::ValueArg<int> mipmaps("m", "mipmaps", "Number of mipmaps (levels of detail) to create",false, 1, "integer", cmd); 
+  TCLAP::ValueArg<int> quality("q", "quality", "Jpeg compression quality, from 0-100",false, 75, "integer", cmd); 
 
+  TCLAP::ValueArg<int> buffersize("b", "buffersize", "Number of frames to buffer.  Default is 200.  Using lower values saves memory but may decrease performance, and vice versa.",false, 200, "integer", cmd); 
+
+  TCLAP::ValueArg<float> frameRate("r", "framerate", " Set preferred frame rate.  Default is 30, max is 50.",false, 30, "float", cmd); 
   vector<string> allowedformats; 
   allowedformats.push_back("tiff"); allowedformats.push_back("TIFF"); 
   allowedformats.push_back("sgi"); allowedformats.push_back("SGI");  
@@ -489,22 +509,24 @@ int main(int argc,char **argv)
   TCLAP::ValueArg<string>compression("c", "compression", "Compression to use on movie", false, "gz", allowed); 
   cmd.add(compression); 
   //delete allowed; 
-
-  TCLAP::SwitchArg noMetadata("N", "nometadata", "Do not include any metadata, even if -tag or other is given", cmd, false); 
-
-  TCLAP::MultiArg<VectFromString<string> > Tag("T", "Tag", "Store given string in given tag.  Can be given multiple times to create multiple tags.", false, "quoted pair: 'tagname value'"); 
-  cmd.add(Tag); 
+  TCLAP::ValueArg<float> rotate("", "rotate", " Set rotation of image. ",false, 0, "0,30,60 or 90", cmd); 
 
   TCLAP::SwitchArg planar("p", "planar", "Raw img is planar interleaved (default: pixel interleave)", cmd, false); 
   TCLAP::SwitchArg flipx("X", "flipx", "Flip the image over the X axis", cmd, false); 
   TCLAP::SwitchArg flipy("Y", "flipy", "Flip the image over the Y axis", cmd, false); 
 
-  TCLAP::ValueArg<VectFromString<int32_t> > size("", "size", "Specify raw img dims", false, VectFromString<int32_t>(), "four nums in quotes: 'width height depth header'"); 
-  size.getValue().expectedElems = 4; 
-  cmd.add(size); 
+  TCLAP::ValueArg<string> size("", "raw-image-dims", "Specify raw img dims", false, "", "'width:height:depth:header'", cmd); 
 
   TCLAP::SwitchArg stereo("S", "Stereo", "Specify the output file is L/R stereo.", cmd, false); 
+  
 
+
+  /*!
+    =====================================================
+    other
+    =====================================================
+  */ 
+  TCLAP::ValueArg<int> threads("t", "threads", "Number of threads to use",false, 4, "integer", cmd); 
   TCLAP::SwitchArg verbose("v", "verbose", "Sets verbosity to level 1", cmd, false); 
   TCLAP::ValueArg<int> verbosity("V", "Verbosity", "Verbosity level",false, 0, "integer", cmd);   
 
@@ -576,10 +598,22 @@ int main(int argc,char **argv)
 
   vector<int>   iInDims, iSize(4);
   iSize[0] = iSize[1] = -1; 
-  if (size.getValue().valid) {
-    iSize = size.getValue().elems; 
+  if (size.getValue() != "") {
+    string errmsg = str(boost::format("Error in raw-image-dims \"%1%\".  Expected four integers. ")% size.getValue());
+    bool success = false; 
+    vector<string> nums = Split(size.getValue()); 
+    if (nums.size() != 4) {
+      errexit(cmd,errmsg); 
+    }    
+    try {
+      for (uint i=0; i<nums.size(); i++) {
+        iSize[i] = boost::lexical_cast<int64_t>(nums[i]);
+      }     
+    } catch (...) {
+      errexit(cmd,errmsg); 
+    }
   }
-
+  
   smdbprintf(5, "parsing tile sizes \n"); 
   unsigned int  tsizes[8][2];
   int count = 0;
@@ -860,13 +894,41 @@ int main(int argc,char **argv)
   sm->flushFrames(true); 
 
   if (! noMetadata.getValue()) {
-    smdbprintf(1, "Adding metadata (%d entries)...\n", Tag.getValue().size()); 
-    vector<VectFromString<string> >::const_iterator pos = Tag.begin(), endpos = Tag.end(); 
+    SM_MetaData::SetDelimiter(delimiter.getValue()); 
+   
+    if (tagfile.getValue() != "") {
+      if (!sm->ImportMetaData(tagfile.getValue())) {
+        errexit (cmd, "Could not export meta data to file."); 
+      }
+    }
+    if (canonical.getValue()) {
+      TagMap canonicalTags; 
+      SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags);   
+      sm->SetMetaData(canonicalTags); 
+    }
+      
+    smdbprintf(1, "Adding metadata (%d entries)...\n", taglist.getValue().size()); 
+    vector<string>::const_iterator pos = taglist.begin(), endpos = taglist.end(); 
     while (pos != endpos) {
-      sm->SetMetaData((*pos)[0], (*pos)[1]); 
+      try {
+        sm->SetMetaDataFromDelimitedString(*pos); 
+      } catch (...) {
+        errexit(str(boost::format("Bad meta data tag string: \"%1%\"\n")%(*pos)));
+      }
       ++pos; 
     } 
+    if (thumbnail.getValue() != -1)  {
+      sm->SetThumbnailFrame(thumbnail.getValue()); 
+      if (thumbres.getValue() != -1) {
+        sm->SetThumbnailRes(thumbres.getValue()); 
+      }
+    }
     sm->WriteMetaData(); 
+    if (exportTagfile.getValue() != "") {      
+      if (!sm->ExportMetaData(exportTagfile.getValue())) {
+        cerr << "Warning:  could not export metadata to file " << exportTagfile.getValue() << endl; 
+      }
+    }
   }
 
   sm->closeFile();

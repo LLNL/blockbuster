@@ -224,6 +224,20 @@ struct SM_MetaData {
     return;     
   }
 
+  void Set(string tag, uint64_t mdtype, string s) {   
+    mTag = tag; 
+    if (mdtype == METADATA_TYPE_INT64) {
+      SetValue(boost::lexical_cast<int64_t>(s)); 
+    } else if  (mdtype == METADATA_TYPE_DOUBLE) {
+      SetValue(boost::lexical_cast<double>(s)); 
+    } else if (mdtype == METADATA_TYPE_ASCII) {
+      SetValue(s); 
+    } else {
+      mType = METADATA_TYPE_UNKNOWN; 
+    }
+    return;     
+  }
+
   void SetValue(string s) {
     mType = METADATA_TYPE_ASCII;
     mAscii = s; 
@@ -238,21 +252,29 @@ struct SM_MetaData {
     mType = METADATA_TYPE_INT64;
     mInt64 = i; 
   } 
-   
+  
+  /*!
+    Given a tag, return "ASCII", "DOUBLE", "INT64" or "UNKNOWN"
+  */ 
+  string GetCanonicalTagType(string tag);
+
+  /*!
+    Accepts  "tag:value[:type]" where type defaults to ASCII. 
+    Automatically recognizes canonical tags and enforces proper type. 
+  */ 
+  void SetFromDelimitedString(string s);
+
+  static void SetDelimiter(string s) {
+    mDelimiter = s; 
+  }
+        
   bool operator == (const SM_MetaData&other) const {
     return (other.mTag == mTag); 
-  }
-  static string payloadTypeToString(uint64_t pt) {
-    if (pt == METADATA_TYPE_UNKNOWN) return "METADATA_TYPE_UNKNOWN"; 
-    if (pt == METADATA_TYPE_ASCII) return "METADATA_TYPE_ASCII"; 
-    if (pt == METADATA_TYPE_DOUBLE) return "METADATA_TYPE_DOUBLE"; 
-    if (pt == METADATA_TYPE_INT64) return "METADATA_TYPE_INT64"; 
-    else return "GARBAGE???"; 
   }
   
   static vector<SM_MetaData> CanonicalMetaData(void) { return mCanonicalMetaData; }
   static TagMap CanonicalMetaDataAsMap(void);
-
+  static bool mInitialized; 
   static void GetCanonicalMetaDataValuesFromUser(TagMap &canonicals);
   static bool GetMetaDataFromFile(string metadatafile, TagMap &metadatavec);
   static bool  WriteMetaDataToFile(string metadatafile, TagMap &metadatavec);
@@ -265,6 +287,7 @@ struct SM_MetaData {
   bool Write(int filedescr); 
   off64_t Read(int filedescr); // read backward from current point in file, leave file ready for another read
   private:
+  static string mDelimiter; // for separating tag:value[:type] strings
   static vector<SM_MetaData> mCanonicalMetaData; 
 };
   
@@ -519,7 +542,11 @@ class smBase {
     SetMetaData("SM__thumbres", r); 
   }
 
-
+  void SetMetaDataFromDelimitedString(string s) {
+    SM_MetaData md;
+    md.SetFromDelimitedString(s); 
+    SetMetaData(md); 
+  }
   void SetMetaData(SM_MetaData &md);
   void SetMetaData(TagMap &mdmap);
   void SetMetaData(vector<SM_MetaData> &mdvec);
@@ -532,6 +559,21 @@ class smBase {
   }
 
   void WriteMetaData(void);
+
+  bool ExportMetaData(string filename) {  
+    if (mMetaData.size() ) {
+      smdbprintf(2, "Writing metadata to file %s\n", filename.c_str()); 
+      return SM_MetaData::WriteMetaDataToFile(filename, mMetaData); 
+    } 
+    return false; 
+  }
+  bool ImportMetaData(string filename) {
+    if (mMetaData.size() ) {
+      smdbprintf(2, "Importing metadata from file %s\n", filename.c_str()); 
+      return SM_MetaData::GetMetaDataFromFile(filename, mMetaData); 
+    } 
+    return false; 
+  }
 
         
   // close a movie
@@ -556,7 +598,7 @@ class smBase {
   void computeTileOverlap(int *blockDim, int* blockPos, int res, int thread);
 
   // metadata
-  map <string, SM_MetaData> mMetaData; 
+  TagMap mMetaData; 
   
  protected:
   
