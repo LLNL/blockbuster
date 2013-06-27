@@ -816,7 +816,7 @@ int smBase::newFile(const char *_fname, u_int _width, u_int _height,
      }
    }
    
-   mFrameOffsets.resize(mNumFrames*mNumResolutions, 0); 
+   mFrameOffsets.resize(mNumFrames*mNumResolutions+1, 0); 
    mFrameOffsets[0] = SM_HDR_SIZE*sizeof(u_int) +
 	   mNumFrames*mNumResolutions*(sizeof(off64_t)+sizeof(u_int));
    
@@ -939,7 +939,7 @@ void smBase::readHeader(void)
    }
    
    // Get the framestart offsets
-   mFrameOffsets.resize((mNumFrames+1)*mNumResolutions, 0); 
+   mFrameOffsets.resize(mNumFrames*mNumResolutions+1, 0); 
    READ(lfd, &mFrameOffsets[0], sizeof(off64_t)*mNumFrames*mNumResolutions);
    byteswap(&mFrameOffsets[0],sizeof(off64_t)*mNumFrames*mNumResolutions,sizeof(off64_t));
 
@@ -2172,6 +2172,11 @@ void smBase::closeFile(void)
 
 	//smdbprintf(5,"seek header end is %d\n",LSEEK64(mThreadData[0].fd, 0, SEEK_CUR));
    }
+   // note the end of the file
+   mFrameOffsets[mNumFrames*mNumResolutions] = mFrameOffsets[mNumFrames*mNumResolutions-1] + mFrameLengths[mNumFrames*mNumResolutions-1];
+
+   WriteMetaData(); 
+
    int i=mNumThreads; 
    while (i--) {
      CLOSE(mThreadData[i].fd);
