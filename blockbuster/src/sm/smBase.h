@@ -411,7 +411,7 @@ struct OutputBuffer {
     return; 
   }
   bool full(void) {
-    return (mNumFrames == mFrameBuffer.size()); 
+    return (mNumFrames >= mFrameBuffer.size()); 
   } 
 
   void resize(uint32_t frames) {
@@ -425,7 +425,7 @@ struct OutputBuffer {
   
   bool addFrame(FrameCompressionWork* frame){
     int32_t slotnum = frame->mFrame - mFirstFrameNum;
-    if (slotnum + 1 > (int32_t)mFrameBuffer.size() ||  slotnum < 0) {      
+    if (full() || slotnum < 0) {      
       return false; 
     }
     if (mFrameBuffer[slotnum]) {
@@ -584,6 +584,7 @@ class smBase {
   // various flag/type info
   virtual int getType(void) {return(-1);};
   u_int getFlags(void) { return(flags); };
+  void setStereo(void) { flags |= SM_FLAGS_STEREO; }
   void setFlags(u_int f) { flags = f; };
   float getFPS(void) { 
     int i = (flags & SM_FLAGS_FPS_MASK) >> SM_FLAGS_FPS_SHIFT;

@@ -530,11 +530,9 @@ int main(int argc,char **argv)
   TCLAP::SwitchArg verbose("v", "verbose", "Sets verbosity to level 1", cmd, false); 
   TCLAP::ValueArg<int> verbosity("V", "Verbosity", "Verbosity level",false, 0, "integer", cmd);   
 
-  TCLAP::UnlabeledValueArg<string> nameTemplate("infiles", "A C-style string containing %d notation for specifying multiple movie frame files.  For a single frame, need not use %d notation", true, "", "input filename template"); 
-  cmd.add(nameTemplate);
+  TCLAP::UnlabeledValueArg<string> nameTemplate("infiles", "A C-style string containing %d notation for specifying multiple movie frame files.  For a single frame, need not use %d notation", true, "", "input filename template", cmd); 
 
-  TCLAP::UnlabeledValueArg<string> moviename("moviename", "Name of the movie to create",true, "changeme", "output movie name"); 
-  cmd.add(moviename); 
+  TCLAP::UnlabeledValueArg<string> moviename("moviename", "Name of the movie to create",true, "changeme", "output movie name", cmd); 
 
   try {
     cmd.parse(argc, argv);

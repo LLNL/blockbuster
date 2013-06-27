@@ -45,7 +45,8 @@
 #include "sm/smRaw.h"
 #include "sm/smJPG.h"
 #include "../config/version.h"
-
+#include <tclap_utils.h>
+#include <boost/algorithm/string.hpp>
 #include "pt/pt.h"
 
 #include "zlib.h"
@@ -77,41 +78,21 @@ void Sample2d(unsigned char *in,int idx,int idy,unsigned char *out,
         int odx,int ody,int s_left,int s_top,
         int s_dx,int s_dy,int filter);
 
-
-/* code... */
-void cmdline(char *app)
-{
-	fprintf(stderr,"%s (%s) usage: %s [options] outfile infile1 [infile2...]\n",
-              basename(app), BLOCKBUSTER_VERSION, basename(app));
-	fprintf(stderr,"Options:\n");
-	fprintf(stderr,"\t-v Verbose mode (sets verbosity to 1).\n");
-	fprintf(stderr,"\t-verbose n Set verbosity to n.\n");
-	fprintf(stderr,"\t-threads [nt] Number of threads to use. Default: 1.\n");
-	fprintf(stderr,"\t-mipmaps [n] Number of mipmap levels. Default: 1\n");
-	fprintf(stderr,"\t-tilesizes Specify tile sizes per mipmap level. Comma separated.  Non-square tiles can be specified as e.g. 128x256. (default: 512).\n");
-	fprintf(stderr,"\t-rle Select RLE compresssion.\n");
-	fprintf(stderr,"\t-gz Select gzip compresssion.\n");
-	fprintf(stderr,"\t-lzo Select LZO compresssion.\n");
-	fprintf(stderr,"\t-jpg Select JPG compresssion.\n");
-	fprintf(stderr,"\t-jqual [qual] Selects JPG quality. Default: 75\n");
-	fprintf(stderr,"\t-FPS [fps] Set preferred frame rate.  Default is 30.\n");
-	fprintf(stderr,"\t-stereo Specify the output file is stereo.\n");
-	fprintf(stderr,"\t-dst [dx] [dy] Select the output size. Default: source size.\n");
-	fprintf(stderr,"\t-src [x] [y] [dx] [dy] Select a rectangle of the input. Default: all.\n");
-	fprintf(stderr,"\t-filter Enable smoothing filter for image scaling.\n");
-	fprintf(stderr,"\n\tNote: inputfile syntax \"file[@first[@last[@step]]]\"\n");
-	fprintf(stderr,"\tAllowing the first, last and frame step to be specified\"\n");
-	fprintf(stderr,"\tfor each input .sm file individually. The default is to\n");
-	fprintf(stderr,"\ttake all frames in an input file, stepping by 1.\n");
-	exit(1);
+void errexit(TCLAP::CmdLine &cmd, string msg) {
+  cerr << endl << "*** ERROR *** : " << msg  << endl<< endl;
+  cmd.getOutput()->usage(cmd); 
+  cerr << endl << "*** ERROR *** : " << msg << endl << endl;
+  exit(1); 
 }
 
-typedef struct {
-	char name[1024];
-	smBase	*sm;
-	int first,last,step;
-	int num;
-} inp;
+
+struct MovieInfo{
+  MovieInfo():sm(NULL), first(0), last(0), step(1), numframes(0) {}
+  string name; 
+  smBase	*sm;
+  int first,last,step;
+  int numframes;
+};
 
 struct Work {
 	smBase *sm;
@@ -130,398 +111,345 @@ void workproc(void *arg);
 
 int main(int argc,char **argv)
 {
-	int		iRLE = 0;
-	char		*sOutput = NULL;
-	int		iFilter = 0;
-	int		iStereo = 0;
-	int		iSize[2];
-	int		dst[2] = {-1,-1};
-	int		src[4] = {-1,-1,-1,-1};
-	int		iQual = 75;
-	float		fFPS = 0.0;
-	int		nThreads = 1;
-	int		nRes = 1;
 
-	int		i,j,k,count;
-	smBase 		*sm = NULL;
-	void 		*buffer = NULL;
-	void		*pZoom = NULL;
-	int		buffer_len = 0;
-	int		ninputs;
-	inp		*input;
-	int		iScale;
-	pt_pool		thepool;
-	pt_pool_t	pool = &thepool;
+ 
+  TCLAP::CmdLine  cmd(str(boost::format("%1% concats movies together. ")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
+  
+  TCLAP::SwitchArg verbose("v", "verbose", "Sets verbosity to level 1", cmd, false); 
+  TCLAP::ValueArg<int> verbosity("V", "Verbosity", "Verbosity level",false, 0, "integer", cmd);   
+  
+  TCLAP::SwitchArg skipMetadata("N", "no-metadata", "Do not copy metadata.  Default: accumulate metadata in the order of the movies given.", cmd, false);
 
-	char	        tstr[1024],tstr2[1024];
-	char            tsizestr[1024] = "512";
-	unsigned int    tsizes[8][2];
-	int             tiled = 0;
+  TCLAP::SwitchArg stereo("s", "stereo", "output movie is stereo", cmd, false);
+  TCLAP::SwitchArg filter("", "filter", "Enable smoothing filter for image scaling", cmd, false);
+  TCLAP::ValueArg<int> 
+    threads("t","threads","number of threads to use", false,1,"integer",cmd);
+  TCLAP::SwitchArg rle("r", "rle", "Use Run-Length Encoding compression", cmd, false);
+  TCLAP::SwitchArg gz("z", "gz", "Use GZ compression", cmd, false);
+  TCLAP::SwitchArg lzo("l", "lzo", "Use LZO compression", cmd, false);
+  TCLAP::SwitchArg jpg("j", "jpg", "Use JPEG compression", cmd, false);
+  TCLAP::ValueArg<int> jqual("q",  "jqual",  "JPEG quality (0-99, default 75).  Higher is less compressed and higher quality.", false,  75,  "integer (0-99)",  cmd);   
+  
+  TCLAP::ValueArg<int> mipmaps("", "mipmaps", "Number of levels of detail",false, 1, "integer", cmd);   
+  TCLAP::ValueArg<int> tilesizes("",  "tilesizes",  "Pixel size of the tiles within each frame (default: 512).  If set to 0, no tiling will be done.  Examples: '512' or '512,256'", false,  512,  "integer",  cmd); 
+  
+  TCLAP::ValueArg<string> destSize("", "dest-size", "Set output frame dimensions. Default: input size.  Format: XXXxYYY e.g. '300x500'",false, "", "e.g. '300x500'", cmd);   
+  TCLAP::ValueArg<string> subregion("", "src-subregion", "Select a rectangle of the input by giving region size and offset. Default: all. Format: 'Xsize Ysize Xoffset Yoffset' e.g. '300 500 20 50'",false, "", " e.g. '300 500 20 50'", cmd);   
+  TCLAP::ValueArg<float> fps("f", "fps", "Store Frames Per Second (FPS) in movie for playback (float).  Might be ignored.",false, 30, "positive floating point number", cmd);   
+  
+  TCLAP::UnlabeledValueArg<string> output("Output-movie", "Name of the movie to create", true, "", "output movie name", cmd); 
+  
+  TCLAP::UnlabeledMultiArg<string> movienames("moviename", "Names of the input movie(s) to cat. Syntax is \"file[@first[@last[@step]]]\", allowing the first, last and frame step to be specified for each input .sm file individually. The default is to take all frames in an input file, stepping by 1.",true, "movie names", cmd); 
+  
+  
+  try {
+    cmd.parse(argc, argv);
+  } catch(std::exception &e) {
+    std::cout << e.what() << std::endl;
+    return 1;
+  }
+  
+  //int		iFilter = 0;
+  // int		iStereo = stereo.getValue()? 0 : SM_STEREO;
+  int		nThreads = threads.getValue();
+  
+  int		compressionType = 0;
+  if (rle.getValue()) compressionType = 1;
+  if (gz.getValue()) compressionType = 2;
+  if (lzo.getValue()) compressionType = 3;
+  if (jpg.getValue()) compressionType = 4;
+  int		nRes = mipmaps.getValue();
+  if (nRes < 1 || nRes > 8) {
+    errexit(cmd, "Resolutions must be between 1 and 8."); 
+  }
+  
 
-	/* parse the command line ... */
-	i = 1; 
-	while ((i<argc) && (argv[i][0] == '-')) {
-		if (strcmp(argv[i],"-v")==0) {
-			gVerbosity = 1;
-            //sm_setVerbose(5); 
-		}  else if (strcmp(argv[i],"-verbose")==0) {
-          gVerbosity = atoi(argv[++i]);
-          sm_setVerbose(gVerbosity); 
-        } else if (strcmp(argv[i],"-stereo")==0) {
-			iStereo = SM_FLAGS_STEREO;
-		} else if (strcmp(argv[i],"-filter")==0) {
-			iFilter = 1;
-		} else if (strcmp(argv[i],"-rle")==0) {
-			iRLE = 1;
-		} else if (strcmp(argv[i],"-gz")==0) {
-			iRLE = 2;
-		} else if (strcmp(argv[i],"-lzo")==0) {
-			iRLE = 3;
-		} else if (strcmp(argv[i],"-jpg")==0) {
-			iRLE = 4;
-		} else if ((strcmp(argv[i],"-threads")==0) && (i+1 < argc))  {
-			i++; nThreads = atoi(argv[i]);
-		} else if ((strcmp(argv[i],"-mipmaps")==0) && (i+1 < argc))  {
-			i++; nRes = atoi(argv[i]);
-			if (nRes < 1) nRes = 1;
-			if (nRes > 8) nRes = 8;
-		} else if ((strcmp(argv[i],"-jqual")==0) && (i+1 < argc))  {
-			i++; iQual = atoi(argv[i]);
-		} else if ((strcmp(argv[i],"-FPS")==0) && (i+1 < argc))  {
-			i++; fFPS = atof(argv[i]);
-		} else if ((strcmp(argv[i],"-src")==0) && (i+4 < argc))  {
-			i++; src[0] = atoi(argv[i]);
-			i++; src[1] = atoi(argv[i]);
-			i++; src[2] = atoi(argv[i]);
-			i++; src[3] = atoi(argv[i]);
-			if (src[0] < 0) cmdline(argv[0]);
-			if (src[1] < 0) cmdline(argv[0]);
-			if (src[2] <= 0) cmdline(argv[0]);
-			if (src[3] <= 0) cmdline(argv[0]);
-		} else if ((strcmp(argv[i],"-dst")==0) && (i+2 < argc))  {
-			i++; dst[0] = atoi(argv[i]);
-			i++; dst[1] = atoi(argv[i]);
-			if (dst[0] <= 0) cmdline(argv[0]);
-			if (dst[1] <= 0) cmdline(argv[0]);
-		} else if (strcmp(argv[i],"-tilesizes")==0) {
-		  if ((argc-i) > 1) {
-		    strcpy(tsizestr,argv[++i]);
-		    tiled = 1;
-		  } else {
-		    cmdline(argv[0]);
-		  }
-		} else {
-			fprintf(stderr,"Unknown option: %s\n\n",argv[i]);
-			cmdline(argv[0]);
-		}
-		i++;
-	}
+  //char		*sOutput = NULL;
+  //int		dst[2] = {-1,-1};
+  //int		src[4] = {-1,-1,-1,-1};
+  //int		iQual = 75;
+  
+  
+  //char	        tstr[1024],tstr2[1024];
+  //char            tsizestr[1024] = "512";
+  
+  // ===============================================
+  int		iSize[2] = {-1};
+  float		fFPS = fps.getValue();
+  //  int		i=0,j=0,k=0;
+  smBase 		*sm = NULL;
+  void 		*buffer = NULL;
+  void		*pZoom = NULL;
+  int		buffer_len = 0;
 
-	// parse tile sizes 
-	{
-	  char *tok;
-	  char *str;
-   
-	  int count = 0;
-	  int parsed = 0;
-	  int xsize,ysize;
+  vector<MovieInfo> minfos; 
 
-	  str = &tsizestr[0];
-   
-	  tok = strtok(str,(const char *)",");
-	  while(tok != NULL) {
-	    parsed=1;
+  int		iScale;
+  pt_pool		thepool;
+  pt_pool_t	pool = &thepool;
+  unsigned int    tsizes[8][2];
+  int             tiled = 0;
 
-	    xsize = ysize = 0;
-	    if(strchr(tok,'x')) {
-	      sscanf(tok,"%dx%d",&xsize,&ysize);
-	      if((xsize > 0)&&(ysize > 0)){
-		tsizes[count][0] = xsize;
-		tsizes[count][1] = ysize;
-		count++;
-	      }
-	    }
-	    else {
-	      sscanf(tok,"%d",&xsize);
-	      if(xsize > 0) {
-		ysize = xsize;
-		tsizes[count][0] = xsize;
-		tsizes[count][1] = ysize;
-		count++;
-	      }
-	    }
-     
-	    tok = strtok((char*)NULL,(const char *)",");
-     
-	  }
-	  while( (count < nRes) && parsed) {
-	    if(count == 0)
-	      break;
-	    tsizes[count][0] = tsizes[count-1][0];
-	    tsizes[count][1] = tsizes[count-1][1];
-	    count++; 
-	  }
-
-	  if(parsed && gVerbosity) {
-	    for(int n=0; n< nRes; n++) {
-	      dbprintf(1,"Resolution[%d] Tilesize=[%dx%d]\n",n,tsizes[n][0],tsizes[n][1]);
-	    }
-	  }
-	}
-
-	// input filenames
-	if ((argc - i) < 2) cmdline(argv[0]);
-	sOutput = argv[i++];
-
-	smBase::init();
-
-	ninputs = argc-i;
-	input = (inp *)malloc(sizeof(inp)*ninputs);
-	if (!input) exit(1);
-
-	count = 0;
-	for(j=i;j<argc;j++) {
-		char	*p;
-		int	has_at = 0;
-
-		strcpy(input[j-i].name,argv[j]);
-		p = strchr(input[j-i].name,'@');
-		if (p) {
-			*p = '\0';
-			has_at = 1;
-		}
-	        input[j-i].sm = smBase::openFile(input[j-i].name,nThreads);
-		if (input[j-i].sm == NULL) {
-			fprintf(stderr,"Unable to open: %s\n",
-				input[j-i].name);
-			exit(1);
-		}
-		if (fFPS == 0.0) fFPS = input[j-i].sm->getFPS();
-
-		/* cook up defaults */
-		input[j-i].first = 0;
-		input[j-i].last = input[j-i].sm->getNumFrames()-1;
-		input[j-i].step = 1;
-		input[j-i].num = input[j-i].last + 1;
-		if (j == i) {
-			iSize[0] = input[j-i].sm->getWidth();
-			iSize[1] = input[j-i].sm->getHeight();
-		} else {
-			if ((iSize[0] != input[j-i].sm->getWidth()) ||
-			    (iSize[1] != input[j-i].sm->getHeight())) {
-				fprintf(stderr,"Error the file %s has a different framesize\n",input[j-i].name);
-				exit(1);
-			}
-		}
-
-		/* handle the @first[@last[@step]] syntax */
-		if (has_at) {
-			p++;
-			input[j-i].first = atoi(p);
-			p = strchr(p,'@');
-			if (p) {
-				p++;
-				input[j-i].last = atoi(p);
-				p = strchr(p,'@');
-				if (p) {
-					p++;
-					input[j-i].step = atoi(p);
-				}
-			}
-		}
-
-		/* first/last/step error checking */
-		if ((input[j-i].first < 0) || 
-                    (input[j-i].first >= input[j-i].sm->getNumFrames())) {
-			fprintf(stderr,"Invalid first frame %d for %s\n",
-				input[j-i].first,input[j-i].name);
-			exit(1);
-		}
-		if ((input[j-i].last < 0) ||
-                    (input[j-i].last >= input[j-i].sm->getNumFrames())) {
-			fprintf(stderr,"Invalid last frame %d for %s\n",
-				input[j-i].last,input[j-i].name);
-			exit(1);
-		}
-		if ((input[j-i].step == 0) || 
-		    ((input[j-i].step > 0) && 
-                     (input[j-i].last < input[j-i].first)) ||
-		    ((input[j-i].step < 0) && 
-                     (input[j-i].last > input[j-i].first))) {
-			fprintf(stderr,"Invalid first/last/step values (%d/%d/%d)\n",
-			    input[j-i].first,input[j-i].last,input[j-i].step);
-			exit(1);
-		}
-
-		/* count the files */
-		input[j-i].num = 0;
-		if (input[j-i].step > 0) {
-			for(k=input[j-i].first;k<=input[j-i].last;
-				k+=input[j-i].step) {
-				input[j-i].num++;
-			}
-		} else {
-			for(k=input[j-i].first;k>=input[j-i].last;
-				k+=input[j-i].step) {
-				input[j-i].num++;
-			}
-		}
-
-		if (gVerbosity) {
-			printf("Input: %d - %d of %s - size %d %d\n",
-				input[j-i].first,input[j-i].last,
-				input[j-i].name,iSize[0],iSize[1]);
-		}
-		count += input[j-i].num;
-	}
-
-	// Ensure the bounds are good...
-	if (src[0] < 0) {
-		src[0] = 0;
-		src[1] = 0;
-		src[2] = iSize[0];
-		src[3] = iSize[1];
-	} else {
-		if (src[0] + src[2] > iSize[0]) {
-			fprintf(stderr,"Invalid selection width\n");
-			exit(1);
-		}
-		if (src[1] + src[3] > iSize[1]) {
-			fprintf(stderr,"Invalid selection width\n");
-			exit(1);
-		}
-	}
-	// if no value, dst is equal to the src
-	if (dst[0] < 0) {
-		dst[0] = src[2];
-		dst[1] = src[3];
-	}
-	// ok, here we go...
-	iScale = 0;
-	if (iSize[0] != dst[0]) { iSize[0] = dst[0]; iScale = 1; }
-	if (iSize[1] != dst[1]) { iSize[1] = dst[1]; iScale = 1; }
-
-	// memory for scaling buffer...
-	if (iScale) {
-		pZoom = (void *)malloc(iSize[0]*iSize[1]*3);
-		if (!pZoom) exit(1);
-	}
-
+  smBase::init();
+  gVerbosity = verbosity.getValue(); 
+  if (!gVerbosity && verbose.getValue()) {
+    gVerbosity = 1;
+  }
+  sm_setVerbose(gVerbosity);  
+  /*
+  nminfos = argc-i;
+  input = (inp *)malloc(sizeof(inp)*nminfos);
+  if (!input) exit(1);
+  */ 
+  TagMap mdata; 
+  
+  uint count = 0, n = 0;
+  vector<string> movies = movienames.getValue(); 
+  for(vector<string>::iterator pos = movies.begin();pos != movies.end(); ++pos, ++n) {
+    MovieInfo minfo;
+    vector<string> tokens; 
+    boost::split(tokens, *pos, boost::is_any_of("@")); 
+    minfo.name = tokens[0];
+    /* handle the @first[@last[@step]] syntax */
+    minfo.sm = smBase::openFile(minfo.name.c_str(), nThreads);
+    if (minfo.sm == NULL) {
+      errexit(cmd, str(boost::format("Unable to open: %1%")%minfo.name));
+    }
+    if (fFPS == 0.0) fFPS = minfo.sm->getFPS();
     
+    minfo.first = 0;
+    minfo.last = minfo.sm->getNumFrames()-1;
+    minfo.step = 1;
+    minfo.numframes = minfo.last + 1;
+    try {
+      if (tokens.size() > 1) {
+        minfo.first = boost::lexical_cast<int>(tokens[1]); 
+      } 
+      if (tokens.size() > 2) {
+        minfo.last = boost::lexical_cast<int>(tokens[2]); 
+      } 
+      if (tokens.size() > 3) {
+        minfo.step = boost::lexical_cast<int>(tokens[3]); 
+      } 
+    } catch (...) {
+      errexit(cmd, str(boost::format("Bad movie specification string \"%1%\"")%*pos)); 
+    }
+        
+    if (iSize[0] == -1) {
+      iSize[0] = minfo.sm->getWidth();
+      iSize[1] = minfo.sm->getHeight();
+    } else {
+      if ((iSize[0] != minfo.sm->getWidth()) ||
+          (iSize[1] != minfo.sm->getHeight())) {
+        fprintf(stderr,"Error the file %s has a different framesize\n",minfo.name.c_str());
+        exit(1);
+      }
+    }
+    /* first/last/step error checking */
+    if ((minfo.first < 0) || 
+        (minfo.first >= minfo.sm->getNumFrames())) {
+      fprintf(stderr,"Invalid first frame %d for %s\n",
+              minfo.first,minfo.name.c_str());
+      exit(1);
+    }
+    if ((minfo.last < 0) ||
+        (minfo.last >= minfo.sm->getNumFrames())) {
+      fprintf(stderr,"Invalid last frame %d for %s\n",
+              minfo.last,minfo.name.c_str());
+      exit(1);
+    }
+    if ((minfo.step == 0) || 
+        ((minfo.step > 0) && 
+         (minfo.last < minfo.first)) ||
+        ((minfo.step < 0) && 
+         (minfo.last > minfo.first))) {
+      fprintf(stderr,"Invalid first/last/step values (%d/%d/%d)\n",
+              minfo.first,minfo.last,minfo.step);
+      exit(1);
+    }
+    
+     /* count the frames */
+    minfo.numframes = 0;
+    if (minfo.step > 0) {
+      for(uint k=minfo.first;k<=minfo.last;
+          k+=minfo.step) {
+        minfo.numframes++;
+      }
+    } else {
+      for(uint k=minfo.first;k>=minfo.last;
+          k+=minfo.step) {
+        minfo.numframes++;
+      }
+    }
+    
+    if (gVerbosity) {
+      printf("Minfo: %d - %d of %s - size %d %d\n",
+             minfo.first,minfo.last,
+             minfo.name.c_str(),iSize[0],iSize[1]);
+    }
+    count += minfo.numframes;
+    minfos.push_back(minfo); 
+  }
+  
+    // Ensure the bounds are good...
+  int src[4] = {-1}; 
+  if (subregion.getValue() == "") {
+    src[0] = 0;
+    src[1] = 0;
+    src[2] = iSize[0];
+    src[3] = iSize[1];
+  } 
+  else {
+    std::string item;    
+    std::stringstream ss(subregion.getValue());
+    try {
+      ss >> src[0] >> src[1] >> src[2] >> src[3];        
+    } catch (...) {
+      errexit (cmd, str(boost::format("Improperly formatted subregion: %1%")%subregion.getValue())); 
+    }
+    if (src[0] + src[2] > iSize[0]) {
+      fprintf(stderr,"Invalid selection width\n");
+      exit(1);
+    }
+    if (src[1] + src[3] > iSize[1]) {
+      fprintf(stderr,"Invalid selection width\n");
+      exit(1);
+    }
+  }
+  // if no value, dst is equal to the src
+  int dst[2] = {-1}; 
+  if (destSize.getValue() == "") {
+    dst[0] = src[2];
+    dst[1] = src[3];
+  }
+  else {
+    std::string item;    
+    std::stringstream ss(destSize.getValue());
+    try {
+      ss >> dst[0] >> dst[1];
+    } catch (...) {
+      errexit (cmd, str(boost::format("Improperly formatted dest size: %1%")%destSize.getValue())); 
+    }
+  }
+  
+  
+  /* We used to allow tilesizes to be specified in great detail, but it is sufficient now to use same tile size at all mipmaps, since after all the I/O is the same regardless of the level of detail.  
+	Formerly, you could say -tilesizes '512x256,256x128,128x64' and have things go the way you wanted them.  Not worth the hassle but worth noting here.  
+   */ 
+  tsizes[0][0] = tsizes[0][1] = boost::lexical_cast<int>(tilesizes.getValue());
+  for(int n=1; n< nRes; n++) {
+    tsizes[n][0] = tsizes[n-1][0];
+    tsizes[n][1] = tsizes[n-1][1];
+  }
 
-	// Open the output file...
-	if(tiled) {
-	  if (iRLE == 1) {
-	    sm = smRLE::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes, nThreads);
-	  } else if (iRLE == 2) {
-	    sm = smGZ::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes, nThreads);
-	  } else if (iRLE == 3) {
-	    sm = smLZO::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes, nThreads);
-	  } else if (iRLE == 4) {
-	    sm = smJPG::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes, nThreads);
-	    ((smJPG *)sm)->setQuality(iQual);
-	  } else {
-	    sm = smRaw::newFile(sOutput,iSize[0],iSize[1],count,&tsizes[0][0],nRes, nThreads);
-	  }
-	  if (!sm) {
-	    fprintf(stderr,"Unable to create the file: %s\n",
-		    sOutput);
-	    exit(1);
-	  }
-	}
-	else {
-	  if (iRLE == 1) {
-	    sm = smRLE::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes, nThreads);
-	  } else if (iRLE == 2) {
-	    sm = smGZ::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes, nThreads);
-	  } else if (iRLE == 3) {
-	    sm = smLZO::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes, nThreads);
-	  } else if (iRLE == 4) {
-	    sm = smJPG::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes, nThreads);
-	    ((smJPG *)sm)->setQuality(iQual);
-	  } else {
-	    sm = smRaw::newFile(sOutput,iSize[0],iSize[1],count,NULL,nRes, nThreads);
-	  }
-	  if (!sm) {
-	    fprintf(stderr,"Unable to create the file: %s\n",
-		    sOutput);
-	    exit(1);
-	  }
-	}
-
-	/* set any flags */
-	sm->setFlags(iStereo);
-	sm->setFPS(fFPS);
-    sm->startWriteThread(); 
-
-	/* init the parallel tools */
-#ifdef irix
-	pthread_setconcurrency(nThreads*2);
-#endif
-	pt_pool_init(pool, nThreads, nThreads*2, 0);
-
-	/* copy the frames */
-	i = 0;
-	for(j=0;j<ninputs;j++) {
-		int	x;
-		if (gVerbosity) {
-			printf("Reading from %s (%d to %d by %d)\n",
-			   input[j].name,input[j].first,input[j].last,
-				input[j].step);
-		}
-		k = input[j].first;
-		for(x=0;x<input[j].num;x++) {
-			if (gVerbosity) {
-				printf("Working on %d of %d\n",i+1,count);
-			}
-			if (nThreads == 1 && (input[j].sm->getType() == sm->getType()) && 
-					(iScale == 0) && 
-		(sm->getNumResolutions() == input[j].sm->getNumResolutions())) {
-				int	size,res;
-				for(res=0;res<sm->getNumResolutions();res++) {
-                  input[j].sm->getCompFrame(k,0,NULL,size,res);
-				    if (buffer_len < size) {
-					free(buffer);
-					buffer = (void *)malloc(size);
-					buffer_len = size;
-				    }
-				    input[j].sm->getCompFrame(k,0,buffer,size,res);
-				    sm->writeCompFrame(i,buffer,&size,res);
-				}
-				i++;
-			} else {
-				Work *wrk = new Work;
-				wrk->insm = input[j].sm;
-				wrk->sm = sm;
-				wrk->inframe = k;
-				wrk->outframe = i++;
-				wrk->iScale = iScale;
-				wrk->iFilter = iFilter;
-				wrk->dst = dst;
-				wrk->src = src;
-				pt_pool_add_work(pool, workproc, wrk);
-			}
-			k += input[j].step;
-		}
-	}
-	pt_pool_destroy(pool,1);
-    sm->stopWriteThread(); 
-    sm->flushFrames(true); 
-	for(i=0;i<ninputs;i++) {
-      TagMap tm = input[i].sm->GetMetaData();
+  // ok, here we go...
+  iScale = 0;
+  if (iSize[0] != dst[0]) { iSize[0] = dst[0]; iScale = 1; }
+  if (iSize[1] != dst[1]) { iSize[1] = dst[1]; iScale = 1; }
+  
+  // memory for scaling buffer...
+  if (iScale) {
+    pZoom = (void *)malloc(iSize[0]*iSize[1]*3);
+    if (!pZoom) exit(1);
+  }
+     
+  
+  // Open the output file...
+  unsigned int *tsizep = NULL; 
+  if(tsizes[0][0]) {
+    tsizep = &tsizes[0][0];
+  }
+  if (compressionType == 1) {
+    sm = smRLE::newFile(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
+  } else if (compressionType == 2) {
+    sm = smGZ::newFile(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
+  } else if (compressionType == 3) {
+    sm = smLZO::newFile(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
+  } else if (compressionType == 4) {
+    sm = smJPG::newFile(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
+    ((smJPG *)sm)->setQuality(jqual.getValue());
+  } else {
+    sm = smRaw::newFile(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
+  }
+  if (!sm) {
+    fprintf(stderr,"Unable to create the file: %s\n",
+            output.getValue().c_str());
+    exit(1);
+  }
+  if (!skipMetadata.getValue()) {
+    for(uint i=0;i<minfos.size();i++) {
+      TagMap tm = minfos[i].sm->GetMetaData();
       sm->SetMetaData(tm); 
     }
-    sm->WriteMetaData(); 
-	sm->closeFile();
+  }
 
-	/* clean up */
-	delete sm;
-	for(i=0;i<ninputs;i++) delete input[i].sm;
-	free(input);
-	if (pZoom) free(pZoom);
-	if (buffer) free(buffer);
-
-	exit(0);
+  /* set any flags */
+  if (stereo.getValue()) sm->setStereo(); 
+  sm->setFPS(fps.getValue());
+  sm->startWriteThread(); 
+  
+  /* init the parallel tools */
+  pt_pool_init(pool, nThreads, nThreads*2, 0);
+  
+  /* copy the frames */
+  uint outframe = 0; 
+  for (vector<MovieInfo>::iterator pos = minfos.begin(); pos != minfos.end(); ++pos) {
+    int	x;
+    if (gVerbosity) {
+      printf("Reading from %s (%d to %d by %d)\n",
+             pos->name.c_str(),pos->first,pos->last,
+             pos->step);
+    }
+    uint inframe = pos->first;
+    for(x=0;x<pos->numframes;x++) {
+      if (gVerbosity) {
+        printf("Working on %d of %d (frame %d)\n",x,count, inframe);
+      }
+      if (nThreads == 1 && (pos->sm->getType() == sm->getType()) && 
+          (iScale == 0) && 
+          (sm->getNumResolutions() == pos->sm->getNumResolutions())) {
+        int	size,res;
+        for(res=0;res<sm->getNumResolutions();res++) {
+          pos->sm->getCompFrame(inframe,0,NULL,size,res);
+          if (buffer_len < size) {
+            free(buffer);
+            buffer = (void *)malloc(size);
+            buffer_len = size;
+          }
+          pos->sm->getCompFrame(inframe,0,buffer,size,res);
+          sm->writeCompFrame(outframe,buffer,&size,res);
+        }
+      } else {
+        Work *wrk = new Work;
+        wrk->insm = pos->sm;
+        wrk->sm = sm;
+        wrk->inframe = inframe;
+        wrk->outframe = outframe;
+        wrk->iScale = iScale;
+        wrk->iFilter = filter.getValue();
+        wrk->dst = dst;
+        wrk->src = src;
+        pt_pool_add_work(pool, workproc, wrk);
+      }
+      outframe++;
+      inframe += pos->step;
+    }
+  }
+  pt_pool_destroy(pool,1);
+  sm->stopWriteThread(); 
+  sm->flushFrames(true); 
+  
+  sm->WriteMetaData(); 
+  sm->closeFile();
+  
+  /* clean up */
+  // delete sm;
+  //   for(i=0;i<nminfos;i++) delete input[i].sm;
+  // free(input);
+  if (pZoom) free(pZoom);
+  if (buffer) free(buffer);
+  
+  exit(0);
 }
 
 void workproc(void *arg)
@@ -532,7 +460,7 @@ void workproc(void *arg)
 	int	sizeout = 3*wrk->sm->getHeight()*wrk->sm->getWidth();
 	int	size;
 	wrk->buffer = new unsigned char[sizein];
-    dbprintf(5, "created new buffer %p for frame %d\n", 
+    dbprintf(3, "created new buffer %p for frame %d\n", 
              wrk->buffer, wrk->outframe); 
 	wrk->insm->getFrame(wrk->inframe,wrk->buffer, pt_pool_threadnum());
 	if (wrk->iScale) {
