@@ -439,7 +439,6 @@ int main(int argc,char **argv)
   sm->stopWriteThread(); 
   sm->flushFrames(true); 
   
-  sm->WriteMetaData(); 
   sm->closeFile();
   
   /* clean up */
