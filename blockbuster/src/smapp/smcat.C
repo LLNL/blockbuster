@@ -507,6 +507,11 @@ int main(int argc,char **argv)
 	pt_pool_destroy(pool,1);
     sm->stopWriteThread(); 
     sm->flushFrames(true); 
+	for(i=0;i<ninputs;i++) {
+      TagMap tm = input[i].sm->GetMetaData();
+      sm->SetMetaData(tm); 
+    }
+    sm->WriteMetaData(); 
 	sm->closeFile();
 
 	/* clean up */
