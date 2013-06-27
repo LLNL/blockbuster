@@ -558,6 +558,8 @@ class smBase {
     return; 
   }
 
+  TagMap GetMetaData(void) { return mMetaData; }
+
   void WriteMetaData(void);
 
   bool ExportMetaData(string filename) {  
