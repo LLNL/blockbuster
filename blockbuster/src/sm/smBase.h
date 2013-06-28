@@ -271,22 +271,26 @@ struct SM_MetaData {
   bool operator == (const SM_MetaData&other) const {
     return (other.mTag == mTag); 
   }
-  
-  static vector<SM_MetaData> CanonicalMetaData(void) { return mCanonicalMetaData; }
-  static TagMap CanonicalMetaDataAsMap(void);
-  static bool mInitialized; 
-  static void GetCanonicalMetaDataValuesFromUser(TagMap &canonicals);
-  static bool GetMetaDataFromFile(string metadatafile, TagMap &metadatavec);
-  static bool  WriteMetaDataToFile(string metadatafile, TagMap &metadatavec);
-  static string MetaDataSummary(TagMap &metadatavalues);
-  static string CanonicalOrderMetaDataSummary(TagMap &metadatavalues);
-  
   string toString(void) ; 
   string TypeAsString(void);
   string ValueAsString(void); 
   bool Write(int filedescr); 
   off64_t Read(int filedescr); // read backward from current point in file, leave file ready for another read
-  private:
+  
+
+  // ----------------------------------------------------------
+  static bool mInitialized; 
+  static vector<SM_MetaData> CanonicalMetaData(void) { return mCanonicalMetaData; }
+  static TagMap CanonicalMetaDataAsMap(void);
+  static bool GetMetaDataFromFile(string metadatafile, TagMap &metadatavec);
+  static bool  WriteMetaDataToFile(string metadatafile, TagMap &metadatavec);
+  static string CanonicalOrderMetaDataSummary(TagMap &metadatavalues);
+  static string MetaDataSummary(TagMap &metadatavalues);
+  static TagMap GetCanonicalMetaDataValuesFromUser(void);
+  static void GetCanonicalMetaDataValuesFromUser(TagMap &previousMap);
+  // ----------------------------------------------------------
+  
+private:
   static string mDelimiter; // for separating tag:value[:type] strings
   static vector<SM_MetaData> mCanonicalMetaData; 
 };
@@ -547,8 +551,8 @@ class smBase {
     md.SetFromDelimitedString(s); 
     SetMetaData(md); 
   }
-  void SetMetaData(SM_MetaData &md);
-  void SetMetaData(TagMap &mdmap);
+  void SetMetaData(const SM_MetaData &md);
+  void SetMetaData(const TagMap mdmap);
   void SetMetaData(vector<SM_MetaData> &mdvec);
 
   template <class T> 
