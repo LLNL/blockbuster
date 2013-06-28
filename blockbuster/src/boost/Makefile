@@ -48,7 +48,7 @@ $(HEADER_EVIDENCE): $(UNTAR_BOOST)
 
 $(LIB_EVIDENCE): $(HEADER_EVIDENCE)
 	-echo apparently $< is older than $@; ls -l $<; ls -l $@
-	rm -f $@
+	rm -f $@  # ensure all libs are newer than headers when done
 	cd boost_$(BOOST_VERSION) && tar -xzf ../process-0.5.tgz && ./bootstrap.sh --with-libraries=thread,regex,system && ./bjam -j 20 install --prefix=$(INSTALL_DIR)
 
 clean:
