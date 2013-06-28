@@ -33,6 +33,14 @@
 #undef DMALLOC
 #define SM_VERBOSE 1
 // Utility to combine image files into movie
+#include <pstream.h>
+#include <map>
+#include <string> 
+#include <boost/format.hpp>
+#include <boost/tokenizer.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/regex.hpp>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -48,9 +56,8 @@
 #include "simple_jpeg.h"
 #include "version.h"
 #include <tclap_utils.h>
-#include <boost/format.hpp>
-#include <boost/tokenizer.hpp>
-#include <boost/lexical_cast.hpp>
+// http://www.highscore.de/boost/process0.5/boost_process/tutorial.html
+// #include <boost/process.hpp>
 
 #include "pt/pt.h"
 #define int32 int32hack
@@ -60,12 +67,14 @@ extern "C" {
 }
 #undef int32
 
+// =======================================================================
 void errexit(string msg) {
   cerr << "ERROR: "  << msg << endl; 
   exit(1);
 }
 
 
+// =======================================================================
 void errexit(TCLAP::CmdLine &cmd, string msg) {
   cerr << endl << "*** ERROR *** : " << msg  << endl<< endl;
   cmd.getOutput()->usage(cmd); 
@@ -73,13 +82,61 @@ void errexit(TCLAP::CmdLine &cmd, string msg) {
   exit(1); 
 }
 
+// =======================================================================
 /* applying a filename template to a number */ 
 string getFilename(string filenameTemplate, int num, bool useTemplate) {
   if (useTemplate)  return str(boost::format(filenameTemplate)%num);
   else return filenameTemplate;
 }
 
+// =======================================================================
+map<string,string> GetUserInfo(void) {
+  // Get the output of $(finger ${USER}) from the shell:
+  char *uname = getenv("USER"); 
+  string whoami = (uname == NULL ? "" : uname);
+  string cmd = str(boost::format("finger %1% 2>&1")%whoami);
+  redi::ipstream finger(cmd);
+  
+  /*
+    Example output: 
+rcook@rzgpu2 (blockbuster): finger rcook
+Login: portly1                            Name: Armando X. Portly
+Directory: /var/home/portly1                  Shell: /bin/bash
+Office:  123-456-7890
+On since Tue Jun 25 12:26 (PDT) on pts/1 from 134.9.48.241
+   3 days 3 hours idle
+On since Tue Jun 25 15:13 (PDT) on pts/3 from 134.9.48.241
+   56 minutes 48 seconds idle
+On since Fri Jun 28 10:55 (PDT) on pts/5 from 134.9.48.241
+Mail forwarded to funnyguy@somewhere.de
+No mail.
+No Plan.
+  */ 
 
+  // we will store our results based on the expected finger label
+  boost::cmatch results; 
+  map <string,string> info;  
+  info["Login"] = "";
+  info["Name"] = ""; 
+  info["Office"] = ""; 
+
+  // evaluate each line and capture the salient points
+  string line; 
+  while (getline(finger, line)) {
+    for (map <string,string>::iterator pos = info.begin(); pos != info.end(); ++pos) {
+      // set up a regular expression to capture the output
+     // http://www.boost.org/doc/libs/1_53_0/libs/regex/doc/html/boost_regex/syntax/basic_extended.html
+     string pattern = str(boost::format(" *%1%: *(\\<[[:word:]\\. -]*\\>) *")%(pos->first)); 
+      if (regex_search(line.c_str(), results, boost::regex(pattern,  boost::regex::extended))) {
+        smdbprintf(5, str(boost::format("GOT MATCH in line \"%1\" for \"%2%\", pattern \"%3%\": \"%4%\"\n")%line%(pos->first)%(pos->second)%results[1]).c_str()); 
+        info[pos->first] = results[1];
+      }
+    }
+  }        
+  return info; 
+}
+
+// =======================================================================
 // Prototypes 
 int rotate_img(unsigned char *img,int dx,int dy,float rot);
 void rotate_dims(float rot,int *dx,int *dy);
@@ -119,6 +176,7 @@ int iVerb = 0;
 #endif
 
 
+
 // =======================================================================
 #define CHECK(v) \
 if(v == NULL) \
@@ -131,6 +189,7 @@ void img2sm_fail_check(const char *file,int line)
   fprintf(stderr,"Failed at line %d in file %s\n",line,file);
   exit(1); 
 }
+
 
 // =======================================================================
 /*!
@@ -425,6 +484,7 @@ void FillInputBuffer(Work *wrk) {
   return; 
 } // end FillInputBuffer()
 
+
 // =======================================================================
 int main(int argc,char **argv)
 {
@@ -533,6 +593,11 @@ int main(int argc,char **argv)
   TCLAP::UnlabeledValueArg<string> nameTemplate("infiles", "A C-style string containing %d notation for specifying multiple movie frame files.  For a single frame, need not use %d notation", true, "", "input filename template", cmd); 
 
   TCLAP::UnlabeledValueArg<string> moviename("moviename", "Name of the movie to create",true, "changeme", "output movie name", cmd); 
+
+  // save the command line for meta data
+  string commandLine; 
+  for (int i=0; i<argc; i++) 
+    commandLine += (string(argv[i]) + " "); 
 
   try {
     cmd.parse(argc, argv);
@@ -892,19 +957,21 @@ int main(int argc,char **argv)
   sm->flushFrames(true); 
 
   if (! noMetadata.getValue()) {
-    SM_MetaData::SetDelimiter(delimiter.getValue()); 
-   
+    // populate with reasonable guesses by default:
+    TagMap mdmap = SM_MetaData::CanonicalMetaDataAsMap(); 
+    mdmap["Movie Create Command"] = commandLine; 
+    map<string,string> userinfo = GetUserInfo();
+    
     if (tagfile.getValue() != "") {
       if (!sm->ImportMetaData(tagfile.getValue())) {
         errexit (cmd, "Could not export meta data to file."); 
       }
     }
     if (canonical.getValue()) {
-      TagMap canonicalTags; 
-      SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags);   
-      sm->SetMetaData(canonicalTags); 
+      sm->SetMetaData(SM_MetaData::GetCanonicalMetaDataValuesFromUser()); 
     }
       
+    SM_MetaData::SetDelimiter(delimiter.getValue()); 
     smdbprintf(1, "Adding metadata (%d entries)...\n", taglist.getValue().size()); 
     vector<string>::const_iterator pos = taglist.begin(), endpos = taglist.end(); 
     while (pos != endpos) {

@@ -29,27 +29,31 @@
 #
 include ../config/config
 
-BOOST_VERSION = 1_49_0
+BOOST_VERSION = 1_53_0
 INSTALL_DIR ?= $(shell pwd)
 
 HEADER_EVIDENCE = $(INSTALL_DIR)/include/boost/random.hpp 
 LIB_EVIDENCE = $(INSTALL_DIR)/lib/libboost_thread.a  $(INSTALL_DIR)/lib/libboost_system.a  $(INSTALL_DIR)/lib/libboost_regex.a 
-UNTAR_BOOST = boost_$(BOOST_VERSION)/boost/system
+UNTAR_BOOST = boost_$(BOOST_VERSION)/boost/random.hpp
 
-all: lib
+all: $(LIB_EVIDENCE)
 
-$(UNTAR_BOOST):
+boost_$(BOOST_VERSION)/boost/random.hpp: 
+	@echo creating $(UNTAR_BOOST)
 	tar -xzf boost_$(BOOST_VERSION).tar.gz 
+	[ -f $@ ] && touch $@
+	@echo '********************' finished with UNTAR_BOOST $@; echo
 
-lib: $(LIB_EVIDENCE)
-
-$(HEADER_EVIDENCE): $(UNTAR_BOOST)
+$(INSTALL_DIR)/include/boost/random.hpp: boost_$(BOOST_VERSION)/boost/random.hpp
+	-echo apparently $< is newer than $@; ls -l $<; ls -l $@
 	cp -r boost_$(BOOST_VERSION)/boost $(INSTALL_DIR)/include/
+	@echo '********************' finished with HEADER_EVIDENCE $@; echo
 
-$(LIB_EVIDENCE): $(HEADER_EVIDENCE)
-	-echo apparently $< is older than $@; ls -l $<; ls -l $@
+$(LIB_EVIDENCE): $(INSTALL_DIR)/include/boost/random.hpp
+	-echo apparently $< is newer than $@; ls -l $<; ls -l $@
 	rm -f $@  # ensure all libs are newer than headers when done
 	cd boost_$(BOOST_VERSION) && tar -xzf ../process-0.5.tgz && ./bootstrap.sh --with-libraries=thread,regex,system && ./bjam -j 20 install --prefix=$(INSTALL_DIR)
+	@echo '********************' finished with LIB_EVIDENCE $@; echo
 
 clean:
 	rm -rf boost_$(BOOST_VERSION) $(INSTALL_DIR)/lib/libboost* $(INSTALL_DIR)/include/boost

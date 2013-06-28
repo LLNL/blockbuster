@@ -248,6 +248,13 @@ string SM_MetaData::MetaDataSummary(TagMap&mdmap) {
 }
 
 // =====================================================================
+TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(void) {
+  TagMap newmap; 
+  GetCanonicalMetaDataValuesFromUser(newmap); 
+  return newmap; 
+}
+
+// =====================================================================
 void SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous) {
   TagMap copied = previous; 
 
@@ -2101,7 +2108,7 @@ int smBase::compFrame(void *in, void *out, int *outsizes, int res)
 }
  
 //============================================================
-void smBase::SetMetaData(SM_MetaData &md) {
+void smBase::SetMetaData(const SM_MetaData &md) {
   mMetaData[md.mTag] = md;  
   return; 
 }
@@ -2115,8 +2122,8 @@ void smBase::SetMetaData(vector<SM_MetaData> &mdvec) {
 }
 
 //============================================================
-void smBase::SetMetaData(TagMap &tagmap) {
-  for (TagMap::iterator pos = tagmap.begin(); pos != tagmap.end(); pos++) {
+void smBase::SetMetaData(const TagMap tagmap) {
+  for (TagMap::const_iterator pos = tagmap.begin(); pos != tagmap.end(); pos++) {
     SetMetaData(pos->second); 
   }
   return; 
