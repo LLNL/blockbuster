@@ -420,7 +420,7 @@ void BlockbusterInterface::on_loopCheckBox_stateChanged(int state) {
   if (state && pingpongCheckBox->isChecked()){
     pingpongCheckBox->setChecked(false); 
   }
-  if (state && mLoop || !state && !mLoop) return; 
+  if ( (state && mLoop) || (!state && !mLoop)) return; 
   mEventQueue.push_back(MovieEvent(MOVIE_SET_LOOP, state)); 
   return; 
 }

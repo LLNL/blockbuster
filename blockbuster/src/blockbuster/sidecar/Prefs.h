@@ -13,6 +13,7 @@
 #include <string>
 #include <fstream>
 #include "stringutil.h"
+#include <boost/format.hpp>
 
 #define DOUBLE_FALSE (0.0)
 #define LONG_FALSE  (0)
@@ -61,8 +62,7 @@ class Preferences {
       tmp +=  " (" + pos->first + ", " + pos->second + ") \n";
       ++pos;
     }
-    tmp +=  string("_dirty: ") + (int)_dirty  +  "\n"
-      +  "_writtenToDisk: "  +  (int)_writtenToDisk  +  "\n"; 
+    tmp +=  str(boost::format("_dirty: %1%\n_writtenToDisk: %2%\n")%_dirty%_writtenToDisk); ;
     return tmp; 
   }
 
