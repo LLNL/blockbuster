@@ -145,11 +145,6 @@ inline std::string doubleToString(double d, int precision=-1){
 inline std::string intToString(double i) {
   return doubleToString(i, 0); 
 
-  /*  char buf[128] = "";
-  sprintf(buf, "%d", i);    
-  std::string s(buf);
-  return s; 
-  */
 }
 
 inline std::string pointerToString(const void *ptr) {
@@ -158,21 +153,6 @@ inline std::string pointerToString(const void *ptr) {
   return std::string(buf);
 }
 
-inline std::string operator +(std::string s , int d){
-  return s+doubleToString(d);
-}
-
-inline std::string operator +(int d, std::string s ){
-  return s+doubleToString(d);
-}
-
-inline std::string operator +(std::string s , double d){
-  return std::string(s+doubleToString(d));
-}
-
-inline std::string operator +(double d, std::string s){
-  return std::string(doubleToString(d)+s);
-}
 
 //=====================================================
 template <class T> 
