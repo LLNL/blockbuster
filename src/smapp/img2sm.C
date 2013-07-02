@@ -33,7 +33,6 @@
 #undef DMALLOC
 #define SM_VERBOSE 1
 // Utility to combine image files into movie
-#include <pstream.h>
 #include <map>
 #include <string> 
 #include <boost/format.hpp>
@@ -56,6 +55,8 @@
 #include "simple_jpeg.h"
 #include "version.h"
 #include <tclap_utils.h>
+#include "timer.h"
+
 // http://www.highscore.de/boost/process0.5/boost_process/tutorial.html
 // #include <boost/process.hpp>
 
@@ -84,58 +85,11 @@ void errexit(TCLAP::CmdLine &cmd, string msg) {
 
 // =======================================================================
 /* applying a filename template to a number */ 
-string getFilename(string filenameTemplate, int num, bool useTemplate) {
+/* string getFilename(string filenameTemplate, int num, bool useTemplate) {
   if (useTemplate)  return str(boost::format(filenameTemplate)%num);
   else return filenameTemplate;
 }
-
-// =======================================================================
-map<string,string> GetUserInfo(void) {
-  // Get the output of $(finger ${USER}) from the shell:
-  char *uname = getenv("USER"); 
-  string whoami = (uname == NULL ? "" : uname);
-  string cmd = str(boost::format("finger %1% 2>&1")%whoami);
-  redi::ipstream finger(cmd);
-  
-  /*
-    Example output: 
-rcook@rzgpu2 (blockbuster): finger rcook
-Login: portly1                            Name: Armando X. Portly
-Directory: /var/home/portly1                  Shell: /bin/bash
-Office:  123-456-7890
-On since Tue Jun 25 12:26 (PDT) on pts/1 from 134.9.48.241
-   3 days 3 hours idle
-On since Tue Jun 25 15:13 (PDT) on pts/3 from 134.9.48.241
-   56 minutes 48 seconds idle
-On since Fri Jun 28 10:55 (PDT) on pts/5 from 134.9.48.241
-Mail forwarded to funnyguy@somewhere.de
-No mail.
-No Plan.
-  */ 
-
-  // we will store our results based on the expected finger label
-  boost::cmatch results; 
-  map <string,string> info;  
-  info["Login"] = "";
-  info["Name"] = ""; 
-  info["Office"] = ""; 
-
-  // evaluate each line and capture the salient points
-  string line; 
-  while (getline(finger, line)) {
-    for (map <string,string>::iterator pos = info.begin(); pos != info.end(); ++pos) {
-      // set up a regular expression to capture the output
-     // http://www.boost.org/doc/libs/1_53_0/libs/regex/doc/html/boost_regex/syntax/basic_extended.html
-     string pattern = str(boost::format(" *%1%: *(\\<[[:word:]\\. -]*\\>) *")%(pos->first)); 
-      if (regex_search(line.c_str(), results, boost::regex(pattern,  boost::regex::extended))) {
-        smdbprintf(5, str(boost::format("GOT MATCH in line \"%1\" for \"%2%\", pattern \"%3%\": \"%4%\"\n")%line%(pos->first)%(pos->second)%results[1]).c_str()); 
-        info[pos->first] = results[1];
-      }
-    }
-  }        
-  return info; 
-}
-
+*/ 
 // =======================================================================
 // Prototypes 
 int rotate_img(unsigned char *img,int dx,int dy,float rot);
@@ -488,14 +442,14 @@ void FillInputBuffer(Work *wrk) {
 // =======================================================================
 int main(int argc,char **argv)
 {
-  TCLAP::CmdLine  cmd(str(boost::format("%1% converts a set of images into a streaming movie, optionally setting movie meta data. ")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
+  TCLAP::CmdLine  cmd(str(boost::format("%1% converts a set of images into a streaming movie, optionally setting movie meta data.")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
   
   /*!
     =====================================================
     Metadata arguments
     =====================================================
   */ 
-  TCLAP::SwitchArg noMetadata("N", "nometadata", "Do not include any metadata, even if -tag or other is given", cmd, false); 
+  TCLAP::SwitchArg noMetadata("X", "nometadata", "Do not include any metadata, even if -tag or other is given", cmd, false); 
 
   TCLAP::SwitchArg canonical("C", "canonical", "Enter the canonical metadata for a movie interactively.", cmd); 
 
@@ -520,8 +474,8 @@ int main(int argc,char **argv)
     Frame selection, region of interest, rotation
     =====================================================
   */ 
-  TCLAP::ValueArg<int> firstFrame("f", "first", "First frame number",false, -1, "integer", cmd);   
-  TCLAP::ValueArg<int> lastFrame("l", "last", "Last frame number",false, -1, "integer", cmd); 
+  TCLAP::ValueArg<int> firstFrame("f", "first", "First frame number",false, 0, "integer", cmd);   
+  TCLAP::ValueArg<int> userLastFrame("l", "last", "Last frame number",false, -1, "integer", cmd); 
   TCLAP::ValueArg<int> frameStep("s", "step", "Frame step size",false, 1, "integer", cmd); 
 
   /* WHY IS THIS DISABLED NOW? 
@@ -571,9 +525,9 @@ int main(int argc,char **argv)
   //delete allowed; 
   TCLAP::ValueArg<float> rotate("", "rotate", " Set rotation of image. ",false, 0, "0,30,60 or 90", cmd); 
 
-  TCLAP::SwitchArg planar("p", "planar", "Raw img is planar interleaved (default: pixel interleave)", cmd, false); 
-  TCLAP::SwitchArg flipx("X", "flipx", "Flip the image over the X axis", cmd, false); 
-  TCLAP::SwitchArg flipy("Y", "flipy", "Flip the image over the Y axis", cmd, false); 
+  TCLAP::SwitchArg planar("", "planar", "Raw img is planar interleaved (default: pixel interleave)", cmd, false); 
+  TCLAP::SwitchArg flipx("", "flipx", "Flip the image over the X axis", cmd, false); 
+  TCLAP::SwitchArg flipy("", "flipy", "Flip the image over the Y axis", cmd, false); 
 
   TCLAP::ValueArg<string> size("", "raw-image-dims", "Specify raw img dims", false, "", "'width:height:depth:header'", cmd); 
 
@@ -590,15 +544,15 @@ int main(int argc,char **argv)
   TCLAP::SwitchArg verbose("v", "verbose", "Sets verbosity to level 1", cmd, false); 
   TCLAP::ValueArg<int> verbosity("V", "Verbosity", "Verbosity level",false, 0, "integer", cmd);   
 
-  TCLAP::UnlabeledValueArg<string> nameTemplate("infiles", "A C-style string containing %d notation for specifying multiple movie frame files.  For a single frame, need not use %d notation", true, "", "input filename template", cmd); 
-
-  TCLAP::UnlabeledValueArg<string> moviename("moviename", "Name of the movie to create",true, "changeme", "output movie name", cmd); 
+  TCLAP::ValueArg<string> nameTemplate("i", "infile-template", "A C-style string containing %d notation for specifying multiple movie frame files.  For a single frame, need not use %d notation.  If this argument is not given, you must supply a list of filenames before the output moviename.", false, "", "input filename template", cmd); 
+  
+  // Note this is an UnlabeledMultiArg.  If nameTemplate is not given, then there must be at least two files here, the last is the output name, all others are input files.  
+  TCLAP::UnlabeledMultiArg<string> filenames("moviename", "Name of the movie to create.  If --infile-template not given, this will be a list of input filenames followed by a moviename.", true, "filename", cmd); 
 
   // save the command line for meta data
   string commandLine; 
   for (int i=0; i<argc; i++) 
     commandLine += (string(argv[i]) + " "); 
-
   try {
     cmd.parse(argc, argv);
   } catch(std::exception &e) {
@@ -606,16 +560,78 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  int imageType = -1;
-  string suffix = format.getValue();
-  if (suffix == "default") {
-    string::size_type idx = nameTemplate.getValue().rfind('.'); 
-    if (idx == string::npos) {
-      cerr << "Error:  Cannot find a file type suffix in your output template.  Please use -form to tell me what to do if you're not going to give a suffix." << endl; 
-      exit(1); 
+  uint lastFrame = userLastFrame.getValue(); 
+  if (lastFrame != -1 &&firstFrame.getValue() > lastFrame) {
+    errexit(cmd, "Last frame must be greater than first frame."); 
+  }
+  
+  //============================================================
+  // Identify the input files.  
+  string moviename;
+  vector<string> inputfiles =  filenames.getValue(); 
+  if (nameTemplate.getValue() != "") {
+    // We have a filename template.  Use it.  
+    moviename = inputfiles[0];
+    if (inputfiles.size() > 1) {
+      errexit(cmd, "Error: if you use a name template, then you must only give one output filename"); 
+    }      
+    inputfiles.clear(); 
+    // have to find the input files now based on the template
+    FILE *fp = NULL; 
+    uint filenum = firstFrame.getValue(); 
+    string filename; 
+    while (lastFrame == -1 || filenum <= lastFrame) {
+      try {
+        filename = str(boost::format(nameTemplate.getValue())%filenum); 
+      } catch (...) {
+        errexit(cmd, str(boost::format("Invalid filename template \"%1\"")%nameTemplate.getValue()));
+      } 
+      fp = fopen(filename.c_str(),"r");
+      if (!fp) {
+        if (filenum == firstFrame.getValue() || lastFrame != -1) {
+          errexit(cmd, str(boost::format("Cannot open file #%1% in sequence, \"%2\"")%filenum%filename));
+        }
+        else  {
+          break; 
+        }
+      }
+      fclose(fp); 
+      inputfiles.push_back(filename); 
+      filenum += frameStep.getValue(); 
     }
-    suffix = nameTemplate.getValue().substr(idx+1,3); 
-  } 
+    smdbprintf(1, "Found %d files.\n", inputfiles.size()); 
+  } /* end parsing filenames by name template */ 
+  else {
+    // We do not have a filename template.  Check file list.  
+    moviename = inputfiles.back(); 
+    inputfiles.pop_back(); 
+    
+    if (!inputfiles.size()) {
+      errexit(cmd, "If you do not give a filename template, you must list the input files before the movie name."); 
+    }
+
+    for (uint i = 0; i< inputfiles.size(); i++) {
+      string filename = inputfiles[i]; 
+      FILE *fp = fopen(filename.c_str(),"r");
+      if (!fp) {
+        errexit(cmd, str(boost::format("Cannot open file #%1% in sequence, \"%2\"")%i%filename));
+      }
+      fclose(fp); 
+    }
+  }
+  // Done identifying input files.
+  //============================================================
+
+  
+  int imageType = -1;
+  //if (suffix == "default") {
+  string::size_type idx = inputfiles[0].rfind('.'); 
+  if (idx == string::npos) {
+    cerr << "Error:  Cannot find a file type suffix in your output template.  Please use -form to tell me what to do if you're not going to give a suffix." << endl; 
+    exit(1); 
+  }
+  string suffix = inputfiles[0].substr(idx+1,3); 
+  
   if (suffix == "tif" || suffix == "TIF")  imageType = 0; 
   else if (suffix == "sgi" || suffix == "SGI")  imageType = 1; 
   else if (suffix == "pnm" || suffix == "PNM")  imageType = 2; 
@@ -624,7 +640,7 @@ int main(int argc,char **argv)
   else if (suffix == "jpg" || suffix == "JPG" || 
            suffix == "jpe" || suffix == "JPE")  imageType = 5; 
   else  {
-    cerr << "Warning:  Cannot deduce format from input files.  Using PNG format but leaving filenames unchanged." << endl; 
+    cerr << "Warning:  Cannot deduce format from input files.  Using PNG format but leaving inputfiles unchanged." << endl; 
     imageType = 4;
   }
 
@@ -640,20 +656,6 @@ int main(int argc,char **argv)
     errexit(cmd, str(boost::format("Invalid mipmap level: %1%.  Must be from 1 to 8.\n")% mipmaps.getValue()));
   }
     
-  
-  //  char      *sTemplate = NULL;
-  //  char      *sOutput = NULL;
-  //int iIgnore = 0;
-  // int           bufferSize = 100;
-
-  int   iStart=firstFrame.getValue(),
-    iEnd=lastFrame.getValue();
-  if ((iStart > iEnd && frameStep.getValue() > 0) ||
-      (iStart < iEnd && frameStep.getValue() < 0)) {
-    int tmp = iEnd; 
-    iEnd = iStart; 
-    iStart = tmp; 
-  }
 
   TIFF      *tiff = NULL;
   sgi_t     *libi = NULL;
@@ -679,7 +681,7 @@ int main(int argc,char **argv)
   
   smdbprintf(5, "parsing tile sizes \n"); 
   unsigned int  tsizes[8][2];
-  int count = 0;
+  //int count = 0;
   int parsed = 0;
   int xsize=0,ysize=0;
   try {
@@ -717,61 +719,13 @@ int main(int argc,char **argv)
     smdbprintf(1,"Resolution[%d] Tilesize=[%dx%d]\n",n,tsizes[n][0],tsizes[n][1]);
   }
   
-  
-
-  // get the arguments
-  //sTemplate = argv[i];
-  //sOutput = argv[i+1];
 
   if (frameStep.getValue() == 0) {
     errexit(str(boost::format("Invalid Step parameter (%1%)\n")%frameStep.getValue()));
   }
 
-  // see if we have a templated argument: 
-  string filename; 
-  bool haveTemplate = false; 
-
-
-  try {
-    filename = str(boost::format(nameTemplate.getValue())%0);
-    haveTemplate = true; 
-  } catch (...) {
-    smdbprintf(0,"Filename template has no format string for numbers; assuming a single file is meant\n");
-    haveTemplate = false; 
-    iStart = iEnd = 0; 
-  }
-
-  // count the files...
-  int i = 0;
-  if (iStart < 0) {
-    FILE *fp = NULL; 
-    while (i < 10000) {
-      filename = getFilename(nameTemplate.getValue(), i, haveTemplate); 
-      fp = fopen(filename.c_str(),"r");
-      if (fp) break;
-      i += 1;
-    }
-    if (!fp) {
-      errexit(str(boost::format("Unable to find initial file: %s\n")%nameTemplate.getValue()));
-    }
-    fclose(fp);
-    iStart = i;
-    i += 1;
-  } else {
-    i = iStart + frameStep.getValue();
-  }
-  while (iEnd < 0) {
-    FILE *fp = fopen(getFilename(nameTemplate.getValue(), i, haveTemplate).c_str(),"r");
-    if (fp) {
-      fclose(fp);
-      i += frameStep.getValue();
-    } else {
-      iEnd = i - frameStep.getValue();
-    }
-  }
-
   // Check the file type
-  filename = getFilename(nameTemplate.getValue(), iStart, haveTemplate); 
+  string filename = inputfiles[0]; 
   TIFFErrorHandler prev = TIFFSetErrorHandler(NULL); // suppress error messages
   if (imageType == -1) {
     if ((tiff = TIFFOpen((char*)filename.c_str(),"r"))!=0) {
@@ -872,7 +826,7 @@ int main(int argc,char **argv)
   rotate_dims(rotate.getValue(),&iSize[0],&iSize[1]);
 
   // count the files
-  count = abs((iEnd-iStart)/frameStep.getValue()) + 1; 
+  //count = abs((lastFrame-firstFrame.getValue())/frameStep.getValue()) + 1; 
 
   // Open the sm file...
   smBase::init();
@@ -881,18 +835,18 @@ int main(int argc,char **argv)
  
   smBase  *sm = NULL;
   if (compression.getValue() == "raw" || compression.getValue() == "RAW") {
-    sm = smRaw::newFile(moviename.getValue().c_str(),iSize[0],iSize[1],count,tsizes_ptr,mipmaps.getValue());
+    sm = smRaw::newFile(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
   } else if (compression.getValue() == "rle" || compression.getValue() == "RLE") {
-    sm = smRLE::newFile(moviename.getValue().c_str(),iSize[0],iSize[1],count,tsizes_ptr,mipmaps.getValue());
+    sm = smRLE::newFile(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
   } else if (compression.getValue() == "gz" || compression.getValue() == "GZ") {
-    sm = smGZ::newFile(moviename.getValue().c_str(),iSize[0],iSize[1],count,tsizes_ptr,mipmaps.getValue());
+    sm = smGZ::newFile(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
   } else if (compression.getValue() == "lzo" || compression.getValue() == "LZO") {
-    sm = smLZO::newFile(moviename.getValue().c_str(),iSize[0],iSize[1],count,tsizes_ptr,mipmaps.getValue());
+    sm = smLZO::newFile(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
   } else if (compression.getValue() == "jpg" || compression.getValue() == "JPG") {
-    sm = smJPG::newFile(moviename.getValue().c_str(),iSize[0],iSize[1],count,tsizes_ptr,mipmaps.getValue());
+    sm = smJPG::newFile(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
     ((smJPG *)sm)->setQuality(quality.getValue());
   } else if (compression.getValue() == "lzma" || compression.getValue() == "LZMA") {
-    sm = smXZ::newFile(moviename.getValue().c_str(),iSize[0],iSize[1],count,tsizes_ptr,mipmaps.getValue());
+    sm = smXZ::newFile(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
   } else {
     errexit(str(boost::format("Bad encoding type: %1%")%compression.getValue())); 
   }
@@ -904,7 +858,7 @@ int main(int argc,char **argv)
   sm->setBufferSize(buffersize.getValue()); 
   /* init the parallel tools */
 
-  int numsteps = (iEnd-iStart)/frameStep.getValue() + 1; 
+  int numsteps = (lastFrame-firstFrame.getValue())/frameStep.getValue() + 1; 
   int numThreads = threads.getValue();  
   if (numsteps < threads.getValue()) {
     numThreads = numsteps; 
@@ -916,25 +870,18 @@ int main(int argc,char **argv)
   sm->startWriteThread(); 
     
   // memory buffer for frame input
-  smdbprintf(1, "Creating streaming movie file from:\n");
-  smdbprintf(1, str(boost::format("Template: %s\n")%nameTemplate.getValue()).c_str());
-  smdbprintf(1, str(boost::format("First, Last, Step: %d %d %d\n")%iStart%iEnd%frameStep.getValue()).c_str());
-  smdbprintf(1, str(boost::format("%d images of size %d %d\n")%count%iSize[0]%iSize[1]).c_str());
-
+  smdbprintf(1, "Creating streaming movie file %s from %d files.\n", moviename.c_str(), inputfiles.size());
   
   
   // Walk the input files...
-  for(i=iStart;;i+=frameStep.getValue()) {
-
-    // terminate??
-    if ((frameStep.getValue() > 0) && (i>iEnd)) break;
-    if ((frameStep.getValue() < 0) && (i<iEnd)) break;
+  for(uint frame = 0; frame < inputfiles.size(); frame++) {
+    //i=firstFrame.getValue();;i+=frameStep.getValue()) {
 
     Work *wrk = new Work; 
     CHECK(wrk);
 
     // Get the filename
-    wrk->filename = getFilename(nameTemplate.getValue(), i, haveTemplate);
+    wrk->filename = inputfiles[frame];
     wrk->filetype = imageType; 
     // Compress and save (in parallel)
     wrk->Dims = iInDims;
@@ -943,11 +890,11 @@ int main(int argc,char **argv)
     wrk->sm = sm;
     wrk->iFlipx = flipx.getValue();
     wrk->iFlipy = flipy.getValue();
-    wrk->frame = (i-iStart)/frameStep.getValue();
+    wrk->frame = frame;
     wrk->planar = planar.getValue(); 
     wrk->buffer = new u_char[iSize[0]*iSize[1]*3]; 
-    smdbprintf(1, "Adding work: %s : (%d) %d to %d\n",
-               wrk->filename.c_str(),i,iStart,iEnd);
+    smdbprintf(1, "Adding work: %s : (%d of %d)\n",
+               wrk->filename.c_str(),frame,inputfiles.size());
   
     pt_pool_add_work(pool, workproc, (void *)wrk);
   }
@@ -959,9 +906,14 @@ int main(int argc,char **argv)
   if (! noMetadata.getValue()) {
     // populate with reasonable guesses by default:
     TagMap mdmap = SM_MetaData::CanonicalMetaDataAsMap(); 
-    mdmap["Movie Create Command"] = commandLine; 
-    map<string,string> userinfo = GetUserInfo();
-    
+    mdmap["Movie Create Command"] = SM_MetaData("Movie Create Command", commandLine); 
+    mdmap["Movie Create Date"] = SM_MetaData("Movie Create Date", timestamp("%c %Z")); // NEED HOST NAME AND DATE
+    char *host = getenv("HOST"); 
+    if (host)
+      mdmap["Movie Create Host"] = SM_MetaData("Movie Create Host", host); 
+
+    sm->SetMetaData(mdmap); 
+
     if (tagfile.getValue() != "") {
       if (!sm->ImportMetaData(tagfile.getValue())) {
         errexit (cmd, "Could not export meta data to file."); 

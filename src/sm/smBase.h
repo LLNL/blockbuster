@@ -123,13 +123,13 @@ struct smMsgStruct {
 
 extern double gBaseTime; /* initialized to -1 in constructor */  
 inline void sm_initTimer(void) {
-  gBaseTime = GetExactSecondsDouble(); 
+  gBaseTime = timer::GetExactSeconds(); 
 } 
 extern int smVerbose;
 inline void sm_real_dbprintf(const smMsgStruct msg, int level, const char *fmt, ...) {  
   if (smVerbose < level) return; 
   if (gBaseTime == -1) sm_initTimer(); 
-  cerr << " SMDEBUG [" << msg.file << ":"<< msg.function << "(), line "<< msg.line << ", time=" << doubleToString(GetExactSecondsDouble() - gBaseTime, 3) << "]: " ;
+  cerr << " SMDEBUG [" << msg.file << ":"<< msg.function << "(), line "<< msg.line << ", time=" << doubleToString(timer::GetExactSeconds() - gBaseTime, 3) << "]: " ;
   va_list ap;
   va_start(ap, fmt);
   vfprintf(stderr,fmt,ap);

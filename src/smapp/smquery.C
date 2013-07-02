@@ -102,10 +102,6 @@ int main(int argc, char *argv[]) {
   for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {
     if (canonical.getValue()) {
       canonicalTags = SM_MetaData::CanonicalMetaDataAsMap(); 
-      /*for (TagMap::iterator pos = canonicalTags.begin(); 
-        pos != canonicalTags.end(); ++pos) {
-        tagPatterns.push_back(boost::regex(pos->first)); 
-        }*/ 
     }
     string filename = movienames.getValue()[fileno]; 
     smBase *sm = smBase::openFile(filename.c_str(), 1);

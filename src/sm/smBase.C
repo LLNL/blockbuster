@@ -211,7 +211,7 @@ No Plan.
      // http://www.boost.org/doc/libs/1_53_0/libs/regex/doc/html/boost_regex/syntax/basic_extended.html
      string pattern = str(boost::format(" *%1%: *(\\<[[:word:]\\. -]*\\>) *")%(pos->first)); 
       if (regex_search(line.c_str(), results, boost::regex(pattern,  boost::regex::extended))) {
-        smdbprintf(5, str(boost::format("GOT MATCH in line \"%1\" for \"%2%\", pattern \"%3%\": \"%4%\"\n")%line%(pos->first)%(pos->second)%results[1]).c_str()); 
+        smdbprintf(5, str(boost::format("GOT MATCH in line \"%1%\" for \"%2%\", pattern \"%3%\": \"%4%\"\n")%line%(pos->first)%(pos->second)%results[1]).c_str()); 
         info[pos->first] = results[1];
       }
     }
@@ -238,7 +238,7 @@ TagMap SM_MetaData::CanonicalMetaDataAsMap(void) {
   }
   // Add default values
   map<string,string> userinfo = GetUserInfo();
-  mdmap["Movie Creator"] = SM_MetaData("Movie Creator", str(boost::format("%1% (username %2%): %3%")%userinfo["Name"]%userinfo["Name"]%userinfo["Office"]));
+  mdmap["Movie Creator"] = SM_MetaData("Movie Creator", str(boost::format("%1% (%2%): %3%")%userinfo["Name"]%userinfo["Login"]%userinfo["Office"]));
 
   return mdmap;
 }
