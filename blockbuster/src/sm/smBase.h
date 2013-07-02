@@ -253,10 +253,6 @@ struct SM_MetaData {
     mInt64 = i; 
   } 
   
-  /*!
-    Given a tag, return "ASCII", "DOUBLE", "INT64" or "UNKNOWN"
-  */ 
-  string GetCanonicalTagType(string tag);
 
   /*!
     Accepts  "tag:value[:type]" where type defaults to ASCII. 
@@ -281,6 +277,16 @@ struct SM_MetaData {
   // ----------------------------------------------------------
   static bool mInitialized; 
   static vector<SM_MetaData> CanonicalMetaData(void) { return mCanonicalMetaData; }
+  /*!
+    Utility function for getting username info on Unix. 
+    Useful for some canonical tags.
+  */ 
+  static map<string,string> GetUserInfo(void) ;
+
+  /*!
+    Given a tag, return "ASCII", "DOUBLE", "INT64" or "UNKNOWN"
+  */ 
+  static string GetCanonicalTagType(string tag);
   static TagMap CanonicalMetaDataAsMap(void);
   static bool GetMetaDataFromFile(string metadatafile, TagMap &metadatavec);
   static bool  WriteMetaDataToFile(string metadatafile, TagMap &metadatavec);

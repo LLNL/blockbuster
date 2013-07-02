@@ -75,9 +75,14 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include "boost/date_time/gregorian/gregorian.hpp"
+#include "boost/date_time/posix_time/posix_time.hpp"
+#include <pstream.h>
+
 typedef boost::tokenizer<boost::char_separator<char> >  tokenizer;
 
 using namespace std; 
+using namespace boost::gregorian;
 
 #include "smBaseP.h"
 #include "smRaw.h"
@@ -133,16 +138,6 @@ void SM_MetaData::Init(void) {
 }
 
 // =====================================================================
-string SM_MetaData::GetCanonicalTagType(string tag) {  
-  for (vector<SM_MetaData>::iterator pos = mCanonicalMetaData.begin(); 
-       pos != mCanonicalMetaData.end(); ++pos){
-    if (tag == pos->mTag) {
-      return pos->TypeAsString(); 
-    }
-  }
-  return "UNKNOWN"; 
-}
-// =====================================================================
 void SM_MetaData::SetFromDelimitedString(string s) {
 
   string badformat = str(boost::format("Error in tag format:  must be either tag%1%value tag%1%value[%1%type] triple, separated by a '%1%' delimiter.  \"type\" is one of 'ASCII', 'DOUBLE', or 'INT64', defaulting to 'ASCII' if not given.  For canonical values, types are ignored. ")%mDelimiter);
@@ -177,12 +172,74 @@ void SM_MetaData::SetFromDelimitedString(string s) {
   Set(tag, mdtype, value); 
   return; 
 }
+// =======================================================================
+map<string,string> SM_MetaData::GetUserInfo(void) {
+  // Get the output of $(finger ${USER}) from the shell:
+  char *uname = getenv("USER"); 
+  string whoami = (uname == NULL ? "" : uname);
+  string cmd = str(boost::format("finger %1% 2>&1")%whoami);
+  redi::ipstream finger(cmd);
+  
+  /*
+    Example output: 
+rcook@rzgpu2 (blockbuster): finger rcook
+Login: portly1                            Name: Armando X. Portly
+Directory: /var/home/portly1                  Shell: /bin/bash
+Office:  123-456-7890
+On since Tue Jun 25 12:26 (PDT) on pts/1 from 134.9.48.241
+   3 days 3 hours idle
+On since Tue Jun 25 15:13 (PDT) on pts/3 from 134.9.48.241
+   56 minutes 48 seconds idle
+On since Fri Jun 28 10:55 (PDT) on pts/5 from 134.9.48.241
+Mail forwarded to funnyguy@somewhere.de
+No mail.
+No Plan.
+  */ 
+
+  // we will store our results based on the expected finger label
+  boost::cmatch results; 
+  map <string,string> info;  
+  info["Login"] = "";
+  info["Name"] = ""; 
+  info["Office"] = ""; 
+
+  // evaluate each line and capture the salient points
+  string line; 
+  while (getline(finger, line)) {
+    for (map <string,string>::iterator pos = info.begin(); pos != info.end(); ++pos) {
+      // set up a regular expression to capture the output
+     // http://www.boost.org/doc/libs/1_53_0/libs/regex/doc/html/boost_regex/syntax/basic_extended.html
+     string pattern = str(boost::format(" *%1%: *(\\<[[:word:]\\. -]*\\>) *")%(pos->first)); 
+      if (regex_search(line.c_str(), results, boost::regex(pattern,  boost::regex::extended))) {
+        smdbprintf(5, str(boost::format("GOT MATCH in line \"%1\" for \"%2%\", pattern \"%3%\": \"%4%\"\n")%line%(pos->first)%(pos->second)%results[1]).c_str()); 
+        info[pos->first] = results[1];
+      }
+    }
+  }        
+  return info; 
+}
+
+// =====================================================================
+string SM_MetaData::GetCanonicalTagType(string tag) {  
+  for (vector<SM_MetaData>::iterator pos = mCanonicalMetaData.begin(); 
+       pos != mCanonicalMetaData.end(); ++pos){
+    if (tag == pos->mTag) {
+      return pos->TypeAsString(); 
+    }
+  }
+  return "UNKNOWN"; 
+}
+
 // =====================================================================
 TagMap SM_MetaData::CanonicalMetaDataAsMap(void) {
   TagMap mdmap; 
   for (uint i=0; i<mCanonicalMetaData.size(); i++) {
     mdmap[mCanonicalMetaData[i].mTag] = mCanonicalMetaData[i];
   }
+  // Add default values
+  map<string,string> userinfo = GetUserInfo();
+  mdmap["Movie Creator"] = SM_MetaData("Movie Creator", str(boost::format("%1% (username %2%): %3%")%userinfo["Name"]%userinfo["Name"]%userinfo["Office"]));
+
   return mdmap;
 }
 
