@@ -939,7 +939,7 @@ int main(int argc,char **argv)
         sm->SetThumbnailRes(thumbres.getValue()); 
       }
     }
-    sm->WriteMetaData(); 
+    //sm->WriteMetaData(); 
     if (exportTagfile.getValue() != "") {      
       if (!sm->ExportMetaData(exportTagfile.getValue())) {
         cerr << "Warning:  could not export metadata to file " << exportTagfile.getValue() << endl; 
