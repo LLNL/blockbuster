@@ -430,16 +430,16 @@ int main(int argc, char *argv[])
      pthread_create(tp, NULL, readThread, vp);
    }
    bool done = false; 
-   double previousTime = GetExactSecondsDouble(), totalTime = 0; 
+   double previousTime = timer::GetExactSeconds(), totalTime = 0; 
    double elapsed, fps, megabytes, totalMB = 0, nframes; 
    vector<double> previousFrames(nthreads+1, 0), numFrames(nthreads+1, 0), 
      previousBytes(nthreads+1, 0); 
    while (!done) {
      previousFrames[nthreads] = numFrames[nthreads]; 
      numFrames[nthreads] = 0; 
-     elapsed = GetExactSecondsDouble() - previousTime; 
+     elapsed = timer::GetExactSeconds() - previousTime; 
      totalTime += elapsed; 
-     previousTime = GetExactSecondsDouble(); 
+     previousTime = timer::GetExactSeconds(); 
      fprintf(stderr, "t = %05.3f: ", totalTime); 
      totalMB = 0; 
      for(f=0; f<nthreads; f++) {

@@ -24,7 +24,7 @@ HEADERS = sidecar.h  Prefs.h RemoteControl.h \
            ../MovieCues.h \
            ../settings.h \
            ../../common/stringutil.h \
-           ../timer.h
+           ../../common/timer.h
            
 FORMS = ../BlockbusterControl.ui \
          blockbusterLaunchDialog.ui \
@@ -39,6 +39,7 @@ SOURCES = ../common.cpp \
            ../MovieCues.cpp \
            Prefs.C \
            RemoteControl.cpp \
+           ../../common/timer.C \
            sidecar.cpp
 
 RESOURCES = ../images.qrc
