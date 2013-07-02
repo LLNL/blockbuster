@@ -33,7 +33,7 @@ BOOST_VERSION = 1_53_0
 INSTALL_DIR ?= $(shell pwd)
 
 HEADER_EVIDENCE = $(INSTALL_DIR)/include/boost/random.hpp 
-LIB_EVIDENCE = $(INSTALL_DIR)/lib/libboost_thread.a  $(INSTALL_DIR)/lib/libboost_system.a  $(INSTALL_DIR)/lib/libboost_regex.a 
+LIB_EVIDENCE = $(INSTALL_DIR)/lib/libboost_thread.a  $(INSTALL_DIR)/lib/libboost_system.a  $(INSTALL_DIR)/lib/libboost_regex.a $(INSTALL_DIR)/lib/libboost_date_time.a
 UNTAR_BOOST = boost_$(BOOST_VERSION)/boost/random.hpp
 
 all: $(LIB_EVIDENCE)
@@ -52,7 +52,7 @@ $(INSTALL_DIR)/include/boost/random.hpp: boost_$(BOOST_VERSION)/boost/random.hpp
 $(LIB_EVIDENCE): $(INSTALL_DIR)/include/boost/random.hpp
 	-echo apparently $< is newer than $@; ls -l $<; ls -l $@
 	rm -f $@  # ensure all libs are newer than headers when done
-	cd boost_$(BOOST_VERSION) && tar -xzf ../process-0.5.tgz && ./bootstrap.sh --with-libraries=thread,regex,system && ./bjam -j 20 install --prefix=$(INSTALL_DIR)
+	cd boost_$(BOOST_VERSION) && tar -xzf ../process-0.5.tgz && ./bootstrap.sh --with-libraries=thread,regex,system,date_time && ./bjam -j 20 install --prefix=$(INSTALL_DIR)
 	@echo '********************' finished with LIB_EVIDENCE $@; echo
 
 clean:
