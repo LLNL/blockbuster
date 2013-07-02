@@ -211,7 +211,7 @@ No Plan.
      // http://www.boost.org/doc/libs/1_53_0/libs/regex/doc/html/boost_regex/syntax/basic_extended.html
      string pattern = str(boost::format(" *%1%: *(\\<[[:word:]\\. -]*\\>) *")%(pos->first)); 
       if (regex_search(line.c_str(), results, boost::regex(pattern,  boost::regex::extended))) {
-        smdbprintf(5, str(boost::format("GOT MATCH in line \"%1%\" for \"%2%\", pattern \"%3%\": \"%4%\"\n")%line%(pos->first)%(pos->second)%results[1]).c_str()); 
+        smdbprintf(5, str(boost::format("GOT MATCH in line \"%1%\" for \"%2%\", pattern \"%3%\": \"%4%\"\n")%line%(pos->first)%pattern%results[1]).c_str()); 
         info[pos->first] = results[1];
       }
     }
