@@ -113,8 +113,7 @@ int main(int argc,char **argv)
   cmd.add(format); 
 
 
-  TCLAP::SwitchArg verbose("v", "verbose", "Sets verbosity to level 1", cmd, false); 
-  TCLAP::ValueArg<int> verbosity("V", "Verbosity", "Verbosity level",false, 0, "integer", cmd);   
+  TCLAP::ValueArg<int> verbosity("v", "Verbosity", "Verbosity level",false, 0, "integer", cmd);   
 
   TCLAP::ValueArg<string> nameTemplate("o", "outfile", "A C-style string containing %d notation for specifying multiple movie files.  For a single frame, need not use %d notation", false, "", "template", cmd); 
 
@@ -168,12 +167,9 @@ int main(int argc,char **argv)
       imageType = 4;
     }
   }
-  int verbosityValue = verbosity.getValue(); 
-  if (!verbosityValue && verbose.getValue()) 
-    verbosityValue = 1; 
 
   smBase::init();
-  sm_setVerbose(verbose.getValue()?1:verbosityValue);  
+  sm_setVerbose(verbosity.getValue());  
 
   if ((argc - argnum) == 1) {
     getinfo = true; // even for sm2img, a single arg is a request for info
@@ -231,7 +227,7 @@ int main(int argc,char **argv)
       if (sm->getFlags() & SM_FLAGS_STEREO) printf("Stereo ");
       printf("\n");
       
-      if (verbosityValue) {
+      if (verbosity.getValue()) {
         printf("Frame\tOffset\tLength\n");
         int res = 0; 
         for (res=0; res < sm->getNumResolutions(); res++) {
@@ -329,7 +325,7 @@ int main(int argc,char **argv)
     wrk->nameTemplate = nameTemplate.getValue(); 
     wrk->imageType = imageType; 
     wrk->jqual = quality.getValue(); 
-    wrk->verbosity = verbosityValue; 
+    wrk->verbosity = verbosity.getValue(); 
     pt_pool_add_work(pool, workproc, wrk);
     framenum+= frameStep.getValue();
   }
@@ -354,22 +350,6 @@ void workproc(void *vp) {
   //unsigned char *img = gBuffers[threadnum]; 
   vector<unsigned char> img(3*work->blockSize[0]*work->blockSize[1], 0); 
 
-  /*  smBase *sm = smBase::openFile(smFilename, work->numThreads);
-	if (!sm) {
-		fprintf(stderr,"Unable to open the file: %s\n",smFilename);
-		exit(1);
-	}
-  */
-  //char nameTemplate[2048]; 
-  /*  int framestep = frameStep.getValue()*work->numThreads;
-  int firstframe = firstFrame.getValue() + work->threadNum*frameStep.getValue(); 
-  fprintf(stderr, "Thread %d of %d: firstframe = %d, framestep = %d, verbosity = %d\n", 
-          work->threadNum, work->numThreads,
-          firstframe, framestep, gVerbosity); 
-  for(framenum =  firstframe;
-      framenum <= lastFrame.getValue();
-      framenum += framestep ) {	
-  */ 
   if (work->verbosity) fprintf(stderr, "Thread %d working on frame %d\n",
                           threadnum, work->frameNum); 
   

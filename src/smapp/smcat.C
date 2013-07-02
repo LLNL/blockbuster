@@ -115,8 +115,7 @@ int main(int argc,char **argv)
  
   TCLAP::CmdLine  cmd(str(boost::format("%1% concats movies together. ")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
   
-  TCLAP::SwitchArg verbose("v", "verbose", "Sets verbosity to level 1", cmd, false); 
-  TCLAP::ValueArg<int> verbosity("V", "Verbosity", "Verbosity level",false, 0, "integer", cmd);   
+  TCLAP::ValueArg<int> verbosity("v", "Verbosity", "Verbosity level",false, 0, "integer", cmd);   
   
   TCLAP::SwitchArg skipMetadata("N", "no-metadata", "Do not copy metadata.  Default: accumulate metadata in the order of the movies given.", cmd, false);
 
@@ -192,9 +191,6 @@ int main(int argc,char **argv)
 
   smBase::init();
   gVerbosity = verbosity.getValue(); 
-  if (!gVerbosity && verbose.getValue()) {
-    gVerbosity = 1;
-  }
   sm_setVerbose(gVerbosity);  
   /*
   nminfos = argc-i;

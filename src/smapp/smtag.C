@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
 
   TCLAP::SwitchArg report("L", "list", "After all operations are complete, list all the tags in the file.", cmd); 
   
-  TCLAP::ValueArg<int> verbosity("V", "verbosity", "set verbosity (0-5)", false, 0, "int", cmd); 
+  TCLAP::ValueArg<int> verbosity("v", "verbosity", "set verbosity (0-5)", false, 0, "int", cmd); 
 
   //------------------------------------------------------------
   try {

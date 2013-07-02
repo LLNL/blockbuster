@@ -541,8 +541,7 @@ int main(int argc,char **argv)
     =====================================================
   */ 
   TCLAP::ValueArg<int> threads("t", "threads", "Number of threads to use",false, 4, "integer", cmd); 
-  TCLAP::SwitchArg verbose("v", "verbose", "Sets verbosity to level 1", cmd, false); 
-  TCLAP::ValueArg<int> verbosity("V", "Verbosity", "Verbosity level",false, 0, "integer", cmd);   
+  TCLAP::ValueArg<int> verbosity("v", "Verbosity", "Verbosity level",false, 0, "integer", cmd);   
 
   TCLAP::ValueArg<string> nameTemplate("i", "infile-template", "A C-style string containing %d notation for specifying multiple movie frame files.  For a single frame, need not use %d notation.  If this argument is not given, you must supply a list of filenames before the output moviename.", false, "", "input filename template", cmd); 
   
@@ -650,7 +649,7 @@ int main(int argc,char **argv)
     errexit(cmd, str(boost::format("Invalid rotation: %1%.  Only 0,90,180,270 allowed.\n")% rotate.getValue()));
   }
 
-  sm_setVerbose(verbose.getValue()?1:verbosity.getValue());  
+  sm_setVerbose(verbosity.getValue());  
 
   if (mipmaps.getValue() < 1 || mipmaps.getValue() > 8) {
     errexit(cmd, str(boost::format("Invalid mipmap level: %1%.  Must be from 1 to 8.\n")% mipmaps.getValue()));
