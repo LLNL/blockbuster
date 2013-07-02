@@ -614,7 +614,7 @@ int main(int argc,char **argv)
       string filename = inputfiles[i]; 
       FILE *fp = fopen(filename.c_str(),"r");
       if (!fp) {
-        errexit(cmd, str(boost::format("Cannot open file #%1% in sequence, \"%2\"")%i%filename));
+        errexit(cmd, str(boost::format("Cannot open file #%1% in sequence, \"%2%\"")%i%filename));
       }
       fclose(fp); 
     }
