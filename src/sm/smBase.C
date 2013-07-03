@@ -138,8 +138,12 @@ void SM_MetaData::Init(void) {
 }
 
 // =====================================================================
+/*!
+  string format:  "tag:value:[type]" (type is optional)
+*/ 
 void SM_MetaData::SetFromDelimitedString(string s) {
 
+  smdbprintf(5, "SM_MetaData::SetFromDelimitedString(%s)\n", s.c_str()); 
   string badformat = str(boost::format("Error in tag format:  must be either tag%1%value tag%1%value[%1%type] triple, separated by a '%1%' delimiter.  \"type\" is one of 'ASCII', 'DOUBLE', or 'INT64', defaulting to 'ASCII' if not given.  For canonical values, types are ignored. ")%mDelimiter);
 
   boost::char_separator<char> sep(mDelimiter.c_str()); 
@@ -151,24 +155,32 @@ void SM_MetaData::SetFromDelimitedString(string s) {
     exit(1); 
   }
   tag = *pos; 
+  smdbprintf(5, "SM_MetaData::SetFromDelimitedString(): got tag %s\n", tag.c_str()); 
   ++pos; 
   if (pos == endpos) {
     cerr << badformat << endl; 
     exit(1); 
   }  
-  if (*pos == "ASCII" || *pos == "DOUBLE" || *pos == "INT64") {
-    mdtype = *pos; 
-    ++pos;
+  value = *pos; 
+  smdbprintf(5, "SM_MetaData::SetFromDelimitedString(): got value %s\n", value.c_str()); 
+  ++pos; 
+ 
+  if (pos != endpos) {
+    if (*pos == "ASCII" || *pos == "DOUBLE" || *pos == "INT64") {
+      mdtype = *pos; 
+      smdbprintf(5, "SM_MetaData::SetFromDelimitedString(): got mdtype %s\n", mdtype.c_str()); 
+      ++pos;
+    } else {
+      cerr << "Unknown type \"" << *pos << "\".  " << badformat << endl; 
+    }  
   }
+      
   string canonicalType = GetCanonicalTagType(tag); 
   if (canonicalType != "UNKNOWN") {
+    smdbprintf(5, "SM_MetaData::SetFromDelimitedString(): overriding mdtype %s with Canonical type %s\n", mdtype.c_str(), canonicalType.c_str()); 
     mdtype = canonicalType; 
   }
-  if (pos == endpos) {
-    cerr << badformat << endl; 
-    exit(1); 
-  }  
-  value = *pos; 
+
   Set(tag, mdtype, value); 
   return; 
 }
@@ -390,7 +402,7 @@ void SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous) {
 }
 
 //===================================================================
-string SM_MetaData::toString(void) {
+string SM_MetaData::toString(void)  const {
   string s = "SM_MetaData: { \n"; 
   s += string("mTag: ") + mTag + "\n"; 
   s += string("mType: ") + TypeAsString() + "\n"; 
@@ -400,7 +412,7 @@ string SM_MetaData::toString(void) {
 }
 
 //===================================================================
-string SM_MetaData::TypeAsString(void) {
+string SM_MetaData::TypeAsString(void)  const {
   if (mType == METADATA_TYPE_ASCII) {
     return "ASCII";
   }
@@ -414,7 +426,7 @@ string SM_MetaData::TypeAsString(void) {
 }
 
 //===================================================================
-string SM_MetaData::ValueAsString(void) {
+string SM_MetaData::ValueAsString(void) const  {
   if (mType == METADATA_TYPE_ASCII) {
     return mAscii; 
   } 
@@ -465,7 +477,7 @@ off64_t SwapAndWrite(int fd, T *ptr, W numelems, bool needswap) {
 }
 
 ///==========================================================================
-bool SM_MetaData::Write(int lfd) {
+bool SM_MetaData::Write(int lfd)  const {
   if (sizeof(mDouble) != 8 || sizeof(mInt64) != 8) {
     smdbprintf(0, "FIXME!  ERROR!  Cannot properly write metadata object since a double is length %d and int64 is length %d but they should both be 8 bytes each.\n", sizeof(mDouble), sizeof(mInt64)); 
     return false; 
@@ -2167,6 +2179,7 @@ int smBase::compFrame(void *in, void *out, int *outsizes, int res)
 //============================================================
 void smBase::SetMetaData(const SM_MetaData &md) {
   mMetaData[md.mTag] = md;  
+  smdbprintf(5, "Set metadata: %s\n", md.toShortString().c_str()); 
   return; 
 }
 
