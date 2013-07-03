@@ -20,6 +20,10 @@ all:
 	mkdir -p $(INSTALL_DIR)/doc/blockbuster && \
 		cp -rf doc/* $(INSTALL_DIR)/doc/blockbuster
 	INSTALL_DIR=$(INSTALL_DIR) ./install-Qt-libs.sh
+	make testit
+
+testit:
+	./tests/img2smtest.py 
 
 remake: 
 	SYS_TYPE=$(SYS_TYPE) ./remake.sh
