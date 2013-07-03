@@ -43,6 +43,8 @@ int main(int argc, char *argv[]) {
 
   TCLAP::SwitchArg filenameOnly("f", "only-filename", "Only print the filename of the matching movie(s).", cmd); 
 
+  TCLAP::SwitchArg getinfoFlag("i", "movie-info", "Get non-metadata info for movie, such as compression type, number of frames, etc.", cmd); 
+
   TCLAP::UnlabeledMultiArg<string> movienames("movienames", "movie name(s)", true, "movie name(s)", cmd); 
 
   TCLAP::SwitchArg matchAllFlag("A", "match-all", "Same as -T '.*' -V '.*', matches everything everywhere.", cmd); 
@@ -76,6 +78,12 @@ int main(int argc, char *argv[]) {
     matchAll = true; 
     singleLine = true; 
   }
+
+  // handle "sminfo" and --info persona 
+  bool getinfo = false; 
+  if (strstr(argv[0],"sminfo") || getinfoFlag.getValue()) {
+    getinfo = true;     
+  }   
 
   vector<boost::regex> tagPatterns, valuePatterns; 
   TagMap canonicalTags;
@@ -112,6 +120,62 @@ int main(int argc, char *argv[]) {
       usage(cmd, argv[0]); 
       exit(1); 
     }
+
+    // Movie info case... (both sminfo and sm2img file)
+    if (getinfo) {      
+      printf("-----------------------------------------\n"); 
+      printf("File: %s\n",filename.c_str());
+      printf("Streaming movie version: %d\n",sm->getVersion());
+      if (sm->getType() == 0) {   // smRaw::typeID
+        printf("Format: RAW uncompressed\n");
+      } else if (sm->getType() == 1) {   // smRLE::typeID
+        printf("Format: RLE compressed\n");
+      } else if (sm->getType() == 2) {   // smGZ::typeID
+        printf("Format: gzip compressed\n");
+      } else if (sm->getType() == 3) {   // smLZO::typeID
+        printf("Format: LZO compressed\n");
+      } else if (sm->getType() == 4) {   // smJPG::typeID
+        printf("Format: JPG compressed\n");
+      } else if (sm->getType() == 5) {   // smJPG::typeID
+        printf("Format: LZMA compressed\n");
+      } else {
+        printf("Format: unknown\n");
+      }
+      printf("Size: %d %d\n",sm->getWidth(),sm->getHeight());
+      printf("Frames: %d\n",sm->getNumFrames());
+      printf("FPS: %0.2f\n",sm->getFPS());
+      double len = 0;
+      double len_u = 0;
+      int frame, res;
+      for(res=0;res<sm->getNumResolutions();res++) {
+        for(frame=0;frame<sm->getNumFrames();frame++) {
+          len += (double)(sm->getCompFrameSize(frame,res));
+          len_u += (double)(sm->getWidth(res)*sm->getHeight(res)*3);
+        }
+      }
+      printf("Compression ratio: %0.4f%% (%0.0f compressed, %0.0f uncompressed)\n",(len/len_u)*100.0, len, len_u);
+      printf("Number of resolutions: %d\n",sm->getNumResolutions());
+      for(res=0;res<sm->getNumResolutions();res++) {
+        printf("    Level: %d : size %d x %d : tile %d x %d\n",
+               res,sm->getWidth(res),sm->getHeight(res),
+               sm->getTileWidth(res),sm->getTileHeight(res));
+        
+      }
+      printf("Flags: ");
+      if (sm->getFlags() & SM_FLAGS_STEREO) printf("Stereo ");
+      printf("\n");
+      
+      if (verbosity.getValue()) {
+        printf("Frame\tOffset\tLength\n");
+        int res = 0; 
+        for (res=0; res < sm->getNumResolutions(); res++) {
+          for(frame=0;frame<sm->getNumFrames();frame++) {
+            sm->printFrameDetails(stdout,frame, res);
+          }
+        }
+      }
+    }
+
     dbprintf(3, "Metadata for %s: (%d entries)\n", filename.c_str(), sm->mMetaData.size()); 
     int32_t thumbnum = -1, thumbres = -1;
     int numMatches = 0; 

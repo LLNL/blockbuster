@@ -923,7 +923,7 @@ int main(int argc,char **argv)
     }
       
     SM_MetaData::SetDelimiter(delimiter.getValue()); 
-    smdbprintf(1, "Adding metadata (%d entries)...\n", taglist.getValue().size()); 
+    smdbprintf(2, "Adding command line metadata (%d entries)...\n", taglist.getValue().size()); 
     vector<string>::const_iterator pos = taglist.begin(), endpos = taglist.end(); 
     while (pos != endpos) {
       try {
@@ -938,18 +938,20 @@ int main(int argc,char **argv)
       if (thumbres.getValue() != -1) {
         sm->SetThumbnailRes(thumbres.getValue()); 
       }
+      smdbprintf(2, "Set thumbnail metadata.\n"); 
     }
     //sm->WriteMetaData(); 
     if (exportTagfile.getValue() != "") {      
       if (!sm->ExportMetaData(exportTagfile.getValue())) {
         cerr << "Warning:  could not export metadata to file " << exportTagfile.getValue() << endl; 
       }
+      smdbprintf(0, "Exported metadata to file %s\n",exportTagfile.getValue().c_str()); 
     }
   }
 
   sm->closeFile();
   
-  cerr << endl << "img2sm completed successfully."<< endl << endl; 
+  smdbprintf(0, "img2sm successfully created movie %s\n",moviename.c_str()); 
   exit(0);
 }
  

@@ -129,128 +129,39 @@ int main(int argc,char **argv)
   int	originalImageSize[2];
   int blockSize[3] = {0,0,3}; 
   int blockOffset[2] = {0,0}; 
-  int		bIsInfo = 0;
-  //int	i,j,x,y;
   int argnum; 
   int nThreads=threads.getValue(); 
-  bool getinfo = false; 
   int imageType = -1; 
   
   if (region.getValue().valid && region.getValue()[0] != -1) {
     for (int i=0; i<2; i++) blockSize[i] = region.getValue()[i+2]; 
   }
 
-  if (strstr(argv[0],"sminfo") || nameTemplate.getValue() == "") {
-    getinfo = true; 
-    bIsInfo = 1;
-    
-  } else {
-    string suffix = format.getValue();
-    if (suffix == "default") {
-      string templatestr = nameTemplate.getValue(); 
-      string::size_type idx = templatestr.rfind('.'); 
-      if (idx == string::npos) {
-        cerr << "Error:  Cannot find a file type suffix in your output template.  Please use -form to tell me what to do if you're not going to give a suffix." << endl; 
-        exit(1); 
-      }
-      suffix = templatestr.substr(idx+1,3); 
-    } 
-    if (suffix == "tif" || suffix == "TIF")  imageType = 0; 
-    else if (suffix == "sgi" || suffix == "SGI")  imageType = 1; 
-    else if (suffix == "pnm" || suffix == "PNM")  imageType = 2; 
-    else if (suffix == "yuv" || suffix == "YUV")  imageType = 3; 
-    else if (suffix == "png" || suffix == "PNG")  imageType = 4; 
-    else if (suffix == "jpg" || suffix == "JPG" || 
-             suffix == "jpe" || suffix == "JPE")  imageType = 5; 
-    else  {
-      cerr << "Warning:  Cannot deduce format from input files.  Using PNG format but leaving filenames unchanged." << endl; 
-      imageType = 4;
+  string suffix = format.getValue();
+  if (suffix == "default") {
+    string templatestr = nameTemplate.getValue(); 
+    string::size_type idx = templatestr.rfind('.'); 
+    if (idx == string::npos) {
+      cerr << "Error:  Cannot find a file type suffix in your output template.  Please use -form to tell me what to do if you're not going to give a suffix." << endl; 
+      exit(1); 
     }
+    suffix = templatestr.substr(idx+1,3); 
+  } 
+  if (suffix == "tif" || suffix == "TIF")  imageType = 0; 
+  else if (suffix == "sgi" || suffix == "SGI")  imageType = 1; 
+  else if (suffix == "pnm" || suffix == "PNM")  imageType = 2; 
+  else if (suffix == "yuv" || suffix == "YUV")  imageType = 3; 
+  else if (suffix == "png" || suffix == "PNG")  imageType = 4; 
+  else if (suffix == "jpg" || suffix == "JPG" || 
+           suffix == "jpe" || suffix == "JPE")  imageType = 5; 
+  else  {
+    cerr << "Warning:  Cannot deduce format from input files.  Using PNG format but leaving filenames unchanged." << endl; 
+    imageType = 4;
   }
+  
 
   smBase::init();
   sm_setVerbose(verbosity.getValue());  
-
-  if ((argc - argnum) == 1) {
-    getinfo = true; // even for sm2img, a single arg is a request for info
-  }
-  // Movie info case... (both sminfo and sm2img file)
-  if (getinfo) {
-    vector<string> filenames = movienames.getValue(); 
-    for (vector<string>::iterator pos = filenames.begin();  pos != filenames.end(); ++pos) {
-      string filename = *pos; 
-      smBase *sm = smBase::openFile(filename.c_str(), nThreads);
-      if (!sm) {
-        fprintf(stderr,"Unable to open the file: %s\n",filename.c_str());
-        exit(1);
-      }
-      
-      printf("-----------------------------------------\n"); 
-      printf("File: %s\n",filename.c_str());
-      printf("Streaming movie version: %d\n",sm->getVersion());
-      if (sm->getType() == 0) {   // smRaw::typeID
-        printf("Format: RAW uncompressed\n");
-      } else if (sm->getType() == 1) {   // smRLE::typeID
-        printf("Format: RLE compressed\n");
-      } else if (sm->getType() == 2) {   // smGZ::typeID
-        printf("Format: gzip compressed\n");
-      } else if (sm->getType() == 3) {   // smLZO::typeID
-        printf("Format: LZO compressed\n");
-      } else if (sm->getType() == 4) {   // smJPG::typeID
-        printf("Format: JPG compressed\n");
-      } else if (sm->getType() == 5) {   // smJPG::typeID
-        printf("Format: LZMA compressed\n");
-     } else {
-        printf("Format: unknown\n");
-      }
-      printf("Size: %d %d\n",sm->getWidth(),sm->getHeight());
-      printf("Frames: %d\n",sm->getNumFrames());
-      printf("FPS: %0.2f\n",sm->getFPS());
-      double len = 0;
-      double len_u = 0;
-      int frame, res;
-      for(res=0;res<sm->getNumResolutions();res++) {
-        for(frame=0;frame<sm->getNumFrames();frame++) {
-          len += (double)(sm->getCompFrameSize(frame,res));
-          len_u += (double)(sm->getWidth(res)*sm->getHeight(res)*3);
-        }
-      }
-      printf("Compression ratio: %0.4f%% (%0.0f compressed, %0.0f uncompressed)\n",(len/len_u)*100.0, len, len_u);
-      printf("Number of resolutions: %d\n",sm->getNumResolutions());
-      for(res=0;res<sm->getNumResolutions();res++) {
-        printf("    Level: %d : size %d x %d : tile %d x %d\n",
-               res,sm->getWidth(res),sm->getHeight(res),
-               sm->getTileWidth(res),sm->getTileHeight(res));
-        
-      }
-      printf("Flags: ");
-      if (sm->getFlags() & SM_FLAGS_STEREO) printf("Stereo ");
-      printf("\n");
-      
-      if (verbosity.getValue()) {
-        printf("Frame\tOffset\tLength\n");
-        int res = 0; 
-        for (res=0; res < sm->getNumResolutions(); res++) {
-          for(frame=0;frame<sm->getNumFrames();frame++) {
-            sm->printFrameDetails(stdout,frame, res);
-          }
-        }
-      }
-      printf("Metadata: (%d entries)\n", sm->mMetaData.size()); 
-      TagMap::iterator pos = sm->mMetaData.begin(), endpos = sm->mMetaData.end(); 
-      if (pos == endpos) {
-        printf ("No meta data found in movie.\n"); 
-      } else {
-        while (pos != endpos) {
-          printf("%s\n", pos->second.toString().c_str()); 
-          ++pos;
-        }
-      }
-      delete sm;
-    }
-    exit(0);
-  }
-  
   
   smBase *sm = smBase::openFile(movienames.getValue()[0].c_str(), nThreads);
   if (!sm) {
