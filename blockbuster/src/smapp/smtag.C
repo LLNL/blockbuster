@@ -45,13 +45,17 @@ typedef boost::tokenizer<boost::char_separator<char> >  tokenizer;
 
 using namespace std; 
 
+// =======================================================================
+void errexit(TCLAP::CmdLine &cmd, string msg) {
+  cerr << endl << "*** ERROR *** : " << msg  << endl<< endl;
+  cmd.getOutput()->usage(cmd); 
+  cerr << endl << "*** ERROR *** : " << msg << endl << endl;
+  exit(1); 
+}
+
 // =====================================================================
 void usage(TCLAP::CmdLine &cmd, char *argv0, string msg="") {
-  cmd.reset(); 
-  int argc = 2; 
-  char *argv[3] = {argv0, (char*)"-h", NULL}; 
-  cerr << endl << msg << endl; 
-  cmd.parse(argc, argv);
+  cmd.getOutput()->usage(cmd); 
   return; 
 }
 // =====================================================================
@@ -147,6 +151,9 @@ int main(int argc, char *argv[]) {
     } // if (report.getValue())
   }
   else {
+    if (!movienames.getValue().size()) {
+      errexit(cmd, "Need name of a movie to operate on, or a tag file to export\n"); 
+    }
     for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {  
       string moviename = movienames.getValue()[0]; 
       dbprintf(1, str(boost::format("Opening movie file %1%\n")% moviename).c_str()); 
@@ -186,7 +193,7 @@ int main(int argc, char *argv[]) {
       
       // ----------------------------------------------
       if (report.getValue()) {        
-        cout << SM_MetaData::MetaDataSummary(tagmap) << endl; 
+        cout << SM_MetaData::MetaDataSummary(sm->GetMetaData()) << endl; 
       }    
       sm->WriteMetaData(); 
       sm->closeFile(); 

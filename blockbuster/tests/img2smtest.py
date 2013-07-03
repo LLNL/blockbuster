@@ -11,7 +11,7 @@ test_common.FindPaths(args.bindir)
 IMG2SM_SUCCESS = "img2sm successfully created movie"
 IMG2SM_FAILURE = "ERROR"
 SMQUERY_SUCCESS = None
-SMQUERY_FAILURE = None
+SMQUERY_FAILURE = "ERROR"
 
 tests = [ {"name": "mountains-single",
            "need_data": "mountains.tiff", 
@@ -96,14 +96,30 @@ tests = [ {"name": "mountains-single",
            "failure_pattern": SMQUERY_FAILURE,
            "success_pattern": ["Movie Creator.*%s"%os.getenv("USER"), "Movie Create Host.*%s"%os.getenv("HOST"), "Movie Create Date"]}, 
 
-           {"name": "smtag-quicksand-11frames-lzma",
-           "need_data": "quicksand-wildcard-11frames-lzma.sm", 
+           {"name": "smtag-filegen",
+           "need_data": None, 
            'cmd': "smtag",
-           "args": "-v 5 -T 'testtag: 78 :INT64' -E smtag-quicksand.tagfile quicksand-wildcard-11frames-lzma.sm", 
+           "args": "-v 5 -L -T 'testtag: 78 :INT64' -T 'doubletag: 42.4 :DOUBLE' -T 'horsie tag:horse feathers are fluffy' -E smtag-quicksand.tagfile", 
            "output": "smtag-quicksand.tagfile",
            "failure_pattern": SMQUERY_FAILURE,
-           "success_pattern": "SetValue\(METADATA_TYPE_INT64, 78\)" }
+           "success_pattern":
+            ["\(DOUBLE\) doubletag *: value = 42.400000", 
+             "\( ASCII\) horsie tag *: value = \"horse feathers are fluffy\"", 
+             "\( INT64\) testtag *: value = 78"] },
 
+           {"name": "smtag-from-file",
+           "need_data": ["quicksand-wildcard-11frames-lzma.sm","smtag-quicksand.tagfile"], 
+           'cmd': "smtag",
+           "args": "-v 5 -L -T 'testtag2: 82 :INT64' -T 'doubletag2: 47.4 :DOUBLE' -T 'horsie tag:new horsie tag' -F smtag-quicksand.tagfile quicksand-wildcard-11frames-lzma.sm", 
+           "output": "smtag-quicksand.tagfile",
+           "failure_pattern": SMQUERY_FAILURE,
+           "success_pattern":
+            ["\(DOUBLE\) doubletag *: value = 42.400000", 
+             "\(DOUBLE\) doubletag2 *: value = 47.400000", 
+             "\( ASCII\) horsie tag *: value = \"new horsie tag\"", 
+             "\( INT64\) testtag *: value = 78", 
+             "\( INT64\) testtag2 *: value = 82"] },
+          
           
          ]
 

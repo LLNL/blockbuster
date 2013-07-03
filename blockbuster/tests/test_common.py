@@ -170,8 +170,9 @@ def run_test(test, timeout=15):
     os.chdir(gTestdir)
     dbprint("\n"+ "="*80 +"\n"+ "="*80 +"\n\n" )
     dbprint("run_test, cwd is %s, running test: %s\n"%(os.getcwd(), str(test)))
-    if test['need_data']:
-        need_data = "%s/%s"%(gTestdir,test['need_data'])
+    test['need_data'] = MakeList(test['need_data'])
+    for data in test['need_data']:
+        need_data = "%s/%s"%(gTestdir,data)
         dbprint("need data: %s\n"% need_data)
         if  os.path.exists(need_data):
             dbprint("data exists\n")
@@ -237,9 +238,11 @@ def run_test(test, timeout=15):
             for pattern in failure_patterns:
                 if re.search(pattern, line):
                     found_failure=True                
+        if len(found_successes) == len(success_patterns):
+            found_all_successes = True
         if found_failure:
             errmsg = "Found failure pattern \"%s\" in output."%str(test['failure_pattern'])
-        if not found_all_successes:
+        elif not found_all_successes:
             errmsg = "Expected patterns not found in command output: \n"
             for pattern in range(len(test['success_pattern'])):
                 if pattern not in found_successes:
