@@ -474,9 +474,9 @@ int main(int argc,char **argv)
     Frame selection, region of interest, rotation
     =====================================================
   */ 
-  TCLAP::ValueArg<int> firstFrame("f", "first", "First frame number",false, 0, "integer", cmd);   
-  TCLAP::ValueArg<int> userLastFrame("l", "last", "Last frame number",false, -1, "integer", cmd); 
-  TCLAP::ValueArg<int> frameStep("s", "step", "Frame step size",false, 1, "integer", cmd); 
+  TCLAP::ValueArg<int> firstFrameFlag("f", "first", "First frame number",false, 0, "integer", cmd);   
+  TCLAP::ValueArg<int> lastFrameFlag("l", "last", "Last frame number",false, -1, "integer", cmd); 
+  TCLAP::ValueArg<int> frameStepFlag("s", "step", "Frame step size",false, 1, "integer", cmd); 
 
   /* WHY IS THIS DISABLED NOW? 
      TCLAP::ValueArg<VectFromString<int> > region("g", "Region", "Image pixel subregion to extract",false, VectFromString<int>(), "'Xoffset Yoffset Xsize Ysize'"); 
@@ -559,11 +559,23 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  uint lastFrame = userLastFrame.getValue(); 
-  if (lastFrame != -1 &&firstFrame.getValue() > lastFrame) {
-    errexit(cmd, "Last frame must be greater than first frame."); 
+  int lastFrame = lastFrameFlag.getValue(), firstFrame = firstFrameFlag.getValue(), frameStep = frameStepFlag.getValue(); 
+  
+  if (!frameStep) {
+    errexit(cmd, "frameStep cannot be 0."); 
   }
   
+  if (lastFrame != -1) {
+    if ( firstFrame > lastFrame) {
+      errexit(cmd, "Last frame must be greater than first frame."); 
+    }  
+    if (frameStep < 0) {
+      uint tmp = lastFrame; 
+      lastFrame = firstFrame; 
+      firstFrame = tmp; 
+    }
+  }
+
   //============================================================
   // Identify the input files.  
 
@@ -577,14 +589,14 @@ int main(int argc,char **argv)
   // We do not have a filename template.  Check file list.  
   moviename = inputfiles.back(); 
   inputfiles.pop_back(); 
-  
 
+  bool haveTemplate = false; 
   if (inputfiles.size() == 1) {
     string nameTemplate = inputfiles[0];
     // See if we have a filename template   
     FILE *fp = NULL; 
-    uint filenum = firstFrame.getValue(); 
-    smdbprintf(5, "First frame is %d, last is %d\n",  firstFrame.getValue(), lastFrame); 
+    uint filenum = firstFrame; 
+    smdbprintf(5, "First frame is %d, last is %d\n",  firstFrame, lastFrame); 
     string filename; 
     while (lastFrame == -1 || filenum <= lastFrame) {
       smdbprintf(5, "Beginning frame number %d\n", filenum); 
@@ -597,7 +609,7 @@ int main(int argc,char **argv)
       smdbprintf(5, "Opening file %s\n", filename.c_str()); 
       fp = fopen(filename.c_str(),"r");
       if (!fp) {
-        if (filenum == firstFrame.getValue() || lastFrame != -1) {
+        if (filenum == firstFrame || lastFrame != -1) {
           errexit(cmd, str(boost::format("Cannot open file \"%1%\", #%2% in sequence for template \"%3%\"")%filename%filenum%nameTemplate));
         }
         else  {
@@ -609,18 +621,25 @@ int main(int argc,char **argv)
         inputfiles.clear();
       }
       inputfiles.push_back(filename); 
-      filenum += frameStep.getValue(); 
+      filenum += frameStep; 
     }
     smdbprintf(1, "Found %d files for template %s.\n", inputfiles.size(), nameTemplate.c_str()); 
+    haveTemplate = true; 
   } /* end parsing filenames by name template */ 
 
-  for (uint i = 0; i< inputfiles.size(); i++) {
-    string filename = inputfiles[i]; 
-    FILE *fp = fopen(filename.c_str(),"r");
-    if (!fp) {
-      errexit(cmd, str(boost::format("Cannot open file #%1% in sequence, \"%2%\"")%i%filename));
+  /* If no template, then filter out explicit filenames using --first and --last and --step if given */ 
+  if (!haveTemplate) {
+    vector<string> filtered;     
+    for (uint frame = firstFrame; lastFrame == -1 || (frameStep > 0 && frame <= lastFrame)  || (frameStep < 0 && frame >= lastFrame); frame += frameStep) {
+      string filename = inputfiles[frame]; 
+      FILE *fp = fopen(filename.c_str(),"r");
+      if (!fp) {
+        errexit(cmd, str(boost::format("Cannot open file #%1%, in file list.  Filename: \"%2%\"")%frame%filename));
+      }
+      fclose(fp); 
+      filtered.push_back(filename); 
     }
-    fclose(fp); 
+    inputfiles = filtered; 
   }
   
   // Done identifying input files.
@@ -628,7 +647,6 @@ int main(int argc,char **argv)
 
   
   int imageType = -1;
-  //if (suffix == "default") {
   string::size_type idx = inputfiles[0].rfind('.'); 
   if (idx == string::npos) {
     cerr << "Error:  Cannot find a file type suffix in your output template.  Please use -form to tell me what to do if you're not going to give a suffix." << endl; 
@@ -724,12 +742,10 @@ int main(int argc,char **argv)
   }
   
 
-  if (frameStep.getValue() == 0) {
-    errexit(str(boost::format("Invalid Step parameter (%1%)\n")%frameStep.getValue()));
-  }
-
+ 
   // Check the file type
   string filename = inputfiles[0]; 
+  smdbprintf(5, "Checking file type of first file %s\n", filename.c_str()); 
   TIFFErrorHandler prev = TIFFSetErrorHandler(NULL); // suppress error messages
   if (imageType == -1) {
     if ((tiff = TIFFOpen((char*)filename.c_str(),"r"))!=0) {
@@ -862,7 +878,7 @@ int main(int argc,char **argv)
   sm->setBufferSize(buffersize.getValue()); 
   /* init the parallel tools */
 
-  int numsteps = (lastFrame-firstFrame.getValue())/frameStep.getValue() + 1; 
+  int numsteps = inputfiles.size(); 
   int numThreads = threads.getValue();  
   if (numsteps < threads.getValue()) {
     numThreads = numsteps; 
@@ -879,8 +895,7 @@ int main(int argc,char **argv)
   
   // Walk the input files...
   for(uint frame = 0; frame < inputfiles.size(); frame++) {
-    //i=firstFrame.getValue();;i+=frameStep.getValue()) {
-
+ 
     Work *wrk = new Work; 
     CHECK(wrk);
 
