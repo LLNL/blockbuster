@@ -91,10 +91,20 @@ tests = [ {"name": "mountains-single",
           {"name": "tagged-quicksand-11frames-lzma",
            "need_data": "quicksand-wildcard-11frames-lzma.sm", 
            'cmd': "sminfo",
-           "args": "quicksand-11frames-lzma.sm", 
+           "args": "quicksand-wildcard-11frames-lzma.sm", 
            "output": None,
            "failure_pattern": SMQUERY_FAILURE,
-           "success_pattern": ["Movie Creator.*%s"%os.getenv("USER"), "Movie Create Host.*%s"%os.getenv("HOST"), "Movie Create Date"]}       
+           "success_pattern": ["Movie Creator.*%s"%os.getenv("USER"), "Movie Create Host.*%s"%os.getenv("HOST"), "Movie Create Date"]}, 
+
+           {"name": "smtag-quicksand-11frames-lzma",
+           "need_data": "quicksand-wildcard-11frames-lzma.sm", 
+           'cmd': "smtag",
+           "args": "-v 5 -T 'testtag: 78 :INT64' -E smtag-quicksand.tagfile quicksand-wildcard-11frames-lzma.sm", 
+           "output": "smtag-quicksand.tagfile",
+           "failure_pattern": SMQUERY_FAILURE,
+           "success_pattern": "SetValue\(METADATA_TYPE_INT64, 78\)" }
+
+          
          ]
 
 # ============================================================================================

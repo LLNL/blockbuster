@@ -120,22 +120,9 @@ int main(int argc, char *argv[]) {
   // Next, override with any tags explicitly from the command line. 
   if (taglist.getValue().size()) {
     for (uint tagnum = 0; tagnum < taglist.getValue().size(); tagnum++) {
-      string arg = taglist.getValue()[tagnum]; 
-      boost::char_separator<char> sep(":"); 
-      tokenizer t(arg, sep);
-      tokenizer::iterator pos = t.begin(), endpos = t.end(); 
-      vector<string> tokens; 
-      
-      while (tokens.size() < 2) {
-        if (pos == endpos) {
-          cerr << "Error in tag format:  must be a tag:value pair, separated by a colon." << endl; 
-          exit(1); 
-        }
-        tokens.push_back(*pos); 
-        ++pos; 
-      } 
-      dbprintf(2, str(boost::format("Adding tag %1% and value %2% to list of tags to apply\n") % tokens[0] % tokens[1]).c_str()); 
-      tagmap[tokens[0]] = tokens[1]; 
+      SM_MetaData md; 
+      md.SetFromDelimitedString(taglist.getValue()[tagnum]);
+      tagmap[md.mTag] = md; 
     }
   }
 
@@ -183,6 +170,7 @@ int main(int argc, char *argv[]) {
      }
       
       //--------------------------------------------------
+      smdbprintf(5, "Adding tagmap to movie %s\n", moviename.c_str()); 
       sm->SetMetaData(tagmap); 
       
       //--------------------------------------------------
