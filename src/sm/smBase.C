@@ -143,7 +143,7 @@ void SM_MetaData::Init(void) {
 */ 
 void SM_MetaData::SetFromDelimitedString(string s) {
 
-  smdbprintf(5, "SM_MetaData::SetFromDelimitedString(%s)\n", s.c_str()); 
+  //smdbprintf(5, "SM_MetaData::SetFromDelimitedString(%s)\n", s.c_str()); 
   string badformat = str(boost::format("Error in tag format:  must be either tag%1%value tag%1%value[%1%type] triple, separated by a '%1%' delimiter.  \"type\" is one of 'ASCII', 'DOUBLE', or 'INT64', defaulting to 'ASCII' if not given.  For canonical values, types are ignored. ")%mDelimiter);
 
   boost::char_separator<char> sep(mDelimiter.c_str()); 
@@ -155,20 +155,20 @@ void SM_MetaData::SetFromDelimitedString(string s) {
     exit(1); 
   }
   tag = *pos; 
-  smdbprintf(5, "SM_MetaData::SetFromDelimitedString(): got tag %s\n", tag.c_str()); 
+  //smdbprintf(5, "SM_MetaData::SetFromDelimitedString(): got tag %s\n", tag.c_str()); 
   ++pos; 
   if (pos == endpos) {
     cerr << badformat << endl; 
     exit(1); 
   }  
   value = *pos; 
-  smdbprintf(5, "SM_MetaData::SetFromDelimitedString(): got value %s\n", value.c_str()); 
+  //smdbprintf(5, "SM_MetaData::SetFromDelimitedString(): got value %s\n", value.c_str()); 
   ++pos; 
  
   if (pos != endpos) {
     if (*pos == "ASCII" || *pos == "DOUBLE" || *pos == "INT64") {
       mdtype = *pos; 
-      smdbprintf(5, "SM_MetaData::SetFromDelimitedString(): got mdtype %s\n", mdtype.c_str()); 
+      //smdbprintf(5, "SM_MetaData::SetFromDelimitedString(): got mdtype %s\n", mdtype.c_str()); 
       ++pos;
     } else {
       cerr << "Unknown type \"" << *pos << "\".  " << badformat << endl; 
@@ -177,7 +177,7 @@ void SM_MetaData::SetFromDelimitedString(string s) {
       
   string canonicalType = GetCanonicalTagType(tag); 
   if (canonicalType != "UNKNOWN") {
-    smdbprintf(5, "SM_MetaData::SetFromDelimitedString(): overriding mdtype %s with Canonical type %s\n", mdtype.c_str(), canonicalType.c_str()); 
+    //smdbprintf(5, "SM_MetaData::SetFromDelimitedString(): overriding mdtype %s with Canonical type %s\n", mdtype.c_str(), canonicalType.c_str()); 
     mdtype = canonicalType; 
   }
 
@@ -298,20 +298,24 @@ bool SM_MetaData::WriteMetaDataToFile(string filename, TagMap&mdmap) {
 } 
 
 // =====================================================================
-string SM_MetaData::CanonicalOrderMetaDataSummary(TagMap&mdmap) {
+string SM_MetaData::CanonicalOrderMetaDataSummary( TagMap mdmap) {
   string summary = "TAG SUMMARY\n";
   for (uint i = 0; i<mCanonicalMetaData.size(); i++) {
     string tag = mCanonicalMetaData[i].mTag; 
-    summary += str(boost::format("(%1$6s) %2$-33s: current value = \"%3%\"\n") % mdmap[tag].TypeAsString() % mdmap[tag].mTag % mdmap[tag].ValueAsString()); 
+    string quote; 
+    if (mdmap[tag].mType == METADATA_TYPE_ASCII) quote = "\""; 
+    summary += str(boost::format("(%1$6s) %2$-33s: value = %4%%3%%4%\n") % mdmap[tag].TypeAsString() % mdmap[tag].mTag % mdmap[tag].ValueAsString() % quote); 
   }
   return summary;   
 }
 
 // =====================================================================
-string SM_MetaData::MetaDataSummary(TagMap&mdmap) {
+string SM_MetaData::MetaDataSummary(const TagMap mdmap) {
   string summary = "TAG SUMMARY\n";
-  for (TagMap::iterator pos = mdmap.begin(); pos != mdmap.end(); pos++) {
-    summary += str(boost::format("(%1$6s) %2$-33s: current value = \"%3%\"\n") % pos->second.TypeAsString() % pos->second.mTag % pos->second.ValueAsString()); 
+  for (TagMap::const_iterator pos = mdmap.begin(); pos != mdmap.end(); pos++) {
+    string quote; 
+    if (pos->second.mType == METADATA_TYPE_ASCII) quote = "\""; 
+    summary += str(boost::format("(%1$6s) %2$-33s: value = %4%%3%%4%\n") % pos->second.TypeAsString() % pos->second.mTag % pos->second.ValueAsString() % quote); 
   }
   return summary;   
 }

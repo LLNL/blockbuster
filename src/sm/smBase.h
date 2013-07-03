@@ -211,7 +211,8 @@ struct SM_MetaData {
     return;     
   }
   
-  void Set(string tag, string mdtype, string s) {   
+  void Set(string tag, string mdtype, string s) {  
+    smdbprintf(5, "Set(%s, %s, %s)\n", tag.c_str(), mdtype.c_str(), s.c_str());
     mTag = tag; 
     if (mdtype == "INT64") {
       boost::trim(s);
@@ -229,34 +230,22 @@ struct SM_MetaData {
 
   void Set(string tag, uint64_t mdtype, string s) {   
     mTag = tag; 
-    if (mdtype == METADATA_TYPE_INT64) {
-      boost::trim(s);
-      SetValue(boost::lexical_cast<int64_t>(s)); 
-    } else if  (mdtype == METADATA_TYPE_DOUBLE) {
-      boost::trim(s);
-      SetValue(boost::lexical_cast<double>(s)); 
-    } else if (mdtype == METADATA_TYPE_ASCII) {
-      SetValue(s); 
-    } else {
-      mType = METADATA_TYPE_UNKNOWN; 
-    }
+    mType = mdtype;
+    Set(mTag, TypeAsString(), s); 
     return;     
   }
 
   void SetValue(string s) {
-    smdbprintf(5, "SetValue(METADATA_TYPE_ASCII, string \"%s\")\n", s.c_str()); 
     mType = METADATA_TYPE_ASCII;
     mAscii = s; 
   } 
    
   void SetValue(double d) {
-    smdbprintf(5, "SetValue(METADATA_TYPE_DOUBLE, %f)\n", d); 
     mType = METADATA_TYPE_DOUBLE;
     mDouble = d; 
   } 
    
   void SetValue(int64_t i) {
-    smdbprintf(5, "SetValue(METADATA_TYPE_INT64, %d)\n", i); 
     mType = METADATA_TYPE_INT64;
     mInt64 = i; 
   } 
@@ -301,8 +290,8 @@ struct SM_MetaData {
   static TagMap CanonicalMetaDataAsMap(void);
   static bool GetMetaDataFromFile(string metadatafile, TagMap &metadatavec);
   static bool  WriteMetaDataToFile(string metadatafile, TagMap &metadatavec);
-  static string CanonicalOrderMetaDataSummary(TagMap &metadatavalues);
-  static string MetaDataSummary(TagMap &metadatavalues);
+  static string CanonicalOrderMetaDataSummary(const TagMap metadatavalues);
+  static string MetaDataSummary(const TagMap metadatavalues);
   static TagMap GetCanonicalMetaDataValuesFromUser(void);
   static void GetCanonicalMetaDataValuesFromUser(TagMap &previousMap);
   // ----------------------------------------------------------
