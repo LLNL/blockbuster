@@ -1,13 +1,33 @@
 #!/usr/bin/env python
 
-import sys, os, shutil, time, threading, argparse
+import sys, os, shutil, time, threading, argparse, re, stat
 from subprocess import *
 
 # =================================================================
 gTestdir = "/tmp/"+os.getenv("USER")+"/blockbuster_tests/"
 gBindir = "" # almost certainly bad
 gDatadir = "" # almost certainly bad
+gDBFile = None
+gDBFilename = None
 
+# =================================================================
+def SetDBFile(outfilename=None):
+    global gDBFilename, gDBFile
+    if not gDBFile:
+        if not gDBFilename:
+            if not outfilename:
+                outfilename = os.getcwd() + "/" + "results.out"
+            gDBFilename = outfilename
+            dbprint("Debug output file is %s\n"%gDBFilename)
+        gDBFile = open(gDBFilename, "w")
+    return
+
+# =================================================================
+def dbprint(msg):
+    SetDBFile()
+    sys.stdout.write(msg)
+    gDBFile.write(msg)
+    
 # =================================================================
 def FindBinDir(progname):
     global gBindir
@@ -15,7 +35,7 @@ def FindBinDir(progname):
     for dots in ['..','../..','../../..']:
         for subdir in [systype, '.']:
             trydir = "%s/%s/%s/bin"%(testdir,dots,subdir)
-            # sys.stderr.write( "trying directory: %s\n"%trydir)
+            # dbprint( "trying directory: %s\n"%trydir)
             if  os.path.exists(trydir+'/' + progname):
                 gBindir = trydir
                 return gBindir         
@@ -37,18 +57,31 @@ if not systype:
 
 # =================================================================
 def errexit (msg):
-    print '*********************************************************************'
-    print "Error: " + msg
-    print '*********************************************************************'
+    dbprint('*********************************************************************\n')
+    dbprint("Error: %s\n" % msg)
+    dbprint('*********************************************************************\n')
     sys.exit(1)
+
+# ================================================================
+# Create a run script from the command, essentially to allow filename globbing in arguments
+def CreateScript(cmd, filename):
+    if os.path.exists(filename):
+        os.remove(filename)
+    script = open(filename, "w")
+    script.write("#!/usr/bin/env bash \n");
+    script.write("set -xv\n");
+    script.write("echo script running...\n");
+    script.write(cmd + ' 2>&1 \n');
+    script.close()
+    os.chmod(filename, stat.S_IRUSR | stat.S_IXUSR)
+    return
 
 # =================================================================
 proc = None
 def run_command(cmd, outfile):
     global proc
-    sys.stderr.write( "Running command: \"%s\"\n"%cmd)
-    #sys.stderr.write("length of command: %d\n"%len(cmd))
-    proc = Popen(cmd.split(), bufsize=-1, stdout=outfile, stderr=STDOUT)
+    dbprint( "Running command: \"%s\"\n"%cmd)
+    proc = Popen(cmd, bufsize=-1, stdout=outfile, stderr=STDOUT)
     proc.wait()
     return 
 
@@ -88,8 +121,8 @@ def FindPaths(bindir):
     
     gDatadir = FindDataDir()
     
-    sys.stderr.write( "bindir is: %s\n"%bindir)
-    sys.stderr.write( "datadir is: %s\n"%gDatadir)
+    dbprint( "bindir is: %s\n"%bindir)
+    dbprint( "datadir is: %s\n"%gDatadir)
     
     return
 
@@ -111,6 +144,23 @@ def SetBaseDir(basedir, clean=True):
     CreateDir(gTestdir, clean=clean)
     return
 
+
+# ===================================================================
+def MakeList(thing):
+    if not thing:
+        return []
+    if type(thing) != type([1,2]) and type(thing) != type((1,2)):
+        return [thing]
+    return list(thing)
+
+# ===================================================================
+def MakeCompiledList(thing):
+    patterns = MakeList(thing)
+    compiled = []
+    for thing in patterns:
+        compiled.append(re.compile(thing))
+    return compiled
+
 # ================================================================
 def run_test(test, timeout=15):
     global proc, gTestdir, gDatadir
@@ -118,40 +168,50 @@ def run_test(test, timeout=15):
     if not os.path.exists(gTestdir):
         CreateDir(gTestdir)
     os.chdir(gTestdir)
-    print "run_test, cwd is %s, running test: %s"%(os.getcwd(), str(test))
-    need_data = "%s/%s"%(gTestdir,test['need_data'])
-    if need_data:
-        print "need data:", need_data
+    dbprint("\n"+ "="*80 +"\n"+ "="*80 +"\n\n" )
+    dbprint("run_test, cwd is %s, running test: %s\n"%(os.getcwd(), str(test)))
+    if test['need_data']:
+        need_data = "%s/%s"%(gTestdir,test['need_data'])
+        dbprint("need data: %s\n"% need_data)
         if  os.path.exists(need_data):
-            print "data exists"
+            dbprint("data exists\n")
         else:
             src_data = gDatadir+'/'+need_data
             if not os.path.exists(src_data):
                 errmsg = "Error: Cannot find or copy needed data %s"% need_data
             else:
                 dest = gTestdir+"/"+need_data
-                print "copying", src_data, "to", dest
+                dbprint("copying %s to %d\n"%( src_data, dest))
                 if os.path.isdir(src_data):
                     shutil.copytree(src_data, dest)
                 else:
                     shutil.copy(src_data, dest)
-                print "copied data to", dest
+                dbprint("copied data to %s\n"% dest)
 
+    success_patterns = MakeCompiledList(test['success_pattern'])    
+    failure_patterns = MakeCompiledList(test['failure_pattern'])
     outfilename = gTestdir+"%s.out"%test['name']
     fullcmd = "%s/%s %s"%(gBindir,test['cmd'],test['args'])
     outfile = open(outfilename, "w")
-    outfile.write(fullcmd+'\n')
-    outfile.write("Working directory: %s\n"%os.getcwd())
-    outfile.flush()
+    outfile.close()
+    outfile = open(outfilename, "r+")
     if errmsg == "SUCCESS":
-        theThread = threading.Thread(target=run_command, args=([fullcmd, outfile]))
+        outfile.write(fullcmd+'\n')
+        outfile.write("Working directory: %s\n"%os.getcwd())
+        outfile.flush()
+        
+        scriptname = "%s/%s.sh"%(os.getcwd(), test['name'])
+        CreateScript(fullcmd, scriptname)
+        dbprint("Full command is \"%s\", placed in script %s\n"%(fullcmd, scriptname))
+        
+        theThread = threading.Thread(target=run_command, args=([scriptname, outfile]))
         theThread.start()
-        sys.stderr.write("Waiting %d seconds for thread to finish...\n"%timeout)
+        dbprint("Waiting %d seconds for thread to finish...\n"%timeout)
         theThread.join(timeout)
         if theThread.isAlive():
             os.kill(proc.pid,9)
             errmsg = "ERROR: Command failed to exit within timeout %d seconds!\n"%timeout
-        print "command output saved in", outfilename
+        dbprint("command output saved in %s\n"% outfilename)
     
         
     if errmsg == "SUCCESS" and proc and proc.returncode and proc.returncode < 0:
@@ -160,24 +220,24 @@ def run_test(test, timeout=15):
     if errmsg == "SUCCESS" and test['output'] and not os.path.exists(test['output']):
         errmsg = "Output file %s was not created as expected.\n"%test['output']
 
-    outfile.write(errmsg+'\n')
-    outfile.close()
     if errmsg == "SUCCESS" and test['success_pattern'] or test['failure_pattern']:
-        outfile = open(outfilename, 'r')
+        outfile.seek(0)
         found_failure = False
         found_success = False
         while not found_success and not found_failure:
             line = outfile.readline()
             if not line:
                 break
-            if test['success_pattern'] in line:
-                found_success=True
-            if test['failure_pattern'] in line:
-                found_failure=True                
+            for pattern in success_patterns:
+                if re.search(pattern, line):
+                    found_success=True
+            for pattern in failure_patterns:
+                if re.search(pattern, line):
+                    found_failure=True                
         if not found_success:
-            errmsg = "Expected success pattern \"%s\" not found in output."%test['success_pattern']
+            errmsg = "Expected success pattern \"%s\" not found in output."%str(test['success_pattern'])
         if found_failure:
-            errmsg = "Found failure pattern \"%s\" in output."%test['failure_pattern']
+            errmsg = "Found failure pattern \"%s\" in output."%str(test['failure_pattern'])
             
     if errmsg == "SUCCESS":
         resultstring = errmsg
@@ -186,17 +246,28 @@ def run_test(test, timeout=15):
         if proc:
             returncode = proc.returncode
         result = [False, errmsg]
-        resultstring = "Failed.  Return code %s, reason: \"%s\"\n"%(str(returncode),errmsg)
+        resultstring = "FAILED.  Return code %s, reason: \"%s\"\n"%(str(returncode),errmsg)
         
-    sys.stderr.write("\n"+"*"*50+"\n" )
-    sys.stderr.write("%s\n"%resultstring)       
-    sys.stderr.write("\n"+"*"*50+"\n\n" )
+    if errmsg != "SUCCESS":
+        outfile.seek(0)
+        output = outfile.read()
+        if output:
+            dbprint("Failure in command; detailed command output from file %s follows: \n"%outfilename)
+            dbprint("\n"+"-"*50+"\n\n" )
+            dbprint(output+'\n')
+            dbprint("\n"+"-"*50+"\n\n" )
+        outfile.write(errmsg+'\n')
+    else:
+        dbprint("\n"+"*"*50+"\n" )
+        
+    dbprint("%s\n"%resultstring)       
+    dbprint("*"*80+"\n\n" )
     
     return  [errmsg == "SUCCESS", errmsg]
-    return [True, ["No errors"]]
 
-# ============================================================================================
+# ========================================================================
 def RunTests(tests):
+
     successes = 0
     results = []
     for test in tests:
@@ -204,12 +275,8 @@ def RunTests(tests):
         results.append(result)
         successes = successes + result[0]
 
-    outfilename = os.getcwd() + "/" + "results.out"
-    outfile = open(outfilename, "w")
     resultstring = "*"*50+"\n" + "successes:  %d out of %d tests\n"%(successes, len(tests)) + "results: " + str(results) + "\n"+"*"*50+"\n"
-    print resultstring
-    outfile.write(resultstring + "\n")
-    print "Results saved in", outfilename
-    outfile.close()
+    dbprint(resultstring)
+    dbprint("Results saved in %s\n"% str(gDBFilename))
     return [successes, results]
 
