@@ -47,8 +47,8 @@ $(INSTALL_DIR)/bin/%: %
 	cp  $? $@
 	@echo
 
-$(INSTALL_DIR)/bin/sminfo: sm2img
-	rm $@; ln -s sm2img $@
+$(INSTALL_DIR)/bin/sminfo: smquery
+	rm $@; ln -s $^ $@
 
 manpages:
 	mkdir -p $(INSTALL_DIR)/man/man1
