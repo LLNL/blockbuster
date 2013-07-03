@@ -94,7 +94,7 @@ tests = [ {"name": "mountains-single",
            "args": "quicksand-11frames-lzma.sm", 
            "output": None,
            "failure_pattern": SMQUERY_FAILURE,
-           "success_pattern": SMQUERY_SUCCESS}       
+           "success_pattern": ["Movie Creator.*%s"%os.getenv("USER"), "Movie Create Host.*%s"%os.getenv("HOST"), "Movie Create Date"]}       
          ]
 
 # ============================================================================================
