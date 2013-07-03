@@ -187,7 +187,7 @@ def run_test(test, timeout=15):
                 else:
                     shutil.copy(src_data, dest)
                 dbprint("copied data to %s\n"% dest)
-
+    test['success_pattern'] = MakeList(test['success_pattern'])
     success_patterns = MakeCompiledList(test['success_pattern'])    
     failure_patterns = MakeCompiledList(test['failure_pattern'])
     outfilename = gTestdir+"%s.out"%test['name']
@@ -223,21 +223,27 @@ def run_test(test, timeout=15):
     if errmsg == "SUCCESS" and test['success_pattern'] or test['failure_pattern']:
         outfile.seek(0)
         found_failure = False
-        found_success = False
-        while not found_success and not found_failure:
+        found_successes = []
+        found_all_successes = False
+        while not found_all_successes and not found_failure:
             line = outfile.readline()
             if not line:
                 break
-            for pattern in success_patterns:
-                if re.search(pattern, line):
-                    found_success=True
+            for pattern in range(len(success_patterns)):
+                if re.search(success_patterns[pattern], line):
+                    found_successes.append(pattern)
+                    if len(found_successes) == len(success_patterns):
+                        found_all_successes = True
             for pattern in failure_patterns:
                 if re.search(pattern, line):
                     found_failure=True                
-        if not found_success:
-            errmsg = "Expected success pattern \"%s\" not found in output."%str(test['success_pattern'])
         if found_failure:
             errmsg = "Found failure pattern \"%s\" in output."%str(test['failure_pattern'])
+        if not found_all_successes:
+            errmsg = "Expected patterns not found in command output: \n"
+            for pattern in range(len(test['success_pattern'])):
+                if pattern not in found_successes:
+                    errmsg = errmsg+"   %d: \"%s\"\n"%(pattern, str(test['success_pattern'][pattern]))
             
     if errmsg == "SUCCESS":
         resultstring = errmsg
