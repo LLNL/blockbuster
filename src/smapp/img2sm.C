@@ -543,10 +543,10 @@ int main(int argc,char **argv)
   TCLAP::ValueArg<int> threads("t", "threads", "Number of threads to use",false, 4, "integer", cmd); 
   TCLAP::ValueArg<int> verbosity("v", "Verbosity", "Verbosity level",false, 0, "integer", cmd);   
 
-  TCLAP::ValueArg<string> nameTemplate("i", "infile-template", "A C-style string containing %d notation for specifying multiple movie frame files.  For a single frame, need not use %d notation.  If this argument is not given, you must supply a list of filenames before the output moviename.", false, "", "input filename template", cmd); 
+  TCLAP::ValueArg<string> nameTemplateFlag("i", "infile-template", " For a single frame, need not use %d notation.  If this argument is not given, you must supply a list of filenames before the output moviename.", false, "", "input filename template", cmd); 
   
   // Note this is an UnlabeledMultiArg.  If nameTemplate is not given, then there must be at least two files here, the last is the output name, all others are input files.  
-  TCLAP::UnlabeledMultiArg<string> filenames("moviename", "Name of the movie to create.  If --infile-template not given, this will be a list of input filenames followed by a moviename.", true, "filename", cmd); 
+  TCLAP::UnlabeledMultiArg<string> filenames("moviename", "Either a list of input filenames or a filename template followed by a moviename.  A filename template is aa C-style string containing C++ template notation for specifying multiple movie frame files, e.g. \"filename%04d.png\" specifies a list of png files with 4 digit 0-padded numbers. Boost-style %1% notation is also supported.", true, "filename", cmd); 
 
   // save the command line for meta data
   string commandLine; 
@@ -566,58 +566,63 @@ int main(int argc,char **argv)
   
   //============================================================
   // Identify the input files.  
+
   string moviename;
   vector<string> inputfiles =  filenames.getValue(); 
-  if (nameTemplate.getValue() != "") {
-    // We have a filename template.  Use it.  
-    moviename = inputfiles[0];
-    if (inputfiles.size() > 1) {
-      errexit(cmd, "Error: if you use a name template, then you must only give one output filename"); 
-    }      
-    inputfiles.clear(); 
-    // have to find the input files now based on the template
+  if (inputfiles.size() < 2) {
+    errexit(cmd, "You must supply an input file or filename template plus an output movie name.");
+  }
+
+
+  // We do not have a filename template.  Check file list.  
+  moviename = inputfiles.back(); 
+  inputfiles.pop_back(); 
+  
+
+  if (inputfiles.size() == 1) {
+    string nameTemplate = inputfiles[0];
+    // See if we have a filename template   
     FILE *fp = NULL; 
     uint filenum = firstFrame.getValue(); 
+    smdbprintf(5, "First frame is %d, last is %d\n",  firstFrame.getValue(), lastFrame); 
     string filename; 
     while (lastFrame == -1 || filenum <= lastFrame) {
+      smdbprintf(5, "Beginning frame number %d\n", filenum); 
       try {
-        filename = str(boost::format(nameTemplate.getValue())%filenum); 
+        filename = str(boost::format(nameTemplate)%filenum); 
       } catch (...) {
-        errexit(cmd, str(boost::format("Invalid filename template \"%1\"")%nameTemplate.getValue()));
+        smdbprintf(5, str(boost::format("Warning: single input file \"%1%\" given.  This is not a valid filename template, so I'm assuming it's actually a single input file, which is going to make a pretty stupid movie.\n")%nameTemplate).c_str());
+        break; 
       } 
+      smdbprintf(5, "Opening file %s\n", filename.c_str()); 
       fp = fopen(filename.c_str(),"r");
       if (!fp) {
         if (filenum == firstFrame.getValue() || lastFrame != -1) {
-          errexit(cmd, str(boost::format("Cannot open file #%1% in sequence, \"%2\"")%filenum%filename));
+          errexit(cmd, str(boost::format("Cannot open file \"%1%\", #%2% in sequence for template \"%3%\"")%filename%filenum%nameTemplate));
         }
         else  {
           break; 
         }
       }
       fclose(fp); 
+      if (inputfiles[0] == nameTemplate) {
+        inputfiles.clear();
+      }
       inputfiles.push_back(filename); 
       filenum += frameStep.getValue(); 
     }
-    smdbprintf(1, "Found %d files.\n", inputfiles.size()); 
+    smdbprintf(1, "Found %d files for template %s.\n", inputfiles.size(), nameTemplate.c_str()); 
   } /* end parsing filenames by name template */ 
-  else {
-    // We do not have a filename template.  Check file list.  
-    moviename = inputfiles.back(); 
-    inputfiles.pop_back(); 
-    
-    if (!inputfiles.size()) {
-      errexit(cmd, "If you do not give a filename template, you must list the input files before the movie name."); 
-    }
 
-    for (uint i = 0; i< inputfiles.size(); i++) {
-      string filename = inputfiles[i]; 
-      FILE *fp = fopen(filename.c_str(),"r");
-      if (!fp) {
-        errexit(cmd, str(boost::format("Cannot open file #%1% in sequence, \"%2%\"")%i%filename));
-      }
-      fclose(fp); 
+  for (uint i = 0; i< inputfiles.size(); i++) {
+    string filename = inputfiles[i]; 
+    FILE *fp = fopen(filename.c_str(),"r");
+    if (!fp) {
+      errexit(cmd, str(boost::format("Cannot open file #%1% in sequence, \"%2%\"")%i%filename));
     }
+    fclose(fp); 
   }
+  
   // Done identifying input files.
   //============================================================
 
