@@ -106,7 +106,6 @@ int main(int argc, char *argv[]) {
   sm_setVerbose(verbosity.getValue());  
   dbg_setverbose(verbosity.getValue()); 
 
-
   for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {
     if (canonical.getValue()) {
       canonicalTags = SM_MetaData::CanonicalMetaDataAsMap(); 
@@ -122,58 +121,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Movie info case... (both sminfo and sm2img file)
-    if (getinfo) {      
-      printf("-----------------------------------------\n"); 
-      printf("File: %s\n",filename.c_str());
-      printf("Streaming movie version: %d\n",sm->getVersion());
-      if (sm->getType() == 0) {   // smRaw::typeID
-        printf("Format: RAW uncompressed\n");
-      } else if (sm->getType() == 1) {   // smRLE::typeID
-        printf("Format: RLE compressed\n");
-      } else if (sm->getType() == 2) {   // smGZ::typeID
-        printf("Format: gzip compressed\n");
-      } else if (sm->getType() == 3) {   // smLZO::typeID
-        printf("Format: LZO compressed\n");
-      } else if (sm->getType() == 4) {   // smJPG::typeID
-        printf("Format: JPG compressed\n");
-      } else if (sm->getType() == 5) {   // smJPG::typeID
-        printf("Format: LZMA compressed\n");
-      } else {
-        printf("Format: unknown\n");
-      }
-      printf("Size: %d %d\n",sm->getWidth(),sm->getHeight());
-      printf("Frames: %d\n",sm->getNumFrames());
-      printf("FPS: %0.2f\n",sm->getFPS());
-      double len = 0;
-      double len_u = 0;
-      int frame, res;
-      for(res=0;res<sm->getNumResolutions();res++) {
-        for(frame=0;frame<sm->getNumFrames();frame++) {
-          len += (double)(sm->getCompFrameSize(frame,res));
-          len_u += (double)(sm->getWidth(res)*sm->getHeight(res)*3);
-        }
-      }
-      printf("Compression ratio: %0.4f%% (%0.0f compressed, %0.0f uncompressed)\n",(len/len_u)*100.0, len, len_u);
-      printf("Number of resolutions: %d\n",sm->getNumResolutions());
-      for(res=0;res<sm->getNumResolutions();res++) {
-        printf("    Level: %d : size %d x %d : tile %d x %d\n",
-               res,sm->getWidth(res),sm->getHeight(res),
-               sm->getTileWidth(res),sm->getTileHeight(res));
-        
-      }
-      printf("Flags: ");
-      if (sm->getFlags() & SM_FLAGS_STEREO) printf("Stereo ");
-      printf("\n");
-      
-      if (verbosity.getValue()) {
-        printf("Frame\tOffset\tLength\n");
-        int res = 0; 
-        for (res=0; res < sm->getNumResolutions(); res++) {
-          for(frame=0;frame<sm->getNumFrames();frame++) {
-            sm->printFrameDetails(stdout,frame, res);
-          }
-        }
-      }
+    if (getinfo) {  
+      smdbprintf(0, (sm->InfoString(verbosity.getValue())+"\n").c_str()); 
     }
 
     dbprintf(3, "Metadata for %s: (%d entries)\n", filename.c_str(), sm->mMetaData.size()); 
@@ -235,7 +184,7 @@ int main(int argc, char *argv[]) {
         if (mdtag == "SM__thumbframe") {
           thumbnum = pos->second.mInt64; 
           dbprintf(5, "Found thumbnail frame %d\n", thumbnum); 
-       }
+        }
         else if (mdtag == "SM__thumbres") {
           thumbres = pos->second.mInt64; 
           dbprintf(5, "Found thumbnail res %d\n", thumbres); 
@@ -259,16 +208,12 @@ int main(int argc, char *argv[]) {
       if (!getinfo) {
         dbprintf(0, "Matched tags for movie %s:\n", filename.c_str()); 
       } else {
-        dbprintf(0, "Tags -----------------------\n", filename.c_str()); 
+        dbprintf(0, "Tags --------------------------------------\n", filename.c_str()); 
       }
-      string formatString = str(boost::format("%%1$12s (%%3$%2%s) %%2$-%1%s = ")%(longestTagMatch+2) % longestValueType);
-      //dbprintf(0, "format string: \"%s\"\n", formatString.c_str()); 
-      for (uint i = 0; i< tagMatches.size(); i++) {
-        if (valueTypes[i] == "ASCII") 
-          cout << str(boost::format(formatString + "\"%4%\"") % matchTypes[i] % tagMatches[i] % valueTypes[i] % valueMatches[i]) << endl; 
-        else 
-          cout << str(boost::format(formatString + "%4%") % matchTypes[i] % tagMatches[i] % valueTypes[i] % valueMatches[i]) << endl; 
-      }
+      for (uint i=0; i< tagMatches.size(); i++) {
+        SM_MetaData md(tagMatches[i], valueTypes[i], valueMatches[i]); 
+        cout << md.toShortString(matchTypes[i], longestValueType, longestTagMatch+2) << endl;
+      }      
     }
     dbprintf(1, str(boost::format("Finished with movie %1%") % filename).c_str()); 
     delete sm;
