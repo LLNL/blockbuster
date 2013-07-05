@@ -801,6 +801,56 @@ smBase *smBase::openFile(const char *_fname, int numthreads)
    return(base);
 }
 
+string smBase::InfoString(bool verbose) {
+  string info = "-----------------------------------------\n";
+  info += str(boost::format("File: %s\n")%mMovieName);
+  info += str(boost::format("Streaming movie version: %d\n")%(getVersion()));
+  if (getType() == 0) {   // smRaw::typeID
+    info += "Format: RAW uncompressed\n";
+  } else if (getType() == 1) {   // smRLE::typeID
+    info += "Format: RLE compressed\n";
+  } else if (getType() == 2) {   // smGZ::typeID
+    info += "Format: gzip compressed\n";
+  } else if (getType() == 3) {   // smLZO::typeID
+    info += "Format: LZO compressed\n";
+  } else if (getType() == 4) {   // smJPG::typeID
+    info += "Format: JPG compressed\n";
+  } else if (getType() == 5) {   // smJPG::typeID
+    info += "Format: LZMA compressed\n";
+  } else {
+    info += "Format: unknown\n";
+  }
+  info += str(boost::format("Size: %d %d\n")%(getWidth())%(getHeight()));
+  info += str(boost::format("Frames: %d\n")%(getNumFrames()));
+  info += str(boost::format("FPS: %0.2f\n")%(getFPS()));
+  double len = 0;
+  double len_u = 0;
+  for(uint res=0;res<getNumResolutions();res++) {
+    for(uint frame=0;frame<getNumFrames();frame++) {
+      len += (double)(getCompFrameSize(frame,res));
+      len_u += (double)(getWidth(res)*getHeight(res)*3);
+    }
+  }
+  info += str(boost::format("Compression ratio: %0.4f%% (%0.0f compressed, %0.0f uncompressed)\n")%((len/len_u)*100.0) % len % len_u);
+  info += str(boost::format("Number of resolutions: %d\n") %(getNumResolutions()));
+  for(uint res=0;res<getNumResolutions();res++) {
+    info += str(boost::format("    Level: %d : size %d x %d : tile %d x %d\n")%res % (getWidth(res)) % (getHeight(res)) % ( getTileWidth(res))%(getTileHeight(res)));
+  }
+  info += "Flags: ";
+  if (getFlags() & SM_FLAGS_STEREO) info += "Stereo ";
+  info += "\n";
+  if (verbose) {
+    info += "Frame\tOffset\tLength\n";
+    uint f = 0; 
+    for (uint res=0; res < getNumResolutions(); res++) {
+      for(uint frame=0;frame<getNumFrames();frame++, f++) {
+        info += str(boost::format("res=%d\tframe=%d\toffset=%I64d\tlength=%d\n")%res%frame%(mFrameOffsets[f])%(mFrameLengths[f]));
+      }
+    }
+  }
+  return info; 
+}
+
 //! convenience function
 /*!
   \param fp FILE * to the file containing the frame

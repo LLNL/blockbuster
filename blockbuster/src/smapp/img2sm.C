@@ -981,6 +981,11 @@ int main(int argc,char **argv)
     }
   }
 
+  if (report.getValue()) {
+    smdbprintf(0, (sm->InfoString(verbosity.getValue())+"\n").c_str()); 
+    
+  }
+
   sm->closeFile();
   
   smdbprintf(0, "img2sm successfully created movie %s\n",moviename.c_str()); 

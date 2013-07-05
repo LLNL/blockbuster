@@ -265,8 +265,16 @@ struct SM_MetaData {
     return (other.mTag == mTag); 
   }
   string toString(void)  const ; 
-  string toShortString(void) const {
-    return str(boost::format("Tag: \"%s\", Type: %s, Value: \"%s\"")%mTag%TypeAsString()%ValueAsString());
+
+  string toShortString(string label="", int typeLength = 0, int tagLength = 0) const {
+    if (!typeLength) typeLength = TypeAsString().size() + 2; 
+    if (!tagLength) tagLength = mTag.size() + 4; 
+    string formatString = str(boost::format("%%1$12s(%%3$%1%s) %%2$-%2%s = ") % typeLength % tagLength );
+    string quote; 
+    if (mType == METADATA_TYPE_ASCII) {
+      quote = "\""; 
+    }
+    return str(boost::format(formatString + "%5%%4%%5%") % label % mTag % TypeAsString() % ValueAsString() % quote);
   }
   string TypeAsString(void) const ;
   string ValueAsString(void) const ; 
@@ -290,7 +298,7 @@ struct SM_MetaData {
   static TagMap CanonicalMetaDataAsMap(void);
   static bool GetMetaDataFromFile(string metadatafile, TagMap &metadatavec);
   static bool  WriteMetaDataToFile(string metadatafile, TagMap &metadatavec);
-  static string CanonicalOrderMetaDataSummary(const TagMap metadatavalues);
+  static string CanonicalOrderMetaDataSummary( TagMap metadatavalues);
   static string MetaDataSummary(const TagMap metadatavalues);
   static TagMap GetCanonicalMetaDataValuesFromUser(void);
   static void GetCanonicalMetaDataValuesFromUser(TagMap &previousMap);
@@ -506,6 +514,7 @@ class smBase {
   static void init(void);
 #endif
   
+
   u_int getWidth(int res=0)  { return(framesizes[res][0]); }
   u_int getHeight(int res=0) { return(framesizes[res][1]); }
   u_int getNumFrames() { return(mNumFrames); }
@@ -519,6 +528,8 @@ class smBase {
   
   int Min(int a,int b) { return((a > b) ? b : a); }
   
+  // used in img2sm and smquery to print frame rate and other movie details
+  string InfoString(bool verbose) ; 
   void printFrameDetails(FILE *fp, int f, int res);
   
   // open a movie
