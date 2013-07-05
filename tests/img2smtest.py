@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
-import sys, os, test_common
+import sys, os, test_common, argparse
 parser = test_common.get_arg_parser()
+parser.add_argument('-s', '--stop-on-failure', help="Stop testing when a failure occurs", action='store_true', default=None)
+
 args = parser.parse_args()
 
 test_common.FindPaths(args.bindir)
@@ -87,14 +89,29 @@ tests = [ {"name": "mountains-single",
            "output": None,
            "failure_pattern": SMQUERY_FAILURE,
            "success_pattern": SMQUERY_SUCCESS},
+                   
+            {"name": "steamboat-globbed-allframes",
+             "need_data": "steamboat", 
+             'cmd': "img2sm",
+             "args": "-L -T 'testtag2:steamboat' -E steamboat.tagfile steamboat/*png steamboat-globbed-allframes.sm", 
+            "output": "steamboat.tagfile",
+             "failure_pattern": SMQUERY_FAILURE,
+             "success_pattern":
+             ["\(ASCII\) testtag2 *= \"steamboat\"",
+              "Movie Create Host.*%s"%os.getenv("HOST"),
+              "Movie Create Date",
+              "\(ASCII\) Movie Creator *=.*%s"%os.getenv("USER")] },
           
-          {"name": "tagged-quicksand-11frames-lzma",
+            {"name": "tagged-quicksand-11frames-lzma",
            "need_data": "quicksand-wildcard-11frames-lzma.sm", 
            'cmd': "sminfo",
            "args": "quicksand-wildcard-11frames-lzma.sm", 
            "output": None,
            "failure_pattern": SMQUERY_FAILURE,
-           "success_pattern": ["Movie Creator.*%s"%os.getenv("USER"), "Movie Create Host.*%s"%os.getenv("HOST"), "Movie Create Date"]}, 
+           "success_pattern":
+             ["Movie Creator.*%s"%os.getenv("USER"),
+              "Movie Create Host.*%s"%os.getenv("HOST"),
+              "Movie Create Date"]}, 
 
            {"name": "smtag-filegen",
            "need_data": None, 
@@ -119,13 +136,13 @@ tests = [ {"name": "mountains-single",
              "\( ASCII\) horsie tag *: value = \"new horsie tag\"", 
              "\( INT64\) testtag *: value = 78", 
              "\( INT64\) testtag2 *: value = 82"] },
-          
+        
           
          ]
 
 # ============================================================================================
 # RUN TESTS
-[successes, results] = test_common.RunTests(tests)
+[successes, results] = test_common.RunTests(tests, args.stop_on_failure)
 
 if successes != len(tests):
     sys.exit(1)

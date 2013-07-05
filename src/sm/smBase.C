@@ -2254,6 +2254,21 @@ void smBase::SetMetaData(const TagMap tagmap) {
 }
 
 // =====================================================================
+string smBase::MetaDataAsString(string label){
+  string s; 
+  int maxTypeLength = 0, maxTagLength = 0; 
+  for (TagMap::iterator pos = mMetaData.begin(); pos !=  mMetaData.end(); ++pos) {
+    if (pos->second.mTag.size() > maxTagLength) maxTagLength = pos->second.mTag.size();
+    if (pos->second.TypeAsString().size() > maxTypeLength) maxTypeLength = pos->second.TypeAsString().size(); 
+  }
+
+  for (TagMap::iterator pos = mMetaData.begin(); pos !=  mMetaData.end(); ++pos) {
+    s += pos->second.toShortString(label, maxTypeLength, maxTagLength) + "\n"; 
+  }
+  return s; 
+}
+
+// =====================================================================
 void smBase::WriteMetaData(void) { 
   ftruncate(mThreadData[0].fd, mFrameOffsets[mNumFrames*mNumResolutions]); 
   uint64_t filepos = LSEEK64(mThreadData[0].fd, 0, SEEK_END);
