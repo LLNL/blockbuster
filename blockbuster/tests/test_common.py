@@ -168,8 +168,6 @@ def run_test(test, timeout=15):
     if not os.path.exists(gTestdir):
         CreateDir(gTestdir)
     os.chdir(gTestdir)
-    dbprint("\n"+ "="*80 +"\n"+ "="*80 +"\n\n" )
-    dbprint("run_test, cwd is %s, running test: %s\n"%(os.getcwd(), str(test)))
     test['need_data'] = MakeList(test['need_data'])
     for data in test['need_data']:
         need_data = "%s/%s"%(gTestdir,data)
@@ -177,17 +175,16 @@ def run_test(test, timeout=15):
         if  os.path.exists(need_data):
             dbprint("data exists\n")
         else:
-            src_data = gDatadir+'/'+need_data
+            src_data = "%s/%s"%(gDatadir,data)
             if not os.path.exists(src_data):
-                errmsg = "Error: Cannot find or copy needed data %s"% need_data
+                errmsg = "Error: Cannot find or copy needed data %s from %s"% (need_data,src_data)
             else:
-                dest = gTestdir+"/"+need_data
-                dbprint("copying %s to %d\n"%( src_data, dest))
+                dbprint("copying %s to %s\n"%( src_data, need_data))
                 if os.path.isdir(src_data):
-                    shutil.copytree(src_data, dest)
+                    shutil.copytree(src_data, need_data)
                 else:
-                    shutil.copy(src_data, dest)
-                dbprint("copied data to %s\n"% dest)
+                    shutil.copy(src_data, need_data)
+                dbprint("copied data to %s\n"% need_data)
     test['success_pattern'] = MakeList(test['success_pattern'])
     success_patterns = MakeCompiledList(test['success_pattern'])    
     failure_patterns = MakeCompiledList(test['failure_pattern'])
@@ -221,7 +218,7 @@ def run_test(test, timeout=15):
     if errmsg == "SUCCESS" and test['output'] and not os.path.exists(test['output']):
         errmsg = "Output file %s was not created as expected.\n"%test['output']
 
-    if errmsg == "SUCCESS" and test['success_pattern'] or test['failure_pattern']:
+    if errmsg == "SUCCESS" and (test['success_pattern'] or test['failure_pattern']):
         outfile.seek(0)
         found_failure = False
         found_successes = []
@@ -275,17 +272,27 @@ def run_test(test, timeout=15):
     return  [errmsg == "SUCCESS", errmsg]
 
 # ========================================================================
-def RunTests(tests):
+def RunTests(tests, stoponfail):
 
     successes = 0
     results = []
+    n = 0
     for test in tests:
+        dbprint("\n"+ "="*80 +"\n"+ "="*80 +"\n\n" )
+        dbprint("cwd is %s, running test %d: %s\n"%(os.getcwd(), n, str(test)))
         result = run_test(test)
         results.append(result)
         successes = successes + result[0]
+        if stoponfail and not result[0]:
+            dbprint("*"*50+"\n")
+            dbprint("FAILED TEST %d, \"%s\", stopping per user preference.\n"%(n,test['name'])); 
+            break
+        n = n+1
 
-    resultstring = "*"*50+"\n" + "successes:  %d out of %d tests\n"%(successes, len(tests)) + "results: " + str(results) + "\n"+"*"*50+"\n"
-    dbprint(resultstring)
+    dbprint("*"*50+"\n")
+    if not stoponfail or  successes == len(tests):
+        dbprint("successes:  %d out of %d tests\n"%(successes, len(tests)))
+        dbprint("results: " + str(results) + "\n"+"*"*50+"\n")
     dbprint("Results saved in %s\n"% str(gDBFilename))
     return [successes, results]
 

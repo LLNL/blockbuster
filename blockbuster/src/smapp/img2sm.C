@@ -453,7 +453,7 @@ int main(int argc,char **argv)
 
   TCLAP::SwitchArg canonical("C", "canonical", "Enter the canonical metadata for a movie interactively.", cmd); 
 
-  TCLAP::ValueArg<string> exportTagfile("", "export-tagfile", "Instead of applying tags to a movie, create a tag file from the current session which can be read with -f to start another smtag session.", false, "", "filename", cmd); 
+  TCLAP::ValueArg<string> exportTagfile("E", "export-tagfile", "Instead of applying tags to a movie, create a tag file from the current session which can be read with -f to start another smtag session.", false, "", "filename", cmd); 
   
   TCLAP::ValueArg<string> tagfile("", "tagfile", "a file containing name:value pairs to be set", false, "", "filename", cmd); 
   
@@ -982,8 +982,9 @@ int main(int argc,char **argv)
   }
 
   if (report.getValue()) {
-    smdbprintf(0, (sm->InfoString(verbosity.getValue())+"\n").c_str()); 
-    
+    smdbprintf(0, (sm->InfoString(verbosity.getValue())+"\n").c_str());
+    smdbprintf(0, "Tags =============== \n"); 
+    smdbprintf(0, sm->MetaDataAsString().c_str());  
   }
 
   sm->closeFile();

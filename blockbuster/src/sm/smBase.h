@@ -580,6 +580,7 @@ class smBase {
   }
 
   TagMap GetMetaData(void) { return mMetaData; }
+  string MetaDataAsString(string label=""); 
 
   void WriteMetaData(void);
 
