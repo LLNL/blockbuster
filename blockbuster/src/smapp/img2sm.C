@@ -575,7 +575,7 @@ int main(int argc,char **argv)
       firstFrame = tmp; 
     }
   }
-
+  
   //============================================================
   // Identify the input files.  
 
@@ -586,14 +586,14 @@ int main(int argc,char **argv)
   }
 
 
-  // We do not have a filename template.  Check file list.  
+  // The movie is the last file in the list of files no matter what 
   moviename = inputfiles.back(); 
   inputfiles.pop_back(); 
 
   bool haveTemplate = false; 
   if (inputfiles.size() == 1) {
-    string nameTemplate = inputfiles[0];
     // See if we have a filename template   
+    string nameTemplate = inputfiles[0];
     FILE *fp = NULL; 
     uint filenum = firstFrame; 
     smdbprintf(5, "First frame is %d, last is %d\n",  firstFrame, lastFrame); 
@@ -625,12 +625,24 @@ int main(int argc,char **argv)
     }
     smdbprintf(1, "Found %d files for template %s.\n", inputfiles.size(), nameTemplate.c_str()); 
     haveTemplate = true; 
+    firstFrame = 0; 
+    lastFrame = inputfiles.size()-1;
+    frameStep = 1; 
   } /* end parsing filenames by name template */ 
 
+  if (lastFrame == -1) {
+    lastFrame = inputfiles.size()-1;
+  }
   /* If no template, then filter out explicit filenames using --first and --last and --step if given */ 
   if (!haveTemplate) {
-    vector<string> filtered;     
-    for (uint frame = firstFrame; lastFrame == -1 || (frameStep > 0 && frame <= lastFrame)  || (frameStep < 0 && frame >= lastFrame); frame += frameStep) {
+    vector<string> filtered;  
+    for (uint frame = firstFrame; 
+         (frameStep > 0 && frame <= lastFrame)  || 
+           (frameStep < 0 && frame >= lastFrame) ; 
+         frame += frameStep) {
+      if (frame >= inputfiles.size()) {
+        errexit(cmd, str(boost::format("Frame %1% in sequence is out of given range (%2%-%3% by step %4%).  Please either don't use --first, --last and --step, or specify such that they fall between 0 and %5%.")%frame%firstFrame%lastFrame%frameStep%(inputfiles.size())));
+      }
       string filename = inputfiles[frame]; 
       FILE *fp = fopen(filename.c_str(),"r");
       if (!fp) {
@@ -639,7 +651,7 @@ int main(int argc,char **argv)
       fclose(fp); 
       filtered.push_back(filename); 
     }
-    inputfiles = filtered; 
+    inputfiles = filtered;     
   }
   
   // Done identifying input files.

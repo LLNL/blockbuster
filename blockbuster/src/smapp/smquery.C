@@ -256,7 +256,11 @@ int main(int argc, char *argv[]) {
       }
     } 
     if (singleLine) {
-      dbprintf(0, "Matched tags for movie %s:\n", filename.c_str()); 
+      if (!getinfo) {
+        dbprintf(0, "Matched tags for movie %s:\n", filename.c_str()); 
+      } else {
+        dbprintf(0, "Tags -----------------------\n", filename.c_str()); 
+      }
       string formatString = str(boost::format("%%1$12s (%%3$%2%s) %%2$-%1%s = ")%(longestTagMatch+2) % longestValueType);
       //dbprintf(0, "format string: \"%s\"\n", formatString.c_str()); 
       for (uint i = 0; i< tagMatches.size(); i++) {
