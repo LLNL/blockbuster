@@ -951,7 +951,7 @@ int main(int argc,char **argv)
       }
     }
     if (canonical.getValue()) {
-      sm->SetMetaData(SM_MetaData::GetCanonicalMetaDataValuesFromUser()); 
+      sm->SetMetaData(SM_MetaData::GetCanonicalMetaDataValuesFromUser(sm->getName())); 
     }
       
     SM_MetaData::SetDelimiter(delimiter.getValue()); 

@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
         dbprintf(0, str(boost::format("%1%: (%2%) %3%:\n") % pos->first % pos->second.TypeAsString() % pos->second.ValueAsString()).c_str());
       }
     } 
-    if (singleLine) {
+    if (singleLine || getinfo) {
       if (!getinfo) {
         dbprintf(0, "Matched tags for movie %s:\n", filename.c_str()); 
       } else {

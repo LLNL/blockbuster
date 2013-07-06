@@ -132,10 +132,10 @@ int main(int argc, char *argv[]) {
 
   // Now, initialize canonical tags if the user wants to use that interface.
   // This is a separate map because it can change from movie to movie.  
-  if (canonical.getValue()) {
+  //  if (canonical.getValue()) {
     // this needs to be here to make sure the -t flags can override the canonical flags
-    SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags);   
-  }
+  // SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags);   
+  //}
   // ------------------------------------------------------------------------------------
   if (exportTagfile.getValue() != "") {
     SM_MetaData::WriteMetaDataToFile(exportTagfile.getValue(), tagmap);
@@ -171,10 +171,12 @@ int main(int argc, char *argv[]) {
       //--------------------------------------------------
       if (canonical.getValue()) {
         if (canonicalTags[APPLY_ALL_TAG].ValueAsString() != "yes") {
-          SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags);   
+          SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags, moviename);   
+        } else {
+          canonicalTags["Title"] = SM_MetaData("Title", moviename); 
         }
         sm->SetMetaData(canonicalTags); 
-     }
+      }
       
       //--------------------------------------------------
       smdbprintf(5, "Adding tagmap to movie %s\n", moviename.c_str()); 
