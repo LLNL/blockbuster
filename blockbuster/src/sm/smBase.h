@@ -298,10 +298,10 @@ struct SM_MetaData {
   static TagMap CanonicalMetaDataAsMap(void);
   static bool GetMetaDataFromFile(string metadatafile, TagMap &metadatavec);
   static bool  WriteMetaDataToFile(string metadatafile, TagMap &metadatavec);
-  static string CanonicalOrderMetaDataSummary( TagMap metadatavalues);
-  static string MetaDataSummary(const TagMap metadatavalues);
-  static TagMap GetCanonicalMetaDataValuesFromUser(void);
-  static void GetCanonicalMetaDataValuesFromUser(TagMap &previousMap);
+  static string CanonicalOrderMetaDataSummary( TagMap metadatavalues, bool withnums=false);
+  static string MetaDataSummary(const TagMap metadatavalues, bool withnums=false);
+  static TagMap GetCanonicalMetaDataValuesFromUser(string moviename);
+  static TagMap GetCanonicalMetaDataValuesFromUser(TagMap &previousMap, string moviename = "");
   // ----------------------------------------------------------
   
 private:
@@ -514,7 +514,7 @@ class smBase {
   static void init(void);
 #endif
   
-
+  string getName(void) { return mMovieName; }
   u_int getWidth(int res=0)  { return(framesizes[res][0]); }
   u_int getHeight(int res=0) { return(framesizes[res][1]); }
   u_int getNumFrames() { return(mNumFrames); }

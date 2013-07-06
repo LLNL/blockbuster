@@ -298,111 +298,125 @@ bool SM_MetaData::WriteMetaDataToFile(string filename, TagMap&mdmap) {
 } 
 
 // =====================================================================
-string SM_MetaData::CanonicalOrderMetaDataSummary( TagMap mdmap) {
+string SM_MetaData::CanonicalOrderMetaDataSummary( TagMap mdmap, bool withnums) {
   string summary = "TAG SUMMARY\n";
-  for (uint i = 0; i<mCanonicalMetaData.size(); i++) {
+  int num = 0; 
+  for (uint i = 0; i<mCanonicalMetaData.size(); i++, num++) {
     string tag = mCanonicalMetaData[i].mTag; 
     string quote; 
     if (mdmap[tag].mType == METADATA_TYPE_ASCII) quote = "\""; 
+    if (withnums) summary += str(boost::format("%1$02d: ")%num); 
     summary += str(boost::format("(%1$6s) %2$-33s: value = %4%%3%%4%\n") % mdmap[tag].TypeAsString() % mdmap[tag].mTag % mdmap[tag].ValueAsString() % quote); 
   }
   return summary;   
 }
 
 // =====================================================================
-string SM_MetaData::MetaDataSummary(const TagMap mdmap) {
+string SM_MetaData::MetaDataSummary(const TagMap mdmap, bool withnums) {
   string summary = "TAG SUMMARY\n";
-  for (TagMap::const_iterator pos = mdmap.begin(); pos != mdmap.end(); pos++) {
+  int num = 0; 
+  for (TagMap::const_iterator pos = mdmap.begin(); pos != mdmap.end(); pos++, num++) {
     string quote; 
     if (pos->second.mType == METADATA_TYPE_ASCII) quote = "\""; 
+    if (withnums) summary += boost::lexical_cast<string>(num) + ": "; 
     summary += str(boost::format("(%1$6s) %2$-33s: value = %4%%3%%4%\n") % pos->second.TypeAsString() % pos->second.mTag % pos->second.ValueAsString() % quote); 
   }
   return summary;   
 }
 
 // =====================================================================
-TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(void) {
+TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(string moviename) {
   TagMap newmap; 
-  GetCanonicalMetaDataValuesFromUser(newmap); 
+  GetCanonicalMetaDataValuesFromUser(newmap, moviename); 
   return newmap; 
 }
 
 // =====================================================================
-void SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous) {
+TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, string moviename) {
   TagMap copied = previous; 
 
   // synchronize tags/values and canonicals to start up
-  if (!copied.size() || copied[USE_TEMPLATE_TAG].mAscii == "" || copied[USE_TEMPLATE_TAG].mAscii == "no") {
-    
-    for (vector<SM_MetaData>::iterator pos = mCanonicalMetaData.begin(); 
-         pos != mCanonicalMetaData.end(); ++pos) {
-      copied[pos->mTag] = *pos; 
-    }
+  // this loop is necessary in order to initialize all needed fields
+  bool useTemplate = (copied[USE_TEMPLATE_TAG].mAscii == "yes"); 
+  for (vector<SM_MetaData>::iterator pos = mCanonicalMetaData.begin(); 
+       pos != mCanonicalMetaData.end(); ++pos) {
+    string tag = pos->mTag; 
+    string tname = copied[tag].TypeAsString(); 
+    if (!useTemplate || tname == "UNKNOWN" ) {
+      copied[tag] = *pos; 
+    } 
+  }
+  if (moviename != "") {
+    copied["Title"] = SM_MetaData("Title", moviename); 
   } 
-  
 
-  cout << "You will now be asked to supply values for the " << copied.size() << " 'canonical' tags.  At any time, you can enter 'e' or 'exit' to stop the input for this movie without saving your values, 's' or 'save' to stop the input and save your changes, 'm' or 'menu' to be presented with a menu, a number to choose a different tag to enter." << endl;
-  cout << CanonicalOrderMetaDataSummary(copied) << endl; 
+  cout << "You will now be asked to supply values for the " << copied.size() << " 'canonical' tags.  At any time, you can enter 'e' or 'exit' to stop the input for this movie without saving your values, 's' or 'save' to stop the input and save your changes, 'm' or 'menu' to be presented with a menu, or a number to choose a different tag to enter." << endl;
+  cout << CanonicalOrderMetaDataSummary(copied, true) << endl; 
 
   string response; 
   int tagno = 0; 
+  string tag = mCanonicalMetaData[tagno].mTag;
+  response = readline(str(boost::format("Please enter a value for key %1% (default: \"%2%\"): ") % tag % copied[tag].ValueAsString()).c_str()); 
   while (true) {
     if (response == "e" || response == "exit") {
       cout << "Exiting without saving changes." << endl; 
-      return ; 
+      return previous; 
     }
     else if (response == "s" || response == "save" || tagno == mCanonicalMetaData.size()) {
       cout << "Exiting and saving." << endl; 
       previous = copied; 
-      return ; 
+      return previous; 
     } 
     else if (response == "m" || response == "map") {
-      cout << CanonicalOrderMetaDataSummary(copied) << endl; 
-      response = readline("Please enter a key number from the list (-1 to just continue): ");       
-      int rval = -1; 
-      if (response != "" && response != "-1") {
-        try {
-          rval = boost::lexical_cast<short>(response);
-          smdbprintf(5, "Got good user response %d\n", rval); 
-        }
-        catch(boost::bad_lexical_cast &) {
-          smdbprintf(5, "Got bad user response\n"); 
-          rval = -1; 
-        }
-        if (rval < 0 || rval >= mCanonicalMetaData.size()) {
-          cout << "Invalid value. "; 
-        } else {
+      cout << CanonicalOrderMetaDataSummary(copied, true) << endl; 
+    } 
+    else if (response == "") { 
+      // The user hit 'enter', so skip over current
+      tagno++; 
+    }
+    else  {
+      // at this point, we either have a number to change the tagno, 
+      // or a value to set the current tag to
+      bool gotnum = false; 
+      try {
+        int rval = boost::lexical_cast<int>(response);
+        smdbprintf(5, "User response is number: %d\n", rval); 
+        gotnum = true; 
+        if (tagno < 0 || tagno >= mCanonicalMetaData.size()) {
+          smdbprintf(0, "Bad tag number, please try again.\n"); 
+        } 
+        else {
           tagno = rval; 
         }
       }
-    }
-    else if (response != "") {
-      if (boost::regex_match(response, boost::regex("[yY]e*s*"))) response = "yes"; 
-      if (boost::regex_match(response, boost::regex("[Nn]o*"))) response = "no"; 
-      string tag = mCanonicalMetaData[tagno].mTag;  
-      uint64_t dtype = mCanonicalMetaData[tagno].mType;
-      try {
-        if (dtype == METADATA_TYPE_INT64) {
-          copied[tag]=SM_MetaData(tag, boost::lexical_cast<int64_t>(response));
-        } else if (dtype == METADATA_TYPE_DOUBLE) {
-          copied[tag]=SM_MetaData(tag, boost::lexical_cast<double>(response));
-        } else {
-          copied[tag]=SM_MetaData(tag, response); 
-        }
-        tagno++; 
-      } catch (...) {
-        smdbprintf(0, str(boost::format("Incorrect type response %1% for tag %2% (type %3% required)\n") % response % tag % mCanonicalMetaData[tagno].TypeAsString()).c_str()); 
+      catch(boost::bad_lexical_cast &) {
+        smdbprintf(5, "User response is not an integer\n"); 
       }
-    } 
-    else  {
-      // The user hit 'enter', so skip over current
-      tagno++; 
+      if (!gotnum) {
+        // The user is setting the tag.  
+        if (boost::regex_match(response, boost::regex("[yY]e*s*"))) response = "yes"; 
+        if (boost::regex_match(response, boost::regex("[Nn]o*"))) response = "no"; 
+        string tag = mCanonicalMetaData[tagno].mTag;  
+        uint64_t dtype = mCanonicalMetaData[tagno].mType;
+        try {
+          if (dtype == METADATA_TYPE_INT64) {
+            copied[tag]=SM_MetaData(tag, boost::lexical_cast<int64_t>(response));
+          } else if (dtype == METADATA_TYPE_DOUBLE) {
+            copied[tag]=SM_MetaData(tag, boost::lexical_cast<double>(response));
+          } else {
+            copied[tag]=SM_MetaData(tag, response); 
+          }
+          tagno++; 
+        } catch (...) {
+          smdbprintf(0, str(boost::format("Incorrect type response %1% for tag %2% (type %3% required)\n") % response % tag % mCanonicalMetaData[tagno].TypeAsString()).c_str()); 
+        }
+      } 
     }
     string tag = mCanonicalMetaData[tagno].mTag;
     response = readline(str(boost::format("Please enter a value for key %1% (default: \"%2%\"): ") % tag % copied[tag].ValueAsString()).c_str()); 
   }
   
-  return; 
+  return previous; 
 }
 
 //===================================================================
