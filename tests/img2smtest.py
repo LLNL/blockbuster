@@ -163,13 +163,13 @@ tests = [
      "failure_pattern": [SCRIPT_FAILURE, IMG2SM_FAILURE],
      "success_pattern":
      ["\(ASCII\) steamtag * = \"boats\""],
-     "script": [["Please enter a value for key Title.*:.*:", "", "3"],
-                ["Please enter a value for key Science.*:.*:", "", "bogus"],
-                ["Please enter a value for key UCRL.*:.*:", "", "10"],
-                ["Please enter a value for key Keywords.*:.*:", "", "salmon, trout"],
-                ["Please enter a value for key .*Creator.*:.*:", "", "m"],
-                ["Please enter a value for key .*Creator.*:.*:", "", "s"],
-                ]},
+     "pexpect": [["Please enter a value for key Title.*:.*:", "", "3"],
+                 ["Please enter a value for key Science.*:.*:", "", "bogus"],
+                 ["Please enter a value for key UCRL.*:.*:", "", "10"],
+                 ["Please enter a value for key Keywords.*:.*:", "", "salmon, trout"],
+                 ["Please enter a value for key .*Creator.*:.*:", "", "m"],
+                 ["Please enter a value for key .*Creator.*:.*:", "", "s"],
+                 ]},
     
     ]
 
