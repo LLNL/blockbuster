@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-import sys, os, shutil, time, threading, argparse, re, stat
+import sys, os, shutil, time, threading, argparse, re, stat, pexpect, glob
+import signal
 from subprocess import *
 
 # =================================================================
@@ -23,8 +24,10 @@ def SetDBFile(outfilename=None):
     return
 
 # =================================================================
-def dbprint(msg):
+def dbprint(msg, outfile=None):
     SetDBFile()
+    if outfile:
+        outfile.write(msg)
     sys.stdout.write(msg)
     gDBFile.write(msg)
     
@@ -64,13 +67,14 @@ def errexit (msg):
 
 # ================================================================
 # Create a run script from the command, essentially to allow filename globbing in arguments
-def CreateScript(cmd, filename):
+def CreateScript(cmd, filename, verbose=True):
     if os.path.exists(filename):
         os.remove(filename)
     script = open(filename, "w")
     script.write("#!/usr/bin/env bash \n");
-    script.write("set -xv\n");
-    script.write("echo script running...\n");
+    if verbose:
+        script.write("set -xv\n");
+        script.write("echo script running...\n");
     script.write(cmd + ' 2>&1 \n');
     script.close()
     os.chmod(filename, stat.S_IRUSR | stat.S_IXUSR)
@@ -162,11 +166,68 @@ def MakeCompiledList(thing):
     return compiled
 
 # ================================================================
-def run_test(test, timeout=15):
+def RunTestCommand(fullcmd, test, outfile):
+    timeout = 15
+    name = test['name']
+    outfile.write(fullcmd+'\n')
+    outfile.write("Working directory: %s\n"%os.getcwd())
+    outfile.flush()
+    
+    scriptname = "%s/%s.sh"%(os.getcwd(), name)
+    CreateScript(fullcmd, scriptname)
+    dbprint("Full command is \"%s\", placed in script %s\n"%(fullcmd, scriptname))
+    
+    theThread = threading.Thread(target=run_command, args=([scriptname, outfile]))
+    theThread.start()
+    dbprint("Waiting %d seconds for thread to finish...\n"%timeout)
+    theThread.join(timeout)
+    if theThread.isAlive():
+        os.kill(proc.pid,9)
+        return "ERROR: Command failed to exit within timeout %d seconds!\n"%timeout
+    return "SUCCESS"
+
+
+# ================================================================
+def RunTestExpect(fullcmd, test, outfile):
+    errmsg =  "SUCCESS"
+    wrappername = "%s/%s.sh"%(os.getcwd(), test['name'])
+    CreateScript(fullcmd, wrappername)
+    script = test['script']
+    dbprint("Running command in pexpect: %s\n"%wrappername, outfile)
+    child = pexpect.spawn(wrappername)
+    try:
+        for line in script:
+            expecting = MakeList(line[0])
+            if line[1]:
+                expecting = expecting + MakeList(line[1])
+            dbprint ("expecting \"%s\"\n" % str(expecting), outfile)
+            result = child.expect(expecting, timeout=5)
+            dbprint ("child.before: " + child.before + "\n", outfile)
+            dbprint ("Matched string: \"%s\"\n" % child.after, outfile)
+            if result != 0:
+                dbprint("Got ERROR result from expect script\n" , outfile)
+                return "Got ERROR result from expect script"                
+            if line[2]:
+                dbprint ("Sending string \"%s\"" % line[2], outfile)
+                child.sendline(line[2])
+    except:        
+        dbprint("Caught error \"%s\"\n" % sys.exc_info()[0], outfile)
+        errmsg = "ERROR running expect script"
+    child.kill(signal.SIGKILL)
+    try:
+        dbprint("Child stuff: \"%s\"\n"%str(child.read_nonblocking(timeout=1)), outfile)
+    except:
+        dbprint("Could not read any more from child\n", outfile)
+    child.close(False)
+    return errmsg
+
+# ================================================================
+def run_test(test):
     global proc, gTestdir, gDatadir
     errmsg = "SUCCESS"
-    if not os.path.exists(gTestdir):
-        CreateDir(gTestdir)
+        
+    # ------------------------------------------------------------
+    # Copy needed data into working directory
     os.chdir(gTestdir)
     test['need_data'] = MakeList(test['need_data'])
     for data in test['need_data']:
@@ -185,6 +246,9 @@ def run_test(test, timeout=15):
                 else:
                     shutil.copy(src_data, need_data)
                 dbprint("copied data to %s\n"% need_data)
+
+    # ------------------------------------------------------------
+    # Run the command
     test['success_pattern'] = MakeList(test['success_pattern'])
     success_patterns = MakeCompiledList(test['success_pattern'])    
     failure_patterns = MakeCompiledList(test['failure_pattern'])
@@ -194,29 +258,24 @@ def run_test(test, timeout=15):
     outfile.close()
     outfile = open(outfilename, "r+")
     if errmsg == "SUCCESS":
-        outfile.write(fullcmd+'\n')
-        outfile.write("Working directory: %s\n"%os.getcwd())
-        outfile.flush()
+        if 'script' in test.keys():
+            errmsg = RunTestExpect(fullcmd, test, outfile)
+        else:
+            errmsg = RunTestCommand(fullcmd, test, outfile)
+    dbprint("Command completed; output saved in %s\n"% outfilename)
+
         
-        scriptname = "%s/%s.sh"%(os.getcwd(), test['name'])
-        CreateScript(fullcmd, scriptname)
-        dbprint("Full command is \"%s\", placed in script %s\n"%(fullcmd, scriptname))
-        
-        theThread = threading.Thread(target=run_command, args=([scriptname, outfile]))
-        theThread.start()
-        dbprint("Waiting %d seconds for thread to finish...\n"%timeout)
-        theThread.join(timeout)
-        if theThread.isAlive():
-            os.kill(proc.pid,9)
-            errmsg = "ERROR: Command failed to exit within timeout %d seconds!\n"%timeout
-        dbprint("command output saved in %s\n"% outfilename)
-    
-        
+    # ------------------------------------------------------------
+    # Check output of command
     if errmsg == "SUCCESS" and proc and proc.returncode and proc.returncode < 0:
         errmsg = "Command returned exit code %d."%proc.returncode
-        
-    if errmsg == "SUCCESS" and test['output'] and not os.path.exists(test['output']):
-        errmsg = "Output file %s was not created as expected.\n"%test['output']
+
+    test['output'] = MakeList(test['output'])
+    if errmsg == "SUCCESS" and test['output']:
+        for filename in test['output']:
+            if not os.path.exists(filename):
+                errmsg = "Output file %s was not created as expected.\n"%test['output']
+                break
 
     if errmsg == "SUCCESS" and (test['success_pattern'] or test['failure_pattern']):
         outfile.seek(0)
@@ -245,6 +304,8 @@ def run_test(test, timeout=15):
                 if pattern not in found_successes:
                     errmsg = errmsg+"   %d: \"%s\"\n"%(pattern, str(test['success_pattern'][pattern]))
             
+    # ------------------------------------------------------------
+    # check return code of command if it failed
     if errmsg == "SUCCESS":
         resultstring = errmsg
     else:
@@ -254,6 +315,8 @@ def run_test(test, timeout=15):
         result = [False, errmsg]
         resultstring = "FAILED.  Return code %s, reason: \"%s\"\n"%(str(returncode),errmsg)
         
+    # ------------------------------------------------------------
+    # pretty things up a bit
     if errmsg != "SUCCESS":
         outfile.seek(0)
         output = outfile.read()
@@ -273,6 +336,11 @@ def run_test(test, timeout=15):
 
 # ========================================================================
 def RunTests(tests, stoponfail):
+
+    if os.path.exists(gTestdir):
+        shutil.rmtree(gTestdir)
+
+    CreateDir(gTestdir)
 
     successes = 0
     results = []
