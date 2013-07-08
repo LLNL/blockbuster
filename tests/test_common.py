@@ -196,28 +196,30 @@ def RunTestExpect(fullcmd, test, outfile):
     dbprint("Running command in pexpect: %s\n"%wrappername, outfile)
     child = pexpect.spawn(wrappername)
     try:
+        result = 0
         for line in script:
-            expecting = MakeList(line[0])
+            expecting = MakeList(line[0]) + [pexpect.EOF, pexpect.TIMEOUT]
             if line[1]:
                 expecting = expecting + MakeList(line[1])
             dbprint ("expecting \"%s\"\n" % str(expecting), outfile)
             result = child.expect(expecting, timeout=5)
             dbprint ("child.before: " + child.before + "\n", outfile)
-            dbprint ("Matched string: \"%s\"\n" % child.after, outfile)
+            dbprint ("\"%s\" Matched string: \"%s\"\n" % (str(expecting[result]), child.after), outfile)
             if result != 0:
-                dbprint("Got ERROR result from expect script\n" , outfile)
-                return "Got ERROR result from expect script"                
-            if line[2]:
-                dbprint ("Sending string \"%s\"" % line[2], outfile)
-                child.sendline(line[2])
+                msg = "Got ERROR result from expect script: %s"%str(expecting[result]) 
+                dbprint(msg + "\n" , outfile)
+                return msg   
+            dbprint ("Sending string \"%s\"\n" % line[2], outfile)
+            child.sendline(line[2])
+        if result == 0:
+            dbprint("Waiting for process to give EOF\n")
+            child.expect(pexpect.EOF, timeout=5)
     except:        
         dbprint("Caught error \"%s\"\n" % sys.exc_info()[0], outfile)
         errmsg = "ERROR running expect script"
+
     child.kill(signal.SIGKILL)
-    try:
-        dbprint("Child stuff: \"%s\"\n"%str(child.read_nonblocking(timeout=1)), outfile)
-    except:
-        dbprint("Could not read any more from child\n", outfile)
+    dbprint("Child output remaining: \"%s\"\n"%str(child.before), outfile)
     child.close(False)
     return errmsg
 

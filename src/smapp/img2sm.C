@@ -979,6 +979,8 @@ int main(int argc,char **argv)
       }
       smdbprintf(0, "Exported metadata to file %s\n",exportTagfile.getValue().c_str()); 
     }
+  } else {
+    smdbprintf(0, "noMetadata.getValue() was set\n"); 
   }
 
   if (report.getValue()) {

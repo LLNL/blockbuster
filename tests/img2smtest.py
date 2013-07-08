@@ -14,6 +14,8 @@ IMG2SM_SUCCESS = "img2sm successfully created movie"
 IMG2SM_FAILURE = "ERROR"
 SMQUERY_SUCCESS = None
 SMQUERY_FAILURE = "ERROR"
+SCRIPT_SUCCESS = None
+SCRIPT_FAILURE = "ERROR"
 
 tests = [
     # ===============================================       
@@ -102,7 +104,7 @@ tests = [
      "success_pattern": SMQUERY_SUCCESS},
     
     # ===============================================       
-    {"name": "steamboat-globbed-allframes",
+    {"name": "steamboat-globbed-allframes-with-tagfile",
      "need_data": "steamboat", 
      'cmd': "img2sm",
      "args": "-L -T 'testtag2:steamboat' -E steamboat.tagfile steamboat/*png steamboat-globbed-allframes.sm", 
@@ -151,6 +153,23 @@ tests = [
       "\( ASCII\) horsie tag *: value = \"new horsie tag\"", 
       "\( INT64\) testtag *: value = 78", 
       "\( INT64\) testtag2 *: value = 82"] },
+    
+    # ===============================================       
+    {"name": "img2sm-canonical-pexpect-steamboat",
+     "need_data": "steamboat", 
+     'cmd': "img2sm",
+     "args": " -v 5 steamboat/* -L -C -T steamtag:boats -E img2sm-canonical-tags.tagfile img2sm-canonical-tags.sm",
+     "output": ["img2sm-canonical-tags.tagfile", "img2sm-canonical-tags.sm"],
+     "failure_pattern": [SCRIPT_FAILURE, IMG2SM_FAILURE],
+     "success_pattern":
+     ["\(ASCII\) steamtag * = \"boats\""],
+     "script": [["Please enter a value for key Title.*:.*:", "", "3"],
+                ["Please enter a value for key Science.*:.*:", "", "bogus"],
+                ["Please enter a value for key UCRL.*:.*:", "", "10"],
+                ["Please enter a value for key Keywords.*:.*:", "", "salmon, trout"],
+                ["Please enter a value for key .*Creator.*:.*:", "", "m"],
+                ["Please enter a value for key .*Creator.*:.*:", "", "s"],
+                ]},
     
     ]
 

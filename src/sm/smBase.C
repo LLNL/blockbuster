@@ -350,7 +350,7 @@ TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, string 
     copied["Title"] = SM_MetaData("Title", moviename); 
   } 
 
-  cout << "You will now be asked to supply values for the " << copied.size() << " 'canonical' tags.  At any time, you can enter 'e' or 'exit' to stop the input for this movie without saving your values, 's' or 'save' to stop the input and save your changes, 'm' or 'menu' to be presented with a menu, or a number to choose a different tag to enter." << endl;
+  cout << "You will now be asked to supply values for the " << copied.size() << " 'canonical' tags.  At any time, you can enter 'e' or 'exit' to stop the input for this movie without saving your values, 's' or 'save' to stop the input and save your changes, 'm' or 'menu' to be presented with a menu, or a number to choose a different tag to enter.  If you just hit Enter, the default will be used." << endl;
   cout << CanonicalOrderMetaDataSummary(copied, true) << endl; 
 
   string response; 
@@ -858,7 +858,7 @@ string smBase::InfoString(bool verbose) {
     uint f = 0; 
     for (uint res=0; res < getNumResolutions(); res++) {
       for(uint frame=0;frame<getNumFrames();frame++, f++) {
-        info += str(boost::format("res=%d\tframe=%d\toffset=%I64d\tlength=%d\n")%res%frame%(mFrameOffsets[f])%(mFrameLengths[f]));
+        info += str(boost::format("res=%d\tframe=%d\toffset=%d\tlength=%d\n")%res%frame%(mFrameOffsets[f])%(mFrameLengths[f]));
       }
     }
   }
