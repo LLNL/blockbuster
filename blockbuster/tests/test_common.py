@@ -192,7 +192,7 @@ def RunTestExpect(fullcmd, test, outfile):
     errmsg =  "SUCCESS"
     wrappername = "%s/%s.sh"%(os.getcwd(), test['name'])
     CreateScript(fullcmd, wrappername)
-    script = test['script']
+    script = test['pexpect']
     dbprint("Running command in pexpect: %s\n"%wrappername, outfile)
     child = pexpect.spawn(wrappername)
     try:
@@ -260,7 +260,7 @@ def run_test(test):
     outfile.close()
     outfile = open(outfilename, "r+")
     if errmsg == "SUCCESS":
-        if 'script' in test.keys():
+        if 'pexpect' in test.keys():
             errmsg = RunTestExpect(fullcmd, test, outfile)
         else:
             errmsg = RunTestCommand(fullcmd, test, outfile)
