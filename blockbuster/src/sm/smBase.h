@@ -155,6 +155,7 @@ inline void sm_real_dbprintf(int , const char * ...) {
 
 #define METADATA_TYPE_UNKNOWN  0x0
 #define METADATA_TYPE_ASCII  0xA5C11A5C11A5C11A
+#define METADATA_TYPE_DATE    0xDD00772255DD1177
 #define METADATA_TYPE_DOUBLE  0xF10A7F10A7F10A7F
 #define METADATA_TYPE_INT64    0x4244224442244442
 
@@ -173,11 +174,14 @@ extern string payloadTypeToString(uint64_t pt);
 
          supported payloads: 
          METADATA_TYPE_ASCII:  8 bytes: magic number 0xA5C11A5C11A5C11A
-                               8 bytes: uint64_t giving  length of null-terminated string
-                               n bytes: null-terminated ASCII string,             
+                               8 bytes: uint64_t, length of 0-terminated string
+                               n bytes: 0-terminated ASCII string,   
+         METADATA_TYPE_DATE:   8 bytes: magic number 0xDD00772255DD1177
+                               8 bytes: uint64_t, length of 0-terminated string
+                               n bytes: 0-terminated DATE formatted string,
          METADATA_TYPE_DOUBLE: 8 bytes: magic number 0xF10A7F10A7F10A7F
                                8 bytes: double (FP64)
-         METADATA_TYPE_INT64:    8 bytes: magic number 0x4244224442244442
+         METADATA_TYPE_INT64:  8 bytes: magic number 0x4244224442244442
                                8 bytes: long long (int64_t)
 
 */ 
@@ -196,7 +200,8 @@ struct SM_MetaData {
   SM_MetaData(string tag): mTag(tag) {
     Init(); 
   }
-  SM_MetaData(string tag, string s): mTag(tag), mType(METADATA_TYPE_ASCII), mAscii(s) {    Init(); 
+  SM_MetaData(string tag, string s): mTag(tag), mType(METADATA_TYPE_ASCII), mAscii(s) {    
+    Init(); 
   }
   SM_MetaData(string tag, int64_t i):mTag(tag), mType(METADATA_TYPE_INT64), mInt64(i) {
     Init(); 
@@ -211,7 +216,7 @@ struct SM_MetaData {
     return;     
   }
   
-  void Set(string tag, string mdtype, string s) {  
+  bool Set(string tag, string mdtype, string s) {  
     smdbprintf(5, "Set(%s, %s, %s)\n", tag.c_str(), mdtype.c_str(), s.c_str());
     mTag = tag; 
     if (mdtype == "INT64") {
@@ -222,27 +227,50 @@ struct SM_MetaData {
       SetValue(boost::lexical_cast<double>(s)); 
     } else if (mdtype == "ASCII") {
       SetValue(s); 
+    } else if (mdtype == "DATE") {
+      return SetDate(s); 
     } else {
       mType = METADATA_TYPE_UNKNOWN; 
+      return false; 
     }
-    return;     
+    return true;     
   }
 
-  void Set(string tag, uint64_t mdtype, string s) {   
+  bool Set(string tag, uint64_t mdtype, string s) {   
     mTag = tag; 
     mType = mdtype;
-    Set(mTag, TypeAsString(), s); 
-    return;     
+    return Set(mTag, TypeAsString(), s); 
   }
 
+  bool SetDate(string s) {
+    bool retval = true; 
+    if (s != "") {
+      s = GetStandardTimeStringFromString(s);
+    }
+    if (s == INVALID_TIME_STRING) {
+      mType = METADATA_TYPE_UNKNOWN;
+      retval = false; 
+    } else {
+      mType = METADATA_TYPE_DATE;
+    }
+    mAscii = s; 
+    return retval; 
+  } 
+   
   void SetValue(string s) {
+    if (mType == METADATA_TYPE_DATE) {
+      SetDate(s); 
+      return; 
+    }
     mType = METADATA_TYPE_ASCII;
     mAscii = s; 
+    return; 
   } 
    
   void SetValue(double d) {
     mType = METADATA_TYPE_DOUBLE;
     mDouble = d; 
+    return;
   } 
    
   void SetValue(int64_t i) {
@@ -271,7 +299,7 @@ struct SM_MetaData {
     if (!tagLength) tagLength = mTag.size() + 4; 
     string formatString = str(boost::format("%%1$12s(%%3$%1%s) %%2$-%2%s = ") % typeLength % tagLength );
     string quote; 
-    if (mType == METADATA_TYPE_ASCII) {
+    if (mType == METADATA_TYPE_ASCII || mType == METADATA_TYPE_DATE) {
       quote = "\""; 
     }
     return str(boost::format(formatString + "%5%%4%%5%") % label % mTag % TypeAsString() % ValueAsString() % quote);
@@ -300,8 +328,7 @@ struct SM_MetaData {
   static bool  WriteMetaDataToFile(string metadatafile, TagMap &metadatavec);
   static string CanonicalOrderMetaDataSummary( TagMap metadatavalues, bool withnums=false);
   static string MetaDataSummary(const TagMap metadatavalues, bool withnums=false);
-  static TagMap GetCanonicalMetaDataValuesFromUser(string moviename);
-  static TagMap GetCanonicalMetaDataValuesFromUser(TagMap &previousMap, string moviename = "");
+  static TagMap GetCanonicalMetaDataValuesFromUser(TagMap &previousMap, bool usePrevious, string moviename="");
   // ----------------------------------------------------------
   
 private:

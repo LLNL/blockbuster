@@ -31,8 +31,8 @@
 
 include ../config/config
 export CPPFLAGS += -Ismdfc
-SRC_FILES = smBase.C smXZ.C smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C smdfc/smdfc.c 
-OFILES = smBase.o smXZ.o smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o smdfc.o
+SRC_FILES = smBase.C smXZ.C smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C smdfc/smdfc.c ../common/timer.C
+OFILES = smBase.o smXZ.o smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o smdfc.o ../common/timer.o
 HFILES = sm.h smBase.h smBaseP.h smXZ.h smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h smdfc/smdfc.h
 
 all:  include lib doc
@@ -98,3 +98,4 @@ smLZO.o: ../common/stringutil.h
 smJPG.o: smJPG.h smBase.h smBaseP.h ../common/stringutil.h ../common/timer.h
 smJPG.o: ../common/stringutil.h
 smdfc/smdfc.o: smdfc/smdfcP.h smdfc/smdfc.h
+../common/timer.o: ../common/timer.h ../common/stringutil.h

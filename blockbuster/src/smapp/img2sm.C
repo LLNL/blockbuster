@@ -951,7 +951,7 @@ int main(int argc,char **argv)
       }
     }
     if (canonical.getValue()) {
-      sm->SetMetaData(SM_MetaData::GetCanonicalMetaDataValuesFromUser(sm->getName())); 
+      sm->SetMetaData(SM_MetaData::GetCanonicalMetaDataValuesFromUser(mdmap, false)); 
     }
       
     SM_MetaData::SetDelimiter(delimiter.getValue()); 
@@ -964,7 +964,7 @@ int main(int argc,char **argv)
         errexit(str(boost::format("Bad meta data tag string: \"%1%\"\n")%(*pos)));
       }
       ++pos; 
-    } 
+    }
     if (thumbnail.getValue() != -1)  {
       sm->SetThumbnailFrame(thumbnail.getValue()); 
       if (thumbres.getValue() != -1) {
@@ -977,21 +977,19 @@ int main(int argc,char **argv)
       if (!sm->ExportMetaData(exportTagfile.getValue())) {
         cerr << "Warning:  could not export metadata to file " << exportTagfile.getValue() << endl; 
       }
-      smdbprintf(0, "Exported metadata to file %s\n",exportTagfile.getValue().c_str()); 
+      cout << str(boost::format("Exported metadata to file %s\n")%exportTagfile.getValue()); 
     }
-  } else {
-    smdbprintf(0, "noMetadata.getValue() was set\n"); 
   }
-
+  
   if (report.getValue()) {
-    smdbprintf(0, (sm->InfoString(verbosity.getValue())+"\n").c_str());
-    smdbprintf(0, "Tags =============== \n"); 
-    smdbprintf(0, sm->MetaDataAsString().c_str());  
+    cout << sm->InfoString(verbosity.getValue()) << endl;
+    cout << "Tags =============== \n";
+    cout << sm->MetaDataAsString() << endl; 
   }
 
   sm->closeFile();
   
-  smdbprintf(0, "img2sm successfully created movie %s\n",moviename.c_str()); 
+  cout << str(boost::format("img2sm successfully created movie %s\n")%moviename); 
   exit(0);
 }
  

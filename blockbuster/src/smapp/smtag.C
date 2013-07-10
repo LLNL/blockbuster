@@ -132,10 +132,10 @@ int main(int argc, char *argv[]) {
 
   // Now, initialize canonical tags if the user wants to use that interface.
   // This is a separate map because it can change from movie to movie.  
-  //  if (canonical.getValue()) {
+  if (canonical.getValue() && !movienames.getValue().size()) {
     // this needs to be here to make sure the -t flags can override the canonical flags
-  // SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags);   
-  //}
+    SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags, false);   
+  }
   // ------------------------------------------------------------------------------------
   if (exportTagfile.getValue() != "") {
     SM_MetaData::WriteMetaDataToFile(exportTagfile.getValue(), tagmap);
@@ -154,54 +154,58 @@ int main(int argc, char *argv[]) {
     if (!movienames.getValue().size()) {
       errexit(cmd, "Need name of a movie to operate on, or a tag file to export\n"); 
     }
-    for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {  
-      string moviename = movienames.getValue()[0]; 
-      dbprintf(1, str(boost::format("Opening movie file %1%\n")% moviename).c_str()); 
-      smBase *sm = smBase::openFile(moviename.c_str(), 1);
-      if (!sm) {
-        dbprintf(0,"smtag: Error: Unable to open the file: %s\n", moviename.c_str());
-        continue;
+  }
+  
+  for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {  
+    string moviename = movienames.getValue()[0]; 
+    dbprintf(1, str(boost::format("Opening movie file %1%\n")% moviename).c_str()); 
+    smBase *sm = smBase::openFile(moviename.c_str(), 1);
+    if (!sm) {
+      dbprintf(0,"smtag: Error: Unable to open the file: %s\n", moviename.c_str());
+      continue;
+    }
+    dbprintf(5, "Before setting metadata, there are %d metadata items\n", sm->mMetaData.size()); 
+    if (deleteMD.getValue()) {
+      sm->DeleteMetaData(); 
+      cout << "Deleted metadata from " << moviename << endl; 
+    }
+    
+    //MergeTags(sm_getmetadata, canonicalTags);
+    
+    //--------------------------------------------------
+    if (canonical.getValue()) {
+      if (canonicalTags[APPLY_ALL_TAG].ValueAsString() != "yes") {
+        SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags, false, moviename);   
+      } else {
+        canonicalTags["Title"] = SM_MetaData("Title", moviename); 
       }
-      dbprintf(5, "Before setting metadata, there are %d metadata items\n", sm->mMetaData.size()); 
-      if (deleteMD.getValue()) {
-        sm->DeleteMetaData(); 
-        cout << "Deleted metadata from " << moviename << endl; 
+      sm->SetMetaData(canonicalTags); 
+    }
+    
+    //--------------------------------------------------
+    smdbprintf(5, "Adding tagmap to movie %s\n", moviename.c_str()); 
+    sm->SetMetaData(tagmap); 
+    
+    //--------------------------------------------------
+    if (thumbnail.getValue() != -1)  {
+      sm->SetThumbnailFrame(thumbnail.getValue()); 
+      if (thumbres.getValue() != -1) {
+        sm->SetThumbnailRes(thumbres.getValue()); 
       }
-      
-      //--------------------------------------------------
-      if (canonical.getValue()) {
-        if (canonicalTags[APPLY_ALL_TAG].ValueAsString() != "yes") {
-          SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags, moviename);   
-        } else {
-          canonicalTags["Title"] = SM_MetaData("Title", moviename); 
-        }
-        sm->SetMetaData(canonicalTags); 
-      }
-      
-      //--------------------------------------------------
-      smdbprintf(5, "Adding tagmap to movie %s\n", moviename.c_str()); 
-      sm->SetMetaData(tagmap); 
-      
-      //--------------------------------------------------
-      if (thumbnail.getValue() != -1)  {
-        sm->SetThumbnailFrame(thumbnail.getValue()); 
-        if (thumbres.getValue() != -1) {
-          sm->SetThumbnailRes(thumbres.getValue()); 
-        }
-      }
-      
-      //--------------------------------------------------
-      dbprintf(5, "After setting metadata, there are %d metadata items\n", sm->mMetaData.size()); 
-      
-      // ----------------------------------------------
-      if (report.getValue()) {        
-        cout << SM_MetaData::MetaDataSummary(sm->GetMetaData()) << endl; 
-      }    
-      sm->WriteMetaData(); 
-      sm->closeFile(); 
-      dbprintf(1, str(boost::format("All flags applied for movie %1%\n") % moviename).c_str()); 
-    } // end loop over movienames
-  } // end else (if doing movies instead of tagfile export)
+    }
+    
+    //--------------------------------------------------
+    dbprintf(5, "After setting metadata, there are %d metadata items\n", sm->mMetaData.size()); 
+    
+    // ----------------------------------------------
+    if (report.getValue()) {        
+      cout << SM_MetaData::MetaDataSummary(sm->GetMetaData()) << endl; 
+    }    
+    sm->WriteMetaData(); 
+    sm->closeFile(); 
+    dbprintf(1, str(boost::format("All flags applied for movie %1%\n") % moviename).c_str()); 
+  } // end loop over movienames
+  // } // end else (if doing movies instead of tagfile export)
   
   
   return 0;
