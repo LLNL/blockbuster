@@ -11,9 +11,9 @@ test_common.FindPaths(args.bindir)
 # ============================================================================================
 # DEFINE TESTS
 IMG2SM_SUCCESS = "img2sm successfully created movie"
-IMG2SM_FAILURE = ["ERROR", "NO_VALUE_UNKNOWN_TYPE"]
+IMG2SM_FAILURE = ["ERROR", "UNKNOWN"]
 SMQUERY_SUCCESS = None
-SMQUERY_FAILURE = ["ERROR", "NO_VALUE_UNKNOWN_TYPE"]
+SMQUERY_FAILURE = ["ERROR", "UNKNOWN"]
 SCRIPT_SUCCESS = None
 SCRIPT_FAILURE = ["ERROR"]
 
@@ -167,8 +167,13 @@ tests = [
                  ["Please enter a value for key Science.*:.*:", "", "bogus"],
                  ["Please enter a value for key UCRL.*:.*:", "", "10"],
                  ["Please enter a value for key Keywords.*:.*:", "", "salmon, trout"],
-                 ["Please enter a value for key .*Creator.*:.*:", "", "m"],
-                 ["Please enter a value for key .*Creator.*:.*:", "", "s"],
+                 ["Please enter a value for key .*Creator.*:.*:", "", "12"],
+                 ["Please enter a value for key .*Create Date.*:.*:", "", "June 18, 1965 3AM "],
+                 ["Please enter a value for key .*Create Host.*:.*:", "Invalid date.*", "m"],
+                 ["Please enter a value for key .*Create Host.*:.*:", "Invalid date.*", "12"],
+                 ["Please enter a value for key .*Create Date.*:.*:", "", "June 18 "],
+                 ["Please enter a value for key .*Create Host.*:.*:", "Invalid date.*", "m"],
+                 ["Please enter a value for key .*Create Host.*:.*:", "", "s"],
                  ]},
     
     ]

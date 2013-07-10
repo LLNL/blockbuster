@@ -122,13 +122,13 @@ void SM_MetaData::Init(void) {
     mCanonicalMetaData.push_back(SM_MetaData("Science Type", "")); 
     mCanonicalMetaData.push_back(SM_MetaData("UCRL", "")); 
     mCanonicalMetaData.push_back(SM_MetaData("Code Name", "")); 
-    mCanonicalMetaData.push_back(SM_MetaData("Sim Start Time", "")); 
+    mCanonicalMetaData.push_back(SM_MetaData("Sim Date", "DATE", "")); 
     mCanonicalMetaData.push_back(SM_MetaData("Sim Duration", "")); 
     mCanonicalMetaData.push_back(SM_MetaData("Sim CPUs", (int64_t)0)); 
     mCanonicalMetaData.push_back(SM_MetaData("Sim Cluster", "")); 
     mCanonicalMetaData.push_back(SM_MetaData("Keywords", "")); 
     mCanonicalMetaData.push_back(SM_MetaData("Movie Creator", "")); 
-    mCanonicalMetaData.push_back(SM_MetaData("Movie Create Date", "")); 
+    mCanonicalMetaData.push_back(SM_MetaData("Movie Create Date", "DATE", "")); 
     mCanonicalMetaData.push_back(SM_MetaData("Movie Create Host", "")); 
     mCanonicalMetaData.push_back(SM_MetaData("Movie Create Command", "")); 
     mCanonicalMetaData.push_back(SM_MetaData(APPLY_ALL_TAG, "no")); 
@@ -304,9 +304,11 @@ string SM_MetaData::CanonicalOrderMetaDataSummary( TagMap mdmap, bool withnums) 
   for (uint i = 0; i<mCanonicalMetaData.size(); i++, num++) {
     string tag = mCanonicalMetaData[i].mTag; 
     string quote; 
-    if (mdmap[tag].mType == METADATA_TYPE_ASCII) quote = "\""; 
+    if (mdmap[tag].mType == METADATA_TYPE_ASCII || mdmap[tag].mType == METADATA_TYPE_DATE) {
+      quote = "\""; 
+    }
     if (withnums) summary += str(boost::format("%1$02d: ")%num); 
-    summary += str(boost::format("(%1$6s) %2$-33s: value = %4%%3%%4%\n") % mdmap[tag].TypeAsString() % mdmap[tag].mTag % mdmap[tag].ValueAsString() % quote); 
+    summary += str(boost::format("(%1$7s) %2$-33s: value = %4%%3%%4%\n") % mdmap[tag].TypeAsString() % mdmap[tag].mTag % mdmap[tag].ValueAsString() % quote); 
   }
   return summary;   
 }
@@ -317,32 +319,25 @@ string SM_MetaData::MetaDataSummary(const TagMap mdmap, bool withnums) {
   int num = 0; 
   for (TagMap::const_iterator pos = mdmap.begin(); pos != mdmap.end(); pos++, num++) {
     string quote; 
-    if (pos->second.mType == METADATA_TYPE_ASCII) quote = "\""; 
+    if (pos->second.mType == METADATA_TYPE_ASCII || pos->second.mType == METADATA_TYPE_DATE) quote = "\""; 
     if (withnums) summary += boost::lexical_cast<string>(num) + ": "; 
-    summary += str(boost::format("(%1$6s) %2$-33s: value = %4%%3%%4%\n") % pos->second.TypeAsString() % pos->second.mTag % pos->second.ValueAsString() % quote); 
+    summary += str(boost::format("(%1$7s) %2$-33s: value = %4%%3%%4%\n") % pos->second.TypeAsString() % pos->second.mTag % pos->second.ValueAsString() % quote); 
   }
   return summary;   
 }
 
 // =====================================================================
-TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(string moviename) {
-  TagMap newmap; 
-  GetCanonicalMetaDataValuesFromUser(newmap, moviename); 
-  return newmap; 
-}
-
-// =====================================================================
-TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, string moviename) {
+TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, bool usePrevious, string moviename) {
   TagMap copied = previous; 
 
   // synchronize tags/values and canonicals to start up
   // this loop is necessary in order to initialize all needed fields
-  bool useTemplate = (copied[USE_TEMPLATE_TAG].mAscii == "yes"); 
   for (vector<SM_MetaData>::iterator pos = mCanonicalMetaData.begin(); 
        pos != mCanonicalMetaData.end(); ++pos) {
     string tag = pos->mTag; 
-    string tname = copied[tag].TypeAsString(); 
-    if (!useTemplate || tname == "UNKNOWN" ) {
+    string previousType = copied[tag].TypeAsString(); 
+    if (!usePrevious || previousType == "UNKNOWN" ) {
+      // override previous with canonical base values
       copied[tag] = *pos; 
     } 
   }
@@ -395,7 +390,7 @@ TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, string 
       if (!gotnum) {
         // The user is setting the tag.  
         if (boost::regex_match(response, boost::regex("[yY]e*s*"))) response = "yes"; 
-        if (boost::regex_match(response, boost::regex("[Nn]o*"))) response = "no"; 
+        if (boost::regex_match(response, boost::regex("[Nn]o*"))) response = "no";         
         string tag = mCanonicalMetaData[tagno].mTag;  
         uint64_t dtype = mCanonicalMetaData[tagno].mType;
         try {
@@ -403,6 +398,15 @@ TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, string 
             copied[tag]=SM_MetaData(tag, boost::lexical_cast<int64_t>(response));
           } else if (dtype == METADATA_TYPE_DOUBLE) {
             copied[tag]=SM_MetaData(tag, boost::lexical_cast<double>(response));
+          } else if (dtype == METADATA_TYPE_DATE) {
+            SM_MetaData md; 
+            if (!md.Set(tag, "DATE", response)) {
+              cerr<< "Invalid date string.  Please try again.\n";
+              tagno--; // will be incremented again... 
+            }
+            else {
+              copied[tag]=md;
+            }
           } else {
             copied[tag]=SM_MetaData(tag, response); 
           }
@@ -434,6 +438,9 @@ string SM_MetaData::TypeAsString(void)  const {
   if (mType == METADATA_TYPE_ASCII) {
     return "ASCII";
   }
+  if (mType == METADATA_TYPE_DATE) {
+    return "DATE";
+  }
   else if (mType == METADATA_TYPE_DOUBLE) {
     return "DOUBLE"; 
   } 
@@ -453,6 +460,9 @@ string SM_MetaData::ValueAsString(void) const  {
   } 
   else if (mType == METADATA_TYPE_INT64) {
     return intToString(mInt64); 
+  } 
+  else if (mType == METADATA_TYPE_DATE) {
+    return mAscii; 
   } 
   return "NO_VALUE_UNKNOWN_TYPE"; 
   

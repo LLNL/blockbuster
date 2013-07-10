@@ -22,14 +22,18 @@
 #endif
 #include <iostream>
 #include <iomanip>
-#include <stringutil.h>
+#include "stringutil.h"
+#define INVALID_TIME_STRING "INVALID_TIME_STRING"
+
+using namespace std; 
+string GetStandardTimeStringFromString(string s);
+bool GetTimeFromString(string s, struct tm &tms); 
 
 int Progress(class timer &iTimer, double iNum, double iMax, 
              double &oPercent, double iPercentDelta, 
              double &oTime, double iTimeDelta,  std::string iMsg);
 
 
-using namespace std; 
 
 // ======================================================================== 
 // Get current date/time, format "%Y-%m-%d.%X" means YYYY-MM-DD.HH:mm:ss

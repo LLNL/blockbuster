@@ -188,6 +188,7 @@ def RunTestCommand(fullcmd, test, outfile):
 
 
 # ================================================================
+# for each line in the script, line[0] is the expect, line[1] are errors, and line[2] is the response
 def RunTestExpect(fullcmd, test, outfile):
     errmsg =  "SUCCESS"
     wrappername = "%s/%s.sh"%(os.getcwd(), test['name'])
@@ -348,8 +349,11 @@ def RunTests(tests, stoponfail):
     results = []
     n = 0
     for test in tests:
-        dbprint("\n"+ "="*80 +"\n"+ "="*80 +"\n\n" )
-        dbprint("cwd is %s, running test %d: %s\n"%(os.getcwd(), n, str(test)))
+        dbprint("\n"+ "="*80 +"\n" )
+        dbprint("RUNNING TEST %d\n\n"%n)
+        dbprint("CWD is %s\n"%os.getcwd())
+        dbprint("TEST: %s\n\n"%str(test))
+        dbprint("\n"+ "-"*40 +"\n" )
         result = run_test(test)
         results.append(result)
         successes = successes + result[0]
@@ -358,11 +362,19 @@ def RunTests(tests, stoponfail):
             dbprint("FAILED TEST %d, \"%s\", stopping per user preference.\n"%(n,test['name'])); 
             break
         n = n+1
+        dbprint("\n"+ "="*80 +"\n" )
 
-    dbprint("*"*50+"\n")
+    dbprint("*"*50+"\n\n")
     if not stoponfail or  successes == len(tests):
         dbprint("successes:  %d out of %d tests\n"%(successes, len(tests)))
         dbprint("results: " + str(results) + "\n"+"*"*50+"\n")
-    dbprint("Results saved in %s\n"% str(gDBFilename))
+        if successes != len(tests): 
+            dbprint("Failed tests:\n")
+            for n in range( len(tests)):
+                if not results[n][0]:
+                    dbprint("Test %d: %s: %s\n"%(n,tests[n]['name'], results[n][1]))
+            dbprint("*"*50+"\n\n")
+                
+    dbprint("Results saved in %s\n\n"% str(gDBFilename))
     return [successes, results]
 
