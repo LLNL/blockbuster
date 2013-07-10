@@ -253,7 +253,7 @@ def run_test(test):
     # Run the command
     test['success_pattern'] = MakeList(test['success_pattern'])
     success_patterns = MakeCompiledList(test['success_pattern'])    
-    failure_patterns = MakeCompiledList(test['failure_pattern'])
+    failure_patterns = MakeList(test['failure_pattern'])
     outfilename = gTestdir+"%s.out"%test['name']
     fullcmd = "%s/%s %s"%(gBindir,test['cmd'],test['args'])
     outfile = open(outfilename, "w")
@@ -294,12 +294,12 @@ def run_test(test):
                     if len(found_successes) == len(success_patterns):
                         found_all_successes = True
             for pattern in failure_patterns:
-                if re.search(pattern, line):
-                    found_failure=True                
+                if re.search(re.compile(pattern), line):
+                    found_failure=pattern                
         if len(found_successes) == len(success_patterns):
             found_all_successes = True
         if found_failure:
-            errmsg = "Found failure pattern \"%s\" in output."%str(test['failure_pattern'])
+            errmsg = "Found failure pattern \"%s\" in output."%found_failure
         elif not found_all_successes:
             errmsg = "Expected patterns not found in command output: \n"
             for pattern in range(len(test['success_pattern'])):

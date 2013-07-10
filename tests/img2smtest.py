@@ -11,11 +11,11 @@ test_common.FindPaths(args.bindir)
 # ============================================================================================
 # DEFINE TESTS
 IMG2SM_SUCCESS = "img2sm successfully created movie"
-IMG2SM_FAILURE = "ERROR"
+IMG2SM_FAILURE = ["ERROR", "NO_VALUE_UNKNOWN_TYPE"]
 SMQUERY_SUCCESS = None
-SMQUERY_FAILURE = "ERROR"
+SMQUERY_FAILURE = ["ERROR", "NO_VALUE_UNKNOWN_TYPE"]
 SCRIPT_SUCCESS = None
-SCRIPT_FAILURE = "ERROR"
+SCRIPT_FAILURE = ["ERROR"]
 
 tests = [
     # ===============================================       
@@ -160,7 +160,7 @@ tests = [
      'cmd': "img2sm",
      "args": "steamboat/* -L -C -T steamtag:boats -E img2sm-canonical-tags.tagfile img2sm-canonical-tags.sm",
      "output": ["img2sm-canonical-tags.tagfile", "img2sm-canonical-tags.sm"],
-     "failure_pattern": [SCRIPT_FAILURE, IMG2SM_FAILURE],
+     "failure_pattern": SCRIPT_FAILURE + IMG2SM_FAILURE,
      "success_pattern":
      ["\( *ASCII\) steamtag * = \"boats\""],
      "pexpect": [["Please enter a value for key Title.*:.*:", "", "3"],
