@@ -225,6 +225,7 @@ bool GetTimeFromString(string s, struct tm &tms) {
               tms.tm_year = localtime(&now)->tm_year;
               tms.tm_hour = tms.tm_min = tms.tm_sec = 0; 
               tms.tm_mon = tms.tm_wday = tms.tm_yday = 0; 
+              tms.tm_mday = 1; 
               const char *sp = s.c_str(); 
               m = strptime(sp, timestrings[i].c_str(), &tms);
               if (m && !*m) {
