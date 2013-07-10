@@ -111,10 +111,10 @@ tests = [
      "output": "steamboat.tagfile",
      "failure_pattern": IMG2SM_FAILURE,
      "success_pattern":
-     ["\(ASCII\) testtag2 *= \"steamboat\"",
+     ["\( *ASCII\) testtag2 *= \"steamboat\"",
       "Movie Create Host.*%s"%os.getenv("HOST"),
       "Movie Create Date",
-      "\(ASCII\) Movie Creator *=.*%s"%os.getenv("USER")] },
+      "\( *ASCII\) Movie Creator *=.*%s"%os.getenv("USER")] },
     
     # ===============================================       
     {"name": "tagged-quicksand-11frames-lzma",
@@ -136,9 +136,9 @@ tests = [
      "output": "smtag-quicksand.tagfile",
      "failure_pattern": SMQUERY_FAILURE,
      "success_pattern":
-     ["\(DOUBLE\) doubletag *: value = 42.400000", 
-      "\( ASCII\) horsie tag *: value = \"horse feathers are fluffy\"", 
-      "\( INT64\) testtag *: value = 78"] },
+     ["\( *DOUBLE\) doubletag *: value = 42.400000", 
+      "\( *ASCII\) horsie tag *: value = \"horse feathers are fluffy\"", 
+      "\( *INT64\) testtag *: value = 78"] },
     
     # ===============================================       
     {"name": "smtag-from-file",
@@ -148,21 +148,21 @@ tests = [
      "output": "smtag-quicksand.tagfile",
      "failure_pattern": SMQUERY_FAILURE,
      "success_pattern":
-     ["\(DOUBLE\) doubletag *: value = 42.400000", 
-      "\(DOUBLE\) doubletag2 *: value = 47.400000", 
-      "\( ASCII\) horsie tag *: value = \"new horsie tag\"", 
-      "\( INT64\) testtag *: value = 78", 
-      "\( INT64\) testtag2 *: value = 82"] },
+     ["\( *DOUBLE\) doubletag *: value = 42.400000", 
+      "\( *DOUBLE\) doubletag2 *: value = 47.400000", 
+      "\( *ASCII\) horsie tag *: value = \"new horsie tag\"", 
+      "\( *INT64\) testtag *: value = 78", 
+      "\( *INT64\) testtag2 *: value = 82"] },
     
     # ===============================================       
     {"name": "img2sm-canonical-pexpect-steamboat",
      "need_data": "steamboat", 
      'cmd': "img2sm",
-     "args": " -v 5 steamboat/* -L -C -T steamtag:boats -E img2sm-canonical-tags.tagfile img2sm-canonical-tags.sm",
+     "args": "steamboat/* -L -C -T steamtag:boats -E img2sm-canonical-tags.tagfile img2sm-canonical-tags.sm",
      "output": ["img2sm-canonical-tags.tagfile", "img2sm-canonical-tags.sm"],
      "failure_pattern": [SCRIPT_FAILURE, IMG2SM_FAILURE],
      "success_pattern":
-     ["\(ASCII\) steamtag * = \"boats\""],
+     ["\( *ASCII\) steamtag * = \"boats\""],
      "pexpect": [["Please enter a value for key Title.*:.*:", "", "3"],
                  ["Please enter a value for key Science.*:.*:", "", "bogus"],
                  ["Please enter a value for key UCRL.*:.*:", "", "10"],
