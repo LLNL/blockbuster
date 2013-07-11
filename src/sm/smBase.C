@@ -369,9 +369,10 @@ TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, bool us
       cout << "Exiting without saving changes." << endl; 
       return previous; 
     }
-    else if (response == "s" || response == "save" || tagno == numCanonical) {
+    else if (response == "s" || response == "save") {
       cout << "Exiting and saving." << endl; 
-      return copied; 
+      previous = copied; 
+      return previous; 
     }     
     else if (response == "m" || response == "menu") {
       cout << CanonicalOrderMetaDataSummary(copied, true, promptForReuse) << endl; 
