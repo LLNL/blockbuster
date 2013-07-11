@@ -174,7 +174,8 @@ tests = [
                  ["Please enter a value for key .*Create Host.*:.*:", "Invalid date.*", "m"],
                  ["Please enter a value for key .*Create Host.*:.*:", "Invalid date.*", "12"],
                  ["Please enter a value for key .*Create Date.*:.*:", "", "June 18 "],
-                 ["Please enter a value for key .*Create Host.*:.*:", "Invalid date.*", "m"],
+                 ["Please enter a value for key .*Create Host.*:.*:", "Invalid date.*", "115"],
+                 ["You entered a bad tag number.*Please enter a value for key .*Create Host.*:.*:", "Invalid date.*", "m"],
                  ["Please enter a value for key .*Create Host.*:.*:", "", "s"],
                  ]},
     
