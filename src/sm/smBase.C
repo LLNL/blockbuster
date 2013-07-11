@@ -286,6 +286,10 @@ bool SM_MetaData::WriteMetaDataToFile(string filename, TagMap&mdmap) {
   using boost::property_tree::ptree; 
   ptree pt;
   for (TagMap::iterator pos = mdmap.begin(); pos != mdmap.end(); pos++) {
+    if (pos->first == APPLY_ALL_TAG || pos->first == USE_TEMPLATE_TAG) {
+      smdbprintf(5, "Skipping tag %s\n", pos->first.c_str()); 
+      continue; 
+    }
     string tag = pos->first; 
     pt.put(str(boost::format("%1%.type")%pos->first), pos->second.TypeAsString()); 
     pt.put(str(boost::format("%1%.value")%pos->first), pos->second.ValueAsString()); 
@@ -2321,10 +2325,14 @@ void smBase::WriteMetaData(void) {
   TagMap::iterator pos = mMetaData.begin(), endpos = mMetaData.end(); 
   while (pos != endpos) {
     if (pos->second.mType == METADATA_TYPE_UNKNOWN) {
-      cerr << "Cowardly refusing to write metadata of type METADATA_TYPE_UNKNOWN" << endl; 
-      continue;
+      cerr << "Skipping metadata of type METADATA_TYPE_UNKNOWN" << endl; 
     }
-    pos->second.Write(mThreadData[0].fd); 
+    else if (pos->second.mTag == APPLY_ALL_TAG || pos->second.mTag == USE_TEMPLATE_TAG) {
+      smdbprintf(1, "Skipping tag %s\n", pos->second.mTag.c_str()); 
+    } 
+    else {
+      pos->second.Write(mThreadData[0].fd); 
+    }
     ++pos;  
   }
   return; 
