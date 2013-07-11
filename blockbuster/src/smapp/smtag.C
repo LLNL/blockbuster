@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
     if (canonical.getValue()) {      
       canonicalTags["Title"] = SM_MetaData("Title", moviename); 
       if (canonicalTags[APPLY_ALL_TAG].ValueAsString() != "yes") {
-        SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags, false, true);   
+        SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags, true, true);   
       } 
       sm->SetMetaData(canonicalTags); 
     }
