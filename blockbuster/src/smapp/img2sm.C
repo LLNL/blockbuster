@@ -942,7 +942,7 @@ int main(int argc,char **argv)
     char *host = getenv("HOST"); 
     if (host)
       mdmap["Movie Create Host"] = SM_MetaData("Movie Create Host", host); 
-
+    mdmap["Title"] = SM_MetaData("Title", moviename); 
     sm->SetMetaData(mdmap); 
 
     if (tagfile.getValue() != "") {
@@ -951,7 +951,7 @@ int main(int argc,char **argv)
       }
     }
     if (canonical.getValue()) {
-      sm->SetMetaData(SM_MetaData::GetCanonicalMetaDataValuesFromUser(mdmap, false)); 
+      sm->SetMetaData(SM_MetaData::GetCanonicalMetaDataValuesFromUser(mdmap, true)); 
     }
       
     SM_MetaData::SetDelimiter(delimiter.getValue()); 

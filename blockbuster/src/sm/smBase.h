@@ -151,16 +151,20 @@ inline void sm_real_dbprintf(int , const char * ...) {
 //===============================================
 /* struct SM_MetaData */
 
-#define METADATA_MAGIC       0x0088BBeecc113399
-
+//-----------------------------------------------------------------
+// DO NOT CHANGE THESE VALUES!  IT WILL DESTROY DATA IF YOU DO
+#define METADATA_MAGIC         0x0088BBeecc113399
+//---------------------------
 #define METADATA_TYPE_UNKNOWN  0x0
-#define METADATA_TYPE_ASCII  0xA5C11A5C11A5C11A
-#define METADATA_TYPE_DATE    0xDD00772255DD1177
-#define METADATA_TYPE_DOUBLE  0xF10A7F10A7F10A7F
+#define METADATA_TYPE_ERROR    0x1231111111111123
+#define METADATA_TYPE_ASCII    0xA5C11A5C11A5C11A
+#define METADATA_TYPE_DATE     0xDD00772255DD1177
+#define METADATA_TYPE_DOUBLE   0xF10A7F10A7F10A7F
 #define METADATA_TYPE_INT64    0x4244224442244442
-
+//---------------------------
 #define APPLY_ALL_TAG "Apply To All Movies [y/n]?"
 #define USE_TEMPLATE_TAG "Use As Template [y/n]?"
+//----------------------------------------------------------------
 
 typedef map<string,struct SM_MetaData> TagMap; 
 
@@ -219,20 +223,27 @@ struct SM_MetaData {
   bool Set(string tag, string mdtype, string s) {  
     smdbprintf(5, "Set(%s, %s, %s)\n", tag.c_str(), mdtype.c_str(), s.c_str());
     mTag = tag; 
-    if (mdtype == "INT64") {
-      boost::trim(s);
-      SetValue(boost::lexical_cast<int64_t>(s)); 
-    } else if  (mdtype == "DOUBLE") {
-      boost::trim(s);
-      SetValue(boost::lexical_cast<double>(s)); 
-    } else if (mdtype == "ASCII") {
-      SetValue(s); 
-    } else if (mdtype == "DATE") {
-      return SetDate(s); 
-    } else {
-      mType = METADATA_TYPE_UNKNOWN; 
-      return false; 
+    try {
+      if (mdtype == "INT64") {
+        boost::trim(s);
+        SetValue(boost::lexical_cast<int64_t>(s)); 
+      } else if  (mdtype == "DOUBLE") {
+        boost::trim(s);
+        SetValue(boost::lexical_cast<double>(s)); 
+      } else if (mdtype == "ASCII") {
+        SetValue(s); 
+      } else if (mdtype == "DATE") {
+        return SetDate(s); 
+      } else {
+        mType = METADATA_TYPE_UNKNOWN; 
+        return false; 
+      }
+    } catch (...) {
+        mType = METADATA_TYPE_UNKNOWN; 
+        mAscii = "BAD_VALUE"; 
+        return false; 
     }
+     
     return true;     
   }
 
