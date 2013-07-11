@@ -268,7 +268,9 @@ string GetStandardTimeStringFromString(string s) {
   if  (!GetTimeFromString(s, ts)) {
     return INVALID_TIME_STRING;
   }
-  return asctime(&ts);
+  s = asctime(&ts);
+  boost::trim (s); 
+  return s;
 }
   
 
