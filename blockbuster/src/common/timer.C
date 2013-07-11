@@ -138,9 +138,12 @@ std::ostream& operator<<(std::ostream& os, timer& t)
 }
 
 
+  
 // =================================================================
+/* Search the entire known universe for a time string match.  
+   This is awful but it works. 
+*/ 
 bool GetTimeFromString(string s, struct tm &tms) {
-  //vector<string> GetTimeStrings(void) {
   
   boost::trim(s);
   //cerr << "Checking time \"" << s << "\"" << endl;
@@ -151,6 +154,10 @@ bool GetTimeFromString(string s, struct tm &tms) {
   vector<string> yearformats; 
   yearformats.push_back(" ");
   yearformats.push_back("%Y");
+  yearformats.push_back("%Y -");
+  yearformats.push_back("- %Y");
+  yearformats.push_back("%Y /");
+  yearformats.push_back("/ %Y");
 
   vector<string> weekdays; 
   weekdays.push_back(" ");
@@ -159,11 +166,9 @@ bool GetTimeFromString(string s, struct tm &tms) {
 
   vector<string> dateformats; 
   dateformats.push_back(" "); 
-  dateformats.push_back("/ %m / %d");
-  dateformats.push_back("%m / %d /");
-  dateformats.push_back("- %m - %d");
-  dateformats.push_back("%m - %d -");
-  dateformats.push_back("%m %d");
+  dateformats.push_back("%m / %d ");
+  dateformats.push_back("%m - %d");
+  dateformats.push_back("%e %b"); 
   dateformats.push_back("%b %e"); 
   dateformats.push_back("%B %e"); 
 
