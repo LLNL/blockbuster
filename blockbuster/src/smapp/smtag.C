@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
   // This is a separate map because it can change from movie to movie.  
   if (canonical.getValue() && !movienames.getValue().size()) {
     // this needs to be here to make sure the -t flags can override the canonical flags
-    SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags, false);   
+    SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags, false, true);   
   }
   // ------------------------------------------------------------------------------------
   if (exportTagfile.getValue() != "") {
@@ -173,12 +173,11 @@ int main(int argc, char *argv[]) {
     //MergeTags(sm_getmetadata, canonicalTags);
     
     //--------------------------------------------------
-    if (canonical.getValue()) {
+    if (canonical.getValue()) {      
+      canonicalTags["Title"] = SM_MetaData("Title", moviename); 
       if (canonicalTags[APPLY_ALL_TAG].ValueAsString() != "yes") {
-        SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags, false, moviename);   
-      } else {
-        canonicalTags["Title"] = SM_MetaData("Title", moviename); 
-      }
+        SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags, false, true);   
+      } 
       sm->SetMetaData(canonicalTags); 
     }
     

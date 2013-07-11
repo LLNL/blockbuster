@@ -936,7 +936,7 @@ int main(int argc,char **argv)
 
   if (! noMetadata.getValue()) {
     // populate with reasonable guesses by default:
-    TagMap mdmap = SM_MetaData::CanonicalMetaDataAsMap(); 
+    TagMap mdmap = SM_MetaData::CanonicalMetaDataAsMap(true); 
     mdmap["Movie Create Command"] = SM_MetaData("Movie Create Command", commandLine); 
     mdmap["Movie Create Date"] = SM_MetaData("Movie Create Date", timestamp("%c %Z")); // NEED HOST NAME AND DATE
     char *host = getenv("HOST"); 
@@ -951,7 +951,7 @@ int main(int argc,char **argv)
       }
     }
     if (canonical.getValue()) {
-      sm->SetMetaData(SM_MetaData::GetCanonicalMetaDataValuesFromUser(mdmap, true)); 
+      sm->SetMetaData(SM_MetaData::GetCanonicalMetaDataValuesFromUser(mdmap, true, false)); 
     }
       
     SM_MetaData::SetDelimiter(delimiter.getValue()); 

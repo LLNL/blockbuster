@@ -231,6 +231,7 @@ struct SM_MetaData {
         boost::trim(s);
         SetValue(boost::lexical_cast<double>(s)); 
       } else if (mdtype == "ASCII") {
+        mType = METADATA_TYPE_ASCII; 
         SetValue(s); 
       } else if (mdtype == "DATE") {
         return SetDate(s); 
@@ -323,7 +324,15 @@ struct SM_MetaData {
 
   // ----------------------------------------------------------
   static bool mInitialized; 
-  static vector<SM_MetaData> CanonicalMetaData(void) { return mCanonicalMetaData; }
+  static vector<SM_MetaData> CanonicalMetaData(bool includePrompts) { 
+    vector<SM_MetaData> mdata = mCanonicalMetaData; 
+     
+    if (!includePrompts) {
+      mdata.pop_back();
+      mdata.pop_back();
+    }
+    return mdata;
+  }
   /*!
     Utility function for getting username info on Unix. 
     Useful for some canonical tags.
@@ -334,12 +343,12 @@ struct SM_MetaData {
     Given a tag, return "ASCII", "DOUBLE", "INT64" or "UNKNOWN"
   */ 
   static string GetCanonicalTagType(string tag);
-  static TagMap CanonicalMetaDataAsMap(void);
+  static TagMap CanonicalMetaDataAsMap(bool includePrompts);
   static bool GetMetaDataFromFile(string metadatafile, TagMap &metadatavec);
   static bool  WriteMetaDataToFile(string metadatafile, TagMap &metadatavec);
-  static string CanonicalOrderMetaDataSummary( TagMap metadatavalues, bool withnums=false);
+  static string CanonicalOrderMetaDataSummary( TagMap metadatavalues, bool withnums, bool promptForReuse);
   static string MetaDataSummary(const TagMap metadatavalues, bool withnums=false);
-  static TagMap GetCanonicalMetaDataValuesFromUser(TagMap &previousMap, bool usePrevious, string moviename="");
+  static TagMap GetCanonicalMetaDataValuesFromUser(TagMap &previousMap, bool usePrevious, bool promptForReuse);
   // ----------------------------------------------------------
   
 private:
