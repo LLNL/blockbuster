@@ -59,7 +59,11 @@ int main(int argc, char *argv[]) {
 
   TCLAP::SwitchArg singleLineFlag("s", "summary", "Summarize: For each movie, report each match as tag, type and value on a line together.", cmd); 
 
-  TCLAP::SwitchArg extractThumb("e", "extract-thumbnail", "extract thumbnail frame", cmd); 
+  TCLAP::SwitchArg extractThumb("e", "extract-thumbnail", "extract thumbnail frame (not working yet)", cmd); 
+
+  TCLAP::ValueArg<string> exportTagfile("E", "export-tagfile", "Extract a tag file from the movie which can be read with smtag.", false, "", "filename", cmd); 
+  TCLAP::SwitchArg quietExport("q", "quiet-export", "when exporting a tagfile, do not echo the tags to stdout", cmd); 
+
 
   TCLAP::ValueArg<int> verbosity("v", "verbosity", "set verbosity (0-5)", false, 0, "int", cmd); 
 
@@ -124,7 +128,14 @@ int main(int argc, char *argv[]) {
     if (getinfo) {  
       smdbprintf(0, (sm->InfoString(verbosity.getValue())+"\n").c_str()); 
     }
-
+    if (exportTagfile.getValue() != "") {
+      TagMap moviedata = sm->GetMetaData(); 
+      SM_MetaData::WriteMetaDataToFile(exportTagfile.getValue(), moviedata);
+      if (quietExport.getValue()) {
+        continue; 
+      }
+    }
+      
     dbprintf(3, "Metadata for %s: (%d entries)\n", filename.c_str(), sm->mMetaData.size()); 
     int32_t thumbnum = -1, thumbres = -1;
     int numMatches = 0; 
