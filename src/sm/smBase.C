@@ -352,7 +352,7 @@ TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, bool us
 
   string response; 
   int tagno = 0; 
-  string tag = mCanonicalMetaData[tagno].mTag;
+  string tag = mCanonicalMetaData[0].mTag;
   uint numCanonical = mCanonicalMetaData.size(); 
   if (!promptForReuse) numCanonical -= 2; 
 
@@ -371,8 +371,7 @@ TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, bool us
     }
     else if (response == "s" || response == "save" || tagno == numCanonical) {
       cout << "Exiting and saving." << endl; 
-      previous = copied; 
-      return previous; 
+      return copied; 
     }     
     else if (response == "m" || response == "menu") {
       cout << CanonicalOrderMetaDataSummary(copied, true, promptForReuse) << endl; 
@@ -386,7 +385,6 @@ TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, bool us
       // or a value to set the current tag to
       bool gotnum = false; 
       int64_t rval = -1; 
-      SM_MetaData md = mCanonicalMetaData[tagno]; 
       try {        
         rval = boost::lexical_cast<int64_t>(response);
         smdbprintf(5, "User response is int64: %d\n", rval); 
@@ -399,21 +397,24 @@ TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, bool us
       if (forcechange && !gotnum) {
         cout << "You entered a bad tag number, please try again.\n";
       }
-      else if (forcechange || (gotnum && md.mType != METADATA_TYPE_INT64)) {
+      else if (forcechange || (gotnum && mCanonicalMetaData[tagno].mType != METADATA_TYPE_INT64)) {
         if (rval < 0 || rval >= numCanonical) {
           cout << "You entered a bad tag number, please try again.\n"; 
         } 
         else {
+          smdbprintf(5, "Tag number changed to %d\n", rval); 
           tagno = rval; 
         }
       } 
       else {
-        // Assign the tag 
+        smdbprintf(5, "Assign the tag %d\n", tagno); 
         if (boost::regex_match(response, boost::regex("[yY]e*s*"))) response = "yes"; 
         if (boost::regex_match(response, boost::regex("[Nn]o*"))) response = "no";         
-        if (md.Set(tag,  md.TypeAsString(), response)) {
-          copied[tag]=md;
+        SM_MetaData md = copied[mCanonicalMetaData[tagno].mTag]; 
+        if (md.Set(md.mTag,  md.TypeAsString(), response)) {
+          copied[md.mTag]=md;
           tagno++; 
+          smdbprintf(5, "Tag %d assigned: %s\n", tagno, md.toShortString().c_str()); 
         }
         else {
           cout << str(boost::format("Incorrect type response %1% for tag %2% (type %3% required)\n") % response % tag % mCanonicalMetaData[tagno].TypeAsString()); 
@@ -428,6 +429,7 @@ TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, bool us
       response = readline(str(boost::format("Please enter a value for key %1% (default: \"%2%\"): ") % tag % copied[tag].ValueAsString()).c_str()); 
     }
   }
+  smdbprintf(0, "Warning:  Code should ever get here.\n"); 
   return previous; 
 }
 
