@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
 
   for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {
     if (canonical.getValue()) {
-      canonicalTags = SM_MetaData::CanonicalMetaDataAsMap(); 
+      canonicalTags = SM_MetaData::CanonicalMetaDataAsMap(false); 
     }
     string filename = movienames.getValue()[fileno]; 
     smBase *sm = smBase::openFile(filename.c_str(), 1);
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
         if (singleLine && (tagmatch || valuematch)) {
           string matchtype; 
           if (matchAll) {
-            matchtype = str(boost::format("Got Item")); 
+            matchtype = str(boost::format("Got Item: ")); 
           } else if (tagmatch && valuematch) {
             matchtype = "Both Match"; 
           } else if (tagmatch) {
@@ -199,9 +199,10 @@ int main(int argc, char *argv[]) {
     }
     if (canonical.getValue()) {
       dbprintf(0, "Canonical tags for movie %s:\n", filename.c_str()); 
-      for (TagMap::iterator pos = canonicalTags.begin();
-           pos != canonicalTags.end(); pos++) {
-        dbprintf(0, str(boost::format("%1%: (%2%) %3%:\n") % pos->first % pos->second.TypeAsString() % pos->second.ValueAsString()).c_str());
+      vector<SM_MetaData> cmdata = SM_MetaData::CanonicalMetaData(false);
+      for (uint i = 0; i<cmdata.size()-1; i++) {
+        SM_MetaData * smdp = &canonicalTags[cmdata[i].mTag];
+        dbprintf(0, str(boost::format("%1%: (%2%) %3%:\n") % (smdp->mTag) % (smdp->TypeAsString()) % (smdp->ValueAsString())).c_str());
       }
     } 
     if (singleLine || getinfo) {

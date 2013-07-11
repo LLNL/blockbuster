@@ -243,10 +243,12 @@ string SM_MetaData::GetCanonicalTagType(string tag) {
 }
 
 // =====================================================================
-TagMap SM_MetaData::CanonicalMetaDataAsMap(void) {
+TagMap SM_MetaData::CanonicalMetaDataAsMap(bool includePrompts) {
   TagMap mdmap; 
   for (uint i=0; i<mCanonicalMetaData.size(); i++) {
-    mdmap[mCanonicalMetaData[i].mTag] = mCanonicalMetaData[i];
+    if (includePrompts || (mCanonicalMetaData[i].mTag != APPLY_ALL_TAG && mCanonicalMetaData[i].mTag != USE_TEMPLATE_TAG)) {
+      mdmap[mCanonicalMetaData[i].mTag] = mCanonicalMetaData[i];
+    }
   }
   // Add default values
   map<string,string> userinfo = GetUserInfo();
@@ -298,10 +300,12 @@ bool SM_MetaData::WriteMetaDataToFile(string filename, TagMap&mdmap) {
 } 
 
 // =====================================================================
-string SM_MetaData::CanonicalOrderMetaDataSummary( TagMap mdmap, bool withnums) {
+string SM_MetaData::CanonicalOrderMetaDataSummary( TagMap mdmap, bool withnums, bool promptForReuse) {
   string summary = "TAG SUMMARY\n";
   int num = 0; 
-  for (uint i = 0; i<mCanonicalMetaData.size(); i++, num++) {
+  int numitems = mCanonicalMetaData.size();
+  if (!promptForReuse) numitems -= 2; 
+  for (uint i = 0; i<numitems; i++, num++) {
     string tag = mCanonicalMetaData[i].mTag; 
     string quote; 
     if (mdmap[tag].mType == METADATA_TYPE_ASCII || mdmap[tag].mType == METADATA_TYPE_DATE) {
@@ -327,13 +331,14 @@ string SM_MetaData::MetaDataSummary(const TagMap mdmap, bool withnums) {
 }
 
 // =====================================================================
-TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, bool usePrevious, string moviename) {
+TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, bool usePrevious, bool promptForReuse) {
   TagMap copied = previous; 
-
+  
   // synchronize tags/values and canonicals to start up
   // this loop is necessary in order to initialize all needed fields
-  for (vector<SM_MetaData>::iterator pos = mCanonicalMetaData.begin(); 
-       pos != mCanonicalMetaData.end(); ++pos) {
+  vector<SM_MetaData> canonical = CanonicalMetaData(promptForReuse); 
+  for (vector<SM_MetaData>::iterator pos = canonical.begin(); 
+       pos != canonical.end(); ++pos) {
     string tag = pos->mTag; 
     string previousType = copied[tag].TypeAsString(); 
     if (!usePrevious || previousType == "UNKNOWN" ) {
@@ -341,22 +346,22 @@ TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, bool us
       copied[tag] = *pos; 
     } 
   }
-  if (moviename != "") {
-    copied["Title"] = SM_MetaData("Title", moviename); 
-  } 
-
+  
   cout << "You will now be asked to supply values for the " << copied.size() << " 'canonical' tags.  At any time, you can enter 'e' or 'exit' to stop the input for this movie without saving your values, 's' or 'save' to stop the input and save your changes, 'm' or 'menu' to be presented with a menu, or a number to choose a different tag to enter.  If you just hit Enter, the default will be used." << endl;
-  cout << CanonicalOrderMetaDataSummary(copied, true) << endl; 
+  cout << CanonicalOrderMetaDataSummary(copied, true, promptForReuse) << endl; 
 
   string response; 
   int tagno = 0; 
   string tag = mCanonicalMetaData[tagno].mTag;
+  uint numCanonical = mCanonicalMetaData.size(); 
+  if (!promptForReuse) numCanonical -= 2; 
+
   response = readline(str(boost::format("Please enter a value for key %1% (default: \"%2%\"): ") % tag % copied[tag].ValueAsString()).c_str()); 
   while (true) {
     // Special case: if last response was to explicitly change entries, read new entry before continuing
     bool forcechange = false; 
     if (response == "c" || response == "change") {
-      response = readline(str(boost::format("Enter an integer to select a different tag (0-%1%), or use 'm', 'e', or 's': ")%(mCanonicalMetaData.size()-1)).c_str());
+      response = readline(str(boost::format("Enter an integer to select a different tag (0-%1%), or use 'm', 'e', or 's': ")%(numCanonical-1)).c_str());
       forcechange = true; 
     }
     
@@ -364,13 +369,13 @@ TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, bool us
       cout << "Exiting without saving changes." << endl; 
       return previous; 
     }
-    else if (response == "s" || response == "save" || tagno == mCanonicalMetaData.size()) {
+    else if (response == "s" || response == "save" || tagno == numCanonical) {
       cout << "Exiting and saving." << endl; 
       previous = copied; 
       return previous; 
     }     
     else if (response == "m" || response == "menu") {
-      cout << CanonicalOrderMetaDataSummary(copied, true) << endl; 
+      cout << CanonicalOrderMetaDataSummary(copied, true, promptForReuse) << endl; 
     } 
     else if (response == "") { 
       // The user hit 'enter', so skip over current
@@ -395,7 +400,7 @@ TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, bool us
         cout << "You entered a bad tag number, please try again.\n";
       }
       else if (forcechange || (gotnum && md.mType != METADATA_TYPE_INT64)) {
-        if (rval < 0 || rval >= mCanonicalMetaData.size()) {
+        if (rval < 0 || rval >= numCanonical) {
           cout << "You entered a bad tag number, please try again.\n"; 
         } 
         else {
@@ -415,7 +420,7 @@ TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, bool us
         }
       } 
     }
-    if (tagno == mCanonicalMetaData.size()) {
+    if (tagno == numCanonical) {
       response = readline("End of tags reached.  Type 's' to save and exit, 'm' to display a menu, 'e' to exit without saving tags, or a number to select an entry: "); 
     }
     else {
@@ -423,7 +428,6 @@ TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, bool us
       response = readline(str(boost::format("Please enter a value for key %1% (default: \"%2%\"): ") % tag % copied[tag].ValueAsString()).c_str()); 
     }
   }
-  
   return previous; 
 }
 
