@@ -54,11 +54,6 @@ void errexit(TCLAP::CmdLine &cmd, string msg) {
 }
 
 // =====================================================================
-void usage(TCLAP::CmdLine &cmd, char *argv0, string msg="") {
-  cmd.getOutput()->usage(cmd); 
-  return; 
-}
-// =====================================================================
 int main(int argc, char *argv[]) {
  
   TCLAP::CmdLine  cmd(str(boost::format("%1% sets and changes tags in movies.  You must supply at least one of -c, -d, -f, -R, -t, or -n, and at least one of -e or a list of filenames")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
@@ -93,18 +88,10 @@ int main(int argc, char *argv[]) {
 	return 1;
   }
   if (!movienames.getValue().size() && exportTagfile.getValue() == "" && !report.getValue()) {
-    string msg = string("*****************************************************************'\n") + 
-      "ERROR: You must supply at least one of -e, -R, or a list of filenames.\n" + 
-      "*****************************************************************\n";
-    usage(cmd, argv[0], msg); 
-    exit(1); 
+    errexit(cmd, "You must supply at least one of -e, -R, or a list of filenames.\n" ); 
   }
-  if (!canonical.getValue() && !deleteMD.getValue() && tagfile.getValue() == "" && !taglist.getValue().size() && thumbnail.getValue() == -1) {
-    string msg = string("*****************************************************************\n") +
-      "ERROR: You must supply at least one of -c, -d, -f, -R, -t, or -n.\n" +
-      "*****************************************************************\n"; 
-    usage(cmd, argv[0], msg); 
-    exit(1); 
+  if (!canonical.getValue() && !deleteMD.getValue() && tagfile.getValue() == "" && !taglist.getValue().size() && thumbnail.getValue() == -1 && exportTagfile.getValue() == "") {
+    errexit(cmd, "You must supply at least one of -c, -d, -E -f, -R, -t, or -n.\n"); 
   }
     
   smBase::init();
@@ -131,27 +118,27 @@ int main(int argc, char *argv[]) {
   }
 
   // Now, initialize canonical tags if the user wants to use that interface.
-  // This is a separate map because it can change from movie to movie.  
-  if (canonical.getValue() && !movienames.getValue().size()) {
-    // this needs to be here to make sure the -t flags can override the canonical flags
-    SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags, false, true);   
-  }
-  // ------------------------------------------------------------------------------------
-  if (exportTagfile.getValue() != "") {
-    SM_MetaData::WriteMetaDataToFile(exportTagfile.getValue(), tagmap);
-
-    if (report.getValue()) {
-      for (TagMap::iterator pos = canonicalTags.begin(); 
-           pos != canonicalTags.end(); pos++) {
-        if (tagmap.find(pos->first) == tagmap.end())
-          tagmap[pos->first] = canonicalTags[pos->first]; 
-      }
+  // This is a separate map because it can change from movie to movie. 
+  if (!movienames.getValue().size()) {
+    if (canonical.getValue()) {
+      // this needs to be here to make sure the -t flags can override the canonical flags
+      SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags, false, true);   
+    }
+    // ------------------------------------------------------------------------------------
+    if (exportTagfile.getValue() != "") {
+      SM_MetaData::WriteMetaDataToFile(exportTagfile.getValue(), tagmap);
+    
+      if (report.getValue()) {
+        for (TagMap::iterator pos = canonicalTags.begin(); 
+             pos != canonicalTags.end(); pos++) {
+          if (tagmap.find(pos->first) == tagmap.end())
+            tagmap[pos->first] = canonicalTags[pos->first]; 
+        }
       
-     cout << SM_MetaData::MetaDataSummary(tagmap) << endl; 
-    } // if (report.getValue())
-  }
-  else {
-    if (!movienames.getValue().size()) {
+        cout << SM_MetaData::MetaDataSummary(tagmap) << endl; 
+      } // if (report.getValue())
+    }
+    else {
       errexit(cmd, "Need name of a movie to operate on, or a tag file to export\n"); 
     }
   }
@@ -202,6 +189,10 @@ int main(int argc, char *argv[]) {
     if (report.getValue()) {        
       cout << SM_MetaData::MetaDataSummary(sm->GetMetaData()) << endl; 
     }    
+    if (exportTagfile.getValue() != "") {
+      moviedata = sm->GetMetaData(); 
+      SM_MetaData::WriteMetaDataToFile(exportTagfile.getValue(), moviedata);
+    }
     sm->WriteMetaData(); 
     sm->closeFile(); 
     dbprintf(1, str(boost::format("All flags applied for movie %1%\n") % moviename).c_str()); 
