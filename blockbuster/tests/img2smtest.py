@@ -162,10 +162,12 @@ tests = [
      "output": ["img2sm-canonical-tags.tagfile", "img2sm-canonical-tags.sm"],
      "failure_pattern": SCRIPT_FAILURE + IMG2SM_FAILURE,
      "success_pattern":
-     ["\( *ASCII\) steamtag * = \"boats\""],
+     ["\( *ASCII\) steamtag * = \"boats\"", "\( *ASCII\) Science Type * = \"bogus\""],
      "pexpect": [["Please enter a value for key Title.*:.*:", "", "3"],
                  ["Please enter a value for key Science.*:.*:", "", "bogus"],
-                 ["Please enter a value for key UCRL.*:.*:", "", "10"],
+                 ["Please enter a value for key UCRL.*:.*:", "", "8"],
+                 ["Please enter a value for key Sim CPUs.*:.*:", "", "10"],
+                 ["Please enter a value for key Sim Cluster.*:.*:", "", ""],
                  ["Please enter a value for key Keywords.*:.*:", "", "salmon, trout"],
                  ["Please enter a value for key .*Creator.*:.*:", "", "6"],
                  ["Please enter a value for key .*Sim Date.*:.*:", "", "Thu 1am "],
@@ -176,6 +178,7 @@ tests = [
                  ["Please enter a value for key .*Create Date.*:.*:", "", "June 18 "],
                  ["Please enter a value for key .*Create Host.*:.*:", "Invalid date.*", "115"],
                  ["You entered a bad tag number.*Please enter a value for key .*Create Host.*:.*:", "Invalid date.*", "m"],
+                 ["Please enter a value for key .*Create Host.*:.*:", "", "m"],
                  ["Please enter a value for key .*Create Host.*:.*:", "", "s"],
                  ]},
     
