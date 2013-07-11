@@ -138,7 +138,7 @@ tests = [
      "success_pattern":
      ["\( *DOUBLE\) doubletag *: value = 42.400000", 
       "\( *ASCII\) horsie tag *: value = \"horse feathers are fluffy\"", 
-      "\( *INT64\) testtag *: value = 78"] },
+     "\( *INT64\) testtag *: value = 78"] },
     
     # ===============================================       
     {"name": "smtag-from-file",
@@ -150,6 +150,7 @@ tests = [
      "success_pattern":
      ["\( *DOUBLE\) doubletag *: value = 42.400000", 
       "\( *DOUBLE\) doubletag2 *: value = 47.400000", 
+       "\( *ASCII\) Title *: value = \"quicksand-wildcard-11frames-lzma.sm\"", 
       "\( *ASCII\) horsie tag *: value = \"new horsie tag\"", 
       "\( *INT64\) testtag *: value = 78", 
       "\( *INT64\) testtag2 *: value = 82"] },
