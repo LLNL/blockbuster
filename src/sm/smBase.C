@@ -580,7 +580,7 @@ bool SM_MetaData::Write(int lfd)  const {
 ///==========================================================================
 off64_t SM_MetaData::Read(int lfd) {
   if (sizeof(double) != 8) {
-    smdbprintf(0, "FIXME!  Error!  Cannot properly read metadata object since a double is not 8 bytes!\n"); 
+    smdbprintf(0, "SM_MetaData::Read(() -- FIXME!  Error!  Cannot properly read metadata object since a double is not 8 bytes!\n"); 
     return 0; 
   } 
   off64_t filepos = LSEEK64(lfd,0,SEEK_CUR), startpos = 0; 
@@ -1136,8 +1136,13 @@ void smBase::readHeader(void)
    off64_t filepos = LSEEK64(lfd,0,SEEK_END);
    SM_MetaData md; 
    while (md.Read(lfd)) {
-     mMetaData[md.mTag] = md; 
      smdbprintf(5, "smBase::readHeader(): Read metadata: %s\n", md.toString().c_str());
+     if (md.mType == METADATA_TYPE_UNKNOWN) {
+       cerr << "Read METADATA_TYPE_UNKNOWN, skipping import." << endl; 
+     } 
+     else {
+       mMetaData[md.mTag] = md; 
+     }
    }
 
 
@@ -2315,6 +2320,10 @@ void smBase::WriteMetaData(void) {
   smdbprintf(5, "Truncated file to %ld bytes, writing new meta data section.\n", filepos); 
   TagMap::iterator pos = mMetaData.begin(), endpos = mMetaData.end(); 
   while (pos != endpos) {
+    if (pos->second.mType == METADATA_TYPE_UNKNOWN) {
+      cerr << "Cowardly refusing to write metadata of type METADATA_TYPE_UNKNOWN" << endl; 
+      continue;
+    }
     pos->second.Write(mThreadData[0].fd); 
     ++pos;  
   }
