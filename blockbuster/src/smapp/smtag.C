@@ -170,15 +170,17 @@ int main(int argc, char *argv[]) {
       cout << "Deleted metadata from " << moviename << endl; 
     }
     
-    //MergeTags(sm_getmetadata, canonicalTags);
-    
+    sm->SetMetaData(tagmap); 
+    TagMap moviedata = sm->GetMetaData(); 
+
     //--------------------------------------------------
     if (canonical.getValue()) {      
-      canonicalTags["Title"] = SM_MetaData("Title", moviename); 
-      if (canonicalTags[APPLY_ALL_TAG].ValueAsString() != "yes") {
-        SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags, true, true);   
-      } 
-      sm->SetMetaData(canonicalTags); 
+      if (moviedata["Title"].ValueAsString() == "") {
+        moviedata["Title"] =  SM_MetaData("Title", moviename); 
+      }
+      SM_MetaData::GetCanonicalMetaDataValuesFromUser(moviedata, true, true);
+      
+      sm->SetMetaData(moviedata); 
     }
     
     //--------------------------------------------------
