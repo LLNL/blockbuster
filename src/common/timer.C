@@ -234,7 +234,7 @@ bool GetTimeFromString(string s, struct tm &tms) {
               const char *sp = s.c_str(); 
               m = strptime(sp, timestrings[i].c_str(), &tms);
               if (m && !*m) {
-                cerr << "matched format " << numattempts << ": " << timestrings[i] << endl; 
+                //cerr << "matched format " << numattempts << ": " << timestrings[i] << endl; 
                 return true;           
               }
             }
@@ -243,7 +243,7 @@ bool GetTimeFromString(string s, struct tm &tms) {
       }
     }
   }
-  cerr << "no format matches \"" << s <<"\" out of " << numattempts << endl;
+  //cerr << "no format matches \"" << s <<"\" out of " << numattempts << endl;
   return false; 
 }
 

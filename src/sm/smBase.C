@@ -628,16 +628,17 @@ off64_t SM_MetaData::Read(int lfd) {
   if (mType == METADATA_TYPE_ASCII || mType == METADATA_TYPE_DATE) {
     uint64_t stringlen; 
     ReadAndSwap(lfd, &stringlen, 1, needswap);
-    if (mType == METADATA_TYPE_DATE && stringlen > 100000) {
-      cerr << "Warning: Suspect corrupt date; ignoring and setting to empty string" << endl; 
-      stringlen = 0; 
+    if (!stringlen || (mType == METADATA_TYPE_DATE && stringlen > 100000)) {
+      smdbprintf(0, "Warning: Suspect corrupt date; ignoring and setting to empty string\n");  
+    } else {
+      smdbprintf(5, "SM_MetaData::Read(): read (2b) stringlen %d at pos %d\n", stringlen, filepos); 
+      filepos = LSEEK64(lfd,0,SEEK_CUR);
+      char buf[stringlen+1]; 
+      *buf = 0; 
+      READ(lfd, buf, stringlen+1); 
+      mAscii = buf; 
+      smdbprintf(5, "SM_MetaData::Read(): read (2c) string %s at pos %d\n", &mAscii[0], filepos); 
     }
-    smdbprintf(5, "SM_MetaData::Read(): read (2b) stringlen %d at pos %d\n", stringlen, filepos); 
-    filepos = LSEEK64(lfd,0,SEEK_CUR);
-    char buf[stringlen+1];
-    READ(lfd, buf, stringlen+1); 
-    mAscii = buf; 
-    smdbprintf(5, "SM_MetaData::Read(): read (2c) string %s at pos %d\n", &mAscii[0], filepos); 
   }
   else if (mType == METADATA_TYPE_DOUBLE) {
     ReadAndSwap(lfd, &mDouble,  1, needswap);    
