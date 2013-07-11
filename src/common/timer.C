@@ -243,7 +243,7 @@ bool GetTimeFromString(string s, struct tm &tms) {
       }
     }
   }
-  //cerr << "no format matches out of " << numattempts << endl;
+  cerr << "no format matches \"" << s <<"\" out of " << numattempts << endl;
   return false; 
 }
 

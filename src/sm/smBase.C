@@ -535,7 +535,7 @@ bool SM_MetaData::Write(int lfd)  const {
   smdbprintf(5, "SM_MetaData::Write() wrote (2a) payload type %s at pos %d\n", TypeAsString().c_str(), filepos); 
 
   filepos = LSEEK64(lfd,0,SEEK_CUR);     
-  if (mType == METADATA_TYPE_ASCII) {
+  if (mType == METADATA_TYPE_ASCII || mType == METADATA_TYPE_DATE) {
     uint64_t stringlen = mAscii.size()+1; 
     SwapAndWrite(lfd, &stringlen, 1, needswap);
     smdbprintf(5, "SM_MetaData::Write() wrote (2b) payload string length %d  at pos %d\n",stringlen, filepos); 
@@ -625,9 +625,13 @@ off64_t SM_MetaData::Read(int lfd) {
   smdbprintf(5, "SM_MetaData::Read(): read (2a) payload type %s at pos %d\n", TypeAsString().c_str(), filepos); 
   filepos = LSEEK64(lfd,0,SEEK_CUR);
 
-  if (mType == METADATA_TYPE_ASCII) {
+  if (mType == METADATA_TYPE_ASCII || mType == METADATA_TYPE_DATE) {
     uint64_t stringlen; 
     ReadAndSwap(lfd, &stringlen, 1, needswap);
+    if (mType == METADATA_TYPE_DATE && stringlen > 100000) {
+      cerr << "Warning: Suspect corrupt date; ignoring and setting to empty string" << endl; 
+      stringlen = 0; 
+    }
     smdbprintf(5, "SM_MetaData::Read(): read (2b) stringlen %d at pos %d\n", stringlen, filepos); 
     filepos = LSEEK64(lfd,0,SEEK_CUR);
     char buf[stringlen+1];

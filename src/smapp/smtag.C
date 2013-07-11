@@ -60,6 +60,8 @@ int main(int argc, char *argv[]) {
 
   TCLAP::UnlabeledMultiArg<string> movienames("movienames", "movie name(s)", false, "movie name(s)", cmd); 
  
+  TCLAP::SwitchArg interactive("I", "interactive", "Enter the metadata for a movie interactively.", cmd); 
+
   TCLAP::SwitchArg canonical("C", "canonical", "Enter the canonical metadata for a movie interactively.", cmd); 
 
   TCLAP::SwitchArg deleteMD("D", "delete-metadata", "Delete all meta data in the file before applying any other tags.  If given alone, then the file will have no metadata when finished.", cmd); 
@@ -157,6 +159,7 @@ int main(int argc, char *argv[]) {
       cout << "Deleted metadata from " << moviename << endl; 
     }
     
+    smdbprintf(5, "Adding tagmap to movie %s\n", moviename.c_str()); 
     sm->SetMetaData(tagmap); 
     TagMap moviedata = sm->GetMetaData(); 
 
@@ -171,8 +174,8 @@ int main(int argc, char *argv[]) {
     }
     
     //--------------------------------------------------
-    smdbprintf(5, "Adding tagmap to movie %s\n", moviename.c_str()); 
-    sm->SetMetaData(tagmap); 
+    //smdbprintf(5, "Adding tagmap to movie %s\n", moviename.c_str()); 
+    //sm->SetMetaData(tagmap); 
     
     //--------------------------------------------------
     if (thumbnail.getValue() != -1)  {
