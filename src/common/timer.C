@@ -143,7 +143,7 @@ bool GetTimeFromString(string s, struct tm &tms) {
   //vector<string> GetTimeStrings(void) {
   
   boost::trim(s);
-  cerr << "Checking time \"" << s << "\"" << endl;
+  //cerr << "Checking time \"" << s << "\"" << endl;
   vector<string> delims; 
   delims.push_back(" "); 
   delims.push_back(" , "); 
@@ -238,7 +238,7 @@ bool GetTimeFromString(string s, struct tm &tms) {
       }
     }
   }
-  cerr << "no format matches out of " << numattempts << endl;
+  //cerr << "no format matches out of " << numattempts << endl;
   return false; 
 }
 
