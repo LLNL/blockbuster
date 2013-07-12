@@ -281,13 +281,14 @@ bool SM_MetaData::GetMetaDataFromFile(string tagfile,  TagMap&mdmap){
   return success; 
 }
 
+
 // =====================================================================
-bool SM_MetaData::WriteMetaDataToFile(string filename, TagMap&mdmap) {
+bool SM_MetaData::WriteMetaDataToStream(ofstream &ofile, TagMap &mdmap) {
   using boost::property_tree::ptree; 
   ptree pt;
   for (TagMap::iterator pos = mdmap.begin(); pos != mdmap.end(); pos++) {
-    if (pos->first == APPLY_ALL_TAG || pos->first == USE_TEMPLATE_TAG) {
-      smdbprintf(5, "Skipping tag %s\n", pos->first.c_str()); 
+    if (pos->first == APPLY_ALL_TAG || pos->first == USE_TEMPLATE_TAG || pos->second.mType == METADATA_TYPE_UNKNOWN) {
+      smdbprintf(5, "Skipping tag %s of type %s\n", pos->first.c_str(), pos->second.TypeAsString().c_str()); 
       continue; 
     }
     string tag = pos->first; 
@@ -296,7 +297,7 @@ bool SM_MetaData::WriteMetaDataToFile(string filename, TagMap&mdmap) {
   }    
   bool success = true; 
   try {
-    write_json(filename, pt);
+    write_json(ofile, pt);
   } catch (...) {
     success = false; 
   }

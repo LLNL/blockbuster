@@ -107,8 +107,8 @@ tests = [
     {"name": "steamboat-globbed-allframes-with-tagfile",
      "need_data": "steamboat", 
      'cmd': "img2sm",
-     "args": "-L -T 'testtag2:steamboat' -E steamboat.tagfile steamboat/*png steamboat-globbed-allframes.sm", 
-     "output": "steamboat.tagfile",
+     "args": "--report -T 'testtag2:steamboat' -E steamboat/*png steamboat-globbed-allframes.sm", 
+     "output": "steamboat-globbed-allframes.tagfile",
      "failure_pattern": IMG2SM_FAILURE,
      "success_pattern":
      ["\( *ASCII\) testtag2 *= \"steamboat\"",
@@ -132,8 +132,8 @@ tests = [
     {"name": "smtag-filegen",
      "need_data": None, 
      'cmd': "smtag",
-     "args": "-v 5 -L -T 'testtag: 78 :INT64' -T 'doubletag: 42.4 :DOUBLE' -T 'horsie tag:horse feathers are fluffy' -E smtag-quicksand.tagfile", 
-     "output": "smtag-quicksand.tagfile",
+     "args": "-v 5 --report -T 'testtag: 78 :INT64' -T 'doubletag: 42.4 :DOUBLE' -T 'horsie tag:horse feathers are fluffy' -E ", 
+     "output": "tags.tagfile",
      "failure_pattern": SMQUERY_FAILURE,
      "success_pattern":
      ["\( *DOUBLE\) doubletag *: value = 42.400000", 
@@ -142,10 +142,10 @@ tests = [
     
     # ===============================================       
     {"name": "smtag-from-file",
-     "need_data": ["quicksand-wildcard-11frames-lzma.sm","smtag-quicksand.tagfile"], 
+     "need_data": ["quicksand-wildcard-11frames-lzma.sm","tags.tagfile"], 
      'cmd': "smtag",
-     "args": "-v 5 -L -T 'testtag2: 82 :INT64' -T 'doubletag2: 47.4 :DOUBLE' -T 'horsie tag:new horsie tag' -F smtag-quicksand.tagfile quicksand-wildcard-11frames-lzma.sm", 
-     "output": "smtag-quicksand.tagfile",
+     "args": "-v 5 --report -T 'testtag2: 82 :INT64' -T 'doubletag2: 47.4 :DOUBLE' -T 'horsie tag:new horsie tag' -E -F tags.tagfile quicksand-wildcard-11frames-lzma.sm", 
+     "output": "quicksand-wildcard-11frames-lzma.tagfile",
      "failure_pattern": SMQUERY_FAILURE,
      "success_pattern":
      ["\( *DOUBLE\) doubletag *: value = 42.400000", 
@@ -159,7 +159,7 @@ tests = [
     {"name": "img2sm-canonical-pexpect-steamboat",
      "need_data": "steamboat", 
      'cmd': "img2sm",
-     "args": "steamboat/* -L -C -T steamtag:boats -E img2sm-canonical-tags.tagfile img2sm-canonical-tags.sm",
+     "args": "steamboat/* --report -C -T steamtag:boats -E  img2sm-canonical-tags.sm",
      "output": ["img2sm-canonical-tags.tagfile", "img2sm-canonical-tags.sm"],
      "failure_pattern": SCRIPT_FAILURE + IMG2SM_FAILURE,
      "success_pattern":

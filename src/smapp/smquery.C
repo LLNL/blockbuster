@@ -2,20 +2,21 @@
 #include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string/replace.hpp>
 #include <boost/regex.hpp>
 #include <sm/sm.h>
 #include <vector>
+#include <fstream>
 #include "version.h"
 #include "debugutil.h"
 using namespace std; 
 
-//===================================================================
-void usage(TCLAP::CmdLine  &cmd, char *prog) {
-  char *helpargs[3] = {prog, (char*)"--help", NULL}; 
-  int helpargc = 2; 
-  cmd.reset(); 
-  cmd.parse(helpargc, helpargs); 
-  return; 
+// =======================================================================
+void errexit(TCLAP::CmdLine &cmd, string msg) {
+  cerr << endl << "*** ERROR *** : " << msg  << endl<< endl;
+  cmd.getOutput()->usage(cmd); 
+  cerr << endl << "*** ERROR *** : " << msg << endl << endl;
+  exit(1); 
 }
 
 //===================================================================
@@ -41,40 +42,37 @@ int main(int argc, char *argv[]) {
 
   TCLAP::SwitchArg canonical("c", "canonical", "List all canonical tags for each movie", cmd); 
 
+  TCLAP::SwitchArg exportThumb("e", "export-thumbnail", "Export thumbnail frame (not working yet)", cmd); 
+
   TCLAP::SwitchArg filenameOnly("f", "only-filename", "Only print the filename of the matching movie(s).", cmd); 
 
   TCLAP::SwitchArg getinfoFlag("i", "movie-info", "Get non-metadata info for movie, such as compression type, number of frames, etc.", cmd); 
 
-  TCLAP::UnlabeledMultiArg<string> movienames("movienames", "movie name(s)", true, "movie name(s)", cmd); 
-
-  TCLAP::SwitchArg matchAllFlag("A", "match-all", "Same as -T '.*' -V '.*', matches everything everywhere.", cmd); 
-
   TCLAP::SwitchArg list("l", "list", "Lists all tags in movie(s) with their values.  Equivalent to -T '.*' -s.  This is the default behavior", cmd); 
-
-  TCLAP::MultiArg<string> tagPatternStrings("T", "Tag", "Regexp pattern to match the tag name being queried", false, "regexp", cmd); 
-
-  TCLAP::MultiArg<string> valuePatternStrings("V", "Value", "Regexp pattern to match the name the tag being queried", false, "regexp", cmd); 
 
   TCLAP::SwitchArg thumbnailInfo("n", "thumbnail-info", "get number of thumbnail and resolution", cmd); 
 
-  //TCLAP::SwitchArg singleLineFlag("s", "summary", "Summarize: For each movie, report each match as tag, type and value on a line together.", cmd); 
-
-  TCLAP::SwitchArg exportThumb("e", "export-thumbnail", "Export thumbnail frame (not working yet)", cmd); 
-
-  TCLAP::ValueArg<string> exportTagfile("E", "export-tagfile", "Extract a tag file from the movie which can be read with smtag.", false, "", "filename", cmd); 
   TCLAP::SwitchArg quiet("q", "quiet", "wDo not echo the tags to stdout.  Just return 0 on successful match. ", cmd); 
 
-
-
   TCLAP::ValueArg<int> verbosity("v", "verbosity", "set verbosity (0-5)", false, 0, "int", cmd); 
+
+  TCLAP::SwitchArg matchAllFlag("A", "match-all", "Same as -T '.*' -V '.*', matches everything everywhere.", cmd); 
+
+  TCLAP::SwitchArg exportTagfile("E", "export-tagfile", "Extract a tag file from each movie which can be read with smtag.", cmd); 
+
+  TCLAP::ValueArg<string> lorenzFileName("L", "lorenz-format", "Export a single JSON file, suitable for Lorenz import, containing tags for all movies.", false, "", "filename", cmd); 
+
+  TCLAP::MultiArg<string> tagPatternStrings("T", "Tag", "Regex pattern to match the tag name being queried", false, "regexp", cmd); 
+
+  TCLAP::MultiArg<string> valuePatternStrings("V", "Value", "Regex pattern to match the value of any tags being queried", false, "regexp", cmd); 
+
+  TCLAP::UnlabeledMultiArg<string> movienames("movienames", "movie name(s)", true, "movie name(s)", cmd); 
 
 
   try {
 	cmd.parse(argc, argv);
   } catch(std::exception &e) {
-	std::cout << e.what() << std::endl;
-    usage(cmd, argv[0]); 
-	exit(1);
+    errexit(cmd, e.what()); 
   }
   
   bool matchAll = matchAllFlag.getValue(), singleLine = true; //  = singleLineFlag.getValue(); 
@@ -105,6 +103,13 @@ int main(int argc, char *argv[]) {
       valuePatterns.push_back(boost::regex(patternStrings[patno])); 
     }
   }  
+  ofstream lorenzFile;
+  if (lorenzFileName.getValue() != "") {
+    lorenzFile.open(lorenzFileName.getValue().c_str()); 
+    if (!lorenzFile) {
+      errexit(cmd, str(boost::format("Error:  could not open lorenz file %s for writing") % lorenzFileName.getValue())); 
+    }
+  }
 
   smBase::init();
   sm_setVerbose(verbosity.getValue());  
@@ -117,22 +122,41 @@ int main(int argc, char *argv[]) {
     string filename = movienames.getValue()[fileno]; 
     smBase *sm = smBase::openFile(filename.c_str(), 1);
     if (!sm) {
-      dbprintf(0, "\n***********************************************\n"); 
-      dbprintf(0, "ERROR: could not open file %s.  Did you make a mistake in your arguments?\n", filename.c_str()); 
-      dbprintf(0, "***********************************************\n"); 
-      usage(cmd, argv[0]); 
-      exit(1); 
+      errexit(cmd, "ERROR: could not open movie file %s."); 
     }
 
     // Movie info case... (both sminfo and sm2img file)
     if (getinfo) {  
       smdbprintf(0, (sm->InfoString(verbosity.getValue())+"\n").c_str()); 
     }
-    if (exportTagfile.getValue() != "") {
+    if (exportTagfile.getValue()) {
       TagMap moviedata = sm->GetMetaData(); 
-      SM_MetaData::WriteMetaDataToFile(exportTagfile.getValue(), moviedata);
+      string filename = sm->getName(); 
+      boost::replace_last(filename, ".sm", ".tagfile"); 
+      if (filename == sm->getName()) {
+        filename = filename + ".tagfile"; 
+      }
+      ofstream tagfile(filename.c_str()); 
+      if (!tagfile) {
+        errexit(cmd, str(boost::format("Error:  could not open tag file %s for movie %s")% filename %  sm->getName())); 
+      }
+      SM_MetaData::WriteMetaDataToStream(tagfile, moviedata);
       if (quiet.getValue()) {
         continue; 
+      } else {
+        cout << "Wrote movie meta data tag file " << filename << endl; 
+      }
+    }
+    if (lorenzFile) {
+      TagMap moviedata = sm->GetMetaData(); 
+      if (fileno) {
+        lorenzFile << ",\n"; 
+      } else {
+        lorenzFile << "[\n"; 
+      }
+      SM_MetaData::WriteMetaDataToStream(lorenzFile, moviedata);
+      if (fileno ==movienames.getValue().size()-1) {
+        lorenzFile << "]\n"; 
       }
     }
       
@@ -168,7 +192,7 @@ int main(int argc, char *argv[]) {
         }
       }
       else {
-        if (/*singleLine && */(tagmatch || valuematch)) {
+        if ((tagmatch || valuematch)) {
           string matchtype; 
           if (matchAll) {
             matchtype = str(boost::format("Got Item: ")); 
@@ -188,15 +212,7 @@ int main(int argc, char *argv[]) {
           valueTypes.push_back(mdtype); 
           matchTypes.push_back(matchtype); 
         }
-        /*else {
-          if (tagmatch) {
-            cout << str(boost::format("%1%: Tag Match: %2%") % filename % mdtag) << endl;
-          }  
-          if (valuematch) {
-            cout << str(boost::format("%1%: Value Match: %2%") % filename % mdvalue) << endl;
-          }
-          }*/ 
-      }
+     }
       if (thumbnailInfo.getValue()) {
         if (mdtag == "SM__thumbframe") {
           thumbnum = pos->second.mInt64; 
