@@ -345,7 +345,7 @@ struct SM_MetaData {
   static string GetCanonicalTagType(string tag);
   static TagMap CanonicalMetaDataAsMap(bool includePrompts);
   static bool GetMetaDataFromFile(string metadatafile, TagMap &metadatavec);
-  static bool  WriteMetaDataToFile(string metadatafile, TagMap &metadatavec);
+  static bool  WriteMetaDataToStream(ofstream &ofile, TagMap &metadatavec);
   static string CanonicalOrderMetaDataSummary( TagMap metadatavalues, bool withnums, bool promptForReuse);
   static string MetaDataSummary(const TagMap metadatavalues, bool withnums=false);
   static TagMap GetCanonicalMetaDataValuesFromUser(TagMap &previousMap, bool usePrevious, bool promptForReuse);
@@ -636,13 +636,13 @@ class smBase {
 
   void WriteMetaData(void);
 
-  bool ExportMetaData(string filename) {  
-    if (mMetaData.size() ) {
-      smdbprintf(2, "Writing metadata to file %s\n", filename.c_str()); 
-      return SM_MetaData::WriteMetaDataToFile(filename, mMetaData); 
-    } 
+  bool ExportMetaData(ofstream &ofile) {  
+    if (mMetaData.size()) {
+      return SM_MetaData::WriteMetaDataToStream(ofile, mMetaData); 
+    }
     return false; 
   }
+
   bool ImportMetaData(string filename) {
     if (mMetaData.size() ) {
       smdbprintf(2, "Importing metadata from file %s\n", filename.c_str()); 

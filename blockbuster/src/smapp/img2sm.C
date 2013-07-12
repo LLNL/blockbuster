@@ -46,6 +46,7 @@
 #include <math.h>
 #include <libgen.h>
 #include <sm/sm.h>
+#include <fstream>
 
 #include "zlib.h"
 #include "pngsimple.h"
@@ -56,6 +57,7 @@
 #include "version.h"
 #include <tclap_utils.h>
 #include "timer.h"
+
 
 // http://www.highscore.de/boost/process0.5/boost_process/tutorial.html
 // #include <boost/process.hpp>
@@ -453,9 +455,9 @@ int main(int argc,char **argv)
 
   TCLAP::SwitchArg canonical("C", "canonical", "Enter the canonical metadata for a movie interactively.", cmd); 
 
-  TCLAP::ValueArg<string> exportTagfile("E", "export-tagfile", "Instead of applying tags to a movie, create a tag file from the current session which can be read with -f to start another smtag session.", false, "", "filename", cmd); 
+  TCLAP::SwitchArg exportTagfile("E", "export-tagfile", "Create a tag file from the current session which can be read by img2sm or smtag.", cmd); 
   
-  TCLAP::ValueArg<string> tagfile("", "tagfile", "a file containing name:value pairs to be set", false, "", "filename", cmd); 
+  TCLAP::ValueArg<string> tagfile("F", "tagfile", "a file containing name:value pairs to be set", false, "", "filename", cmd); 
   
   TCLAP::MultiArg<string> taglist("T", "tag", "a name:value[:type] for a tag being set or added.  'type' can be 'ASCII', 'DOUBLE', or 'INT64' and defaults to 'ASCII'.", false, "tagname:value[:type]", cmd); 
 
@@ -465,8 +467,10 @@ int main(int argc,char **argv)
 
   TCLAP::ValueArg<int> thumbres("R", "thumbres", "the X resolution of the thumbnail (Y res will be autoscaled based on X res)", false, 0, "numpixels", cmd); 
 
-  TCLAP::SwitchArg report("L", "list", "After all operations are complete, list all the tags in the file.", cmd); 
+  TCLAP::SwitchArg report("", "report", "After all operations are complete, list all the tags in the file.", cmd); 
   
+  TCLAP::SwitchArg quiet("q", "quiet", "Do not echo the tags to stdout.  Just return 0 on successful match. ", cmd); 
+
  
 
   /*!
@@ -490,7 +494,7 @@ int main(int argc,char **argv)
   */ 
   TCLAP::ValueArg<string> tilesizes("", "tilesizes", "Size of tiles in movie", false, "512", "M for square tiles, MxN for rectangular tiles", cmd); 
   TCLAP::ValueArg<int> mipmaps("m", "mipmaps", "Number of mipmaps (levels of detail) to create",false, 1, "integer", cmd); 
-  TCLAP::ValueArg<int> quality("q", "quality", "Jpeg compression quality, from 0-100",false, 75, "integer", cmd); 
+  TCLAP::ValueArg<int> quality("", "quality", "Jpeg compression quality, from 0-100",false, 75, "integer", cmd); 
 
   TCLAP::ValueArg<int> buffersize("b", "buffersize", "Number of frames to buffer.  Default is 200.  Using lower values saves memory but may decrease performance, and vice versa.",false, 200, "integer", cmd); 
 
@@ -505,7 +509,7 @@ int main(int argc,char **argv)
   TCLAP::ValuesConstraint<string> *allowed = new TCLAP::ValuesConstraint<string>(allowedformats); 
   if (!allowed) 
     errexit("Cannot create values constraint for formats\n"); 
-  TCLAP::ValueArg<string>format("F", "Format", "Format of output files (use if name does not make this clear)", false, "default", allowed); 
+  TCLAP::ValueArg<string>format("", "format", "Format of output files (use if name does not make this clear)", false, "default", allowed); 
   cmd.add(format); 
   //delete allowed; 
 
@@ -973,11 +977,21 @@ int main(int argc,char **argv)
       smdbprintf(2, "Set thumbnail metadata.\n"); 
     }
     //sm->WriteMetaData(); 
-    if (exportTagfile.getValue() != "") {      
-      if (!sm->ExportMetaData(exportTagfile.getValue())) {
-        cerr << "Warning:  could not export metadata to file " << exportTagfile.getValue() << endl; 
+    if (exportTagfile.getValue()) {      
+      TagMap moviedata = sm->GetMetaData(); 
+      string filename = sm->getName(); 
+      boost::replace_last(filename, ".sm", ".tagfile"); 
+      if (filename == sm->getName()) {
+        filename = filename + ".tagfile"; 
       }
-      cout << str(boost::format("Exported metadata to file %s\n")%exportTagfile.getValue()); 
+      ofstream tagfile(filename.c_str()); 
+      if (!tagfile) {
+        errexit(cmd, str(boost::format("Error:  could not open tag file %s for movie %s")% filename %  sm->getName())); 
+      }
+      SM_MetaData::WriteMetaDataToStream(tagfile, moviedata);
+      if (!quiet.getValue()) {
+        cout << "Wrote movie meta data tag file " << filename << endl; 
+      }
     }
   }
   

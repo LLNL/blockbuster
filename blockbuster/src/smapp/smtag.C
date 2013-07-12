@@ -40,6 +40,7 @@
 #include "sm/sm.h" 
 #include "debugutil.h"
 #include <map> 
+#include <fstream>
 typedef boost::tokenizer<boost::char_separator<char> >  tokenizer;
 
 
@@ -60,28 +61,32 @@ int main(int argc, char *argv[]) {
 
   TCLAP::UnlabeledMultiArg<string> movienames("movienames", "movie name(s)", false, "movie name(s)", cmd); 
  
-  TCLAP::SwitchArg interactive("I", "interactive", "Enter the metadata for a movie interactively.", cmd); 
+  TCLAP::SwitchArg quiet("q", "quiet", "wDo not echo the tags to stdout.  Just return 0 on successful match. ", cmd); 
 
+  TCLAP::SwitchArg report("r", "report", "After all operations are complete, list all the tags in the file.", cmd); 
+  
   TCLAP::SwitchArg canonical("C", "canonical", "Enter the canonical metadata for a movie interactively.", cmd); 
 
   TCLAP::SwitchArg deleteMD("D", "delete-metadata", "Delete all meta data in the file before applying any other tags.  If given alone, then the file will have no metadata when finished.", cmd); 
   
-  TCLAP::ValueArg<string> exportTagfile("E", "export-tagfile", "Instead of applying tags to a movie, create a tag file from the current session which can be read with -f to start another smtag session.", false, "", "filename", cmd); 
+  TCLAP::SwitchArg exportTagfile("E", "export-tagfile", "Instead of or in addition to applying tags to a movie, create a tag file from the current session which can be read with -f to feed another smtag session.  The tagfile name: moviename is used ending with '.tagfile' instead of '.sm'",  cmd); 
   
   TCLAP::ValueArg<string> tagfile("F", "tagfile", "a file containing name:value pairs to be set", false, "", "filename", cmd); 
   
-  TCLAP::MultiArg<string> taglist("T", "tag", "a name:value[:type] for a tag being set or added.  'type' can be 'ASCII', 'DOUBLE', or 'INT64' and defaults to 'ASCII'.", false, "tagname:value[:type]", cmd); 
-
-  TCLAP::ValueArg<string> delimiter("", "delimiter", "Sets the delimiter for all -T arguments.",false, ":", "string", cmd); 
+  TCLAP::SwitchArg interactive("I", "interactive", "Enter the metadata for a movie interactively.", cmd); 
+  
+  TCLAP::ValueArg<string> lorenzFileName("L", "lorenz-format", "Export a single JSON file, suitable for Lorenz import, containing tags for all movies.", false, "", "filename", cmd); 
 
   TCLAP::ValueArg<int> thumbnail("N", "thumbnail", "set frame number of thumbnail", false, -1, "frameNum", cmd); 
 
   TCLAP::ValueArg<int> thumbres("R", "thumbres", "the X resolution of the thumbnail (Y res will be autoscaled based on X res)", false, 0, "numpixels", cmd); 
 
-  TCLAP::SwitchArg report("L", "list", "After all operations are complete, list all the tags in the file.", cmd); 
-  
-  TCLAP::ValueArg<int> verbosity("v", "verbosity", "set verbosity (0-5)", false, 0, "int", cmd); 
+  TCLAP::MultiArg<string> taglist("T", "tag", "a name:value[:type] for a tag being set or added.  'type' can be 'ASCII', 'DOUBLE', or 'INT64' and defaults to 'ASCII'.", false, "tagname:value[:type]", cmd); 
 
+  TCLAP::ValueArg<string> delimiter("", "delimiter", "Sets the delimiter for all -T arguments.",false, ":", "string", cmd); 
+
+  TCLAP::ValueArg<int> verbosity("v", "verbosity", "set verbosity (0-5)", false, 0, "int", cmd); 
+  
   //------------------------------------------------------------
   try {
 	cmd.parse(argc, argv);
@@ -89,19 +94,13 @@ int main(int argc, char *argv[]) {
 	std::cout << e.what() << std::endl;
 	return 1;
   }
-  if (!movienames.getValue().size() && exportTagfile.getValue() == "" && !report.getValue()) {
-    errexit(cmd, "You must supply at least one of -e, -R, or a list of filenames.\n" ); 
-  }
-  if (!canonical.getValue() && !deleteMD.getValue() && tagfile.getValue() == "" && !taglist.getValue().size() && thumbnail.getValue() == -1 && exportTagfile.getValue() == "") {
-    errexit(cmd, "You must supply at least one of -c, -d, -E -f, -R, -t, or -n.\n"); 
-  }
     
   smBase::init();
   sm_setVerbose(verbosity.getValue());  
   dbg_setverbose(verbosity.getValue()); 
-
+  
   SM_MetaData::SetDelimiter(delimiter.getValue()); 
-
+  
   TagMap tagmap; 
   TagMap canonicalTags; 
   
@@ -109,7 +108,7 @@ int main(int argc, char *argv[]) {
   if (tagfile.getValue() != "") {
     SM_MetaData::GetMetaDataFromFile(tagfile.getValue(), tagmap); 
   }
-
+  
   // Next, override with any tags explicitly from the command line. 
   if (taglist.getValue().size()) {
     for (uint tagnum = 0; tagnum < taglist.getValue().size(); tagnum++) {
@@ -118,30 +117,42 @@ int main(int argc, char *argv[]) {
       tagmap[md.mTag] = md; 
     }
   }
-
+  
+  ofstream lorenzFile;
+  if (lorenzFileName.getValue() != "") {
+    lorenzFile.open(lorenzFileName.getValue().c_str()); 
+    if (!lorenzFile) {
+      errexit(cmd, str(boost::format("Error:  could not open lorenz file %s for writing") % lorenzFileName.getValue())); 
+    }
+  }
   // Now, initialize canonical tags if the user wants to use that interface.
   // This is a separate map because it can change from movie to movie. 
   if (!movienames.getValue().size()) {
     if (canonical.getValue()) {
       // this needs to be here to make sure the -t flags can override the canonical flags
-      SM_MetaData::GetCanonicalMetaDataValuesFromUser(canonicalTags, false, true);   
+      SM_MetaData::GetCanonicalMetaDataValuesFromUser(tagmap, false, true);   
     }
     // ------------------------------------------------------------------------------------
-    if (exportTagfile.getValue() != "") {
-      SM_MetaData::WriteMetaDataToFile(exportTagfile.getValue(), tagmap);
     
-      if (report.getValue()) {
-        for (TagMap::iterator pos = canonicalTags.begin(); 
-             pos != canonicalTags.end(); pos++) {
-          if (tagmap.find(pos->first) == tagmap.end())
-            tagmap[pos->first] = canonicalTags[pos->first]; 
-        }
-      
-        cout << SM_MetaData::MetaDataSummary(tagmap) << endl; 
-      } // if (report.getValue())
+    if (report.getValue()) {      
+      cout << SM_MetaData::MetaDataSummary(tagmap) << endl; 
+    } // if (report.getValue())
+  
+    if (exportTagfile.getValue()) {
+      string filename = "tags.tagfile"; 
+      ofstream tagfile(filename.c_str()); 
+      if (!tagfile) {
+        errexit(cmd, str(boost::format("Error:  could not open tag file %s")% filename)); 
+      }
+      SM_MetaData::WriteMetaDataToStream(tagfile, tagmap);
+      if (!quiet.getValue()) {
+        cout << "Wrote movie meta data tag file " << filename << endl; 
+      }
     }
-    else {
-      errexit(cmd, "Need name of a movie to operate on, or a tag file to export\n"); 
+    if (lorenzFile) {
+      lorenzFile << "[\n"; 
+      SM_MetaData::WriteMetaDataToStream(lorenzFile, tagmap);
+      lorenzFile << "]\n"; 
     }
   }
   
@@ -192,10 +203,37 @@ int main(int argc, char *argv[]) {
     if (report.getValue()) {        
       cout << SM_MetaData::MetaDataSummary(sm->GetMetaData()) << endl; 
     }    
-    if (exportTagfile.getValue() != "") {
-      moviedata = sm->GetMetaData(); 
-      SM_MetaData::WriteMetaDataToFile(exportTagfile.getValue(), moviedata);
+    if (exportTagfile.getValue()) {
+      TagMap moviedata = sm->GetMetaData(); 
+      string filename = sm->getName(); 
+      boost::replace_last(filename, ".sm", ".tagfile"); 
+      if (filename == sm->getName()) {
+        filename = filename + ".tagfile"; 
+      }
+      ofstream tagfile(filename.c_str()); 
+      if (!tagfile) {
+        errexit(cmd, str(boost::format("Error:  could not open tag file %s for movie %s")% filename %  sm->getName())); 
+      }
+      SM_MetaData::WriteMetaDataToStream(tagfile, moviedata);
+      if (quiet.getValue()) {
+        continue; 
+      } else {
+        cout << "Wrote movie meta data tag file " << filename << endl; 
+      }
     }
+    if (lorenzFile) {
+      TagMap moviedata = sm->GetMetaData(); 
+      if (fileno) {
+        lorenzFile << ",\n"; 
+      } else {
+        lorenzFile << "[\n"; 
+      }
+      SM_MetaData::WriteMetaDataToStream(lorenzFile, moviedata);
+      if (fileno ==movienames.getValue().size()-1) {
+        lorenzFile << "]\n"; 
+      }
+    }
+    
     sm->WriteMetaData(); 
     sm->closeFile(); 
     dbprintf(1, str(boost::format("All flags applied for movie %1%\n") % moviename).c_str()); 
