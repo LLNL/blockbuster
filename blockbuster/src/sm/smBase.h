@@ -610,6 +610,11 @@ class smBase {
     SetMetaData("SM__thumbres", r); 
   }
 
+  void ExportThumbnail(void) {
+    // export to $(echo $moviename | sed s/.sm/_Thumbnail.png); see movie loop for how this is done
+    smdbprintf(0, "Error: ExportThumbnail(void) is not implemented yet.\n"); 
+  }
+
   void SetMetaDataFromDelimitedString(string s) {
     SM_MetaData md;
     md.SetFromDelimitedString(s); 
