@@ -57,12 +57,13 @@ int main(int argc, char *argv[]) {
 
   TCLAP::SwitchArg thumbnailInfo("n", "thumbnail-info", "get number of thumbnail and resolution", cmd); 
 
-  TCLAP::SwitchArg singleLineFlag("s", "summary", "Summarize: For each movie, report each match as tag, type and value on a line together.", cmd); 
+  //TCLAP::SwitchArg singleLineFlag("s", "summary", "Summarize: For each movie, report each match as tag, type and value on a line together.", cmd); 
 
-  TCLAP::SwitchArg extractThumb("e", "extract-thumbnail", "extract thumbnail frame (not working yet)", cmd); 
+  TCLAP::SwitchArg exportThumb("e", "export-thumbnail", "Export thumbnail frame (not working yet)", cmd); 
 
   TCLAP::ValueArg<string> exportTagfile("E", "export-tagfile", "Extract a tag file from the movie which can be read with smtag.", false, "", "filename", cmd); 
-  TCLAP::SwitchArg quietExport("q", "quiet-export", "when exporting a tagfile, do not echo the tags to stdout", cmd); 
+  TCLAP::SwitchArg quiet("q", "quiet", "wDo not echo the tags to stdout.  Just return 0 on successful match. ", cmd); 
+
 
 
   TCLAP::ValueArg<int> verbosity("v", "verbosity", "set verbosity (0-5)", false, 0, "int", cmd); 
@@ -76,11 +77,10 @@ int main(int argc, char *argv[]) {
 	exit(1);
   }
   
-  bool matchAll = matchAllFlag.getValue(), singleLine = singleLineFlag.getValue(); 
+  bool matchAll = matchAllFlag.getValue(), singleLine = true; //  = singleLineFlag.getValue(); 
 
-  if (!canonical.getValue() && !thumbnailInfo.getValue() && !extractThumb.getValue() && !tagPatternStrings.getValue().size() && !valuePatternStrings.getValue().size() && !matchAll) {
+  if (!canonical.getValue() && !thumbnailInfo.getValue() && !exportThumb.getValue() && !tagPatternStrings.getValue().size() && !valuePatternStrings.getValue().size() && !matchAll) {
     matchAll = true; 
-    singleLine = true; 
   }
 
   // handle "sminfo" and --info persona 
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
   smBase::init();
   sm_setVerbose(verbosity.getValue());  
   dbg_setverbose(verbosity.getValue()); 
-
+  bool matched = false; 
   for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {
     if (canonical.getValue()) {
       canonicalTags = SM_MetaData::CanonicalMetaDataAsMap(false); 
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
     if (exportTagfile.getValue() != "") {
       TagMap moviedata = sm->GetMetaData(); 
       SM_MetaData::WriteMetaDataToFile(exportTagfile.getValue(), moviedata);
-      if (quietExport.getValue()) {
+      if (quiet.getValue()) {
         continue; 
       }
     }
@@ -153,7 +153,13 @@ int main(int argc, char *argv[]) {
         canonicalTags[mdtag].Set(mdtag,mdtype,mdvalue);                   
       }
 
-      if (tagmatch || valuematch) numMatches ++; 
+      if (tagmatch || valuematch) {
+        numMatches ++; 
+        matched = true; 
+        if (quiet.getValue()) {
+          break; 
+        }
+      }
 
       if (filenameOnly.getValue()) {
         if (tagmatch || valuematch) {
@@ -162,16 +168,16 @@ int main(int argc, char *argv[]) {
         }
       }
       else {
-        if (singleLine && (tagmatch || valuematch)) {
+        if (/*singleLine && */(tagmatch || valuematch)) {
           string matchtype; 
           if (matchAll) {
             matchtype = str(boost::format("Got Item: ")); 
           } else if (tagmatch && valuematch) {
-            matchtype = "Both Match"; 
+            matchtype = "Both Match: "; 
           } else if (tagmatch) {
-            matchtype = "Tag Match";
+            matchtype = "Tag Match: ";
           } else if (valuematch) {
-            matchtype = "Value Match";
+            matchtype = "Value Match: ";
           }
            if (mdtype.size() > longestValueType) 
             longestValueType = mdtype.size(); 
@@ -182,14 +188,14 @@ int main(int argc, char *argv[]) {
           valueTypes.push_back(mdtype); 
           matchTypes.push_back(matchtype); 
         }
-        else {
+        /*else {
           if (tagmatch) {
             cout << str(boost::format("%1%: Tag Match: %2%") % filename % mdtag) << endl;
           }  
           if (valuematch) {
             cout << str(boost::format("%1%: Value Match: %2%") % filename % mdvalue) << endl;
           }
-        }
+          }*/ 
       }
       if (thumbnailInfo.getValue()) {
         if (mdtag == "SM__thumbframe") {
@@ -216,7 +222,10 @@ int main(int argc, char *argv[]) {
         dbprintf(0, str(boost::format("%1%: (%2%) %3%:\n") % (smdp->mTag) % (smdp->TypeAsString()) % (smdp->ValueAsString())).c_str());
       }
     } 
-    if (singleLine || getinfo) {
+    if (exportThumb.getValue()) {
+      sm->ExportThumbnail(); 
+    }
+    if (!quiet.getValue() ) {
       if (!getinfo) {
         dbprintf(0, "Matched tags for movie %s:\n", filename.c_str()); 
       } else {
@@ -231,4 +240,5 @@ int main(int argc, char *argv[]) {
     delete sm;
   }
   
+  return (matched?0:1);
 }
