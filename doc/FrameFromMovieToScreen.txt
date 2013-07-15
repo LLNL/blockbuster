@@ -1,0 +1,56 @@
+This is a story about the journey from disk to screen of a little old movie frame.  
+
+=========================================================================================
+NORMAL MOVIE LOOP: 
+
+1.  movie.cpp calls  
+    canvas->mRenderer->mCache->PreloadHint(preloadFrames, playDirection, 
+                                              startFrame, endFrame);
+       canvas->Render(frameNumber, &roi, destX, destY, currentZoom, lod);
+       
+ 
+2.  Renderer calls its GetImage, which is simply a pointer to
+     mCache->GetImage(frameNumber, newRegion, levelOfDetail); 
+
+3.  the CacheThread calls 
+    LoadAndConvertImage(&job->frameInfo, job->frameNumber, 
+                        this->cache->mCanvas, &job->region, 
+                        job->levelOfDetail);
+
+4.  LoadAndConvertImage calls
+    /* Call the file format module to load the image */
+    rv = (*frameInfo->LoadImage)(image, frameInfo, 
+                                 &canvas->requiredImageFormat,
+                                 region, levelOfDetail);
+NOTE: LoadImage is a pointer to a LoadImageFunc, defined in png.cpp, pnm.cpp, sgi-rgb.cpp, sm.cpp (smLoadImage), and tiff.cpp and then assigned to the FrameInfo in the worst example of object oriented programming in known history.  
+typedef int (*LoadImageFunc)
+  ( Image *image,
+    struct FrameInfo *frameInfo,
+    ImageFormat *requiredImageFormat, 
+    const Rectangle *region,
+    int levelOfDetail
+    );
+ 
+5.  In sm.cpp, the LoadImageFunc is called smLoadImage
+    In here it calls  getFrameBlock to load the data into image->imageData at the correct offset
+    ((privateData*) p)->sm->getFrameBlock(frameInfo->mFrameNumberInFile, (void *) dest, 
+                       GetCurrentThreadID(), destStride,
+                       size, pos, step, levelOfDetail);
+  
+6. Next, cache.cpp LoadAndConvertImage() calls convert.cpp:ConvertImageToFormat(image, canvas) to prepare for screen display.  It returns the converted image to the cachethread->GetImage() function, which then returns it to the renderer->Render() function, which calls glDrawPixels in the imageData.  
+=========================================================================================
+If MOVIE_SAVE_IMAGE is encountered in the movie loop, then:
+
+1.  MovieLoop calls 
+    image = canvas->mRenderer->GetImage(frameNumber, &region, 0);
+
+2.  MovieLoop calls 
+               write_png_file(filename.toAscii().data(), 
+                              static_cast<unsigned char*>(image->imageData), 
+                              size);
+this is defined in libpng
+
+
+=========================================================================================
+FOR THUMBNAILS:  
+So it looks to me like sm->getFrameBlock() --> (fileformat-function)->LoadAndConvertImage() --> write_png_file() is the magic path. 
