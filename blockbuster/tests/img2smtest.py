@@ -184,14 +184,31 @@ tests = [
                  ]},
     
     # ===============================================       
+     {"name": "smquery-canonical-list",
+     "need_data": None, 
+     'cmd': "smquery",
+     "args": " -C", 
+     "output": None,
+     "failure_pattern": SMQUERY_FAILURE,
+     "success_pattern": "\( *ASCII\) UCRL *: value = "      
+      },
+    # ===============================================       
+     {"name": "smtag-canonical-list",
+     "need_data": None, 
+     'cmd': "smtag",
+     "args": " -C", 
+     "output": None,
+     "failure_pattern": SMQUERY_FAILURE,
+     "success_pattern": "\( *ASCII\) UCRL *: value = "      
+      },
+    # ===============================================       
      {"name": "lorenz-tagfile",
      "need_data": ["lorenz.tagfile.goldstandard"], 
      'cmd': "smtag",
      "args": " --report -T 'LorenzTag:Lorenz value' -L lorenz.tagfile -F tags.tagfile *.sm; diff lorenz.tagfile.goldstandard lorenz.tagfile", 
      "output": "lorenz.tagfile",
      "failure_pattern": SMQUERY_FAILURE,
-     "success_pattern": None
-      
+     "success_pattern": None      
       },
    ]
 

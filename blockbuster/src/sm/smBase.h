@@ -196,7 +196,7 @@ struct SM_MetaData {
   double mDouble; //assuming 8 bytes here; checked in Read and Write functions for safety
   int64_t mInt64; 
   
-  void Init(void);
+  static void Init(void);
 
   SM_MetaData():mType(METADATA_TYPE_UNKNOWN) {
     Init(); 
@@ -325,6 +325,7 @@ struct SM_MetaData {
   // ----------------------------------------------------------
   static bool mInitialized; 
   static vector<SM_MetaData> CanonicalMetaData(bool includePrompts) { 
+    Init(); 
     vector<SM_MetaData> mdata = mCanonicalMetaData; 
      
     if (!includePrompts) {
@@ -340,9 +341,17 @@ struct SM_MetaData {
   static map<string,string> GetUserInfo(void) ;
 
   /*!
-    Given a tag, return "ASCII", "DOUBLE", "INT64" or "UNKNOWN"
+    Given a tag, return "ASCII", "DOUBLE", "INT64" "DATE", or "UNKNOWN"
   */ 
   static string GetCanonicalTagType(string tag);
+  static TagMap MergeMetaData(TagMap &target, const TagMap source) {
+    Init(); 
+    for (TagMap::const_iterator pos = source.begin(); pos != source.end(); pos++) {
+      target[pos->first] = pos->second;
+    }
+    return target; 
+  }
+
   static TagMap CanonicalMetaDataAsMap(bool includePrompts);
   static bool GetMetaDataFromFile(string metadatafile, TagMap &metadatavec);
   static bool  WriteMetaDataToStream(ofstream &ofile, TagMap &metadatavec);

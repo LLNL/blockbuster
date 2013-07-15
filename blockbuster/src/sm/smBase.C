@@ -124,7 +124,7 @@ void SM_MetaData::Init(void) {
     mCanonicalMetaData.push_back(SM_MetaData("Code Name", "")); 
     mCanonicalMetaData.push_back(SM_MetaData("Sim Date", "DATE", "")); 
     mCanonicalMetaData.push_back(SM_MetaData("Sim Duration", "")); 
-    mCanonicalMetaData.push_back(SM_MetaData("Sim CPUs", (int64_t)0)); 
+    mCanonicalMetaData.push_back(SM_MetaData("Sim CPUs", (int64_t)1)); 
     mCanonicalMetaData.push_back(SM_MetaData("Sim Cluster", "")); 
     mCanonicalMetaData.push_back(SM_MetaData("Keywords", "")); 
     mCanonicalMetaData.push_back(SM_MetaData("Movie Creator", "")); 
@@ -233,6 +233,7 @@ No Plan.
 
 // =====================================================================
 string SM_MetaData::GetCanonicalTagType(string tag) {  
+  Init(); 
   for (vector<SM_MetaData>::iterator pos = mCanonicalMetaData.begin(); 
        pos != mCanonicalMetaData.end(); ++pos){
     if (tag == pos->mTag) {
@@ -244,6 +245,7 @@ string SM_MetaData::GetCanonicalTagType(string tag) {
 
 // =====================================================================
 TagMap SM_MetaData::CanonicalMetaDataAsMap(bool includePrompts) {
+  Init(); 
   TagMap mdmap; 
   for (uint i=0; i<mCanonicalMetaData.size(); i++) {
     if (includePrompts || (mCanonicalMetaData[i].mTag != APPLY_ALL_TAG && mCanonicalMetaData[i].mTag != USE_TEMPLATE_TAG)) {
@@ -253,7 +255,7 @@ TagMap SM_MetaData::CanonicalMetaDataAsMap(bool includePrompts) {
   // Add default values
   map<string,string> userinfo = GetUserInfo();
   mdmap["Movie Creator"] = SM_MetaData("Movie Creator", str(boost::format("%1% (%2%): %3%")%userinfo["Name"]%userinfo["Login"]%userinfo["Office"]));
-
+  
   return mdmap;
 }
 
@@ -305,7 +307,8 @@ bool SM_MetaData::WriteMetaDataToStream(ofstream &ofile, TagMap &mdmap) {
 } 
 
 // =====================================================================
-string SM_MetaData::CanonicalOrderMetaDataSummary( TagMap mdmap, bool withnums, bool promptForReuse) {
+string SM_MetaData::CanonicalOrderMetaDataSummary(TagMap mdmap, bool withnums, bool promptForReuse) {
+  Init(); 
   string summary = "TAG SUMMARY\n";
   int num = 0; 
   int numitems = mCanonicalMetaData.size();
@@ -337,6 +340,7 @@ string SM_MetaData::MetaDataSummary(const TagMap mdmap, bool withnums) {
 
 // =====================================================================
 TagMap SM_MetaData::GetCanonicalMetaDataValuesFromUser(TagMap &previous, bool usePrevious, bool promptForReuse) {
+  Init(); 
   TagMap copied = previous; 
   
   // synchronize tags/values and canonicals to start up
