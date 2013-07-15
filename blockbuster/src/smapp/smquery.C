@@ -20,7 +20,7 @@ void errexit(TCLAP::CmdLine &cmd, string msg) {
 }
 
 //===================================================================
-bool MatchesAPattern(const vector<boost::regex> &patterns, string &s) { 
+bool MatchesAPattern(const vector<boost::regex> &patterns, string &s, vector<bool> &matched) { 
   dbprintf(5, "MatchesAPattern: %d patterns to check\n", patterns.size()); 
 
   for (uint patno=0; patno < patterns.size(); patno++) {
@@ -28,6 +28,7 @@ bool MatchesAPattern(const vector<boost::regex> &patterns, string &s) {
              s.c_str(), patterns[patno].str().c_str()); 
     if (regex_search(s, patterns[patno])) {
       dbprintf(5, "\n *** Found match. *** \n"); 
+      matched[patno] = true; 
       return true; 
     }
   }
@@ -133,7 +134,7 @@ int main(int argc, char *argv[]) {
     string filename = movienames.getValue()[fileno]; 
     smBase *sm = smBase::openFile(filename.c_str(), 1);
     if (!sm) {
-      errexit(cmd, "ERROR: could not open movie file %s."); 
+      errexit(cmd, str(boost::format("ERROR: could not open movie file %s.")% filename)); 
     }
 
     // Movie info case... (both sminfo and sm2img file)
@@ -177,12 +178,13 @@ int main(int argc, char *argv[]) {
      // for long list format:
     vector<string> tagMatches, valueMatches, valueTypes, matchTypes;
     uint longestTagMatch = 0, longestValueType = 5; 
+    vector<bool> matchedTags(tagPatterns.size(), false), matchedValues(valuePatterns.size(), false); 
     for (map <string,SM_MetaData>::iterator pos = sm->mMetaData.begin();
          pos != sm->mMetaData.end(); pos++) {
       string mdtag = pos->first, mdvalue = pos->second.ValueAsString(), 
         mdtype = pos->second.TypeAsString(); 
-      bool tagmatch = MatchesAPattern(tagPatterns, mdtag), 
-        valuematch = MatchesAPattern(valuePatterns, mdvalue);
+      bool tagmatch = MatchesAPattern(tagPatterns, mdtag, matchedTags), 
+        valuematch = MatchesAPattern(valuePatterns, mdvalue, matchedValues);
 
       if (canonicalTags.find(mdtag) != canonicalTags.end()) {
         canonicalTags[mdtag].Set(mdtag,mdtype,mdvalue);                   
@@ -194,8 +196,6 @@ int main(int argc, char *argv[]) {
         if (quiet.getValue() && !andFlag.getValue()) {
           break; 
         }
-      } else {
-        matchedAll = false; 
       }
 
       if (filenameOnly.getValue()) {
@@ -275,12 +275,38 @@ int main(int argc, char *argv[]) {
         cout << md.toShortString(matchTypes[i], longestValueType, longestTagMatch+2) << endl;
       }      
     }
+    if (andFlag.getValue()) {
+      for (vector<bool>::iterator pos = matchedTags.begin(); pos != matchedTags.end() && matchedAll; pos++) {
+        matchedAll = *pos && matchedAll;           
+      } 
+      for (vector<bool>::iterator pos = matchedValues.begin(); pos != matchedValues.end() && matchedAll; pos++) {
+        matchedAll = *pos && matchedAll;           
+      } 
+    }
     dbprintf(1, str(boost::format("Finished with movie %1%") % filename).c_str()); 
     delete sm;
   }
 
-  if (andFlag.getValue()) 
+  if (andFlag.getValue()) {
+    if (!quiet.getValue()) {
+      if (matchedAll) {
+        printf("Matched all tags for all movies.\n"); 
+      } 
+      else {
+        printf("Did not match all tags for all movies.\n"); 
+      }
+    }
     return matchedAll ? 0: 1; 
+  }
+
+  if (!quiet.getValue()) {
+    if (matchedAll) {
+      printf("Matched at least one tag among all movies.\n"); 
+    } 
+    else {
+      printf("Did not match any tags for any movies.\n"); 
+    }
+  }
 
   return (matchedAny?0:1);
 }

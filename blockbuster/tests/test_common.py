@@ -226,7 +226,8 @@ def RunTestExpect(fullcmd, test, outfile):
 
 # ================================================================
 def run_test(test):
-    global proc, gTestdir, gDatadir
+    global proc, gTestdir, gDatadir, proc
+    proc = None
     errmsg = "SUCCESS"
         
     # ------------------------------------------------------------
@@ -312,9 +313,12 @@ def run_test(test):
     returncode = 0
     if proc:
         returncode = proc.returncode
-    if errmsg == "SUCCESS" and returncode:
-        result = [False, errmsg]
-        errmsg = "FAILED: Process exited with return code %d"% returncode
+        if errmsg == "SUCCESS":
+            if 'return' not in test.keys():
+                test['return'] = 0
+            if returncode != test['return']:
+                result = [False, errmsg]
+                errmsg = "FAILED: Process exited with undesirable return code %d"% returncode
         
     
     # ------------------------------------------------------------
