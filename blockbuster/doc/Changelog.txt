@@ -2,7 +2,7 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.0a (r844) Mon Jul 15 15:15:31 PDT 2013
+VERSION 2.8.0a (r845) Mon Jul 15 15:19:17 PDT 2013
 -- Added metadata support to smtools and blockbuster. 
 -- Lorenz movie browser format (JSON) is supported
 -- Added LZMA compression option for movies.  
