@@ -26,7 +26,7 @@ bool MatchesAPattern(const vector<boost::regex> &patterns, string &s) {
   for (uint patno=0; patno < patterns.size(); patno++) {
     dbprintf(5, "MatchesAPattern: Comparing string \"%s\" to pattern \"%s\"\n",
              s.c_str(), patterns[patno].str().c_str()); 
-    if (regex_match(s, patterns[patno])) {
+    if (regex_search(s, patterns[patno])) {
       dbprintf(5, "\n *** Found match. *** \n"); 
       return true; 
     }
@@ -56,13 +56,15 @@ int main(int argc, char *argv[]) {
 
   TCLAP::ValueArg<int> verbosity("v", "verbosity", "set verbosity (0-5)", false, 0, "int", cmd); 
 
-  TCLAP::SwitchArg matchAllFlag("A", "match-all", "Same as -T '.*' -V '.*', matches everything everywhere.", cmd); 
+  TCLAP::SwitchArg matchAllFlag("", "match-all", "Same as -T '.*', matches all tags.", cmd); 
+
+  TCLAP::SwitchArg andFlag("A", "and", "Program only returns true (0) if all expressions match.  Normally, any matched expression causes a 0 return code.", cmd); 
 
   TCLAP::SwitchArg exportTagfile("E", "export-tagfile", "Extract a tag file from each movie which can be read with smtag.", cmd); 
 
   TCLAP::ValueArg<string> lorenzFileName("L", "lorenz-format", "Export a single JSON file, suitable for Lorenz import, containing tags for all movies.", false, "", "filename", cmd); 
 
-  TCLAP::MultiArg<string> tagPatternStrings("T", "Tag", "Regex pattern to match the tag name being queried", false, "regexp", cmd); 
+  TCLAP::MultiArg<string> tagPatternStrings("T", "Tag", "Regex pattern to match any substring of the tag name being queried.  Thus the pattern 'Duration' is the same as '.*Duration.*'", false, "regexp", cmd); 
 
   TCLAP::MultiArg<string> valuePatternStrings("V", "Value", "Regex pattern to match the value of any tags being queried", false, "regexp", cmd); 
 
@@ -80,9 +82,13 @@ int main(int argc, char *argv[]) {
   if (!canonical.getValue() && !thumbnailInfo.getValue() && !exportThumb.getValue() && !tagPatternStrings.getValue().size() && !valuePatternStrings.getValue().size() && !matchAll) {
     matchAll = true; 
   }
-
-  if (canonical.getValue() && !movienames.getValue().size()) {
-    cout << SM_MetaData::MetaDataSummary(SM_MetaData::CanonicalMetaDataAsMap(false), false)<< endl; 
+  if (!movienames.getValue().size()) {
+    if (canonical.getValue()) {
+      cout << SM_MetaData::MetaDataSummary(SM_MetaData::CanonicalMetaDataAsMap(false), false)<< endl; 
+    }
+    else { 
+      cmd.getOutput()->usage(cmd); 
+    }
     exit (0); 
   }
     
@@ -111,15 +117,15 @@ int main(int argc, char *argv[]) {
   ofstream lorenzFile;
   if (lorenzFileName.getValue() != "") {
     lorenzFile.open(lorenzFileName.getValue().c_str()); 
-    if (!lorenzFile) {
+    if (!lorenzFile.is_open()) {
       errexit(cmd, str(boost::format("Error:  could not open lorenz file %s for writing") % lorenzFileName.getValue())); 
     }
   }
   
+  bool matchedAll = true, matchedAny = false; 
   smBase::init();
   sm_setVerbose(verbosity.getValue());  
   dbg_setverbose(verbosity.getValue()); 
-  bool matched = false; 
   for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {
     if (canonical.getValue()) {
       canonicalTags = SM_MetaData::CanonicalMetaDataAsMap(false); 
@@ -152,7 +158,7 @@ int main(int argc, char *argv[]) {
         cout << "Wrote movie meta data tag file " << filename << endl; 
       }
     }
-    if (lorenzFile) {
+    if (lorenzFile.is_open()) {
       TagMap moviedata = sm->GetMetaData(); 
       if (fileno) {
         lorenzFile << ",\n"; 
@@ -184,10 +190,12 @@ int main(int argc, char *argv[]) {
 
       if (tagmatch || valuematch) {
         numMatches ++; 
-        matched = true; 
-        if (quiet.getValue()) {
+        matchedAny = true; 
+        if (quiet.getValue() && !andFlag.getValue()) {
           break; 
         }
+      } else {
+        matchedAll = false; 
       }
 
       if (filenameOnly.getValue()) {
@@ -248,9 +256,19 @@ int main(int argc, char *argv[]) {
     }
     if (!quiet.getValue() ) {
       if (!getinfo) {
-        dbprintf(0, "Matched tags for movie %s:\n", filename.c_str()); 
+        if (tagMatches.size()) {
+          printf( "Matched tags for movie %s:\n", filename.c_str()); 
+        } 
+        else {
+          printf( "No tags for movie %s matched.\n", filename.c_str()); 
+        }
       } else {
-        dbprintf(0, "Tags --------------------------------------\n", filename.c_str()); 
+        if (tagMatches.size()) {
+          dbprintf(0, "Tags --------------------------------------\n", filename.c_str()); 
+        } 
+        else {
+          printf( "No tags for movie %s matched.\n", filename.c_str()); 
+        }
       }
       for (uint i=0; i< tagMatches.size(); i++) {
         SM_MetaData md(tagMatches[i], valueTypes[i], valueMatches[i]); 
@@ -260,6 +278,9 @@ int main(int argc, char *argv[]) {
     dbprintf(1, str(boost::format("Finished with movie %1%") % filename).c_str()); 
     delete sm;
   }
-  
-  return (matched?0:1);
+
+  if (andFlag.getValue()) 
+    return matchedAll ? 0: 1; 
+
+  return (matchedAny?0:1);
 }

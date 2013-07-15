@@ -57,7 +57,7 @@ void errexit(TCLAP::CmdLine &cmd, string msg) {
 // =====================================================================
 int main(int argc, char *argv[]) {
  
-  TCLAP::CmdLine  cmd(str(boost::format("%1% sets and changes tags in movies.  You must supply at least one of -c, -d, -f, -R, -t, or -n, and at least one of -e or a list of filenames")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
+  TCLAP::CmdLine  cmd(str(boost::format("%1% sets and changes tags in movies.")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
 
   TCLAP::UnlabeledMultiArg<string> movienames("movienames", "movie name(s)", false, "movie name(s)", cmd); 
  
@@ -128,7 +128,9 @@ int main(int argc, char *argv[]) {
   // Now, initialize canonical tags if the user wants to use that interface.
   // This is a separate map because it can change from movie to movie. 
   if (!movienames.getValue().size()) {
+    bool didSomething = false; 
     if (canonical.getValue()) {
+      didSomething = true; 
       // this needs to be here to make sure the -t flags can override the canonical flags
       if (exportTagfile.getValue()) {
         SM_MetaData::GetCanonicalMetaDataValuesFromUser(tagmap, false, true);
@@ -141,10 +143,12 @@ int main(int argc, char *argv[]) {
     // ------------------------------------------------------------------------------------
     
     if (report.getValue()) {      
+      didSomething = true; 
       cout << SM_MetaData::MetaDataSummary(tagmap) << endl; 
     } // if (report.getValue())
   
     if (exportTagfile.getValue()) {
+      didSomething = true; 
       string filename = "tags.tagfile"; 
       ofstream tagfile(filename.c_str()); 
       if (!tagfile) {
@@ -155,10 +159,15 @@ int main(int argc, char *argv[]) {
         cout << "Wrote movie meta data tag file " << filename << endl; 
       }
     }
-    if (lorenzFile) {
+    if (lorenzFile.is_open()) {
+      didSomething = true; 
       lorenzFile << "[\n"; 
       SM_MetaData::WriteMetaDataToStream(lorenzFile, tagmap);
       lorenzFile << "]\n"; 
+    }
+    if (!didSomething) {
+      cmd.getOutput()->usage(cmd); 
+      exit(0); 
     }
   }
   
@@ -227,7 +236,7 @@ int main(int argc, char *argv[]) {
         cout << "Wrote movie meta data tag file " << filename << endl; 
       }
     }
-    if (lorenzFile) {
+    if (lorenzFile.is_open()) {
       TagMap moviedata = sm->GetMetaData(); 
       if (fileno) {
         lorenzFile << ",\n"; 

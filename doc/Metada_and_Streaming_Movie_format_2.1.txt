@@ -13,20 +13,32 @@ img2sm has support for inserting metadata at creation time
 sm2img also has metadata support
 
 UTILITIES:
-    smtag    
     Movie information is now available in the Lorenz Movie Browser utility, now in beta.  To that end, we will need a tool that sets and gets tags, and also can work with thumbnails.  
-    Scott Miller and other experts should be able to add metadata and query both files, directories, and lists of files for metadata.  
-    Tag values shall be of three types for now:  
-             1.  a simple text string with zero or more chars
-             2.  a list of text strings, for storing keywords, or authors or other "list" types.  This will just be stored as a string starting with the special 9-char sequence: '[SM_LIST]', followed by a series of list elements, delimited by the 13-char sequence '[SM_LITEM]'.  Example:  "[SM_LIST]This is item 1[SM_LITEM]This is the second item[SM_LITEM]This is the 3rd and final item."  In this way, list items can contain any sequence of ASCII characters.  
-             3.  a thumbnail (an image file stored in its entirety)
-
-    There will be a canonical list of tags, and ways to set them.  
-    Also need to be able to see if a tag is missing.   
+    Scott Miller and other experts are now able to add metadata and query both files and lists of files for metadata.  
+    There is a canonical list of tags.  
 
     CANONICAL SET OF DESCRIPTIVE TAGS 
+(  ASCII) Authors                          : value = ""
+(  ASCII) Code Name                        : value = ""
+(  ASCII) Description                      : value = ""
+(  ASCII) Keywords                         : value = ""
+(  ASCII) Movie Create Command             : value = ""
+(   DATE) Movie Create Date                : value = ""
+(  ASCII) Movie Create Host                : value = ""
+(  ASCII) Movie Creator                    : value = "<name from finger> (<username>): <phone from finger>"
+(  ASCII) Science Type                     : value = ""
+(  INT64) Sim CPUs                         : value = 1
+(  ASCII) Sim Cluster                      : value = ""
+(   DATE) Sim Date                         : value = ""
+(  ASCII) Sim Duration                     : value = ""
+(  ASCII) Title                            : value = ""
+(  ASCII) UCRL                             : value = ""
    
-    CANONICAL SET OF DESCRIPTIVE TAGS SET AT MOVIE CREATION TIME
+    CANONICAL SET OF DESCRIPTIVE TAGS SET AT MOVIE CREATION TIME (by img2sm)
+(  ASCII) Movie Create Command             : value = ""
+(   DATE) Movie Create Date                : value = ""
+(  ASCII) Movie Create Host                : value = ""
+(  ASCII) Movie Creator                    : value = "<name from finger> (<username>): <phone from finger>"
 
     QUERIES: (smquery)
 

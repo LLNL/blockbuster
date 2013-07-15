@@ -89,7 +89,7 @@ void errexit(TCLAP::CmdLine &cmd, string msg) {
 
 int main(int argc,char **argv)
 {
-  TCLAP::CmdLine  cmd(str(boost::format("%1% converts movies to images, sets movie meta data, and reports on movie information.  If no template is given, then acts as if it is sminfo")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
+  TCLAP::CmdLine  cmd(str(boost::format("%1% converts movies to images.")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
   TCLAP::ValueArg<int> firstFrame("f", "first", "First frame number",false, 0, "integer", cmd); 
   TCLAP::ValueArg<int> lastFrame("l", "last", "Last frame number",false, -1, "integer", cmd); 
   TCLAP::ValueArg<int> frameStep("s", "step", "Frame step size",false, 1, "integer", cmd); 
