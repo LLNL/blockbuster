@@ -136,7 +136,7 @@ echo $version > src/config/versionstring.txt || errexit "Could not echo string t
 # Remove duplicate version from repo if it exists. 
 if ! testbool $skipcheckin; then
     echo "Removing version $version from SVN if it exists..." 
-    versiondir=https://blockbuster.svn.sourceforge.net/svnroot/blockbuster/tags/blockbuster-v$version
+    versiondir=svn+ssh://wealthychef@svn.code.sf.net/p/blockbuster/code/tags/blockbuster-v$version
     svn rm -m "Removing version $version if it exists..."  $versiondir
 fi
 
@@ -169,7 +169,7 @@ mkdir -p $tmpdir || errexit "Could not create tmp directory for tarball"
 pushd $tmpdir || errexit "Could not cd into new tmp directory!?" 
 
 echo "Creating new version in SVN repo from trunk" 
-svn cp -m "Version $version, automatic version creation by finalizeVersion.sh, by user $(whoami)" https://blockbuster.svn.sourceforge.net/svnroot/blockbuster/trunk/blockbuster  $versiondir || errexit "could not create version in svn" 
+svn cp -m "Version $version, automatic version creation by finalizeVersion.sh, by user $(whoami)" svn+ssh://wealthychef@svn.code.sf.net/p/blockbuster/code/trunk/blockbuster  $versiondir || errexit "could not create version in svn" 
 
 echo "Checking out the new version from SVN repo..." 
 svn co $versiondir || errexit "could not check out versiondir $versiondir from svn repo" 
