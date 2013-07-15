@@ -132,8 +132,8 @@ tests = [
     {"name": "smtag-filegen",
      "need_data": None, 
      'cmd': "smtag",
-     "args": "-v 5 --report -T 'testtag: 78 :INT64' -T 'doubletag: 42.4 :DOUBLE' -T 'horsie tag:horse feathers are fluffy' -E ", 
-     "output": "tags.tagfile",
+     "args": "-v 5 --report -T 'testtag: 78 :INT64' -T 'doubletag: 42.4 :DOUBLE' -T 'horsie tag:horse feathers are fluffy' -E", 
+     "output": ["tags.tagfile"], 
      "failure_pattern": SMQUERY_FAILURE,
      "success_pattern":
      ["\( *DOUBLE\) doubletag *: value = 42.400000", 
@@ -183,7 +183,17 @@ tests = [
                  ["Please enter a value for key .*Create Host.*:.*:", "", "s"],
                  ]},
     
-    ]
+    # ===============================================       
+     {"name": "lorenz-tagfile",
+     "need_data": ["lorenz.tagfile.goldstandard"], 
+     'cmd': "smtag",
+     "args": " --report -T 'LorenzTag:Lorenz value' -L lorenz.tagfile -F tags.tagfile *.sm; diff lorenz.tagfile.goldstandard lorenz.tagfile", 
+     "output": "lorenz.tagfile",
+     "failure_pattern": SMQUERY_FAILURE,
+     "success_pattern": None
+      
+      },
+   ]
 
 # ======================================================================
 # RUN TESTS

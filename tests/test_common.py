@@ -309,15 +309,14 @@ def run_test(test):
             
     # ------------------------------------------------------------
     # check return code of command if it failed
-    if errmsg == "SUCCESS":
-        resultstring = errmsg
-    else:
-        returncode = None
-        if proc:
-            returncode = proc.returncode
+    returncode = 0
+    if proc:
+        returncode = proc.returncode
+    if errmsg == "SUCCESS" and returncode:
         result = [False, errmsg]
-        resultstring = "FAILED.  Return code %s, reason: \"%s\"\n"%(str(returncode),errmsg)
+        errmsg = "FAILED: Process exited with return code %d"% returncode
         
+    
     # ------------------------------------------------------------
     # pretty things up a bit
     if errmsg != "SUCCESS":
@@ -332,7 +331,7 @@ def run_test(test):
     else:
         dbprint("\n"+"*"*50+"\n" )
         
-    dbprint("%s\n"%resultstring)       
+    dbprint("%s\n"%errmsg)       
     dbprint("*"*80+"\n\n" )
     
     return  [errmsg == "SUCCESS", errmsg]
