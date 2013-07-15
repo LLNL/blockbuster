@@ -17,7 +17,7 @@ def SetDBFile(outfilename=None):
     if not gDBFile:
         if not gDBFilename:
             if not outfilename:
-                outfilename = os.getcwd() + "/" + "results.out"
+                outfilename = os.getcwd() + "/" + "testing-results.out"
             gDBFilename = outfilename
             dbprint("Debug output file is %s\n"%gDBFilename)
         gDBFile = open(gDBFilename, "w")
