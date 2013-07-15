@@ -600,7 +600,9 @@ off64_t SM_MetaData::Read(int lfd) {
   uint64_t mdmagic; 
   uint64_t payloadLength, taglength; 
 
-  filepos = LSEEK64(lfd, -24, SEEK_CUR); // to beginning of header, at payload length
+  // ======================================================
+  // CHECK FOR MAGIC -- DO WE HAVE METADATA?  
+  filepos = LSEEK64(lfd, -24, SEEK_CUR); // to beginning of header, at MAGIC
   smdbprintf(5, "SM_MetaData::Read(): seeked back 24 bytes to beginning of metadata header (item 3) at pos %d\n", filepos); 
   off64_t headerpos = filepos; 
     
@@ -611,18 +613,25 @@ off64_t SM_MetaData::Read(int lfd) {
   }
   smdbprintf(5, "SM_MetaData::Read(): read (3) MAGIC %lu, now at pos %d\n", mdmagic, filepos); 
 
+  // ======================================================
+  // READ TAG NAME LENGTH
   filepos += ReadAndSwap(lfd, &taglength, 1, needswap);  
   smdbprintf(5, "SM_MetaData::Read(): read (4) tagname length %lu, now at pos %d\n", taglength, filepos); 
 
+  // ======================================================
+  // READ PAYLOAD LENGTH
   filepos += ReadAndSwap(lfd, &payloadLength, 1, needswap);  
   smdbprintf(5, "SM_MetaData::Read(): read (5) payload length %lu, now at pos %d\n", payloadLength, filepos); 
 
   
+  // ======================================================
   // we need the payload now, so have to seek backwards -- the price to pay for a "linked list" approach for metadata
   filepos =  LSEEK64(lfd,-(payloadLength + taglength + 24),SEEK_CUR);
   startpos = filepos; 
   smdbprintf(5, "payloadLength is %lu, tag length is %lu, header is 24 bytes, so have to seek backwards %ld to position %ld\n", payloadLength, taglength, payloadLength + taglength + 24, filepos); 
 
+  // ======================================================
+  // READ THE TAG NAME 
   char  *namebuf = new char[taglength+1]; 
   mTag.resize(taglength+1); 
   filepos += READ(lfd, namebuf, taglength);
@@ -630,10 +639,14 @@ off64_t SM_MetaData::Read(int lfd) {
   delete[] namebuf; 
   smdbprintf(5, "SM_MetaData::Read(): read (1) name %s, %lu bytes, now at pos %d\n", mTag.c_str(), taglength, filepos); 
   
+  // ======================================================
+  // READ THE PAYLOAD TYPE
   ReadAndSwap(lfd, &mType, 1, needswap);
   smdbprintf(5, "SM_MetaData::Read(): read (2a) payload type %s at pos %d\n", TypeAsString().c_str(), filepos); 
   filepos = LSEEK64(lfd,0,SEEK_CUR);
 
+  // ======================================================
+  // READ THE PAYLOAD VALUE
   if (mType == METADATA_TYPE_ASCII || mType == METADATA_TYPE_DATE) {
     uint64_t stringlen; 
     ReadAndSwap(lfd, &stringlen, 1, needswap);
