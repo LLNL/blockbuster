@@ -1,22 +1,26 @@
-We are now supporting the use of metadata in movies.  This does not require a new file format per se, just an extension to the current format.  We shall store the metadata at the end of SM 2.0 movies.  OK, so it's a new format.  So sue me.  
+We are now supporting the use of metadata in movies.  This required an extension to the current format.  We store the metadata at the end of SM 2.0 movies.  
 
+=================================================================================
 USE CASES: 
-    Becky needs information about movies made by scientist X to pass along to TID. 
+    Becky or other manager asks for information about movies matching some criteria K. 
     Rich, Liam or Scott need to browse movie information preparatory to a demo.  
     Lorenz needs to list all movie data for Movie Browser utility. 
      
+=================================================================================
+TOOLS: 
+smtag   -- intended to set tags in existing movies. 
+smquery -- for querying metadata in existing movies.  
+sminfo  -- is now an alias for "smquery --movie-info"
+img2sm  -- has support for inserting metadata at creation time
+sm2img  -- no longer deals with metadata (see sminfo)
 
-smtag is intended to set tags in existing movies. 
-smquery is for querying metadata in existing movies.  
-sminfo is now an alias for "smquery --movie-info"
-img2sm has support for inserting metadata at creation time
-sm2img also has metadata support
-
-UTILITIES:
+=================================================================================
+CURRENT STATUS:
     Movie information is now available in the Lorenz Movie Browser utility, now in beta.  To that end, we will need a tool that sets and gets tags, and also can work with thumbnails.  
     Scott Miller and other experts are now able to add metadata and query both files and lists of files for metadata.  
     There is a canonical list of tags.  
 
+=================================================================================
     CANONICAL SET OF DESCRIPTIVE TAGS 
 (  ASCII) Authors                          : value = ""
 (  ASCII) Code Name                        : value = ""
@@ -40,29 +44,14 @@ UTILITIES:
 (  ASCII) Movie Create Host                : value = ""
 (  ASCII) Movie Creator                    : value = "<name from finger> (<username>): <phone from finger>"
 
-    QUERIES: (smquery)
 
-
-    SETTING AND CHANGING TAGS: (smtag) 
-    smtag --tag Author --value 'Fred Streitz' *Streitz*sm   --- sets the Author tag in the given movies to "Fred Streitz"
-    smtag --thumbnail 50 --xres 50 movie.sm                 --- set the thumbnail for the movie to be the image in frame 50, with X resolution 50 pixels and Y resolution automatically set appropriately
-    smtag --canonical                                       --- prompt for all canonical tags, one by one. 
-
-
-       METADATA TOOLS
-       We can use  metadata to identify, list and describe our movies on the clusters. 
-       We need a single list of all movies, merged but separable, with a way to view them.  
-       A Qt GUI listing all movies would be a good start.  We could use metadata within the
-       movies to characterize them more deeply. 
-       Collecting the list of movies on each cluster into a database on a regular 
-       basis would enable this to work.  
-
+=================================================================================
        METADATA FORMAT IN STREAMING MOVIES
        The metadata section shall begin at the first byte following the last frame of the 
        movie and continues to the end of the movie.  Metadata is a general term and can 
        include any arbitrary information, including binary payloads, that one might want
        to include with a movie.  The metadata is written  as follows. 
-       Naturally, fields (2) - (4)  are big-endian.  
+       All numerical fields are big-endian (network byte order).  
        Note that Field 3 is the beginning of the header, always 24 bytes before the end of the metadata.
 
          (1) n bytes: <tag name: null terminated ASCII sequence> 
@@ -72,13 +61,10 @@ UTILITIES:
          (5) 8 bytes: uint64 : payload length (p)  BEGINNING OF "HEADER" 
 
  
-       This allows the metadata to be found simply by reading the last 8 bytes of the file, 
-       confirming the binary signature (4), and reading field (3) to check if the tag is of
-       interest.         
-       If the tag name is not understood by the reader, the metadata item shall simply be 
-       skipped.  
-       You then can read the payload by seeking backwards and reading the data.  The next 
-       metadata item is found by reading the   8 bytes preceding this one, and so on.  This
+       This allows the metadata to be found simply by reading the last 24 bytes of the file, 
+       then confirming the binary signature (3).         
+       You then can read the payload by seeking backwards to (1) and reading the data.  
+       The next  metadata item is found by reading the 24 bytes preceding this one.  This
        backwards flow is convenient, flexible, and eliminates the need to store any more
        than just the metadata itself.  
        
@@ -86,6 +72,9 @@ UTILITIES:
        compressed,  "wrong" endian, etc.  However, currently supported payloads are all big 
        endian and start with a magic number and have the following formats: 
          METADATA_TYPE_ASCII:  8 bytes: magic number 0xA5C11A5C11A5C11A
+                               8 bytes: uint64_t giving  length of null-terminated string
+                               n bytes: null-terminated ASCII string,             
+         METADATA_TYPE_DATE:   8 bytes: magic number 0xDD00772255DD1177
                                8 bytes: uint64_t giving  length of null-terminated string
                                n bytes: null-terminated ASCII string,             
          METADATA_TYPE_DOUBLE: 8 bytes: magic number 0xF10A7F10A7F10A7F
