@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
 
   TCLAP::SwitchArg report("r", "report", "After all operations are complete, list all the tags in the file.", cmd); 
   
-  TCLAP::SwitchArg canonical("C", "canonical", "Enter the canonical metadata for a movie interactively.", cmd); 
+  TCLAP::SwitchArg canonical("C", "canonical", "Enter the canonical metadata for a movie interactively.  If no movie name is given, simply list all canonical metadata with default values.", cmd); 
 
   TCLAP::SwitchArg deleteMD("D", "delete-metadata", "Delete all meta data in the file before applying any other tags.  If given alone, then the file will have no metadata when finished.", cmd); 
   
@@ -130,7 +130,13 @@ int main(int argc, char *argv[]) {
   if (!movienames.getValue().size()) {
     if (canonical.getValue()) {
       // this needs to be here to make sure the -t flags can override the canonical flags
-      SM_MetaData::GetCanonicalMetaDataValuesFromUser(tagmap, false, true);   
+      if (exportTagfile.getValue()) {
+        SM_MetaData::GetCanonicalMetaDataValuesFromUser(tagmap, false, true);
+      }
+      else {
+        SM_MetaData::MergeMetaData(tagmap, SM_MetaData::CanonicalMetaDataAsMap(false)); 
+        cout << SM_MetaData::MetaDataSummary(tagmap, false)<< endl; 
+      }
     }
     // ------------------------------------------------------------------------------------
     

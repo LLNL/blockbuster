@@ -40,7 +40,7 @@ bool MatchesAPattern(const vector<boost::regex> &patterns, string &s) {
 int main(int argc, char *argv[]) {
   TCLAP::CmdLine  cmd(str(boost::format("%1% sets and changes tags in movies.")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
 
-  TCLAP::SwitchArg canonical("c", "canonical", "List all canonical tags for each movie", cmd); 
+  TCLAP::SwitchArg canonical("C", "canonical", "List all canonical tags for each movie.  If no movie name is given, simply list all canonical metadata with default values.", cmd); 
 
   TCLAP::SwitchArg exportThumb("e", "export-thumbnail", "Export thumbnail frame (not working yet)", cmd); 
 
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
 
   TCLAP::MultiArg<string> valuePatternStrings("V", "Value", "Regex pattern to match the value of any tags being queried", false, "regexp", cmd); 
 
-  TCLAP::UnlabeledMultiArg<string> movienames("movienames", "movie name(s)", true, "movie name(s)", cmd); 
+  TCLAP::UnlabeledMultiArg<string> movienames("movienames", "movie name(s)", false, "movie name(s)", cmd); 
 
 
   try {
@@ -81,6 +81,11 @@ int main(int argc, char *argv[]) {
     matchAll = true; 
   }
 
+  if (canonical.getValue() && !movienames.getValue().size()) {
+    cout << SM_MetaData::MetaDataSummary(SM_MetaData::CanonicalMetaDataAsMap(false), false)<< endl; 
+    exit (0); 
+  }
+    
   // handle "sminfo" and --info persona 
   bool getinfo = false; 
   if (strstr(argv[0],"sminfo") || getinfoFlag.getValue()) {
@@ -110,7 +115,7 @@ int main(int argc, char *argv[]) {
       errexit(cmd, str(boost::format("Error:  could not open lorenz file %s for writing") % lorenzFileName.getValue())); 
     }
   }
-
+  
   smBase::init();
   sm_setVerbose(verbosity.getValue());  
   dbg_setverbose(verbosity.getValue()); 
