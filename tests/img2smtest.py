@@ -156,6 +156,26 @@ tests = [
       "\( *INT64\) testtag2 *: value = 82"] },
     
     # ===============================================       
+     {"name": "query-and",
+     "need_data": ["quicksand-wildcard-11frames-lzma.sm"], 
+     'cmd': "smquery",
+     "args": " -T 'horsie' -T doubletag -A quicksand-wildcard-11frames-lzma.sm", 
+     "output": None,
+     "failure_pattern": SMQUERY_FAILURE,
+     "success_pattern": "Matched all tags" ,    
+      "return": 0
+      },
+    # ===============================================       
+     {"name": "query-and",
+     "need_data": ["quicksand-wildcard-11frames-lzma.sm"], 
+     'cmd': "smquery",
+     "args": " -T 'horsie' -T badtag -A quicksand-wildcard-11frames-lzma.sm", 
+     "output": None,
+     "failure_pattern": SMQUERY_FAILURE,
+     "success_pattern": "Did not match all tags",
+      "return": 1
+      },
+    # ===============================================       
     {"name": "img2sm-canonical-pexpect-steamboat",
      "need_data": "steamboat", 
      'cmd': "img2sm",
