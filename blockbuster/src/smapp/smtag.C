@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
   
   TCLAP::SwitchArg interactive("I", "interactive", "Enter the metadata for a movie interactively.", cmd); 
   
-  TCLAP::ValueArg<string> lorenzFileName("L", "lorenz-format", "Export a single JSON file, suitable for Lorenz import, containing tags for all movies.", false, "", "filename", cmd); 
+  TCLAP::ValueArg<string> lorenzFileName("L", "lorenz-file", "Export a single JSON file, suitable for Lorenz import, containing tags for all movies.", false, "", "filename", cmd); 
 
   TCLAP::ValueArg<int> thumbnail("N", "thumbnail", "set frame number of thumbnail", false, -1, "frameNum", cmd); 
 
