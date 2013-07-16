@@ -80,6 +80,38 @@ def CreateScript(cmd, filename, verbose=True):
     os.chmod(filename, stat.S_IRUSR | stat.S_IXUSR)
     return
 
+# ================================================================
+def CheckOutput(outfile, success_patterns, failure_patterns):
+    errmsg = "SUCCESS"
+    outfile.seek(0)
+    found_failure = False
+    found_successes = []
+    found_all_successes = False
+    compiled_success_patterns = MakeCompiledList(success_patterns)
+    compiled_failure_patterns = MakeCompiledList(failure_patterns)
+    while not found_all_successes and not found_failure:
+        line = outfile.readline()
+        if not line:
+            break
+        for pattern in range(len(compiled_success_patterns)):
+            if re.search(compiled_success_patterns[pattern], line) and pattern not in found_successes:
+                found_successes.append(pattern)
+            if len(found_successes) == len(success_patterns):
+                found_all_successes = True
+        for pattern in range(len(compiled_failure_patterns)):
+            if re.search(compiled_failure_patterns[pattern], line):
+                found_failure= failure_patterns[pattern]              
+    if len(found_successes) == len(success_patterns):
+        found_all_successes = True
+    if found_failure:
+        errmsg = "Found failure pattern \"%s\" in output."%found_failure
+    elif not found_all_successes:
+        errmsg = "Expected patterns not found in command output: \n"
+    for pattern in range(len(success_patterns)):
+        if pattern not in found_successes:
+            errmsg = errmsg+"   %d: \"%s\"\n"%(pattern, str(success_patterns[pattern]))
+    return errmsg
+
 # =================================================================
 proc = None
 def run_command(cmd, outfile):
@@ -90,14 +122,6 @@ def run_command(cmd, outfile):
     return 
 
 # =================================================================
-# python 2.7 has check_output, but we are assuming 2.6 here
-def CheckOutput(cmd):
-    outfile = tempfile.NamedTemporaryFile()
-    run_command(cmd, outfile)
-    outfile.seek(0)
-    return outfile.read()
-
-# ============================================================================================
 def FindDataDir():
     global gDatadir
     gDatadir = os.path.abspath(os.path.dirname(sys.argv[0])+'/../sample-data')
@@ -188,6 +212,23 @@ def RunTestCommand(fullcmd, test, outfile):
 
 
 # ================================================================
+def FrameDiffs(test):
+    if "frame diffs" not in test.keys():
+        return "SUCCESS"
+
+    return "SUCCESS"
+
+def junk():
+    # extract the frame
+    movie = test['frame diffs'][0]
+    frame = test['frame diffs'][1]
+    fullcmd = "%s/sm2img --first %d --last %d %s"%(gBindir, frame, frame, movie)
+    outfile = open(outfilename, "w")
+    run_command(fullcmd, outfile)
+    
+    return "ERROR: TestImage is not yet implemented!"
+
+# ================================================================
 # for each line in the script, line[0] is the expect, line[1] are errors, and line[2] is the response
 def RunTestExpect(fullcmd, test, outfile):
     errmsg =  "SUCCESS"
@@ -254,8 +295,6 @@ def run_test(test):
     # ------------------------------------------------------------
     # Run the command
     test['success_pattern'] = MakeList(test['success_pattern'])
-    success_patterns = MakeCompiledList(test['success_pattern'])    
-    failure_patterns = MakeList(test['failure_pattern'])
     outfilename = gTestdir+"%s.out"%test['name']
     fullcmd = "%s/%s %s"%(gBindir,test['cmd'],test['args'])
     outfile = open(outfilename, "w")
@@ -282,32 +321,10 @@ def run_test(test):
                 break
 
     if errmsg == "SUCCESS" and (test['success_pattern'] or test['failure_pattern']):
-        outfile.seek(0)
-        found_failure = False
-        found_successes = []
-        found_all_successes = False
-        while not found_all_successes and not found_failure:
-            line = outfile.readline()
-            if not line:
-                break
-            for pattern in range(len(success_patterns)):
-                if re.search(success_patterns[pattern], line):
-                    found_successes.append(pattern)
-                    if len(found_successes) == len(success_patterns):
-                        found_all_successes = True
-            for pattern in failure_patterns:
-                if re.search(re.compile(pattern), line):
-                    found_failure=pattern                
-        if len(found_successes) == len(success_patterns):
-            found_all_successes = True
-        if found_failure:
-            errmsg = "Found failure pattern \"%s\" in output."%found_failure
-        elif not found_all_successes:
-            errmsg = "Expected patterns not found in command output: \n"
-            for pattern in range(len(test['success_pattern'])):
-                if pattern not in found_successes:
-                    errmsg = errmsg+"   %d: \"%s\"\n"%(pattern, str(test['success_pattern'][pattern]))
-            
+        success_patterns = MakeList(test['success_pattern'])    
+        failure_patterns = MakeList(test['failure_pattern'])
+        errmsg = CheckOutput(outfile, success_patterns, failure_patterns)
+
     # ------------------------------------------------------------
     # check return code of command if it failed
     returncode = 0
@@ -317,8 +334,11 @@ def run_test(test):
             if 'return' not in test.keys():
                 test['return'] = 0
             if returncode != test['return']:
-                result = [False, errmsg]
                 errmsg = "FAILED: Process exited with undesirable return code %d"% returncode
+
+    # ------------------------------------------------------------
+    if errmsg == "SUCCESS":
+        errmsg = FrameDiffs(test)
         
     
     # ------------------------------------------------------------
@@ -341,7 +361,7 @@ def run_test(test):
     return  [errmsg == "SUCCESS", errmsg]
 
 # ========================================================================
-def RunTests(tests, stoponfail):
+def RunTests(tests, stoponfail, create_gold_standard):
 
     if os.path.exists(gTestdir):
         shutil.rmtree(gTestdir)
@@ -357,6 +377,7 @@ def RunTests(tests, stoponfail):
         dbprint("CWD is %s\n"%os.getcwd())
         dbprint("TEST: %s\n\n"%str(test))
         dbprint("\n"+ "-"*40 +"\n" )
+        test['create gold standard'] = create_gold_standard
         result = run_test(test)
         results.append(result)
         successes = successes + result[0]
