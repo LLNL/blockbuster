@@ -3,7 +3,7 @@
 import sys, os, test_common, argparse
 parser = test_common.get_arg_parser()
 parser.add_argument('-s', '--stop-on-failure', help="Stop testing when a failure occurs", action='store_true', default=None)
-
+parser.add_argument('-g', '--create-gold-standard', help="Create baseline images and files for use in later testing.  Assumes the current code is perfect", action='store_true')
 args = parser.parse_args()
 
 test_common.FindPaths(args.bindir)
@@ -25,7 +25,9 @@ tests = [
      "args": "-v 5 mountains.tiff mountains.sm",
      "output": "mountains.sm",
      "failure_pattern": IMG2SM_FAILURE,
-     "success_pattern": IMG2SM_SUCCESS},
+     "success_pattern": IMG2SM_SUCCESS,
+     "frame diffs": ["mountains.sm",0]
+     },
     # --------------------------------------------
     {"name": "check-mountains-single", 
      "need_data": "mountains.sm", 
@@ -33,7 +35,8 @@ tests = [
      "args": "mountains.sm",
      "output": None,
     "failure_pattern": SMQUERY_FAILURE,
-     "success_pattern": SMQUERY_SUCCESS},
+     "success_pattern": SMQUERY_SUCCESS,
+     },
     
     # ===============================================       
     {"name": "quicksand-single-gz",
@@ -42,7 +45,9 @@ tests = [
      "args": "-v 5 --first 084 --last 084 quicksand-short-6fps/quicksand-short-6fps%03d.png quicksand-single-gz.sm", 
      "output": "quicksand-single-gz.sm",
      "failure_pattern": IMG2SM_FAILURE,
-     "success_pattern":  IMG2SM_SUCCESS},
+     "success_pattern":  IMG2SM_SUCCESS  ,
+     "frame diffs": ["quicksand-single-gz.sm", 0]
+     },
     # --------------------------------------------          
     {"name": "check-quicksand-single-gz", 
      "need_data": "quicksand-single-gz.sm", 
@@ -50,7 +55,8 @@ tests = [
      "args": "quicksand-single-gz.sm",
      "output": None,
      "failure_pattern": SMQUERY_FAILURE,
-     "success_pattern": SMQUERY_SUCCESS},
+     "success_pattern": SMQUERY_SUCCESS
+     },
     
     # ===============================================       
     {"name": "quicksand-11frames-gz",
@@ -59,7 +65,9 @@ tests = [
     "args": "-v 5 -c gz --first 20 -l 30 quicksand-short-6fps/quicksand-short-6fps%03d.png quicksand-11frames-gz.sm", 
      "output": "quicksand-11frames-gz.sm",
      "failure_pattern": IMG2SM_FAILURE,
-     "success_pattern": IMG2SM_SUCCESS},
+     "success_pattern": IMG2SM_SUCCESS,
+     "frame diffs": ["quicksand-11frames-gz.sm", 5]
+     },
     # --------------------------------------------          
     {"name": "check-quicksand-11frames-gz",
      "need_data": "quicksand-11frames-gz.sm", 
@@ -67,7 +75,8 @@ tests = [
      "args": "quicksand-11frames-gz.sm",
      "output": None,
      "failure_pattern": SMQUERY_FAILURE,
-     "success_pattern": SMQUERY_SUCCESS},
+     "success_pattern": SMQUERY_SUCCESS
+     },
     
     # ===============================================       
     {"name": "quicksand-11frames-lzma",
@@ -76,7 +85,9 @@ tests = [
      "args": "-v 5 --compression lzma --first 20 --last 30 quicksand-short-6fps/quicksand-short-6fps%03d.png quicksand-11frames-lzma.sm",
      "output": "quicksand-11frames-lzma.sm",
      "failure_pattern": IMG2SM_FAILURE,
-     "success_pattern": IMG2SM_SUCCESS },           
+     "success_pattern": IMG2SM_SUCCESS,
+     "frame diffs": ["quicksand-11frames-lzma.sm",5]
+     },           
     # --------------------------------------------
     {"name": "check-quicksand-11frames-lzma",
      "need_data": "quicksand-11frames-lzma.sm", 
@@ -84,7 +95,8 @@ tests = [
      "args": "quicksand-11frames-lzma.sm", 
      "output": None,
      "failure_pattern": SMQUERY_FAILURE,
-     "success_pattern": SMQUERY_SUCCESS},
+     "success_pattern": SMQUERY_SUCCESS
+     },
     
     # ===============================================       
     {"name": "quicksand-wildcard-11frames-lzma",
@@ -93,7 +105,9 @@ tests = [
      "args": "-v 5 --compression lzma --first 20 --last 30 quicksand-short-6fps/quicksand-short-*.png quicksand-wildcard-11frames-lzma.sm",
      "output": "quicksand-wildcard-11frames-lzma.sm",
      "failure_pattern": IMG2SM_FAILURE,
-     "success_pattern": IMG2SM_SUCCESS },           
+     "success_pattern": IMG2SM_SUCCESS,
+     "frame diffs": ["quicksand-wildcard-11frames-lzma.sm",5]
+     },           
     # --------------------------------------------
     {"name": "check-quicksand-wildcard-11frames-lzma",
      "need_data": "quicksand-wildcard-11frames-lzma.sm", 
@@ -114,7 +128,9 @@ tests = [
      ["\( *ASCII\) testtag2 *= \"steamboat\"",
       "Movie Create Host.*%s"%os.getenv("HOST"),
       "Movie Create Date",
-      "\( *ASCII\) Movie Creator *=.*%s"%os.getenv("USER")] },
+      "\( *ASCII\) Movie Creator *=.*%s"%os.getenv("USER")],
+     "frame diffs": ["steamboat-globbed-allframes.sm",1]
+     },
     
     # ===============================================       
     {"name": "tagged-quicksand-11frames-lzma",
@@ -126,7 +142,8 @@ tests = [
      "success_pattern":
      ["Movie Creator.*%s"%os.getenv("USER"),
       "Movie Create Host.*%s"%os.getenv("HOST"),
-      "Movie Create Date"]}, 
+      "Movie Create Date"]
+     }, 
     
     # ===============================================       
     {"name": "smtag-filegen",
@@ -138,7 +155,8 @@ tests = [
      "success_pattern":
      ["\( *DOUBLE\) doubletag *: value = 42.400000", 
       "\( *ASCII\) horsie tag *: value = \"horse feathers are fluffy\"", 
-     "\( *INT64\) testtag *: value = 78"] },
+     "\( *INT64\) testtag *: value = 78"]
+     },
     
     # ===============================================       
     {"name": "smtag-from-file",
@@ -153,7 +171,9 @@ tests = [
        "\( *ASCII\) Title *: value = \"quicksand-wildcard-11frames-lzma.sm\"", 
       "\( *ASCII\) horsie tag *: value = \"new horsie tag\"", 
       "\( *INT64\) testtag *: value = 78", 
-      "\( *INT64\) testtag2 *: value = 82"] },
+      "\( *INT64\) testtag2 *: value = 82"],
+     "frame diffs": ["quicksand-wildcard-11frames-lzma.sm", 1]
+    },
     
     # ===============================================       
      {"name": "query-and",
@@ -201,7 +221,9 @@ tests = [
                  ["You entered a bad tag number.*Please enter a value for key .*Create Host.*:.*:", "Invalid date.*", "m"],
                  ["Please enter a value for key .*Create Host.*:.*:", "", "m"],
                  ["Please enter a value for key .*Create Host.*:.*:", "", "s"],
-                 ]},
+                 ],
+     "frame diffs": ["img2sm-canonical-tags.sm",1]
+     },
     
     # ===============================================       
      {"name": "smquery-canonical-list",
@@ -219,7 +241,7 @@ tests = [
      "args": " -C", 
      "output": None,
      "failure_pattern": SMQUERY_FAILURE,
-     "success_pattern": "\( *ASCII\) UCRL *: value = "      
+     "success_pattern": "\( *ASCII\) UCRL *: value = "
       },
     # ===============================================       
      {"name": "lorenz-tagfile",
@@ -228,13 +250,16 @@ tests = [
      "args": " --report -T 'LorenzTag:Lorenz value' -L lorenz.tagfile -F tags.tagfile *.sm; diff lorenz.tagfile.goldstandard lorenz.tagfile", 
      "output": "lorenz.tagfile",
      "failure_pattern": SMQUERY_FAILURE,
-     "success_pattern": None      
+     "success_pattern": None,
+     "frame diffs": ["img2sm-canonical-tags.sm",1]
       },
+    # ===============================================       
+    
    ]
 
 # ======================================================================
 # RUN TESTS
-[successes, results] = test_common.RunTests(tests, args.stop_on_failure)
+[successes, results] = test_common.RunTests(tests, args.stop_on_failure, args.create_gold_standard)
 
 if successes != len(tests):
     sys.exit(1)
