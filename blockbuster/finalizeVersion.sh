@@ -25,6 +25,17 @@ function errexit() {
     exit ${2:-1}
 }
 
+export PATH=/usr/local/tools/qt-4.8.4/bin:$PATH
+if [ -f /usr/local/tools/dotkit/init.sh ]; then
+    . /usr/local/tools/dotkit/init.sh
+    if use qt; then 
+        echo "Warning: used dotkit to set Qt."
+    else
+        echo "Warning: Could not set Qt dotkit."
+    fi
+fi
+echo  "qmake is " $(which qmake)
+
 # must give either -temp or -final: 
 if echo $1 | grep -- -temp >/dev/null; then
     skipcheckin=true
@@ -203,7 +214,6 @@ ln -s $installdir/$SYS_TYPE $installdir/$altsystype
 pushd $installdir/$SYS_TYPE || errexit "Cannot cd to install directory $SYS_TYPE"
 tar -xzf ../blockbuster-v${version}.tgz || errexit "Cannot untar tarball!?" 
 pushd blockbuster-v${version} || errexit "Cannot cd to blockbuster source directory" 
-use qt || echo "Warning: could not set Qt dotkit"
 make || errexit "Could not make software" 
 popd
 popd
