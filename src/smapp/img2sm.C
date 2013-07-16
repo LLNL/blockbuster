@@ -86,13 +86,6 @@ void errexit(TCLAP::CmdLine &cmd, string msg) {
 }
 
 // =======================================================================
-/* applying a filename template to a number */ 
-/* string getFilename(string filenameTemplate, int num, bool useTemplate) {
-  if (useTemplate)  return str(boost::format(filenameTemplate)%num);
-  else return filenameTemplate;
-}
-*/ 
-// =======================================================================
 // Prototypes 
 int rotate_img(unsigned char *img,int dx,int dy,float rot);
 void rotate_dims(float rot,int *dx,int *dy);
@@ -547,10 +540,8 @@ int main(int argc,char **argv)
   TCLAP::ValueArg<int> threads("t", "threads", "Number of threads to use",false, 4, "integer", cmd); 
   TCLAP::ValueArg<int> verbosity("v", "Verbosity", "Verbosity level",false, 0, "integer", cmd);   
 
-  TCLAP::ValueArg<string> nameTemplateFlag("i", "infile-template", " For a single frame, need not use %d notation.  If this argument is not given, you must supply a list of filenames before the output moviename.", false, "", "input filename template", cmd); 
-  
-  // Note this is an UnlabeledMultiArg.  If nameTemplate is not given, then there must be at least two files here, the last is the output name, all others are input files.  
-  TCLAP::UnlabeledMultiArg<string> filenames("moviename", "Either a list of input filenames or a filename template followed by a moviename.  A filename template is aa C-style string containing C++ template notation for specifying multiple movie frame files, e.g. \"filename%04d.png\" specifies a list of png files with 4 digit 0-padded numbers. Boost-style %1% notation is also supported.", true, "filename", cmd); 
+  // Note this is an UnlabeledMultiArg.  There must be at least two words given here, the last is the output name, all others are input files.  
+  TCLAP::UnlabeledMultiArg<string> filenames("filenames", "Either a list of input filenames, or a filename template, followed by a moviename.  A filename template is aa C-style string containing C++ template notation for specifying multiple movie frame files, e.g. \"filename%04d.png\" specifies a list of png files with 4 digit 0-padded numbers. Boost-style %1% notation is also supported.", true, "filename", cmd); 
 
   // save the command line for meta data
   string commandLine; 
