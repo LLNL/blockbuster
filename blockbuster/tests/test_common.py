@@ -83,15 +83,17 @@ def CreateScript(cmd, filename, verbose=True):
 # ================================================================
 def CheckOutput(outfile, success_patterns, failure_patterns):
     errmsg = "SUCCESS"
+    outfile.flush()
     outfile.seek(0)
     found_failure = False
     found_successes = []
     found_all_successes = False
+    success_patterns = MakeList(success_patterns)
+    failure_patterns = MakeList(failure_patterns)
     compiled_success_patterns = MakeCompiledList(success_patterns)
     compiled_failure_patterns = MakeCompiledList(failure_patterns)
-    while not found_all_successes and not found_failure:
-        line = outfile.readline()
-        if not line:
+    for line in outfile:
+        if found_all_successes and not found_failure:
             break
         for pattern in range(len(compiled_success_patterns)):
             if re.search(compiled_success_patterns[pattern], line) and pattern not in found_successes:
@@ -113,12 +115,14 @@ def CheckOutput(outfile, success_patterns, failure_patterns):
     return errmsg
 
 # =================================================================
+# outfile is a file object
 proc = None
 def run_command(cmd, outfile):
     global proc
     dbprint( "Running command: \"%s\"\n"%cmd)
     proc = Popen(cmd, bufsize=-1, stdout=outfile, stderr=STDOUT)
     proc.wait()
+    dbprint("run_command completed.\n")
     return 
 
 # =================================================================
@@ -213,19 +217,26 @@ def RunTestCommand(fullcmd, test, outfile):
 
 # ================================================================
 def FrameDiffs(test):
+    errmsg = "SUCCESS"
     if "frame diffs" not in test.keys():
         return "SUCCESS"
-    return "SUCCESS"
-
-def junk():
     # extract the frame
     movie = test['frame diffs'][0]
     frame = test['frame diffs'][1]
-    fullcmd = "%s/sm2img --first %d --last %d %s"%(gBindir, frame, frame, movie)
+    outframe = "%s_testframe.png"%test['name']
+    fullcmd = "%s/sm2img --first %d --last %d %s %s"%(gBindir, frame, frame, movie, outframe)
+    outfilename = "%s/%s"%(os.getcwd(), test['name']+'.frame_diff.txt')
+    dbprint("FrameDiffs: outfile is %s\n"%outfilename)
     outfile = open(outfilename, "w")
-    run_command(fullcmd, outfile)
-    #CheckOutput(
-    return "ERROR: TestImage is not yet implemented!"
+    outfile.close()
+    outfile = open(outfilename, "r+")
+    run_command(fullcmd.split(), outfile)
+    errmsg = CheckOutput(outfile, "Successful completion", "ERROR")
+    if errmsg != "SUCCESS":
+        return errmsg
+
+    
+    return errmsg
 
 # ================================================================
 # for each line in the script, line[0] is the expect, line[1] are errors, and line[2] is the response
