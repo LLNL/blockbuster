@@ -215,7 +215,6 @@ def RunTestCommand(fullcmd, test, outfile):
 def FrameDiffs(test):
     if "frame diffs" not in test.keys():
         return "SUCCESS"
-
     return "SUCCESS"
 
 def junk():
@@ -225,7 +224,7 @@ def junk():
     fullcmd = "%s/sm2img --first %d --last %d %s"%(gBindir, frame, frame, movie)
     outfile = open(outfilename, "w")
     run_command(fullcmd, outfile)
-    
+    #CheckOutput(
     return "ERROR: TestImage is not yet implemented!"
 
 # ================================================================
