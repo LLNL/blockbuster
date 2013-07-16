@@ -74,7 +74,7 @@ struct Work {
   int blockSize[3]; 
   int blockOffset[2]; 
   int lod; 
-  string nameTemplate; 
+  string filename; 
   int imageType; 
   int jqual; 
   int verbosity; 
@@ -115,9 +115,10 @@ int main(int argc,char **argv)
 
   TCLAP::ValueArg<int> verbosity("v", "Verbosity", "Verbosity level",false, 0, "integer", cmd);   
 
-  TCLAP::ValueArg<string> nameTemplate("o", "outfile", "A C-style string containing %d notation for specifying multiple movie files.  For a single frame, need not use %d notation", false, "", "template", cmd); 
+  TCLAP::UnlabeledValueArg<string> moviename("moviename", "Name of the movie",true, "", "path", cmd); 
 
-  TCLAP::UnlabeledMultiArg<string> movienames("moviename", "Name of the movie(s) to analyze or convert",true, "list of movies", cmd); 
+  TCLAP::UnlabeledValueArg<string> frameTemplate("frameTemplate", "The output frame template or name.  For multiple frames, use %d notation, e.g. frame%04d.png yields names like frame0000.png, frame0001.png, etc.  For a single frame, a template is optional.", true, "", "frame template", cmd); 
+
   try {
 	cmd.parse(argc, argv);
   } catch(std::exception &e) {
@@ -139,7 +140,7 @@ int main(int argc,char **argv)
 
   string suffix = format.getValue();
   if (suffix == "default") {
-    string templatestr = nameTemplate.getValue(); 
+    string templatestr = frameTemplate.getValue(); 
     string::size_type idx = templatestr.rfind('.'); 
     if (idx == string::npos) {
       cerr << "Error:  Cannot find a file type suffix in your output template.  Please use -form to tell me what to do if you're not going to give a suffix." << endl; 
@@ -163,9 +164,9 @@ int main(int argc,char **argv)
   smBase::init();
   sm_setVerbose(verbosity.getValue());  
   
-  smBase *sm = smBase::openFile(movienames.getValue()[0].c_str(), nThreads);
+  smBase *sm = smBase::openFile(moviename.getValue().c_str(), nThreads);
   if (!sm) {
-    fprintf(stderr,"Unable to open the file: %s\n",movienames.getValue()[0].c_str());
+    fprintf(stderr,"Unable to open the file: %s\n",moviename.getValue().c_str());
     exit(1);
   }
   int lod = mipmap.getValue(); 
@@ -210,11 +211,13 @@ int main(int argc,char **argv)
   }
   int numFrames = (lastFrame.getValue() - firstFrame.getValue())/frameStep.getValue() + 1; 
   
-  if (numFrames > 1) {
-    // Bad template name?
-    try {
-      string test = str(boost::format(nameTemplate.getValue()) % 1);
-    } catch(...) {
+  // Bad template name?
+  bool useTemplate = false; 
+  try {
+    string test = str(boost::format(frameTemplate.getValue()) % 1);
+    useTemplate = true; 
+  } catch(...) {
+    if (numFrames > 1) {
       fprintf(stderr,"If you are outputting multiple frames, then the output specification must be a C-style sprintf template\n");
       exit(1);
     }
@@ -233,7 +236,12 @@ int main(int argc,char **argv)
     memcpy(wrk->blockSize, blockSize, sizeof(blockSize)); 
     memcpy(wrk->blockOffset, blockOffset, sizeof(blockOffset)); 
     wrk->lod = lod; 
-    wrk->nameTemplate = nameTemplate.getValue(); 
+    if (useTemplate) {
+      wrk->filename = str(boost::format(frameTemplate.getValue()) % framenum);
+    } 
+    else {
+      wrk->filename = frameTemplate.getValue(); 
+    } 
     wrk->imageType = imageType; 
     wrk->jqual = quality.getValue(); 
     wrk->verbosity = verbosity.getValue(); 
@@ -272,12 +280,10 @@ void workproc(void *vp) {
     work->sm->getFrame(work->frameNum, &img[0], threadnum);
   }
   
-  string filename = str(boost::format(work->nameTemplate) % work->frameNum);
-
   switch(work->imageType) {
   case 0: {  // TIFF
     unsigned char *p;
-    tif = TIFFOpen(filename.c_str(),"w");
+    tif = TIFFOpen(work->filename.c_str(),"w");
       if (tif) {
         // Header stuff 
 #ifdef Tru64
@@ -292,7 +298,7 @@ void workproc(void *vp) {
         TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
         TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
         TIFFSetField(tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
-        TIFFSetField(tif, TIFFTAG_DOCUMENTNAME, filename.c_str());
+        TIFFSetField(tif, TIFFTAG_DOCUMENTNAME, work->filename.c_str());
         TIFFSetField(tif, TIFFTAG_IMAGEDESCRIPTION, "sm2img TIFF image");
         TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 3);
         TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, 1);
@@ -309,7 +315,7 @@ void workproc(void *vp) {
       break;
     case 1: {  // SGI
       vector<unsigned short>   buf(work->blockSize[0]+1);
-      libi = sgiOpen((char*)filename.c_str(),SGI_WRITE,SGI_COMP_RLE,1,
+      libi = sgiOpen((char*)work->filename.c_str(),SGI_WRITE,SGI_COMP_RLE,1,
                      work->blockSize[0],work->blockSize[1],3);
       if (libi) {
         for(y=0;y<work->blockSize[1];y++) {
@@ -325,7 +331,7 @@ void workproc(void *vp) {
     }
       break;
     case 2: {  // PNM
-      fp = pm_openw((char*)filename.c_str());
+      fp = pm_openw((char*)work->filename.c_str());
       if (fp) {
         xel* xrow;
         xel* xp;
@@ -400,7 +406,7 @@ void workproc(void *vp) {
       }
       
       /* write the 3 files */
-      string yuvname = filename + ".Y"; 
+      string yuvname = work->filename + ".Y"; 
       p = buf;
       fp = fopen(yuvname.c_str(),"wb");
       if (fp) {
@@ -408,14 +414,14 @@ void workproc(void *vp) {
         fclose(fp);
       }
       p += dx*dy;
-      yuvname = filename + ".U"; 
+      yuvname = work->filename + ".U"; 
       fp = fopen(yuvname.c_str(),"wb");
       if (fp) {
         fwrite(p,dx*dy/4,1,fp);
         fclose(fp);
       }
       p += dx*dy/4;
-      yuvname = filename + ".V"; 
+      yuvname = work->filename + ".V"; 
       fp = fopen(yuvname.c_str(),"wb");
       if (fp) {
         fwrite(p,dx*dy/4,1,fp);
@@ -426,11 +432,11 @@ void workproc(void *vp) {
     }
       break;
     case 4: {  // PNG
-      write_png_file((char*)filename.c_str(), &img[0],work->blockSize);
+      write_png_file((char*)work->filename.c_str(), &img[0],work->blockSize);
     }
       break;
     case 5: {  // JPEG
-      write_jpeg_image((char*)filename.c_str(), &img[0],work->blockSize,work->jqual);
+      write_jpeg_image((char*)work->filename.c_str(), &img[0],work->blockSize,work->jqual);
     }
       break;
     }
