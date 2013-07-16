@@ -203,6 +203,7 @@ ln -s $installdir/$SYS_TYPE $installdir/$altsystype
 pushd $installdir/$SYS_TYPE || errexit "Cannot cd to install directory $SYS_TYPE"
 tar -xzf ../blockbuster-v${version}.tgz || errexit "Cannot untar tarball!?" 
 pushd blockbuster-v${version} || errexit "Cannot cd to blockbuster source directory" 
+use qt || echo "Warning: could not set Qt dotkit"
 make || errexit "Could not make software" 
 popd
 popd
