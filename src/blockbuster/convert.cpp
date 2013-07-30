@@ -111,7 +111,7 @@ static void ConvertPixel(const ImageFormat *srcFormat,
     }
 }
 
-Image *ConvertImageToFormat(const Image *image, Canvas *canvas)
+Image *ConvertImageToFormat(const Image *image, ImageFormat *canvasFormat)
 {
     /* We used to check for optimized cases; but any time we're
      * here, we're unoptimized, so now just do as complete a job
@@ -120,7 +120,7 @@ Image *ConvertImageToFormat(const Image *image, Canvas *canvas)
   DEBUGMSG("ConvertImageToFormat(frame %d)", image->frameNumber); 
     Image *destImage;
     const ImageFormat *srcFormat = &image->imageFormat;
-    const ImageFormat *destFormat = &canvas->requiredImageFormat;
+    const ImageFormat *destFormat = canvasFormat;
 
     const int srcBytesPerPixel = srcFormat->bytesPerPixel;
     const int destBytesPerPixel = destFormat->bytesPerPixel;
@@ -211,8 +211,8 @@ Image *ConvertImageToFormat(const Image *image, Canvas *canvas)
 
     destImage->width = image->width;
     destImage->height = image->height;
-    destImage->imageFormat = canvas->requiredImageFormat;
-    if (canvas->requiredImageFormat.rowOrder == ROW_ORDER_DONT_CARE)
+    destImage->imageFormat = *canvasFormat;
+    if (canvasFormat->rowOrder == ROW_ORDER_DONT_CARE)
        destImage->imageFormat.rowOrder = image->imageFormat.rowOrder;
     bb_assert(destImage->imageFormat.rowOrder != ROW_ORDER_DONT_CARE);
     destImage->loadedRegion = image->loadedRegion;

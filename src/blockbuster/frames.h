@@ -20,7 +20,7 @@ struct ImageFormat{
               int rs, int gs, int bs, long rm, long gm, long bm):
     bytesPerPixel(bpp), scanlineByteMultiple(sbm), 
     byteOrder(bo), rowOrder(ro), 
-    redShift(rs), greenShift(gs), blueShift(bs), 
+    redShift(rs), greenShift(gs), blueShift(bs),
     redMask(rm), greenMask(gm), blueMask(bm) {}
   int bytesPerPixel;
   int scanlineByteMultiple;
@@ -65,11 +65,6 @@ struct ImageFormat{
 } ;
 
 struct Image {
-  /*  Image():width(0), height(0),  levelOfDetail(0), 
-          frameNumber(0), imageDataBytes(0), imageData(NULL), 
-          mManageData(false){
-    init(); 
-    }*/ 
   Image(uint32_t w, uint32_t h, 
         ImageFormat &form, Rectangle &region, int lod, uint32_t frame, 
         unsigned int idb, void *data, bool manageData=false) :
@@ -91,7 +86,15 @@ struct Image {
     return; 
   }
   
-    
+  // this will be the Image API
+  int LoadImage(struct FrameInfo *frameInfo,
+    ImageFormat *requiredImageFormat, 
+    const Rectangle *region,
+    int levelOfDetail
+                ) {
+    return 0; 
+  }
+
   uint32_t width, height;
   ImageFormat imageFormat;
   Rectangle loadedRegion;
