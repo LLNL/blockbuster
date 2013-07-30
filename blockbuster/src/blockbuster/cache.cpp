@@ -76,7 +76,7 @@ bool jobComparer(const ImageCacheJob *first, const ImageCacheJob *second){
  */
 #define MAX_CONVERSION_WARNINGS 10
 static Image *LoadAndConvertImage(FrameInfo *frameInfo, unsigned int frameNumber,
-	Canvas *canvas, const Rectangle *region, int levelOfDetail)
+	ImageFormat *canvasFormat, const Rectangle *region, int levelOfDetail)
 {
   CACHEDEBUG(QString("LoadAndConvertImage frame %1, region %2, frameInfo %3").arg( frameNumber).arg(region->toString()).arg((uint64_t)frameInfo)); 
 
@@ -95,7 +95,7 @@ static Image *LoadAndConvertImage(FrameInfo *frameInfo, unsigned int frameNumber
     CACHEDEBUG("LoadImage being called"); 
     /* Call the file format module to load the image */
     rv = (*frameInfo->LoadImage)(image, frameInfo, 
-                                 &canvas->requiredImageFormat,
+                                 canvasFormat,
                                  region, levelOfDetail);
     image->frameNumber = frameNumber; 
     CACHEDEBUG("LoadImage done"); 
@@ -120,7 +120,7 @@ static Image *LoadAndConvertImage(FrameInfo *frameInfo, unsigned int frameNumber
      * conversion failed.  If any other image comes back, we can
      * discard the original, and use the conversion instead.
      */
-    convertedImage = ConvertImageToFormat(image, canvas);
+    convertedImage = ConvertImageToFormat(image, canvasFormat);
     if (convertedImage != image) {
       /* We either converted, or failed to convert; in either
        * case, the old image is useless.
@@ -238,7 +238,7 @@ void CacheThread::run() {
 	 */
     CACHEDEBUG("Worker thread calling LoadAndConvertImage for frame %d", job->frameNumber); 
 	image = LoadAndConvertImage(&job->frameInfo,
-	    job->frameNumber, this->cache->mCanvas, &job->region, job->levelOfDetail);
+	    job->frameNumber, &this->cache->mCanvas->requiredImageFormat, &job->region, job->levelOfDetail);
 
 	/* With image in hand (or possibly a NULL), we're ready to start
 	 * modifying caches and queues.  We always will have to remove
@@ -881,7 +881,7 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
      * wait for an image to become ready.
      */
     image = LoadAndConvertImage(mFrameList->getFrame(frameNumber),
-                                frameNumber, mCanvas, &region, levelOfDetail);
+                                frameNumber, &mCanvas->requiredImageFormat, &region, levelOfDetail);
     if (image == NULL) {
 	/* Error has already been reported */
 	return NULL;
