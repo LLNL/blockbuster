@@ -1357,7 +1357,7 @@ ppm_freecolorhash(  colorhash_table cht)
 
 /* Load the desired subimage into a set of RGB bytes */
 static int
-LoadImage(Image *image, struct FrameInfo *frameInfo,
+pnmLoadImage(Image *image, struct FrameInfo *frameInfo,
           ImageFormat *requiredImageFormat, const Rectangle *, int levelOfDetail)
 {
     FILE *f;
@@ -1568,7 +1568,7 @@ FrameList *pnmGetFrameList(const char *filename)
     frameInfo->depth = 8*depth;
     frameInfo->mFrameNumberInFile = 0;
     frameInfo->enable = 1;
-    frameInfo->LoadImage = LoadImage;
+    frameInfo->LoadImage = pnmLoadImage;
     frameInfo->DestroyFrameInfo = DefaultDestroyFrameInfo;
 
     /* Fill out the final return form, and call it a day */
