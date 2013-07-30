@@ -1541,7 +1541,8 @@ FrameList *pnmGetFrameList(const char *filename)
      * need be large enough only for 2 entries (the information
      * about the single frame, and the terminating NULL).
      */
-    frameInfo = (FrameInfo *)calloc(1, sizeof(FrameInfo));
+    frameInfo = new FrameInfo(); 
+    //frameInfo = (FrameInfo *)calloc(1, sizeof(FrameInfo));
     if (frameInfo == NULL) {
 	ERROR("cannot allocate FrameInfo structure");
 	return NULL;
@@ -1551,14 +1552,16 @@ FrameList *pnmGetFrameList(const char *filename)
     frameInfo->filename = strdup(filename);
     if (frameInfo->filename == NULL) {
 	ERROR("cannot allocate duplicate filename string");
-	free(frameInfo);
+    delete frameInfo; 
+	//	free(frameInfo);
 	return NULL;
     }
     frameList = new FrameList; 
     //    frameList = (FrameList *)calloc(1,sizeof(FrameList) + 1*sizeof(FrameInfo *));
     if (frameList == NULL) {
 	ERROR("cannot allocate FrameInfo list structure");
-	free(frameInfo);
+    delete frameInfo; 
+	//	free(frameInfo);
 	return NULL;
     }
 

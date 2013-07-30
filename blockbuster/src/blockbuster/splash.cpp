@@ -31,122 +31,11 @@
 
 extern unsigned char splashImageData[92700];  // defined at the bottom of this file
 
+static Image *splashScreen = NULL; 
+FrameList splashScreenFrameList; 
+static FrameInfo *frameInfo = NULL; 
+char splash[] = "SPLASH"; 
 
-/* This is a utility that saves the specified image to a file as
- * a compilable Image file. 
- *
- */
-
-void WriteImageToFile(Canvas *canvas, int frameNumber)
-{
-    Image *image;
-    Rectangle region;
-    FILE *f;
-    register uint32_t i;
-    register unsigned char *imageData;
-	uint32_t localFrameNumber = 0;
-
-	/* explicitly use localFrameNumber as a reminder that we may be dealing with stereo movies */
-	if(canvas->frameList->stereo) {
-	  localFrameNumber = frameNumber * 2;
-	
-	}
-	else {
-	  localFrameNumber = frameNumber;
-	}
-  
-
-    /* This particular function only works on renderers that
-     * are using the Image Cache utilities.
-     */
-    if (canvas->frameList == NULL) {
-	WARNING("Cannot write image to file - frame list is NULL");
-	return;
-    }
-    if (localFrameNumber >= canvas->frameList->numActualFrames()) {
-	WARNING("Cannot write image to file - asked for frame %d of %d",
-		localFrameNumber, canvas->frameList->numActualFrames());
-	return;
-    }
-
-    region.x = 0;
-    region.y = 0;
-    region.height = canvas->frameList->getFrame(localFrameNumber)->height;
-    region.width = canvas->frameList->getFrame(localFrameNumber)->width;
-
-    image = canvas->mRenderer->GetImage(localFrameNumber, &region, 0);
-
-    if (image == NULL) {
-	WARNING("Cannot write image to file - image is NULL");
-	return;
-    }
-
-    /* We've got an image.  Write out a description to tmp.c */
-    f = fopen("tmp.c", "w");
-    if (f == NULL) {
-	WARNING("Cannot write image to file - cannot open tmp.c");
-	canvas->mRenderer->ReleaseImage( image);
-	return;
-    }
-
-    fprintf(f, "static FrameInfo frameInfo = {\n");
-    fprintf(f, "    %d, %d, %d, /* width, height, depth */\n",
-	    image->width, image->height, image->imageFormat.bytesPerPixel * 8);
-    fprintf(f, "    0, /* maxLOD */\n"),
-    fprintf(f, "    \"SPLASH\", /* filename */\n");
-    fprintf(f, "    0, /* localFrameNumber */\n");
-    fprintf(f, "    NULL, /* privateData */\n");
-    fprintf(f, "    1, /* enable */\n");
-    fprintf(f, "    LoadSplashScreen, /* loadImageFunc */\n");
-    fprintf(f, "    NullDestroyFrameInfo,\n");
-    fprintf(f, "};\n\n");
-
-    fprintf(f, "FrameList splashScreenFrameList = {\n");
-    fprintf(f, "    1, /* count */\n");
-    fprintf(f, "    0.0, /* targetFPS */\n");
-    fprintf(f, "    {&frameInfo}\n");
-    fprintf(f, "};\n\n");
-
-    fprintf(f, "static unsigned char imageData[%d] = {",
-	    image->imageDataBytes);
-    imageData = (unsigned char *)image->imageData;
-    for (i = 0; i < image->imageDataBytes; i++) {
-	if (i > 0) fprintf(f, ", ");
-	if (i % 10 == 0) fprintf(f, "\n    ");
-	fprintf(f, "0x%02x", imageData[i]);
-    }
-    fprintf(f, "\n};\n\n");
-    fprintf(f, "static Image splashScreen = {\n");
-    fprintf(f, "    %d, %d, /* width, height */\n", 
-	    image->width, image->height);
-    fprintf(f, "    {\n");
-    fprintf(f, "        %d, /* bytesPerPixel */\n", 
-	    image->imageFormat.bytesPerPixel);
-    fprintf(f, "        %d, /* scanlineByteMultiple */\n",
-	    image->imageFormat.scanlineByteMultiple);
-    fprintf(f, "        %d, /* byteOrder */\n", 
-	    image->imageFormat.byteOrder);
-    fprintf(f, "        %d, /* rowOrder */\n", 
-	    image->imageFormat.rowOrder);
-    fprintf(f, "        %d, %d, %d, /* redShift, greenShift, blueShift */\n",
-	    image->imageFormat.redShift,
-	    image->imageFormat.greenShift,
-	    image->imageFormat.blueShift);
-    fprintf(f, "        0x%lx, 0x%lx, 0x%lx, /* redMask, greenMask, blueMask */\n",
-	    image->imageFormat.redMask,
-	    image->imageFormat.greenMask,
-	    image->imageFormat.blueMask);
-    fprintf(f, "    },\n");
-    fprintf(f, "    {0, 0, %d, %d}, /* x, y, width, height */\n",
-	    image->width, image->height);
-    fprintf(f, "    0, /* levelOfDetail */\n");
-    fprintf(f, "    %d, /* imageDataBytes */\n", image->imageDataBytes);
-    fprintf(f, "    (void *)imageData,\n");
-    fprintf(f, "};\n");
-    fclose(f);
-    canvas->mRenderer->ReleaseImage( image);
-    INFO("Saved image in tmp.c");
-}
 
 /****************************************************************/
 
@@ -178,19 +67,38 @@ splashFormat(3, /* bytesPerPixel */
 
 Rectangle splashRect(0, 0, 300, 103); /* x, y, width, height */
 
-static Image splashScreen
-(300, 103, /* width, height */
- splashFormat, splashRect,
- 0, 0, 92700, /* levelOfDetail, frameNumber, imageDataBytes */
- (void *)splashImageData, false); 
-
-
 
 static int LoadSplashScreen(Image *image, FrameInfo *,
 	ImageFormat *, const Rectangle *, int )
 {
-    *image = splashScreen;
-    return 1;
+  *image = *splashScreen; 
+  return 1;
+}
+
+
+
+void InitSplashScreen(void) {
+  if (!splashScreen) {
+    splashScreen = new Image(); 
+    splashScreen->width = 300; 
+    splashScreen->height = 103; 
+    splashScreen->imageFormat = splashFormat; 
+    splashScreen->loadedRegion = splashRect; 
+    splashScreen->imageDataBytes = 92700;
+    splashScreen->imageData = splashImageData; 
+  }
+  if (!frameInfo) {
+    frameInfo = new FrameInfo(300, 103, 24, /* width, height, depth */
+                              0, /* maxLOD */
+                              splash, /* filename */
+                              NULL, /* privateData */
+                              1, /* enable */
+                              LoadSplashScreen, /* loadImageFunc */
+                              NullDestroyFrameInfo); 
+    splashScreenFrameList.append(frameInfo); 
+  }
+    
+  return; 
 }
 
 #endif
@@ -200,18 +108,7 @@ static int LoadSplashScreen(Image *image, FrameInfo *,
  * and using the "s" movie control function should be appended
  * here.
  */
-char splash[] = "SPLASH"; 
-static FrameInfo frameInfo
-(300, 103, 24, /* width, height, depth */
- 0, /* maxLOD */
- splash, /* filename */
- NULL, /* privateData */
- 1, /* enable */
- LoadSplashScreen, /* loadImageFunc */
- NullDestroyFrameInfo); 
 
-
-FrameList splashScreenFrameList(&frameInfo); 
 
 unsigned char splashImageData[92700] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 

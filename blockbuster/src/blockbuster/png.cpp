@@ -303,57 +303,60 @@ FrameList *pngGetFrameList(const char *filename)
 
     /* Start reading the file straight away */
     if (!PrepPng(filename, &f, &readStruct, &infoStruct)) {
-	/* Error has already been reported */
-	return NULL;
+      /* Error has already been reported */
+      return NULL;
     }
-
+    
     /* Prepare the FrameList and FrameInfo structures we are to
      * return to the user.  Since a PNG file stores a single 
      * frame, we need only one frameInfo, and the frameList
      * need be large enough only for 2 entries (the information
      * about the single frame, and the terminating NULL).
      */
-    frameInfo = (FrameInfo *)calloc(1, sizeof(FrameInfo));
+    frameInfo = new FrameInfo(); 
+    //frameInfo = (FrameInfo *)calloc(1, sizeof(FrameInfo));
     if (frameInfo == NULL) {
-	ERROR("cannot allocate FrameInfo structure");
-	png_destroy_read_struct(&readStruct, &infoStruct, NULL);
-	fclose(f);
-	return NULL;
+      ERROR("cannot allocate FrameInfo structure");
+      png_destroy_read_struct(&readStruct, &infoStruct, NULL);
+      fclose(f);
+      return NULL;
     }
-
+    
     frameInfo->privateData = NULL;
     frameInfo->filename = strdup(filename);
     if (frameInfo->filename == NULL) {
-	ERROR("cannot allocate duplicate filename string");
-	free(frameInfo);
-	png_destroy_read_struct(&readStruct, &infoStruct, NULL);
-	fclose(f);
-	return NULL;
+      ERROR("cannot allocate duplicate filename string");
+      delete frameInfo; 
+      //free(frameInfo);
+      png_destroy_read_struct(&readStruct, &infoStruct, NULL);
+      fclose(f);
+      return NULL;
     }
-
-     frameList = new FrameList; 
+    
+    frameList = new FrameList; 
     if (frameList == NULL) {
-	ERROR("cannot allocate FrameInfo list structure");
-	free(frameInfo);
-	png_destroy_read_struct(&readStruct, &infoStruct, NULL);
-	fclose(f);
-	return NULL;
+      ERROR("cannot allocate FrameInfo list structure");
+      delete frameInfo; 
+      //	free(frameInfo);
+      png_destroy_read_struct(&readStruct, &infoStruct, NULL);
+      fclose(f);
+      return NULL;
     }
-
+    
     /* The info is all read; this routine extracts the info
      * from the structures that already store it.
      */
     png_get_IHDR(readStruct, infoStruct, 
-	    &width, &height, &depth, &colorType, 
-	    &interlaceType, &compressionType, &filterMethod);
-
+                 &width, &height, &depth, &colorType, 
+                 &interlaceType, &compressionType, &filterMethod);
+    
     /* Done with all the reading we're going to do.  Close up the
      * file and destroy the structures we allocated to help with
      * the reading.
      */
     png_destroy_read_struct(&readStruct, &infoStruct, NULL);
     fclose(f);
-
+    
     /* Fill out the rest of the frameInfo information */
     frameInfo->width = width;
     frameInfo->height = height;
@@ -368,26 +371,27 @@ FrameList *pngGetFrameList(const char *filename)
 	case PNG_COLOR_TYPE_GRAY_ALPHA:
 	case PNG_COLOR_TYPE_RGB:
 	case PNG_COLOR_TYPE_RGB_ALPHA:
-	    frameInfo->depth = depth * 3; 
-	    break;
+      frameInfo->depth = depth * 3; 
+      break;
 	case PNG_COLOR_TYPE_PALETTE:
-	    frameInfo->depth = depth;
-	    break;
+      frameInfo->depth = depth;
+      break;
 	default:
-	    WARNING("Unrecognized PNG color type %d ignored.", colorType);
-	    free(frameInfo);
-	    delete frameList;
-	    return NULL;
+      WARNING("Unrecognized PNG color type %d ignored.", colorType);
+      delete frameInfo; 
+      //	    free(frameInfo);
+      delete frameList;
+      return NULL;
     }
     frameInfo->mFrameNumberInFile = 0;
     frameInfo->enable = 1;
     frameInfo->LoadImage = pngLoadImage;
     frameInfo->DestroyFrameInfo = DefaultDestroyFrameInfo;
-
+    
     /* Fill out the final return form, and call it a day */
     frameList->append(frameInfo);
     frameList->targetFPS = 0.0;
-
+    
     frameList->formatName = "PNG"; 
     frameList->formatDescription = "Single-frame image in a PNG file"; 
     return frameList;

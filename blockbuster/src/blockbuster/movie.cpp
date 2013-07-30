@@ -751,7 +751,7 @@ int DisplayLoop(FrameList **allFramesPtr, ProgramOptions *options)
              
     break;
       case MOVIE_SAVE_IMAGE:
-        WriteImageToFile(canvas, frameNumber);
+        canvas->WriteImageToFile(frameNumber);
         break;
        case MOVIE_SAVE_FRAME:
          if (frameInfo ) {
