@@ -27,6 +27,8 @@ struct Canvas {
     mRenderer->Render(frameNumber, imageRegion, destX, destY, zoom, lod);
   } 
   
+  void WriteImageToFile(int frameNumber);
+
   FrameInfo *GetFrameInfoPtr(int frameNumber);
   
   void SetFrameList(FrameList *frameList) {

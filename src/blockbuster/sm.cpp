@@ -223,8 +223,8 @@ FrameList *smGetFrameList(const char *filename)
     }
 
     for (i = 0; i < numFrames; i++) {
-	FrameInfo *frameInfo;
-	frameInfo = (FrameInfo *)calloc(1, sizeof(FrameInfo));
+	FrameInfo *frameInfo = new FrameInfo(); 
+    //frameInfo = (FrameInfo *)calloc(1, sizeof(FrameInfo));
 	if (frameInfo == NULL) {
 	    ERROR(
 		"cannot allocate %d%s FrameInfo structure (of %d) for file %s",

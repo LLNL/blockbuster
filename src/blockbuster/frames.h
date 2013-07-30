@@ -64,34 +64,22 @@ struct ImageFormat{
   unsigned long redMask, greenMask, blueMask;
 } ;
 
-struct Image {
-  Image(uint32_t w, uint32_t h, 
-        ImageFormat &form, Rectangle &region, int lod, uint32_t frame, 
-        unsigned int idb, void *data, bool manageData=false) :
-    width(w), height(h), imageFormat(form), loadedRegion(region), 
-    levelOfDetail(lod), 
-    frameNumber(frame), imageDataBytes(idb), imageData(data), 
-    mManageData(manageData) {
-    init(); 
-  } 
 
-  void init(void) {
-    if (mManageData) {
-      imageData = new char[imageDataBytes]; 
-    }
+struct Image {
+  Image(): width(0), height(0), levelOfDetail(0), 
+           frameNumber(0), imageDataBytes(0), imageData(NULL) {
+    return; 
   }
-    
+   
   ~Image() {
-    if (mManageData && imageData) delete[] (char*)imageData; 
     return; 
   }
   
   // this will be the Image API
-  int LoadImage(struct FrameInfo *frameInfo,
-    ImageFormat *requiredImageFormat, 
-    const Rectangle *region,
-    int levelOfDetail
-                ) {
+  int LoadImage(struct FrameInfo */*frameInfo*/,
+                ImageFormat */*requiredImageFormat*/, 
+                const Rectangle */*region*/,
+                int /*levelOfDetail */ ) {
     return 0; 
   }
 
@@ -102,7 +90,7 @@ struct Image {
   uint32_t frameNumber; // if appropriate
   unsigned int imageDataBytes;
   void *imageData;      /* the actual image data created when read from disk */
-  bool mManageData; // if true, then imageData will be free()'d during destructor
+  //bool mManageData; // if true, then imageData will be free()'d during destructor
   
 } ;
 
@@ -128,18 +116,27 @@ struct FrameInfo {
   FrameInfo(): width(0), height(0), depth(0), maxLOD(0), filename(NULL), 
                mFrameNumberInFile(0), privateData(NULL), mTextureObject(NULL), 
                enable(0), LoadImage(NULL), DestroyFrameInfo(NULL) {}
-  FrameInfo(int w, int h, int d, int lod, char *fname, /*int fnum, */
+  
+  FrameInfo(int w, int h, int d, int lod, char *fname, 
             void *priv, int en, 
             LoadImageFunc lif, DestroyFrameFunc dff):
     width(w), height(h), depth(d), maxLOD(lod), filename(fname), 
     mFrameNumberInFile(0), privateData(priv), mTextureObject(NULL), enable(en), 
-    LoadImage(lif), DestroyFrameInfo(dff) {}
-            
-  ~FrameInfo() {}
+    LoadImage(lif), DestroyFrameInfo(dff) {
+    return; 
+  }
+  
+  ~FrameInfo() {
+    return; 
+  }
 
   QString toString(void) {
     return QString("{ FrameInfo: frameNumber = %1 in file %2}").arg(mFrameNumberInFile).arg(filename); 
   }
+
+  Image *LoadAndConvertImage(unsigned int frameNumber,
+                             ImageFormat *canvasFormat, 
+                             const Rectangle *region, int levelOfDetail);
   /* Basic statistics */
   int width, height, depth;
   
@@ -167,6 +164,8 @@ struct FrameInfo {
   /* A flag that we can use to disable frames that have errors */
   int enable;
   
+  Image *mImage; 
+
   /* This routine is called to pull the frame contents out
    * of a file.  The file format module can pull out only the
    * desired subimage, or it might pull out the whole thing;

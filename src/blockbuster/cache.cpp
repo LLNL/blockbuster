@@ -71,87 +71,6 @@ bool jobComparer(const ImageCacheJob *first, const ImageCacheJob *second){
 }
 
 
-/* This utility function handles loading and converting images appropriately,
- * for both the single-threaded and multi-threaded cases.
- */
-#define MAX_CONVERSION_WARNINGS 10
-static Image *LoadAndConvertImage(FrameInfo *frameInfo, unsigned int frameNumber,
-	ImageFormat *canvasFormat, const Rectangle *region, int levelOfDetail)
-{
-  CACHEDEBUG(QString("LoadAndConvertImage frame %1, region %2, frameInfo %3").arg( frameNumber).arg(region->toString()).arg((uint64_t)frameInfo)); 
-
-    Image *image, *convertedImage;
-    int rv;
-    static int conversionCount = 0;
-
-    if (!frameInfo->enable) return NULL;
-
-    image = (Image *) calloc(1, sizeof(Image));
-    if (!image) {
-	ERROR("Out of memory in LoadAndConvertImage");
-	return NULL;
-    }
-
-    CACHEDEBUG("LoadImage being called"); 
-    /* Call the file format module to load the image */
-    rv = (*frameInfo->LoadImage)(image, frameInfo, 
-                                 canvasFormat,
-                                 region, levelOfDetail);
-    image->frameNumber = frameNumber; 
-    CACHEDEBUG("LoadImage done"); 
-
-    if (!rv) {
-	ERROR("could not load frame %d (frame %d of file name %s) for the cache",
-	    frameNumber,
-	    frameInfo->mFrameNumberInFile,
-	    frameInfo->filename
-	);
-	frameInfo->enable = 0;
-    //if (image->imageData) free (image->imageData);
-	free(image);
-	return NULL;
-    }
-
-    /* The file format module, which loaded the image for us, tried to
-     * do as good a job as it could to match the format our canvas
-     * requires, but it might not have succeeded.  Try to convert
-     * this image to the correct format.  If the same image comes
-     * back, no conversion was necessary; if a NULL image comes back,
-     * conversion failed.  If any other image comes back, we can
-     * discard the original, and use the conversion instead.
-     */
-    convertedImage = ConvertImageToFormat(image, canvasFormat);
-    if (convertedImage != image) {
-      /* We either converted, or failed to convert; in either
-       * case, the old image is useless.
-       */
-      //if (image->imageData) free (image->imageData); 
-      free(image);
-      
-      image = convertedImage;
-      if (image == NULL) {
-	    ERROR("failed to convert frame %d", frameNumber);
-      }
-      else {
-	    conversionCount++;
-	    if (conversionCount < MAX_CONVERSION_WARNINGS) {
-          /* We'll issue a warning anyway, as conversion is an expensive
-           * process.
-           */
-          WARNING("had to convert frame %d", frameNumber);
-          
-          if (conversionCount +1 == MAX_CONVERSION_WARNINGS) {
-		    WARNING("(suppressing further conversion warnings)");
-          }
-	    }
-      }
-    }
-
-    /* If we have a NULL image, the converter already reported it. */
-    CACHEDEBUG("Done with LoadAndConvertImage, frame %d", frameNumber); 
-    return image;
-}
-
 
 #define NEW_CACHE 1
 #ifdef NEW_CACHE
@@ -237,8 +156,12 @@ void CacheThread::run() {
 	 * boss thread can return.
 	 */
     CACHEDEBUG("Worker thread calling LoadAndConvertImage for frame %d", job->frameNumber); 
-	image = LoadAndConvertImage(&job->frameInfo,
-	    job->frameNumber, &this->cache->mCanvas->requiredImageFormat, &job->region, job->levelOfDetail);
+    image = job->frameInfo.LoadAndConvertImage
+      (job->frameNumber, &this->cache->mCanvas->requiredImageFormat, 
+       &job->region, job->levelOfDetail);
+
+    /*	image = LoadAndConvertImage(&job->frameInfo,
+      job->frameNumber, &this->cache->mCanvas->requiredImageFormat, &job->region, job->levelOfDetail);*/
 
 	/* With image in hand (or possibly a NULL), we're ready to start
 	 * modifying caches and queues.  We always will have to remove
@@ -880,8 +803,11 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
      * image ourselves; if we're multi-threaded, add work to the work queue and 
      * wait for an image to become ready.
      */
-    image = LoadAndConvertImage(mFrameList->getFrame(frameNumber),
-                                frameNumber, &mCanvas->requiredImageFormat, &region, levelOfDetail);
+    image = mFrameList->getFrame(frameNumber)->
+      LoadAndConvertImage(frameNumber, &mCanvas->requiredImageFormat, 
+                                &region, levelOfDetail);
+    /*image = LoadAndConvertImage(mFrameList->getFrame(frameNumber),
+      frameNumber, &mCanvas->requiredImageFormat, &region, levelOfDetail);*/
     if (image == NULL) {
 	/* Error has already been reported */
 	return NULL;

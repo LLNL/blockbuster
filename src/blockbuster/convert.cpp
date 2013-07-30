@@ -150,22 +150,22 @@ Image *ConvertImageToFormat(const Image *image, ImageFormat *canvasFormat)
 	(srcFormat->rowOrder == destFormat->rowOrder ||
          destFormat->rowOrder == ROW_ORDER_DONT_CARE)
     ) {
-	/* It's possible that we match - we need a closer look. */
-	if (srcBytesPerPixel >= 3) {
+      /* It's possible that we match - we need a closer look. */
+      if (srcBytesPerPixel >= 3) {
 	    /* Match, as we ignore the extra bytes in a pixel */
 	    return (Image *) image;
-	}
-
-	/* Less than 3 bytes per pixel - we match if our
-	 * shifts and masks all match.
-	 */
-	if (srcFormat->redShift == destFormat->redShift &&
-	    srcFormat->greenShift == destFormat->greenShift &&
-	    srcFormat->blueShift == destFormat->blueShift &&
-	    srcFormat->redMask == destFormat->redMask &&
-	    srcFormat->greenMask == destFormat->greenMask &&
-	    srcFormat->blueMask == destFormat->blueMask)
-           return (Image *) image;
+      }
+      
+      /* Less than 3 bytes per pixel - we match if our
+       * shifts and masks all match.
+       */
+      if (srcFormat->redShift == destFormat->redShift &&
+          srcFormat->greenShift == destFormat->greenShift &&
+          srcFormat->blueShift == destFormat->blueShift &&
+          srcFormat->redMask == destFormat->redMask &&
+          srcFormat->greenMask == destFormat->greenMask &&
+          srcFormat->blueMask == destFormat->blueMask)
+        return (Image *) image;
     }
     /* Otherwise, we suffer a non-trivial conversion. Create a new
      * image from scratch.

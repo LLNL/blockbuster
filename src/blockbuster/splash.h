@@ -3,7 +3,6 @@
 
 
   /* Splash Screen functions from splash.c */
-   void WriteImageToFile(Canvas *canvas, int frameNumber);
   extern FrameList splashScreenFrameList;
 
 

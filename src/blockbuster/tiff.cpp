@@ -391,7 +391,8 @@ FrameList *tiffGetFrameList(const char *filename)
      * need be large enough only for 2 entries (the information
      * about the single frame, and the terminating NULL).
      */
-    frameInfo = (FrameInfo *)calloc(1, sizeof(FrameInfo));
+    frameInfo = new FrameInfo(); 
+    //frameInfo = (FrameInfo *)calloc(1, sizeof(FrameInfo));
     if (frameInfo == NULL) {
 	ERROR("cannot allocate FrameInfo structure");
 	return NULL;
@@ -400,7 +401,8 @@ FrameList *tiffGetFrameList(const char *filename)
     privateDataPtr = (privateData *)calloc(1, sizeof(privateData));
     if (privateDataPtr == NULL) {
 	ERROR("cannot allocate private data structure");
-	free(frameInfo);
+	delete frameInfo; 
+	//free(frameInfo);
 	return NULL;
     }
 
@@ -408,7 +410,8 @@ FrameList *tiffGetFrameList(const char *filename)
     if (frameInfo->filename == NULL) {
 	ERROR("cannot allocate duplicate filename string");
 	free(privateDataPtr);
-	free(frameInfo);
+	delete frameInfo; 
+	//free(frameInfo);
 	return NULL;
     }
 
@@ -417,7 +420,8 @@ FrameList *tiffGetFrameList(const char *filename)
     if (frameList == NULL) {
 	ERROR("cannot allocate FrameInfo list structure");
 	free(privateDataPtr);
-	free(frameInfo);
+	delete frameInfo; 
+	//free(frameInfo);
 	return NULL;
     }
 
@@ -451,7 +455,8 @@ FrameList *tiffGetFrameList(const char *filename)
 	    filename, bitsPerSample, samplesPerPixel);
 	delete frameList;
 	free(privateDataPtr);
-	free(frameInfo);
+	delete frameInfo; 
+	//free(frameInfo);
 	return NULL;
     }
     
@@ -461,7 +466,8 @@ FrameList *tiffGetFrameList(const char *filename)
 	    filename, width);
 	delete frameList;
 	free(privateDataPtr);
-	free(frameInfo);
+	delete frameInfo; 
+	//free(frameInfo);
 	return NULL;
     }
 

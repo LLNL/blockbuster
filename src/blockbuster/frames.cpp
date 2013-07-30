@@ -37,6 +37,7 @@
 #include "sm.h"
 #include "errmsg.h"
 #include "settings.h"
+#include "convert.h"
 
 static QString matchName; 
 
@@ -68,6 +69,88 @@ void DefaultDestroyFrameInfo(FrameInfo *frameInfo)
 	free(frameInfo);
     }
 }
+
+//===============================================================
+/* This utility function handles loading and converting images appropriately,
+ * for both the single-threaded and multi-threaded cases.
+ */
+#define MAX_CONVERSION_WARNINGS 10
+Image *FrameInfo::LoadAndConvertImage(unsigned int frameNumber,
+	ImageFormat *canvasFormat, const Rectangle *region, int levelOfDetail)
+{
+  DEBUGMSG(QString("LoadAndConvertImage frame %1, region %2, frameInfo %3").arg( frameNumber).arg(region->toString()).arg((uint64_t)this)); 
+
+    Image *image, *convertedImage;
+    int rv;
+    static int conversionCount = 0;
+
+    if (!enable) return NULL;
+
+    image = (Image *) calloc(1, sizeof(Image));
+    if (!image) {
+	ERROR("Out of memory in LoadAndConvertImage");
+	return NULL;
+    }
+
+    DEBUGMSG("LoadImage being called"); 
+    /* Call the file format module to load the image */
+    rv = (*LoadImage)(image, this, 
+                      canvasFormat,
+                      region, levelOfDetail);
+    image->frameNumber = frameNumber; 
+    DEBUGMSG("LoadImage done"); 
+
+    if (!rv) {
+	ERROR("could not load frame %d (frame %d of file name %s) for the cache",
+	    frameNumber,
+	    mFrameNumberInFile,
+	    filename
+	);
+	enable = 0;
+	free(image);
+	return NULL;
+    }
+
+    /* The file format module, which loaded the image for us, tried to
+     * do as good a job as it could to match the format our canvas
+     * requires, but it might not have succeeded.  Try to convert
+     * this image to the correct format.  If the same image comes
+     * back, no conversion was necessary; if a NULL image comes back,
+     * conversion failed.  If any other image comes back, we can
+     * discard the original, and use the conversion instead.
+     */
+    convertedImage = ConvertImageToFormat(image, canvasFormat);
+    if (convertedImage != image) {
+      /* We either converted, or failed to convert; in either
+       * case, the old image is useless.
+       */
+      //if (image->imageData) free (image->imageData); 
+      free(image);
+      
+      image = convertedImage;
+      if (image == NULL) {
+	    ERROR("failed to convert frame %d", frameNumber);
+      }
+      else {
+	    conversionCount++;
+	    if (conversionCount < MAX_CONVERSION_WARNINGS) {
+          /* We'll issue a warning anyway, as conversion is an expensive
+           * process.
+           */
+          WARNING("had to convert frame %d", frameNumber);
+          
+          if (conversionCount +1 == MAX_CONVERSION_WARNINGS) {
+		    WARNING("(suppressing further conversion warnings)");
+          }
+	    }
+      }
+    }
+
+    /* If we have a NULL image, the converter already reported it. */
+    DEBUGMSG("Done with LoadAndConvertImage, frame %d", frameNumber); 
+    return image;
+}
+
 
 //===============================================================
 

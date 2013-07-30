@@ -8,4 +8,5 @@ Image *ScaleImage(const Image *image,
                   int srcX, int srcY, int srcWidth, int srcHeight,
                   int zoomedWidth, int zoomedHeight);
 
+
 #endif
