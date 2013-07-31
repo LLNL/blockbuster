@@ -778,7 +778,7 @@ int DisplayLoop(FrameList **allFramesPtr, ProgramOptions *options)
              int size[3] = {region.width, region.height, 3}; 
              int result = 
                write_png_file(filename.toAscii().data(), 
-                              static_cast<unsigned char*>(image->imageData), 
+                              (unsigned char*)image->Data(), 
                               size);
              if (result == -1) {
                ERROR("Could not write png file %s.", filename.toAscii().data()); 

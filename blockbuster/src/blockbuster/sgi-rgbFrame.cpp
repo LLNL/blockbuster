@@ -204,42 +204,34 @@ SGILoadImage(Image *image, FrameInfo *frameInfo,
 {
   int rowWidth;
 
-  if (!image->imageData) {
-
-	image->width = frameInfo->width;
-	image->height = frameInfo->height;
-	image->levelOfDetail = 0;
-	image->imageFormat = *format;
-
-	if (image->imageFormat.rowOrder == ROW_ORDER_DONT_CARE)
-      image->imageFormat.rowOrder = BOTTOM_TO_TOP; /* Bias for OpenGL */
-	else
-      image->imageFormat.rowOrder = format->rowOrder;
-
-	if (image->imageFormat.bytesPerPixel == 0)
-      image->imageFormat.bytesPerPixel = 3;
-
-	if (image->imageFormat.scanlineByteMultiple == 0)
-      image->imageFormat.scanlineByteMultiple = 1;
-
-	rowWidth = ROUND_TO_MULTIPLE(
-                                 image->width * image->imageFormat.bytesPerPixel,
-                                 image->imageFormat.scanlineByteMultiple);
-
-	image->imageDataBytes = frameInfo->height * rowWidth;
-	image->imageData = malloc(image->imageDataBytes);
-	if (image->imageData == NULL) {
-      ERROR("could not allocate %dx%dx%d image data",
-            frameInfo->width, frameInfo->height, frameInfo->depth);
-      return 0;
-	}
-  }
-  else {
-	rowWidth = ROUND_TO_MULTIPLE(
-                                 image->width * image->imageFormat.bytesPerPixel,
-                                 image->imageFormat.scanlineByteMultiple);
+  if (!image->allocate(frameInfo->height * rowWidth)) {
+    ERROR("could not allocate %dx%dx%d image data",
+          frameInfo->width, frameInfo->height, frameInfo->depth);
+    return 0;
   }
 
+  image->width = frameInfo->width;
+  image->height = frameInfo->height;
+  image->levelOfDetail = 0;
+  image->imageFormat = *format;
+  
+  if (image->imageFormat.rowOrder == ROW_ORDER_DONT_CARE)
+    image->imageFormat.rowOrder = BOTTOM_TO_TOP; /* Bias for OpenGL */
+  else
+    image->imageFormat.rowOrder = format->rowOrder;
+  
+  if (image->imageFormat.bytesPerPixel == 0)
+    image->imageFormat.bytesPerPixel = 3;
+  
+  if (image->imageFormat.scanlineByteMultiple == 0)
+    image->imageFormat.scanlineByteMultiple = 1;
+  
+  rowWidth = ROUND_TO_MULTIPLE(
+                               image->width * image->imageFormat.bytesPerPixel,
+                               image->imageFormat.scanlineByteMultiple);
+  
+
+  
   /* OK, now really load the image */
   {
 	rawImageRec *rec;
@@ -268,12 +260,12 @@ SGILoadImage(Image *image, FrameInfo *frameInfo,
 	}
 
 	if (image->imageFormat.rowOrder == TOP_TO_BOTTOM) {
-      rowStart = (char *) image->imageData
+      rowStart = (char *) image->Data()
 		+ (image->height - 1) * rowWidth;
       rowStride = -rowWidth;
 	}
 	else {
-      rowStart = (char *) image->imageData;
+      rowStart = (char *) image->Data();
       rowStride = rowWidth;
 	}
 
@@ -344,7 +336,7 @@ FrameList *sgirgbGetFrameList(const char *filename)
   frameInfo->height = rec->sizeY;
   frameInfo->depth = rec->sizeZ * 8;
   frameInfo->mFrameNumberInFile = 0;
-  frameInfo->enable = 1;
+  //frameInfo->enable = 1;
   frameInfo->LoadImageFunPtr = SGILoadImage;
 
   /* Fill out the final return form, and call it a day */

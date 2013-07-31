@@ -100,7 +100,7 @@ static unsigned int Distance(unsigned int oldFrame, unsigned int newFrame,
  */
 
 void CacheThread::run() {
-  Image *image;
+  Image *image = NULL;
   ImageCacheJob *job =NULL;
   CachedImage *imageSlot;
   CACHEDEBUG("CacheThread::run() (thread = %p)", QThread::currentThread()); 
@@ -185,8 +185,7 @@ void CacheThread::run() {
        */
       this->cache->unlock("useless job", __FILE__, __LINE__); 
       if (image) {
-        if (image->imageData) free(image->imageData); 
-        free(image);
+        delete image;
         image = NULL;
       }
 	}
@@ -216,8 +215,7 @@ void CacheThread::run() {
 
       this->cache->unlock("no place for job", __FILE__, __LINE__); 
       this->cache->WakeAllJobDone("no place for job",__FILE__, __LINE__); 
-      if (image->imageData) free(image->imageData); 
-      free(image);
+      delete image;
       image = NULL;
 	}
 	else {
@@ -419,8 +417,7 @@ CachedImage *ImageCache::GetCachedImageSlot(uint32_t newFrameNumber)
    * before returning it.
    */
   if (imageSlot->loaded) {
-    if (imageSlot->image->imageData) free (imageSlot->image->imageData); 
-    free(imageSlot->image);
+    delete imageSlot->image;
     imageSlot->image = NULL;
     imageSlot->loaded = 0;
   }
@@ -489,10 +486,7 @@ void ImageCache::ClearImages(void)
       CACHEDEBUG("cached image %d forcibly unlocked while clearing cache",	i);
 	}
 	if (this->mCachedImages[i].loaded) {
-      if (this->mCachedImages[i].image->imageData) {
-        free(this->mCachedImages[i].image->imageData);
-      }
-      free(this->mCachedImages[i].image);
+      delete this->mCachedImages[i].image;
       this->mCachedImages[i].image = NULL;
       this->mCachedImages[i].loaded = 0;
     }
@@ -847,16 +841,13 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
 	if (mNumReaderThreads > 0) {
       unlock("no place for image", __FILE__, __LINE__); 
 	}
-	if (image->imageData) free(image->imageData);
-	free(image);
-    image = NULL;
+	delete image;
 	return NULL;
   }
 
   /* if there's an image in this slot, free it! */
   if (imageSlot->image) {
-    if (imageSlot->image->imageData) free(imageSlot->image->imageData);
-    free(imageSlot->image);
+    delete imageSlot->image;
     imageSlot->image = NULL;
   }
 

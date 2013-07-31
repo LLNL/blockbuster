@@ -30,11 +30,11 @@
 #include "util.h"
 #include <libgen.h>
 #include "frames.h"
-#include "pnm.h"
-#include "bbpng.h"
-#include "tiff.h"
-#include "sgi-rgb.h"
-#include "sm.h"
+#include "pnmFrame.h"
+#include "pngFrame.h"
+#include "tiffFrame.h"
+#include "sgi-rgbFrame.h"
+#include "smFrame.h"
 #include "errmsg.h"
 #include "settings.h"
 #include "convert.h"
@@ -75,9 +75,12 @@ Image *FrameInfo::LoadAndConvertImage(unsigned int frameNumber,
   int rv;
   static int conversionCount = 0;
 
-  if (!enable) return NULL;
+  /*  if (!enable) {
+    cerr << "Interesting: disabled FrameInfo" << endl; 
+    return NULL;
+    }*/
 
-  image = (Image *) calloc(1, sizeof(Image));
+  image = new Image(); 
   if (!image) {
 	ERROR("Out of memory in LoadAndConvertImage");
 	return NULL;
@@ -97,8 +100,8 @@ Image *FrameInfo::LoadAndConvertImage(unsigned int frameNumber,
           mFrameNumberInFile,
           filename.c_str()
           );
-	enable = 0;
-	free(image);
+	//enable = 0;
+	delete image; 
 	return NULL;
   }
 
@@ -115,9 +118,8 @@ Image *FrameInfo::LoadAndConvertImage(unsigned int frameNumber,
     /* We either converted, or failed to convert; in either
      * case, the old image is useless.
      */
-    //if (image->imageData) free (image->imageData); 
-    free(image);
-      
+    delete image; 
+  
     image = convertedImage;
     if (image == NULL) {
       ERROR("failed to convert frame %d", frameNumber);
@@ -199,8 +201,8 @@ bool FrameList::LoadFrames(QStringList &files) {
      */
     if (QString(base).startsWith("dfc:")) {
       numFiles = 1;
-      fileList = (struct dirent **)malloc(sizeof(struct direct *));
-      fileList[0] = (struct dirent *)malloc(sizeof(struct dirent));
+      fileList = new struct dirent *;
+      fileList[0] = new struct dirent;
       strcpy(fileList[0]->d_name,base);
       directory[0] = '\0';
     } 
@@ -269,12 +271,10 @@ bool FrameList::LoadFrames(QStringList &files) {
     /* Done with this argument; free up the matching file list and
      * other associated variables.
      */
-    //free(directory);
-    //free(base);
     for (i = 0; i < numFiles; i++) {
-      free(fileList[i]);
+      delete fileList[i];
     }
-    free(fileList);
+    delete fileList; 
   }
   
   return frames.size()>0;

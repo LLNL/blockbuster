@@ -33,7 +33,7 @@
 #include "errmsg.h"
 #include "splash.h"
 #include "frames.h"
-#include "sm.h"
+#include "smFrame.h"
 #include "cache.h"
 #include <time.h>
 #include "util.h"
