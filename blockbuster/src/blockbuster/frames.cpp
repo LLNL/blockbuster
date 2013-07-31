@@ -51,23 +51,20 @@ static QString matchName;
 #if defined(irix) || defined(aix) || defined(__APPLE__)
 static int matchStartOfName(struct dirent *entry)
 #else
-static int matchStartOfName(const struct dirent *entry)
+  static int matchStartOfName(const struct dirent *entry)
 #endif
 {
-    /* RDC -- this is all that is needed.  The old version of this function called stat on every matching file, for no good reason I could tell.  Unfortunately, on a 32 bit OS with large files, this caused weird behavior, so I just pulled it out.  We're left with a very easy check  - check the name to see if it matches */
+  /* RDC -- this is all that is needed.  The old version of this function called stat on every matching file, for no good reason I could tell.  Unfortunately, on a 32 bit OS with large files, this caused weird behavior, so I just pulled it out.  We're left with a very easy check  - check the name to see if it matches */
   return (QString(entry->d_name) == matchName); 
 }
 
 /* This routine is called to release all the memory associated with a frame. */
 void DefaultDestroyFrameInfo(FrameInfo *frameInfo)
 {
-    if (frameInfo) {
+  if (frameInfo) {
 	/* Release the filename allocated with strdup. */
-	if (frameInfo->filename) {
-	    free(frameInfo->filename);
-	}
-	free(frameInfo);
-    }
+    free(frameInfo);
+  }
 }
 
 //===============================================================
@@ -76,79 +73,79 @@ void DefaultDestroyFrameInfo(FrameInfo *frameInfo)
  */
 #define MAX_CONVERSION_WARNINGS 10
 Image *FrameInfo::LoadAndConvertImage(unsigned int frameNumber,
-	ImageFormat *canvasFormat, const Rectangle *region, int levelOfDetail)
+                                      ImageFormat *canvasFormat, const Rectangle *region, int levelOfDetail)
 {
   DEBUGMSG(QString("LoadAndConvertImage frame %1, region %2, frameInfo %3").arg( frameNumber).arg(region->toString()).arg((uint64_t)this)); 
 
-    Image *image, *convertedImage;
-    int rv;
-    static int conversionCount = 0;
+  Image *image, *convertedImage;
+  int rv;
+  static int conversionCount = 0;
 
-    if (!enable) return NULL;
+  if (!enable) return NULL;
 
-    image = (Image *) calloc(1, sizeof(Image));
-    if (!image) {
+  image = (Image *) calloc(1, sizeof(Image));
+  if (!image) {
 	ERROR("Out of memory in LoadAndConvertImage");
 	return NULL;
-    }
+  }
 
-    DEBUGMSG("LoadImage being called"); 
-    /* Call the file format module to load the image */
-    rv = (*LoadImage)(image, this, 
-                      canvasFormat,
-                      region, levelOfDetail);
-    image->frameNumber = frameNumber; 
-    DEBUGMSG("LoadImage done"); 
+  DEBUGMSG("LoadImage being called"); 
+  /* Call the file format module to load the image */
+  rv = (*LoadImage)(image, this, 
+                    canvasFormat,
+                    region, levelOfDetail);
+  image->frameNumber = frameNumber; 
+  DEBUGMSG("LoadImage done"); 
 
-    if (!rv) {
+  if (!rv) {
 	ERROR("could not load frame %d (frame %d of file name %s) for the cache",
-	    frameNumber,
-	    mFrameNumberInFile,
-	    filename
-	);
+          frameNumber,
+          mFrameNumberInFile,
+          filename.c_str()
+          );
 	enable = 0;
 	free(image);
 	return NULL;
-    }
+  }
 
-    /* The file format module, which loaded the image for us, tried to
-     * do as good a job as it could to match the format our canvas
-     * requires, but it might not have succeeded.  Try to convert
-     * this image to the correct format.  If the same image comes
-     * back, no conversion was necessary; if a NULL image comes back,
-     * conversion failed.  If any other image comes back, we can
-     * discard the original, and use the conversion instead.
+  /* The file format module, which loaded the image for us, tried to
+   * do as good a job as it could to match the format our canvas
+   * requires, but it might not have succeeded.  Try to convert
+   * this image to the correct format.  If the same image comes
+   * back, no conversion was necessary; if a NULL image comes back,
+   * conversion failed.  If any other image comes back, we can
+   * discard the original, and use the conversion instead.
+   */
+  convertedImage = ConvertImageToFormat(image, canvasFormat);
+  if (convertedImage != image) {
+    /* We either converted, or failed to convert; in either
+     * case, the old image is useless.
      */
-    convertedImage = ConvertImageToFormat(image, canvasFormat);
-    if (convertedImage != image) {
-      /* We either converted, or failed to convert; in either
-       * case, the old image is useless.
-       */
-      //if (image->imageData) free (image->imageData); 
-      free(image);
+    //if (image->imageData) free (image->imageData); 
+    free(image);
       
-      image = convertedImage;
-      if (image == NULL) {
-	    ERROR("failed to convert frame %d", frameNumber);
-      }
-      else {
-	    conversionCount++;
-	    if (conversionCount < MAX_CONVERSION_WARNINGS) {
-          /* We'll issue a warning anyway, as conversion is an expensive
-           * process.
-           */
-          WARNING("had to convert frame %d", frameNumber);
+    image = convertedImage;
+    if (image == NULL) {
+      ERROR("failed to convert frame %d", frameNumber);
+    }
+    else {
+      conversionCount++;
+      if (conversionCount < MAX_CONVERSION_WARNINGS) {
+        /* We'll issue a warning anyway, as conversion is an expensive
+         * process.
+         */
+        WARNING("had to convert frame %d", frameNumber);
           
-          if (conversionCount +1 == MAX_CONVERSION_WARNINGS) {
-		    WARNING("(suppressing further conversion warnings)");
-          }
-	    }
+        if (conversionCount +1 == MAX_CONVERSION_WARNINGS) {
+          WARNING("(suppressing further conversion warnings)");
+        }
       }
     }
+  }
 
-    /* If we have a NULL image, the converter already reported it. */
-    DEBUGMSG("Done with LoadAndConvertImage, frame %d", frameNumber); 
-    return image;
+  /* If we have a NULL image, the converter already reported it. */
+  DEBUGMSG("Done with LoadAndConvertImage, frame %d", frameNumber); 
+  return image;
 }
 
 
@@ -176,7 +173,7 @@ void FrameList::append(FrameList *other) {
 
 //===============================================================
 void FrameList::GetInfo(int &maxWidth, int &maxHeight, int &maxDepth,
-			     int &maxLOD, float &fps){
+                        int &maxLOD, float &fps){
   maxWidth = maxHeight = maxDepth = maxLOD = 0; 
   uint32_t i; 
   for (i = 0; i < frames.size(); i++) {
@@ -235,8 +232,8 @@ bool FrameList::LoadFrames(QStringList &files) {
       directory[0] = '\0';
     } 
     else if ((numFiles = scandir(directory,
-				 &fileList, 
-				 matchStartOfName, alphasort)) < 0){
+                                 &fileList, 
+                                 matchStartOfName, alphasort)) < 0){
       ERROR(QString("Error scanning directory '%1': %2").arg(directory ).arg(strerror(errno)));
       return false;
     }
@@ -250,7 +247,7 @@ bool FrameList::LoadFrames(QStringList &files) {
      * frames (movie files in particular can include multiple frames).
      */
     /*   recentFileName = QString("%1/%2").arg(directory).arg(base);
-	 SetRecentFileSetting((void*)settings, recentFileName);
+         SetRecentFileSetting((void*)settings, recentFileName);
     */ 
     for (i = 0; i < numFiles; i++) {
       QString matchedFileName = 
@@ -262,36 +259,36 @@ bool FrameList::LoadFrames(QStringList &files) {
       /* Search for a format driver that can read the matched file. */
       frameListFromFile = smGetFrameList(matchedFileName.toStdString().c_str()); 
       if (!frameListFromFile) {
-	frameListFromFile = tiffGetFrameList(matchedFileName.toStdString().c_str()); 
+        frameListFromFile = tiffGetFrameList(matchedFileName.toStdString().c_str()); 
       }
       if (!frameListFromFile) {
-	frameListFromFile = pnmGetFrameList(matchedFileName.toStdString().c_str()); 
+        frameListFromFile = pnmGetFrameList(matchedFileName.toStdString().c_str()); 
       }
       if (!frameListFromFile) {
-	frameListFromFile = pngGetFrameList(matchedFileName.toStdString().c_str()); 
+        frameListFromFile = pngGetFrameList(matchedFileName.toStdString().c_str()); 
       }
       if (!frameListFromFile) {
-	frameListFromFile = sgirgbGetFrameList(matchedFileName.toStdString().c_str()); 
+        frameListFromFile = sgirgbGetFrameList(matchedFileName.toStdString().c_str()); 
       }
       /* See if any of the formats matched */
       if (frameListFromFile) {
-	/* Spit out a little information about the matched
-	 * frames.  
-	 */
-	DEBUGMSG(QString("Matched format '%1' with file '%2'").
-		 arg(frameListFromFile->formatName).arg(matchedFileName));
-	/* This operation will dump more information about the
-	 * matched frames, and will destroy frameListFromFile
-	 */
-	//allFrames = AppendFrameList(allFrames, frameListFromFile);
-	append(frameListFromFile); 
-    if (i==0) stereo = frameListFromFile->stereo; 
-	delete frameListFromFile; 
+        /* Spit out a little information about the matched
+         * frames.  
+         */
+        DEBUGMSG(QString("Matched format '%1' with file '%2'").
+                 arg(frameListFromFile->formatName).arg(matchedFileName));
+        /* This operation will dump more information about the
+         * matched frames, and will destroy frameListFromFile
+         */
+        //allFrames = AppendFrameList(allFrames, frameListFromFile);
+        append(frameListFromFile); 
+        if (i==0) stereo = frameListFromFile->stereo; 
+        delete frameListFromFile; 
       }
       else {
-	/* No format was able to open the file.  Give an error. */
-	ERROR(QString("No known format could open the file '%1' - skipping")
-	      .arg(matchedFileName));
+        /* No format was able to open the file.  Give an error. */
+        ERROR(QString("No known format could open the file '%1' - skipping")
+              .arg(matchedFileName));
       }
             
     } /* loop scanning all file names that match a single argument */

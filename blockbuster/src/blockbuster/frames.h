@@ -65,23 +65,26 @@ struct ImageFormat{
 } ;
 
 
+// ============================================================
 struct Image {
   Image(): width(0), height(0), levelOfDetail(0), 
-           frameNumber(0), imageDataBytes(0), imageData(NULL) {
+           frameNumber(0), imageDataBytes(0), imageData(NULL), 
+           mTypeName("UNKNOWN") {
     return; 
   }
    
-  ~Image() {
+  virtual ~Image() {
     return; 
   }
   
   // this will be the Image API
-  int LoadImage(struct FrameInfo */*frameInfo*/,
+  virtual int LoadImage(struct FrameInfo */*frameInfo*/,
                 ImageFormat */*requiredImageFormat*/, 
                 const Rectangle */*region*/,
                 int /*levelOfDetail */ ) {
     return 0; 
   }
+  
 
   uint32_t width, height;
   ImageFormat imageFormat;
@@ -91,7 +94,7 @@ struct Image {
   unsigned int imageDataBytes;
   void *imageData;      /* the actual image data created when read from disk */
   //bool mManageData; // if true, then imageData will be free()'d during destructor
-  
+  string mTypeName ; // e.g. "SM" or "PNG"  
 } ;
 
 //============================================================
@@ -113,11 +116,19 @@ typedef  void (*DestroyFrameFunc)(struct FrameInfo *frameInfo);
 //============================================================
 /* Information about one frame of the movie. */ 
 struct FrameInfo {
-  FrameInfo(): width(0), height(0), depth(0), maxLOD(0), filename(NULL), 
+  FrameInfo(): width(0), height(0), depth(0), maxLOD(0), 
                mFrameNumberInFile(0), privateData(NULL), mTextureObject(NULL), 
                enable(0), LoadImage(NULL), DestroyFrameInfo(NULL) {}
   
-  FrameInfo(int w, int h, int d, int lod, char *fname, 
+  
+  // NEW VERSION 
+  FrameInfo(int w, int h, int d, int lod, string fname, uint32_t frame, int en=true):
+    width(w), height(h), depth(d), maxLOD(lod), filename(fname), 
+    mFrameNumberInFile(frame), mTextureObject(NULL), enable(en) {
+    return; 
+  }
+  
+  FrameInfo(int w, int h, int d, int lod, string fname, 
             void *priv, int en, 
             LoadImageFunc lif, DestroyFrameFunc dff):
     width(w), height(h), depth(d), maxLOD(lod), filename(fname), 
@@ -126,24 +137,25 @@ struct FrameInfo {
     return; 
   }
   
-  ~FrameInfo() {
+  virtual ~FrameInfo() {
     return; 
   }
 
   QString toString(void) {
-    return QString("{ FrameInfo: frameNumber = %1 in file %2}").arg(mFrameNumberInFile).arg(filename); 
+    return QString("{ FrameInfo: frameNumber = %1 in file %2}").arg(mFrameNumberInFile).arg(filename.c_str()); 
   }
 
   Image *LoadAndConvertImage(unsigned int frameNumber,
                              ImageFormat *canvasFormat, 
                              const Rectangle *region, int levelOfDetail);
+
   /* Basic statistics */
   int width, height, depth;
   
   int maxLOD; /* 0 if LOD not supported */
   
   /* Associated file */
-  char *filename;
+  string filename;
   
   /* If there is more than one frame in a single file, the format
    * driver can use this integer to distinguish them.

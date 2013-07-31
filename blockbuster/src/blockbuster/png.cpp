@@ -203,7 +203,7 @@ pngLoadImage(Image *image, struct FrameInfo *frameInfo,
 	}
     }
 
-    if (!PrepPng(frameInfo->filename, &f, &readStruct, &infoStruct)) {
+    if (!PrepPng(frameInfo->filename.c_str(), &f, &readStruct, &infoStruct)) {
 	/* Error has already been reported */
 	free(rowPointers);
 	if (image->imageData) free (image->imageData);
@@ -323,15 +323,7 @@ FrameList *pngGetFrameList(const char *filename)
     }
     
     frameInfo->privateData = NULL;
-    frameInfo->filename = strdup(filename);
-    if (frameInfo->filename == NULL) {
-      ERROR("cannot allocate duplicate filename string");
-      delete frameInfo; 
-      //free(frameInfo);
-      png_destroy_read_struct(&readStruct, &infoStruct, NULL);
-      fclose(f);
-      return NULL;
-    }
+    frameInfo->filename = filename;
     
     frameList = new FrameList; 
     if (frameList == NULL) {

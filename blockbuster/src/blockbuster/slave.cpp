@@ -237,7 +237,7 @@ bool Slave::LoadFrames(const char *files)
     }
 
     if (numFiles == 1 &&
-        fileList[0] == splashScreenFrameList.getFrame(0)->filename) {
+        fileList[0] == splashScreenFrameList.getFrame(0)->filename.c_str()) {
       frames = &splashScreenFrameList;
     }
     else {

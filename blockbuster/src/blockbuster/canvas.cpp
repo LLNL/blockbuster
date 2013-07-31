@@ -220,7 +220,7 @@ void Canvas::ReportFrameListChange(const FrameList *frameList) {
   if (mBlockbusterInterface) {
     mBlockbusterInterface->setFrameRange(1, frameList->numStereoFrames()); 
     mBlockbusterInterface->setFrameNumber(1); 
-    QString moviename = frameList->getFrame(0)->filename; 
+    QString moviename = frameList->getFrame(0)->filename.c_str(); 
     if (moviename.size() > 32) moviename = QString("...") + moviename.right(32); 
     mBlockbusterInterface->setTitle(QString("Blockbuster Control (%1)").arg(moviename)); 
     mRenderer->SetTitle(QString("Blockbuster (%1)").arg(moviename)); 
