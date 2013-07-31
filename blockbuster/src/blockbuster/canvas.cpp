@@ -137,7 +137,7 @@ void Canvas::WriteImageToFile(int frameNumber)
     fprintf(f, "    NULL, /* privateData */\n");
     fprintf(f, "    1, /* enable */\n");
     fprintf(f, "    LoadSplashScreen, /* loadImageFunc */\n");
-    fprintf(f, "    NullDestroyFrameInfo,\n");
+    // fprintf(f, "    NullDestroyFrameInfo,\n");
     fprintf(f, "};\n\n");
 
     fprintf(f, "FrameList splashScreenFrameList = {\n");
@@ -188,7 +188,7 @@ void Canvas::WriteImageToFile(int frameNumber)
 }
 
 //============================================================
-FrameInfo *Canvas::GetFrameInfoPtr(int frameNumber)
+FrameInfoPtr Canvas::GetFrameInfoPtr(int frameNumber)
 {
   /* Added to support stereo files */
   /* Assumes canvas has a valid FrameList */
@@ -202,7 +202,7 @@ FrameInfo *Canvas::GetFrameInfoPtr(int frameNumber)
 	localFrameNumber = frameNumber;
   }
   
-  return (FrameInfo*)frameList->getFrame(localFrameNumber);
+  return frameList->getFrame(localFrameNumber);
 }
 
 //============================================================

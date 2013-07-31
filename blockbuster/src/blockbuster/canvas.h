@@ -29,7 +29,7 @@ struct Canvas {
   
   void WriteImageToFile(int frameNumber);
 
-  FrameInfo *GetFrameInfoPtr(int frameNumber);
+  FrameInfoPtr GetFrameInfoPtr(int frameNumber);
   
   void SetFrameList(FrameList *frameList) {
     mRenderer->SetFrameList(frameList); 
@@ -142,6 +142,5 @@ struct Canvas {
 void DestroyCanvas(Canvas *canvas);
 void DefaultSetFrameList(Canvas *canvas, FrameList *frameList);
 void CacheSetFrameList(Canvas *canvas, FrameList *frameList);
-FrameInfo *GetFrameInfoPtr(Canvas *canvas, int frameNumber);
 
 #endif

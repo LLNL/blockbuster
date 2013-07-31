@@ -32,22 +32,21 @@
 #include "zlib.h"
 #include <X11/Xlib.h>
 
-
-/* This structure stores the SM instance that we'll use to read these images.
- * There's also a use counter, so that we know when we can destroy the 
- * SM instance.
- */
-typedef struct {
-  smBase *sm;
-  int useCount;
-} privateData;
+#include "boost/shared_ptr.hpp"
 
 int
-smLoadImage(Image *image, struct FrameInfo *frameInfo, 
+smLoadImage(Image *image,  FrameInfo *frameInfoPtr, 
             ImageFormat *, const Rectangle *desiredSub, int levelOfDetail)
 {
   //  DEBUGMSG(QString("smLoadImage(%1").arg(frameInfo->frameNumber)); 
-  const privateData *p = (privateData *)frameInfo->privateData;
+  /*  SMFrameInfo *sfip = reinterpret_cast<SMFrameInfo *>(frameInfoPtr.get()); 
+  SMFrameInfoPtr frameInfo(frameInfoPtr, sfip); */
+  SMFrameInfo *frameInfo = reinterpret_cast<SMFrameInfo *>(frameInfoPtr); 
+  if (!frameInfo) {
+	ERROR("cannot allocate FrameInfo structure");
+	return NULL;
+  }
+
   const uint32_t imgWidth = frameInfo->width >> levelOfDetail;
   const uint32_t imgHeight = frameInfo->height >> levelOfDetail;
   bb_assert(image);
@@ -100,7 +99,7 @@ smLoadImage(Image *image, struct FrameInfo *frameInfo,
 		   size[0], size[1],
 		   image->width, image->height, destStride);
   
-  p->sm->getFrameBlock(frameInfo->mFrameNumberInFile, (void *) dest, 
+  frameInfo->mSM->getFrameBlock(frameInfo->mFrameNumberInFile, (void *) dest, 
 					   GetCurrentThreadID(), destStride,
 					   size, pos, step, levelOfDetail);
   
@@ -112,26 +111,6 @@ smLoadImage(Image *image, struct FrameInfo *frameInfo,
   return 1;
 }
 
-/* This routine is called to release all the memory associated with a frame. */
-void smDestroyFrameInfo(FrameInfo *frameInfo)
-{
-  if (frameInfo) {
-	/* One less frame using the private data.  If the private data is gone,
-	 * free it.	 This won't happen until all the frameInfo structures are
-	 * freed, so we shouldn't have any dangling pointers.
-	 */
-	if (frameInfo->privateData) {
-      privateData *p = (privateData *)frameInfo->privateData;
-      if (--p->useCount == 0) {
-		delete p->sm;
-		free(p);
-      }
-	}
-
-	/* Call the default routine to free the rest of the frame */
-	DefaultDestroyFrameInfo(frameInfo);
-  }
-}
 
 #define ORDINAL_SUFFIX(x) (                         \
                            (x > 3 && x < 21)?"th":  \
@@ -142,9 +121,6 @@ void smDestroyFrameInfo(FrameInfo *frameInfo)
 
 FrameList *smGetFrameList(const char *filename)
 {
-  FrameList *frameList;
-  smBase *sm = NULL;
-  privateData *privateDataPtr;
   int smType;
   uint32_t numFrames, height, width, flags, maxLOD;
   int stereo = 0;
@@ -152,8 +128,9 @@ FrameList *smGetFrameList(const char *filename)
 
   smBase::init();
   ProgramOptions *options = GetGlobalOptions(); 
-  sm = smBase::openFile(filename, options->readerThreads+1);
-  if (sm == NULL) {
+  boost::shared_ptr<smBase> sm(smBase::openFile(filename, options->readerThreads+1)); 
+  //sm = smBase::openFile(filename, options->readerThreads+1);
+  if (!sm) {
 	DEBUGMSG("SM cannot open the file '%s'", filename);
 	return NULL;
   }
@@ -194,51 +171,26 @@ FrameList *smGetFrameList(const char *filename)
 
   if (numFrames == 0) {
 	WARNING("SM file %s has no frames", filename);
-	delete sm;
 	return NULL;
   }
 
   /* Get the structures we'll need to return information */
-  frameList = new FrameList; 
+  FrameList *frameList = new FrameList; 
   if (frameList == NULL) {
 	ERROR("SM cannot allocate FrameInfo list structure");
-	delete sm;
 	return NULL;
   }
 
-  /* There'll be one private data pointer for all the frames, to store the SM
-   * instance.  It will have a counter (of the number of frames using the SM
-   * instance) so that we know when we can destroy it.
-   */
-  privateDataPtr = (privateData *)calloc(1, sizeof(privateData));
-  if (privateDataPtr == NULL) {
-	ERROR("SM cannot allocate private data structure");
-	delete frameList;
-	delete sm;
-	return NULL;
-  }
 
   for (i = 0; i < numFrames; i++) {
-	FrameInfo *frameInfo = 
-      new SMFrameInfo(width, height, 24, maxLOD, filename, i, sm); 
-	if (frameInfo == NULL) {
+	FrameInfoPtr frameInfo(new SMFrameInfo(width, height, 24, maxLOD, filename, i, sm)); 
+	if (!frameInfo) {
       ERROR( "cannot allocate %d%s FrameInfo structure (of %d) for file %s",
              i, ORDINAL_SUFFIX(i), numFrames, filename);
-      free(privateDataPtr);
       delete frameList;
-      delete sm;
       return NULL;
 	}
-	/*frameInfo->width = width;
-	frameInfo->height = height;
-    frameInfo->maxLOD = maxLOD;
-	frameInfo->depth = 24;
-	frameInfo->mFrameNumberInFile = i;
-	frameInfo->enable = 1;*/
-	frameInfo->DestroyFrameInfo = smDestroyFrameInfo;
 	frameInfo->LoadImage = smLoadImage;
-	frameInfo->privateData = privateDataPtr;
-    //frameInfo->filename = strdup(filename);
 	frameList->append(frameInfo); 
   }
 
@@ -248,8 +200,6 @@ FrameList *smGetFrameList(const char *filename)
    */
   frameList->targetFPS = sm->getFPS();
   frameList->stereo = stereo;
-  privateDataPtr->sm = sm;
-  privateDataPtr->useCount = numFrames;
 
   frameList->formatName = "SM";
   frameList->formatDescription =

@@ -5,6 +5,7 @@
 #include <GL/gl.h>
 #include <GL/glx.h>
 
+
 /* Base GL rendering class for all other GL renderers */ 
 class glRenderer: public Renderer {
  public:
@@ -45,14 +46,17 @@ class glStereoRenderer: public glRenderer {
 // glTextureRenderer
 // ==================================================================
 
+typedef boost::shared_ptr<struct TextureObject> TextureObjectPtr;
+
 struct TextureObject {
     GLuint texture;
     GLuint width, height; /* level zero */
     Rectangle valid[MAX_IMAGE_LEVELS];
     GLboolean anyLoaded;   /* is any part of this texture valid/loaded? */
     GLuint age;
-    FrameInfo *frameInfo;  /* back pointer */
+  FrameInfoPtr frameInfo;  /* back pointer */
 } ;
+
 
 #define MAX_TEXTURES 20
 
@@ -64,12 +68,12 @@ class glTextureRenderer: public glRenderer {
   int32_t MinPowerOf2(int x); 
   void Render(int frameNumber, const Rectangle *imageRegion,
               int destX, int destY, float zoom, int lod);
-  TextureObject *GetTextureObject(int frameNumber);
+  TextureObjectPtr GetTextureObject(int frameNumber);
   void UpdateProjectionAndViewport(int newWidth, int newHeight);
 
   int maxTextureWidth, maxTextureHeight;
   GLenum texFormat, texIntFormat;
-  TextureObject mTextures[MAX_TEXTURES];
+  vector<TextureObjectPtr> mTextures;
 
 }; 
 

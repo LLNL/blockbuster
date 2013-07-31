@@ -198,7 +198,7 @@ static void RawImageGetRow(rawImageRec *raw, unsigned char *buf, int y, int z)
 
 
 static int
-LoadSGIImage(Image *image, struct FrameInfo *frameInfo,
+SGILoadImage(Image *image, FrameInfo *frameInfo,
              ImageFormat *format, const Rectangle */*desiredSubRegion*/,
              int /*LOD*/)
 {
@@ -312,11 +312,8 @@ LoadSGIImage(Image *image, struct FrameInfo *frameInfo,
 
 FrameList *sgirgbGetFrameList(const char *filename)
 {
-  FrameInfo *frameInfo;
-  FrameList *frameList;
-  rawImageRec *rec;
-
-  rec = RawImageOpen(filename);
+ 
+  rawImageRec *rec = RawImageOpen(filename);
   if (!rec) {
 	DEBUGMSG("The file '%s' is not an SGI RGB file.", filename);
 	return NULL;
@@ -328,18 +325,17 @@ FrameList *sgirgbGetFrameList(const char *filename)
    * need be large enough only for 2 entries (the information
    * about the single frame, and the terminating NULL).
    */
-  frameInfo = new FrameInfo(); 
-  if (frameInfo == NULL) {
+  FrameInfoPtr frameInfo(new FrameInfo()); 
+  if (!frameInfo) {
 	ERROR("cannot allocate FrameInfo structure");
 	return NULL;
   }
 
-  frameInfo->filename = strdup(filename);
+  frameInfo->filename = filename;
 
-  frameList = new FrameList; 
+  FrameList *frameList = new FrameList; 
   if (frameList == NULL) {
 	ERROR("cannot allocate FrameInfo list structure");
-    delete frameInfo; 
 	return NULL;
   }
 
@@ -349,9 +345,7 @@ FrameList *sgirgbGetFrameList(const char *filename)
   frameInfo->depth = rec->sizeZ * 8;
   frameInfo->mFrameNumberInFile = 0;
   frameInfo->enable = 1;
-  frameInfo->DestroyFrameInfo = DefaultDestroyFrameInfo;
-  frameInfo->LoadImage = LoadSGIImage;
-  frameInfo->privateData = NULL;
+  frameInfo->LoadImage = SGILoadImage;
 
   /* Fill out the final return form, and call it a day */
   frameList->append(frameInfo);

@@ -1357,7 +1357,7 @@ ppm_freecolorhash(  colorhash_table cht)
 
 /* Load the desired subimage into a set of RGB bytes */
 static int
-pnmLoadImage(Image *image, struct FrameInfo *frameInfo,
+pnmLoadImage(Image *image, FrameInfo *frameInfo,
              ImageFormat *requiredImageFormat, const Rectangle *, int levelOfDetail)
 {
   FILE *f;
@@ -1503,7 +1503,6 @@ pnmLoadImage(Image *image, struct FrameInfo *frameInfo,
 FrameList *pnmGetFrameList(const char *filename)
 {
   FILE *f;
-  FrameInfo *frameInfo;
   FrameList *frameList;
   int 	width,height,depth,fmt;
   xelval	value;
@@ -1541,20 +1540,16 @@ FrameList *pnmGetFrameList(const char *filename)
    * need be large enough only for 2 entries (the information
    * about the single frame, and the terminating NULL).
    */
-  frameInfo = new FrameInfo(); 
-  //frameInfo = (FrameInfo *)calloc(1, sizeof(FrameInfo));
-  if (frameInfo == NULL) {
+  FrameInfoPtr frameInfo(new FrameInfo()); 
+  if (!frameInfo) {
 	ERROR("cannot allocate FrameInfo structure");
 	return NULL;
   }
 
-  frameInfo->privateData = NULL;
   frameInfo->filename = filename;
   frameList = new FrameList; 
   if (frameList == NULL) {
 	ERROR("cannot allocate FrameInfo list structure");
-    delete frameInfo; 
-	//	free(frameInfo);
 	return NULL;
   }
 
@@ -1565,7 +1560,6 @@ FrameList *pnmGetFrameList(const char *filename)
   frameInfo->mFrameNumberInFile = 0;
   frameInfo->enable = 1;
   frameInfo->LoadImage = pnmLoadImage;
-  frameInfo->DestroyFrameInfo = DefaultDestroyFrameInfo;
 
   /* Fill out the final return form, and call it a day */
   frameList->append(frameInfo);

@@ -4,11 +4,13 @@
 #define MAX_IMAGE_LEVELS 10
 #include "common.h"
 #include <vector>
+#include "boost/shared_ptr.hpp"
 #include <QStringList>
-struct TextureObject; 
 using namespace std; 
 struct Canvas; 
 
+typedef boost::shared_ptr<struct FrameInfo> FrameInfoPtr; 
+typedef boost::shared_ptr<struct TextureObject> TextureObjectPtr;
 
 //============================================================
 struct ImageFormat{
@@ -78,7 +80,7 @@ struct Image {
   }
   
   // this will be the Image API
-  virtual int LoadImage(struct FrameInfo */*frameInfo*/,
+  virtual int LoadImage(FrameInfoPtr /*frameInfo*/,
                 ImageFormat */*requiredImageFormat*/, 
                 const Rectangle */*region*/,
                 int /*levelOfDetail */ ) {
@@ -104,36 +106,36 @@ struct Image {
 
 typedef int (*LoadImageFunc)
   ( Image *image,
-    struct FrameInfo *frameInfo,
+    FrameInfo*frameInfo,
     ImageFormat *requiredImageFormat, 
     const Rectangle *region,
     int levelOfDetail
     );
 
-typedef  void (*DestroyFrameFunc)(struct FrameInfo *frameInfo);
 
 
 //============================================================
 /* Information about one frame of the movie. */ 
 struct FrameInfo {
   FrameInfo(): width(0), height(0), depth(0), maxLOD(0), 
-               mFrameNumberInFile(0), privateData(NULL), mTextureObject(NULL), 
-               enable(0), LoadImage(NULL), DestroyFrameInfo(NULL) {}
+               mFrameNumberInFile(0), 
+               enable(0){
+    return; 
+  }
   
   
   // NEW VERSION 
-  FrameInfo(int w, int h, int d, int lod, string fname, uint32_t frame, int en=true):
-    width(w), height(h), depth(d), maxLOD(lod), filename(fname), 
-    mFrameNumberInFile(frame), mTextureObject(NULL), enable(en) {
+  FrameInfo(int w, int h, int d, int maxlod, string fname, uint32_t frame, int en=true):
+    width(w), height(h), depth(d), maxLOD(maxlod), filename(fname), 
+    mFrameNumberInFile(frame), enable(en) {
     return; 
   }
   
   FrameInfo(int w, int h, int d, int lod, string fname, 
-            void *priv, int en, 
-            LoadImageFunc lif, DestroyFrameFunc dff):
+            int en,  LoadImageFunc lif):
     width(w), height(h), depth(d), maxLOD(lod), filename(fname), 
-    mFrameNumberInFile(0), privateData(priv), mTextureObject(NULL), enable(en), 
-    LoadImage(lif), DestroyFrameInfo(dff) {
+    mFrameNumberInFile(0), enable(en), 
+    LoadImage(lif) {
     return; 
   }
   
@@ -145,10 +147,16 @@ struct FrameInfo {
     return QString("{ FrameInfo: frameNumber = %1 in file %2}").arg(mFrameNumberInFile).arg(filename.c_str()); 
   }
 
-  Image *LoadAndConvertImage(unsigned int frameNumber,
+  /* virtual int LoadImage(ImageFormat *requiredImageFormat, 
+                const Rectangle *region,
+                int levelOfDetail) {
+    mImage->LoadImage(requiredImageFormat); 
+    }*/
+
+   Image *LoadAndConvertImage(unsigned int frameNumber,
                              ImageFormat *canvasFormat, 
                              const Rectangle *region, int levelOfDetail);
-
+  
   /* Basic statistics */
   int width, height, depth;
   
@@ -162,16 +170,8 @@ struct FrameInfo {
    */
   int mFrameNumberInFile;
 
-  /* If the image loader has anything else it wants to store for the
-   * frame (file offsets, image information, etc.) it goes here.
-   * This is very poorly named -- it's not private at all in the classic
-   * sense of the word.  In fact, all of this "object oriented" code is 
-   * completely bogus.  
-   */
-  void *privateData; // used by tiff.cpp and sm.cpp.  Blech.  Another indication that Images and FrameInfos should be merged. 
-  
   /* Pointer to frame data that's specific to the canvas */
-  TextureObject *mTextureObject;
+  TextureObjectPtr mTextureObject;
   
   /* A flag that we can use to disable frames that have errors */
   int enable;
@@ -188,7 +188,7 @@ struct FrameInfo {
    *
   */
   /* int LoadImage(Image *image,
-		struct FrameInfo *frameInfo,
+		struct FrameInfoPtr frameInfo,
 		struct Canvas *canvas,
 		const Rectangle *region,
 		int levelOfDetail
@@ -196,7 +196,6 @@ struct FrameInfo {
   */
   LoadImageFunc LoadImage;
   
-  void (*DestroyFrameInfo)(struct FrameInfo *frameInfo);
 } ;
 
 
@@ -209,13 +208,19 @@ struct FrameInfo {
    * This structure basically represents a movie.
    */
 struct FrameList {
-  FrameList() { init(); }
-  FrameList(FrameInfo* fi) {
+  // ----------------------------------------------------
+  FrameList() { 
+    init(); 
+  }
+
+  // ----------------------------------------------------
+  FrameList(FrameInfoPtr fi) {
     init(); 
     append(fi); 
     return; 
   }
 
+  // ----------------------------------------------------
   FrameList(int numfiles, char **files) {
     init(); 
     char **fp = files; 
@@ -228,72 +233,62 @@ struct FrameList {
     return; 
   }
 
-  void init(void) {
+   // ----------------------------------------------------
+ void init(void) {
     stereo = false; 
     targetFPS = 30.0;
   }
 
-  void DeleteFrames(void); 
+  // ----------------------------------------------------
+  void DeleteFrames(void) {
+    frames.clear(); 
+  }
 
+  // ----------------------------------------------------
   uint32_t numStereoFrames(void) const {
     if (stereo) return frames.size()/2; 
     return frames.size(); 
   }
 
+  // ----------------------------------------------------
   uint32_t numActualFrames(void) const { return frames.size(); }
 
-  FrameInfo * getFrame(uint32_t num) const {
-    if (num < frames.size()){
+  // ----------------------------------------------------
+  FrameInfoPtr getFrame(uint32_t num) const {
+     if (num < frames.size()){
       return frames[num];
     }
-    return NULL; 
+    return FrameInfoPtr(); 
   }
+  // ----------------------------------------------------
   void GetInfo(int &maxWidth, int &maxHeight, int &maxDepth,
 		    int &maxLOD, float &fps);
 
-  void append(FrameList *other) ; 
+  // ----------------------------------------------------
+  void append(FrameList *other) {
+    for  (uint32_t i=0; i < other->frames.size(); i++) {
+      frames.push_back(other->frames[i]); 
+    }  
+    return; 
+  }
 
-  void append(FrameInfo *frame) {
+  // ----------------------------------------------------
+  void append(FrameInfoPtr frame) {
     frames.push_back(frame); 
     return; 
   }
   
+  // ----------------------------------------------------
   bool LoadFrames(QStringList &files);
 
+  // ----------------------------------------------------
   bool stereo;
   float targetFPS;      /* desired/target frames/second playback rate */
   QString formatName, formatDescription; 
   private:
-  vector<FrameInfo *> frames; 
+  vector<FrameInfoPtr> frames; 
 } ;
 
 
-/* A format is a collection of routines that know how to read 
- * image files of a given format.
- */
-/* struct FileFormat {
-   char *name;
-   char *description;
-*/
-  /* This returns a list of frames available in the file, or NULL if the file
-   * can't be handled by this format driver, or if there are no frames available
-   * in the file.  The list of frames is terminated by a NULL, and should be
-   * released with free() when the application is done with it.
-   *
-   * Note that all other function pointers are associated with the frame, not
-   * with the format; this lets the format choose optimized functions (rather
-   * than generic functions) if it determines that such are appropriate, on
-   * a per-frame basis.
-   */
-  /* FrameList *(*GetFrameList)(const char *filename);
-     
-  } ;
- 
-  extern FileFormat *fileFormats[];
-  extern FileFormat pngFormat, pnmFormat, tiffFormat, smFormat, sgiRgbFormat;
-  */ 
-
-//FrameList *LoadFrameList(int fileCount, const char **files, void *settings);
-void DefaultDestroyFrameInfo(FrameInfo *frameInfo);
 
 #endif

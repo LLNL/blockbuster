@@ -29,18 +29,20 @@ class ImageCache;
 
 //! ImageCacheJob:  a request for the workers to get an image
 struct ImageCacheJob {
-  ImageCacheJob(): frameNumber(0), levelOfDetail(0), requestNumber(0) {}
+  // ImageCacheJob(): frameNumber(0), levelOfDetail(0), requestNumber(0) {}
   ImageCacheJob(uint32_t frame, const Rectangle *reg, 
-                uint32_t  lod, uint32_t reqnum): 
-    frameNumber(frame),  levelOfDetail(lod), requestNumber(reqnum)
-  { region = *reg; }
+                uint32_t  lod, uint32_t reqnum, FrameInfoPtr fInfo): 
+    frameInfo(fInfo), frameNumber(frame), region(*reg),  
+    levelOfDetail(lod), requestNumber(reqnum) { 
+    return; 
+  }
     
   ~ImageCacheJob() {}
   QString toString(void) {
-    return QString("{ ImageCacheJob: frameNumber = %1, region = %2, LOD = %3, request = %4, frameInfo = %5 }").arg(frameNumber).arg(region.toString()).arg(levelOfDetail).arg(requestNumber).arg(frameInfo.toString());
+    return QString("{ ImageCacheJob: frameNumber = %1, region = %2, LOD = %3, request = %4, frameInfo = %5 }").arg(frameNumber).arg(region.toString()).arg(levelOfDetail).arg(requestNumber).arg(frameInfo->toString());
   }
 
-  FrameInfo frameInfo; /* Local copy needed in case FrameList changes while we're working */
+  FrameInfoPtr frameInfo; 
   uint32_t frameNumber;
   Rectangle region;
   uint32_t levelOfDetail;
