@@ -28,6 +28,7 @@
 #include "errmsg.h"
 #include <errno.h> 
 #include <X11/Xlib.h>
+#include "tiff.h"
 
 #define int16 myint16
 #define int32 myint32
@@ -36,21 +37,13 @@
 #undef int32
 
 
-typedef struct {
-  int bitsPerSample;	/* 8 or 16 */
-  int samplesPerPixel; /* 1 - grayscale; 3 - color */
-  int photometric; /* can invert a grayscale image */
-  double minSample; /* for 16-bit samples */
-  double maxSample; /* for 16-bit samples */
-  unsigned char *scanlineBuffer; /* if scanline conversion is needed */
-} privateData;
 
-
+// ==================================================================
 /* Use the TIFFRGBAImage facilities to load any supported image */
 /* image -- output image
    all other params are input parameters
 */ 
-static int RGBALoadImage(Image *image, struct FrameInfo *frameInfo,
+static int RGBALoadImage(Image *image,  FrameInfo *frameInfoPtr,
                          ImageFormat *requiredImageFormat, const Rectangle *,
                          int levelOfDetail)
 {
@@ -58,10 +51,18 @@ static int RGBALoadImage(Image *image, struct FrameInfo *frameInfo,
   register uint32_t i, j, k;
   uint32_t extraBytesPerPixel, extraBytesPerScanline;
   int scanlineBytes;
-  privateData *privateDataPtr = reinterpret_cast<privateData*>(frameInfo->privateData);
+   TiffFrameInfo *frameInfo = reinterpret_cast<TiffFrameInfo *>(frameInfoPtr); 
+   /*   
+  TiffFrameInfo *tfip = reinterpret_cast<TiffFrameInfo *>(frameInfoPtr.get()); 
+  TiffFrameInfoPtr frameInfo(frameInfoPtr, tfip); 
+   */
+  if (!frameInfo) {
+    ERROR("programmer mistake:  FrameInfoPtr could not be recast to TiffFrameInfoPtr\n"); 
+    return 0; 
+  }
+
   register unsigned char *dest;
   TIFFRGBAImage rgbaImg;
-  uint32* raster;
   char errMesg[1024];
   int rc;
 
@@ -132,7 +133,7 @@ static int RGBALoadImage(Image *image, struct FrameInfo *frameInfo,
 	TIFFClose( f );
 	return 0;
   }
-  raster = (uint32*)privateDataPtr->scanlineBuffer;
+  uint32* raster = (uint32*)(&frameInfo->scanlineBuffer[0]);
   dest = (unsigned char *)image->imageData;
   for (i = 0; i < image->height; i++) {
 	const int row = /*desiredSub->y +*/ i;
@@ -201,15 +202,24 @@ static int RGBALoadImage(Image *image, struct FrameInfo *frameInfo,
  * contains 8-bit samples and 3 samples per pixel.
  */
 static int
-Color24LoadImage(Image *image, struct FrameInfo *frameInfo,
+Color24LoadImage(Image *image,  FrameInfo* frameInfoPtr,
                  ImageFormat *requiredImageFormat, const Rectangle *,
                  int levelOfDetail)
 {
   TIFF *f;
+  /*
+  TiffFrameInfo *tfip = reinterpret_cast<TiffFrameInfo *>(frameInfoPtr.get()); 
+  TiffFrameInfoPtr frameInfo(frameInfoPtr, tfip); 
+  */
+  TiffFrameInfo *frameInfo = reinterpret_cast<TiffFrameInfo *>(frameInfoPtr); 
+
+  if (!frameInfo) {
+    ERROR("programmer mistake:  FrameInfoPtr could not be recast to TiffFrameInfoPtr\n"); 
+    return 0; 
+  }
   register uint32_t i, j, k;
   int extraBytesPerPixel, extraBytesPerScanline;
   int scanlineBytes;
-  privateData *privateDataPtr = reinterpret_cast<privateData*>(frameInfo->privateData);
   register unsigned char *dest, *src;
 
   bb_assert(image);
@@ -274,7 +284,7 @@ Color24LoadImage(Image *image, struct FrameInfo *frameInfo,
   for (i = 0; i < image->height; i++) {
 	const int row = /*desiredSub->y +*/ i;
 	int rv;
-	src = privateDataPtr->scanlineBuffer;
+	src = &frameInfo->scanlineBuffer[0];
 	/* If we're going from bottom to top, put the scanline at the bottom;
 	 * otherwise, it should still be well-placed for what we need.
 	 */
@@ -324,28 +334,10 @@ Color24LoadImage(Image *image, struct FrameInfo *frameInfo,
 }
 
 
-/* This routine is called to release all the memory associated with a frame. */
-static void DestroyFrameInfo(FrameInfo *frameInfo)
-{
-  if (frameInfo) {
-	if (frameInfo->privateData) {
-      privateData *privateDataPtr = (privateData *)frameInfo->privateData;
-      if (privateDataPtr->scanlineBuffer) {
-		free(privateDataPtr->scanlineBuffer);
-      }
-      free(privateDataPtr);
-	}
-
-	DefaultDestroyFrameInfo(frameInfo);
-  }
-}
-
 FrameList *tiffGetFrameList(const char *filename)
 {
   TIFF *f;
-  FrameInfo *frameInfo;
   FrameList *frameList;
-  privateData *privateDataPtr;
   char errMesg[1024];
 
   /* Values used with TIFFGetField have to be of the specific
@@ -391,16 +383,9 @@ FrameList *tiffGetFrameList(const char *filename)
    * need be large enough only for 2 entries (the information
    * about the single frame, and the terminating NULL).
    */
-  frameInfo = new FrameInfo(); 
-  if (frameInfo == NULL) {
+  TiffFrameInfoPtr frameInfo(new TiffFrameInfo()); 
+  if (!frameInfo) {
 	ERROR("cannot allocate FrameInfo structure");
-	return NULL;
-  }
-
-  privateDataPtr = (privateData *)calloc(1, sizeof(privateData));
-  if (privateDataPtr == NULL) {
-	ERROR("cannot allocate private data structure");
-	delete frameInfo; 
 	return NULL;
   }
 
@@ -409,8 +394,6 @@ FrameList *tiffGetFrameList(const char *filename)
   frameList = new FrameList(); 
   if (frameList == NULL) {
     ERROR("cannot allocate FrameInfo list structure");
-    free(privateDataPtr);
-    delete frameInfo; 
     return NULL;
   }
     
@@ -421,11 +404,11 @@ FrameList *tiffGetFrameList(const char *filename)
 	/* 24-bit color image */
 	frameInfo->LoadImage = Color24LoadImage;
 	/* Each scan line will hold 3 bytes per pixel */
-	privateDataPtr->scanlineBuffer = (unsigned char *)malloc(width * 3);
+    frameInfo->scanlineBuffer.resize(width * 3);
   } else if ( TIFFRGBAImageOK( f, errMesg ) ) {
 	frameInfo->LoadImage = RGBALoadImage;
 	/* Each scan line will hold 3 bytes per pixel */
-	privateDataPtr->scanlineBuffer = (unsigned char *)malloc(width * sizeof(uint32));
+    frameInfo->scanlineBuffer.resize(width * sizeof(uint32));
   }
 #if 0
   else if (bitsPerSample == 16 && samplesPerPixel == 3) {
@@ -443,37 +426,21 @@ FrameList *tiffGetFrameList(const char *filename)
             "%s: unsupported %d bps/%d spp TIFF file",
             filename, bitsPerSample, samplesPerPixel);
 	delete frameList;
-	free(privateDataPtr);
-	delete frameInfo; 
-	//free(frameInfo);
 	return NULL;
   }
     
-  if (privateDataPtr->scanlineBuffer == NULL) {
-	ERROR(
-          "%s: could not allocate scanline for width %d",
-          filename, width);
-	delete frameList;
-	free(privateDataPtr);
-	delete frameInfo; 
-	//free(frameInfo);
-	return NULL;
-  }
-
   /* Fill out the rest of the frameInfo information */
   frameInfo->width = width;
   frameInfo->height = height;
   frameInfo->depth = 8*samplesPerPixel;
   frameInfo->mFrameNumberInFile = 0;
   frameInfo->enable = 1;
-  frameInfo->DestroyFrameInfo = DestroyFrameInfo;
 
-  privateDataPtr->photometric = photometric;
-  privateDataPtr->minSample = minSample;
-  privateDataPtr->maxSample = maxSample;
-  privateDataPtr->bitsPerSample = bitsPerSample;
-  privateDataPtr->samplesPerPixel = samplesPerPixel;
-  frameInfo->privateData = (void *)privateDataPtr;
+  frameInfo->photometric = photometric;
+  frameInfo->minSample = minSample;
+  frameInfo->maxSample = maxSample;
+  frameInfo->bitsPerSample = bitsPerSample;
+  frameInfo->samplesPerPixel = samplesPerPixel;
 
   /* Fill out the final return form, and call it a day */
   frameList->append(frameInfo); 

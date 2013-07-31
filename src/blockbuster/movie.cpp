@@ -131,7 +131,7 @@ int DisplayLoop(FrameList **allFramesPtr, ProgramOptions *options)
   FrameList *allFrames = *allFramesPtr; 
   int32_t previousFrame = -1, cueEndFrame = 0;
   uint totalFrameCount = 0, recentFrameCount = 0;
-  FrameInfo *frameInfo = NULL;
+  FrameInfoPtr frameInfo;
   Canvas *canvas;
   int maxWidth, maxHeight, maxDepth;
   int loopCount = options->loopCount; 
@@ -348,7 +348,7 @@ int DisplayLoop(FrameList **allFramesPtr, ProgramOptions *options)
         break; 
       case MOVIE_FULLSCREEN:
         //DEBUGMSG("fullscreen"); canvas->width
-        if(frameInfo != NULL) {
+        if(!frameInfo) {
           /*newZoom = ComputeZoomToFit(canvas, frameInfo->width,
                                    frameInfo->height);
           */
@@ -395,7 +395,7 @@ int DisplayLoop(FrameList **allFramesPtr, ProgramOptions *options)
           if (event.width == 0) {
             /* if there are frames, use the frame width for the window width 
                else use the current width */ 
-            if(frameInfo != NULL) {
+            if(frameInfo) {
               event.width = frameInfo->width;
             } else {
               event.width = canvas->width;
@@ -408,7 +408,7 @@ int DisplayLoop(FrameList **allFramesPtr, ProgramOptions *options)
           if (event.height == 0)  {
             /* if there are frames, use the frame height for the window height 
                else use the current height */ 
-            if(frameInfo != NULL) {
+            if(frameInfo) {
               event.height = frameInfo->height;
             } else {
               event.height = canvas->height;
@@ -505,7 +505,7 @@ int DisplayLoop(FrameList **allFramesPtr, ProgramOptions *options)
         
       case MOVIE_ZOOM_FIT: 
       MOVIE_ZOOM_FIT: 
-        if(frameInfo != NULL) {
+        if(frameInfo) {
           newZoom = ComputeZoomToFit(canvas, frameInfo->width,
                                    frameInfo->height);
           DEBUGMSG("Zoom to Fit: %f", newZoom);

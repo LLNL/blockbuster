@@ -573,38 +573,37 @@ void glTextureRenderer::UpdateProjectionAndViewport(int newWidth, int newHeight)
 }
 
 
-TextureObject *glTextureRenderer::GetTextureObject(int frameNumber)
+TextureObjectPtr glTextureRenderer::GetTextureObject(int frameNumber)
 {
+  cerr << "Warning:  DEAD CODE EXECUTING? " << endl; 
   static GLuint clock = 1;
-  TextureObject *texObj = mCanvas->frameList->getFrame(frameNumber)->mTextureObject;
+  TextureObjectPtr texObj = 
+    mCanvas->frameList->getFrame(frameNumber)->mTextureObject;
   
   if (!texObj) {
 	/* find a free texture object */
 	GLuint oldestAge = ~0;
 	int oldestPos = -1;
-	int i;
 	/* find LRU texture object */
-	for (i = 0; i < MAX_TEXTURES; i++) {
-      if (mTextures[i].age < oldestAge) {
-		oldestAge = mTextures[i].age;
+	for (uint32_t i = 0; i < mTextures.size(); i++) {
+      if (mTextures[i]->age < oldestAge) {
+		oldestAge = mTextures[i]->age;
 		oldestPos = i;
       }
 	}
     
 	bb_assert(oldestPos >= 0);
-	bb_assert(oldestPos < MAX_TEXTURES);
 	bb_assert(oldestAge != ~(uint32_t)0);
     
-	texObj = mTextures + oldestPos;
+	texObj = mTextures[oldestPos];
     
 	/* unlink FrameInfo pointer */
-	if (texObj->frameInfo)
-      texObj->frameInfo->mTextureObject = NULL;
+    texObj->frameInfo->mTextureObject.reset();
     
 	/* update/init texObj fields */
 	texObj->age = clock++;	/* XXX handle clock wrap-around! */
 	texObj->frameInfo = mCanvas->frameList->getFrame(frameNumber);
-	for (i = 0; i < MAX_IMAGE_LEVELS; i++)
+	for (uint32_t i = 0; i < MAX_IMAGE_LEVELS; i++)
       texObj->valid[i].width = texObj->valid[i].height = -1;
 	texObj->anyLoaded = GL_FALSE;
 	mCanvas->frameList->getFrame(frameNumber)->mTextureObject = texObj;
@@ -616,7 +615,6 @@ TextureObject *glTextureRenderer::GetTextureObject(int frameNumber)
 
 void glTextureRenderer::Render(int frameNumber, const Rectangle *imageRegion,
                                int destX, int destY, float zoom, int lod) {
-  TextureObject *texObj;
   GLfloat s0, t0, s1, t1;
   GLfloat x0, y0, x1, y1;
   int32_t lodScale;
@@ -664,7 +662,7 @@ void glTextureRenderer::Render(int frameNumber, const Rectangle *imageRegion,
   }
   
   /* get texture object */
-  texObj = GetTextureObject(localFrameNumber);
+  TextureObjectPtr texObj = GetTextureObject(localFrameNumber);
   bb_assert(texObj);
   bb_assert(texObj->frameInfo == mCanvas->frameList->getFrame(localFrameNumber));
   

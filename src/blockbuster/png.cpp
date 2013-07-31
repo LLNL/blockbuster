@@ -111,7 +111,7 @@ static int PrepPng(const char *filename,
 
 /* Load the desired subimage into a set of RGB bytes */
 static int
-pngLoadImage(Image *image, struct FrameInfo *frameInfo,
+pngLoadImage(Image *image,  FrameInfo * frameInfo,
           ImageFormat *requiredImageFormat, const Rectangle */*desiredSubregion*/, 
           int levelOfDetail)
 {
@@ -296,7 +296,6 @@ FrameList *pngGetFrameList(const char *filename)
     FILE *f;
     png_structp readStruct;
     png_infop infoStruct;
-    FrameInfo *frameInfo;
     FrameList *frameList;
     png_uint_32 width, height;
     int depth, colorType, interlaceType, compressionType, filterMethod;
@@ -313,23 +312,19 @@ FrameList *pngGetFrameList(const char *filename)
      * need be large enough only for 2 entries (the information
      * about the single frame, and the terminating NULL).
      */
-    frameInfo = new FrameInfo(); 
-    //frameInfo = (FrameInfo *)calloc(1, sizeof(FrameInfo));
-    if (frameInfo == NULL) {
+    FrameInfoPtr frameInfo(new FrameInfo()); 
+    if (!frameInfo) {
       ERROR("cannot allocate FrameInfo structure");
       png_destroy_read_struct(&readStruct, &infoStruct, NULL);
       fclose(f);
       return NULL;
     }
     
-    frameInfo->privateData = NULL;
     frameInfo->filename = filename;
     
     frameList = new FrameList; 
     if (frameList == NULL) {
       ERROR("cannot allocate FrameInfo list structure");
-      delete frameInfo; 
-      //	free(frameInfo);
       png_destroy_read_struct(&readStruct, &infoStruct, NULL);
       fclose(f);
       return NULL;
@@ -370,15 +365,12 @@ FrameList *pngGetFrameList(const char *filename)
       break;
 	default:
       WARNING("Unrecognized PNG color type %d ignored.", colorType);
-      delete frameInfo; 
-      //	    free(frameInfo);
       delete frameList;
       return NULL;
     }
     frameInfo->mFrameNumberInFile = 0;
     frameInfo->enable = 1;
     frameInfo->LoadImage = pngLoadImage;
-    frameInfo->DestroyFrameInfo = DefaultDestroyFrameInfo;
     
     /* Fill out the final return form, and call it a day */
     frameList->append(frameInfo);

@@ -33,7 +33,7 @@ extern unsigned char splashImageData[92700];  // defined at the bottom of this f
 
 static Image *splashScreen = NULL; 
 FrameList splashScreenFrameList; 
-static FrameInfo *frameInfo = NULL; 
+static FrameInfoPtr frameInfoPtr; 
 char splash[] = "SPLASH"; 
 
 
@@ -52,10 +52,6 @@ FrameList splashScreenFrameList = {
 };
 #else 
 
-static void NullDestroyFrameInfo(FrameInfo *)
-{
-    return;
-}
 
 static ImageFormat 
 splashFormat(3, /* bytesPerPixel */
@@ -68,7 +64,7 @@ splashFormat(3, /* bytesPerPixel */
 Rectangle splashRect(0, 0, 300, 103); /* x, y, width, height */
 
 
-static int LoadSplashScreen(Image *image, FrameInfo *,
+static int LoadSplashScreen(Image *image, FrameInfo*,
 	ImageFormat *, const Rectangle *, int )
 {
   *image = *splashScreen; 
@@ -87,15 +83,13 @@ void InitSplashScreen(void) {
     splashScreen->imageDataBytes = 92700;
     splashScreen->imageData = splashImageData; 
   }
-  if (!frameInfo) {
-    frameInfo = new FrameInfo(300, 103, 24, /* width, height, depth */
-                              0, /* maxLOD */
-                              splash, /* filename */
-                              NULL, /* privateData */
-                              1, /* enable */
-                              LoadSplashScreen, /* loadImageFunc */
-                              NullDestroyFrameInfo); 
-    splashScreenFrameList.append(frameInfo); 
+  if (frameInfoPtr) {
+    frameInfoPtr.reset(new FrameInfo(300, 103, 24, /* width, height, depth */
+                                     0, /* maxLOD */
+                                     splash, /* filename */
+                                     1, /* enable */
+                                     LoadSplashScreen /* loadImageFunc */)); 
+    splashScreenFrameList.append(frameInfoPtr); 
   }
     
   return; 

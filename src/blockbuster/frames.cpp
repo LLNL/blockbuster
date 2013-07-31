@@ -58,14 +58,6 @@ static int matchStartOfName(struct dirent *entry)
   return (QString(entry->d_name) == matchName); 
 }
 
-/* This routine is called to release all the memory associated with a frame. */
-void DefaultDestroyFrameInfo(FrameInfo *frameInfo)
-{
-  if (frameInfo) {
-	/* Release the filename allocated with strdup. */
-    free(frameInfo);
-  }
-}
 
 //===============================================================
 /* This utility function handles loading and converting images appropriately,
@@ -73,7 +65,9 @@ void DefaultDestroyFrameInfo(FrameInfo *frameInfo)
  */
 #define MAX_CONVERSION_WARNINGS 10
 Image *FrameInfo::LoadAndConvertImage(unsigned int frameNumber,
-                                      ImageFormat *canvasFormat, const Rectangle *region, int levelOfDetail)
+                                      ImageFormat *canvasFormat, 
+                                      const Rectangle *region, 
+                                      int levelOfDetail)
 {
   DEBUGMSG(QString("LoadAndConvertImage frame %1, region %2, frameInfo %3").arg( frameNumber).arg(region->toString()).arg((uint64_t)this)); 
 
@@ -149,27 +143,6 @@ Image *FrameInfo::LoadAndConvertImage(unsigned int frameNumber,
 }
 
 
-//===============================================================
-
-void FrameList::DeleteFrames(void) {
-  register uint32_t i;
-  
-  for (i = 0; i < frames.size(); i++) {
-    //DEBUGMSG("Deleting frame %d", i); 
-    (frames[i]->DestroyFrameInfo)(frames[i]);
-  }
-  //  DEBUGMSG("Done with DeleteFrames"); 
-}
-
-//===============================================================
-void FrameList::append(FrameList *other) {
-  uint32_t i=0; 
-  while (i < other->frames.size()) {
-    frames.push_back(other->frames[i]); 
-    ++i; 
-  }  
-  return; 
-}
 
 //===============================================================
 void FrameList::GetInfo(int &maxWidth, int &maxHeight, int &maxDepth,
@@ -177,7 +150,7 @@ void FrameList::GetInfo(int &maxWidth, int &maxHeight, int &maxDepth,
   maxWidth = maxHeight = maxDepth = maxLOD = 0; 
   uint32_t i; 
   for (i = 0; i < frames.size(); i++) {
-    FrameInfo *frameInfoPtr = frames[i]; 
+    FrameInfoPtr frameInfoPtr = frames[i]; 
     maxWidth = MAX2(maxWidth, frameInfoPtr->width);
     maxHeight = MAX2(maxHeight, frameInfoPtr->height);
     maxDepth = MAX2(maxDepth, frameInfoPtr->depth);
