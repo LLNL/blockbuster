@@ -345,7 +345,7 @@ FrameList *sgirgbGetFrameList(const char *filename)
   frameInfo->depth = rec->sizeZ * 8;
   frameInfo->mFrameNumberInFile = 0;
   frameInfo->enable = 1;
-  frameInfo->LoadImage = SGILoadImage;
+  frameInfo->LoadImageFunPtr = SGILoadImage;
 
   /* Fill out the final return form, and call it a day */
   frameList->append(frameInfo);

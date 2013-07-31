@@ -190,7 +190,7 @@ FrameList *smGetFrameList(const char *filename)
       delete frameList;
       return NULL;
 	}
-	frameInfo->LoadImage = smLoadImage;
+	frameInfo->LoadImageFunPtr = smLoadImage;
 	frameList->append(frameInfo); 
   }
 

@@ -370,7 +370,7 @@ FrameList *pngGetFrameList(const char *filename)
     }
     frameInfo->mFrameNumberInFile = 0;
     frameInfo->enable = 1;
-    frameInfo->LoadImage = pngLoadImage;
+    frameInfo->LoadImageFunPtr = pngLoadImage;
     
     /* Fill out the final return form, and call it a day */
     frameList->append(frameInfo);

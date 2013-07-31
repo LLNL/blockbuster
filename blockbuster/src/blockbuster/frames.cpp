@@ -85,7 +85,7 @@ Image *FrameInfo::LoadAndConvertImage(unsigned int frameNumber,
 
   DEBUGMSG("LoadImage being called"); 
   /* Call the file format module to load the image */
-  rv = (*LoadImage)(image, this, 
+  rv = (*LoadImageFunPtr)(image, this, 
                     canvasFormat,
                     region, levelOfDetail);
   image->frameNumber = frameNumber; 

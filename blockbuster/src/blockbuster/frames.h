@@ -135,7 +135,7 @@ struct FrameInfo {
             int en,  LoadImageFunc lif):
     width(w), height(h), depth(d), maxLOD(lod), filename(fname), 
     mFrameNumberInFile(0), enable(en), 
-    LoadImage(lif) {
+    LoadImageFunPtr(lif) {
     return; 
   }
   
@@ -147,13 +147,15 @@ struct FrameInfo {
     return QString("{ FrameInfo: frameNumber = %1 in file %2}").arg(mFrameNumberInFile).arg(filename.c_str()); 
   }
 
-  /* virtual int LoadImage(ImageFormat *requiredImageFormat, 
-                const Rectangle *region,
-                int levelOfDetail) {
-    mImage->LoadImage(requiredImageFormat); 
-    }*/
+  virtual int LoadImage(ImageFormat */*requiredImageFormat*/, 
+                        const Rectangle */*region*/,
+                        int /*levelOfDetail*/) {
+    cerr << "This needs to be made virtual" << endl; 
+    return 0;
+  }
 
-   Image *LoadAndConvertImage(unsigned int frameNumber,
+  
+  Image *LoadAndConvertImage(unsigned int frameNumber,
                              ImageFormat *canvasFormat, 
                              const Rectangle *region, int levelOfDetail);
   
@@ -194,7 +196,7 @@ struct FrameInfo {
 		int levelOfDetail
 		);
   */
-  LoadImageFunc LoadImage;
+  LoadImageFunc LoadImageFunPtr;
   
 } ;
 
