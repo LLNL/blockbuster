@@ -391,9 +391,9 @@ void dmxRenderer::SetFrameList(FrameList *frameList) {
    */
   files.clear(); 
   for (framenum = 0; framenum < frameList->numActualFrames(); framenum++) {
-    if (previousName != frameList->getFrame(framenum)->filename) {
+    if (previousName != frameList->getFrame(framenum)->filename.c_str()) {
       files.push_back(frameList->getFrame(framenum)->filename); 
-      previousName = frameList->getFrame(framenum)->filename;        
+      previousName = frameList->getFrame(framenum)->filename.c_str();        
     }
   }
   
@@ -619,52 +619,52 @@ void dmxRenderer::SlaveError(DMXSlave *, QString host,
 void dmxRenderer::UpdateBackendCanvases(void)
 {
     
-   if (!numValidWindowInfos) return; 
+  if (!numValidWindowInfos) return; 
 
-    int i;
+  int i;
 
-    for (i = 0; i < numValidWindowInfos; i++) {
-	  const int scrn = dmxWindowInfos[i].screen;
+  for (i = 0; i < numValidWindowInfos; i++) {
+    const int scrn = dmxWindowInfos[i].screen;
 	  
-	  if (!haveDMX) {
-		ERROR("UpdateBackendCanvases: no not have DMX!"); 
-		abort(); 
-	  }
-	  /*
-	   * Check if we need to create any back-end windows / canvases
-	   */
-	  if (dmxWindowInfos[i].window && !mActiveSlaves[scrn]->HaveCanvas()) {
-		mActiveSlaves[scrn]->
-		  SendMessage(QString("CreateCanvas %1 %2 %3 %4 %5 %6 %7")
-					  .arg( dmxScreenInfos[scrn]->displayName)
-					  .arg((int) dmxWindowInfos[i].window)
-					  .arg(dmxWindowInfos[i].pos.width)
-					  .arg(dmxWindowInfos[i].pos.height)
-					  .arg(mCanvas->depth)
-					  .arg(mOptions->frameCacheSize)
-					  .arg(mOptions->readerThreads));
-
-		mActiveSlaves[scrn]->HaveCanvas(true);
-		if (files.size()) {
-		  /* send list of image files too */
-		  if (dmxWindowInfos[i].window) {
-			mActiveSlaves[scrn]->SendFrameList(files);
-		  }
-		}
-	  }
-	  
-	  /*
-	   * Compute new position/size parameters for the backend subwindow.
-	   * Send message to back-end processes to resize/move the canvases.
-	   */
-	  if (i < numValidWindowInfos && dmxWindowInfos[i].window) {
-		mActiveSlaves[scrn]->
-		  MoveResizeCanvas(dmxWindowInfos[i].vis.x,
-						   dmxWindowInfos[i].vis.y,
-						   dmxWindowInfos[i].vis.width,
-						   dmxWindowInfos[i].vis.height);
-	  }
+    if (!haveDMX) {
+      ERROR("UpdateBackendCanvases: no not have DMX!"); 
+      abort(); 
     }
+    /*
+     * Check if we need to create any back-end windows / canvases
+     */
+    if (dmxWindowInfos[i].window && !mActiveSlaves[scrn]->HaveCanvas()) {
+      mActiveSlaves[scrn]->
+        SendMessage(QString("CreateCanvas %1 %2 %3 %4 %5 %6 %7")
+                    .arg( dmxScreenInfos[scrn]->displayName)
+                    .arg((int) dmxWindowInfos[i].window)
+                    .arg(dmxWindowInfos[i].pos.width)
+                    .arg(dmxWindowInfos[i].pos.height)
+                    .arg(mCanvas->depth)
+                    .arg(mOptions->frameCacheSize)
+                    .arg(mOptions->readerThreads));
+
+      mActiveSlaves[scrn]->HaveCanvas(true);
+      if (files.size()) {
+        /* send list of image files too */
+        if (dmxWindowInfos[i].window) {
+          mActiveSlaves[scrn]->SendFrameList(files);
+        }
+      }
+    }
+	  
+    /*
+     * Compute new position/size parameters for the backend subwindow.
+     * Send message to back-end processes to resize/move the canvases.
+     */
+    if (i < numValidWindowInfos && dmxWindowInfos[i].window) {
+      mActiveSlaves[scrn]->
+        MoveResizeCanvas(dmxWindowInfos[i].vis.x,
+                         dmxWindowInfos[i].vis.y,
+                         dmxWindowInfos[i].vis.width,
+                         dmxWindowInfos[i].vis.height);
+    }
+  }
 }
 
 /*
@@ -697,7 +697,7 @@ void dmxRenderer::GetBackendInfo(void)
   /*!
 	Ask DMX how many screens our window is overlapping and by how much.
 	There is one windowInfo info for each screen our window overlaps 
-   */ 
+  */ 
   if (!DMXGetWindowInfo(display,
 						window, &numValidWindowInfos,
 						numScreens,
@@ -720,90 +720,90 @@ void dmxRenderer::FakeBackendInfo(void)
 {
     
 
-    /* two screens with the window stradling the boundary */
-    const int screenWidth = 1280, screenHeight = 1024;
-    const int w = 1024;
-    const int h = 768;
-    const int x = screenWidth - w / 2;
-    const int y = 100;
-    int i;
+  /* two screens with the window stradling the boundary */
+  const int screenWidth = 1280, screenHeight = 1024;
+  const int w = 1024;
+  const int h = 768;
+  const int x = screenWidth - w / 2;
+  const int y = 100;
+  int i;
 
-    haveDMX = 0;
+  haveDMX = 0;
 
-    numScreens = 2;
-    numWindows = 2;
-
-
-#if DMX_API_VERSION == 1
-    dmxScreenInfo = (DMXScreenInformation *)
-        calloc(1, numScreens * sizeof(DMXScreenInformation));
-#else
-    dmxScreenInfo = (DMXScreenAttributes *)
-        calloc(1, numScreens * sizeof(DMXScreenAttributes));
-#endif
-
-    if (!dmxScreenInfo) {
-        ERROR("FakeBackendDMXWindowInfo failed!\n");
-        numScreens = 0;
-        return;
-    }
+  numScreens = 2;
+  numWindows = 2;
 
 
 #if DMX_API_VERSION == 1
-    dmxWindowInfo = (DMXWindowInformation *)
-        calloc(1, numScreens * sizeof(DMXWindowInformation));
+  dmxScreenInfo = (DMXScreenInformation *)
+    calloc(1, numScreens * sizeof(DMXScreenInformation));
 #else
-    dmxWindowInfo = (DMXWindowAttributes *)
-        calloc(1, numScreens * sizeof(DMXWindowAttributes));
+  dmxScreenInfo = (DMXScreenAttributes *)
+    calloc(1, numScreens * sizeof(DMXScreenAttributes));
 #endif
 
-    if (!dmxWindowInfo) {
-        ERROR("Out of memory in FakeBackendDMXWindowInfo\n");
-        free(dmxScreenInfo);
-        dmxScreenInfo = NULL;
-        numScreens = 0;
-        return;
-    }
+  if (!dmxScreenInfo) {
+    ERROR("FakeBackendDMXWindowInfo failed!\n");
+    numScreens = 0;
+    return;
+  }
 
-    for (i = 0; i < numScreens; i++) {
-       dmxScreenInfo[i].displayName = strdup("localhost:0");
-
-       dmxScreenInfo[i].logicalScreen = 0;
-#if DMX_API_VERSION == 1
-       dmxScreenInfo[i].width = screenWidth;
-       dmxScreenInfo[i].height = screenHeight;
-       dmxScreenInfo[i].xoffset = 0;
-       dmxScreenInfo[i].yoffset = 0;
-       dmxScreenInfo[i].xorigin = i * screenWidth;
-       dmxScreenInfo[i].yorigin = 0;
-#else
-       /* xxx untested */
-       dmxScreenInfo[i].screenWindowWidth = screenWidth;
-       dmxScreenInfo[i].screenWindowHeight = screenHeight;
-       dmxScreenInfo[i].screenWindowXoffset = 0;
-       dmxScreenInfo[i].screenWindowYoffset = 0;
-       dmxScreenInfo[i].rootWindowXorigin = i * screenWidth;
-       dmxScreenInfo[i].rootWindowYorigin = 0;
-#endif
-
-       dmxWindowInfo[i].screen = i;
-       dmxWindowInfo[i].window = 0;
 
 #if DMX_API_VERSION == 1
-       dmxWindowInfo[i].pos.x = x - dmxScreenInfo[i].xorigin;
-       dmxWindowInfo[i].pos.y = y - dmxScreenInfo[i].yorigin;
+  dmxWindowInfo = (DMXWindowInformation *)
+    calloc(1, numScreens * sizeof(DMXWindowInformation));
 #else
-       dmxWindowInfo[i].pos.x = x - dmxScreenInfo[i].rootWindowXorigin;
-       dmxWindowInfo[i].pos.y = y - dmxScreenInfo[i].rootWindowYorigin;
+  dmxWindowInfo = (DMXWindowAttributes *)
+    calloc(1, numScreens * sizeof(DMXWindowAttributes));
 #endif
 
-       dmxWindowInfo[i].pos.width = w;
-       dmxWindowInfo[i].pos.height = h;
-       dmxWindowInfo[i].vis.x = i * w / 2;
-       dmxWindowInfo[i].vis.y = 0;
-       dmxWindowInfo[i].vis.width = w / 2;
-       dmxWindowInfo[i].vis.height = h;
-    }
+  if (!dmxWindowInfo) {
+    ERROR("Out of memory in FakeBackendDMXWindowInfo\n");
+    free(dmxScreenInfo);
+    dmxScreenInfo = NULL;
+    numScreens = 0;
+    return;
+  }
+
+  for (i = 0; i < numScreens; i++) {
+    dmxScreenInfo[i].displayName = strdup("localhost:0");
+
+    dmxScreenInfo[i].logicalScreen = 0;
+#if DMX_API_VERSION == 1
+    dmxScreenInfo[i].width = screenWidth;
+    dmxScreenInfo[i].height = screenHeight;
+    dmxScreenInfo[i].xoffset = 0;
+    dmxScreenInfo[i].yoffset = 0;
+    dmxScreenInfo[i].xorigin = i * screenWidth;
+    dmxScreenInfo[i].yorigin = 0;
+#else
+    /* xxx untested */
+    dmxScreenInfo[i].screenWindowWidth = screenWidth;
+    dmxScreenInfo[i].screenWindowHeight = screenHeight;
+    dmxScreenInfo[i].screenWindowXoffset = 0;
+    dmxScreenInfo[i].screenWindowYoffset = 0;
+    dmxScreenInfo[i].rootWindowXorigin = i * screenWidth;
+    dmxScreenInfo[i].rootWindowYorigin = 0;
+#endif
+
+    dmxWindowInfo[i].screen = i;
+    dmxWindowInfo[i].window = 0;
+
+#if DMX_API_VERSION == 1
+    dmxWindowInfo[i].pos.x = x - dmxScreenInfo[i].xorigin;
+    dmxWindowInfo[i].pos.y = y - dmxScreenInfo[i].yorigin;
+#else
+    dmxWindowInfo[i].pos.x = x - dmxScreenInfo[i].rootWindowXorigin;
+    dmxWindowInfo[i].pos.y = y - dmxScreenInfo[i].rootWindowYorigin;
+#endif
+
+    dmxWindowInfo[i].pos.width = w;
+    dmxWindowInfo[i].pos.height = h;
+    dmxWindowInfo[i].vis.x = i * w / 2;
+    dmxWindowInfo[i].vis.y = 0;
+    dmxWindowInfo[i].vis.width = w / 2;
+    dmxWindowInfo[i].vis.height = h;
+  }
 }
 #endif
 

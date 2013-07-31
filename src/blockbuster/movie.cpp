@@ -94,7 +94,7 @@ void ClampStartEndFrames(FrameList *allFrames,
 						 int32_t &endFrame, 
 						 int32_t &frameNumber, 
 						 bool warn = false) {
-  DEBUGMSG(QString("BEGIN ClampStartEndFrames(%1, %2, %3, %4...").arg(allFrames->getFrame(0)->filename).arg(startFrame).arg(endFrame).arg(frameNumber)); 
+  DEBUGMSG(QString("BEGIN ClampStartEndFrames(%1, %2, %3, %4...").arg(allFrames->getFrame(0)->filename.c_str()).arg(startFrame).arg(endFrame).arg(frameNumber)); 
   if (endFrame <= 0) {
     endFrame = allFrames->numStereoFrames()-1;
   }
@@ -118,7 +118,7 @@ void ClampStartEndFrames(FrameList *allFrames,
   }
   if (frameNumber > endFrame) frameNumber = endFrame; 
   if (frameNumber < startFrame) frameNumber = startFrame; 
-  DEBUGMSG(QString("END ClampStartEndFrames(%1, %2, %3, %4...").arg(allFrames->getFrame(0)->filename).arg(startFrame).arg(endFrame).arg(frameNumber)); 
+  DEBUGMSG(QString("END ClampStartEndFrames(%1, %2, %3, %4...").arg(allFrames->getFrame(0)->filename.c_str()).arg(startFrame).arg(endFrame).arg(frameNumber)); 
   return;
 }
 
@@ -320,7 +320,7 @@ int DisplayLoop(FrameList **allFramesPtr, ProgramOptions *options)
         break; 
       case MOVIE_PWD:
         {
-          QString pwd =  ParentDir(QString(frameInfo->filename));
+          QString pwd =  ParentDir(QString(frameInfo->filename.c_str()));
           gSidecarServer->SendEvent(MovieEvent(MOVIE_PWD, pwd)); 
         }
         break; 
@@ -762,7 +762,7 @@ int DisplayLoop(FrameList **allFramesPtr, ProgramOptions *options)
                getText(NULL, "Filename",
                        "Please give the image a name.",
                        QLineEdit::Normal,
-                       ParentDir(QString(frameInfo->filename)),
+                       ParentDir(QString(frameInfo->filename.c_str())),
                        &ok);
            }
            
@@ -916,7 +916,7 @@ int DisplayLoop(FrameList **allFramesPtr, ProgramOptions *options)
       QString filename("none"); 
       
       if (allFrames && static_cast<int32_t>(allFrames->numStereoFrames()) > frameNumber) {
-        filename = allFrames->getFrame(frameNumber)->filename; 
+        filename = allFrames->getFrame(frameNumber)->filename.c_str(); 
       }
       int loopmsg = 0, imageHeight=0, imageWidth = 0;
       if (loopCount < 0) loopmsg = -1;
