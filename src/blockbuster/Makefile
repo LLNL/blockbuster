@@ -88,7 +88,8 @@ endif
 SOURCES=main.cpp blockbuster_qt.cpp movie.cpp  ../common/timer.C \
 	 pure_C.c frames.cpp  slave.cpp remotecommands.cpp \
 	cache.cpp  canvas.cpp common.cpp \
-	sgi-rgb.cpp convert.cpp sm.cpp png.cpp splash.cpp pnm.cpp tiff.cpp \
+	sgi-rgbFrame.cpp convert.cpp smFrame.cpp pngFrame.cpp \
+	splash.cpp pnmFrame.cpp tiffFrame.cpp \
 	libdmx/dmx.c MovieCues.cpp events.cpp xwindow.cpp  \
 	MovieRenderer.cpp util.cpp settings.cpp errmsg.cpp \
 	Renderer.cpp x11Renderer.cpp glRenderer.cpp dmxRenderer.cpp 

@@ -1386,25 +1386,21 @@ pnmLoadImage(Image *image, FrameInfo *frameInfo,
     rowOrder = requiredImageFormat->rowOrder;
   byteOrder = requiredImageFormat->byteOrder;
 
-  if (!image->imageData) {
-    /* The Canvas gets the opportunity to allocate image data first. */
-    image->imageData = malloc(frameInfo->height * scanlineBytes);
-    if (image->imageData == NULL) {
-      ERROR("could not allocate %dx%dx%d image data ",
-            frameInfo->width, frameInfo->height, frameInfo->depth);
-      free(image);
-      return 0;
-    }
-    image->imageDataBytes = frameInfo->height * scanlineBytes;
-     
-    image->width = frameInfo->width;
-    image->height = frameInfo->height;
-    image->imageFormat.bytesPerPixel = requiredImageFormat->bytesPerPixel;
-    image->imageFormat.scanlineByteMultiple = requiredImageFormat->scanlineByteMultiple;
-    image->imageFormat.byteOrder = byteOrder;
-    image->imageFormat.rowOrder = rowOrder;
-    image->levelOfDetail = levelOfDetail;
+  if (!image->allocate(frameInfo->height * scanlineBytes)) {
+    ERROR("could not allocate %dx%dx%d image data ",
+          frameInfo->width, frameInfo->height, frameInfo->depth);
+    delete image;
+    return 0;
   }
+  
+  image->width = frameInfo->width;
+  image->height = frameInfo->height;
+  image->imageFormat.bytesPerPixel = requiredImageFormat->bytesPerPixel;
+  image->imageFormat.scanlineByteMultiple = requiredImageFormat->scanlineByteMultiple;
+  image->imageFormat.byteOrder = byteOrder;
+  image->imageFormat.rowOrder = rowOrder;
+  image->levelOfDetail = levelOfDetail;
+  
 
   /* We're really dumb.  We only know how to return our
    * specific format (RGB, 3 bytes per pixel).  We'll rely on the
@@ -1413,13 +1409,13 @@ pnmLoadImage(Image *image, FrameInfo *frameInfo,
   f = pm_openr(frameInfo->filename.c_str());
   if (f == NULL) {
 	WARNING("cannot open file %s", frameInfo->filename.c_str());
-	free(image);
+	delete image;
 	return 0;
   }
   if (pnm_readpnminit(f, &width,&height,&value,&fmt) == -1) {
 	SYSERROR("%s is not a PNM file", frameInfo->filename.c_str());
 	pm_closer(f);
-	free(image);
+	delete image;
 	return 0;
   }
   switch(PNM_FORMAT_TYPE(fmt)) {
@@ -1443,8 +1439,7 @@ pnmLoadImage(Image *image, FrameInfo *frameInfo,
           width, height, 8*depth,
           frameInfo->width, frameInfo->height, frameInfo->depth);
 	pm_closer(f);
-    if (image->imageData) free(image->imageData); 
-	free(image);
+	delete image;
 	return 0;
   }
 
@@ -1452,7 +1447,7 @@ pnmLoadImage(Image *image, FrameInfo *frameInfo,
 
   xrow = pnm_allocrow( width );
   for(i=0;i<height;i++) {
-	p = (unsigned char *) image->imageData + (rowOrder == TOP_TO_BOTTOM?i:height - i - 1)*scanlineBytes;
+	p = (unsigned char *) image->Data() + (rowOrder == TOP_TO_BOTTOM?i:height - i - 1)*scanlineBytes;
 	pnm_readpnmrow( f, xrow, width, value, fmt );
 	if (depth == 3) {
       xp = xrow;
@@ -1559,7 +1554,7 @@ FrameList *pnmGetFrameList(const char *filename)
   frameInfo->height = height;
   frameInfo->depth = 8*depth;
   frameInfo->mFrameNumberInFile = 0;
-  frameInfo->enable = 1;
+  //frameInfo->enable = 1;
   frameInfo->LoadImageFunPtr = pnmLoadImage;
 
   /* Fill out the final return form, and call it a day */

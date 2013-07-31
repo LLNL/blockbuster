@@ -28,7 +28,7 @@
 #include "errmsg.h"
 #include <errno.h> 
 #include <X11/Xlib.h>
-#include "tiff.h"
+#include "tiffFrame.h"
 
 #define int16 myint16
 #define int32 myint32
@@ -79,39 +79,32 @@ static int RGBALoadImage(Image *image,  FrameInfo *frameInfoPtr,
   extraBytesPerScanline = scanlineBytes - 
     requiredImageFormat->bytesPerPixel * frameInfo->width;
 
-
-  if (!image->imageData) {
-	if (requiredImageFormat->rowOrder == ROW_ORDER_DONT_CARE)
-      image->imageFormat.rowOrder = BOTTOM_TO_TOP; /* Bias toward OpenGL */
-	else
-      image->imageFormat.rowOrder = requiredImageFormat->rowOrder;
-
-	/* The Canvas gets the opportunity to allocate image data first. */
-	image->imageData = calloc(1, frameInfo->height * scanlineBytes);
-	if (image->imageData == NULL) {
-      ERROR("could not allocate %dx%dx%d image data",
-            frameInfo->width, frameInfo->height, frameInfo->depth);
-      return 0;
-	}
-	image->imageDataBytes = frameInfo->height * scanlineBytes;
-
-	/* We sent only the necessary rows, but all pixels in each row.
-	 * So tell this to the caller.
-	 */
-	image->width = frameInfo->width;
-	image->height = frameInfo->height;
-	image->imageFormat.bytesPerPixel = requiredImageFormat->bytesPerPixel;
-	image->imageFormat.scanlineByteMultiple = requiredImageFormat->scanlineByteMultiple;
-	image->imageFormat.byteOrder = requiredImageFormat->byteOrder;
-	image->levelOfDetail = levelOfDetail;
+  if (!image->allocate(frameInfo->height * scanlineBytes)) {
+    ERROR("could not allocate %dx%dx%d image data",
+          frameInfo->width, frameInfo->height, frameInfo->depth);
+    return 0;
   }
+
+  if (requiredImageFormat->rowOrder == ROW_ORDER_DONT_CARE)
+    image->imageFormat.rowOrder = BOTTOM_TO_TOP; /* Bias toward OpenGL */
+  else
+    image->imageFormat.rowOrder = requiredImageFormat->rowOrder;
+
+
+  /* We sent only the necessary rows, but all pixels in each row.
+   * So tell this to the caller.
+   */
+  image->width = frameInfo->width;
+  image->height = frameInfo->height;
+  image->imageFormat.bytesPerPixel = requiredImageFormat->bytesPerPixel;
+  image->imageFormat.scanlineByteMultiple = requiredImageFormat->scanlineByteMultiple;
+  image->imageFormat.byteOrder = requiredImageFormat->byteOrder;
+  image->levelOfDetail = levelOfDetail;
+
 
   f = TIFFOpen(frameInfo->filename.c_str(), "r");
   if (f == NULL) {
 	SYSERROR("cannot open TIFF file %s", frameInfo->filename.c_str());
-    if (image->imageData) free(image->imageData);
-	image->imageData = NULL;
-	image->imageDataBytes = 0;
 	return 0;
   }
 
@@ -134,7 +127,7 @@ static int RGBALoadImage(Image *image,  FrameInfo *frameInfoPtr,
 	return 0;
   }
   uint32* raster = (uint32*)(&frameInfo->scanlineBuffer[0]);
-  dest = (unsigned char *)image->imageData;
+  dest = (unsigned char *)image->Data();
   for (i = 0; i < image->height; i++) {
 	const int row = /*desiredSub->y +*/ i;
 	int rv;
@@ -143,11 +136,11 @@ static int RGBALoadImage(Image *image,  FrameInfo *frameInfoPtr,
 	 * otherwise, it should still be well-placed for what we need.
 	 */
 	if (image->imageFormat.rowOrder == BOTTOM_TO_TOP) {
-      dest = (unsigned char *)image->imageData + (frameInfo->height - row - 1) * scanlineBytes;
+      dest = (unsigned char *)image->Data() + (frameInfo->height - row - 1) * scanlineBytes;
 	}
     else {
       bb_assert(image->imageFormat.rowOrder == TOP_TO_BOTTOM);
-      dest = (unsigned char *)image->imageData + row * scanlineBytes;
+      dest = (unsigned char *)image->Data() + row * scanlineBytes;
     }
 
     /* Use width 1 to get a single full width scanline */
@@ -234,38 +227,32 @@ Color24LoadImage(Image *image,  FrameInfo* frameInfoPtr,
     requiredImageFormat->bytesPerPixel * frameInfo->width;
 
 
-  if (!image->imageData) {
-	if (requiredImageFormat->rowOrder == ROW_ORDER_DONT_CARE)
-      image->imageFormat.rowOrder = BOTTOM_TO_TOP; /* Bias toward OpenGL */
-	else
-      image->imageFormat.rowOrder = requiredImageFormat->rowOrder;
-
-	/* The Canvas gets the opportunity to allocate image data first. */
-	image->imageData = calloc(1, frameInfo->height * scanlineBytes);
-	if (image->imageData == NULL) {
-      ERROR("could not allocate %dx%dx%d image data ",
-            frameInfo->width, frameInfo->height, frameInfo->depth);
-      return 0;
-	}
-	image->imageDataBytes = frameInfo->height * scanlineBytes;
-
-	/* We sent only the necessary rows, but all pixels in each row.
-	 * So tell this to the caller.
-	 */
-	image->width = frameInfo->width;
-	image->height = frameInfo->height;
-	image->imageFormat.bytesPerPixel = requiredImageFormat->bytesPerPixel;
-	image->imageFormat.scanlineByteMultiple = requiredImageFormat->scanlineByteMultiple;
-	image->imageFormat.byteOrder = requiredImageFormat->byteOrder;
-	image->levelOfDetail = levelOfDetail;
+  if (!image->allocate(frameInfo->height * scanlineBytes)) {
+    ERROR("could not allocate %dx%dx%d image data ",
+          frameInfo->width, frameInfo->height, frameInfo->depth);
+    return 0;
   }
+  
+  if (requiredImageFormat->rowOrder == ROW_ORDER_DONT_CARE)
+    image->imageFormat.rowOrder = BOTTOM_TO_TOP; /* Bias toward OpenGL */
+  else
+    image->imageFormat.rowOrder = requiredImageFormat->rowOrder;
+  
+  
+  /* We sent only the necessary rows, but all pixels in each row.
+   * So tell this to the caller.
+   */
+  image->width = frameInfo->width;
+  image->height = frameInfo->height;
+  image->imageFormat.bytesPerPixel = requiredImageFormat->bytesPerPixel;
+  image->imageFormat.scanlineByteMultiple = requiredImageFormat->scanlineByteMultiple;
+  image->imageFormat.byteOrder = requiredImageFormat->byteOrder;
+  image->levelOfDetail = levelOfDetail;
+  
 
   f = TIFFOpen(frameInfo->filename.c_str(), "r");
   if (f == NULL) {
 	SYSERROR("cannot open TIFF file %s", frameInfo->filename.c_str());
-	if (image->imageData) free(image->imageData);
-	image->imageData = NULL;
-	image->imageDataBytes = 0;
 	return 0;
   }
 
@@ -280,7 +267,7 @@ Color24LoadImage(Image *image,  FrameInfo* frameInfoPtr,
    * NOTE: We generally can't read a sub-image unless the tiff is
    * uncompressed.  Read whole image.
    */
-  dest = (unsigned char *)image->imageData;
+  dest = (unsigned char *)image->Data();
   for (i = 0; i < image->height; i++) {
 	const int row = /*desiredSub->y +*/ i;
 	int rv;
@@ -289,11 +276,11 @@ Color24LoadImage(Image *image,  FrameInfo* frameInfoPtr,
 	 * otherwise, it should still be well-placed for what we need.
 	 */
 	if (image->imageFormat.rowOrder == BOTTOM_TO_TOP) {
-      dest = (unsigned char *)image->imageData + (frameInfo->height - row - 1) * scanlineBytes;
+      dest = (unsigned char *)image->Data() + (frameInfo->height - row - 1) * scanlineBytes;
 	}
     else {
       bb_assert(image->imageFormat.rowOrder == TOP_TO_BOTTOM);
-      dest = (unsigned char *)image->imageData + row * scanlineBytes;
+      dest = (unsigned char *)image->Data() + row * scanlineBytes;
     }
 	rv = TIFFReadScanline(f, src, row, 0);
 	if (rv != 1) {
@@ -434,7 +421,7 @@ FrameList *tiffGetFrameList(const char *filename)
   frameInfo->height = height;
   frameInfo->depth = 8*samplesPerPixel;
   frameInfo->mFrameNumberInFile = 0;
-  frameInfo->enable = 1;
+  //frameInfo->enable = 1;
 
   frameInfo->photometric = photometric;
   frameInfo->minSample = minSample;

@@ -269,7 +269,7 @@ void glRenderer::Render(int frameNumber,
   } else {    
     glDrawPixels(region.width, region.height,
                  GL_RGB, GL_UNSIGNED_BYTE,
-                 image->imageData);
+                 image->Data());
     DEBUGMSG("Done with glDrawPixels\n"); 
   }
 
@@ -422,7 +422,7 @@ void glStereoRenderer::Render(int frameNumber,
                 mCanvas->requiredImageFormat.scanlineByteMultiple);
   glDrawPixels(region.width, region.height,
                GL_RGB, GL_UNSIGNED_BYTE,
-               image->imageData);
+               image->Data());
   
   /* Offset raster pos by (-destX, -destY) to put it back to (0,0) */
   glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
@@ -472,7 +472,7 @@ void glStereoRenderer::Render(int frameNumber,
                   mCanvas->requiredImageFormat.scanlineByteMultiple);
     glDrawPixels(region.width, region.height,
                  GL_RGB, GL_UNSIGNED_BYTE,
-                 image->imageData);
+                 image->Data());
     
     /* Offset raster pos by (-destX, -destY) to put it back to (0,0) */
     glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
@@ -745,7 +745,7 @@ void glTextureRenderer::Render(int frameNumber, const Rectangle *imageRegion,
                       region.x, region.y,
                       region.width, region.height,
                       texFormat, GL_UNSIGNED_BYTE,
-                      image->imageData);
+                      image->Data());
       
       if (texObj->anyLoaded)
         texObj->valid[lod] = RectUnionRect(&texObj->valid[lod], imageRegion);
@@ -812,7 +812,7 @@ void glTextureRenderer::Render(int frameNumber, const Rectangle *imageRegion,
                     0, 0, /* pos */
                     region.width, region.height,
                     texFormat, GL_UNSIGNED_BYTE,
-                    image->imageData);
+                    image->Data());
     /* invalidate valid region, for sake of first path, above */
     texObj->valid[lod].x = 0;
     texObj->valid[lod].y = 0;
@@ -906,7 +906,7 @@ void glTextureRenderer::Render(int frameNumber, const Rectangle *imageRegion,
         glTexSubImage2D(GL_TEXTURE_2D, 0,
                         0, 0, width, height,
                         texFormat, GL_UNSIGNED_BYTE,
-                        image->imageData);
+                        image->Data());
         
         /* tex coords */
         s0 = 0;

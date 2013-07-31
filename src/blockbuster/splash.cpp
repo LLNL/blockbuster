@@ -80,8 +80,7 @@ void InitSplashScreen(void) {
     splashScreen->height = 103; 
     splashScreen->imageFormat = splashFormat; 
     splashScreen->loadedRegion = splashRect; 
-    splashScreen->imageDataBytes = 92700;
-    splashScreen->imageData = splashImageData; 
+    splashScreen->allocate(92700);
   }
   if (frameInfoPtr) {
     frameInfoPtr.reset(new FrameInfo(300, 103, 24, /* width, height, depth */

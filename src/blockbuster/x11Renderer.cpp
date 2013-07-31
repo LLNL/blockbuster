@@ -183,12 +183,12 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
   stride = ROUND_TO_MULTIPLE(image->width
                              * image->imageFormat.bytesPerPixel, 4);
   if (zoom == 1.0) {
-    start = (char *) image->imageData + region.y * stride
+    start = (char*)image->Data() + region.y * stride
       + region.x * image->imageFormat.bytesPerPixel;
   }
   else {
     /* we'll draw the whole rescaled image */
-    start = (char *) image->imageData;
+    start = (char*)image->Data();
   }
   
   xImage = XCreateImage(display,
@@ -270,8 +270,7 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
    * release it so that the image cache knows we're done with it.
    */
   if (zoom != 1.0) {
-    if (image->imageData) free(image->imageData); 
-    free(image);
+    delete image;
   }
   else {
     mCanvas->mRenderer->ReleaseImage( image);

@@ -17,6 +17,14 @@ struct TiffFrameInfo: public FrameInfo {
   virtual ~TiffFrameInfo() {
     return;
   }
+
+  virtual int LoadImage(ImageFormat *fmt, 
+                        const Rectangle *region, 
+                        int lod) {
+    return 0; 
+  }
+
+
   int bitsPerSample;	/* 8 or 16 */
   int samplesPerPixel; /* 1 - grayscale; 3 - color */
   int photometric; /* can invert a grayscale image */

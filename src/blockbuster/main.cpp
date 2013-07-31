@@ -53,7 +53,7 @@
 #include "slave.h"
 #include "util.h"
 #include "SidecarServer.h"
-#include "sm.h"
+#include "smFrame.h"
 
 // global for Qt use: 
 QApplication *gCoreApp=NULL; 

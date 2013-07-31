@@ -78,113 +78,113 @@ Canvas::~Canvas()
 
 void Canvas::WriteImageToFile(int frameNumber)
 {
-    Image *image;
-    Rectangle region;
-    FILE *f;
-    register uint32_t i;
-    register unsigned char *imageData;
-	uint32_t localFrameNumber = 0;
+  Image *image;
+  Rectangle region;
+  FILE *f;
+  register uint32_t i;
+  register unsigned char *imageData;
+  uint32_t localFrameNumber = 0;
 
-	/* explicitly use localFrameNumber as a reminder that we may be dealing with stereo movies */
-	if(frameList->stereo) {
-	  localFrameNumber = frameNumber * 2;
+  /* explicitly use localFrameNumber as a reminder that we may be dealing with stereo movies */
+  if(frameList->stereo) {
+    localFrameNumber = frameNumber * 2;
 	
-	}
-	else {
-	  localFrameNumber = frameNumber;
-	}
+  }
+  else {
+    localFrameNumber = frameNumber;
+  }
   
 
-    /* This particular function only works on renderers that
-     * are using the Image Cache utilities.
-     */
-    if (frameList == NULL) {
+  /* This particular function only works on renderers that
+   * are using the Image Cache utilities.
+   */
+  if (frameList == NULL) {
 	WARNING("Cannot write image to file - frame list is NULL");
 	return;
-    }
-    if (localFrameNumber >= frameList->numActualFrames()) {
+  }
+  if (localFrameNumber >= frameList->numActualFrames()) {
 	WARNING("Cannot write image to file - asked for frame %d of %d",
-		localFrameNumber, frameList->numActualFrames());
+            localFrameNumber, frameList->numActualFrames());
 	return;
-    }
+  }
 
-    region.x = 0;
-    region.y = 0;
-    region.height = frameList->getFrame(localFrameNumber)->height;
-    region.width = frameList->getFrame(localFrameNumber)->width;
+  region.x = 0;
+  region.y = 0;
+  region.height = frameList->getFrame(localFrameNumber)->height;
+  region.width = frameList->getFrame(localFrameNumber)->width;
 
-    image = mRenderer->GetImage(localFrameNumber, &region, 0);
+  image = mRenderer->GetImage(localFrameNumber, &region, 0);
 
-    if (image == NULL) {
+  if (image == NULL) {
 	WARNING("Cannot write image to file - image is NULL");
 	return;
-    }
+  }
 
-    /* We've got an image.  Write out a description to tmp.c */
-    f = fopen("tmp.c", "w");
-    if (f == NULL) {
+  /* We've got an image.  Write out a description to tmp.c */
+  f = fopen("tmp.c", "w");
+  if (f == NULL) {
 	WARNING("Cannot write image to file - cannot open tmp.c");
 	mRenderer->ReleaseImage( image);
 	return;
-    }
+  }
 
-    fprintf(f, "static FrameInfo frameInfo = {\n");
-    fprintf(f, "    %d, %d, %d, /* width, height, depth */\n",
-	    image->width, image->height, image->imageFormat.bytesPerPixel * 8);
-    fprintf(f, "    0, /* maxLOD */\n"),
+  fprintf(f, "static FrameInfo frameInfo = {\n");
+  fprintf(f, "    %d, %d, %d, /* width, height, depth */\n",
+          image->width, image->height, image->imageFormat.bytesPerPixel * 8);
+  fprintf(f, "    0, /* maxLOD */\n"),
     fprintf(f, "    \"SPLASH\", /* filename */\n");
-    fprintf(f, "    0, /* localFrameNumber */\n");
-    fprintf(f, "    NULL, /* privateData */\n");
-    fprintf(f, "    1, /* enable */\n");
-    fprintf(f, "    LoadSplashScreen, /* loadImageFunc */\n");
-    // fprintf(f, "    NullDestroyFrameInfo,\n");
-    fprintf(f, "};\n\n");
+  fprintf(f, "    0, /* localFrameNumber */\n");
+  fprintf(f, "    NULL, /* privateData */\n");
+  fprintf(f, "    1, /* enable */\n");
+  fprintf(f, "    LoadSplashScreen, /* loadImageFunc */\n");
+  // fprintf(f, "    NullDestroyFrameInfo,\n");
+  fprintf(f, "};\n\n");
 
-    fprintf(f, "FrameList splashScreenFrameList = {\n");
-    fprintf(f, "    1, /* count */\n");
-    fprintf(f, "    0.0, /* targetFPS */\n");
-    fprintf(f, "    {&frameInfo}\n");
-    fprintf(f, "};\n\n");
+  fprintf(f, "FrameList splashScreenFrameList = {\n");
+  fprintf(f, "    1, /* count */\n");
+  fprintf(f, "    0.0, /* targetFPS */\n");
+  fprintf(f, "    {&frameInfo}\n");
+  fprintf(f, "};\n\n");
 
-    fprintf(f, "static unsigned char imageData[%d] = {",
-	    image->imageDataBytes);
-    imageData = (unsigned char *)image->imageData;
-    for (i = 0; i < image->imageDataBytes; i++) {
+  fprintf(f, "static unsigned char imageData[%d] = {",
+          image->DataSize());
+  imageData = (unsigned char *)image->Data();
+  for (i = 0; i < image->DataSize(); i++) {
 	if (i > 0) fprintf(f, ", ");
 	if (i % 10 == 0) fprintf(f, "\n    ");
 	fprintf(f, "0x%02x", imageData[i]);
-    }
-    fprintf(f, "\n};\n\n");
-    fprintf(f, "static Image splashScreen = {\n");
-    fprintf(f, "    %d, %d, /* width, height */\n", 
-	    image->width, image->height);
-    fprintf(f, "    {\n");
-    fprintf(f, "        %d, /* bytesPerPixel */\n", 
-	    image->imageFormat.bytesPerPixel);
-    fprintf(f, "        %d, /* scanlineByteMultiple */\n",
-	    image->imageFormat.scanlineByteMultiple);
-    fprintf(f, "        %d, /* byteOrder */\n", 
-	    image->imageFormat.byteOrder);
-    fprintf(f, "        %d, /* rowOrder */\n", 
-	    image->imageFormat.rowOrder);
-    fprintf(f, "        %d, %d, %d, /* redShift, greenShift, blueShift */\n",
-	    image->imageFormat.redShift,
-	    image->imageFormat.greenShift,
-	    image->imageFormat.blueShift);
-    fprintf(f, "        0x%lx, 0x%lx, 0x%lx, /* redMask, greenMask, blueMask */\n",
-	    image->imageFormat.redMask,
-	    image->imageFormat.greenMask,
-	    image->imageFormat.blueMask);
-    fprintf(f, "    },\n");
-    fprintf(f, "    {0, 0, %d, %d}, /* x, y, width, height */\n",
-	    image->width, image->height);
-    fprintf(f, "    0, /* levelOfDetail */\n");
-    fprintf(f, "    %d, /* imageDataBytes */\n", image->imageDataBytes);
-    fprintf(f, "    (void *)imageData,\n");
-    fprintf(f, "};\n");
-    fclose(f);
-    mRenderer->ReleaseImage( image);
-    INFO("Saved image in tmp.c");
+  }
+  fprintf(f, "\n};\n\n");
+  fprintf(f, "static Image splashScreen = {\n");
+  fprintf(f, "    %d, %d, /* width, height */\n", 
+          image->width, image->height);
+  fprintf(f, "    {\n");
+  fprintf(f, "        %d, /* bytesPerPixel */\n", 
+          image->imageFormat.bytesPerPixel);
+  fprintf(f, "        %d, /* scanlineByteMultiple */\n",
+          image->imageFormat.scanlineByteMultiple);
+  fprintf(f, "        %d, /* byteOrder */\n", 
+          image->imageFormat.byteOrder);
+  fprintf(f, "        %d, /* rowOrder */\n", 
+          image->imageFormat.rowOrder);
+  fprintf(f, "        %d, %d, %d, /* redShift, greenShift, blueShift */\n",
+          image->imageFormat.redShift,
+          image->imageFormat.greenShift,
+          image->imageFormat.blueShift);
+  fprintf(f, "        0x%lx, 0x%lx, 0x%lx, /* redMask, greenMask, blueMask */\n",
+          image->imageFormat.redMask,
+          image->imageFormat.greenMask,
+          image->imageFormat.blueMask);
+  fprintf(f, "    },\n");
+  fprintf(f, "    {0, 0, %d, %d}, /* x, y, width, height */\n",
+          image->width, image->height);
+  fprintf(f, "    0, /* levelOfDetail */\n");
+  fprintf(f, "    %d, /* imageDataBytes */\n", image->DataSize());
+  fprintf(f, "    (void *)imageData,\n");
+  fprintf(f, "};\n");
+  fclose(f);
+  mRenderer->ReleaseImage( image);
+  INFO("Saved image in tmp.c");
 }
 
 //============================================================

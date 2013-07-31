@@ -2,9 +2,17 @@
 #define BBPNM_H
 #include "frames.h"
 
-class pnmImage {
+//============================================================
+struct PNMFrameInfo: public FrameInfo {
+  
+  virtual int LoadImage(ImageFormat *fmt, 
+                        const Rectangle *region, 
+                        int lod) {
+    return 0; 
+  }
   
 }; 
+
 
 FrameList *pnmGetFrameList(const char *filename);
 #endif

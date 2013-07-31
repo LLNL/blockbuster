@@ -25,7 +25,7 @@
 #include <string.h>
 #include <math.h>
 #include "errmsg.h"
-#include "sm.h"
+#include "smFrame.h"
 #include "frames.h"
 #include "sm/smBase.h"
 #include "settings.h"
@@ -53,35 +53,20 @@ smLoadImage(Image *image,  FrameInfo *frameInfoPtr,
   bb_assert(imgWidth > 0);
   bb_assert(imgHeight > 0);
   
-  if (!image->imageData) {
-	/* The Canvas gets the opportunity to allocate image data first. */
-	image->imageData = calloc(1, imgWidth * imgHeight * 3);
-	if (image->imageData == NULL) {
-	  ERROR("could not allocate %dx%dx24 image data",
-			frameInfo->width, frameInfo->height);
-	  return 0;
-	}
-	image->width = imgWidth;
-	image->height = imgHeight;
-	image->imageDataBytes = imgWidth * imgHeight * 3;
-    image->imageFormat.bytesPerPixel = 3;
-	image->imageFormat.scanlineByteMultiple = 1;
-	image->imageFormat.byteOrder = MSB_FIRST;
-	image->imageFormat.rowOrder = BOTTOM_TO_TOP; /* OpenGL order */
-	image->levelOfDetail = levelOfDetail;
+  if (!image->allocate(imgWidth * imgHeight * 3)) {
+    ERROR("could not allocate %dx%dx24 image data",
+          frameInfo->width, frameInfo->height);
+    return 0;
   }
-  else {
-	/* some sanity checks */
-	bb_assert(image->width > 0);
-	bb_assert(static_cast<int32_t>(image->width) <= frameInfo->width);
-	bb_assert(image->height > 0);
-	bb_assert(static_cast<int32_t>(image->height) <= frameInfo->height);
-	bb_assert(image->imageFormat.rowOrder == BOTTOM_TO_TOP);
-	bb_assert(image->imageDataBytes >= imgWidth * imgHeight * 3);
-	bb_assert(image->width == imgWidth);
-	bb_assert(image->height == imgHeight);
-  }
-  
+  image->width = imgWidth;
+  image->height = imgHeight;
+  image->imageFormat.bytesPerPixel = 3;
+  image->imageFormat.scanlineByteMultiple = 1;
+  image->imageFormat.byteOrder = MSB_FIRST;
+  image->imageFormat.rowOrder = BOTTOM_TO_TOP; /* OpenGL order */
+  image->levelOfDetail = levelOfDetail;
+
+
   /* compute position and size of region in res=levelOfDetail coordinates */
   const int destStride = image->width * 3;
   int size[2], pos[2], step[2];
@@ -92,7 +77,7 @@ smLoadImage(Image *image,  FrameInfo *frameInfoPtr,
   size[1] = desiredSub->height;
   step[0] = 1;
   step[1] = 1;
-  dest = (char *) image->imageData + (pos[1] * image->width + pos[0]) * 3;
+  dest = (char*) image->Data() + (pos[1] * image->width + pos[0]) * 3;
   
   DEBUGMSG("smLoadImage: Getting frame %d, SM region at (%d, %d), size (%d x %d)  of image sized (%d x %d)	destStride=%d",
 		   frameInfo->mFrameNumberInFile, desiredSub->x, desiredSub->y, 

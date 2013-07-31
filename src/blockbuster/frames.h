@@ -70,8 +70,7 @@ struct ImageFormat{
 // ============================================================
 struct Image {
   Image(): width(0), height(0), levelOfDetail(0), 
-           frameNumber(0), imageDataBytes(0), imageData(NULL), 
-           mTypeName("UNKNOWN") {
+           frameNumber(0), mTypeName("UNKNOWN"), imageData(NULL) {
     return; 
   }
    
@@ -87,16 +86,33 @@ struct Image {
     return 0; 
   }
   
+  bool allocate(uint32_t bytes) {
+    if (bytes > imageData.size()) {
+      imageData.resize(bytes); 
+    }
+    return (imageData.size() >= bytes); 
+  }
+
+  const void *ConstData(void) const {
+    return (void*)&imageData[0]; 
+  }
+
+  void *Data(void) {
+    return (void*)&imageData[0]; 
+  }
+
+  uint32_t DataSize(void) {
+    return imageData.size(); 
+  }
 
   uint32_t width, height;
   ImageFormat imageFormat;
   Rectangle loadedRegion;
   int levelOfDetail;
   uint32_t frameNumber; // if appropriate
-  unsigned int imageDataBytes;
-  void *imageData;      /* the actual image data created when read from disk */
-  //bool mManageData; // if true, then imageData will be free()'d during destructor
   string mTypeName ; // e.g. "SM" or "PNG"  
+  private: 
+  vector<char> imageData; /* the actual image data to display */
 } ;
 
 //============================================================
@@ -118,24 +134,22 @@ typedef int (*LoadImageFunc)
 /* Information about one frame of the movie. */ 
 struct FrameInfo {
   FrameInfo(): width(0), height(0), depth(0), maxLOD(0), 
-               mFrameNumberInFile(0), 
-               enable(0){
+               mFrameNumberInFile(0) /*,  enable(0) */{
     return; 
   }
   
   
   // NEW VERSION 
-  FrameInfo(int w, int h, int d, int maxlod, string fname, uint32_t frame, int en=true):
+  FrameInfo(int w, int h, int d, int maxlod, string fname, uint32_t frame):
     width(w), height(h), depth(d), maxLOD(maxlod), filename(fname), 
-    mFrameNumberInFile(frame), enable(en) {
+    mFrameNumberInFile(frame)/*, enable(en)*/ {
     return; 
   }
   
   FrameInfo(int w, int h, int d, int lod, string fname, 
-            int en,  LoadImageFunc lif):
+            int /*en*/,  LoadImageFunc lif):
     width(w), height(h), depth(d), maxLOD(lod), filename(fname), 
-    mFrameNumberInFile(0), enable(en), 
-    LoadImageFunPtr(lif) {
+    mFrameNumberInFile(0)/*, enable(en)*/,  LoadImageFunPtr(lif) {
     return; 
   }
   
@@ -176,7 +190,7 @@ struct FrameInfo {
   TextureObjectPtr mTextureObject;
   
   /* A flag that we can use to disable frames that have errors */
-  int enable;
+  // int enable;
   
   Image *mImage; 
 
@@ -186,7 +200,7 @@ struct FrameInfo {
    * if it can switch to the desired format, it should, but
    * it can return any format it wishes (or can).
    * 
-   * The returned image can be released with free()
+   * The returned image must be released with delete
    *
   */
   /* int LoadImage(Image *image,
