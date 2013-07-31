@@ -13,6 +13,7 @@
 #include "util.h"
 #include "frames.h"
 #include <X11/Xlib.h>
+#include "pngFrame.h"
 
 /* pnmrw.h - header file for PBM/PGM/PPM read/write library
 **
@@ -1559,7 +1560,7 @@ FrameList *pnmGetFrameList(const char *filename)
   frameInfo->depth = 8*depth;
   frameInfo->mFrameNumberInFile = 0;
   frameInfo->enable = 1;
-  frameInfo->LoadImage = pnmLoadImage;
+  frameInfo->LoadImageFunPtr = pnmLoadImage;
 
   /* Fill out the final return form, and call it a day */
   frameList->append(frameInfo);

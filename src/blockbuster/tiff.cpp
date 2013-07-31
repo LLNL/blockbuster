@@ -402,11 +402,11 @@ FrameList *tiffGetFrameList(const char *filename)
    */
   if (bitsPerSample == 8 && samplesPerPixel == 3) {
 	/* 24-bit color image */
-	frameInfo->LoadImage = Color24LoadImage;
+	frameInfo->LoadImageFunPtr = Color24LoadImage;
 	/* Each scan line will hold 3 bytes per pixel */
     frameInfo->scanlineBuffer.resize(width * 3);
   } else if ( TIFFRGBAImageOK( f, errMesg ) ) {
-	frameInfo->LoadImage = RGBALoadImage;
+	frameInfo->LoadImageFunPtr = RGBALoadImage;
 	/* Each scan line will hold 3 bytes per pixel */
     frameInfo->scanlineBuffer.resize(width * sizeof(uint32));
   }
