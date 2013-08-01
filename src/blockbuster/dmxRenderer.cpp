@@ -366,7 +366,7 @@ void dmxRenderer::SwapBuffers(void){
 
 
 //  =============================================================
-void dmxRenderer::SetFrameList(FrameList *frameList) {
+void dmxRenderer::SetFrameList(FrameListPtr frameList) {
   ECHO_FUNCTION(5);
   uint32_t framenum;
   uint32_t i; 

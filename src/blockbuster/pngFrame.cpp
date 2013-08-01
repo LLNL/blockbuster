@@ -47,7 +47,7 @@ int PrepPng(const char *filename,
 int pngLoadImage(Image *image,
                  FrameInfo*frameInfo,
                  ImageFormat *requiredImageFormat, 
-                 const Rectangle *desiredSubregion, 
+                 const Rectangle */*desiredSubregion*/, 
                  int levelOfDetail) {
   Image *mImage = image; 
   png_structp readStruct;
@@ -208,19 +208,19 @@ int pngLoadImage(Image *image,
 }
 
 
-FrameList *pngGetFrameList(const char *filename)
+FrameListPtr pngGetFrameList(const char *filename)
 {
   FILE *f;
   png_structp readStruct;
   png_infop infoStruct;
-  FrameList *frameList;
   png_uint_32 width, height;
   int depth, colorType, interlaceType, compressionType, filterMethod;
+  FrameListPtr frameList; 
 
   /* Start reading the file straight away */
   if (!PrepPng(filename, &f, &readStruct, &infoStruct)) {
     /* Error has already been reported */
-    return NULL;
+    return frameList;
   }
     
   /* Prepare the FrameList and FrameInfo structures we are to
@@ -234,17 +234,17 @@ FrameList *pngGetFrameList(const char *filename)
     ERROR("cannot allocate FrameInfo structure");
     png_destroy_read_struct(&readStruct, &infoStruct, NULL);
     fclose(f);
-    return NULL;
+    return frameList;
   }
     
   frameInfo->filename = filename;
     
-  frameList = new FrameList; 
-  if (frameList == NULL) {
+  frameList.reset(new FrameList); 
+  if (!frameList) {
     ERROR("cannot allocate FrameInfo list structure");
     png_destroy_read_struct(&readStruct, &infoStruct, NULL);
     fclose(f);
-    return NULL;
+    return frameList;
   }
     
   /* The info is all read; this routine extracts the info
@@ -282,19 +282,20 @@ FrameList *pngGetFrameList(const char *filename)
     break;
   default:
     WARNING("Unrecognized PNG color type %d ignored.", colorType);
-    delete frameList;
-    return NULL;
+    frameList.reset(); 
   }
-  frameInfo->mFrameNumberInFile = 0;
-  //frameInfo->enable = 1;
-  frameInfo->LoadImageFunPtr = pngLoadImage;
+  if (frameList) {
+    frameInfo->mFrameNumberInFile = 0;
+    //frameInfo->enable = 1;
+    frameInfo->LoadImageFunPtr = pngLoadImage;
     
-  /* Fill out the final return form, and call it a day */
-  frameList->append(frameInfo);
-  frameList->targetFPS = 0.0;
+    /* Fill out the final return form, and call it a day */
+    frameList->append(frameInfo);
+    frameList->targetFPS = 0.0;
     
-  frameList->formatName = "PNG"; 
-  frameList->formatDescription = "Single-frame image in a PNG file"; 
+    frameList->formatName = "PNG"; 
+    frameList->formatDescription = "Single-frame image in a PNG file"; 
+  }
   return frameList;
 }
 

@@ -288,7 +288,7 @@ ImageCache::ImageCache(int numthreads, int numimages, Canvas *c):
       mThreads[i]->start(); 
     }
   }
-  mFrameList = NULL;
+
   /* The validRequestThreshold is the number of the last request that
    * we shold ignore.  It starts at 0 (so we don't ignore any requests);
    * if something should happen that would invalidate pending work 
@@ -511,7 +511,7 @@ void ImageCache::ClearJobQueue(void)
  * This must be called from the main thread; it is not safe
  * for more than one thread to call at once.
  */
-void ImageCache::ManageFrameList(FrameList *frameList)
+void ImageCache::ManageFrameList(FrameListPtr frameList)
 {
   /* If we've got worker threads, there may already be work that
    * is being done with the current framelist.  Clear all the
@@ -528,7 +528,11 @@ void ImageCache::ManageFrameList(FrameList *frameList)
    */
   ClearImages();
 
-  /* Put the new frame list in place. */
+  /* 
+     Put the new frame list in place. As long as they are here, 
+     we have ownership of the shared_ptrs and they won't disappear even 
+     if deleted elsewhere, like in movieLoop. 
+  */
   mFrameList = frameList;
 
   /* The caller should already have updated the canvas' frame list. */

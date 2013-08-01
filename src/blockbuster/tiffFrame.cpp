@@ -321,11 +321,11 @@ Color24LoadImage(Image *image,  FrameInfo* frameInfoPtr,
 }
 
 
-FrameList *tiffGetFrameList(const char *filename)
+FrameListPtr tiffGetFrameList(const char *filename)
 {
   TIFF *f;
-  FrameList *frameList;
   char errMesg[1024];
+  FrameListPtr frameList; 
 
   /* Values used with TIFFGetField have to be of the specific
    * correct types, as the function is a varargs function
@@ -344,7 +344,7 @@ FrameList *tiffGetFrameList(const char *filename)
   f = TIFFOpen(filename, "r");
   if (!f) {
 	DEBUGMSG("The file '%s' is not a TIFF file.", filename);
-	return NULL;
+	return frameList;
   }
   if (!TIFFGetField(f, TIFFTAG_BITSPERSAMPLE, &bitsPerSample))
 	bitsPerSample = 1;
@@ -373,68 +373,66 @@ FrameList *tiffGetFrameList(const char *filename)
   TiffFrameInfoPtr frameInfo(new TiffFrameInfo()); 
   if (!frameInfo) {
 	ERROR("cannot allocate FrameInfo structure");
-	return NULL;
+	return frameList;
   }
 
   frameInfo->filename = filename;
     
-  frameList = new FrameList(); 
-  if (frameList == NULL) {
+  frameList.reset(new FrameList()); 
+  if (!frameList) {
     ERROR("cannot allocate FrameInfo list structure");
-    return NULL;
   }
-    
-  /* Choose an image loader function based on the type of image
-   * we have.
-   */
-  if (bitsPerSample == 8 && samplesPerPixel == 3) {
-	/* 24-bit color image */
-	frameInfo->LoadImageFunPtr = Color24LoadImage;
-	/* Each scan line will hold 3 bytes per pixel */
-    frameInfo->scanlineBuffer.resize(width * 3);
-  } else if ( TIFFRGBAImageOK( f, errMesg ) ) {
-	frameInfo->LoadImageFunPtr = RGBALoadImage;
-	/* Each scan line will hold 3 bytes per pixel */
-    frameInfo->scanlineBuffer.resize(width * sizeof(uint32));
-  }
-#if 0
-  else if (bitsPerSample == 16 && samplesPerPixel == 3) {
-	/* 48-bit color image!?! */
-  }
-  else if (bitsPerSample == 8 && samplesPerPixel == 1) {
-	/* 8-bit grayscale */
-  }
-  else if (bitsPerSample == 16 && samplesPerPixel == 1) {
-	/* 16-bit grayscale */
-  }
-#endif
   else {
-	WARNING(
-            "%s: unsupported %d bps/%d spp TIFF file",
-            filename, bitsPerSample, samplesPerPixel);
-	delete frameList;
-	return NULL;
-  }
+    /* Choose an image loader function based on the type of image
+     * we have.
+     */
+    if (bitsPerSample == 8 && samplesPerPixel == 3) {
+      /* 24-bit color image */
+      frameInfo->LoadImageFunPtr = Color24LoadImage;
+      /* Each scan line will hold 3 bytes per pixel */
+      frameInfo->scanlineBuffer.resize(width * 3);
+    } else if ( TIFFRGBAImageOK( f, errMesg ) ) {
+      frameInfo->LoadImageFunPtr = RGBALoadImage;
+      /* Each scan line will hold 3 bytes per pixel */
+      frameInfo->scanlineBuffer.resize(width * sizeof(uint32));
+    }
+#if 0
+    else if (bitsPerSample == 16 && samplesPerPixel == 3) {
+      /* 48-bit color image!?! */
+    }
+    else if (bitsPerSample == 8 && samplesPerPixel == 1) {
+      /* 8-bit grayscale */
+    }
+    else if (bitsPerSample == 16 && samplesPerPixel == 1) {
+      /* 16-bit grayscale */
+    }
+#endif
+    else {
+      WARNING("%s: unsupported %d bps/%d spp TIFF file",
+              filename, bitsPerSample, samplesPerPixel);
+      return frameList;
+    }
     
-  /* Fill out the rest of the frameInfo information */
-  frameInfo->width = width;
-  frameInfo->height = height;
-  frameInfo->depth = 8*samplesPerPixel;
-  frameInfo->mFrameNumberInFile = 0;
-  //frameInfo->enable = 1;
+    /* Fill out the rest of the frameInfo information */
+    frameInfo->width = width;
+    frameInfo->height = height;
+    frameInfo->depth = 8*samplesPerPixel;
+    frameInfo->mFrameNumberInFile = 0;
+    //frameInfo->enable = 1;
 
-  frameInfo->photometric = photometric;
-  frameInfo->minSample = minSample;
-  frameInfo->maxSample = maxSample;
-  frameInfo->bitsPerSample = bitsPerSample;
-  frameInfo->samplesPerPixel = samplesPerPixel;
+    frameInfo->photometric = photometric;
+    frameInfo->minSample = minSample;
+    frameInfo->maxSample = maxSample;
+    frameInfo->bitsPerSample = bitsPerSample;
+    frameInfo->samplesPerPixel = samplesPerPixel;
 
-  /* Fill out the final return form, and call it a day */
-  frameList->append(frameInfo); 
-  frameList->targetFPS = 0.0;
+    /* Fill out the final return form, and call it a day */
+    frameList->append(frameInfo); 
+    frameList->targetFPS = 0.0;
 
-  frameList->formatName = "TIFF";
-  frameList->formatDescription = "Single-frame image in a TIFF file";
+    frameList->formatName = "TIFF";
+    frameList->formatDescription = "Single-frame image in a TIFF file";
+  }
   return frameList;
 }
 

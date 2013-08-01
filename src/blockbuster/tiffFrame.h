@@ -2,7 +2,7 @@
 #define BBTIFF_H
 #include "frames.h"
 #include "boost/shared_ptr.hpp"
-FrameList *tiffGetFrameList(const char *filename);
+FrameListPtr tiffGetFrameList(const char *filename);
 
 typedef boost::shared_ptr<struct TiffFrameInfo> TiffFrameInfoPtr; 
 

@@ -4,7 +4,7 @@
 #include "frames.h"
 #include <png.h>
 
-FrameList *pngGetFrameList(const char *filename);
+FrameListPtr pngGetFrameList(const char *filename);
 
 //============================================================
 struct PNGFrameInfo: public FrameInfo {

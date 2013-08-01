@@ -215,6 +215,7 @@ struct FrameInfo {
 } ;
 
 
+typedef boost::shared_ptr<struct FrameList> FrameListPtr; 
 //============================================================
 
   /* A FrameList contains an array of frame pointers and associated metadata.  
@@ -244,6 +245,11 @@ struct FrameList {
     }
     LoadFrames(filenames); 
     return; 
+  }
+
+  // ----------------------------------------------------
+  ~FrameList() {
+    frames.clear(); 
   }
 
    // ----------------------------------------------------
@@ -278,10 +284,12 @@ struct FrameList {
 		    int &maxLOD, float &fps);
 
   // ----------------------------------------------------
-  void append(FrameList *other) {
-    for  (uint32_t i=0; i < other->frames.size(); i++) {
-      frames.push_back(other->frames[i]); 
-    }  
+  void append(FrameListPtr other) {
+    if (other) {
+      for  (uint32_t i=0; i < other->frames.size(); i++) {
+        frames.push_back(other->frames[i]); 
+      }  
+    }
     return; 
   }
 

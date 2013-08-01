@@ -194,62 +194,64 @@ void Slave::SendError(QString msg) {
   return; 
 }
 
+//=========================================================
 bool Slave::LoadFrames(const char *files)
 {
   
   DEBUGMSG("LoadFrames"); 
-    FrameList *frames;
-    int numFiles = 0;
-    char *start, *lastChar;
+  FrameListPtr frames;
+  int numFiles = 0;
+  char *start, *lastChar;
 
-    QStringList fileList; 
-    start = strdup(files);
-    lastChar = start + strlen(start);
+  QStringList fileList; 
+  start = strdup(files);
+  lastChar = start + strlen(start);
 
-    while (1) {
-      char *end = strchr(start, ' ');
-      if (!end)
-        end = (char *) lastChar;
-      if (end && end > start) {
-        /* found a filename between <start> and <end> */
-        char save = *end;
-        *end = 0;
-        /* save this filename */
-        fileList.append(start); 
-        numFiles++;
-        /* restore character at <end> */
-        *end = save;
-        if (end == lastChar)
-          break;
-        start = end + 1;
-      }
-      else {
+  while (1) {
+    char *end = strchr(start, ' ');
+    if (!end)
+      end = (char *) lastChar;
+    if (end && end > start) {
+      /* found a filename between <start> and <end> */
+      char save = *end;
+      *end = 0;
+      /* save this filename */
+      fileList.append(start); 
+      numFiles++;
+      /* restore character at <end> */
+      *end = save;
+      if (end == lastChar)
         break;
-      }
-    }
-    free(start);
-    /* debug */
-    if (0) {
-        int i;
-        for (i = 0; i < numFiles; i++) {
-          printf("File %d: %s\n", i, fileList[i].toStdString().c_str());
-        }
-    }
-
-    if (numFiles == 1 &&
-        fileList[0] == splashScreenFrameList.getFrame(0)->filename.c_str()) {
-      frames = &splashScreenFrameList;
+      start = end + 1;
     }
     else {
-      frames = new FrameList; 
+      break;
+    }
+  }
+  free(start);
+  /* debug */
+  if (0) {
+    int i;
+    for (i = 0; i < numFiles; i++) {
+      printf("File %d: %s\n", i, fileList[i].toStdString().c_str());
+    }
+  }
+
+  if (numFiles == 1 &&
+      fileList[0] == splashScreenFrameListPtr->getFrame(0)->filename.c_str()) {
+    frames = splashScreenFrameListPtr;
+  }
+  else {
+    frames.reset(new FrameList); 
+    if (frames) {
       frames->LoadFrames(fileList);
     }
+  }
+  if (frames) {
     mCanvas->SetFrameList(frames);
-	if (!mCanvas->frameList) {
-	  return false;
-	}
-    resetFPS(); 
-	return true;
+  }
+  resetFPS(); 
+  return true;
 }
 
 
@@ -289,7 +291,7 @@ void Slave::updateAndReportFPS(void) {
   return; 
 }
   
-  //=========================================================
+//=========================================================
 /*
  * When the movie player is operating in DMX slave mode, we'll take
  * our commands from the master instance of the player, rather than
@@ -317,7 +319,7 @@ int Slave::Loop(void)
       now = time(NULL); 
       if (now - lastheartbeat > 300) {
         ERROR("It's been more than 5 minutes since the server checked in -- exiting."); 
-       return 1; 
+        return 1; 
       }
       //      DEBUGMSG("About to process events. mMasterSocket state is %d", mMasterSocket.state()); 
       if (GetMasterMessage(message) ) {
@@ -376,7 +378,7 @@ int Slave::Loop(void)
             
             if (mCanvas->frameList) {
               mCanvas->Render(imageNum, &currentRegion, 
-                             destX, destY, zoom, lod);
+                              destX, destY, zoom, lod);
               
               if (imageNum != lastImageRendered && lastImageRendered >= 0) {
                 if (mCanvas->frameList->stereo) {
@@ -456,7 +458,7 @@ int Slave::Loop(void)
             /* send ack */
             SendMessage(QString("SwapBuffers complete %1 %2").arg(messageList[1]).arg(messageList[2])); 
             /*  mCanvas->Preload(lastImageRendered, preload, playDirection, 
-                            startFrame, endFrame, &currentRegion, lod); 
+                startFrame, endFrame, &currentRegion, lod); 
             */
             /* if (preload && mCanvas && mCanvas->frameList) {
                int32_t i;
@@ -482,11 +484,11 @@ int Slave::Loop(void)
               continue; 
             }
             bool ok = false; 
-             preload = messageList[1].toLong(&ok); 
-             if (!ok) {
-               SendError(QString("Bad Preload argument ")+messageList[1]); 
-               continue; 
-             }
+            preload = messageList[1].toLong(&ok); 
+            if (!ok) {
+              SendError(QString("Bad Preload argument ")+messageList[1]); 
+              continue; 
+            }
           }
           else if (token == "CreateCanvas") {
             if (messageList.size() != 8) {
@@ -528,7 +530,7 @@ int Slave::Loop(void)
               SendError( "Error Could not create a canvas");
               return -1;
             }
-         }// end "CreateCanvas"
+          }// end "CreateCanvas"
           else if (token == "DestroyCanvas") {
             // this never did do anything that I remember.  
           } // end "DestroyCanvas"
@@ -559,13 +561,11 @@ int Slave::Loop(void)
             /* This is the "file load" part of the code, rather misleading */
             /*we need to destroy image cache/reader threads etc before smBase destructor */
             mCanvas->mRenderer->DestroyImageCache();
-            if (mCanvas->frameList) {
-              mCanvas->frameList->DeleteFrames(); 
-              delete mCanvas->frameList; 
-            }
-           message.remove(0, 13); //strip "SetFrameList " from front
-           DEBUGMSG((QString("File list is: ")+message)); 
-           if (!LoadFrames( message.toAscii()) || !mCanvas->frameList->numActualFrames()) {			
+            mCanvas->frameList.reset(); 
+
+            message.remove(0, 13); //strip "SetFrameList " from front
+            DEBUGMSG((QString("File list is: ")+message)); 
+            if (!LoadFrames( message.toAscii()) || !mCanvas->frameList->numActualFrames()) {			
               SendError("No frames could be loaded."); 
             }
             playFirstFrame = 0; 
@@ -575,7 +575,7 @@ int Slave::Loop(void)
             */ 
             recentStartTime = GetCurrentTime(); 
             recentFrameCount = 0;
-         }// end "SetFrameList"
+          }// end "SetFrameList"
           else {
             QString msg = QString("Bad message: ")+ message;
             SendError(msg);
@@ -597,7 +597,7 @@ int Slave::Loop(void)
       if (0 && playStep) {
         if (mCanvas && mCanvas->frameList) {
           mCanvas->Render(playFrame, &currentRegion, 
-                         destX, destY, zoom, lod);
+                          destX, destY, zoom, lod);
         }
         lastImageRendered = playFrame; 
 #ifdef USE_MPI
@@ -629,7 +629,7 @@ int Slave::Loop(void)
           /* render the next frame and advance the counter */
           if (mCanvas && mCanvas->frameList) {
             mCanvas->Render(playFrame, &currentRegion, 
-                           destX, destY, zoom, lod);
+                            destX, destY, zoom, lod);
           }
           lastImageRendered = playFrame; 
           playFrame ++; 

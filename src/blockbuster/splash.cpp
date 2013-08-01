@@ -32,7 +32,7 @@
 extern unsigned char splashImageData[92700];  // defined at the bottom of this file
 
 static Image *splashScreen = NULL; 
-FrameList splashScreenFrameList; 
+FrameListPtr splashScreenFrameListPtr; 
 static FrameInfoPtr frameInfoPtr; 
 char splash[] = "SPLASH"; 
 
@@ -82,15 +82,16 @@ void InitSplashScreen(void) {
     splashScreen->loadedRegion = splashRect; 
     splashScreen->allocate(92700);
   }
+
   if (frameInfoPtr) {
     frameInfoPtr.reset(new FrameInfo(300, 103, 24, /* width, height, depth */
                                      0, /* maxLOD */
                                      splash, /* filename */
                                      1, /* enable */
                                      LoadSplashScreen /* loadImageFunc */)); 
-    splashScreenFrameList.append(frameInfoPtr); 
+    splashScreenFrameListPtr.reset(new FrameList(frameInfoPtr)); 
   }
-    
+  
   return; 
 }
 

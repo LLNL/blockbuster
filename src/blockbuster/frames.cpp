@@ -229,7 +229,7 @@ bool FrameList::LoadFrames(QStringList &files) {
         QString("%1/%2").arg(directory).arg(fileList[i]->d_name);;
       DEBUGMSG(QString("Matched file name '%1'").arg( matchedFileName));
       
-      FrameList *frameListFromFile = NULL;
+      FrameListPtr frameListFromFile;
            
       /* Search for a format driver that can read the matched file. */
       frameListFromFile = smGetFrameList(matchedFileName.toStdString().c_str()); 
@@ -258,7 +258,6 @@ bool FrameList::LoadFrames(QStringList &files) {
         //allFrames = AppendFrameList(allFrames, frameListFromFile);
         append(frameListFromFile); 
         if (i==0) stereo = frameListFromFile->stereo; 
-        delete frameListFromFile; 
       }
       else {
         /* No format was able to open the file.  Give an error. */
