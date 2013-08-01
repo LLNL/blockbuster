@@ -19,10 +19,10 @@ struct SMFrameInfo: public FrameInfo {
     return; 
   }
   
-  virtual int LoadImage(ImageFormat *fmt, 
-                        const Rectangle *region, 
-                        int lod) {
-    return 0; 
+  virtual int LoadImage(ImageFormat */*fmt*/, 
+                        const Rectangle */*region*/, 
+                        int /*lod*/) {
+     return 0; 
   }
 
   boost::shared_ptr<smBase> mSM; 

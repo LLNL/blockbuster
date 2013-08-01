@@ -6,21 +6,18 @@
 
 FrameList *pngGetFrameList(const char *filename);
 
-int PrepPng(const char *filename, 
-              FILE **fPtr, png_structp *readStructPtr, 
-              png_infop *infoStructPtr);
 //============================================================
 struct PNGFrameInfo: public FrameInfo {
   
-  virtual int LoadImage(ImageFormat *fmt, 
-                        const Rectangle *region, 
-                        int lod) {
+  virtual int LoadImage(ImageFormat */*fmt*/, 
+                        const Rectangle */*region*/, 
+                        int /*lod*/) {
     return 0; 
   }
 
-   int PrepPng(const char *filename, 
-              FILE **fPtr, png_structp *readStructPtr, 
-               png_infop *infoStructPtr) {
+  int PrepPng(const char */*filename*/, 
+              FILE **/*fPtr*/, png_structp */*readStructPtr*/, 
+               png_infop */*infoStructPtr*/) {
      return 0; 
    }
  

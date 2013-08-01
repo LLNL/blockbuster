@@ -18,9 +18,9 @@ struct TiffFrameInfo: public FrameInfo {
     return;
   }
 
-  virtual int LoadImage(ImageFormat *fmt, 
-                        const Rectangle *region, 
-                        int lod) {
+  virtual int LoadImage(ImageFormat */*fmt*/, 
+                        const Rectangle */*region*/, 
+                        int /*lod*/) {
     return 0; 
   }
 
