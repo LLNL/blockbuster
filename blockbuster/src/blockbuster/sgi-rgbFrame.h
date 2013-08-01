@@ -2,7 +2,7 @@
 #define SGIFRAME_H
 #include "frames.h"
 
-FrameList *sgirgbGetFrameList(const char *filename);
+FrameListPtr sgirgbGetFrameList(const char *filename);
 
 //============================================================
 struct SGIFrameInfo: public FrameInfo {

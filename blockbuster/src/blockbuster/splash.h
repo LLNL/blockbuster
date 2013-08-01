@@ -3,7 +3,7 @@
 
 
   /* Splash Screen functions from splash.c */
-  extern FrameList splashScreenFrameList;
+  extern FrameListPtr splashScreenFrameListPtr;
 
 
 #endif

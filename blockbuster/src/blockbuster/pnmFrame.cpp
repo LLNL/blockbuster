@@ -1496,22 +1496,22 @@ pnmLoadImage(Image *image, FrameInfo *frameInfo,
   return 1; /* success */
 }
 
-FrameList *pnmGetFrameList(const char *filename)
+FrameListPtr pnmGetFrameList(const char *filename)
 {
   FILE *f;
-  FrameList *frameList;
   int 	width,height,depth,fmt;
   xelval	value;
+  FrameListPtr frameList; 
 
   f = pm_openr(filename);
   if (!f) {
     WARNING("Cannot open the file '%s'", filename);
-    return NULL;
+    return frameList;
   }
   if (pnm_readpnminit(f, &width,&height,&value,&fmt) == -1) {
 	DEBUGMSG("The file '%s' is not in PNM format.", filename);
 	pm_closer(f);
-	return NULL;
+	return frameList;
   }
   pm_closer(f);
 
@@ -1520,7 +1520,7 @@ FrameList *pnmGetFrameList(const char *filename)
   case PBM_TYPE:
     WARNING("The file '%s' is a PNM bitmap file, and not supported.",
 		    filename);
-    return NULL;
+    return frameList;
     break;
   case PPM_TYPE:
     depth = 3;
@@ -1539,14 +1539,14 @@ FrameList *pnmGetFrameList(const char *filename)
   FrameInfoPtr frameInfo(new FrameInfo()); 
   if (!frameInfo) {
 	ERROR("cannot allocate FrameInfo structure");
-	return NULL;
+	return frameList;
   }
 
   frameInfo->filename = filename;
-  frameList = new FrameList; 
-  if (frameList == NULL) {
+  frameList.reset(new FrameList); 
+  if (!frameList) {
 	ERROR("cannot allocate FrameInfo list structure");
-	return NULL;
+	return frameList;
   }
 
   /* Fill out the rest of the frameInfo information */

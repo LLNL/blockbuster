@@ -3,7 +3,7 @@
 #include "frames.h"
 #include "sm/smBase.h"
 
-FrameList *smGetFrameList(const char *filename);
+FrameListPtr smGetFrameList(const char *filename);
 
 typedef boost::shared_ptr<struct SMFrameInfo> SMFrameInfoPtr; 
 

@@ -590,7 +590,7 @@ int main(int argc, char *argv[])
   putenv(noglib); 
 
   /* This is the master list of frames, and some stats about the list */
-  FrameList *allFrames = NULL;
+  FrameListPtr allFrames;
   
   /* We might be saving settings files.  Look for them
    * in the user's home directory, and in the current
@@ -666,13 +666,12 @@ int main(int argc, char *argv[])
   int count = 0; 
   while (count < newargc && newargs[count]) count++;  
   if (count && count-1) {
-    allFrames = new FrameList(count-1, &newargs[1]);
+    allFrames.reset(new FrameList(count-1, &newargs[1]));
     if (allFrames->numActualFrames() == 0) {
-      delete allFrames; 
-      allFrames = NULL; 
+      allFrames.reset(); // now allFrames != true
     }
   }
-  if (opt->sidecarHostPort != "" && allFrames == NULL) {
+  if (opt->sidecarHostPort != "" && !allFrames) {
     ERROR("%s is not a valid movie file - nothing to display", newargs[1]);
     gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
     exit(1);
@@ -699,7 +698,7 @@ int main(int argc, char *argv[])
     }
     
     
-    allFrames = new FrameList; 
+    allFrames.reset(new FrameList); 
     QStringList names(filename); 
     if (!allFrames->LoadFrames(names) ||
         !allFrames->numActualFrames()) {
@@ -711,7 +710,7 @@ int main(int argc, char *argv[])
   /* At this point, we should have a full list of frames.  If we don't,
    * we obviously cannot play anything.
    */
-  if (!opt->slaveMode && allFrames == NULL) {
+  if (!opt->slaveMode && !allFrames) {
     ERROR("No frames found - nothing to display");
     gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
     exit(1);
@@ -726,8 +725,7 @@ int main(int argc, char *argv[])
     /* The slave doesn't need frames - it will get the list from the master */
     if (allFrames) {
       DEBUGMSG("Deleting frame list..."); 
-      allFrames->DeleteFrames(); 
-      delete allFrames;
+      allFrames.reset(); 
       DEBUGMSG("Frame List deleted"); 
     } else {
       DEBUGMSG("No frames to delete"); 
@@ -756,7 +754,7 @@ int main(int argc, char *argv[])
         }
       }
     } 
-    while (DisplayLoop(&allFrames, opt)) {
+    while (DisplayLoop(allFrames, opt)) {
       continue; 
     }
   }

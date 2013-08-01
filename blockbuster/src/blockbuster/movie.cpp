@@ -43,17 +43,9 @@
 #include <libgen.h>
 #include "xwindow.h"
 #include "canvas.h"
-/* ---------------------------------------------*/ 
-
-static void FrameListModified(Canvas *canvas, FrameList *frameList)
-{
-  canvas->SetFrameList(frameList);
-  canvas->ReportFrameListChange(frameList);
-
-  
-}
 
 
+// ====================================================================
 /*
  * Given a zoom factor, compute appropriate level of detail.
  */
@@ -68,6 +60,7 @@ int LODFromZoom(float zoom)
     return lod;
 }
 
+// ====================================================================
 static float ComputeZoomToFit(Canvas *canvas, int width, int height)
 {
   float xZoom, yZoom, zoom;
@@ -89,7 +82,8 @@ static float ComputeZoomToFit(Canvas *canvas, int width, int height)
 }
 
 
-void ClampStartEndFrames(FrameList *allFrames, 
+// ====================================================================
+void ClampStartEndFrames(FrameListPtr allFrames, 
 						 int32_t &startFrame, 
 						 int32_t &endFrame, 
 						 int32_t &frameNumber, 
@@ -122,13 +116,13 @@ void ClampStartEndFrames(FrameList *allFrames,
   return;
 }
 
+// ====================================================================
 /*
  * Main UI / image display loop
  * XXX this should get moved to a new file.
  */
-int DisplayLoop(FrameList **allFramesPtr, ProgramOptions *options)
+int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
 {
-  FrameList *allFrames = *allFramesPtr; 
   int32_t previousFrame = -1, cueEndFrame = 0;
   uint totalFrameCount = 0, recentFrameCount = 0;
   FrameInfoPtr frameInfo;
@@ -199,7 +193,8 @@ int DisplayLoop(FrameList **allFramesPtr, ProgramOptions *options)
   
   /* Tell the Canvas about the frames it's going to render.
     Generate a warning if the frames are out of whack */
-  FrameListModified(canvas, allFrames);
+  canvas->SetFrameList(allFrames);
+  canvas->ReportFrameListChange(allFrames);
   ClampStartEndFrames(allFrames, startFrame, endFrame, frameNumber, true); 
   int playExit = options->playExit; 
   if (playExit < 0) playExit = endFrame; 
@@ -693,14 +688,11 @@ int DisplayLoop(FrameList **allFramesPtr, ProgramOptions *options)
 
       canvas->mRenderer->DestroyImageCache();
 
-      allFrames->DeleteFrames(); 
-      delete allFrames;
-	  allFrames = new FrameList; 
- 	  if (allFrames->LoadFrames(filenames)) {
-	    
-	    *allFramesPtr = allFrames;  // for when we exit and return
+      allFrames.reset(new FrameList); // this should delete our old FrameList
+ 	  if (allFrames->LoadFrames(filenames)) {	    
 	    allFrames->GetInfo(maxWidth, maxHeight, maxDepth, maxLOD, targetFPS);
-	    FrameListModified(canvas, allFrames);
+        canvas->SetFrameList(allFrames);
+        canvas->ReportFrameListChange(allFrames);
 	    canvas->ReportRateChange(targetFPS); 
 	    
 	    startFrame = 0; 
@@ -1212,8 +1204,6 @@ int DisplayLoop(FrameList **allFramesPtr, ProgramOptions *options)
   delete canvas;
   
   /* Done with the frames */
-  allFrames->DeleteFrames(); 
-  delete allFrames;
   return 0; 
-}
+} // end DisplayLoop
 

@@ -198,7 +198,7 @@ class dmxRenderer: public QObject, public Renderer {
               int destX, int destY, float zoom, int lod);
   virtual void SwapBuffers(void);
  
-  void SetFrameList(FrameList *frameList);
+  void SetFrameList(FrameListPtr frameList);
   void Preload(uint32_t frameNumber,
                const Rectangle *imageRegion, uint32_t levelOfDetail);
 

@@ -104,20 +104,21 @@ smLoadImage(Image *image,  FrameInfo *frameInfoPtr,
                            "th"                     \
                            )
 
-FrameList *smGetFrameList(const char *filename)
+FrameListPtr smGetFrameList(const char *filename)
 {
   int smType;
   uint32_t numFrames, height, width, flags, maxLOD;
   int stereo = 0;
   register uint32_t i;
-
+  FrameListPtr frameList; 
+  
   smBase::init();
   ProgramOptions *options = GetGlobalOptions(); 
   boost::shared_ptr<smBase> sm(smBase::openFile(filename, options->readerThreads+1)); 
   //sm = smBase::openFile(filename, options->readerThreads+1);
   if (!sm) {
 	DEBUGMSG("SM cannot open the file '%s'", filename);
-	return NULL;
+	return frameList;
   }
 
   DEBUGMSG("SM file '%s': streaming movie version %d",
@@ -156,39 +157,38 @@ FrameList *smGetFrameList(const char *filename)
 
   if (numFrames == 0) {
 	WARNING("SM file %s has no frames", filename);
-	return NULL;
+	return frameList;
   }
 
   /* Get the structures we'll need to return information */
-  FrameList *frameList = new FrameList; 
-  if (frameList == NULL) {
+  frameList.reset(new FrameList); 
+  if (!frameList) {
 	ERROR("SM cannot allocate FrameInfo list structure");
-	return NULL;
+  } else {
+    // valid frameList
+    for (i = 0; i < numFrames; i++) {
+      FrameInfoPtr frameInfo(new SMFrameInfo(width, height, 24, maxLOD, filename, i, sm)); 
+      if (!frameInfo) {
+        ERROR( "cannot allocate %d%s FrameInfo structure (of %d) for file %s",
+               i, ORDINAL_SUFFIX(i), numFrames, filename);
+        frameList.reset(); 
+        return frameList;
+      }
+      frameInfo->LoadImageFunPtr = smLoadImage;
+      frameList->append(frameInfo); 
+    }
+
+    /* If we're here, we have a list of frames, all of which point at
+     * the same private data structure.	 The use count for this structure
+     * is obviously the number of frames.
+     */
+    frameList->targetFPS = sm->getFPS();
+    frameList->stereo = stereo;
+
+    frameList->formatName = "SM";
+    frameList->formatDescription =
+      "Multiple frames in an SM (Streaming Movie) file";
   }
-
-
-  for (i = 0; i < numFrames; i++) {
-	FrameInfoPtr frameInfo(new SMFrameInfo(width, height, 24, maxLOD, filename, i, sm)); 
-	if (!frameInfo) {
-      ERROR( "cannot allocate %d%s FrameInfo structure (of %d) for file %s",
-             i, ORDINAL_SUFFIX(i), numFrames, filename);
-      delete frameList;
-      return NULL;
-	}
-	frameInfo->LoadImageFunPtr = smLoadImage;
-	frameList->append(frameInfo); 
-  }
-
-  /* If we're here, we have a list of frames, all of which point at
-   * the same private data structure.	 The use count for this structure
-   * is obviously the number of frames.
-   */
-  frameList->targetFPS = sm->getFPS();
-  frameList->stereo = stereo;
-
-  frameList->formatName = "SM";
-  frameList->formatDescription =
-    "Multiple frames in an SM (Streaming Movie) file";
   return frameList;
 }
 

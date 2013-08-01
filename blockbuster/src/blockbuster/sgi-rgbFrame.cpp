@@ -302,13 +302,14 @@ SGILoadImage(Image *image, FrameInfo *frameInfo,
 
 
 
-FrameList *sgirgbGetFrameList(const char *filename)
+FrameListPtr sgirgbGetFrameList(const char *filename)
 {
- 
+  FrameListPtr frameList;
+
   rawImageRec *rec = RawImageOpen(filename);
   if (!rec) {
 	DEBUGMSG("The file '%s' is not an SGI RGB file.", filename);
-	return NULL;
+	return frameList;
   }
 
   /* Prepare the FrameList and FrameInfo structures we are to
@@ -320,15 +321,15 @@ FrameList *sgirgbGetFrameList(const char *filename)
   FrameInfoPtr frameInfo(new FrameInfo()); 
   if (!frameInfo) {
 	ERROR("cannot allocate FrameInfo structure");
-	return NULL;
+	return frameList;
   }
 
   frameInfo->filename = filename;
 
-  FrameList *frameList = new FrameList; 
-  if (frameList == NULL) {
+  frameList.reset(new FrameList); 
+  if (!frameList) {
 	ERROR("cannot allocate FrameInfo list structure");
-	return NULL;
+	return frameList;
   }
 
   /* Fill out the rest of the frameInfo information */

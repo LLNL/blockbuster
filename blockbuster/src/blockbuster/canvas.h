@@ -31,7 +31,7 @@ struct Canvas {
 
   FrameInfoPtr GetFrameInfoPtr(int frameNumber);
   
-  void SetFrameList(FrameList *frameList) {
+  void SetFrameList(FrameListPtr frameList) {
     mRenderer->SetFrameList(frameList); 
   }
   
@@ -99,7 +99,7 @@ struct Canvas {
                             int line, int level, 
                             const char *message);
   
-  void ReportFrameListChange(const FrameList *frameList);
+  void ReportFrameListChange(const FrameListPtr frameList);
   void ReportFrameChange(int frameNumber);
   void ReportDetailRangeChange(int min, int max);
   void ReportDetailChange(int levelOfDetail);
@@ -132,15 +132,15 @@ struct Canvas {
   
   BlockbusterInterface *mBlockbusterInterface; 
   
-  FrameList *frameList;
+  FrameListPtr frameList;
   Renderer *mRenderer; 
   
   int32_t playDirection, startFrame, endFrame, preloadFrames; 
   ProgramOptions *mOptions; 
 } ;
-
+/*
 void DestroyCanvas(Canvas *canvas);
-void DefaultSetFrameList(Canvas *canvas, FrameList *frameList);
-void CacheSetFrameList(Canvas *canvas, FrameList *frameList);
-
+void DefaultSetFrameList(Canvas *canvas, FrameListPtr frameList);
+void CacheSetFrameList(Canvas *canvas, FrameListPtr frameList);
+*/ 
 #endif

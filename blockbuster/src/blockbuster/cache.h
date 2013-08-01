@@ -102,7 +102,7 @@ class ImageCache {
   
   Image *GetImage(uint32_t frameNumber,
                   const Rectangle *newRegion, uint32_t levelOfDetail);
-  void ManageFrameList(FrameList *frameList);
+  void ManageFrameList(FrameListPtr frameList);
   
   // I do not like that these are called outside of the cache.  This is a huge design flaw.  The cache needs to manage how items are cached!  
 
@@ -181,7 +181,7 @@ class ImageCache {
   Canvas *mCanvas;
   
   /* Cache management details */
-  FrameList *mFrameList;
+  FrameListPtr mFrameList;
   unsigned long mRequestNumber;
   unsigned long mValidRequestThreshold;
   vector<CachedImage> mCachedImages;

@@ -40,7 +40,6 @@ Canvas::Canvas(qint32 parentWindowID, ProgramOptions *options,
   height(0), width(0), screenHeight(0), screenWidth(0), 
   XPos(0), YPos(0), depth(0), threads(0), cachesize(0), 
   mBlockbusterInterface(gui), 
-  frameList(NULL), 
   mOptions(options)
 {
   
@@ -191,7 +190,7 @@ void Canvas::WriteImageToFile(int frameNumber)
 FrameInfoPtr Canvas::GetFrameInfoPtr(int frameNumber)
 {
   /* Added to support stereo files */
-  /* Assumes canvas has a valid FrameList */
+  /* Assumes canvas has a valid FrameListPtr */
   int localFrameNumber = 0;
 
   if(frameList->stereo) {
@@ -215,7 +214,7 @@ void Canvas::ReportFrameChange(int frameNumber) {
 }
 
 //============================================================
-void Canvas::ReportFrameListChange(const FrameList *frameList) {
+void Canvas::ReportFrameListChange(FrameListPtr frameList) {
   DEBUGMSG("Canvas::ReportFrameListChange"); 
   if (mBlockbusterInterface) {
     mBlockbusterInterface->setFrameRange(1, frameList->numStereoFrames()); 

@@ -14,5 +14,5 @@ struct PNMFrameInfo: public FrameInfo {
 }; 
 
 
-FrameList *pnmGetFrameList(const char *filename);
+FrameListPtr pnmGetFrameList(const char *filename);
 #endif

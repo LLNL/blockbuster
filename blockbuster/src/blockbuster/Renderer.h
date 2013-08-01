@@ -44,7 +44,7 @@ class Renderer: public XWindow {
                       const Rectangle *imageRegion,
                       int destX, int destY, float zoom, int lod) = 0;
 
-  virtual void SetFrameList(FrameList *frameList) ;
+  virtual void SetFrameList(FrameListPtr frameList) ;
     
   // from Canvas class 
   virtual void Preload(uint32_t frameNumber,
@@ -57,7 +57,7 @@ class Renderer: public XWindow {
   
  public:
   QString mName; 
-  FrameList *mFrameList;
+  FrameListPtr mFrameList;
   ImageCache *mCache; // if not using DMX
 
  protected:   

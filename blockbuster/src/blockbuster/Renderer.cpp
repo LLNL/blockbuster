@@ -43,7 +43,7 @@ void Renderer::FinishInit(ProgramOptions *opt, Canvas *canvas, Window parentWind
   return;
 }
 
-void Renderer::SetFrameList(FrameList *frameList) {
+void Renderer::SetFrameList(FrameListPtr frameList) {
   if (!mCache) {
     mCache = CreateImageCache(mCanvas->threads, mCanvas->cachesize, mCanvas);
   }
