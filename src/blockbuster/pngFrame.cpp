@@ -34,6 +34,9 @@
  */
 #define DISPLAY_EXPONENT 2.2
 
+int PrepPng(const char *filename, 
+              FILE **fPtr, png_structp *readStructPtr, 
+              png_infop *infoStructPtr);
 
 // ===============================================================
 /* Load the desired subimage into a set of RGB bytes */

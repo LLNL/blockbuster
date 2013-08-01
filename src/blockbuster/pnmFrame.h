@@ -5,9 +5,9 @@
 //============================================================
 struct PNMFrameInfo: public FrameInfo {
   
-  virtual int LoadImage(ImageFormat *fmt, 
-                        const Rectangle *region, 
-                        int lod) {
+  virtual int LoadImage(ImageFormat */*fmt*/, 
+                        const Rectangle */*region*/, 
+                        int /*lod*/) {
     return 0; 
   }
   
