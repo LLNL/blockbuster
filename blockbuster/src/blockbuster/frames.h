@@ -218,9 +218,6 @@ struct FrameInfo {
 //============================================================
 
   /* A FrameList contains an array of frame pointers and associated metadata.  
-   * The list itself is always released
-   * with free(), although each of the frames on the inside must first be
-   * released with the appropriate (*DestroyFrameInfo)() call.
    * This structure basically represents a movie.
    */
 struct FrameList {

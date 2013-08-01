@@ -262,9 +262,9 @@ class dmxRenderer: public QObject, public Renderer {
   // FROM RENDERINFO: 
   int haveDMX;
   
-  vector<DMXScreenInfo *> dmxScreenInfos;  /* [numScreens] */
+  vector<DMXScreenInfo> dmxScreenInfos;  /* [numScreens] */
   vector<QHostAddress > dmxHostAddresses; // Qt goodness for convenience
-  DMXWindowInfo *dmxWindowInfos;  /* up to numScreens */
+  vector<DMXWindowInfo> dmxWindowInfos;  /* up to numScreens */
   int numValidWindowInfos; 
   
   vector<string> files;
