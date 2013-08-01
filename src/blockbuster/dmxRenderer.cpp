@@ -73,9 +73,9 @@ void dmxRenderer::FinishRendererInit(ProgramOptions *, Canvas *, Window ) {
 #endif
   }
   for (i = 0; i < dmxScreenInfos.size(); i++) {
-    QHostInfo info = QHostInfo::fromName(QString(dmxScreenInfos[i]->displayName).split(":")[0]);
+    QHostInfo info = QHostInfo::fromName(QString(dmxScreenInfos[i].displayName).split(":")[0]);
     QHostAddress address = info.addresses().first();
-    DEBUGMSG(QString("initializeing display name from %1 to %2 with result %3").arg(dmxScreenInfos[i]->displayName).arg(info.hostName()).arg(address.toString())); 
+    DEBUGMSG(QString("initializeing display name from %1 to %2 with result %3").arg(dmxScreenInfos[i].displayName).arg(info.hostName()).arg(address.toString())); 
     dmxHostAddresses.push_back(address); 
     DEBUGMSG(QString("put on stack as %1").arg(dmxHostAddresses[i].toString())); 
   }
@@ -91,7 +91,7 @@ void dmxRenderer::FinishRendererInit(ProgramOptions *, Canvas *, Window ) {
   for (i = 0; i < dmxScreenInfos.size(); i++) {
     
     if (i==0 || mOptions->slaveLaunchMethod != "mpi") {
-      QString host(dmxScreenInfos[i]->displayName);
+      QString host(dmxScreenInfos[i].displayName);
       /* remove :x.y suffix */
       if (host.contains(":")) {
         host.remove(host.indexOf(":"), 100); 
@@ -141,8 +141,8 @@ void dmxRenderer::ShutDownSlaves(void) {
       mActiveSlaves[dmxWindowInfos[i].screen]->
         SendMessage( QString("Destroy Canvas"));
     }
-    if (dmxWindowInfos)
-      delete [] dmxWindowInfos;
+    /*    if (dmxWindowInfos)
+          delete [] dmxWindowInfos;*/
   } 
 
   int     slavenum = mActiveSlaves.size();
@@ -560,7 +560,7 @@ void dmxRenderer::SlaveConnected() {
       if (mNumActiveSlaves == dmxHostAddresses.size()) {
         mSlavesReady = true; 
       }
-      QStringList disp  = QString(dmxScreenInfos[screenNum]->displayName).split(":"); 
+      QStringList disp  = QString(dmxScreenInfos[screenNum].displayName).split(":"); 
       QString remoteDisplay = disp[0];
       theSlave->setHostName(disp[0]); 
       if (disp.size() == 2) {
@@ -636,7 +636,7 @@ void dmxRenderer::UpdateBackendCanvases(void)
     if (dmxWindowInfos[i].window && !mActiveSlaves[scrn]->HaveCanvas()) {
       mActiveSlaves[scrn]->
         SendMessage(QString("CreateCanvas %1 %2 %3 %4 %5 %6 %7")
-                    .arg( dmxScreenInfos[scrn]->displayName)
+                    .arg( dmxScreenInfos[scrn].displayName)
                     .arg((int) dmxWindowInfos[i].window)
                     .arg(dmxWindowInfos[i].pos.width)
                     .arg(dmxWindowInfos[i].pos.height)
@@ -679,14 +679,11 @@ void dmxRenderer::GetBackendInfo(void)
   DMXGetScreenCount(display, &numScreens);
   if ((uint32_t)numScreens != dmxScreenInfos.size()) {
 	ClearScreenInfos(); 
-	for (i = 0; i < numScreens; i++) {
-	  DMXScreenInfo *newScreenInfo = new DMXScreenInfo; 
-	  dmxScreenInfos.push_back(newScreenInfo); 
-	}
-	dmxWindowInfos = new DMXWindowInfo[numScreens]; 
+    dmxScreenInfos.resize(numScreens); 
+	dmxWindowInfos.resize(numScreens); 
   }
   for (i = 0; i < numScreens; i++) {
-	if (!DMXGetScreenInfo(display, i, dmxScreenInfos[i])) {
+	if (!DMXGetScreenInfo(display, i, &dmxScreenInfos[i])) {
 	  ERROR("Could not get screen information for screen %d\n", i);
 	  ClearScreenInfos(); 
 	  return;
@@ -701,7 +698,7 @@ void dmxRenderer::GetBackendInfo(void)
   if (!DMXGetWindowInfo(display,
 						window, &numValidWindowInfos,
 						numScreens,
-						dmxWindowInfos)) {
+						&dmxWindowInfos[0])) {
 	ERROR("Could not get window information for 0x%x\n",
 		  (int) window);
 	ClearScreenInfos(); 
@@ -732,42 +729,14 @@ void dmxRenderer::FakeBackendInfo(void)
 
   numScreens = 2;
   numWindows = 2;
-
-
-#if DMX_API_VERSION == 1
-  dmxScreenInfo = (DMXScreenInformation *)
-    calloc(1, numScreens * sizeof(DMXScreenInformation));
-#else
-  dmxScreenInfo = (DMXScreenAttributes *)
-    calloc(1, numScreens * sizeof(DMXScreenAttributes));
-#endif
-
-  if (!dmxScreenInfo) {
-    ERROR("FakeBackendDMXWindowInfo failed!\n");
-    numScreens = 0;
-    return;
-  }
-
-
-#if DMX_API_VERSION == 1
-  dmxWindowInfo = (DMXWindowInformation *)
-    calloc(1, numScreens * sizeof(DMXWindowInformation));
-#else
-  dmxWindowInfo = (DMXWindowAttributes *)
-    calloc(1, numScreens * sizeof(DMXWindowAttributes));
-#endif
-
-  if (!dmxWindowInfo) {
-    ERROR("Out of memory in FakeBackendDMXWindowInfo\n");
-    free(dmxScreenInfo);
-    dmxScreenInfo = NULL;
-    numScreens = 0;
-    return;
-  }
-
+  
+  vector<DMXScreenInfo> dmxScreenInfo(numScreens); 
+  vector<DMXWindowInfo> dmxWindowInfo(numScreens); 
+  
+  
   for (i = 0; i < numScreens; i++) {
     dmxScreenInfo[i].displayName = strdup("localhost:0");
-
+    
     dmxScreenInfo[i].logicalScreen = 0;
 #if DMX_API_VERSION == 1
     dmxScreenInfo[i].width = screenWidth;
@@ -808,10 +777,8 @@ void dmxRenderer::FakeBackendInfo(void)
 #endif
 
 void dmxRenderer::ClearScreenInfos(void) {
-  uint32_t i=0; 
-  while (i < dmxScreenInfos.size()) delete dmxScreenInfos[i]; 
   dmxScreenInfos.clear(); 
-  if (dmxWindowInfos) delete [] dmxWindowInfos; 
+  dmxWindowInfos.clear(); 
   return; 
 }
 

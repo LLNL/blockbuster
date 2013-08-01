@@ -51,7 +51,6 @@ int pngLoadImage(Image *image,
   png_infop infoStruct;
   int rv;
   FILE *f;
-  png_bytep *rowPointers;
   register int i;
   int depth, colorType, rowBytes;
   double gamma;
@@ -106,7 +105,7 @@ int pngLoadImage(Image *image,
  
   /* PNG requires an array of row pointers.  Allocate the array
    */
-  rowPointers = (png_bytep *)malloc(frameInfo->height * sizeof(png_bytep));
+  png_bytep *rowPointers = new png_bytep[frameInfo->height]; 
   if (rowPointers == NULL) {
     ERROR("could not allocate row pointers for frame");
     return 0;
@@ -123,7 +122,7 @@ int pngLoadImage(Image *image,
 
   if (!PrepPng(frameInfo->filename.c_str(), &f, &readStruct, &infoStruct)) {
 	/* Error has already been reported */
-	free(rowPointers);
+	delete rowPointers;
 	return 0;
   }
 
@@ -139,7 +138,7 @@ int pngLoadImage(Image *image,
   if (rv != 0) {
 	ERROR("libpng error: setjmp returned %d", rv);
 	png_destroy_read_struct(&readStruct, &infoStruct, NULL);
-	free(rowPointers);
+	delete rowPointers;
 	fclose(f);
 	return 0;
   }
@@ -189,7 +188,7 @@ int pngLoadImage(Image *image,
   png_destroy_read_struct(&readStruct, &infoStruct, NULL);
 
   fclose(f);
-  free(rowPointers);
+  delete rowPointers;
 
   /* Since we're reading the whole
    * image, our offset is at (0,0), and our width and height

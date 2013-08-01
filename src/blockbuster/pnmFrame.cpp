@@ -258,7 +258,7 @@ pm_allocrow( int cols, int size )
 void
 pm_freerow(char * itrow )
 {
-  free( itrow );
+  free ( itrow );
 }
 
 char**

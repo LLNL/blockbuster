@@ -184,7 +184,7 @@ class ImageCache {
   FrameList *mFrameList;
   unsigned long mRequestNumber;
   unsigned long mValidRequestThreshold;
-  CachedImage *mCachedImages;
+  vector<CachedImage> mCachedImages;
   unsigned int mHighestFrameNumber;
   
   /* New approach:  start managing preloads from the cache */ 

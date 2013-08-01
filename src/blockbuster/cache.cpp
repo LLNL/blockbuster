@@ -270,11 +270,7 @@ ImageCache::ImageCache(int numthreads, int numimages, Canvas *c):
   
   register int i;
   CACHEDEBUG("CreateImageCache(mNumReaderThreads = %d, mMaxCachedImages = %d, mCanvas)", mNumReaderThreads, mMaxCachedImages);
-  mCachedImages = (CachedImage *)calloc(1, mMaxCachedImages * sizeof(CachedImage));
-  if (mCachedImages == NULL) {
-	ERROR("cannot allocate %d cached images", mMaxCachedImages);
-	return ;
-  }
+  mCachedImages.resize(mMaxCachedImages);
   for (i = 0; i < mMaxCachedImages; i++) {
     mCachedImages[i].requestNumber = 0;
     mCachedImages[i].lockCount = 0;
@@ -342,10 +338,6 @@ ImageCache::~ImageCache() {
   /* Any images in the cache must be released */
   ClearImages();
 
-  /* Free the slots that have been holding the cached images */
-  CACHEDEBUG("free(mCachedImages)");
-  free(mCachedImages);
-
   return; 
 }
 /*
@@ -357,34 +349,31 @@ ImageCache::~ImageCache() {
  */
 CachedImage *ImageCache::GetCachedImageSlot(uint32_t newFrameNumber)
 {
-  register CachedImage *cachedImage;
-  register int i;
   CachedImage *imageSlot = NULL;
 #ifdef NEW_CACHE
   unsigned long maxDist = 0;
 #endif
   CACHEDEBUG("GetCachedImageSlot(%d)", newFrameNumber); 
 
-  for (i = 0, cachedImage = mCachedImages; 
-       i < mMaxCachedImages; 
-       i++, cachedImage++) {
+  for (vector<CachedImage>::iterator cachedImage = mCachedImages.begin(); 
+       cachedImage != mCachedImages.end();  cachedImage++) {
 #ifdef NEW_CACHE
     /* Look for an empty slot, or a slot who's frame number is
      * furthest away from the one about to be loaded.
      */
     if (cachedImage->lockCount == 0) {
       unsigned long dist;
-        
+      
       if (cachedImage->requestNumber == 0) {
-        imageSlot = cachedImage;
+        imageSlot = &(*cachedImage);
         break;
       }
-        
+      
       dist = Distance(cachedImage->frameNumber, newFrameNumber,
                       mHighestFrameNumber);
       if (dist > maxDist){
         maxDist = dist;
-        imageSlot = cachedImage;
+        imageSlot = &(*cachedImage); 
       }
     }
 #else
@@ -401,7 +390,7 @@ CachedImage *ImageCache::GetCachedImageSlot(uint32_t newFrameNumber)
     }
 #endif
   }
-    
+  
   /* If we couldn't find an image slot, something's wrong. */
   if (imageSlot == NULL) {
     ERROR("image cache is full, with all %d images locked",
@@ -552,21 +541,17 @@ void ImageCache::ManageFrameList(FrameList *frameList)
  */
   
 CachedImage *ImageCache::FindImage(uint32_t frame, uint32_t lod) {
-  register CachedImage *cachedImage;
-  register int i;
   CACHEDEBUG("FindImage frame %d", frame); 
   /* Search the cache to see whether an appropriate image already
    * exists within the cache.
    */
-  cachedImage = mCachedImages;
-  for (i = 0, cachedImage = mCachedImages; 
-       i < mMaxCachedImages; 
-       i++, cachedImage++) {
+  for (vector<CachedImage>::iterator cachedImage = mCachedImages.begin(); 
+       cachedImage != mCachedImages.end();  cachedImage++) {
     if (cachedImage->loaded &&
         cachedImage->frameNumber == frame &&
         cachedImage->levelOfDetail == lod) {
       CACHEDEBUG("Found frame number %d", frame); 
-      return cachedImage;
+      return &(*cachedImage);
     }
   }
   
@@ -894,20 +879,14 @@ Image *ImageCache::GetImage(uint32_t frameNumber,
  */
 void ImageCache::ReleaseImage(Image *image)
 {
-  register int i;
-  register CachedImage *cachedImage;
   CACHEDEBUG("ReleaseImage %d", image->frameNumber); 
   //int rv;
   /* Look for the given image in the cache. */
   if (mNumReaderThreads > 0) {
     lock("releasing an image", __FILE__, __LINE__);
   }
-  cachedImage = mCachedImages;
-  for (
-       i = 0, cachedImage = mCachedImages; 
-       i < mMaxCachedImages; 
-       i++, cachedImage++
-       ) {
+  for (vector<CachedImage>::iterator cachedImage = mCachedImages.begin(); 
+       cachedImage != mCachedImages.end();  cachedImage++) {
 	if (cachedImage->image == image) {
       CACHEDEBUG("Releasing frame %d from cache", cachedImage->frameNumber); 
       /* Unlock it and return. */
@@ -936,20 +915,15 @@ void ImageCache::ReleaseImage(Image *image)
   Replaces ReleaseImage -- releases all images associated with the given frame number.  Does not know about stereo, uses actual frame numbers, not stereo frame numbers.
 */ 
 void ImageCache::ReleaseFrame(int frameNumber) {
-  register int i, numreleased = 0;
-  register CachedImage *cachedImage;
+  register int numreleased = 0, i=0;
   CACHEDEBUG("ReleaseFrame %d", frameNumber); 
   //int rv;
   /* Look for the given image in the cache. */
   if (mNumReaderThreads > 0) {
     lock("releasing an image", __FILE__, __LINE__);
   }
-  cachedImage = mCachedImages;
-  for (
-       i = 0, cachedImage = mCachedImages; 
-       i < mMaxCachedImages; 
-       i++, cachedImage++
-       ) {
+  for (vector<CachedImage>::iterator cachedImage = mCachedImages.begin(); 
+       cachedImage != mCachedImages.end();  cachedImage++, i++) {
 	if ((int)cachedImage->frameNumber == frameNumber) {
       CACHEDEBUG("Releasing frame slot %d from cache", i); 
       /* Unlock it and return. */
@@ -1072,13 +1046,11 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
 /* For debugging */
 void ImageCache::Print(void)
 {
-  register CachedImage *cachedImage;
   register int i, numlocked=0;
   QString msg; 
   CACHEDEBUG("Printing cache state."); 
-  for (i = 0, cachedImage = mCachedImages; 
-       i < mMaxCachedImages; 
-       i++, cachedImage++) {
+  for (vector<CachedImage>::iterator cachedImage = mCachedImages.begin(); 
+       cachedImage != mCachedImages.end();  cachedImage++, i++) {
     msg = QString("  Slot %1: lockCount:%2  frame:%3 lod:%4  req:%5  ")
       .arg( i)
       .arg(cachedImage->lockCount)
