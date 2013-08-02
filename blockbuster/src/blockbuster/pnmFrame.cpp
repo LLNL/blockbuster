@@ -1526,6 +1526,7 @@ PNMFrameInfo::PNMFrameInfo(string fname): FrameInfo(fname) {
   width = pnmwidth; 
   height = pnmheight; 
 
+  DEBUGMSG("The file '%s' is a valid PNM file.", filename.c_str());
   mValid = true; 
   return; 
 }
@@ -1547,6 +1548,9 @@ FrameListPtr pnmGetFrameList(const char *filename)
   if (!frameInfo) {
     ERROR("cannot allocate FrameInfo structure");
     return frameList;
+  }
+  if (!frameInfo->mValid) {
+    return frameList; 
   }
 
   frameList.reset(new FrameList); 

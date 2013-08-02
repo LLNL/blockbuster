@@ -268,7 +268,7 @@ void BlockbusterInterface::on_openButton_clicked() {
   QString filename = 
     QFileDialog::  getOpenFileName(this, "Choose a movie file",
                                    "",
-                                   "Movie Files (*.sm)");
+                                   "Readable Files (*.sm *png *tiff *pnm *raw *sgi);;Any (*)");
   if (filename != "") {
     mEventQueue.push_back(MovieEvent(MOVIE_OPEN_FILE, filename)); 
   }

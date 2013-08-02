@@ -329,8 +329,8 @@ PNGFrameInfo::PNGFrameInfo(string fname): FrameInfo(fname)  {
   width = pngwidth; 
   height = pngheight; 
 
-  png_destroy_read_struct(&readStruct, &infoStruct, NULL);
-  fclose(f);
+  DEBUGMSG("The file '%s' is a valid PNG file.", filename.c_str());
+
   mValid = true; 
   return; 
 }
@@ -347,12 +347,15 @@ FrameListPtr pngGetFrameList(const char *filename)
    * about the single frame, and the terminating NULL).
    */
   FrameInfoPtr frameInfo(new PNGFrameInfo(filename)); 
-  if (!frameInfo || !frameInfo->mValid) {
+  if (!frameInfo) {
     ERROR("cannot allocate FrameInfo structure");
     return frameList;
   }
     
-    
+  if (!frameInfo->mValid) {
+    return frameList; 
+  }
+
   frameList.reset(new FrameList(frameInfo)); 
   if (!frameList) {
     ERROR("cannot allocate FrameInfo list structure");

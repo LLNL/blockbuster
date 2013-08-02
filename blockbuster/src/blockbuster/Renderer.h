@@ -30,22 +30,24 @@ class Renderer {
                                   BlockbusterInterface *gui=NULL);
   // ======================================================================
 
-
+  
   // ======================================================================
   Renderer(ProgramOptions *opt, qint32 parentWindowID, 
            BlockbusterInterface *gui, QString name="virtual");
-
+  
   // ======================================================================
- virtual ~Renderer() {
+  virtual ~Renderer() {
     Close(); 
     return; 
   } 
-
- // ======================================================================
+  
+  // ======================================================================
   void FinishInit(ProgramOptions *opt);
+  
+  // ======================================================================
   virtual void FinishRendererInit(ProgramOptions *opt) =0; 
-
- // ======================================================================
+  
+  // ======================================================================
   // the following depend on whether DMX is being used: 
   virtual void DestroyImageCache(void)
   {

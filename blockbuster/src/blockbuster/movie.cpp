@@ -729,7 +729,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
         return 0; 
 	  }
-	  frameInfo =  renderer->GetFrameInfoPtr(1);
+	  frameInfo =  renderer->GetFrameInfoPtr(0);
 	  preloadFrames = MIN2(options->preloadFrames, static_cast<int32_t>(allFrames->numStereoFrames()));
 	}
     if (!options->stereoSwitchDisable) {

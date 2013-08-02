@@ -361,6 +361,7 @@ TiffFrameInfo::TiffFrameInfo(string fname): FrameInfo(fname), mTiffType(TIFF_INV
   /* Fill out the rest of the frameInfo information */
   this->depth = 8*samplesPerPixel;
   this->mFrameNumberInFile = 0;
+  DEBUGMSG("The file '%s' is a valid TIFF file.", filename.c_str());
   mValid = true; 
   return; 
 }
@@ -374,11 +375,13 @@ FrameListPtr tiffGetFrameList(const char *filename) {
    * about the single frame, and the terminating NULL).
    */
   TiffFrameInfoPtr frameInfo(new TiffFrameInfo(filename)); 
-  if (!frameInfo || !frameInfo-> mValid) {
+  if (!frameInfo) {
 	ERROR("cannot allocate FrameInfo structure");
 	return FrameListPtr();
   }
-
+  if (!frameInfo->mValid) {
+ 	return FrameListPtr();
+  }    
   FrameListPtr frameList(new FrameList(frameInfo)); 
   if (!frameList) {
     ERROR("cannot allocate FrameInfo list structure");
