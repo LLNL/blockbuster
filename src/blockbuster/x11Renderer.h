@@ -17,6 +17,12 @@ class x11Renderer: public Renderer {
   virtual ~x11Renderer() ;
   
   int ComputeShift(unsigned long mask);
+  virtual XVisualInfo *ChooseVisual(void) {
+    return NULL; // does not apply to X11
+  }
+  virtual void FinishRendererInit(ProgramOptions *opt) {
+    return; 
+  }
 
   void Render(int frameNumber,
               const Rectangle *imageRegion,
