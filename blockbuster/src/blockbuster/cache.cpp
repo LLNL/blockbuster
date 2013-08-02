@@ -114,7 +114,7 @@ void CacheThread::run() {
      * we're the only ones trying to do so at this particular
      * momemt, so grab the mutex.
      */
-    cache->lock("check for job in work queue", __FILE__, __LINE__);
+    mCache->lock("check for job in work queue", __FILE__, __LINE__);
             
     /* Wait for a job to appear on the work queue (which we can do
      * because we currently hold the mutex for the queue).  This is
@@ -123,32 +123,32 @@ void CacheThread::run() {
      * up on the work ready condition, but one has already grabbed the
      * work).
      */
-    while (! this->cache->mJobQueue.size()) {
+    while (! this->mCache->mJobQueue.size()) {
       /* Wait for work ready condition to come in. */
-      this->cache->WaitForJobReady("no job in work queue yet", __FILE__, __LINE__); 
+      this->mCache->WaitForJobReady("no job in work queue yet", __FILE__, __LINE__); 
       if (mStop) {
         CACHEDEBUG("Thread %p terminating", QThread::currentThread()); 
         UnregisterThread(this); 
-        cache->unlock("thread is dying", __FILE__, __LINE__); 
+        mCache->unlock("thread is dying", __FILE__, __LINE__); 
         return; 
       }
     }
     // take the job from head of the queue: 
-    job = this->cache->mJobQueue.at(0); 
+    job = this->mCache->mJobQueue.at(0); 
     CACHEDEBUG("Worker moving job %d from job queue to pending cue", job->frameNumber); 
-    this->cache->mJobQueue.pop_front(); 
-    cache->PrintJobQueue(cache->mJobQueue); 
+    this->mCache->mJobQueue.pop_front(); 
+    mCache->PrintJobQueue(mCache->mJobQueue); 
 
 	/* Add the job removed from the job queue to the pending queue,
 	 * so that the main thread can tell the job is in progress.
 	 */
-    this->cache->mPendingQueue.push_back(job); 
-    cache->PrintJobQueue(cache->mPendingQueue); 
+    this->mCache->mPendingQueue.push_back(job); 
+    mCache->PrintJobQueue(mCache->mPendingQueue); 
 	/* We don't need the mutex (or the cancellation function) any more;
 	 * this call will both clear the cancellation function, and cause
 	 * it to be called to unlock the mutex, more or less simultaneously.
 	 */
-    cache->unlock("found job and added to pending queue", __FILE__, __LINE__); 
+    mCache->unlock("found job and added to pending queue", __FILE__, __LINE__); 
 
 	/* Do the work.  Note that this function could cause warning and
 	 * error output, and could still return an empty ImagePtr.  Even if an
@@ -157,33 +157,31 @@ void CacheThread::run() {
 	 */
     CACHEDEBUG("Worker thread calling LoadAndConvertImage for frame %d", job->frameNumber); 
     image = job->frameInfo->LoadAndConvertImage
-      (job->frameNumber, &this->cache->mCanvas->requiredImageFormat, 
+      (job->frameNumber, &mCache->mRequiredImageFormat, 
        &job->region, job->levelOfDetail);
 
-    /*	image = LoadAndConvertImage(&job->frameInfo,
-      job->frameNumber, &this->cache->mCanvas->requiredImageFormat, &job->region, job->levelOfDetail);*/
-
+ 
 	/* With image in hand (or possibly a NULL), we're ready to start
 	 * modifying caches and queues.  We always will have to remove
 	 * the job from the PendingQueue.
 	 */
-    this->cache->lock("finished job, updating queues", __FILE__, __LINE__); 
+    this->mCache->lock("finished job, updating queues", __FILE__, __LINE__); 
 
     CACHEDEBUG("RemoveJobFromPendingQueue frame %d", job->frameNumber); 
-	this->cache->RemoveJobFromPendingQueue(job);
-    cache->PrintJobQueue(cache->mPendingQueue);
+	this->mCache->RemoveJobFromPendingQueue(job);
+    mCache->PrintJobQueue(mCache->mPendingQueue);
 
 	/* First see if this request has been invalidated (because the
 	 * main thread changed the frame list while we were working).
 	 * If so, there's nothing to do with the image.
 	 */
-	if (job->requestNumber <= this->cache->mValidRequestThreshold) {
-      CACHEDEBUG("Destroying useless job frame %d, because job request number %d is less than or equal to the cache valid request threshold %d", job->frameNumber, job->requestNumber, this->cache->mValidRequestThreshold); 
+	if (job->requestNumber <= this->mCache->mValidRequestThreshold) {
+      CACHEDEBUG("Destroying useless job frame %d, because job request number %d is less than or equal to the cache valid request threshold %d", job->frameNumber, job->requestNumber, this->mCache->mValidRequestThreshold); 
       /* The job is useless.  Destroy the image, if we got one,
        * and go home.  We don't need to send an indicator to
        * anyone; the main thread doesn't care.
        */
-      this->cache->unlock("useless job", __FILE__, __LINE__); 
+      this->mCache->unlock("useless job", __FILE__, __LINE__); 
       if (image) {
         image.reset();
       }
@@ -196,12 +194,12 @@ void CacheThread::run() {
        * the error queue (which the main thread will
        * check) and signal that the job is done.
        */
-      this->cache->mErrorQueue.push_back(job); 
-      cache->PrintJobQueue(cache->mErrorQueue);
-      this->cache->unlock("error in job", __FILE__, __LINE__); 
-      this->cache->WakeAllJobDone("error in job",__FILE__, __LINE__); 
+      this->mCache->mErrorQueue.push_back(job); 
+      mCache->PrintJobQueue(mCache->mErrorQueue);
+      this->mCache->unlock("error in job", __FILE__, __LINE__); 
+      this->mCache->WakeAllJobDone("error in job",__FILE__, __LINE__); 
 	}
-	else if (!(imageSlot = cache->GetCachedImageSlot(job->frameNumber))) {
+	else if (!(imageSlot = mCache->GetCachedImageSlot(job->frameNumber))) {
       CACHEDEBUG("No place to put job frame %d!", job->frameNumber); 
       /* We have an image, but no place to put it.  This
        * is an error as well, that the main thread has
@@ -209,11 +207,11 @@ void CacheThread::run() {
        * already been reported by here, so we don't
        * have to report another one.
        */
-      this->cache->mErrorQueue.push_back(job); 
-      cache->PrintJobQueue(cache->mErrorQueue);
+      this->mCache->mErrorQueue.push_back(job); 
+      mCache->PrintJobQueue(mCache->mErrorQueue);
 
-      this->cache->unlock("no place for job", __FILE__, __LINE__); 
-      this->cache->WakeAllJobDone("no place for job",__FILE__, __LINE__);    
+      this->mCache->unlock("no place for job", __FILE__, __LINE__); 
+      this->mCache->WakeAllJobDone("no place for job",__FILE__, __LINE__);    
       image.reset();
 	}
 	else {
@@ -229,8 +227,8 @@ void CacheThread::run() {
       imageSlot->requestNumber = job->requestNumber;
       imageSlot->lockCount = 0;
 
-      this->cache->unlock("job success", __FILE__, __LINE__);
-      this->cache->WakeAllJobDone("job success", __FILE__, __LINE__); 
+      this->mCache->unlock("job success", __FILE__, __LINE__);
+      this->mCache->WakeAllJobDone("job success", __FILE__, __LINE__); 
  
       /* Fairness among threads is greatly improved by yielding here.
        * Without this, threads can frequently starve for a while and
@@ -247,25 +245,26 @@ void CacheThread::run() {
 }
 
 //==================================================================
-ImageCachePtr CreateImageCache(int numReaderThreads, int maxCachedImages, Canvas * canvas)
+ImageCachePtr CreateImageCache(int numReaderThreads, int maxCachedImages, ImageFormat &required)
 {
-  ImageCachePtr newCache(new ImageCache(numReaderThreads, maxCachedImages, canvas));
+  ImageCachePtr newCache(new ImageCache(numReaderThreads, maxCachedImages, required));
   if (!newCache) {
 	SYSERROR("cannot allocate image cache");
   }
   return newCache; 
 }
 //==================================================================
-ImageCache::ImageCache(int numthreads, int numimages, Canvas * c): 
+ImageCache::ImageCache(int numthreads, int numimages, ImageFormat &required): 
   mNumReaderThreads(numthreads), mMaxCachedImages(numimages), 
-  mCanvas(c), mRequestNumber(0), mValidRequestThreshold(0), 
+  mRequiredImageFormat(required), mRequestNumber(0), 
+  mValidRequestThreshold(0), 
   mCachedImages(numimages), 
   mHighestFrameNumber(0), mPreloadFrames(0),  mCurrentPlayDirection(0),
   mCurrentStartFrame(0),  mCurrentEndFrame(0) {
   CACHEDEBUG("ImageCache constructor"); 
   
   register int i;
-  CACHEDEBUG("CreateImageCache(mNumReaderThreads = %d, mMaxCachedImages = %d, mCanvas)", mNumReaderThreads, mMaxCachedImages);
+  CACHEDEBUG("CreateImageCache(mNumReaderThreads = %d, mMaxCachedImages = %d)", mNumReaderThreads, mMaxCachedImages);
   
   for (i = 0; i < mMaxCachedImages; i++) {
     mCachedImages[i].reset(new CachedImage()); 
@@ -754,7 +753,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
    */
   FrameInfoPtr fip = mFrameList->getFrame(frameNumber); 
   image = fip-> LoadAndConvertImage(frameNumber, 
-                                    &mCanvas->requiredImageFormat, 
+                                    &mRequiredImageFormat, 
                                     &region, levelOfDetail);
   if (!image) {
 	return image;

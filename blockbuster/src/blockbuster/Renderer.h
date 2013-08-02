@@ -56,6 +56,14 @@ class Renderer: public XWindow {
                int playDirection, uint32_t minFrame, uint32_t maxFrame,
                const Rectangle *imageRegion, uint32_t levelOfDetail);
   
+  /* This really should be part of Renderer.  It is set by the Renderer.
+   * Describes best image format for the Renderer.  The various FileFormat
+   * modules will be told to give us images in this format; if they
+   * fail to do so, we'll convert them ourselves (an expensive but
+   * functional situation).
+   */
+  ImageFormat mRequiredImageFormat;
+  
  public:
   QString mName; 
   FrameListPtr mFrameList;
