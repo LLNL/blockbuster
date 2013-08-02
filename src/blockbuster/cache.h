@@ -20,11 +20,9 @@ using namespace std;
 
 typedef boost::shared_ptr<class ImageCache> ImageCachePtr; 
 typedef boost::shared_ptr<class CacheThread> CacheThreadPtr; 
-/*! 
-  ==================================================================
-  old code:  BADLY BEHAVING OLD CACHE and associated stuff
-  ==================================================================
-*/
+
+ImageCachePtr CreateImageCache(int numReaderThreads, int maxCachedImages, ImageFormat &required);
+
 
 // =================================================================
 //! ImageCacheJob:  a request for the workers to get an image
@@ -70,6 +68,7 @@ struct CachedImage{
   ImagePtr image;
 } ;
 
+// ====================================================================
 class CacheThread: public QThread {
   Q_OBJECT
     public:
@@ -88,7 +87,7 @@ class CacheThread: public QThread {
 };
 
 
- 
+// ====================================================================
 /* An Image Cache is a collection of images, both read from the
  * disk (i.e. full images) and as yet unread (i.e., frame
  * specifications).  The Image Cache abstraction allows for images
@@ -227,12 +226,5 @@ class ImageCache {
   deque<ImageCacheJobPtr> mErrorQueue;  // FAILs
 } ;
 
-/* Image Cache management from cache.c.  These utilities are expected to be
- * used by Renderer modules to manage their images (because each renderer
- * is responsible for its own image management).
- */
-ImageCachePtr CreateImageCache(int numReaderThreads, int maxCachedImages, ImageFormat &required);
-/*void CachePreload(Canvas *canvas, uint32_t frameNumber, 
-                  const Rectangle *imageRegion, uint32_t levelOfDetail);
-*/
+
 #endif

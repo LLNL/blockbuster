@@ -59,6 +59,7 @@
                          (x==EINTR)?"EINTR":            \
                          "unknown")
 
+// ======================================================================
 //! returns true if first is MORE important than second, even though this functor implements "less than".  This sorts the queue in reverse order, meaning that most important job is always next in the queue. 
 uint32_t gCurrentFrame, gLastFrame; 
 bool jobComparer(const ImageCacheJobPtr first, const ImageCacheJobPtr second){
@@ -71,6 +72,7 @@ bool jobComparer(const ImageCacheJobPtr first, const ImageCacheJobPtr second){
 
 
 
+// ======================================================================
 #define NEW_CACHE 1
 #ifdef NEW_CACHE
 /*
@@ -94,6 +96,7 @@ static unsigned int Distance(unsigned int oldFrame, unsigned int newFrame,
 #endif
 
 
+// ======================================================================
 /* This is the work function, which is used by child threads to 
  * "asynchronously" load images from disk.  Not used in single-threaded case. 
  */
@@ -240,7 +243,7 @@ void CacheThread::run() {
 
   } /* loop forever, until the thread is cancelled */
 
-   return; 
+  return; 
 }
 
 //==================================================================
@@ -282,6 +285,7 @@ ImageCache::ImageCache(int numthreads, int numimages, ImageFormat &required):
   return;
 }
 
+// ======================================================================
 ImageCache::~ImageCache() {
   /* If we have reader threads, we have to clear the cache
    * work queue and cancel all the reader threads.
@@ -318,6 +322,8 @@ ImageCache::~ImageCache() {
 
   return; 
 }
+
+// ======================================================================
 /*
  * Allocate a cache slot.  If the cache is full, an existing frame will have
  * to be discarded.
@@ -462,6 +468,7 @@ void ImageCache::ClearJobQueue(void)
 }
 
 
+// ======================================================================
 /* This routine is called to allow the Image Cache to manage the
  * associated frames.  The frames will be added to any list the
  * image cache is already managing.
@@ -502,6 +509,7 @@ void ImageCache::ManageFrameList(FrameListPtr frameList)
 }
 
 
+// ======================================================================
 /* This routine looks for an image already in the image cache, and returns
  * the cached image slot itself, or an empty CachedImagePtr if not found.
  * Note: we don't care about the loaded image region at this point.
@@ -525,6 +533,7 @@ CachedImagePtr ImageCache::FindImage(uint32_t frame, uint32_t lod) {
   return CachedImagePtr();
 }
 
+// ======================================================================
 //! GetImage()
 /*!
  * This routine gets an image from the cache, specified by frameNumber,
@@ -554,7 +563,7 @@ CachedImagePtr ImageCache::FindImage(uint32_t frame, uint32_t lod) {
  */
 
 ImagePtr ImageCache::GetImage(uint32_t frameNumber,
-                            const Rectangle *newRegion, uint32_t levelOfDetail)
+                              const Rectangle *newRegion, uint32_t levelOfDetail)
 {
 
   ImagePtr image;
@@ -831,6 +840,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
   return image;
 }
 
+// ======================================================================
 /* 
  * I do not think this is needed any more because we are using 
  * boost::shared_ptrs to manage images etc.  
@@ -879,6 +889,7 @@ void ImageCache::DecrementLockCount(ImagePtr image)
   return;
 }
 
+// ======================================================================
 /*!
   Releases all images associated with the given frame number.  Does not know about stereo, uses actual frame numbers, not stereo frame numbers.
 */ 
@@ -914,6 +925,7 @@ void ImageCache::DecrementLockCount(int frameNumber) {
   return;
 }
 
+// ======================================================================
 /* This routine is informatory; it notifies the cache that a particular frame
  * will likely be of interest soon, so that the cache can start loading the
  * image. 
@@ -1012,6 +1024,7 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
 }
 
 
+// ======================================================================
 /* For debugging */
 void ImageCache::Print(void)
 {
