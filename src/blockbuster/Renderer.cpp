@@ -30,8 +30,6 @@ Renderer::Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QSt
   XWindow(opt, canvas, parentWindow), 
   mName(name), mCanvas(canvas), mOptions(opt){  
 
-  mCache = CreateImageCache(mOptions->readerThreads,
-                            mOptions->frameCacheSize, canvas);
   return; 
 } 
 
@@ -40,12 +38,14 @@ void Renderer::FinishInit(ProgramOptions *opt) {
   visInfo = ChooseVisual(); 
   FinishXWindowInit(opt); 
   FinishRendererInit(opt); 
+  mCache = CreateImageCache(mOptions->readerThreads,
+                            mOptions->frameCacheSize, mRequiredImageFormat);
   return;
 }
 
 void Renderer::SetFrameList(FrameListPtr frameList) {
   if (!mCache) {
-    mCache = CreateImageCache(mCanvas->threads, mCanvas->cachesize, mCanvas);
+    mCache = CreateImageCache(mCanvas->threads, mCanvas->cachesize, mRequiredImageFormat);
   }
   if (mCache == NULL) {
     ERROR("could not recreate image cache when changing frame list");

@@ -73,8 +73,8 @@ struct CachedImage{
 class CacheThread: public QThread {
   Q_OBJECT
     public:
-  CacheThread(ImageCache *incache): 
-    cache(incache), mStop(false) {
+  CacheThread(ImageCache *icache): 
+    mCache(icache), mStop(false) {
     CACHEDEBUG("CacheThread constructor");     
     RegisterThread(this); 
   }
@@ -83,7 +83,7 @@ class CacheThread: public QThread {
 
   void run(void); 
   void stop(void) { mStop = true; }
-  ImageCache *cache;
+  ImageCache *mCache;
   bool mStop; 
 };
 
@@ -108,7 +108,7 @@ class CacheThread: public QThread {
 class ImageCache {
   friend class CacheThread; 
  public:
-  ImageCache(int numthreads, int numimages, Canvas * c);
+  ImageCache(int numthreads, int numimages, ImageFormat &required);
   ~ImageCache(); 
   
   ImagePtr GetImage(uint32_t frameNumber,
@@ -189,8 +189,9 @@ class ImageCache {
   /* Configuration information */
   int mNumReaderThreads;
   int mMaxCachedImages;
-  Canvas *mCanvas;
-  
+
+  ImageFormat mRequiredImageFormat; 
+   
   /* Cache management details */
   FrameListPtr mFrameList;
   unsigned long mRequestNumber;
@@ -230,8 +231,8 @@ class ImageCache {
  * used by Renderer modules to manage their images (because each renderer
  * is responsible for its own image management).
  */
-ImageCachePtr CreateImageCache(int numReaderThreads, int maxCachedImages, Canvas * canvas);
-void CachePreload(Canvas *canvas, uint32_t frameNumber, 
+ImageCachePtr CreateImageCache(int numReaderThreads, int maxCachedImages, ImageFormat &required);
+/*void CachePreload(Canvas *canvas, uint32_t frameNumber, 
                   const Rectangle *imageRegion, uint32_t levelOfDetail);
-
+*/
 #endif

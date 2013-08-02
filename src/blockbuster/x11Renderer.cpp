@@ -48,27 +48,27 @@ void x11Renderer::FinishRendererInit(ProgramOptions *, Canvas *, Window ) {
    * *4* bytes per pixel, not 3.
    */
   if (visInfo->depth > 16) {
-    mCanvas->requiredImageFormat.bytesPerPixel = 4;
+    mRequiredImageFormat.bytesPerPixel = 4;
   }
   else if (visInfo->depth > 8) {
-    mCanvas->requiredImageFormat.bytesPerPixel = 2;
+    mRequiredImageFormat.bytesPerPixel = 2;
   }
   else {
-    mCanvas->requiredImageFormat.bytesPerPixel = 1;
+    mRequiredImageFormat.bytesPerPixel = 1;
   }
-  mCanvas->requiredImageFormat.scanlineByteMultiple = BitmapPad(display)/8;
+  mRequiredImageFormat.scanlineByteMultiple = BitmapPad(display)/8;
   
   /* If the bytesPerPixel value is 3 or 4, we don't need these;
    * but we'll put them in anyway.
    */
-  mCanvas->requiredImageFormat.redShift = ComputeShift(visInfo->visual->red_mask) - 8;
-  mCanvas->requiredImageFormat.greenShift = ComputeShift(visInfo->visual->green_mask) - 8;
-  mCanvas->requiredImageFormat.blueShift = ComputeShift(visInfo->visual->blue_mask) - 8;
-  mCanvas->requiredImageFormat.redMask = visInfo->visual->red_mask;
-  mCanvas->requiredImageFormat.greenMask = visInfo->visual->green_mask;
-  mCanvas->requiredImageFormat.blueMask = visInfo->visual->blue_mask;
-  mCanvas->requiredImageFormat.byteOrder = ImageByteOrder(display);
-  mCanvas->requiredImageFormat.rowOrder = TOP_TO_BOTTOM;
+  mRequiredImageFormat.redShift = ComputeShift(visInfo->visual->red_mask) - 8;
+  mRequiredImageFormat.greenShift = ComputeShift(visInfo->visual->green_mask) - 8;
+  mRequiredImageFormat.blueShift = ComputeShift(visInfo->visual->blue_mask) - 8;
+  mRequiredImageFormat.redMask = visInfo->visual->red_mask;
+  mRequiredImageFormat.greenMask = visInfo->visual->green_mask;
+  mRequiredImageFormat.blueMask = visInfo->visual->blue_mask;
+  mRequiredImageFormat.byteOrder = ImageByteOrder(display);
+  mRequiredImageFormat.rowOrder = TOP_TO_BOTTOM;
   
     return; 
 }

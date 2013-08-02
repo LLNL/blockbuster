@@ -80,10 +80,10 @@ void glRenderer::FinishRendererInit(ProgramOptions *) {
   /* Specify our required format.  For OpenGL, always assume we're
    * getting 24-bit RGB pixels.
    */
-  mCanvas->requiredImageFormat.scanlineByteMultiple = 1;
-  mCanvas->requiredImageFormat.rowOrder = ROW_ORDER_DONT_CARE;
-  mCanvas->requiredImageFormat.byteOrder = MSB_FIRST;
-  mCanvas->requiredImageFormat.bytesPerPixel = 3;
+  mRequiredImageFormat.scanlineByteMultiple = 1;
+  mRequiredImageFormat.rowOrder = ROW_ORDER_DONT_CARE;
+  mRequiredImageFormat.byteOrder = MSB_FIRST;
+  mRequiredImageFormat.bytesPerPixel = 3;
   
   return; 
 }
@@ -247,11 +247,11 @@ void glRenderer::Render(int frameNumber,
   glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
   glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 
-                mCanvas->requiredImageFormat.scanlineByteMultiple);
+                mRequiredImageFormat.scanlineByteMultiple);
   DEBUGMSG("glPixelStorei(GL_UNPACK_ROW_LENGTH, %d)\n", image->width);
   DEBUGMSG("glPixelStorei(GL_UNPACK_SKIP_ROWS,  %d)\n", saveSkip);
   DEBUGMSG("glPixelStorei(GL_UNPACK_SKIP_PIXELS,  %d)\n",  region.x);
-  DEBUGMSG("glPixelStorei(GL_UNPACK_ALIGNMENT,  %d)\n", mCanvas->requiredImageFormat.scanlineByteMultiple);
+  DEBUGMSG("glPixelStorei(GL_UNPACK_ALIGNMENT,  %d)\n", mRequiredImageFormat.scanlineByteMultiple);
 
   DEBUGMSG("Buffer for frame %d is %dw x %dh, region is %dw x %dh, destX = %d, destY = %d\n", frameNumber, image->width, image->height, region.width, region.height, destX, destY); 
 
@@ -409,7 +409,7 @@ void glStereoRenderer::Render(int frameNumber,
   glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
   glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 
-                mCanvas->requiredImageFormat.scanlineByteMultiple);
+                mRequiredImageFormat.scanlineByteMultiple);
   glDrawPixels(region.width, region.height,
                GL_RGB, GL_UNSIGNED_BYTE,
                image->Data());
@@ -457,7 +457,7 @@ void glStereoRenderer::Render(int frameNumber,
     glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
     glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 
-                  mCanvas->requiredImageFormat.scanlineByteMultiple);
+                  mRequiredImageFormat.scanlineByteMultiple);
     glDrawPixels(region.width, region.height,
                  GL_RGB, GL_UNSIGNED_BYTE,
                  image->Data());

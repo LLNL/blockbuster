@@ -48,14 +48,7 @@ struct Canvas {
   }
   
   
-  /* This really should be part of Renderer.  It is set by the Renderer.
-   * Describes best image format for the Renderer.  The various FileFormat
-   * modules will be told to give us images in this format; if they
-   * fail to do so, we'll convert them ourselves (an expensive but
-   * functional situation).
-   */
-  ImageFormat requiredImageFormat;
-  
+ 
   /* notify the renderer
    * that a resize has occurred.    */
   void Resize(int newWidth, int newHeight, int camefromX) {
