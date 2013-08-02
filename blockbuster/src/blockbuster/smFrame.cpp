@@ -34,28 +34,16 @@
 
 #include "boost/shared_ptr.hpp"
 
-int
-smLoadImage(Image *image,  FrameInfo *frameInfoPtr, 
-            ImageFormat *, const Rectangle *desiredSub, int levelOfDetail)
-{
-  //  DEBUGMSG(QString("smLoadImage(%1").arg(frameInfo->frameNumber)); 
-  /*  SMFrameInfo *sfip = reinterpret_cast<SMFrameInfo *>(frameInfoPtr.get()); 
-  SMFrameInfoPtr frameInfo(frameInfoPtr, sfip); */
-  SMFrameInfo *frameInfo = reinterpret_cast<SMFrameInfo *>(frameInfoPtr); 
-  if (!frameInfo) {
-	ERROR("cannot allocate FrameInfo structure");
-	return NULL;
-  }
-
-  const uint32_t imgWidth = frameInfo->width >> levelOfDetail;
-  const uint32_t imgHeight = frameInfo->height >> levelOfDetail;
-  bb_assert(image);
+int SMFrameInfo::LoadImage(ImagePtr image, ImageFormat *, const Rectangle *desiredSub, int levelOfDetail) {
+ 
+  const uint32_t imgWidth = this->width >> levelOfDetail;
+  const uint32_t imgHeight = this->height >> levelOfDetail;
   bb_assert(imgWidth > 0);
   bb_assert(imgHeight > 0);
   
   if (!image->allocate(imgWidth * imgHeight * 3)) {
     ERROR("could not allocate %dx%dx24 image data",
-          frameInfo->width, frameInfo->height);
+          this->width, this->height);
     return 0;
   }
   image->width = imgWidth;
@@ -80,11 +68,11 @@ smLoadImage(Image *image,  FrameInfo *frameInfoPtr,
   dest = (char*) image->Data() + (pos[1] * image->width + pos[0]) * 3;
   
   DEBUGMSG("smLoadImage: Getting frame %d, SM region at (%d, %d), size (%d x %d)  of image sized (%d x %d)	destStride=%d",
-		   frameInfo->mFrameNumberInFile, desiredSub->x, desiredSub->y, 
+		   this->mFrameNumberInFile, desiredSub->x, desiredSub->y, 
 		   size[0], size[1],
 		   image->width, image->height, destStride);
   
-  frameInfo->mSM->getFrameBlock(frameInfo->mFrameNumberInFile, (void *) dest, 
+  this->mSM->getFrameBlock(this->mFrameNumberInFile, (void *) dest, 
 					   GetCurrentThreadID(), destStride,
 					   size, pos, step, levelOfDetail);
   
@@ -167,14 +155,14 @@ FrameListPtr smGetFrameList(const char *filename)
   } else {
     // valid frameList
     for (i = 0; i < numFrames; i++) {
-      FrameInfoPtr frameInfo(new SMFrameInfo(width, height, 24, maxLOD, filename, i, sm)); 
+      FrameInfoPtr frameInfo
+        (new SMFrameInfo(filename, width, height, 24, maxLOD, i, sm)); 
       if (!frameInfo) {
         ERROR( "cannot allocate %d%s FrameInfo structure (of %d) for file %s",
                i, ORDINAL_SUFFIX(i), numFrames, filename);
         frameList.reset(); 
         return frameList;
       }
-      frameInfo->LoadImageFunPtr = smLoadImage;
       frameList->append(frameInfo); 
     }
 
@@ -187,7 +175,7 @@ FrameListPtr smGetFrameList(const char *filename)
 
     frameList->formatName = "SM";
     frameList->formatDescription =
-      "Multiple frames in an SM (Streaming Movie) file";
+      "Multiple frames in a shared SM (Streaming Movie) file";
   }
   return frameList;
 }

@@ -13,7 +13,7 @@
 #include "util.h"
 #include "frames.h"
 #include <X11/Xlib.h>
-#include "pngFrame.h"
+#include "pnmFrame.h"
 
 /* pnmrw.h - header file for PBM/PGM/PPM read/write library
 **
@@ -1357,9 +1357,9 @@ ppm_freecolorhash(  colorhash_table cht)
 /* Start of Blockbuster integration code. */
 
 /* Load the desired subimage into a set of RGB bytes */
-static int
-pnmLoadImage(Image *image, FrameInfo *frameInfo,
-             ImageFormat *requiredImageFormat, const Rectangle *, int levelOfDetail)
+int PNMFrameInfo::LoadImage(ImagePtr image,
+                        ImageFormat *requiredImageFormat, 
+                        const Rectangle *, int levelOfDetail)
 {
   FILE *f;
   register int i, j, k;
@@ -1372,12 +1372,10 @@ pnmLoadImage(Image *image, FrameInfo *frameInfo,
   int extraBytesPerPixel = 0;
   int scanlineBytes, rowOrder, byteOrder;
 
-  bb_assert(image);
-
   /* Calculate how much image data we need. */
   extraBytesPerPixel = requiredImageFormat->bytesPerPixel - 3;
   scanlineBytes = ROUND_TO_MULTIPLE(
-                                    requiredImageFormat->bytesPerPixel * frameInfo->width,
+                                    requiredImageFormat->bytesPerPixel * this->width,
                                     requiredImageFormat->scanlineByteMultiple
                                     );
   if (requiredImageFormat->rowOrder == ROW_ORDER_DONT_CARE)
@@ -1386,15 +1384,14 @@ pnmLoadImage(Image *image, FrameInfo *frameInfo,
     rowOrder = requiredImageFormat->rowOrder;
   byteOrder = requiredImageFormat->byteOrder;
 
-  if (!image->allocate(frameInfo->height * scanlineBytes)) {
+  if (!image->allocate(this->height * scanlineBytes)) {
     ERROR("could not allocate %dx%dx%d image data ",
-          frameInfo->width, frameInfo->height, frameInfo->depth);
-    delete image;
+          this->width, this->height, this->depth);
     return 0;
   }
   
-  image->width = frameInfo->width;
-  image->height = frameInfo->height;
+  image->width = this->width;
+  image->height = this->height;
   image->imageFormat.bytesPerPixel = requiredImageFormat->bytesPerPixel;
   image->imageFormat.scanlineByteMultiple = requiredImageFormat->scanlineByteMultiple;
   image->imageFormat.byteOrder = byteOrder;
@@ -1406,22 +1403,20 @@ pnmLoadImage(Image *image, FrameInfo *frameInfo,
    * specific format (RGB, 3 bytes per pixel).  We'll rely on the
    * conversion module to handle anything different.
    */
-  f = pm_openr(frameInfo->filename.c_str());
+  f = pm_openr(this->filename.c_str());
   if (f == NULL) {
-	WARNING("cannot open file %s", frameInfo->filename.c_str());
-	delete image;
+	WARNING("cannot open file %s", this->filename.c_str());
 	return 0;
   }
   if (pnm_readpnminit(f, &width,&height,&value,&fmt) == -1) {
-	SYSERROR("%s is not a PNM file", frameInfo->filename.c_str());
+	SYSERROR("%s is not a PNM file", this->filename.c_str());
 	pm_closer(f);
-	delete image;
 	return 0;
   }
   switch(PNM_FORMAT_TYPE(fmt)) {
   case PBM_TYPE:
     WARNING("The file '%s' is a PNM bitmap file, and not supported.",
-            frameInfo->filename.c_str());
+            this->filename.c_str());
     return 0;
     break;
   case PPM_TYPE:
@@ -1431,15 +1426,14 @@ pnmLoadImage(Image *image, FrameInfo *frameInfo,
     depth = 1;
     break;
   }
-  if (frameInfo->width != width ||
-      frameInfo->height != height ||
-      frameInfo->depth != 8*depth) {
+  if (this->width != width ||
+      this->height != height ||
+      this->depth != 8*depth) {
 	ERROR("PNM file %s is %dx%dx%d, expected %dx%dx%d",
-          frameInfo->filename.c_str(),
+          this->filename.c_str(),
           width, height, 8*depth,
-          frameInfo->width, frameInfo->height, frameInfo->depth);
+          this->width, this->height, this->depth);
 	pm_closer(f);
-	delete image;
 	return 0;
   }
 
@@ -1496,39 +1490,52 @@ pnmLoadImage(Image *image, FrameInfo *frameInfo,
   return 1; /* success */
 }
 
-FrameListPtr pnmGetFrameList(const char *filename)
-{
-  FILE *f;
-  int 	width,height,depth,fmt;
-  xelval	value;
-  FrameListPtr frameList; 
+//============================================================
 
-  f = pm_openr(filename);
+PNMFrameInfo::PNMFrameInfo(string fname): FrameInfo(fname) {
+  
+  FILE *f;
+  int 	pnmwidth, pnmheight, pnmfmt;
+  xelval	lvalue;
+  f = pm_openr(filename.c_str());
   if (!f) {
-    WARNING("Cannot open the file '%s'", filename);
-    return frameList;
+    WARNING("Cannot open the file '%s'", filename.c_str());
+    return ;
   }
-  if (pnm_readpnminit(f, &width,&height,&value,&fmt) == -1) {
-	DEBUGMSG("The file '%s' is not in PNM format.", filename);
-	pm_closer(f);
-	return frameList;
+  if (pnm_readpnminit(f, &pnmwidth,&pnmheight,&lvalue,&pnmfmt) == -1) {
+    DEBUGMSG("The file '%s' is not in PNM format.", filename.c_str());
+    pm_closer(f);
+    return ;
   }
   pm_closer(f);
 
   /* set up our params */
-  switch(PNM_FORMAT_TYPE(fmt)) {
+  switch(PNM_FORMAT_TYPE(pnmfmt)) {
   case PBM_TYPE:
     WARNING("The file '%s' is a PNM bitmap file, and not supported.",
-		    filename);
-    return frameList;
+            filename.c_str());
+    return ;
     break;
   case PPM_TYPE:
-    depth = 3;
+    depth = 24;
     break;
   default:
-    depth = 1;
+    depth = 8;
     break;
   }
+  width = pnmwidth; 
+  height = pnmheight; 
+
+  mValid = true; 
+  return; 
+}
+
+//============================================================
+
+FrameListPtr pnmGetFrameList(const char *filename)
+{
+  FrameListPtr frameList; 
+
 
   /* Prepare the FrameList and FrameInfo structures we are to
    * return to the user.  Since a PNG file stores a single 
@@ -1536,26 +1543,17 @@ FrameListPtr pnmGetFrameList(const char *filename)
    * need be large enough only for 2 entries (the information
    * about the single frame, and the terminating NULL).
    */
-  FrameInfoPtr frameInfo(new FrameInfo()); 
+  FrameInfoPtr frameInfo(new PNMFrameInfo(filename)); 
   if (!frameInfo) {
-	ERROR("cannot allocate FrameInfo structure");
-	return frameList;
+    ERROR("cannot allocate FrameInfo structure");
+    return frameList;
   }
 
-  frameInfo->filename = filename;
   frameList.reset(new FrameList); 
   if (!frameList) {
-	ERROR("cannot allocate FrameInfo list structure");
-	return frameList;
+    ERROR("cannot allocate FrameInfo list structure");
+    return frameList;
   }
-
-  /* Fill out the rest of the frameInfo information */
-  frameInfo->width = width;
-  frameInfo->height = height;
-  frameInfo->depth = 8*depth;
-  frameInfo->mFrameNumberInFile = 0;
-  //frameInfo->enable = 1;
-  frameInfo->LoadImageFunPtr = pnmLoadImage;
 
   /* Fill out the final return form, and call it a day */
   frameList->append(frameInfo);

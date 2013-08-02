@@ -126,7 +126,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
   int32_t previousFrame = -1, cueEndFrame = 0;
   uint totalFrameCount = 0, recentFrameCount = 0;
   FrameInfoPtr frameInfo;
-  Canvas *canvas;
+  Canvas * canvas;
   int maxWidth, maxHeight, maxDepth;
   int loopCount = options->loopCount; 
   int drawInterface = options->drawInterface;
@@ -179,12 +179,13 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
   }
 
   canvas = new Canvas(0, options, gMainWindow);
-  gSidecarServer->SetCanvas(canvas); 
-
-  if (canvas == NULL) {
+  if (!canvas) {
     ERROR("Could not create a canvas");
     return 1;
   }
+
+  gSidecarServer->SetCanvas(canvas); 
+
   int32_t preloadFrames= options->preloadFrames,
     playDirection = 0, 
     startFrame= options->startFrame, 
@@ -655,8 +656,6 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
        
       case MOVIE_SET_STEREO:
       MOVIE_SET_STEREO:
-        /* Done with the canvas */
-        delete canvas;
         if (event.number) {// TURN ON STEREO
           dbprintf(1, "TURN ON STEREO\n"); 
           if (options->rendererName == "dmx") {
@@ -678,7 +677,10 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         options->geometry.width = canvas->width; 
         options->geometry.height = canvas->height; 
         //printf ("SET_STEREO: X,Y = %d, %d\n", canvas->XPos, canvas->YPos); 
-        return 1; // restarts the DisplayLoop and creates a new canvas in stereo
+        // exit the DisplayLoop 
+        // next time DisplayLoop starts, it will create a new stereo canvas 
+        delete canvas; 
+        return 1; 
       case MOVIE_OPEN_FILE:   
       case MOVIE_OPEN_FILE_NOCHANGE: 
 	{
@@ -766,7 +768,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
              region.x = region.y = 0; 
              region.width = frameInfo->width; 
              region.height = frameInfo->height; 
-             Image *image = canvas->mRenderer->GetImage(frameNumber,&region,0); 
+             ImagePtr image = canvas->mRenderer->GetImage(frameNumber,&region,0); 
              int size[3] = {region.width, region.height, 3}; 
              int result = 
                write_png_file(filename.toAscii().data(), 
@@ -1063,10 +1065,10 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
        
        if (!usingDmx && frameNumber != previousFrame && previousFrame >= 0) {
          if (allFrames->stereo) {
-           canvas->mRenderer->mCache->ReleaseFrame(previousFrame*2); 
-           canvas->mRenderer->mCache->ReleaseFrame(previousFrame*2+1); 
+           canvas->mRenderer->mCache->DecrementLockCount(previousFrame*2); 
+           canvas->mRenderer->mCache->DecrementLockCount(previousFrame*2+1); 
          } else {
-           canvas->mRenderer->mCache->ReleaseFrame(previousFrame); 
+           canvas->mRenderer->mCache->DecrementLockCount(previousFrame); 
          }
        }
        TIMER_PRINT("after render"); 
@@ -1199,9 +1201,6 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
   INFO("Skipped delay count: %d; used delay count: %d",
        skippedDelayCount, usedDelayCount);
 #endif
-  
-  /* Done with the canvas */
-  delete canvas;
   
   /* Done with the frames */
   return 0; 

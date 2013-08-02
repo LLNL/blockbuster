@@ -111,14 +111,13 @@ static void ConvertPixel(const ImageFormat *srcFormat,
   }
 }
 
-Image *ConvertImageToFormat(const Image *image, ImageFormat *canvasFormat)
+ImagePtr ConvertImageToFormat( ImagePtr image, ImageFormat *canvasFormat)
 {
   /* We used to check for optimized cases; but any time we're
    * here, we're unoptimized, so now just do as complete a job
    * as possible, without worrying about efficiency.
    */
   DEBUGMSG("ConvertImageToFormat(frame %d)", image->frameNumber); 
-  Image *destImage;
   const ImageFormat *srcFormat = &image->imageFormat;
   const ImageFormat *destFormat = canvasFormat;
 
@@ -153,7 +152,7 @@ Image *ConvertImageToFormat(const Image *image, ImageFormat *canvasFormat)
     /* It's possible that we match - we need a closer look. */
     if (srcBytesPerPixel >= 3) {
       /* Match, as we ignore the extra bytes in a pixel */
-      return (Image *) image;
+      return image;
     }
       
     /* Less than 3 bytes per pixel - we match if our
@@ -165,21 +164,20 @@ Image *ConvertImageToFormat(const Image *image, ImageFormat *canvasFormat)
         srcFormat->redMask == destFormat->redMask &&
         srcFormat->greenMask == destFormat->greenMask &&
         srcFormat->blueMask == destFormat->blueMask)
-      return (Image *) image;
+      return image;
   }
   /* Otherwise, we suffer a non-trivial conversion. Create a new
    * image from scratch.
    */
-  destImage = new Image(); 
-  if (destImage == NULL) {
+  ImagePtr destImage(new Image()); 
+  if (!destImage) {
 	ERROR("could not allocate Image structure");
-	return NULL;
+	return ImagePtr();
   }
   if (!destImage->allocate(image->height * destBytesPerScanline)) {
 	ERROR("could not allocate %dx%dx%d image data",
           image->height, image->width, destBytesPerPixel*8);
-	delete destImage;
-	return NULL;
+	return ImagePtr();
   }
 
   if ((srcFormat->rowOrder != destFormat->rowOrder) && (destFormat->rowOrder != ROW_ORDER_DONT_CARE))
@@ -222,7 +220,7 @@ Image *ConvertImageToFormat(const Image *image, ImageFormat *canvasFormat)
  * the image and return a new image of that region scaled to zoomeWidth
  * by zoomedHeight
  */
-Image *ScaleImage(const Image *image, int srcX, int srcY,
+ImagePtr ScaleImage( ImagePtr image, int srcX, int srcY,
                   int srcWidth, int srcHeight,
                   int zoomedWidth, int zoomedHeight)
 {
@@ -239,18 +237,16 @@ Image *ScaleImage(const Image *image, int srcX, int srcY,
 
   /*fprintf(stderr,"ScaleImage [%d,%d]->[%d,%d]\n",srcWidth,srcHeight,zoomedWidth,zoomedHeight); */
   register unsigned char *zoomedScanline, *zoomedData, *pixelData;
-  Image *zoomedImage;
 
-  zoomedImage = new Image(); 
-  if (zoomedImage == NULL) {
+  ImagePtr zoomedImage(new Image()); 
+  if (!zoomedImage) {
 	ERROR("could not allocate Image structure");
-	return NULL;
+	return ImagePtr();
   }
   if (!zoomedImage->allocate(zoomedHeight * zoomedBytesPerScanline)) {
 	ERROR("could not allocate %dx%dx%d zoomed image data",
           zoomedHeight, zoomedWidth, format->bytesPerPixel*8);
-	delete zoomedImage;
-	return NULL;
+	return ImagePtr();
   }
   zoomedImage->height = zoomedHeight;
   zoomedImage->width = zoomedWidth;

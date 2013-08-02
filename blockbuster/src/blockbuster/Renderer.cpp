@@ -20,7 +20,7 @@ Renderer * Renderer::CreateRenderer(ProgramOptions *opt, Canvas *canvas, Window 
   if (name == "dmx") renderer = new dmxRenderer(opt, canvas, parentWindow); 
 #endif  
   // this has to be called after ChooseVisual() virtual functions are in place
-  renderer->FinishInit(opt, canvas, parentWindow); 
+  renderer->FinishInit(opt); 
   return renderer;
   
 }
@@ -31,15 +31,15 @@ Renderer::Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QSt
   mName(name), mCanvas(canvas), mOptions(opt){  
 
   mCache = CreateImageCache(mOptions->readerThreads,
-                            mOptions->frameCacheSize, mCanvas);
+                            mOptions->frameCacheSize, canvas);
   return; 
 } 
 
-void Renderer::FinishInit(ProgramOptions *opt, Canvas *canvas, Window parentWindow) {
+void Renderer::FinishInit(ProgramOptions *opt) {
   ECHO_FUNCTION(5); 
   visInfo = ChooseVisual(); 
-  FinishXWindowInit(opt, canvas, parentWindow); 
-  FinishRendererInit(opt, canvas, parentWindow); 
+  FinishXWindowInit(opt); 
+  FinishRendererInit(opt); 
   return;
 }
 

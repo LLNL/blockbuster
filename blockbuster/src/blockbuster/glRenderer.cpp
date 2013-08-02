@@ -41,7 +41,7 @@ glRenderer::glRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow,
   return; 
 }
 
-void glRenderer::FinishRendererInit(ProgramOptions *, Canvas *canvas, Window ) {
+void glRenderer::FinishRendererInit(ProgramOptions *) {
   // from glFinishInitialization: 
   Bool rv;
   Font id = fontInfo->fid;
@@ -80,10 +80,10 @@ void glRenderer::FinishRendererInit(ProgramOptions *, Canvas *canvas, Window ) {
   /* Specify our required format.  For OpenGL, always assume we're
    * getting 24-bit RGB pixels.
    */
-  canvas->requiredImageFormat.scanlineByteMultiple = 1;
-  canvas->requiredImageFormat.rowOrder = ROW_ORDER_DONT_CARE;
-  canvas->requiredImageFormat.byteOrder = MSB_FIRST;
-  canvas->requiredImageFormat.bytesPerPixel = 3;
+  mCanvas->requiredImageFormat.scanlineByteMultiple = 1;
+  mCanvas->requiredImageFormat.rowOrder = ROW_ORDER_DONT_CARE;
+  mCanvas->requiredImageFormat.byteOrder = MSB_FIRST;
+  mCanvas->requiredImageFormat.bytesPerPixel = 3;
   
   return; 
 }
@@ -133,7 +133,6 @@ void glRenderer::Render(int frameNumber,
   int lodScale;
   int localFrameNumber;
   Rectangle region = *imageRegion;
-  Image *image;
   int saveSkip;
   DEBUGMSG("gl_Render begin, frame %d, %d x %d  at %d, %d  zoom=%f  lod=%d", 
            frameNumber,
@@ -153,11 +152,6 @@ void glRenderer::Render(int frameNumber,
   }
 
  
-  if (lod > mCanvas->frameList->getFrame(localFrameNumber)->maxLOD) {
-    ERROR("Error in glRenderer::Render:  lod is greater than max\n"); 
-    abort(); 
-  }
-
   lodScale = 1 << lod;
 
  
@@ -194,9 +188,9 @@ void glRenderer::Render(int frameNumber,
 
 
   TIMER_PRINT("Pull the image from our cache "); 
-  image = /* mCanvas->mRenderer->*/ GetImage(localFrameNumber, &region, lod);
+  ImagePtr image =  GetImage(localFrameNumber, &region, lod);
   TIMER_PRINT("Got image"); 
-  if (image == NULL) {
+  if (!image) {
     /* error has already been reported */
     return;
   }
@@ -277,8 +271,6 @@ void glRenderer::Render(int frameNumber,
   glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
  //  glRasterPos2i(0,0); 
   
-  /* This is bad, we are managing the cache in the render thread.  Sigh.  Anyhow, have to release the image, or the cache will fill up */  
-  //mCanvas->imageCache->ReleaseImage(image);
 #ifdef RENDER_TIMING
   t2 = GetExactSecondsDouble(); 
   timeSamples.push_back(t2-t1); 
@@ -302,7 +294,6 @@ void glStereoRenderer::Render(int frameNumber,
   int lodScale;
   int localFrameNumber;
   Rectangle region = *imageRegion;
-  Image *image;
   int saveSkip;
   int saveDestX;
   int saveDestY;
@@ -327,7 +318,6 @@ void glStereoRenderer::Render(int frameNumber,
   }
 
   
-  bb_assert(lod <= mCanvas->frameList->getFrame(localFrameNumber)->maxLOD);
   lodScale = 1 << lod;
 
   {
@@ -361,9 +351,9 @@ void glStereoRenderer::Render(int frameNumber,
   zoom *= (float) lodScale;
 
   /* Pull the image from our cache */
-  image = /*mCanvas->mRenderer->*/GetImage(localFrameNumber, &region, lod);
+  ImagePtr image = GetImage(localFrameNumber, &region, lod);
 
-  if (image == NULL) {
+  if (!image) {
     /* error has already been reported */
     return;
   }
@@ -427,9 +417,7 @@ void glStereoRenderer::Render(int frameNumber,
   /* Offset raster pos by (-destX, -destY) to put it back to (0,0) */
   glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
   
-  /* Have to release the image, or the cache will fill up */
-  ///*mCanvas->mRenderer->*/ReleaseImage(image);
-  
+   
   if(mCanvas->frameList->stereo) {
     glDrawBuffer(GL_BACK_RIGHT);
     localFrameNumber++;
@@ -477,11 +465,7 @@ void glStereoRenderer::Render(int frameNumber,
     /* Offset raster pos by (-destX, -destY) to put it back to (0,0) */
     glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
     
-    /* Have to release the image, or the cache will fill up */
-    ///*mCanvas->mRenderer->*/ReleaseImage(image);
-    
   }
-  
   
   return; 
   
@@ -514,7 +498,7 @@ XVisualInfo *glStereoRenderer::ChooseVisual(void)
 // glTextureRenderer
 // ==========================================================
 
-glTextureRenderer::glTextureRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow):
+glTextureRenderer::glTextureRenderer(ProgramOptions *opt, Canvas * canvas, Window parentWindow):
   glRenderer(opt, canvas, parentWindow, "gltexture") {
 
   printf("using texture rendering\n"); 
@@ -620,7 +604,6 @@ void glTextureRenderer::Render(int frameNumber, const Rectangle *imageRegion,
   int32_t lodScale;
   int localFrameNumber;
   Rectangle region;
-  Image *image;
   
 #if 0
   printf("gltexture::Render %d, %d  %d x %d  at %d, %d  zoom=%f  lod=%d\n",
@@ -646,7 +629,6 @@ void glTextureRenderer::Render(int frameNumber, const Rectangle *imageRegion,
   /*
    * Compute possibly reduced-resolution image region to display.
    */
-  bb_assert(lod <= mCanvas->frameList->getFrame(localFrameNumber)->maxLOD);
   lodScale = 1 << lod;
   region.x = imageRegion->x / lodScale;
   region.y = imageRegion->y / lodScale;
@@ -655,8 +637,8 @@ void glTextureRenderer::Render(int frameNumber, const Rectangle *imageRegion,
   zoom *= (float) lodScale;
   
   /* Pull the image from our cache */
-  image = GetImage( localFrameNumber, &region, lod);
-  if (image == NULL) {
+  ImagePtr image = GetImage( localFrameNumber, &region, lod);
+  if (!image) {
     /* error has already been reported */
     return;
   }
@@ -956,7 +938,7 @@ void glTextureRenderer::Render(int frameNumber, const Rectangle *imageRegion,
   }
   
   /* Have to release the image, or the cache will fill up */
-  ReleaseImage( image);
+  DecrementLockCount( image);
   
   glDisable(GL_TEXTURE_2D);
 }

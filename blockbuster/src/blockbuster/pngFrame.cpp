@@ -34,9 +34,81 @@
  */
 #define DISPLAY_EXPONENT 2.2
 
-int PrepPng(const char *filename, 
-              FILE **fPtr, png_structp *readStructPtr, 
-              png_infop *infoStructPtr);
+// ===============================================================
+int PNGFrameInfo::PrepPng(string filename, 
+                          FILE **fPtr, png_structp *readStructPtr, 
+                          png_infop *infoStructPtr) {
+#define SIGNATURE_SIZE 8
+  unsigned char signature[SIGNATURE_SIZE];
+  FILE *f;
+  png_structp readStruct;
+  png_infop infoStruct;
+  int rv;
+
+  /* Try to open the given file */
+  f = fopen(filename.c_str(), "rb");
+  if (f == NULL) {
+	WARNING("cannot open file '%s'", filename.c_str());
+	return 0;
+  }
+
+  /* Make sure the file represents a real PNG image. */
+  fread(signature, 1, SIGNATURE_SIZE, f);
+  if (!png_check_sig(signature, SIGNATURE_SIZE)) {
+	DEBUGMSG("PNG signature check failed for filename %s", filename.c_str());
+	fclose(f);
+	return 0;
+  }
+    
+  readStruct = png_create_read_struct(PNG_LIBPNG_VER_STRING,
+                                      NULL, NULL, NULL);
+  if (readStruct == NULL) {
+	ERROR("cannot allocate PNG read structure");
+	fclose(f);
+	return 0;
+  }
+
+  /* And the PNG-defined info structure */
+  infoStruct = png_create_info_struct(readStruct);
+  if (infoStruct == NULL) {
+	ERROR("cannot allocate PNG info structure");
+	png_destroy_read_struct(&readStruct, &infoStruct, NULL);
+	fclose(f);
+	return 0;
+  }
+
+#ifdef PNG_SETJMP_SUPPORTED
+  /* The PNG library uses a setjmp-style of error reporting.
+   * When setjmp is called initially, it will return a value
+   * of 0.  If any error is discovered, the code will jump
+   * back to the setjmp position, but with a non-zero return
+   * value reported for setjmp.  If, then, we get a non-zero
+   * setjmp value, we have to clean up everything.
+   */
+  rv = setjmp(png_jmpbuf(readStruct));
+  if (rv != 0) {
+	ERROR("libpng error: setjmp returned %d", rv);
+	png_destroy_read_struct(&readStruct, &infoStruct, NULL);
+	fclose(f);
+	return 0;
+  }
+#endif
+
+  /* Set up to read from the file pointer, tell the PNG
+   * library that we've already read the signature, and
+   * read the rest of the provided info.
+   */
+  png_init_io(readStruct, f);
+  png_set_sig_bytes(readStruct, SIGNATURE_SIZE);
+  png_read_info(readStruct, infoStruct);
+
+  /* Return the pointers we've gathered so far. */
+  *fPtr = f;
+  *readStructPtr = readStruct;
+  *infoStructPtr = infoStruct;
+
+  return 1;
+}
 
 // ===============================================================
 /* Load the desired subimage into a set of RGB bytes */
@@ -44,24 +116,21 @@ int PrepPng(const char *filename,
   const Rectangle *desiredSubregion, 
   int levelOfDetail) {
 */
-int pngLoadImage(Image *image,
-                 FrameInfo*frameInfo,
-                 ImageFormat *requiredImageFormat, 
-                 const Rectangle */*desiredSubregion*/, 
-                 int levelOfDetail) {
-  Image *mImage = image; 
+int PNGFrameInfo::LoadImage(ImagePtr mImage,
+                             ImageFormat *requiredImageFormat, 
+                             const Rectangle */*desiredSubregion*/, 
+                             int levelOfDetail) {
+
   png_structp readStruct;
   png_infop infoStruct;
   int rv;
   FILE *f;
-  register int i;
   int depth, colorType, rowBytes;
   double gamma;
   int scanlineBytes;
   int bytesPerPixel = 3;
   int byteMultiple = 1;
   int byteOrder = MSB_FIRST;
-  bb_assert(image);
 
   /* We know how to handle 3 bytes per pixel
    * and 4 bytes per pixel, with any scanlineByteMultiple.  If these are
@@ -82,19 +151,19 @@ int pngLoadImage(Image *image,
   }
 
   scanlineBytes = ROUND_TO_MULTIPLE(
-                                    bytesPerPixel * frameInfo->width,
+                                    bytesPerPixel * this->width,
                                     byteMultiple
                                     );
 
-  if (!mImage->allocate(frameInfo->height * scanlineBytes)) {
+  if (!mImage->allocate(this->height * scanlineBytes)) {
     ERROR("could not allocate %dx%dx%d image data",
-          frameInfo->width, frameInfo->height, bytesPerPixel);
+          this->width, this->height, bytesPerPixel);
     return 0;
   }
     
     
-  mImage->width = frameInfo->width;
-  mImage->height = frameInfo->height;
+  mImage->width = this->width;
+  mImage->height = this->height;
   mImage->imageFormat.bytesPerPixel = bytesPerPixel;
   mImage->imageFormat.scanlineByteMultiple = byteMultiple;
   mImage->imageFormat.byteOrder = byteOrder;
@@ -108,22 +177,22 @@ int pngLoadImage(Image *image,
  
   /* PNG requires an array of row pointers.  Allocate the array
    */
-  png_bytep *rowPointers = new png_bytep[frameInfo->height]; 
+  png_bytep *rowPointers = new png_bytep[this->height]; 
   if (rowPointers == NULL) {
     ERROR("could not allocate row pointers for frame");
     return 0;
   }
   bb_assert(scanlineBytes > 0);
-  for (i = 0; i < frameInfo->height; i++) {
+  for (uint32_t i = 0; i < this->height; i++) {
 	if (mImage->imageFormat.rowOrder == TOP_TO_BOTTOM) {
       rowPointers[i] = (png_bytep) mImage->Data() + i * scanlineBytes;
 	}
 	else {
-      rowPointers[frameInfo->height - i - 1] = (png_bytep) mImage->Data() + i * scanlineBytes;
+      rowPointers[this->height - i - 1] = (png_bytep) mImage->Data() + i * scanlineBytes;
 	}
   }
 
-  if (!PrepPng(frameInfo->filename.c_str(), &f, &readStruct, &infoStruct)) {
+  if (!PrepPng(this->filename.c_str(), &f, &readStruct, &infoStruct)) {
 	/* Error has already been reported */
 	delete rowPointers;
 	return 0;
@@ -201,69 +270,42 @@ int pngLoadImage(Image *image,
    */
   mImage->loadedRegion.x = 0;
   mImage->loadedRegion.y = 0;
-  mImage->loadedRegion.height = frameInfo->height;
-  mImage->loadedRegion.width = frameInfo->width;
+  mImage->loadedRegion.height = this->height;
+  mImage->loadedRegion.width = this->width;
 
   return 1;
 }
 
+// ======================================================================
 
-FrameListPtr pngGetFrameList(const char *filename)
-{
+PNGFrameInfo::PNGFrameInfo(string fname): FrameInfo(fname)  {
   FILE *f;
   png_structp readStruct;
   png_infop infoStruct;
-  png_uint_32 width, height;
-  int depth, colorType, interlaceType, compressionType, filterMethod;
-  FrameListPtr frameList; 
+  int pngdepth, colorType, interlaceType, compressionType, filterMethod;
+  png_uint_32 pngwidth, pngheight; 
+
+  /* The info is all read; this routine extracts the info
+   * from the structures that already store it.
+   */
 
   /* Start reading the file straight away */
   if (!PrepPng(filename, &f, &readStruct, &infoStruct)) {
     /* Error has already been reported */
-    return frameList;
+    return ;
   }
-    
-  /* Prepare the FrameList and FrameInfo structures we are to
-   * return to the user.  Since a PNG file stores a single 
-   * frame, we need only one frameInfo, and the frameList
-   * need be large enough only for 2 entries (the information
-   * about the single frame, and the terminating NULL).
-   */
-  FrameInfoPtr frameInfo(new FrameInfo()); 
-  if (!frameInfo) {
-    ERROR("cannot allocate FrameInfo structure");
-    png_destroy_read_struct(&readStruct, &infoStruct, NULL);
-    fclose(f);
-    return frameList;
-  }
-    
-  frameInfo->filename = filename;
-    
-  frameList.reset(new FrameList); 
-  if (!frameList) {
-    ERROR("cannot allocate FrameInfo list structure");
-    png_destroy_read_struct(&readStruct, &infoStruct, NULL);
-    fclose(f);
-    return frameList;
-  }
-    
-  /* The info is all read; this routine extracts the info
-   * from the structures that already store it.
-   */
+ 
   png_get_IHDR(readStruct, infoStruct, 
-               &width, &height, &depth, &colorType, 
+               &pngwidth, &pngheight, &pngdepth, &colorType, 
                &interlaceType, &compressionType, &filterMethod);
-    
+  
   /* Done with all the reading we're going to do.  Close up the
    * file and destroy the structures we allocated to help with
    * the reading.
    */
   png_destroy_read_struct(&readStruct, &infoStruct, NULL);
   fclose(f);
-    
-  /* Fill out the rest of the frameInfo information */
-  frameInfo->width = width;
-  frameInfo->height = height;
+  
   /* Bit depth is interesting - the information returned in
    * "depth" is the depth of *one* channel.  The returned color
    * type indicates which channels are present.  In all cases we
@@ -275,19 +317,49 @@ FrameListPtr pngGetFrameList(const char *filename)
   case PNG_COLOR_TYPE_GRAY_ALPHA:
   case PNG_COLOR_TYPE_RGB:
   case PNG_COLOR_TYPE_RGB_ALPHA:
-    frameInfo->depth = depth * 3; 
+    this->depth = pngdepth * 3; 
     break;
   case PNG_COLOR_TYPE_PALETTE:
-    frameInfo->depth = depth;
+    this->depth = pngdepth;
     break;
   default:
     WARNING("Unrecognized PNG color type %d ignored.", colorType);
-    frameList.reset(); 
+    return; 
   }
+  width = pngwidth; 
+  height = pngheight; 
+
+  png_destroy_read_struct(&readStruct, &infoStruct, NULL);
+  fclose(f);
+  mValid = true; 
+  return; 
+}
+
+FrameListPtr pngGetFrameList(const char *filename)
+{
+  FrameListPtr frameList; 
+
+   
+  /* Prepare the FrameList and FrameInfo structures we are to
+   * return to the user.  Since a PNG file stores a single 
+   * frame, we need only one frameInfo, and the frameList
+   * need be large enough only for 2 entries (the information
+   * about the single frame, and the terminating NULL).
+   */
+  FrameInfoPtr frameInfo(new PNGFrameInfo(filename)); 
+  if (!frameInfo || !frameInfo->mValid) {
+    ERROR("cannot allocate FrameInfo structure");
+    return frameList;
+  }
+    
+    
+  frameList.reset(new FrameList(frameInfo)); 
+  if (!frameList) {
+    ERROR("cannot allocate FrameInfo list structure");
+    return frameList;
+  }
+    
   if (frameList) {
-    frameInfo->mFrameNumberInFile = 0;
-    //frameInfo->enable = 1;
-    frameInfo->LoadImageFunPtr = pngLoadImage;
     
     /* Fill out the final return form, and call it a day */
     frameList->append(frameInfo);
@@ -297,81 +369,5 @@ FrameListPtr pngGetFrameList(const char *filename)
     frameList->formatDescription = "Single-frame image in a PNG file"; 
   }
   return frameList;
-}
-
-// ===============================================================
-int PrepPng(const char *filename, 
-            FILE **fPtr, png_structp *readStructPtr, png_infop *infoStructPtr)
-{
-#define SIGNATURE_SIZE 8
-  unsigned char signature[SIGNATURE_SIZE];
-  FILE *f;
-  png_structp readStruct;
-  png_infop infoStruct;
-  int rv;
-
-  /* Try to open the given file */
-  f = fopen(filename, "rb");
-  if (f == NULL) {
-	WARNING("cannot open file '%s'", filename);
-	return 0;
-  }
-
-  /* Make sure the file represents a real PNG image. */
-  fread(signature, 1, SIGNATURE_SIZE, f);
-  if (!png_check_sig(signature, SIGNATURE_SIZE)) {
-	DEBUGMSG("PNG signature check failed for filename %s", filename);
-	fclose(f);
-	return 0;
-  }
-    
-  readStruct = png_create_read_struct(PNG_LIBPNG_VER_STRING,
-                                      NULL, NULL, NULL);
-  if (readStruct == NULL) {
-	ERROR("cannot allocate PNG read structure");
-	fclose(f);
-	return 0;
-  }
-
-  /* And the PNG-defined info structure */
-  infoStruct = png_create_info_struct(readStruct);
-  if (infoStruct == NULL) {
-	ERROR("cannot allocate PNG info structure");
-	png_destroy_read_struct(&readStruct, &infoStruct, NULL);
-	fclose(f);
-	return 0;
-  }
-
-#ifdef PNG_SETJMP_SUPPORTED
-  /* The PNG library uses a setjmp-style of error reporting.
-   * When setjmp is called initially, it will return a value
-   * of 0.  If any error is discovered, the code will jump
-   * back to the setjmp position, but with a non-zero return
-   * value reported for setjmp.  If, then, we get a non-zero
-   * setjmp value, we have to clean up everything.
-   */
-  rv = setjmp(png_jmpbuf(readStruct));
-  if (rv != 0) {
-	ERROR("libpng error: setjmp returned %d", rv);
-	png_destroy_read_struct(&readStruct, &infoStruct, NULL);
-	fclose(f);
-	return 0;
-  }
-#endif
-
-  /* Set up to read from the file pointer, tell the PNG
-   * library that we've already read the signature, and
-   * read the rest of the provided info.
-   */
-  png_init_io(readStruct, f);
-  png_set_sig_bytes(readStruct, SIGNATURE_SIZE);
-  png_read_info(readStruct, infoStruct);
-
-  /* Return the pointers we've gathered so far. */
-  *fPtr = f;
-  *readStructPtr = readStruct;
-  *infoStructPtr = infoStruct;
-
-  return 1;
 }
 

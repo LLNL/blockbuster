@@ -382,10 +382,10 @@ int Slave::Loop(void)
               
               if (imageNum != lastImageRendered && lastImageRendered >= 0) {
                 if (mCanvas->frameList->stereo) {
-                  mCanvas->mRenderer->mCache->ReleaseFrame(lastImageRendered*2); 
-                  mCanvas->mRenderer->mCache->ReleaseFrame(lastImageRendered*2+1); 
+                  mCanvas->mRenderer->mCache->DecrementLockCount(lastImageRendered*2); 
+                  mCanvas->mRenderer->mCache->DecrementLockCount(lastImageRendered*2+1); 
                 } else {
-                  mCanvas->mRenderer->mCache->ReleaseFrame(lastImageRendered); 
+                  mCanvas->mRenderer->mCache->DecrementLockCount(lastImageRendered); 
                 }
               } 
               lastImageRendered = imageNum; 

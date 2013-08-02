@@ -5,18 +5,20 @@
 #include "xwindow.h"
 
 struct Canvas; 
+typedef boost::shared_ptr<struct Canvas> CanvasPtr; 
+
 /* Base class for all other renderers, defining the API required */ 
 // factory function
 // Renderers: x11Renderer(broken), glRenderer, glStereoRenderer, glTextureRenderer, dmxRenderer
 
 class Renderer: public XWindow {
  public:
-  static Renderer *CreateRenderer(ProgramOptions*, Canvas*, Window);
-  Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QString name);
+  static Renderer *CreateRenderer(ProgramOptions*, Canvas *, Window);
+  Renderer(ProgramOptions *opt, Canvas * canvas, Window parentWindow, QString name);
 
   virtual XVisualInfo *ChooseVisual(void) = 0;
-  void FinishInit(ProgramOptions *opt, Canvas *canvas, Window parentWindow);
-  virtual void FinishRendererInit(ProgramOptions *opt, Canvas *canvas, Window parentWindow) =0; 
+  void FinishInit(ProgramOptions *opt);
+  virtual void FinishRendererInit(ProgramOptions *opt) =0; 
   virtual ~Renderer() {
     DestroyImageCache(); 
     return; 
@@ -25,18 +27,17 @@ class Renderer: public XWindow {
   // the following depend on whether DMX is being used: 
   virtual void DestroyImageCache(void)
   {
-    if (mCache) delete mCache; 
-    mCache = NULL; 
+    mCache.reset(); 
     return; 
   }
 
-  virtual Image *GetImage(uint32_t frameNumber,
+  virtual ImagePtr GetImage(uint32_t frameNumber,
                   const Rectangle *newRegion, uint32_t levelOfDetail){
     return mCache->GetImage(frameNumber, newRegion, levelOfDetail); 
   }
 
-  virtual void ReleaseImage(Image *image) {
-    mCache->ReleaseImage(image); 
+  virtual void DecrementLockCount(ImagePtr image) {
+    mCache->DecrementLockCount(image); 
   }
   
   // The fundamental operation of the Renderer is to render.     
@@ -58,7 +59,7 @@ class Renderer: public XWindow {
  public:
   QString mName; 
   FrameListPtr mFrameList;
-  ImageCache *mCache; // if not using DMX
+  ImageCachePtr mCache; // if not using DMX
 
  protected:   
   // these are good to have around to reduce arguments: 

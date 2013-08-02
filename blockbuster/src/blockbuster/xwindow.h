@@ -46,7 +46,7 @@ struct XWindow {
   virtual XVisualInfo *ChooseVisual(void){
     return  pureC_x11ChooseVisual(display,  screenNumber);
   }
-  void FinishXWindowInit(ProgramOptions *opt, Canvas *canvas, Window parentWindow); 
+  void FinishXWindowInit(ProgramOptions *opt); 
 
   virtual void DrawString(int row, int column, const char *str)=0;  
   virtual void SwapBuffers(void)=0;
@@ -72,6 +72,7 @@ struct XWindow {
   int screenNumber;
   Window window;        /* the window we're really drawing into */
   int isSubWindow;          /* will be true if DMX slave */
+  Window parentWindow; 
   XFontStruct *fontInfo;
   int fontHeight;
   Colormap colormap;

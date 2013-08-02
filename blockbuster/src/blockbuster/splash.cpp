@@ -31,7 +31,7 @@
 
 extern unsigned char splashImageData[92700];  // defined at the bottom of this file
 
-static Image *splashScreen = NULL; 
+static ImagePtr splashScreen; 
 FrameListPtr splashScreenFrameListPtr; 
 static FrameInfoPtr frameInfoPtr; 
 char splash[] = "SPLASH"; 
@@ -64,18 +64,17 @@ splashFormat(3, /* bytesPerPixel */
 Rectangle splashRect(0, 0, 300, 103); /* x, y, width, height */
 
 
-static int LoadSplashScreen(Image *image, FrameInfo*,
-	ImageFormat *, const Rectangle *, int )
+int SplashFrameInfo::LoadImage(ImagePtr image,
+                               ImageFormat *, const Rectangle *, int )
 {
   *image = *splashScreen; 
   return 1;
 }
 
 
-
 void InitSplashScreen(void) {
   if (!splashScreen) {
-    splashScreen = new Image(); 
+    splashScreen.reset(new Image()); 
     splashScreen->width = 300; 
     splashScreen->height = 103; 
     splashScreen->imageFormat = splashFormat; 
@@ -84,11 +83,8 @@ void InitSplashScreen(void) {
   }
 
   if (frameInfoPtr) {
-    frameInfoPtr.reset(new FrameInfo(300, 103, 24, /* width, height, depth */
-                                     0, /* maxLOD */
-                                     splash, /* filename */
-                                     1, /* enable */
-                                     LoadSplashScreen /* loadImageFunc */)); 
+    frameInfoPtr.reset(new SplashFrameInfo()); 
+    frameInfoPtr->init("", 300, 103, 24,  0, 0); 
     splashScreenFrameListPtr.reset(new FrameList(frameInfoPtr)); 
   }
   

@@ -27,7 +27,7 @@
 #include "util.h"
 #include "errmsg.h"
 #include "frames.h"
-
+#include "sgi-rgbFrame.h"
 
 /*
  * The following code comes from old SGI demos
@@ -197,23 +197,10 @@ static void RawImageGetRow(rawImageRec *raw, unsigned char *buf, int y, int z)
 }
 
 
-static int
-SGILoadImage(Image *image, FrameInfo *frameInfo,
-             ImageFormat *format, const Rectangle */*desiredSubRegion*/,
-             int /*LOD*/)
-{
-  int rowWidth;
-
-  if (!image->allocate(frameInfo->height * rowWidth)) {
-    ERROR("could not allocate %dx%dx%d image data",
-          frameInfo->width, frameInfo->height, frameInfo->depth);
-    return 0;
-  }
-
-  image->width = frameInfo->width;
-  image->height = frameInfo->height;
-  image->levelOfDetail = 0;
-  image->imageFormat = *format;
+int SGIFrameInfo::LoadImage(ImagePtr image, 
+                            ImageFormat *format, 
+                            const Rectangle */*desiredSubRegion*/,
+                            int /*LOD*/) {
   
   if (image->imageFormat.rowOrder == ROW_ORDER_DONT_CARE)
     image->imageFormat.rowOrder = BOTTOM_TO_TOP; /* Bias for OpenGL */
@@ -226,11 +213,19 @@ SGILoadImage(Image *image, FrameInfo *frameInfo,
   if (image->imageFormat.scanlineByteMultiple == 0)
     image->imageFormat.scanlineByteMultiple = 1;
   
-  rowWidth = ROUND_TO_MULTIPLE(
-                               image->width * image->imageFormat.bytesPerPixel,
+  this->width = ROUND_TO_MULTIPLE(image->width * image->imageFormat.bytesPerPixel,
                                image->imageFormat.scanlineByteMultiple);
   
-
+  if (!image->allocate(this->height * this->width)) {
+    ERROR("could not allocate %dx%dx%d image data",
+          this->width, this->height, this->depth);
+    return 0;
+  }
+  
+  image->width = this->width;
+  image->height = this->height;
+  image->levelOfDetail = 0;
+  image->imageFormat = *format;
   
   /* OK, now really load the image */
   {
@@ -239,7 +234,7 @@ SGILoadImage(Image *image, FrameInfo *frameInfo,
 	int i, j, rowStride;
 	int rIndex, gIndex, bIndex;
 
-	rec = RawImageOpen(frameInfo->filename.c_str());
+	rec = RawImageOpen(this->filename.c_str());
 	if (!rec)
       return 0;
 
@@ -261,12 +256,12 @@ SGILoadImage(Image *image, FrameInfo *frameInfo,
 
 	if (image->imageFormat.rowOrder == TOP_TO_BOTTOM) {
       rowStart = (char *) image->Data()
-		+ (image->height - 1) * rowWidth;
-      rowStride = -rowWidth;
+		+ (image->height - 1) * this->width;
+      rowStride = -this->width ;
 	}
 	else {
       rowStart = (char *) image->Data();
-      rowStride = rowWidth;
+      rowStride = this->width;
 	}
 
 	for (i = 0; i < (int) rec->sizeY; i++) {
@@ -294,23 +289,31 @@ SGILoadImage(Image *image, FrameInfo *frameInfo,
 
   image->loadedRegion.x = 0;
   image->loadedRegion.y = 0;
-  image->loadedRegion.height = frameInfo->height;
-  image->loadedRegion.width = frameInfo->width;
+  image->loadedRegion.height = this->height;
+  image->loadedRegion.width = this->width;
 
   return 1;
 }
 
+SGIFrameInfo::SGIFrameInfo(string fname): FrameInfo(fname) {
+  rawImageRec *rec = RawImageOpen(filename.c_str());
+  if (!rec) {
+	DEBUGMSG("The file '%s' is not an SGI RGB file.", filename.c_str());
+	return ;
+  }
+  /* Fill out the rest of the frameInfo information */
+  width = rec->sizeX;
+  height = rec->sizeY;
+  depth = rec->sizeZ * 8;
+  mFrameNumberInFile = 0;
+  filename = filename;
+  RawImageClose(rec);
+  return; 
+}
 
 
 FrameListPtr sgirgbGetFrameList(const char *filename)
 {
-  FrameListPtr frameList;
-
-  rawImageRec *rec = RawImageOpen(filename);
-  if (!rec) {
-	DEBUGMSG("The file '%s' is not an SGI RGB file.", filename);
-	return frameList;
-  }
 
   /* Prepare the FrameList and FrameInfo structures we are to
    * return to the user.  Since an RGB file stores a single 
@@ -318,34 +321,23 @@ FrameListPtr sgirgbGetFrameList(const char *filename)
    * need be large enough only for 2 entries (the information
    * about the single frame, and the terminating NULL).
    */
-  FrameInfoPtr frameInfo(new FrameInfo()); 
-  if (!frameInfo) {
+  FrameInfoPtr frameInfo(new SGIFrameInfo(filename)); 
+  if (!frameInfo || !frameInfo->mValid) {
 	ERROR("cannot allocate FrameInfo structure");
-	return frameList;
+	return FrameListPtr();
   }
 
-  frameInfo->filename = filename;
 
-  frameList.reset(new FrameList); 
+  FrameListPtr frameList(new FrameList(frameInfo)); 
   if (!frameList) {
 	ERROR("cannot allocate FrameInfo list structure");
 	return frameList;
   }
 
-  /* Fill out the rest of the frameInfo information */
-  frameInfo->width = rec->sizeX;
-  frameInfo->height = rec->sizeY;
-  frameInfo->depth = rec->sizeZ * 8;
-  frameInfo->mFrameNumberInFile = 0;
-  //frameInfo->enable = 1;
-  frameInfo->LoadImageFunPtr = SGILoadImage;
 
   /* Fill out the final return form, and call it a day */
   frameList->append(frameInfo);
   frameList->targetFPS = 0.0;
-
-  RawImageClose(rec);
-
   frameList->formatName = "SGI RGB";
   frameList->formatDescription = "Single-frame image in an SGI RGB file";
   return frameList;

@@ -68,6 +68,10 @@ struct ImageFormat{
 
 
 // ============================================================
+
+typedef boost::shared_ptr<struct Image> ImagePtr; 
+
+// ------------------------------------------------
 struct Image {
   Image(): width(0), height(0), levelOfDetail(0), 
            frameNumber(0), mTypeName("UNKNOWN"), imageData(NULL) {
@@ -78,13 +82,6 @@ struct Image {
     return; 
   }
   
-  // this will be the Image API
-  virtual int LoadImage(FrameInfoPtr /*frameInfo*/,
-                ImageFormat */*requiredImageFormat*/, 
-                const Rectangle */*region*/,
-                int /*levelOfDetail */ ) {
-    return 0; 
-  }
   
   bool allocate(uint32_t bytes) {
     if (bytes > imageData.size()) {
@@ -115,44 +112,30 @@ struct Image {
   vector<char> imageData; /* the actual image data to display */
 } ;
 
-//============================================================
-/* A typedef here makes things simpler for frame list routines
- * that can return different image load functions.
- */
-
-typedef int (*LoadImageFunc)
-  ( Image *image,
-    FrameInfo*frameInfo,
-    ImageFormat *requiredImageFormat, 
-    const Rectangle *region,
-    int levelOfDetail
-    );
-
-
 
 //============================================================
 /* Information about one frame of the movie. */ 
 struct FrameInfo {
-  FrameInfo(): width(0), height(0), depth(0), maxLOD(0), 
-               mFrameNumberInFile(0) /*,  enable(0) */{
+
+  FrameInfo(string fname="", uint32_t w=0, uint32_t h=0, uint32_t d=0, uint32_t maxlod=0, uint32_t frameInFile=0) {
+    init(fname,w,h,d,maxlod,frameInFile); 
     return; 
   }
   
-  
-  // NEW VERSION 
-  FrameInfo(int w, int h, int d, int maxlod, string fname, uint32_t frame):
-    width(w), height(h), depth(d), maxLOD(maxlod), filename(fname), 
-    mFrameNumberInFile(frame)/*, enable(en)*/ {
+
+  void init(string fname, uint32_t w, uint32_t h,    
+            uint32_t  d,  uint32_t maxlod, uint32_t frameinfile) {
+    width = w; 
+    height = h; 
+    depth = d; 
+    maxLOD = maxlod; 
+    mFrameNumberInFile = frameinfile; // always known at construction
+    mFrameNumber = 0; // usually not known at construction time
+    filename = fname; 
+    mValid = false; 
     return; 
   }
-  
-  FrameInfo(int w, int h, int d, int lod, string fname, 
-            int /*en*/,  LoadImageFunc lif):
-    width(w), height(h), depth(d), maxLOD(lod), filename(fname), 
-    mFrameNumberInFile(0)/*, enable(en)*/,  LoadImageFunPtr(lif) {
-    return; 
-  }
-  
+
   virtual ~FrameInfo() {
     return; 
   }
@@ -161,56 +144,37 @@ struct FrameInfo {
     return QString("{ FrameInfo: frameNumber = %1 in file %2}").arg(mFrameNumberInFile).arg(filename.c_str()); 
   }
 
-  virtual int LoadImage(ImageFormat */*requiredImageFormat*/, 
+  virtual int LoadImage(ImagePtr, ImageFormat */*requiredImageFormat*/, 
                         const Rectangle */*region*/,
-                        int /*levelOfDetail*/) {
-    cerr << "This needs to be made virtual" << endl; 
-    return 0;
-  }
+                        int /*levelOfDetail*/) = 0;
 
   
-  Image *LoadAndConvertImage(unsigned int frameNumber,
+  ImagePtr LoadAndConvertImage(unsigned int frameNumber,
                              ImageFormat *canvasFormat, 
                              const Rectangle *region, int levelOfDetail);
   
   /* Basic statistics */
-  int width, height, depth;
+  uint32_t width, height, depth;
   
-  int maxLOD; /* 0 if LOD not supported */
-  
-  /* Associated file */
-  string filename;
+  uint32_t maxLOD; /* 0 if LOD not supported */
   
   /* If there is more than one frame in a single file, the format
    * driver can use this integer to distinguish them.
    */
-  int mFrameNumberInFile;
+  uint32_t mFrameNumberInFile; 
+
+  // global frame number
+  uint32_t mFrameNumber;
+
+  /* Associated file */
+  string filename;
+  
 
   /* Pointer to frame data that's specific to the canvas */
   TextureObjectPtr mTextureObject;
   
-  /* A flag that we can use to disable frames that have errors */
-  // int enable;
-  
-  Image *mImage; 
+  bool mValid; 
 
-  /* This routine is called to pull the frame contents out
-   * of a file.  The file format module can pull out only the
-   * desired subimage, or it might pull out the whole thing;
-   * if it can switch to the desired format, it should, but
-   * it can return any format it wishes (or can).
-   * 
-   * The returned image must be released with delete
-   *
-  */
-  /* int LoadImage(Image *image,
-		struct FrameInfoPtr frameInfo,
-		struct Canvas *canvas,
-		const Rectangle *region,
-		int levelOfDetail
-		);
-  */
-  LoadImageFunc LoadImageFunPtr;
   
 } ;
 
@@ -264,6 +228,11 @@ struct FrameList {
   }
 
   // ----------------------------------------------------
+  FrameInfoPtr getFrame(uint32_t num) {
+    return frames[num]; 
+  }
+
+  // ----------------------------------------------------
   uint32_t numStereoFrames(void) const {
     if (stereo) return frames.size()/2; 
     return frames.size(); 
@@ -272,13 +241,6 @@ struct FrameList {
   // ----------------------------------------------------
   uint32_t numActualFrames(void) const { return frames.size(); }
 
-  // ----------------------------------------------------
-  FrameInfoPtr getFrame(uint32_t num) const {
-     if (num < frames.size()){
-      return frames[num];
-    }
-    return FrameInfoPtr(); 
-  }
   // ----------------------------------------------------
   void GetInfo(int &maxWidth, int &maxHeight, int &maxDepth,
 		    int &maxLOD, float &fps);

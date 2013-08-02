@@ -77,7 +77,7 @@ Canvas::~Canvas()
 
 void Canvas::WriteImageToFile(int frameNumber)
 {
-  Image *image;
+  ImagePtr image;
   Rectangle region;
   FILE *f;
   register uint32_t i;
@@ -114,7 +114,7 @@ void Canvas::WriteImageToFile(int frameNumber)
 
   image = mRenderer->GetImage(localFrameNumber, &region, 0);
 
-  if (image == NULL) {
+  if (!image) {
 	WARNING("Cannot write image to file - image is NULL");
 	return;
   }
@@ -123,7 +123,7 @@ void Canvas::WriteImageToFile(int frameNumber)
   f = fopen("tmp.c", "w");
   if (f == NULL) {
 	WARNING("Cannot write image to file - cannot open tmp.c");
-	mRenderer->ReleaseImage( image);
+	mRenderer->DecrementLockCount( image);
 	return;
   }
 
@@ -182,7 +182,7 @@ void Canvas::WriteImageToFile(int frameNumber)
   fprintf(f, "    (void *)imageData,\n");
   fprintf(f, "};\n");
   fclose(f);
-  mRenderer->ReleaseImage( image);
+  mRenderer->DecrementLockCount(image);
   INFO("Saved image in tmp.c");
 }
 

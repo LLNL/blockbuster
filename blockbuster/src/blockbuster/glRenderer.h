@@ -6,12 +6,13 @@
 #include <GL/glx.h>
 
 
+
 /* Base GL rendering class for all other GL renderers */ 
 class glRenderer: public Renderer {
  public:
-  glRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QString name="gl");
+  glRenderer(ProgramOptions *opt, Canvas* canvas, Window parentWindow, QString name="gl");
 
-  virtual void FinishRendererInit(ProgramOptions *opt, Canvas *canvas, Window parentWindow);
+  virtual void FinishRendererInit(ProgramOptions *opt);
   virtual ~glRenderer() ;
 
   virtual XVisualInfo *ChooseVisual(void);  
@@ -32,7 +33,7 @@ class glRenderer: public Renderer {
 
 class glStereoRenderer: public glRenderer {
  public:
-  glStereoRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow):
+  glStereoRenderer(ProgramOptions *opt, Canvas * canvas, Window parentWindow):
     glRenderer(opt, canvas, parentWindow, "gl_stereo") {
     return; 
   }

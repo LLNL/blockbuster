@@ -45,6 +45,7 @@
 XWindow::XWindow(ProgramOptions *options, Canvas *theCanvas, Window parentWin):
   mOptions(options), mCanvas(theCanvas), display(NULL), 
   visInfo(NULL), screenNumber(0), window(0), isSubWindow(0), 
+  parentWindow(parentWin),
   fontInfo(NULL), fontHeight(0),  mShowCursor(true), 
   mOldWidth(-1), mOldHeight(-1), mOldX(-1), mOldY(-1), mXSync(false) {
   ECHO_FUNCTION(5);
@@ -74,7 +75,7 @@ XWindow::XWindow(ProgramOptions *options, Canvas *theCanvas, Window parentWin):
 }
   
   
-void XWindow::FinishXWindowInit(ProgramOptions *options, Canvas *, Window parentWin) {
+void XWindow::FinishXWindowInit(ProgramOptions *options) {
   ECHO_FUNCTION(5); 
   const Rectangle *geometry = &options->geometry;
   int decorations = options->decorations;
@@ -170,19 +171,14 @@ void XWindow::FinishXWindowInit(ProgramOptions *options, Canvas *, Window parent
   windowAttrs.border_pixel = 0x0;
   windowAttrs.colormap = colormap;
   windowAttrs.event_mask = StructureNotifyMask | ExposureMask;
-  if (parentWin) {
-    /* propogate mouse/keyboard events to parent */
-  }
-  else {
+  
+  if (!parentWindow) {
     windowAttrs.event_mask |= (KeyPressMask | ButtonPressMask |
                                ButtonReleaseMask | ButtonMotionMask);
+    parentWindow = RootWindow(display, screenNumber);
   }
-  
-  if (!parentWin)
-    parentWin = RootWindow(display, screenNumber);
-  
   printf ("XCreateWindow: X,Y = %d, %d\n", x, y); 
-  window = XCreateWindow(display, parentWin,
+  window = XCreateWindow(display, parentWindow,
                          x, y, width, height,
                          winBorder, visInfo->depth, InputOutput,
                          visInfo->visual, windowAttrsMask, &windowAttrs);
@@ -250,7 +246,7 @@ void XWindow::FinishXWindowInit(ProgramOptions *options, Canvas *, Window parent
                          &x, &y, &junkwin); */
 
   printf("New X,Y, border width is %d, %d, %d\n", x,y, win_attributes.border_width); 
-  XGetWindowAttributes(display, parentWin, &win_attributes); 
+  XGetWindowAttributes(display, parentWindow, &win_attributes); 
   printf("ParentWindow: X,Y =  %d, %d\n", win_attributes.x, win_attributes.y);
   //SetCanvasAttributes(window); 
   mCanvas->width = width;

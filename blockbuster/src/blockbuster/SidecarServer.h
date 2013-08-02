@@ -14,7 +14,10 @@
 #include "errmsg.h"
 #include "settings.h"
 
+#include "boost/shared_ptr.hpp"
 class Canvas; 
+typedef boost::shared_ptr<struct Canvas> CanvasPtr; 
+
 extern class SidecarServer *gSidecarServer;
 
 struct EventQueue {
@@ -31,7 +34,7 @@ class SidecarServer : public QObject {
   Q_OBJECT
     public:
   SidecarServer(QObject *parent = 0): 
-    QObject(parent), mCanvas(NULL), mSidecarSocket(NULL) {
+    QObject(parent), mSidecarSocket(NULL) {
     dbprintf(5, "SidecarServer\n"); 
     //mTcpServer.listen(QHostAddress::Any, 5959); 
     mTcpServer.listen(); 
@@ -57,7 +60,7 @@ class SidecarServer : public QObject {
     }
   }
 
-  void SetCanvas(Canvas *c){mCanvas = c; }
+  void SetCanvas(Canvas * c){mCanvas = c; }
 
   EventQueue mPendingEvents; 
 
@@ -70,7 +73,7 @@ class SidecarServer : public QObject {
   void sidecarDisconnected();
  protected: 
   QTcpServer mTcpServer;
-  Canvas *mCanvas; 
+  Canvas * mCanvas; 
   static bool mPromptForConnections; 
   QTcpSocket *mSidecarSocket;
   uint32_t mLastReceivedCommandID, mLastSentCommandID; 
