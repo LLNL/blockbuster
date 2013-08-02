@@ -11,8 +11,9 @@
 //======================================================================
 class x11Renderer: public Renderer {
  public:
-  x11Renderer(ProgramOptions *opt, Canvas * canvas, Window parentWindow);
-  virtual void FinishRendererInit(ProgramOptions *opt, Canvas *canvas, Window parentWindow);
+  x11Renderer(ProgramOptions *opt, Window parentWindow, 
+              BlockbusterInterface *gui, QString name="x11");
+  virtual void FinishRendererInit(ProgramOptions *opt);
 
   virtual ~x11Renderer() ;
   
@@ -20,24 +21,21 @@ class x11Renderer: public Renderer {
   virtual XVisualInfo *ChooseVisual(void) {
     return NULL; // does not apply to X11
   }
-  virtual void FinishRendererInit(ProgramOptions *opt) {
-    return; 
-  }
-
-  void Render(int frameNumber,
+ 
+  virtual void Render(int frameNumber,
               const Rectangle *imageRegion,
               int destX, int destY, float zoom, int lod);
-  void DrawString(int row, int column, const char *str);
+  virtual void DrawString(int row, int column, const char *str);
   virtual void SwapBuffers(void);
  
   // from X11RendererGlue
-  Drawable drawable;
-  int doubleBuffered;
+  Drawable mDrawable;
+  int mDoubleBuffered;
   // was global: 
   XdbeSwapAction mSwapAction;
   // from WindowInfo struct in xwindow.cpp
-  GC gc;
-  XdbeBackBuffer backBuffer;
+  GC mGC;
+  XdbeBackBuffer mBackBuffer;
 
 } ;
 

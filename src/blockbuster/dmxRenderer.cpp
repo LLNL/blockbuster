@@ -24,17 +24,18 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/tcp.h>
-#include "xwindow.h"
-#include "canvas.h"
 #include "SidecarServer.h"
 
 //  =============================================================
 //  dmxRenderer -- launch and connect remote slaves at startup, manage them
 //  =============================================================
-dmxRenderer::dmxRenderer(ProgramOptions *opt, Canvas * canvas, Window parentWindow, QObject* parent):
-  QObject(parent), Renderer(opt, canvas, parentWindow, "dmx"), mAllowIdleSlaves(true), 
+dmxRenderer::dmxRenderer(ProgramOptions *opt, Window parentWindow, 
+                         BlockbusterInterface *gui, QString name):
+  QObject(NULL), 
+  Renderer(opt, parentWindow, gui, name),
+  mAllowIdleSlaves(true), 
   mNumActiveSlaves(0), mSlavesReady(false),
-  haveDMX(0),  dmxWindowInfos(NULL) {
+  mHaveDMX(0) {
 
   return; 
 } 
@@ -59,7 +60,7 @@ void dmxRenderer::FinishRendererInit(ProgramOptions *) {
   
   
   /* Get DMX info */
-  if (IsDMXDisplay(display)) {
+  if (IsDMXDisplay(mDisplay)) {
     /* This will reset many of the values in gRenderer */
     GetBackendInfo();
   }
@@ -68,16 +69,16 @@ void dmxRenderer::FinishRendererInit(ProgramOptions *) {
     FakeBackendInfo();
 #else
     ERROR("'%s' is not a DMX display, exiting.",
-          DisplayString(display));
+          DisplayString(mDisplay));
     exit(1);
 #endif
   }
-  for (i = 0; i < dmxScreenInfos.size(); i++) {
-    QHostInfo info = QHostInfo::fromName(QString(dmxScreenInfos[i].displayName).split(":")[0]);
+  for (i = 0; i < mDmxScreenInfos.size(); i++) {
+    QHostInfo info = QHostInfo::fromName(QString(mDmxScreenInfos[i].displayName).split(":")[0]);
     QHostAddress address = info.addresses().first();
-    DEBUGMSG(QString("initializeing display name from %1 to %2 with result %3").arg(dmxScreenInfos[i].displayName).arg(info.hostName()).arg(address.toString())); 
-    dmxHostAddresses.push_back(address); 
-    DEBUGMSG(QString("put on stack as %1").arg(dmxHostAddresses[i].toString())); 
+    DEBUGMSG(QString("initializeing display name from %1 to %2 with result %3").arg(mDmxScreenInfos[i].displayName).arg(info.hostName()).arg(address.toString())); 
+    mDmxHostAddresses.push_back(address); 
+    DEBUGMSG(QString("put on stack as %1").arg(mDmxHostAddresses[i].toString())); 
   }
   /* Get a socket connection for each back-end instance of the player.
      For each dmxScreenInfo, launch one slave and create one QHostInfo from the name.
@@ -87,11 +88,11 @@ void dmxRenderer::FinishRendererInit(ProgramOptions *) {
   */ 
   DEBUGMSG("Launching slaves..."); 
   
-  setNumDMXDisplays(dmxScreenInfos.size());
-  for (i = 0; i < dmxScreenInfos.size(); i++) {
+  setNumDMXDisplays(mDmxScreenInfos.size());
+  for (i = 0; i < mDmxScreenInfos.size(); i++) {
     
     if (i==0 || mOptions->slaveLaunchMethod != "mpi") {
-      QString host(dmxScreenInfos[i].displayName);
+      QString host(mDmxScreenInfos[i].displayName);
       /* remove :x.y suffix */
       if (host.contains(":")) {
         host.remove(host.indexOf(":"), 100); 
@@ -117,7 +118,7 @@ void dmxRenderer::FinishRendererInit(ProgramOptions *) {
     exit(10); 
   }
   
-  UpdateBackendCanvases();
+  UpdateBackendRenderers();
   
 }
 
@@ -128,23 +129,64 @@ dmxRenderer::~dmxRenderer() {
   return;
 }
 
+//============================================
+void dmxRenderer::DMXSendHeartbeat(void) { 
+  ECHO_FUNCTION(5);
+  uint16_t i; 
+  if (!mNumValidWindowInfos) return; 
+  for (i = 0; i < mActiveSlaves.size(); i++) {
+    DMXSlave *theSlave = mActiveSlaves[i]; 
+    if (!theSlave) {
+      throw string("Tried to send heartbeat to nonexistent slave");
+    }
+    theSlave->SendMessage("Heartbeat"); 
+  }
+  return; 
+}
+
+//============================================================
+void dmxRenderer::DMXSpeedTest(void) {
+  uint16_t i; 
+  DEBUGMSG("dmx_SpeedTest() called with %d slaves", mActiveSlaves.size()); 
+  if (!mNumValidWindowInfos) return; 
+  for (i = 0; i < mActiveSlaves.size(); i++) {
+    DMXSlave *theSlave = mActiveSlaves[i]; 
+    if (!theSlave) {
+      throw string("Tried to send Play message to nonexistent slave");
+    }
+    theSlave->SendMessage("SpeedTest"); 
+  }
+  return; 
+}
+
+
+//====================================================================
+/*!
+  Check all slaves for incoming network messages.  This is intended to be called from the main event loop regularly
+*/ 
+void dmxRenderer::DMXCheckNetwork(void) {
+  if (!mNumValidWindowInfos) return; 
+  int slavenum=0, numslaves = mActiveSlaves.size(); 
+  if (!numslaves || !mActiveSlaves[0]) return; 
+  while (slavenum < numslaves) {
+	mActiveSlaves[slavenum++]->QueueNetworkEvents(); 
+  }
+  return; 
+}
+
+
 //===================================================================
 void dmxRenderer::ShutDownSlaves(void) {
   ECHO_FUNCTION(5);
-  if (!numValidWindowInfos) {
+  if (!mNumValidWindowInfos) {
     return; 
   }
-  if (mCanvas != NULL) {    
-    int i;
-    for (i = 0; i < numValidWindowInfos; i++) {
-      /* why send this message?  It does nothing in the slave! */ 
-      mActiveSlaves[dmxWindowInfos[i].screen]->
-        SendMessage( QString("Destroy Canvas"));
-    }
-    /*    if (dmxWindowInfos)
-          delete [] dmxWindowInfos;*/
-  } 
-
+  for (int i = 0; i < mNumValidWindowInfos; i++) {
+    /* why send this message?  It does nothing in the slave! */ 
+    mActiveSlaves[mDmxWindowInfos[i].screen]->
+      SendMessage( QString("DestroyRenderer"));
+  }
+ 
   int     slavenum = mActiveSlaves.size();
   
   while (slavenum--) {
@@ -173,54 +215,54 @@ void dmxRenderer::Resize(int newWidth, int newHeight, int cameFromX) {
   ECHO_FUNCTION(5);
 
   // don't forget to update the main window for Movie Cue events:
-  XWindow::Resize(newWidth, newHeight, cameFromX); 
+  Resize(newWidth, newHeight, cameFromX); 
   /* I think these are redundant, as ResizeXWindow sets them
      canvas->width = newWidth;
      canvas->height = newHeight;
   */ 
-  if (haveDMX) {
+  if (mHaveDMX) {
     GetBackendInfo();
   }
   
-  UpdateBackendCanvases();
+  UpdateBackendRenderers();
 }
 
 
 //===================================================================
 void dmxRenderer::Move(int newX, int newY, int cameFromX)
 {
-   
+  
+  Renderer::Move(newX, newY, cameFromX); 
+  if (mHaveDMX) {
+    GetBackendInfo();
+  }
   ECHO_FUNCTION(5);
   /* Since we can use sidecar to move a window, we need to 
      tell the backend servers to move the windows appropriately
   */ 
-  XWindow::Move(newX, newY, cameFromX); 
-  if (haveDMX) {
-    GetBackendInfo();
-  }
   
-  UpdateBackendCanvases();
+  UpdateBackendRenderers();
   
 } 
 
 //=====================================================================
 void  dmxRenderer::DrawString(int row, int column, const char *str) {
   ECHO_FUNCTION(5);
-  if (!numValidWindowInfos) return; 
+  if (!mNumValidWindowInfos) return; 
   
-  int x = (column + 1) * fontHeight;
-  int y = (row + 1) * fontHeight;
+  int x = (column + 1) * mFontHeight;
+  int y = (row + 1) * mFontHeight;
   int i;
   
   /* Send DrawString to back-end renderers, with appropriate offsets */
-  for (i = 0; i < numValidWindowInfos; i++) {
-    if (dmxWindowInfos[i].window) {
-      const int scrn = dmxWindowInfos[i].screen;
+  for (i = 0; i < mNumValidWindowInfos; i++) {
+    if (mDmxWindowInfos[i].window) {
+      const int scrn = mDmxWindowInfos[i].screen;
       
-      int tx = x - dmxWindowInfos[i].vis.x;
-      int ty = y - dmxWindowInfos[i].vis.y;
-      int tcol = tx / fontHeight - 1;
-      int trow = ty / fontHeight - 1;
+      int tx = x - mDmxWindowInfos[i].vis.x;
+      int ty = y - mDmxWindowInfos[i].vis.y;
+      int tcol = tx / mFontHeight - 1;
+      int trow = ty / mFontHeight - 1;
       
       mActiveSlaves[scrn]->
         SendMessage(QString("DrawString %1 %2")
@@ -247,7 +289,7 @@ void dmxRenderer::Render(int frameNumber,const Rectangle *imageRegion,
 {
   
   ECHO_FUNCTION(5);
-  if (!numValidWindowInfos) return; 
+  if (!mNumValidWindowInfos) return; 
   
   int i;
      
@@ -263,33 +305,33 @@ void dmxRenderer::Render(int frameNumber,const Rectangle *imageRegion,
    * the image to display in each tile, and the clipped image's position.
    * This is a bit tricky.
    */
-  for (i = 0; i < numValidWindowInfos; i++) {
-    const int scrn = dmxWindowInfos[i].screen;
+  for (i = 0; i < mNumValidWindowInfos; i++) {
+    const int scrn = mDmxWindowInfos[i].screen;
 #if 0
     if (handle[scrn]) {
       printf("  offset %d, %d\n",
-             dmxScreenInfos[scrn].xoffset,
-             dmxScreenInfos[scrn].yoffset);
+             mDmxScreenInfos[scrn].xoffset,
+             mDmxScreenInfos[scrn].yoffset);
       printf("  origin %d, %d\n",
-             dmxScreenInfos[scrn].xorigin,
-             dmxScreenInfos[scrn].yorigin);
+             mDmxScreenInfos[scrn].xorigin,
+             mDmxScreenInfos[scrn].yorigin);
       
       printf("Window %d:\n", i);
-      printf("  screen: %d\n", dmxWindowInfos[i].screen);
+      printf("  screen: %d\n", mDmxWindowInfos[i].screen);
       printf("  pos: %d, %d  %d x %d\n",
-             dmxWindowInfos[i].pos.x,
-             dmxWindowInfos[i].pos.y,
-             dmxWindowInfos[i].pos.width,
-             dmxWindowInfos[i].pos.height);
+             mDmxWindowInfos[i].pos.x,
+             mDmxWindowInfos[i].pos.y,
+             mDmxWindowInfos[i].pos.width,
+             mDmxWindowInfos[i].pos.height);
       printf("  vis: %d, %d  %d x %d\n",
-             dmxWindowInfos[i].vis.x,
-             dmxWindowInfos[i].vis.y,
-             dmxWindowInfos[i].vis.width,
-             dmxWindowInfos[i].vis.height);
+             mDmxWindowInfos[i].vis.x,
+             mDmxWindowInfos[i].vis.y,
+             mDmxWindowInfos[i].vis.width,
+             mDmxWindowInfos[i].vis.height);
     }
 #endif
-    if (dmxWindowInfos[i].window) {
-      const XRectangle *vis = &dmxWindowInfos[i].vis;
+    if (mDmxWindowInfos[i].window) {
+      const XRectangle *vis = &mDmxWindowInfos[i].vis;
       Rectangle newRegion;
       int newDestX, newDestY;
       
@@ -314,10 +356,10 @@ void dmxRenderer::Render(int frameNumber,const Rectangle *imageRegion,
 void dmxRenderer::SwapBuffers(void){
   ECHO_FUNCTION(5);
   static int32_t swapID = 0; 
-  if (!numValidWindowInfos) return; 
+  if (!mNumValidWindowInfos) return; 
   
   /* Only check the first slave and the hell with the rest , to ensure we stay roughly in sync */ 
-  int numslaves = numValidWindowInfos;
+  int numslaves = mNumValidWindowInfos;
   vector<bool> incomplete; 
   incomplete.assign(numslaves, true); 
   int numcomplete = 0; 
@@ -330,7 +372,7 @@ void dmxRenderer::SwapBuffers(void){
     while (slavenum--) {
       DMXSlave *theSlave = 
         
-        mActiveSlaves[dmxWindowInfos[slavenum].screen];
+        mActiveSlaves[mDmxWindowInfos[slavenum].screen];
       if (incomplete[slavenum]) {
         incomplete[slavenum] = !theSlave->CheckSwapComplete(swapID-1); 
         if (!incomplete[slavenum]) {
@@ -358,7 +400,7 @@ void dmxRenderer::SwapBuffers(void){
   uint16_t slaveNum = 0; 
   for (slaveNum=0; slaveNum< mActiveSlaves.size(); slaveNum++ ) {
     /* Not all slaves have valid buffers to swap, but they will figure this out, and if MPI is involved, it's important they all get to call MPI_Barrer(), so send swapbuffers to everybody */    
-	mActiveSlaves[slaveNum]->SwapBuffers(swapID, mCanvas->playDirection, mCanvas->preloadFrames, mCanvas->startFrame, mCanvas->endFrame);
+	mActiveSlaves[slaveNum]->SwapBuffers(swapID, mPlayDirection, mPreloadFrames, mStartFrame, mEndFrame);
   }
   swapID ++; 
   return; 
@@ -372,7 +414,7 @@ void dmxRenderer::SetFrameList(FrameListPtr frameList) {
   uint32_t i; 
   QString previousName; 
   
-  mCanvas->frameList = frameList;
+  frameList = frameList;
   
   /* concatenate filenames.  We want to send only unique filenames 
    * back down to the slaves (or they'd try to load lots of files);
@@ -389,18 +431,18 @@ void dmxRenderer::SetFrameList(FrameListPtr frameList) {
    * require a lot more complexity and no more utility, since there's
    * no way the main program can take advange of such a feature now.
    */
-  files.clear(); 
+  mFiles.clear(); 
   for (framenum = 0; framenum < frameList->numActualFrames(); framenum++) {
     if (previousName != frameList->getFrame(framenum)->filename.c_str()) {
-      files.push_back(frameList->getFrame(framenum)->filename); 
+      mFiles.push_back(frameList->getFrame(framenum)->filename); 
       previousName = frameList->getFrame(framenum)->filename.c_str();        
     }
   }
   
   /* Tell back-end instances to load the files */
-  for (i = 0; i < dmxScreenInfos.size(); i++) {
-    if (dmxWindowInfos[i].window) {
-      mActiveSlaves[dmxWindowInfos[i].screen]-> SendFrameList(files);
+  for (i = 0; i < mDmxScreenInfos.size(); i++) {
+    if (mDmxWindowInfos[i].window) {
+      mActiveSlaves[mDmxWindowInfos[i].screen]-> SendFrameList(mFiles);
     }
   }
   return; 
@@ -411,51 +453,6 @@ void dmxRenderer::Preload(uint32_t ,
   return; 
 }
 
-
-//====================================================================
-/*!
-  Check all slaves for incoming network messages.  This is intended to be called from the main event loop regularly
-*/ 
-void dmxRenderer::CheckNetwork(void) {
-  if (!numValidWindowInfos) return; 
-  int slavenum=0, numslaves = mActiveSlaves.size(); 
-  if (!numslaves || !mActiveSlaves[0]) return; 
-  while (slavenum < numslaves) {
-	mActiveSlaves[slavenum++]->QueueNetworkEvents(); 
-  }
-  return; 
-}
-
-//============================================================
-void dmxRenderer::SpeedTest(void) {
-  uint16_t i; 
-  DEBUGMSG("dmx_SpeedTest() called with %d slaves", mActiveSlaves.size()); 
-  if (!numValidWindowInfos) return; 
-  for (i = 0; i < mActiveSlaves.size(); i++) {
-    DMXSlave *theSlave = mActiveSlaves[i]; 
-    if (!theSlave) {
-      throw string("Tried to send Play message to nonexistent slave");
-    }
-    theSlave->SendMessage("SpeedTest"); 
-  }
-  return; 
-}
-
-
-//============================================================
-void dmxRenderer::SendHeartbeatToSlaves(void) {
-  ECHO_FUNCTION(5);
-  uint16_t i; 
-  if (!numValidWindowInfos) return; 
-  for (i = 0; i < mActiveSlaves.size(); i++) {
-    DMXSlave *theSlave = mActiveSlaves[i]; 
-    if (!theSlave) {
-      throw string("Tried to send heartbeat to nonexistent slave");
-    }
-    theSlave->SendMessage("Heartbeat"); 
-  }
-  return; 
-}
 
 //====================================================================
 // launch a slave and love it forever
@@ -546,21 +543,21 @@ void dmxRenderer::SlaveConnected() {
   connect(theSlave, SIGNAL(Error(DMXSlave*, QString, QString, bool)), 
           this, SLOT(SlaveError(DMXSlave*, QString, QString, bool))); 
 
-  int screenNum = dmxScreenInfos.size();
+  int screenNum = mDmxScreenInfos.size();
   DEBUGMSG(QString("SlaveConnect from host %1").arg( hostAddress.toString())); 
   bool matched = false; 
   while (screenNum -- && !matched) {
-    dmxAddressString = dmxHostAddresses[screenNum].toString();
+    dmxAddressString = mDmxHostAddresses[screenNum].toString();
     /* compare IP address of socket with IP address from domain name */ 
     DEBUGMSG(QString("Comparing IP address %1 with %2")
              .arg(newAddressString) .arg(dmxAddressString)); 
-    if (hostAddress == dmxHostAddresses[screenNum] && mActiveSlaves[screenNum]==NULL) {
+    if (hostAddress == mDmxHostAddresses[screenNum] && mActiveSlaves[screenNum]==NULL) {
       mActiveSlaves[screenNum] = theSlave;
       mNumActiveSlaves++; 
-      if (mNumActiveSlaves == dmxHostAddresses.size()) {
+      if (mNumActiveSlaves == mDmxHostAddresses.size()) {
         mSlavesReady = true; 
       }
-      QStringList disp  = QString(dmxScreenInfos[screenNum].displayName).split(":"); 
+      QStringList disp  = QString(mDmxScreenInfos[screenNum].displayName).split(":"); 
       QString remoteDisplay = disp[0];
       theSlave->setHostName(disp[0]); 
       if (disp.size() == 2) {
@@ -616,39 +613,39 @@ void dmxRenderer::SlaveError(DMXSlave *, QString host,
  * Also, update the subwindow sizes and positions as needed.
  * This is called when we create a canvas or move/resize it.
  */
-void dmxRenderer::UpdateBackendCanvases(void)
+void dmxRenderer::UpdateBackendRenderers(void)
 {
     
-  if (!numValidWindowInfos) return; 
+  if (!mNumValidWindowInfos) return; 
 
   int i;
 
-  for (i = 0; i < numValidWindowInfos; i++) {
-    const int scrn = dmxWindowInfos[i].screen;
+  for (i = 0; i < mNumValidWindowInfos; i++) {
+    const int scrn = mDmxWindowInfos[i].screen;
 	  
-    if (!haveDMX) {
-      ERROR("UpdateBackendCanvases: no not have DMX!"); 
+    if (!mHaveDMX) {
+      ERROR("UpdateBackendRenderers: no not have DMX!"); 
       abort(); 
     }
     /*
      * Check if we need to create any back-end windows / canvases
      */
-    if (dmxWindowInfos[i].window && !mActiveSlaves[scrn]->HaveCanvas()) {
+    if (mDmxWindowInfos[i].window && !mActiveSlaves[scrn]->HaveRenderer()) {
       mActiveSlaves[scrn]->
-        SendMessage(QString("CreateCanvas %1 %2 %3 %4 %5 %6 %7")
-                    .arg( dmxScreenInfos[scrn].displayName)
-                    .arg((int) dmxWindowInfos[i].window)
-                    .arg(dmxWindowInfos[i].pos.width)
-                    .arg(dmxWindowInfos[i].pos.height)
-                    .arg(mCanvas->depth)
+        SendMessage(QString("CreateRenderer %1 %2 %3 %4 %5 %6 %7")
+                    .arg( mDmxScreenInfos[scrn].displayName)
+                    .arg((int) mDmxWindowInfos[i].window)
+                    .arg(mDmxWindowInfos[i].pos.width)
+                    .arg(mDmxWindowInfos[i].pos.height)
+                    .arg(mDepth)
                     .arg(mOptions->frameCacheSize)
                     .arg(mOptions->readerThreads));
 
-      mActiveSlaves[scrn]->HaveCanvas(true);
-      if (files.size()) {
+      mActiveSlaves[scrn]->HaveRenderer(true);
+      if (mFiles.size()) {
         /* send list of image files too */
-        if (dmxWindowInfos[i].window) {
-          mActiveSlaves[scrn]->SendFrameList(files);
+        if (mDmxWindowInfos[i].window) {
+          mActiveSlaves[scrn]->SendFrameList(mFiles);
         }
       }
     }
@@ -657,12 +654,12 @@ void dmxRenderer::UpdateBackendCanvases(void)
      * Compute new position/size parameters for the backend subwindow.
      * Send message to back-end processes to resize/move the canvases.
      */
-    if (i < numValidWindowInfos && dmxWindowInfos[i].window) {
+    if (i < mNumValidWindowInfos && mDmxWindowInfos[i].window) {
       mActiveSlaves[scrn]->
-        MoveResizeCanvas(dmxWindowInfos[i].vis.x,
-                         dmxWindowInfos[i].vis.y,
-                         dmxWindowInfos[i].vis.width,
-                         dmxWindowInfos[i].vis.height);
+        MoveResizeRenderer(mDmxWindowInfos[i].vis.x,
+                           mDmxWindowInfos[i].vis.y,
+                           mDmxWindowInfos[i].vis.width,
+                           mDmxWindowInfos[i].vis.height);
     }
   }
 }
@@ -673,17 +670,17 @@ void dmxRenderer::UpdateBackendCanvases(void)
 void dmxRenderer::GetBackendInfo(void)
 {
   
-  int i, numScreens; 
-  haveDMX = 0;
+  int numScreens; 
+  mHaveDMX = 0;
     
-  DMXGetScreenCount(display, &numScreens);
-  if ((uint32_t)numScreens != dmxScreenInfos.size()) {
+  DMXGetScreenCount(mDisplay, &numScreens);
+  if ((uint32_t)numScreens != mDmxScreenInfos.size()) {
 	ClearScreenInfos(); 
-    dmxScreenInfos.resize(numScreens); 
-	dmxWindowInfos.resize(numScreens); 
+    mDmxScreenInfos.resize(numScreens); 
+	mDmxWindowInfos.resize(numScreens); 
   }
-  for (i = 0; i < numScreens; i++) {
-	if (!DMXGetScreenInfo(display, i, &dmxScreenInfos[i])) {
+  for (int i = 0; i < numScreens; i++) {
+	if (!DMXGetScreenInfo(mDisplay, i, &mDmxScreenInfos[i])) {
 	  ERROR("Could not get screen information for screen %d\n", i);
 	  ClearScreenInfos(); 
 	  return;
@@ -695,20 +692,20 @@ void dmxRenderer::GetBackendInfo(void)
 	Ask DMX how many screens our window is overlapping and by how much.
 	There is one windowInfo info for each screen our window overlaps 
   */ 
-  if (!DMXGetWindowInfo(display,
-						window, &numValidWindowInfos,
+  if (!DMXGetWindowInfo(mDisplay,
+						mWindow, &mNumValidWindowInfos,
 						numScreens,
-						&dmxWindowInfos[0])) {
+						&mDmxWindowInfos[0])) {
 	ERROR("Could not get window information for 0x%x\n",
-		  (int) window);
+		  (int) mWindow);
 	ClearScreenInfos(); 
 	return;
   }
   uint16_t winNum = 0; 
-  for (winNum=numValidWindowInfos; winNum < dmxScreenInfos.size(); winNum++) {
-	dmxWindowInfos[winNum].window = 0;	
+  for (winNum=mNumValidWindowInfos; winNum < mDmxScreenInfos.size(); winNum++) {
+	mDmxWindowInfos[winNum].window = 0;	
   }
-  haveDMX = 1;
+  mHaveDMX = 1;
 }
 
 #ifdef FAKE_DMX
@@ -725,60 +722,60 @@ void dmxRenderer::FakeBackendInfo(void)
   const int y = 100;
   int i;
 
-  haveDMX = 0;
+  mHaveDMX = 0;
 
   numScreens = 2;
   numWindows = 2;
   
-  vector<DMXScreenInfo> dmxScreenInfo(numScreens); 
-  vector<DMXWindowInfo> dmxWindowInfo(numScreens); 
+  vector<DMXScreenInfo> mDmxScreenInfo(numScreens); 
+  vector<DMXWindowInfo> mDmxWindowInfo(numScreens); 
   
   
   for (i = 0; i < numScreens; i++) {
-    dmxScreenInfo[i].displayName = strdup("localhost:0");
+    mDmxScreenInfo[i].displayName = strdup("localhost:0");
     
-    dmxScreenInfo[i].logicalScreen = 0;
+    mDmxScreenInfo[i].logicalScreen = 0;
 #if DMX_API_VERSION == 1
-    dmxScreenInfo[i].width = screenWidth;
-    dmxScreenInfo[i].height = screenHeight;
-    dmxScreenInfo[i].xoffset = 0;
-    dmxScreenInfo[i].yoffset = 0;
-    dmxScreenInfo[i].xorigin = i * screenWidth;
-    dmxScreenInfo[i].yorigin = 0;
+    mDmxScreenInfo[i].width = screenWidth;
+    mDmxScreenInfo[i].height = screenHeight;
+    mDmxScreenInfo[i].xoffset = 0;
+    mDmxScreenInfo[i].yoffset = 0;
+    mDmxScreenInfo[i].xorigin = i * screenWidth;
+    mDmxScreenInfo[i].yorigin = 0;
 #else
     /* xxx untested */
-    dmxScreenInfo[i].screenWindowWidth = screenWidth;
-    dmxScreenInfo[i].screenWindowHeight = screenHeight;
-    dmxScreenInfo[i].screenWindowXoffset = 0;
-    dmxScreenInfo[i].screenWindowYoffset = 0;
-    dmxScreenInfo[i].rootWindowXorigin = i * screenWidth;
-    dmxScreenInfo[i].rootWindowYorigin = 0;
+    mDmxScreenInfo[i].screenWindowWidth = screenWidth;
+    mDmxScreenInfo[i].screenWindowHeight = screenHeight;
+    mDmxScreenInfo[i].screenWindowXoffset = 0;
+    mDmxScreenInfo[i].screenWindowYoffset = 0;
+    mDmxScreenInfo[i].rootWindowXorigin = i * screenWidth;
+    mDmxScreenInfo[i].rootWindowYorigin = 0;
 #endif
 
-    dmxWindowInfo[i].screen = i;
-    dmxWindowInfo[i].window = 0;
+    mDmxWindowInfo[i].screen = i;
+    mDmxWindowInfo[i].window = 0;
 
 #if DMX_API_VERSION == 1
-    dmxWindowInfo[i].pos.x = x - dmxScreenInfo[i].xorigin;
-    dmxWindowInfo[i].pos.y = y - dmxScreenInfo[i].yorigin;
+    mDmxWindowInfo[i].pos.x = x - mDmxScreenInfo[i].xorigin;
+    mDmxWindowInfo[i].pos.y = y - mDmxScreenInfo[i].yorigin;
 #else
-    dmxWindowInfo[i].pos.x = x - dmxScreenInfo[i].rootWindowXorigin;
-    dmxWindowInfo[i].pos.y = y - dmxScreenInfo[i].rootWindowYorigin;
+    mDmxWindowInfo[i].pos.x = x - mDmxScreenInfo[i].rootWindowXorigin;
+    mDmxWindowInfo[i].pos.y = y - mDmxScreenInfo[i].rootWindowYorigin;
 #endif
 
-    dmxWindowInfo[i].pos.width = w;
-    dmxWindowInfo[i].pos.height = h;
-    dmxWindowInfo[i].vis.x = i * w / 2;
-    dmxWindowInfo[i].vis.y = 0;
-    dmxWindowInfo[i].vis.width = w / 2;
-    dmxWindowInfo[i].vis.height = h;
+    mDmxWindowInfo[i].pos.width = w;
+    mDmxWindowInfo[i].pos.height = h;
+    mDmxWindowInfo[i].vis.x = i * w / 2;
+    mDmxWindowInfo[i].vis.y = 0;
+    mDmxWindowInfo[i].vis.width = w / 2;
+    mDmxWindowInfo[i].vis.height = h;
   }
 }
 #endif
 
 void dmxRenderer::ClearScreenInfos(void) {
-  dmxScreenInfos.clear(); 
-  dmxWindowInfos.clear(); 
+  mDmxScreenInfos.clear(); 
+  mDmxWindowInfos.clear(); 
   return; 
 }
 
@@ -925,7 +922,7 @@ deque<MovieEvent> DMXSlave::mIncomingEvents;
 
 DMXSlave::DMXSlave(QString hostname, QTcpSocket *mSocket, int preloadFrames):
   mPreloadFrames(preloadFrames), mRemoteHostname(hostname.toStdString()), 
-  mHaveCanvas(false), 
+  mHaveRenderer(false), 
   mCurrentFrame(0),  mLastSwapID(-1), 
   mSlaveAwake(false), mShouldDisconnect(false), 
   mSlaveSocket(mSocket), mSlaveProcess(NULL) {

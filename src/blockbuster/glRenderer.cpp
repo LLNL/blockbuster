@@ -18,9 +18,7 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "canvas.h"
 #include "glRenderer.h"
-#include "xwindow.h"
 #include "util.h"
 #include "cache.h"
 #include "frames.h"
@@ -36,31 +34,32 @@
 #include "timer.h"
 
 
-glRenderer::glRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QString name):
-  Renderer(opt, canvas, parentWindow, name) {
+glRenderer::glRenderer(ProgramOptions *opt, Window parentWindow,
+                       BlockbusterInterface *gui, QString name):
+  Renderer(opt, parentWindow, gui, name) {
   return; 
 }
 
 void glRenderer::FinishRendererInit(ProgramOptions *) {
   // from glFinishInitialization: 
   Bool rv;
-  Font id = fontInfo->fid;
-  unsigned int first = fontInfo->min_char_or_byte2;
-  unsigned int last = fontInfo->max_char_or_byte2;
+  Font id = mFontInfo->fid;
+  unsigned int first = mFontInfo->min_char_or_byte2;
+  unsigned int last = mFontInfo->max_char_or_byte2;
   //  glRenderer *renderer = dynamic_cast<glRenderer*>(canvas->mRenderer); 
   
   /* All GL rendering in X11 requires a glX context. */
-  context = glXCreateContext(display, visInfo,
+  context = glXCreateContext(mDisplay, mVisInfo,
                                        NULL, GL_TRUE);
   if (!context) {
     ERROR("couldn't create GLX context");
     return ;
   }
   
-  rv = glXMakeCurrent(display, window, context);
+  rv = glXMakeCurrent(mDisplay, mWindow, context);
   if (rv == False) {
     ERROR("couldn't make graphics context current");
-    glXDestroyContext(display, context);
+    glXDestroyContext(mDisplay, context);
     return ;
   }
   
@@ -70,7 +69,7 @@ void glRenderer::FinishRendererInit(ProgramOptions *) {
   fontBase = glGenLists((GLuint) last + 1);
   if (!fontBase) {
     ERROR("Unable to allocate display lists for fonts");
-    glXDestroyContext(display, context);
+    glXDestroyContext(mDisplay, context);
     return ;
   }
   
@@ -90,7 +89,7 @@ void glRenderer::FinishRendererInit(ProgramOptions *) {
 
 //=============================================================
 glRenderer::~glRenderer() {
-  glXDestroyContext(display, context);
+  glXDestroyContext(mDisplay, context);
   return; 
 }
 
@@ -106,10 +105,10 @@ XVisualInfo *glRenderer::ChooseVisual(void)
   };
   XVisualInfo *visualInfo;
   
-  visualInfo = glXChooseVisual(display, screenNumber, attributes);
+  visualInfo = glXChooseVisual(mDisplay, mScreenNumber, attributes);
   if (visualInfo == NULL) {
     ERROR("cannot find a GLX visual on %s to create new OpenGL window",
-          DisplayString(display));
+          DisplayString(mDisplay));
     return NULL;
   }
   return visualInfo;
@@ -118,10 +117,10 @@ XVisualInfo *glRenderer::ChooseVisual(void)
 //=============================================================
 void glRenderer::DrawString(int row, int column, const char *str)
 {
-  const int x = (column + 1) * /*mCanvas->mRenderer->*/fontHeight;
-  const int y = (row + 1) * /*mCanvas->mRenderer->*/fontHeight;
+  const int x = (column + 1) * mFontHeight;
+  const int y = (row + 1) * mFontHeight;
   glPushAttrib(GL_CURRENT_BIT);
-  glBitmap(0, 0, 0, 0, x, mCanvas->height - y - 1, NULL);
+  glBitmap(0, 0, 0, 0, x, mHeight - y - 1, NULL);
   glCallLists(strlen(str), GL_UNSIGNED_BYTE, (GLubyte *) str);
   glPopAttrib();
   return; 
@@ -144,7 +143,7 @@ void glRenderer::Render(int frameNumber,
   /*
    * Compute possibly reduced-resolution image region to display.
    */
-  if (mCanvas->frameList->stereo) {
+  if (mFrameList->stereo) {
         localFrameNumber = frameNumber *2; /* we'll display left frame only */
   }
   else {
@@ -203,13 +202,13 @@ void glRenderer::Render(int frameNumber,
   /*bb_assert(region.x + region.width <= image->width); */
   /*bb_assert(region.y + region.height <= image->height);*/
 
-  glViewport(0, 0, mCanvas->width, mCanvas->height);
+  glViewport(0, 0, mWidth, mHeight);
 
 
   /* only clear the window if we have to */
   if (destX > 0 || destY > 0 ||
-      region.width * zoom < mCanvas->width ||
-      region.height * zoom < mCanvas->height) {
+      region.width * zoom < mWidth ||
+      region.height * zoom < mHeight) {
     glClearColor(0.0, 0.0, 0.0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
   }
@@ -222,7 +221,7 @@ void glRenderer::Render(int frameNumber,
      * Yes, this is tricky to understand.  
      * The authors did not bother to explain it, either.  LOL
      */
-    destY = mCanvas->height - static_cast<int32_t>((image->height * zoom) + destY) + static_cast<int32_t>(region.y * zoom);
+    destY = mHeight - static_cast<int32_t>((image->height * zoom) + destY) + static_cast<int32_t>(region.y * zoom);
     
     if (destY < 0) {
       region.y = static_cast<int32_t>(-destY / zoom);
@@ -234,7 +233,7 @@ void glRenderer::Render(int frameNumber,
     glPixelZoom(zoom, zoom);
   }
   else {    
-    destY = mCanvas->height - destY - 1;
+    destY = mHeight - destY - 1;
     glPixelZoom(zoom, -zoom);
   }
   TIMER_PRINT("before draw"); 
@@ -281,7 +280,7 @@ void glRenderer::Render(int frameNumber,
 
 //***********************************************************************
 void glRenderer::SwapBuffers(void) {
-  glXSwapBuffers(display, window);
+  glXSwapBuffers(mDisplay, mWindow);
   return; 
 }
 
@@ -302,13 +301,13 @@ void glStereoRenderer::Render(int frameNumber,
            imageRegion->x, imageRegion->y,
            imageRegion->width, imageRegion->height,
            destX, destY, zoom, lod, 
-           (int)(mCanvas->frameList->stereo));
+           (int)(mFrameList->stereo));
   
   /*
    * Compute possibly reduced-resolution image region to display.
    */
  
-  if (mCanvas->frameList->stereo) {
+  if (mFrameList->stereo) {
         localFrameNumber = frameNumber *2; 
         /* start with left frame*/
         glDrawBuffer(GL_BACK_LEFT);
@@ -368,13 +367,13 @@ void glStereoRenderer::Render(int frameNumber,
   /*bb_assert(region.x + region.width <= image->width);*/
   /*bb_assert(region.y + region.height <= image->height);*/
 
-  glViewport(0, 0, mCanvas->width, mCanvas->height);
+  glViewport(0, 0, mWidth, mHeight);
 
 
   /* only clear the window if we have to */
   if (destX > 0 || destY > 0 ||
-      region.width * zoom < mCanvas->width ||
-      region.height * zoom < mCanvas->height) {
+      region.width * zoom < mWidth ||
+      region.height * zoom < mHeight) {
     glClearColor(0.0, 0.0, 0.0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
   }
@@ -385,7 +384,7 @@ void glStereoRenderer::Render(int frameNumber,
      * Yes, this is tricky to understand.
      * And we're not going to help you. 
      */
-    destY = mCanvas->height - static_cast<int32_t>((image->height * zoom + destY)) + static_cast<int32_t>(region.y * zoom);
+    destY = mHeight - static_cast<int32_t>((image->height * zoom + destY)) + static_cast<int32_t>(region.y * zoom);
     if (destY < 0) {
       region.y = static_cast<int32_t>(-destY / zoom);
       destY = 0;
@@ -400,7 +399,7 @@ void glStereoRenderer::Render(int frameNumber,
   }
   else {
     DEBUGMSG("TOP_TO_BOTTOM: glDrawPixels(%d, %d, GL_RGB, GL_UNSIGNED_BYTE, data)\n",   region.width, region.height); 
-    destY = mCanvas->height - destY - 1;
+    destY = mHeight - destY - 1;
     /* RasterPos is (0,0).  Offset it by (destX, destY) */
     glPixelZoom(zoom, -zoom);
   }
@@ -418,23 +417,23 @@ void glStereoRenderer::Render(int frameNumber,
   glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
   
    
-  if(mCanvas->frameList->stereo) {
+  if(mFrameList->stereo) {
     glDrawBuffer(GL_BACK_RIGHT);
     localFrameNumber++;
     
     /* Pull the image from our cache */
-    image = /*mCanvas->mRenderer->*/GetImage(localFrameNumber, &region, lod);
+    image = GetImage(localFrameNumber, &region, lod);
     if (image == NULL) {
       /* error has already been reported */
       return;
     }
     
-    glViewport(0, 0, mCanvas->width, mCanvas->height);
+    glViewport(0, 0, mWidth, mHeight);
     
     /* only clear the window if we have to */
     if (saveDestX > 0 || saveDestY > 0 ||
-        region.width * zoom < mCanvas->width ||
-        region.height * zoom < mCanvas->height) {
+        region.width * zoom < mWidth ||
+        region.height * zoom < mHeight) {
       glClearColor(0.0, 0.0, 0.0, 0);
       glClear(GL_COLOR_BUFFER_BIT);
     }
@@ -483,10 +482,10 @@ XVisualInfo *glStereoRenderer::ChooseVisual(void)
   };
   XVisualInfo *visualInfo;
   
-  visualInfo = glXChooseVisual(display, screenNumber, attributes);
+  visualInfo = glXChooseVisual(mDisplay, mScreenNumber, attributes);
   if (visualInfo == NULL) {
     ERROR("cannot find a GLX stereo visual on %s to create new OpenGL window",
-          DisplayString(display));
+          DisplayString(mDisplay));
     return NULL;
   }
   
@@ -498,8 +497,9 @@ XVisualInfo *glStereoRenderer::ChooseVisual(void)
 // glTextureRenderer
 // ==========================================================
 
-glTextureRenderer::glTextureRenderer(ProgramOptions *opt, Canvas * canvas, Window parentWindow):
-  glRenderer(opt, canvas, parentWindow, "gltexture") {
+glTextureRenderer::glTextureRenderer(ProgramOptions *opt, Window parentWindowID, 
+           BlockbusterInterface *gui, QString name):
+  glRenderer(opt, parentWindowID, gui, name) {
 
   printf("using texture rendering\n"); 
   glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureWidth);
@@ -562,7 +562,7 @@ TextureObjectPtr glTextureRenderer::GetTextureObject(int frameNumber)
   cerr << "Warning:  DEAD CODE EXECUTING? " << endl; 
   static GLuint clock = 1;
   TextureObjectPtr texObj = 
-    mCanvas->frameList->getFrame(frameNumber)->mTextureObject;
+    mFrameList->getFrame(frameNumber)->mTextureObject;
   
   if (!texObj) {
 	/* find a free texture object */
@@ -586,11 +586,11 @@ TextureObjectPtr glTextureRenderer::GetTextureObject(int frameNumber)
     
 	/* update/init texObj fields */
 	texObj->age = clock++;	/* XXX handle clock wrap-around! */
-	texObj->frameInfo = mCanvas->frameList->getFrame(frameNumber);
+	texObj->frameInfo = mFrameList->getFrame(frameNumber);
 	for (uint32_t i = 0; i < MAX_IMAGE_LEVELS; i++)
       texObj->valid[i].width = texObj->valid[i].height = -1;
 	texObj->anyLoaded = GL_FALSE;
-	mCanvas->frameList->getFrame(frameNumber)->mTextureObject = texObj;
+	mFrameList->getFrame(frameNumber)->mTextureObject = texObj;
   }
   
   return texObj;
@@ -612,14 +612,14 @@ void glTextureRenderer::Render(int frameNumber, const Rectangle *imageRegion,
          destX, destY, zoom, lod);
 #endif
   
-  if (glXMakeCurrent(display, window, context) == False) {
+  if (glXMakeCurrent(mDisplay, mWindow, context) == False) {
     WARNING("couldn't make graphics context current before rendering");
   }
   
-  UpdateProjectionAndViewport(mCanvas->width, mCanvas->height);
+  UpdateProjectionAndViewport(mWidth, mHeight);
   glEnable(GL_TEXTURE_2D);
   
-  if (mCanvas->frameList->stereo) {
+  if (mFrameList->stereo) {
     localFrameNumber = frameNumber *2; /* we'll display left frame only */
   }
   else {
@@ -646,7 +646,7 @@ void glTextureRenderer::Render(int frameNumber, const Rectangle *imageRegion,
   /* get texture object */
   TextureObjectPtr texObj = GetTextureObject(localFrameNumber);
   bb_assert(texObj);
-  bb_assert(texObj->frameInfo == mCanvas->frameList->getFrame(localFrameNumber));
+  bb_assert(texObj->frameInfo == mFrameList->getFrame(localFrameNumber));
   
   /* Setup/bind the texture object */
   if (texObj->texture) {

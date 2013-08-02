@@ -26,8 +26,6 @@
 #include "errmsg.h"
 #include "cache.h"
 #include "splash.h"
-#include "canvas.h"
-
 
 extern unsigned char splashImageData[92700];  // defined at the bottom of this file
 

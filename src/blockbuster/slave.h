@@ -4,7 +4,7 @@
 #include <QTcpSocket>
 #include "settings.h"
 #include <QWidget>
-#include "canvas.h"
+#include "Renderer.h"
 
 #ifdef USE_MPI
 #include "mpi.h"
@@ -37,7 +37,7 @@ class Slave: public QWidget {
   int mSocketFD; // another view of the socket
   QTcpSocket mMasterSocket; // connection to the master blockbuster
   QDataStream *mMasterStream;  // still another view of the socket
-  Canvas *mCanvas; 
+  Renderer *mRenderer; 
   uint32_t recentFrameCount; 
   double recentStartTime; 
 #ifdef USE_MPI

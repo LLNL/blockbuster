@@ -1,5 +1,4 @@
 
-#include "canvas.h" 
 #include "x11Renderer.h"
 #include "errmsg.h"
 #include "cache.h"
@@ -16,58 +15,58 @@
 #include <X11/Xutil.h>
 #include <X11/extensions/Xdbe.h>
 
-x11Renderer::x11Renderer(ProgramOptions *opt, Canvas * canvas, Window parentWindow):
-  Renderer(opt, canvas, parentWindow, "x11"), mSwapAction(XdbeBackground) {
+x11Renderer::x11Renderer(ProgramOptions *opt, Window parentWindow, 
+              BlockbusterInterface *gui, QString name):
+  Renderer(opt, parentWindow, gui, name), mSwapAction(XdbeBackground) {
   return; 
 }
 
-void x11Renderer::FinishRendererInit(ProgramOptions *, Canvas *, Window ) {
+void x11Renderer::FinishRendererInit(ProgramOptions *) {
   ECHO_FUNCTION(5);
    
   /* This graphics context and font will be used for rendering status messages,
    */
-  gc = XCreateGC(display, window, 0, NULL);
-  XSetFont(display, gc, fontInfo->fid);
-  XSetForeground(display, gc,
-                 WhitePixel(display, screenNumber));
+  mGC = XCreateGC(mDisplay, mWindow, 0, NULL);
+  XSetFont(mDisplay, mGC, mFontInfo->fid);
+  XSetForeground(mDisplay, mGC,
+                 WhitePixel(mDisplay, mScreenNumber));
   
-  backBuffer = 
-    XdbeAllocateBackBufferName(display, window, mSwapAction);
+  mBackBuffer = 
+    XdbeAllocateBackBufferName(mDisplay, mWindow, mSwapAction);
   
- if (backBuffer) {
-    doubleBuffered = 1;
-    drawable = backBuffer;
+ if (mBackBuffer) {
+    mDoubleBuffered = 1;
+    mDrawable = mBackBuffer;
   }
   else {
-    doubleBuffered = 0;
-    drawable = window;
+    mDoubleBuffered = 0;
+    mDrawable = mWindow;
   }
-  gc = gc;
   
   /* Specify our required format.  Note that 24-bit X11 images require
    * *4* bytes per pixel, not 3.
    */
-  if (visInfo->depth > 16) {
+  if (mVisInfo->depth > 16) {
     mRequiredImageFormat.bytesPerPixel = 4;
   }
-  else if (visInfo->depth > 8) {
+  else if (mVisInfo->depth > 8) {
     mRequiredImageFormat.bytesPerPixel = 2;
   }
   else {
     mRequiredImageFormat.bytesPerPixel = 1;
   }
-  mRequiredImageFormat.scanlineByteMultiple = BitmapPad(display)/8;
+  mRequiredImageFormat.scanlineByteMultiple = BitmapPad(mDisplay)/8;
   
   /* If the bytesPerPixel value is 3 or 4, we don't need these;
    * but we'll put them in anyway.
    */
-  mRequiredImageFormat.redShift = ComputeShift(visInfo->visual->red_mask) - 8;
-  mRequiredImageFormat.greenShift = ComputeShift(visInfo->visual->green_mask) - 8;
-  mRequiredImageFormat.blueShift = ComputeShift(visInfo->visual->blue_mask) - 8;
-  mRequiredImageFormat.redMask = visInfo->visual->red_mask;
-  mRequiredImageFormat.greenMask = visInfo->visual->green_mask;
-  mRequiredImageFormat.blueMask = visInfo->visual->blue_mask;
-  mRequiredImageFormat.byteOrder = ImageByteOrder(display);
+  mRequiredImageFormat.redShift = ComputeShift(mVisInfo->visual->red_mask) - 8;
+  mRequiredImageFormat.greenShift = ComputeShift(mVisInfo->visual->green_mask) - 8;
+  mRequiredImageFormat.blueShift = ComputeShift(mVisInfo->visual->blue_mask) - 8;
+  mRequiredImageFormat.redMask = mVisInfo->visual->red_mask;
+  mRequiredImageFormat.greenMask = mVisInfo->visual->green_mask;
+  mRequiredImageFormat.blueMask = mVisInfo->visual->blue_mask;
+  mRequiredImageFormat.byteOrder = ImageByteOrder(mDisplay);
   mRequiredImageFormat.rowOrder = TOP_TO_BOTTOM;
   
     return; 
@@ -75,7 +74,7 @@ void x11Renderer::FinishRendererInit(ProgramOptions *, Canvas *, Window ) {
 
 //====================================================================
 x11Renderer::~x11Renderer() {
-  XFreeGC(display, gc);
+  XFreeGC(mDisplay, mGC);
   
   return; 
 }
@@ -188,9 +187,9 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
     start = (char*)image->Data();
   }
   
-  xImage = XCreateImage(display,
-                        visInfo->visual,
-                        visInfo->depth,
+  xImage = XCreateImage(mDisplay,
+                        mVisInfo->visual,
+                        mVisInfo->depth,
                         ZPixmap,
                         0, /* no offset to the image data */
                         start,
@@ -206,34 +205,34 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
     return;
   }
   
-  XPutImage(display,
-            drawable,
-            gc,
+  XPutImage(mDisplay,
+            mDrawable,
+            mGC,
             xImage,
             0, 0, /* src_x, src_y */
             destX, destY,
             subWidth, subHeight
             );
   
-  if (!doubleBuffered) {
+  if (!mDoubleBuffered) {
     /* clear unpainted window regions */
     int x, y, w, h;
     /* above */
     if (destY > 0) {
       x = 0;
       y = 0;
-      w = mCanvas->width;
+      w = mWidth;
       h = destY;
-      XClearArea(display, drawable,
+      XClearArea(mDisplay, mDrawable,
                  x, y, w, h, False);
     }
     /* below */
-    if (destY + (int) (subHeight * zoom) < mCanvas->height) {
+    if (destY + (int) (subHeight * zoom) < mHeight) {
       x = 0;
       y = destY + (int) (subHeight * zoom);
-      w = mCanvas->width;
-      h = mCanvas->height - y;
-      XClearArea(display, drawable, 
+      w = mWidth;
+      h = mHeight - y;
+      XClearArea(mDisplay, mDrawable, 
                  x, y, w, h, False);
     }
     /* left */
@@ -241,17 +240,17 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
       x = 0;
       y = destY;
       w = destX;
-      h = mCanvas->height - y;
-      XClearArea(display, drawable,
+      h = mHeight - y;
+      XClearArea(mDisplay, mDrawable,
                  x, y, w, h, False);
     }
     /* right */
-    if (destX + (int) (subWidth * zoom) < mCanvas->width) {
+    if (destX + (int) (subWidth * zoom) < mWidth) {
       x = destX + (int) (subWidth * zoom);
       y = destY;
-      w = mCanvas->width - x;
-      h = mCanvas->height - y;
-      XClearArea(display, drawable, 
+      w = mWidth - x;
+      h = mHeight - y;
+      XClearArea(mDisplay, mDrawable, 
                  x, y, w, h, False);
     }
   }
@@ -265,7 +264,7 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
    * release it so that the image cache knows we're done with it.
    */
   if (zoom == 1.0) {
-    mCanvas->mRenderer->DecrementLockCount( image);
+    DecrementLockCount( image);
   }
   return; 
 }
@@ -273,25 +272,25 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
 //========================================================
 void  x11Renderer::DrawString(int row, int column, const char *str) {
   ECHO_FUNCTION(5);
-  int x = (column + 1) * fontHeight;
-  int y = (row + 1) * fontHeight;
-  XDrawString(display,
-              drawable,
-              gc, 
+  int x = (column + 1) * mFontHeight;
+  int y = (row + 1) * mFontHeight;
+  XDrawString(mDisplay,
+              mDrawable,
+              mGC, 
               x, y, str, strlen(str));
   return; 
 }
 
 //========================================================
 void x11Renderer::SwapBuffers(void) {
-  if (backBuffer) {
+  if (mBackBuffer) {
     /* If we're using DBE */
     XdbeSwapInfo swapInfo;
-    swapInfo.swap_window = window;
+    swapInfo.swap_window = mWindow;
     swapInfo.swap_action = mSwapAction;
-    XdbeSwapBuffers(display, &swapInfo, 1);
+    XdbeSwapBuffers(mDisplay, &swapInfo, 1);
     /* Force sync, in case we get no events (dmx) */
-    XSync(display, 0);
+    XSync(mDisplay, 0);
   }
   return;
 }

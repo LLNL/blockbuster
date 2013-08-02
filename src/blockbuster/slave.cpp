@@ -38,8 +38,6 @@
 #include <time.h>
 #include "util.h"
 #include <fstream>
-#include "xwindow.h"
-
 
 using namespace std; 
 
@@ -52,7 +50,7 @@ using namespace std;
   GTK snarfs it up. 
 */
 Slave::Slave(ProgramOptions *options):
-  mOptions(options), mSocketFD(0), mCanvas(NULL) {
+  mOptions(options), mSocketFD(0), mRenderer(NULL) {
   resetFPS(); 
   SuppressMessageDialogs(true); 
   DEBUGMSG("Slave() called"); 
@@ -68,8 +66,8 @@ Slave::Slave(ProgramOptions *options):
 */
 Slave::~Slave() {
   /* Done with the canvas */
-  if (mCanvas) {
-    delete mCanvas;
+  if (mRenderer) {
+    delete mRenderer;
   }
   return;
 }
@@ -248,7 +246,7 @@ bool Slave::LoadFrames(const char *files)
     }
   }
   if (frames) {
-    mCanvas->SetFrameList(frames);
+    mRenderer->SetFrameList(frames);
   }
   resetFPS(); 
   return true;
@@ -376,16 +374,16 @@ int Slave::Loop(void)
             lod = messageList[9].toLong();
             zoom = messageList[8].toFloat();
             
-            if (mCanvas->frameList) {
-              mCanvas->Render(imageNum, &currentRegion, 
+            if (mRenderer->mFrameList) {
+              mRenderer->Render(imageNum, &currentRegion, 
                               destX, destY, zoom, lod);
               
               if (imageNum != lastImageRendered && lastImageRendered >= 0) {
-                if (mCanvas->frameList->stereo) {
-                  mCanvas->mRenderer->mCache->DecrementLockCount(lastImageRendered*2); 
-                  mCanvas->mRenderer->mCache->DecrementLockCount(lastImageRendered*2+1); 
+                if (mRenderer->mFrameList->stereo) {
+                  mRenderer->mCache->DecrementLockCount(lastImageRendered*2); 
+                  mRenderer->mCache->DecrementLockCount(lastImageRendered*2+1); 
                 } else {
-                  mCanvas->mRenderer->mCache->DecrementLockCount(lastImageRendered); 
+                  mRenderer->mCache->DecrementLockCount(lastImageRendered); 
                 }
               } 
               lastImageRendered = imageNum; 
@@ -417,7 +415,7 @@ int Slave::Loop(void)
             }
             (*mMasterStream) >> message; 
             DEBUGMSG((QString("string to draw is: ")+message)); 
-            mCanvas->DrawString(row, col, message.toAscii());          
+            mRenderer->DrawString(row, col, message.toAscii());          
           }// "DrawString"
           else if (token == "SwapBuffers") {
             if (messageList.size() != 7) {
@@ -439,17 +437,17 @@ int Slave::Loop(void)
               continue; 
             }
 #ifdef USE_MPI
-            DEBUGMSG("frame %d, mCanvas %d: MPI_Barrier", currentFrame, mCanvas); 
+            DEBUGMSG("frame %d, mRenderer %d: MPI_Barrier", currentFrame, mRenderer); 
             /*!
               TOXIC:  disable MPI for right now during testing
             */ 
             //if (0 && useMPI) MPI_Barrier(workers); 
             if (mOptions->useMPI) MPI_Barrier(workers); 
 #endif
-            if (mCanvas && mCanvas->frameList) { 
+            if (mRenderer && mRenderer->mFrameList) { 
               // only swap if there is a valid frame  
-              DEBUGMSG("frame %d: mCanvas->SwapBuffers", currentFrame); 
-              mCanvas->SwapBuffers();
+              DEBUGMSG("frame %d: mRenderer->SwapBuffers", currentFrame); 
+              mRenderer->SwapBuffers();
               updateAndReportFPS(); 
             }
 #ifdef USE_MPI
@@ -457,10 +455,10 @@ int Slave::Loop(void)
 #endif
             /* send ack */
             SendMessage(QString("SwapBuffers complete %1 %2").arg(messageList[1]).arg(messageList[2])); 
-            /*  mCanvas->Preload(lastImageRendered, preload, playDirection, 
+            /*  mRenderer->Preload(lastImageRendered, preload, playDirection, 
                 startFrame, endFrame, &currentRegion, lod); 
             */
-            /* if (preload && mCanvas && mCanvas->frameList) {
+            /* if (preload && mRenderer && mRenderer->mFrameList) {
                int32_t i;
                for (i = 1; i <= preload; i++) {
                int offset = (playDirection == -1) ? -i : i;
@@ -472,7 +470,7 @@ int Slave::Loop(void)
                frame = endFrame - (startFrame - frame); // for loops
                } 
                DEBUGMSG("Preload frame %d", frame); 
-               mCanvas->Preload(frame, &currentRegion, lod);
+               mRenderer->Preload(frame, &currentRegion, lod);
                }
                
                }
@@ -490,9 +488,9 @@ int Slave::Loop(void)
               continue; 
             }
           }
-          else if (token == "CreateCanvas") {
+          else if (token == "CreateRenderer") {
             if (messageList.size() != 8) {
-              SendError("Bad CreateCanvas message: "+message); 
+              SendError("Bad CreateRenderer message: "+message); 
               continue; 
             }
             QString displayName = messageList[1];
@@ -506,7 +504,7 @@ int Slave::Loop(void)
             if (ok) cacheFrames = messageList[6].toLong(&ok); 
             if (ok) numThreads = messageList[7].toLong(&ok);; 
             if (!ok) {
-              SendError("Bad CreateCanvas argument in message: "+message); 
+              SendError("Bad CreateRenderer argument in message: "+message); 
               continue; 
             }
             /* Create our canvas.  This canvas will not have any reader
@@ -521,22 +519,22 @@ int Slave::Loop(void)
             options->geometry.height = h;
             options->displayName = displayName;
             options->suggestedTitle = "Blockbuster Slave";
-            mCanvas = new Canvas(parentWin, options);
+            mRenderer = Renderer::CreateRenderer(options, parentWin);
  
-            mCanvas->mRenderer->GetXEvent(0, &junkEvent); 
+            mRenderer->GetXEvent(0, &junkEvent); 
              
-            if (mCanvas == NULL) {
+            if (mRenderer == NULL) {
               ERROR("Could not create a canvas");
               SendError( "Error Could not create a canvas");
               return -1;
             }
-          }// end "CreateCanvas"
-          else if (token == "DestroyCanvas") {
+          }// end "CreateRenderer"
+          else if (token == "DestroyRenderer") {
             // this never did do anything that I remember.  
-          } // end "DestroyCanvas"
-          else if (token == "MoveResizeCanvas") {
+          } // end "DestroyRenderer"
+          else if (token == "MoveResizeRenderer") {
             if (messageList.size() != 5) {
-              SendError("Bad MoveResizeCanvas message: "+message); 
+              SendError("Bad MoveResizeRenderer message: "+message); 
               continue; 
             }
             qint32 w, h, x, y;
@@ -550,26 +548,26 @@ int Slave::Loop(void)
               continue; 
             }
             
-            if (!mCanvas) {
-              SendError("ResizeCanvas requested, but canvas is not ready"); 
+            if (!mRenderer) {
+              SendError("ResizeRenderer requested, but canvas is not ready"); 
             } else {
-              mCanvas->Resize(w, h, 0);
-              mCanvas->Move(x, y, 0); // the zero means "force this" 
+              mRenderer->Resize(w, h, 0);
+              mRenderer->Move(x, y, 0); // the zero means "force this" 
             }
-          }// end "MoveResizeCanvas"
+          }// end "MoveResizeRenderer"
           else if (token == "SetFrameList") {
             /* This is the "file load" part of the code, rather misleading */
             /*we need to destroy image cache/reader threads etc before smBase destructor */
-            mCanvas->mRenderer->DestroyImageCache();
-            mCanvas->frameList.reset(); 
+            mRenderer->DestroyImageCache();
+            mRenderer->mFrameList.reset(); 
 
             message.remove(0, 13); //strip "SetFrameList " from front
             DEBUGMSG((QString("File list is: ")+message)); 
-            if (!LoadFrames( message.toAscii()) || !mCanvas->frameList->numActualFrames()) {			
+            if (!LoadFrames( message.toAscii()) || !mRenderer->mFrameList->numActualFrames()) {			
               SendError("No frames could be loaded."); 
             }
             playFirstFrame = 0; 
-            playLastFrame = mCanvas->frameList->numStereoFrames()-1; 
+            playLastFrame = mRenderer->mFrameList->numStereoFrames()-1; 
             /*!
               Initialize frame rate computation
             */ 
@@ -595,21 +593,21 @@ int Slave::Loop(void)
         NEW CODE:  Behave like DisplayLoop, in that you do not need explicit master control of when to swap the next frame.  Hopefully, this eliminates delays inherent in that model.  
       */ 
       if (0 && playStep) {
-        if (mCanvas && mCanvas->frameList) {
-          mCanvas->Render(playFrame, &currentRegion, 
+        if (mRenderer && mRenderer->mFrameList) {
+          mRenderer->Render(playFrame, &currentRegion, 
                           destX, destY, zoom, lod);
         }
         lastImageRendered = playFrame; 
 #ifdef USE_MPI
         if (mOptions->useMPI) { 
-          DEBUGMSG("frame %d, %d:  MPI_Barrier", playFrame, mCanvas); 
+          DEBUGMSG("frame %d, %d:  MPI_Barrier", playFrame, mRenderer); 
           MPI_Barrier(workers); 
         }
 #endif
-        if (mCanvas && mCanvas->frameList) { 
+        if (mRenderer && mRenderer->mFrameList) { 
           // only swap if there is a valid frame  
-          DEBUGMSG( "frame %d: mCanvas->SwapBuffers\n", playFrame); 
-          mCanvas->SwapBuffers();
+          DEBUGMSG( "frame %d: mRenderer->SwapBuffers\n", playFrame); 
+          mRenderer->SwapBuffers();
         }
 #ifdef USE_MPI
         DEBUGMSG( "frame %d: Finished MPI_Barrier\n", playFrame); 
@@ -627,8 +625,8 @@ int Slave::Loop(void)
         while (1) {
           
           /* render the next frame and advance the counter */
-          if (mCanvas && mCanvas->frameList) {
-            mCanvas->Render(playFrame, &currentRegion, 
+          if (mRenderer && mRenderer->mFrameList) {
+            mRenderer->Render(playFrame, &currentRegion, 
                             destX, destY, zoom, lod);
           }
           lastImageRendered = playFrame; 
@@ -638,14 +636,14 @@ int Slave::Loop(void)
           }
 #ifdef USE_MPI
           if (mOptions->useMPI) { 
-            DEBUGMSG("speedTest: frame %d, %d:  MPI_Barrier",playFrame, mCanvas); 
+            DEBUGMSG("speedTest: frame %d, %d:  MPI_Barrier",playFrame, mRenderer); 
             MPI_Barrier(workers); 
           }
 #endif
-          if (mCanvas && mCanvas->frameList) { 
+          if (mRenderer && mRenderer->mFrameList) { 
             // only swap if there is a valid frame  
-            DEBUGMSG( "speedTest: frame %d: mCanvas->SwapBuffers\n",playFrame ); 
-            mCanvas->SwapBuffers();
+            DEBUGMSG( "speedTest: frame %d: mRenderer->SwapBuffers\n",playFrame ); 
+            mRenderer->SwapBuffers();
           }
 #ifdef USE_MPI
           DEBUGMSG( "speedTest: frame %d: Finished MPI_Barrier\n",playFrame ); 

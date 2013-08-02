@@ -41,8 +41,7 @@
 #include "frames.h"
 #include "../libpng/pngsimple.h"
 #include <libgen.h>
-#include "xwindow.h"
-#include "canvas.h"
+#include "Renderer.h"
 
 
 // ====================================================================
@@ -61,12 +60,12 @@ int LODFromZoom(float zoom)
 }
 
 // ====================================================================
-static float ComputeZoomToFit(Canvas *canvas, int width, int height)
+static float ComputeZoomToFit(Renderer *renderer, int width, int height)
 {
   float xZoom, yZoom, zoom;
 
-  xZoom = (float) canvas->width / width;
-  yZoom = (float) canvas->height / height;
+  xZoom = (float) renderer->mWidth / width;
+  yZoom = (float) renderer->mHeight / height;
   zoom = xZoom < yZoom ? xZoom : yZoom;
 
   /* The return value is the "integer zoom", a value which
@@ -126,7 +125,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
   int32_t previousFrame = -1, cueEndFrame = 0;
   uint totalFrameCount = 0, recentFrameCount = 0;
   FrameInfoPtr frameInfo;
-  Canvas * canvas;
+  Renderer * renderer;
   int maxWidth, maxHeight, maxDepth;
   int loopCount = options->loopCount; 
   int drawInterface = options->drawInterface;
@@ -178,13 +177,13 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
       options->geometry.height = maxHeight;
   }
 
-  canvas = new Canvas(0, options, gMainWindow);
-  if (!canvas) {
-    ERROR("Could not create a canvas");
+  renderer = Renderer::CreateRenderer(options, 0, gMainWindow);
+  if (!renderer) {
+    ERROR("Could not create a renderer");
     return 1;
   }
 
-  gSidecarServer->SetCanvas(canvas); 
+  gSidecarServer->SetRenderer(renderer); 
 
   int32_t preloadFrames= options->preloadFrames,
     playDirection = 0, 
@@ -192,33 +191,33 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
     frameNumber = options->currentFrame, 
     endFrame = options->endFrame; 
   
-  /* Tell the Canvas about the frames it's going to render.
+  /* Tell the Renderer about the frames it's going to render.
     Generate a warning if the frames are out of whack */
-  canvas->SetFrameList(allFrames);
-  canvas->ReportFrameListChange(allFrames);
+  renderer->SetFrameList(allFrames);
+  renderer->ReportFrameListChange(allFrames);
   ClampStartEndFrames(allFrames, startFrame, endFrame, frameNumber, true); 
   int playExit = options->playExit; 
   if (playExit < 0) playExit = endFrame; 
   
-  /* The Canvas may or may not have an interface to display
+  /* The Renderer may or may not have an interface to display
    * (or to hide, if we chose to initially have the interface
    * off)
    */
-  //  canvas->ReportRateRangeChange(0.01, 1000);
-  canvas->ReportFrameChange(frameNumber);
-  canvas->ReportDetailRangeChange(-maxLOD, maxLOD);
-  canvas->ShowInterface(options->drawInterface);
-  canvas->ReportDetailChange(lodBias);
-  canvas->ReportLoopBehaviorChange(loopCount); 
+  //  renderer->ReportRateRangeChange(0.01, 1000);
+  renderer->ReportFrameChange(frameNumber);
+  renderer->ReportDetailRangeChange(-maxLOD, maxLOD);
+  renderer->ShowInterface(options->drawInterface);
+  renderer->ReportDetailChange(lodBias);
+  renderer->ReportLoopBehaviorChange(loopCount); 
 
   /* Compute a starting zoom factor.  We won't do a full 
    * Zoom to Fit, but we will do a Shrink to Fit (i.e.
    * we'll allow the movie to shrink, but not to grow), so that
-   * the new movie fits in the Canvas initially.
+   * the new movie fits in the Renderer initially.
    */
-  newZoom = ComputeZoomToFit(canvas, maxWidth, maxHeight);
+  newZoom = ComputeZoomToFit(renderer, maxWidth, maxHeight);
   if (newZoom > 1.0) {
-    /* The canvas is larger - do a normal zoom at startup */
+    /* The renderer is larger - do a normal zoom at startup */
     newZoom = 1.0;
   }
 
@@ -234,7 +233,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
   if ( options->zoom != 1.0 )
     newZoom =options->zoom;
 
-  canvas->ReportRateChange(options->frameRate);
+  renderer->ReportRateChange(options->frameRate);
 					
   time_t lastheartbeat = time(NULL); 
   bool fullScreen = options->fullScreen, zoomOne = false; 
@@ -252,11 +251,11 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
       events.push_back(MovieEvent(MOVIE_FULLSCREEN)); 
       options->fullScreen=false; 
     }
-    /* Get an event from the canvas or network and process it.
+    /* Get an event from the renderer or network and process it.
      */   
     /* every minute or so, tell any DMX slaves we are alive */ 
     if (time(NULL) - lastheartbeat > 60) {
-      canvas->DMXSendHeartbeat(); 
+      renderer->DMXSendHeartbeat(); 
       lastheartbeat = time(NULL); 
     }
  
@@ -267,14 +266,14 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
     if (GetNetworkEvent(&newEvent)) { /* Qt events from e.g. Sidecar */
       events.push_back(newEvent); 
     } 
-    canvas->mRenderer->GetXEvent(0, &newEvent); 
+    renderer->GetXEvent(0, &newEvent); 
     if (playDirection && newEvent.eventType == MOVIE_GOTO_FRAME && 
         newEvent.number == frameNumber+playDirection) {
       newEvent.eventType = MOVIE_NONE; 
     }   
     events.push_back(newEvent); 
     
-    //canvas->GetEvent(canvas, 0, &newEvent);
+    //renderer->GetEvent(renderer, 0, &newEvent);
  
    // we now have at least one event
     uint32_t eventNum = 0; 
@@ -302,7 +301,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         break;
       case   MOVIE_CUE_BEGIN: 
         cueEndFrame = event.number;  // for now, a cue will be defined to be "executing" until the end frame is reached, then the cue is complete
-        canvas->reportMovieCueStart(); 
+        renderer->reportMovieCueStart(); 
         break; 
       case   MOVIE_CUE_END: 
         /* This event is just the end of the cue data stream, and is
@@ -329,7 +328,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         endFrame = options->endFrame;
         // clamp frame values, generate a warning if they are funky
         ClampStartEndFrames(allFrames, startFrame, endFrame, frameNumber, true); 
-        canvas->ReportFrameChange(frameNumber); 
+        renderer->ReportFrameChange(frameNumber); 
         DEBUGMSG("START_END_FRAMES: start %d end %d current %d\n", startFrame, endFrame, frameNumber); 
         break; 
       case MOVIE_MESSAGE:
@@ -343,13 +342,13 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         yOffset = event.y; 
         break; 
       case MOVIE_FULLSCREEN:
-        //DEBUGMSG("fullscreen"); canvas->width
+        //DEBUGMSG("fullscreen"); renderer->mWidth
         if(!frameInfo) {
-          /*newZoom = ComputeZoomToFit(canvas, frameInfo->width,
+          /*newZoom = ComputeZoomToFit(renderer, frameInfo->width,
                                    frameInfo->height);
           */
-          newZoom = ComputeZoomToFit(canvas, canvas->width,
-                                   canvas->height);
+          newZoom = ComputeZoomToFit(renderer, renderer->mWidth,
+                                   renderer->mHeight);
           //DEBUGMSG("Zoom to Fit: %f", newZoom);
         } else {
           //DEBUGMSG("No zooming done"); 
@@ -357,8 +356,8 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         fullScreen = true; 
         // fall through to MOVIE_MOVE_RESIZE: 
         event.eventType = MOVIE_MOVE_RESIZE;
-        event.width = canvas->screenWidth; 
-        event.height = canvas->screenHeight; 
+        event.width = renderer->mScreenWidth; 
+        event.height = renderer->mScreenHeight; 
         event.x = 0; 
         event.y = 0; 
         goto MOVIE_MOVE_RESIZE; 
@@ -376,10 +375,10 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         if (event.eventType == MOVIE_MOVE || event.eventType == MOVIE_MOVE_RESIZE) {
           //DEBUGMSG("MOVE"); 
           if (event.x == -1) 
-            event.x = canvas->XPos;
+            event.x = renderer->mXPos;
           if (event.y == -1) 
-            event.y = canvas->YPos;
-          canvas->Move(event.x, event.y, event.number);            
+            event.y = renderer->mYPos;
+          renderer->Move(event.x, event.y, event.number);            
         }
         // END MOVE ===========================
         
@@ -394,12 +393,12 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
             if(frameInfo) {
               event.width = frameInfo->width;
             } else {
-              event.width = canvas->width;
+              event.width = renderer->mWidth;
             }
           }         
           /* if (event.height == -1 )  {
           // use the whole screen height  
-          event.height = canvas->screenHeight; 
+          event.height = renderer->mScreenHeight; 
           } else */
           if (event.height == 0)  {
             /* if there are frames, use the frame height for the window height 
@@ -407,20 +406,20 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
             if(frameInfo) {
               event.height = frameInfo->height;
             } else {
-              event.height = canvas->height;
+              event.height = renderer->mHeight;
             }
           }
-          if (event.width > canvas->screenWidth) {
-            event.width = canvas->screenWidth; 
+          if (event.width > renderer->mScreenWidth) {
+            event.width = renderer->mScreenWidth; 
           }
-          if (event.height > canvas->screenHeight) {
-            event.height = canvas->screenHeight; 
+          if (event.height > renderer->mScreenHeight) {
+            event.height = renderer->mScreenHeight; 
           }
-          canvas->Resize(event.width,
+          renderer->Resize(event.width,
                          event.height, event.number);
           /* Set these in case there is no Resize function */
-          canvas->width = event.width;
-          canvas->height = event.height;
+          renderer->mWidth = event.width;
+          renderer->mHeight = event.height;
           // If we have zoomFit set, resize the frame to fit in the newly resized
           // window.
           if (options->zoomFit/* && !event.number*/) {
@@ -440,7 +439,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
 
       case MOVIE_SET_PINGPONG:
         pingpong = event.number;
-        canvas->ReportPingPongBehaviorChange(event.number); 
+        renderer->ReportPingPongBehaviorChange(event.number); 
         break; 
       case MOVIE_SET_LOOP:
         loopCount = event.number;    
@@ -450,7 +449,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         if (loopCount) {
           pingpong = false;
         }
-        canvas->ReportLoopBehaviorChange(loopCount); 
+        renderer->ReportLoopBehaviorChange(loopCount); 
         break;
       case MOVIE_PLAY_FORWARD: 
         playDirection = 1; loopCount = options->loopCount; 
@@ -502,13 +501,13 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
       case MOVIE_ZOOM_FIT: 
       MOVIE_ZOOM_FIT: 
         if(frameInfo) {
-          newZoom = ComputeZoomToFit(canvas, frameInfo->width,
+          newZoom = ComputeZoomToFit(renderer, frameInfo->width,
                                    frameInfo->height);
           DEBUGMSG("Zoom to Fit: %f", newZoom);
         } else {
           // Caution:  RDC: Zooming was not working right upon movie startup, so here I'm reusing some old code that was commented out -- maybe assumption that allFrames->frames[0] is not NULL is not valid?  
           //bb_assert (allFrames->frames[0] != NULL); 
-          newZoom = ComputeZoomToFit(canvas,
+          newZoom = ComputeZoomToFit(renderer,
                                      allFrames->getFrame(0)->width,
                                      allFrames->getFrame(0)->height);
         }
@@ -544,7 +543,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         panning = 0;
         break;
       case MOVIE_TOGGLE_CURSOR:
-        canvas->mRenderer->ToggleCursor(); 
+        renderer->ToggleCursor(); 
         break; 
       case MOVIE_NOSCREENSAVER:
         options->noscreensaver = event.number;
@@ -574,7 +573,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         break;
       case MOVIE_MOUSE_RELEASE_2:
         //newZoom += zoomDelta;
-        newZoom = startZoom*(1+(float)zoomDelta/(canvas->height));
+        newZoom = startZoom*(1+(float)zoomDelta/(renderer->mHeight));
         zoomDelta = 0;
         zooming = 0;
         break;
@@ -585,12 +584,12 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         }
         else if (zooming) {          
           zoomDelta = zoomStartY - event.y;
-          newZoom = startZoom*(1+(float)zoomDelta/(canvas->height));
+          newZoom = startZoom*(1+(float)zoomDelta/(renderer->mHeight));
         }
         break;
       case MOVIE_INCREASE_RATE:
         targetFPS += 1.0;
-        canvas->ReportRateChange(targetFPS);
+        renderer->ReportRateChange(targetFPS);
         
         nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
         break;
@@ -599,10 +598,10 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         if (targetFPS < 0.0) {
           targetFPS = 0.5;
         }
-        canvas->ReportRateChange(targetFPS);
+        renderer->ReportRateChange(targetFPS);
         if (targetFPS < 0.2) {
           targetFPS = 0.2; 
-          canvas->ReportRateChange(targetFPS);
+          renderer->ReportRateChange(targetFPS);
         }
         nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
         break;
@@ -615,31 +614,31 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
            nextSwapTime = 0.0;
         */
         nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
-        canvas->ReportRateChange(targetFPS);
+        renderer->ReportRateChange(targetFPS);
         break;
       case MOVIE_INCREASE_LOD:
         lodBias++;
         if (lodBias > maxLOD) lodBias = maxLOD; 
-        canvas->ReportDetailChange(lodBias);
+        renderer->ReportDetailChange(lodBias);
         break;
       case MOVIE_DECREASE_LOD:
         lodBias--;
         if (lodBias < 0) lodBias = 0; 
-        canvas->ReportDetailChange(lodBias);
+        renderer->ReportDetailChange(lodBias);
         break;
       case MOVIE_SET_LOD:
         lodBias = event.number;
-        canvas->ReportDetailChange(lodBias);
+        renderer->ReportDetailChange(lodBias);
         break;
       case MOVIE_MOUSE_PRESS_3:
         break;
       case MOVIE_SHOW_INTERFACE:
         drawInterface = true; 
-        canvas->ShowInterface(true);
+        renderer->ShowInterface(true);
         break;
       case MOVIE_HIDE_INTERFACE:
         drawInterface = false; 
-        canvas->ShowInterface(false);        
+        renderer->ShowInterface(false);        
         break;
       case MOVIE_MOUSE_RELEASE_3:
       case MOVIE_TOGGLE_INTERFACE:
@@ -672,14 +671,14 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
           }
         }
         options->currentFrame = frameNumber; 
-        options->geometry.x = canvas->XPos; 
-        options->geometry.y = canvas->YPos; 
-        options->geometry.width = canvas->width; 
-        options->geometry.height = canvas->height; 
-        //printf ("SET_STEREO: X,Y = %d, %d\n", canvas->XPos, canvas->YPos); 
+        options->geometry.x = renderer->mXPos; 
+        options->geometry.y = renderer->mYPos; 
+        options->geometry.width = renderer->mWidth; 
+        options->geometry.height = renderer->mHeight; 
+        //printf ("SET_STEREO: X,Y = %d, %d\n", renderer->mXPos, renderer->mYPos); 
         // exit the DisplayLoop 
-        // next time DisplayLoop starts, it will create a new stereo canvas 
-        delete canvas; 
+        // next time DisplayLoop starts, it will create a new stereo renderer 
+        delete renderer; 
         return 1; 
       case MOVIE_OPEN_FILE:   
       case MOVIE_OPEN_FILE_NOCHANGE: 
@@ -688,21 +687,21 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
 	  QStringList filenames; 
 	  filenames.append(event.mString);
 
-      canvas->mRenderer->DestroyImageCache();
+      renderer->DestroyImageCache();
 
       allFrames.reset(new FrameList); // this should delete our old FrameList
  	  if (allFrames->LoadFrames(filenames)) {	    
 	    allFrames->GetInfo(maxWidth, maxHeight, maxDepth, maxLOD, targetFPS);
-        canvas->SetFrameList(allFrames);
-        canvas->ReportFrameListChange(allFrames);
-	    canvas->ReportRateChange(targetFPS); 
+        renderer->SetFrameList(allFrames);
+        renderer->ReportFrameListChange(allFrames);
+	    renderer->ReportRateChange(targetFPS); 
 	    
 	    startFrame = 0; 
 	    endFrame = allFrames->numStereoFrames()-1; 
 	    frameNumber = event.number;  
 	    if (event.eventType != MOVIE_OPEN_FILE_NOCHANGE) {
 	      /* Compute a Shrink to Fit zoom */
-	      newZoom = ComputeZoomToFit(canvas, maxWidth, maxHeight);
+	      newZoom = ComputeZoomToFit(renderer, maxWidth, maxHeight);
 	      if (newZoom > 1.0) {
 		newZoom = 1.0; /* don't need expanding initially */
 	      }
@@ -721,16 +720,16 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
 	      zoomOne = fullScreen = false; 
 	      
 	    }
-	    canvas->ReportFrameChange(frameNumber);
-	    canvas->ReportDetailRangeChange(-maxLOD, maxLOD);
-	    canvas->ReportZoomChange(newZoom);
+	    renderer->ReportFrameChange(frameNumber);
+	    renderer->ReportDetailRangeChange(-maxLOD, maxLOD);
+	    renderer->ReportZoomChange(newZoom);
         swapBuffers = true; 
 	  } else { 
 	    ERROR("Could not open movie file %s", event.mString); 
         gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
         return 0; 
 	  }
-	  frameInfo =  canvas->GetFrameInfoPtr(1);
+	  frameInfo =  renderer->GetFrameInfoPtr(1);
 	  preloadFrames = MIN2(options->preloadFrames, static_cast<int32_t>(allFrames->numStereoFrames()));
 	}
     if (!options->stereoSwitchDisable) {
@@ -745,7 +744,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
              
     break;
       case MOVIE_SAVE_IMAGE:
-        canvas->WriteImageToFile(frameNumber);
+        renderer->WriteImageToFile(frameNumber);
         break;
        case MOVIE_SAVE_FRAME:
          if (frameInfo ) {
@@ -768,7 +767,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
              region.x = region.y = 0; 
              region.width = frameInfo->width; 
              region.height = frameInfo->height; 
-             ImagePtr image = canvas->mRenderer->GetImage(frameNumber,&region,0); 
+             ImagePtr image = renderer->GetImage(frameNumber,&region,0); 
              int size[3] = {region.width, region.height, 3}; 
              int result = 
                write_png_file(filename.toAscii().data(), 
@@ -800,7 +799,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         //        noscreensaverStartTime, currentTime); 
         if (currentTime - noscreensaverStartTime > 90) {
           dbprintf(1, "Generating false mouse click to defeat screen saver.\n"); 
-          canvas->mRenderer->fakeMouseClick(); 
+          renderer->fakeMouseClick(); 
           noscreensaverStartTime = currentTime;
         }
       }
@@ -816,7 +815,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
            (!loopCount && playDirection < 0 && cueEndFrame != -1 && frameNumber < cueEndFrame)) ) {
         dbprintf(2, QString("Ending cue with playDirection=%1, cueEnd=%2, frameNumber=%3\n").arg(playDirection).arg(cueEndFrame).arg(frameNumber)); 
         cuePlaying = false; 
-        canvas->reportMovieCueComplete();
+        renderer->reportMovieCueComplete();
         gSidecarServer->SendEvent(MovieEvent(MOVIE_CUE_COMPLETE)); 
       }
       
@@ -862,7 +861,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
           else {
             if (loopCount>0) {
               loopCount --; 
-              canvas->ReportLoopBehaviorChange(loopCount);               
+              renderer->ReportLoopBehaviorChange(loopCount);               
             }
             if (loopCount) {
               frameNumber = startFrame; 
@@ -884,7 +883,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
           else {
             if (loopCount > 0) {
               loopCount --; 
-              canvas->ReportLoopBehaviorChange(loopCount); 
+              renderer->ReportLoopBehaviorChange(loopCount); 
             }
             if (loopCount) {
               frameNumber = endFrame; 
@@ -900,11 +899,11 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
       //=====================================================================
       
       /* frameInfo = allFrames->frames[frameNumber];  */
-      frameInfo =  canvas->GetFrameInfoPtr(frameNumber); /* wrapper for stereo support */
+      frameInfo =  renderer->GetFrameInfoPtr(frameNumber); /* wrapper for stereo support */
       
       if (currentZoom != newZoom) {
         currentZoom = newZoom;
-        canvas->ReportZoomChange(currentZoom);
+        renderer->ReportZoomChange(currentZoom);
       }      
       
       QString filename("none"); 
@@ -922,14 +921,14 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
       }
       
       { 
-        MovieSnapshot newSnapshot(event.eventType, filename, fps, targetFPS, currentZoom, lodBias, playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, loopmsg, pingpong, fullScreen, zoomOne, options->noscreensaver, canvas->height, canvas->width, canvas->XPos, canvas->YPos, imageHeight, imageWidth, -xOffset, yOffset); 
+        MovieSnapshot newSnapshot(event.eventType, filename, fps, targetFPS, currentZoom, lodBias, playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, loopmsg, pingpong, fullScreen, zoomOne, options->noscreensaver, renderer->mHeight, renderer->mWidth, renderer->mXPos, renderer->mYPos, imageHeight, imageWidth, -xOffset, yOffset); 
         if (sendSnapshot || newSnapshot != oldSnapshot) {
           
-          canvas->reportWindowMoved(canvas->XPos, canvas->YPos); 
-          canvas->reportWindowResize(canvas->width, canvas->height); 
-          canvas->reportMovieMoved(xOffset, yOffset); 
-          canvas->reportMovieFrameSize(imageWidth, imageHeight); 
-          canvas->reportMovieDisplayedSize
+          renderer->reportWindowMoved(renderer->mXPos, renderer->mYPos); 
+          renderer->reportWindowResize(renderer->mWidth, renderer->mHeight); 
+          renderer->reportMovieMoved(xOffset, yOffset); 
+          renderer->reportMovieFrameSize(imageWidth, imageHeight); 
+          renderer->reportMovieDisplayedSize
             (static_cast<int>(newZoom*imageWidth), 
              static_cast<int>(newZoom*imageHeight)); 
           dbprintf(5, QString("Sending snapshot %1\n").arg(newSnapshot.humanReadableString())); 
@@ -944,12 +943,12 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
       {
         const int imgWidth = frameInfo->width;
         const int imgHeight = frameInfo->height;
-        const int winWidth = canvas->width;
-        const int winHeight = canvas->height;
+        const int winWidth = renderer->mWidth;
+        const int winHeight = renderer->mHeight;
         int x, y;
         int imgLeft, imgRight, imgBottom, imgTop;
         
-        /* (x,y) = image coordinate at center of window (canvas) */
+        /* (x,y) = image coordinate at center of window (renderer) */
         x = (imgWidth / 2) + (xOffset + panDeltaX);
         y = (imgHeight / 2) + (yOffset + panDeltaY);
         
@@ -981,7 +980,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
           roi.x = roi.width = 0;
         }
         
-        // placement of image on canvas:  destX
+        // placement of image on renderer:  destX
         destX = static_cast<int>(-imgLeft * currentZoom);
         if (destX < 0) {
           /* left clip */
@@ -1011,7 +1010,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
           roi.y = roi.height = 0;
         }
         
-        // placement of image on canvas:  destY
+        // placement of image on renderer:  destY
         destY = static_cast<int>(-imgTop * currentZoom);
         if (destY < 0) {
           /* top clip */
@@ -1033,10 +1032,10 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
       if (lodBias < 0) {
         lodBias = 0; 
       }        
-      if (lodBias > frameInfo->maxLOD) {
+      if ((uint32_t) lodBias > frameInfo->maxLOD) {
         lodBias = maxLOD; 
       }        
-      canvas->ReportDetailChange(lodBias);
+      renderer->ReportDetailChange(lodBias);
       
       if (options->noAutoRes) {
         baseLOD = 0; 
@@ -1044,11 +1043,11 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         baseLOD = LODFromZoom(currentZoom);
       }
       lod = baseLOD > lodBias? baseLOD: lodBias;
-      if (lod > frameInfo->maxLOD) {
+      if ((uint32_t)lod > frameInfo->maxLOD) {
         lod = frameInfo->maxLOD;
       }
-      /* Call the canvas to render the desired area of the frame.
-       * Most canvases will refer to their own image caches to load
+      /* Call the renderer to render the desired area of the frame.
+       * Most rendereres will refer to their own image caches to load
        * the image and render it.  Some will just send the
        * request "downstream".
        *
@@ -1059,16 +1058,16 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
        */
       
        TIMER_PRINT("before render"); 
-       canvas->mRenderer->mCache->PreloadHint(preloadFrames, playDirection, 
+       renderer->mCache->PreloadHint(preloadFrames, playDirection, 
                                               startFrame, endFrame);
-       canvas->Render(frameNumber, &roi, destX, destY, currentZoom, lod);
+       renderer->Render(frameNumber, &roi, destX, destY, currentZoom, lod);
        
        if (!usingDmx && frameNumber != previousFrame && previousFrame >= 0) {
          if (allFrames->stereo) {
-           canvas->mRenderer->mCache->DecrementLockCount(previousFrame*2); 
-           canvas->mRenderer->mCache->DecrementLockCount(previousFrame*2+1); 
+           renderer->mCache->DecrementLockCount(previousFrame*2); 
+           renderer->mCache->DecrementLockCount(previousFrame*2+1); 
          } else {
-           canvas->mRenderer->mCache->DecrementLockCount(previousFrame); 
+           renderer->mCache->DecrementLockCount(previousFrame); 
          }
        }
        TIMER_PRINT("after render"); 
@@ -1077,22 +1076,22 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
       /*!
         RDC Note:  this is only done in x11 interface mode, which is going away.  But it might be useful to have a "draw letters on screen" option.  Note that it used OpenGL to do the actual lettering. 
       */ 
-      /*     if (drawInterface && canvas->DrawString != NULL) {
+      /*     if (drawInterface && renderer->DrawString != NULL) {
              char str[100];
              int row = 0;
              sprintf(str, "Frame %d of %d", frameNumber + 1, allFrames->numStereoFrames());
-             canvas->DrawString(row++, 0, str);
+             renderer->DrawString(row++, 0, str);
              sprintf(str, "Frame Size: %d by %d pixels",
              frameInfo->width, frameInfo->height);
-             canvas->DrawString(row++, 0, str);
+             renderer->DrawString(row++, 0, str);
              sprintf(str, "Position: %d, %d",
              -(xOffset + panDeltaX), yOffset + panDeltaY);
-             canvas->DrawString(row++, 0, str);
+             renderer->DrawString(row++, 0, str);
              sprintf(str, "Zoom: %5.2f  LOD: %d (%d + %d)", currentZoom, lod, baseLOD, lodBias);
              
-             canvas->DrawString(row++, 0, str);
+             renderer->DrawString(row++, 0, str);
              sprintf(str, "FPS: %5.1f (target %.1f)", fps, targetFPS);
-             canvas->DrawString(row++, 0, str);
+             renderer->DrawString(row++, 0, str);
              }
       */
  
@@ -1120,29 +1119,29 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
             oldXOffset != xOffset ||
             oldYOffset != yOffset)  {
          */
-         canvas->preloadFrames = preloadFrames; 
-         canvas->playDirection = playDirection;
-         canvas->startFrame = startFrame; 
-        canvas->endFrame = endFrame; 
-        canvas->SwapBuffers();
+         renderer->mPreloadFrames = preloadFrames; 
+         renderer->mPlayDirection = playDirection;
+         renderer->mStartFrame = startFrame; 
+        renderer->mEndFrame = endFrame; 
+        renderer->SwapBuffers();
         if (playDirection && options->speedTest) {
           cerr << "requesting speedTest of slaves" << endl; 
-          canvas->DMXSpeedTest(); 
+          renderer->DMXSpeedTest(); 
           playDirection = 0; 
         }
-        /* Give the canvas a chance to preload upcoming images
+        /* Give the renderer a chance to preload upcoming images
          * while the display thread is displaying an image.
          * (It's too late to preload the current image; that one
          * will either have to be in the cache, or we'll load it
          * directly.)
          * THIS IS ICKY.  But it is going away when I rewrite the cache.  
          */
-        /* canvas->Preload(frameNumber, preloadFrames, playDirection, 
+        /* renderer->Preload(frameNumber, preloadFrames, playDirection, 
                         startFrame, endFrame, &roi, lod); 
         */
        }
        if (frameNumber != previousFrame) {
-         canvas->ReportFrameChange(frameNumber);
+         renderer->ReportFrameChange(frameNumber);
        }
       previousFrame = frameNumber; 
       oldZoom = currentZoom; 
@@ -1176,7 +1175,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         recentFrameCount = 0;
         fps = 0.0;
       }
-      canvas->reportActualFPS(fps); 
+      renderer->reportActualFPS(fps); 
       if ( (playExit && frameNumber >= playExit)) { 
         events.push_back(MovieEvent(MOVIE_QUIT)); 
       }

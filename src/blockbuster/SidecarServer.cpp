@@ -7,7 +7,6 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/tcp.h>
-#include "canvas.h"
 
 // global variables for network communications.  Can these be not global, somehow?   
 SidecarServer *gSidecarServer = NULL; 
@@ -124,8 +123,7 @@ void SidecarServer::AddEvent(MovieEvent &event){
 //============================================================
 /* return 0 if an event was NOT gotten, 1 if it WAS */
 int SidecarServer::GetNetworkEvent(MovieEvent *event){
-  //gCoreApp->processEvents(); 
-  if (mCanvas) mCanvas->DMXCheckNetwork();
+  if (mRenderer) mRenderer->DMXCheckNetwork();
   event->eventType = MOVIE_NONE;
   int result = mPendingEvents.GetEvent(event); 
   return result; 
