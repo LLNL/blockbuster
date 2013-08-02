@@ -178,12 +178,12 @@ typedef DMXWindowAttributes DMXWindowInfo;
 class dmxRenderer: public QObject, public Renderer {
   Q_OBJECT
  public:
-  dmxRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow, QObject *parent = NULL);
+  dmxRenderer(ProgramOptions *opt, Canvas * canvas, Window parentWindow, QObject *parent = NULL);
   virtual XVisualInfo *ChooseVisual(void) {
     return XWindow::ChooseVisual(); 
   }
   
-  virtual void FinishRendererInit(ProgramOptions *, Canvas *, Window );
+  virtual void FinishRendererInit(ProgramOptions *);
   virtual ~dmxRenderer(); 
 
   void ShutDownSlaves(void); 

@@ -64,46 +64,39 @@ static int matchStartOfName(struct dirent *entry)
  * for both the single-threaded and multi-threaded cases.
  */
 #define MAX_CONVERSION_WARNINGS 10
-Image *FrameInfo::LoadAndConvertImage(unsigned int frameNumber,
+ImagePtr FrameInfo::LoadAndConvertImage(unsigned int frameNumber,
                                       ImageFormat *canvasFormat, 
                                       const Rectangle *region, 
                                       int levelOfDetail)
 {
   DEBUGMSG(QString("LoadAndConvertImage frame %1, region %2, frameInfo %3").arg( frameNumber).arg(region->toString()).arg((uint64_t)this)); 
 
-  Image *image, *convertedImage;
   int rv;
   static int conversionCount = 0;
 
-  /*  if (!enable) {
-    cerr << "Interesting: disabled FrameInfo" << endl; 
-    return NULL;
-    }*/
 
-  image = new Image(); 
+  ImagePtr image(new Image()); 
   if (!image) {
 	ERROR("Out of memory in LoadAndConvertImage");
-	return NULL;
+	return image;
   }
 
   DEBUGMSG("LoadImage being called"); 
-  /* Call the file format module to load the image */
-  rv = (*LoadImageFunPtr)(image, this, 
-                    canvasFormat,
-                    region, levelOfDetail);
-  image->frameNumber = frameNumber; 
-  DEBUGMSG("LoadImage done"); 
 
-  if (!rv) {
+  // call derived LoadImage() function
+  rv = LoadImage(image, canvasFormat,region, levelOfDetail);
+
+  if (!rv ) {
 	ERROR("could not load frame %d (frame %d of file name %s) for the cache",
           frameNumber,
           mFrameNumberInFile,
           filename.c_str()
           );
-	//enable = 0;
-	delete image; 
-	return NULL;
+	return ImagePtr();
   }
+  image->frameNumber = frameNumber; 
+  DEBUGMSG("LoadImage done"); 
+
 
   /* The file format module, which loaded the image for us, tried to
    * do as good a job as it could to match the format our canvas
@@ -113,15 +106,13 @@ Image *FrameInfo::LoadAndConvertImage(unsigned int frameNumber,
    * conversion failed.  If any other image comes back, we can
    * discard the original, and use the conversion instead.
    */
-  convertedImage = ConvertImageToFormat(image, canvasFormat);
+  ImagePtr convertedImage = ConvertImageToFormat(image, canvasFormat);
   if (convertedImage != image) {
     /* We either converted, or failed to convert; in either
      * case, the old image is useless.
-     */
-    delete image; 
-  
+     */  
     image = convertedImage;
-    if (image == NULL) {
+    if (!image) {
       ERROR("failed to convert frame %d", frameNumber);
     }
     else {
@@ -150,8 +141,7 @@ Image *FrameInfo::LoadAndConvertImage(unsigned int frameNumber,
 void FrameList::GetInfo(int &maxWidth, int &maxHeight, int &maxDepth,
                         int &maxLOD, float &fps){
   maxWidth = maxHeight = maxDepth = maxLOD = 0; 
-  uint32_t i; 
-  for (i = 0; i < frames.size(); i++) {
+  for (uint32_t i = 0; i < frames.size(); i++) {
     FrameInfoPtr frameInfoPtr = frames[i]; 
     maxWidth = MAX2(maxWidth, frameInfoPtr->width);
     maxHeight = MAX2(maxHeight, frameInfoPtr->height);

@@ -37,51 +37,40 @@
 #undef int32
 
 
-
 // ==================================================================
 /* Use the TIFFRGBAImage facilities to load any supported image */
 /* image -- output image
    all other params are input parameters
 */ 
-static int RGBALoadImage(Image *image,  FrameInfo *frameInfoPtr,
-                         ImageFormat *requiredImageFormat, const Rectangle *,
-                         int levelOfDetail)
+int TiffFrameInfo::RGBALoadImage(ImagePtr image,
+                                 ImageFormat *requiredImageFormat, 
+                                 const Rectangle *,
+                                 int levelOfDetail)
 {
   TIFF *f;
   register uint32_t i, j, k;
   uint32_t extraBytesPerPixel, extraBytesPerScanline;
   int scanlineBytes;
-   TiffFrameInfo *frameInfo = reinterpret_cast<TiffFrameInfo *>(frameInfoPtr); 
-   /*   
-  TiffFrameInfo *tfip = reinterpret_cast<TiffFrameInfo *>(frameInfoPtr.get()); 
-  TiffFrameInfoPtr frameInfo(frameInfoPtr, tfip); 
-   */
-  if (!frameInfo) {
-    ERROR("programmer mistake:  FrameInfoPtr could not be recast to TiffFrameInfoPtr\n"); 
-    return 0; 
-  }
-
+       
   register unsigned char *dest;
   TIFFRGBAImage rgbaImg;
   char errMesg[1024];
   int rc;
 
-  bb_assert(image);
-
   printf("RGBALoadImage CALLED\n");
 
   /* Calculate how much image data we need. */
   extraBytesPerPixel = requiredImageFormat->bytesPerPixel - 3;
-  scanlineBytes = ROUND_TO_MULTIPLE(
-                                    requiredImageFormat->bytesPerPixel * frameInfo->width,
-                                    requiredImageFormat->scanlineByteMultiple
-                                    );
-  extraBytesPerScanline = scanlineBytes - 
-    requiredImageFormat->bytesPerPixel * frameInfo->width;
+  scanlineBytes = 
+    ROUND_TO_MULTIPLE(requiredImageFormat->bytesPerPixel * this->width,
+                      requiredImageFormat->scanlineByteMultiple );
 
-  if (!image->allocate(frameInfo->height * scanlineBytes)) {
+  extraBytesPerScanline = scanlineBytes - 
+    requiredImageFormat->bytesPerPixel * this->width;
+
+  if (!image->allocate(this->height * scanlineBytes)) {
     ERROR("could not allocate %dx%dx%d image data",
-          frameInfo->width, frameInfo->height, frameInfo->depth);
+          this->width, this->height, this->depth);
     return 0;
   }
 
@@ -94,17 +83,17 @@ static int RGBALoadImage(Image *image,  FrameInfo *frameInfoPtr,
   /* We sent only the necessary rows, but all pixels in each row.
    * So tell this to the caller.
    */
-  image->width = frameInfo->width;
-  image->height = frameInfo->height;
+  image->width = this->width;
+  image->height = this->height;
   image->imageFormat.bytesPerPixel = requiredImageFormat->bytesPerPixel;
   image->imageFormat.scanlineByteMultiple = requiredImageFormat->scanlineByteMultiple;
   image->imageFormat.byteOrder = requiredImageFormat->byteOrder;
   image->levelOfDetail = levelOfDetail;
 
 
-  f = TIFFOpen(frameInfo->filename.c_str(), "r");
+  f = TIFFOpen(this->filename.c_str(), "r");
   if (f == NULL) {
-	SYSERROR("cannot open TIFF file %s", frameInfo->filename.c_str());
+	SYSERROR("cannot open TIFF file %s", this->filename.c_str());
 	return 0;
   }
 
@@ -126,7 +115,7 @@ static int RGBALoadImage(Image *image,  FrameInfo *frameInfoPtr,
 	TIFFClose( f );
 	return 0;
   }
-  uint32* raster = (uint32*)(&frameInfo->scanlineBuffer[0]);
+  uint32* raster = (uint32*)(&this->scanlineBuffer[0]);
   dest = (unsigned char *)image->Data();
   for (i = 0; i < image->height; i++) {
 	const int row = /*desiredSub->y +*/ i;
@@ -136,7 +125,7 @@ static int RGBALoadImage(Image *image,  FrameInfo *frameInfoPtr,
 	 * otherwise, it should still be well-placed for what we need.
 	 */
 	if (image->imageFormat.rowOrder == BOTTOM_TO_TOP) {
-      dest = (unsigned char *)image->Data() + (frameInfo->height - row - 1) * scanlineBytes;
+      dest = (unsigned char *)image->Data() + (this->height - row - 1) * scanlineBytes;
 	}
     else {
       bb_assert(image->imageFormat.rowOrder == TOP_TO_BOTTOM);
@@ -144,7 +133,7 @@ static int RGBALoadImage(Image *image,  FrameInfo *frameInfoPtr,
     }
 
     /* Use width 1 to get a single full width scanline */
-	rv = TIFFRGBAImageGet( &rgbaImg, raster, frameInfo->width, 1);
+	rv = TIFFRGBAImageGet( &rgbaImg, raster, this->width, 1);
 	if (rv != 1) {
       WARNING("TIFFRGBAImageGet() row=%d i=%d returned %d", row, i, rv);
       TIFFClose( f );
@@ -155,7 +144,7 @@ static int RGBALoadImage(Image *image,  FrameInfo *frameInfoPtr,
     /* Move down a row for next ImageGet call */
 	rgbaImg.row_offset++;
 
-	for (j = 0; j < static_cast<uint32_t>(frameInfo->width); j++) {
+	for (j = 0; j < static_cast<uint32_t>(this->width); j++) {
       unsigned char red, green, blue;
       red = TIFFGetR( raster[j] );
       green = TIFFGetG( raster[j] );
@@ -183,8 +172,8 @@ static int RGBALoadImage(Image *image,  FrameInfo *frameInfoPtr,
 
   image->loadedRegion.x = 0;
   image->loadedRegion.y = 0;
-  image->loadedRegion.width = frameInfo->width;
-  image->loadedRegion.height = frameInfo->height;
+  image->loadedRegion.width = this->width;
+  image->loadedRegion.height = this->height;
 
   return 1;
 }
@@ -194,22 +183,14 @@ static int RGBALoadImage(Image *image,  FrameInfo *frameInfoPtr,
 /* This image loader function is installed if the TIFF file
  * contains 8-bit samples and 3 samples per pixel.
  */
-static int
-Color24LoadImage(Image *image,  FrameInfo* frameInfoPtr,
-                 ImageFormat *requiredImageFormat, const Rectangle *,
-                 int levelOfDetail)
+int
+TiffFrameInfo::Color24LoadImage(ImagePtr image,
+                                ImageFormat *requiredImageFormat, 
+                                const Rectangle *,
+                                int levelOfDetail)
 {
   TIFF *f;
-  /*
-  TiffFrameInfo *tfip = reinterpret_cast<TiffFrameInfo *>(frameInfoPtr.get()); 
-  TiffFrameInfoPtr frameInfo(frameInfoPtr, tfip); 
-  */
-  TiffFrameInfo *frameInfo = reinterpret_cast<TiffFrameInfo *>(frameInfoPtr); 
-
-  if (!frameInfo) {
-    ERROR("programmer mistake:  FrameInfoPtr could not be recast to TiffFrameInfoPtr\n"); 
-    return 0; 
-  }
+  
   register uint32_t i, j, k;
   int extraBytesPerPixel, extraBytesPerScanline;
   int scanlineBytes;
@@ -220,16 +201,16 @@ Color24LoadImage(Image *image,  FrameInfo* frameInfoPtr,
   /* Calculate how much image data we need. */
   extraBytesPerPixel = requiredImageFormat->bytesPerPixel - 3;
   scanlineBytes = ROUND_TO_MULTIPLE(
-                                    requiredImageFormat->bytesPerPixel * frameInfo->width,
+                                    requiredImageFormat->bytesPerPixel * this->width,
                                     requiredImageFormat->scanlineByteMultiple
                                     );
   extraBytesPerScanline = scanlineBytes - 
-    requiredImageFormat->bytesPerPixel * frameInfo->width;
+    requiredImageFormat->bytesPerPixel * this->width;
 
 
-  if (!image->allocate(frameInfo->height * scanlineBytes)) {
+  if (!image->allocate(this->height * scanlineBytes)) {
     ERROR("could not allocate %dx%dx%d image data ",
-          frameInfo->width, frameInfo->height, frameInfo->depth);
+          this->width, this->height, this->depth);
     return 0;
   }
   
@@ -242,17 +223,17 @@ Color24LoadImage(Image *image,  FrameInfo* frameInfoPtr,
   /* We sent only the necessary rows, but all pixels in each row.
    * So tell this to the caller.
    */
-  image->width = frameInfo->width;
-  image->height = frameInfo->height;
+  image->width = this->width;
+  image->height = this->height;
   image->imageFormat.bytesPerPixel = requiredImageFormat->bytesPerPixel;
   image->imageFormat.scanlineByteMultiple = requiredImageFormat->scanlineByteMultiple;
   image->imageFormat.byteOrder = requiredImageFormat->byteOrder;
   image->levelOfDetail = levelOfDetail;
   
 
-  f = TIFFOpen(frameInfo->filename.c_str(), "r");
+  f = TIFFOpen(this->filename.c_str(), "r");
   if (f == NULL) {
-	SYSERROR("cannot open TIFF file %s", frameInfo->filename.c_str());
+	SYSERROR("cannot open TIFF file %s", this->filename.c_str());
 	return 0;
   }
 
@@ -271,12 +252,12 @@ Color24LoadImage(Image *image,  FrameInfo* frameInfoPtr,
   for (i = 0; i < image->height; i++) {
 	const int row = /*desiredSub->y +*/ i;
 	int rv;
-	src = &frameInfo->scanlineBuffer[0];
+	src = &this->scanlineBuffer[0];
 	/* If we're going from bottom to top, put the scanline at the bottom;
 	 * otherwise, it should still be well-placed for what we need.
 	 */
 	if (image->imageFormat.rowOrder == BOTTOM_TO_TOP) {
-      dest = (unsigned char *)image->Data() + (frameInfo->height - row - 1) * scanlineBytes;
+      dest = (unsigned char *)image->Data() + (this->height - row - 1) * scanlineBytes;
 	}
     else {
       bb_assert(image->imageFormat.rowOrder == TOP_TO_BOTTOM);
@@ -287,7 +268,7 @@ Color24LoadImage(Image *image,  FrameInfo* frameInfoPtr,
       WARNING("TIFFReadScanline(row=%d) i=%d returned %d", row, i, rv);
       return 0;
 	}
-	for (j = 0; j < static_cast<uint32_t>(frameInfo->width); j++) {
+	for (j = 0; j < static_cast<uint32_t>(this->width); j++) {
       unsigned char red, green, blue;
       red = *src++;
       green = *src++;
@@ -314,26 +295,15 @@ Color24LoadImage(Image *image,  FrameInfo* frameInfoPtr,
 
   image->loadedRegion.x = 0;
   image->loadedRegion.y = 0;
-  image->loadedRegion.width = frameInfo->width;
-  image->loadedRegion.height = frameInfo->height;
+  image->loadedRegion.width = this->width;
+  image->loadedRegion.height = this->height;
 
   return 1;
 }
 
-
-FrameListPtr tiffGetFrameList(const char *filename)
-{
+TiffFrameInfo::TiffFrameInfo(string fname): FrameInfo(fname), mTiffType(TIFF_INVALID) {
   TIFF *f;
   char errMesg[1024];
-  FrameListPtr frameList; 
-
-  /* Values used with TIFFGetField have to be of the specific
-   * correct types, as the function is a varargs function
-   * and expects these types.
-   */
-  uint16 bitsPerSample, samplesPerPixel, photometric, planarConfiguration;
-  uint32 width, height;
-  double minSample = 0.0, maxSample = 0.0;
 
   /* Override the TIFF error handler, to keep it from reporting error
    * messages that we wish to control (e.g., an error in TIFFOpen()
@@ -341,10 +311,10 @@ FrameListPtr tiffGetFrameList(const char *filename)
    */
   TIFFSetErrorHandler(NULL);
 
-  f = TIFFOpen(filename, "r");
+  f = TIFFOpen(filename.c_str(), "r");
   if (!f) {
-	DEBUGMSG("The file '%s' is not a TIFF file.", filename);
-	return frameList;
+	DEBUGMSG("The file '%s' is not a TIFF file.", filename.c_str());
+	return ;
   }
   if (!TIFFGetField(f, TIFFTAG_BITSPERSAMPLE, &bitsPerSample))
 	bitsPerSample = 1;
@@ -356,13 +326,46 @@ FrameListPtr tiffGetFrameList(const char *filename)
   (void) TIFFGetField(f, TIFFTAG_PLANARCONFIG, &planarConfiguration);
   (void) TIFFGetFieldDefaulted(f, TIFFTAG_MINSAMPLEVALUE, &minSample);
   (void) TIFFGetFieldDefaulted(f, TIFFTAG_MAXSAMPLEVALUE, &maxSample);
-
   DEBUGMSG(
            "%s is a %dx%d TIFF [%d] file with %d bits per sample and %d samples per pixel",
-           filename, width, height, planarConfiguration, bitsPerSample, samplesPerPixel);
+           filename.c_str(), width, height, planarConfiguration, bitsPerSample, samplesPerPixel);
   DEBUGMSG("scanline size %d", TIFFScanlineSize(f));
 
   TIFFClose(f);
+  
+  if (bitsPerSample == 8 && samplesPerPixel == 3) {
+    scanlineBuffer.resize(width * 3); 
+    mTiffType = TIFF_24BIT; 
+  }
+  else if ( TIFFRGBAImageOK( f, errMesg ) ) {
+    /* Each scan line will hold 3 bytes per pixel */
+    scanlineBuffer.resize(width * sizeof(uint32));
+    mTiffType = TIFF_RGBA; 
+  }
+#if 0
+  else if (bitsPerSample == 16 && samplesPerPixel == 3) {
+    /* 48-bit color image!?! */
+  }
+  else if (bitsPerSample == 8 && samplesPerPixel == 1) {
+    /* 8-bit grayscale */
+  }
+  else if (bitsPerSample == 16 && samplesPerPixel == 1) {
+    /* 16-bit grayscale */
+  }
+#endif
+  else {
+    WARNING("%s: unsupported %d bps/%d spp TIFF file",
+            filename.c_str(), bitsPerSample, samplesPerPixel);
+    return ;
+  }
+  /* Fill out the rest of the frameInfo information */
+  this->depth = 8*samplesPerPixel;
+  this->mFrameNumberInFile = 0;
+  mValid = true; 
+  return; 
+}
+
+FrameListPtr tiffGetFrameList(const char *filename) {
 
   /* Prepare the FrameList and FrameInfo structures we are to
    * return to the user.  Since a PNG file stores a single 
@@ -370,69 +373,21 @@ FrameListPtr tiffGetFrameList(const char *filename)
    * need be large enough only for 2 entries (the information
    * about the single frame, and the terminating NULL).
    */
-  TiffFrameInfoPtr frameInfo(new TiffFrameInfo()); 
-  if (!frameInfo) {
+  TiffFrameInfoPtr frameInfo(new TiffFrameInfo(filename)); 
+  if (!frameInfo || !frameInfo-> mValid) {
 	ERROR("cannot allocate FrameInfo structure");
-	return frameList;
+	return FrameListPtr();
   }
 
-  frameInfo->filename = filename;
-    
-  frameList.reset(new FrameList()); 
+  FrameListPtr frameList(new FrameList(frameInfo)); 
   if (!frameList) {
     ERROR("cannot allocate FrameInfo list structure");
   }
-  else {
-    /* Choose an image loader function based on the type of image
-     * we have.
-     */
-    if (bitsPerSample == 8 && samplesPerPixel == 3) {
-      /* 24-bit color image */
-      frameInfo->LoadImageFunPtr = Color24LoadImage;
-      /* Each scan line will hold 3 bytes per pixel */
-      frameInfo->scanlineBuffer.resize(width * 3);
-    } else if ( TIFFRGBAImageOK( f, errMesg ) ) {
-      frameInfo->LoadImageFunPtr = RGBALoadImage;
-      /* Each scan line will hold 3 bytes per pixel */
-      frameInfo->scanlineBuffer.resize(width * sizeof(uint32));
-    }
-#if 0
-    else if (bitsPerSample == 16 && samplesPerPixel == 3) {
-      /* 48-bit color image!?! */
-    }
-    else if (bitsPerSample == 8 && samplesPerPixel == 1) {
-      /* 8-bit grayscale */
-    }
-    else if (bitsPerSample == 16 && samplesPerPixel == 1) {
-      /* 16-bit grayscale */
-    }
-#endif
-    else {
-      WARNING("%s: unsupported %d bps/%d spp TIFF file",
-              filename, bitsPerSample, samplesPerPixel);
-      return frameList;
-    }
-    
-    /* Fill out the rest of the frameInfo information */
-    frameInfo->width = width;
-    frameInfo->height = height;
-    frameInfo->depth = 8*samplesPerPixel;
-    frameInfo->mFrameNumberInFile = 0;
-    //frameInfo->enable = 1;
+  frameList->targetFPS = 0.0;
 
-    frameInfo->photometric = photometric;
-    frameInfo->minSample = minSample;
-    frameInfo->maxSample = maxSample;
-    frameInfo->bitsPerSample = bitsPerSample;
-    frameInfo->samplesPerPixel = samplesPerPixel;
+  frameList->formatName = "TIFF";
+  frameList->formatDescription = "Single-frame image in a TIFF file";
 
-    /* Fill out the final return form, and call it a day */
-    frameList->append(frameInfo); 
-    frameList->targetFPS = 0.0;
-
-    frameList->formatName = "TIFF";
-    frameList->formatDescription = "Single-frame image in a TIFF file";
-  }
   return frameList;
 }
 

@@ -3,8 +3,8 @@
 
 #include "frames.h"
 /* Conversion utilities from convert.c */
-Image *ConvertImageToFormat(const Image *image, ImageFormat *canvasFormat);
-Image *ScaleImage(const Image *image, 
+ImagePtr ConvertImageToFormat(ImagePtr image, ImageFormat *canvasFormat);
+ImagePtr ScaleImage(ImagePtr image, 
                   int srcX, int srcY, int srcWidth, int srcHeight,
                   int zoomedWidth, int zoomedHeight);
 

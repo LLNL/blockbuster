@@ -138,9 +138,4 @@ struct Canvas {
   int32_t playDirection, startFrame, endFrame, preloadFrames; 
   ProgramOptions *mOptions; 
 } ;
-/*
-void DestroyCanvas(Canvas *canvas);
-void DefaultSetFrameList(Canvas *canvas, FrameListPtr frameList);
-void CacheSetFrameList(Canvas *canvas, FrameListPtr frameList);
-*/ 
 #endif

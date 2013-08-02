@@ -17,17 +17,19 @@
 #include <deque>
 using namespace std; 
 
-#define ImageCache ImageCache
 
-
+typedef boost::shared_ptr<class ImageCache> ImageCachePtr; 
+typedef boost::shared_ptr<class CacheThread> CacheThreadPtr; 
 /*! 
   ==================================================================
   old code:  BADLY BEHAVING OLD CACHE and associated stuff
   ==================================================================
 */
-class ImageCache; 
 
+// =================================================================
 //! ImageCacheJob:  a request for the workers to get an image
+typedef boost::shared_ptr<struct ImageCacheJob> ImageCacheJobPtr; 
+
 struct ImageCacheJob {
   // ImageCacheJob(): frameNumber(0), levelOfDetail(0), requestNumber(0) {}
   ImageCacheJob(uint32_t frame, const Rectangle *reg, 
@@ -49,14 +51,23 @@ struct ImageCacheJob {
   uint32_t requestNumber;
 } ;
 
+// =================================================================
+typedef boost::shared_ptr<struct CachedImage> CachedImagePtr; 
 //! CachedImage: a slot in the image cache
 struct CachedImage{
+  CachedImage():requestNumber(0), loaded(0), lockCount(0), frameNumber(0), levelOfDetail(0) {
+    return; 
+  }
+  ~CachedImage() {
+    return; 
+  }
+    
   unsigned long requestNumber;
   int loaded;
   uint32_t lockCount;
   uint32_t frameNumber;
   uint32_t levelOfDetail;
-  Image *image;
+  ImagePtr image;
 } ;
 
 class CacheThread: public QThread {
@@ -97,10 +108,10 @@ class CacheThread: public QThread {
 class ImageCache {
   friend class CacheThread; 
  public:
-  ImageCache(int numthreads, int numimages, Canvas *c);
+  ImageCache(int numthreads, int numimages, Canvas * c);
   ~ImageCache(); 
   
-  Image *GetImage(uint32_t frameNumber,
+  ImagePtr GetImage(uint32_t frameNumber,
                   const Rectangle *newRegion, uint32_t levelOfDetail);
   void ManageFrameList(FrameListPtr frameList);
   
@@ -117,27 +128,27 @@ class ImageCache {
   void PreloadImage(uint32_t frameNumber, 
                     const Rectangle *region, uint32_t levelOfDetail);
  
-  void ReleaseImage(Image *image); // called from glRenderer, x11Renderer and splash.cpp
-  void ReleaseFrame(int framenum); // called from movie.cpp and slave.cpp
+  void DecrementLockCount(ImagePtr image); // called from glRenderer, x11Renderer and splash.cpp -- decrements lockCounts 
+  void DecrementLockCount(int framenum); // called from movie.cpp and slave.cpp
  protected:
-  CachedImage *GetCachedImageSlot(uint32_t newFrameNumber);
+  CachedImagePtr GetCachedImageSlot(uint32_t newFrameNumber);
   
-  void RemoveJobFromPendingQueue(ImageCacheJob *job) {
+  void RemoveJobFromPendingQueue(ImageCacheJobPtr job) {
     RemoveJobFromQueue(mPendingQueue, job); 
   }
   
-  void RemoveJobFromQueue(deque<ImageCacheJob*> &queue, ImageCacheJob *job);
+  void RemoveJobFromQueue(deque<ImageCacheJobPtr> &queue, ImageCacheJobPtr job);
   
-  ImageCacheJob *FindJobInQueue
-    (deque<ImageCacheJob*> &queue,  unsigned int frameNumber, 
+  ImageCacheJobPtr FindJobInQueue
+    (deque<ImageCacheJobPtr> &queue,  unsigned int frameNumber, 
      const Rectangle *region, unsigned int levelOfDetail); 
-  void ClearQueue(deque<ImageCacheJob*> &queue); 
+  void ClearQueue(deque<ImageCacheJobPtr> &queue); 
   void ClearImages(void); 
   void ClearJobQueue(void);
-  CachedImage *FindImage(uint32_t frame, uint32_t lod);
+  CachedImagePtr FindImage(uint32_t frame, uint32_t lod);
   void Print(void); 
 #define PrintJobQueue(q) __PrintJobQueue(#q,q)
-  void __PrintJobQueue(QString name, deque<ImageCacheJob *>&q); 
+  void __PrintJobQueue(QString name, deque<ImageCacheJobPtr>&q); 
   void  lock(string reason, string file="unknown file", int line=0) {
     CACHEDEBUG("%s: %d: locking image cache (%s)", 
                file.c_str(), line, reason.c_str()); 
@@ -183,8 +194,16 @@ class ImageCache {
   /* Cache management details */
   FrameListPtr mFrameList;
   unsigned long mRequestNumber;
+
+  /* The validRequestThreshold is the number of the last request that
+   * we shold ignore.  It starts at 0 (so we don't ignore any requests);
+   * if something should happen that would invalidate pending work 
+   * requests (say, by changing the FrameList while reader threads are
+   * still reading images from the old FrameList), this will keep the
+   * invalidated images from entering the image queue.
+   */
   unsigned long mValidRequestThreshold;
-  vector<CachedImage> mCachedImages;
+  vector<CachedImagePtr> mCachedImages;
   unsigned int mHighestFrameNumber;
   
   /* New approach:  start managing preloads from the cache */ 
@@ -199,19 +218,19 @@ class ImageCache {
   /* Thread management; none of these fields are used or examined
    * unless numReaderThreads is greater than 0.
    */
-  std::vector<CacheThread *> mThreads;
+  std::vector<CacheThreadPtr> mThreads;
   QMutex imageCacheLock; 
   QWaitCondition jobReady, jobDone; 
-  deque<ImageCacheJob *> mJobQueue; // jobs ready for the workers to take
-  deque<ImageCacheJob *> mPendingQueue; // jobs being worked on by a worker
-  deque<ImageCacheJob *> mErrorQueue;  // FAILs
+  deque<ImageCacheJobPtr> mJobQueue; // jobs ready for the workers to take
+  deque<ImageCacheJobPtr> mPendingQueue; // jobs being worked on by a worker
+  deque<ImageCacheJobPtr> mErrorQueue;  // FAILs
 } ;
 
 /* Image Cache management from cache.c.  These utilities are expected to be
  * used by Renderer modules to manage their images (because each renderer
  * is responsible for its own image management).
  */
-ImageCache *CreateImageCache(int numReaderThreads, int maxCachedImages, Canvas *canvas);
+ImageCachePtr CreateImageCache(int numReaderThreads, int maxCachedImages, Canvas * canvas);
 void CachePreload(Canvas *canvas, uint32_t frameNumber, 
                   const Rectangle *imageRegion, uint32_t levelOfDetail);
 

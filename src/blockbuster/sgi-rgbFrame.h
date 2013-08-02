@@ -6,13 +6,11 @@ FrameListPtr sgirgbGetFrameList(const char *filename);
 
 //============================================================
 struct SGIFrameInfo: public FrameInfo {
-  
-  virtual int LoadImage(ImageFormat */*fmt*/, 
-                        const Rectangle */*region*/, 
-                        int /*lod*/) {
-     return 0; 
-  }
+  SGIFrameInfo(std::string fname); 
 
+  virtual int LoadImage(ImagePtr, ImageFormat */*fmt*/, 
+                        const Rectangle */*region*/, 
+                        int /*lod*/);
  
 }; 
 

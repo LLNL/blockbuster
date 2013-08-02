@@ -7,11 +7,12 @@ FrameListPtr smGetFrameList(const char *filename);
 
 typedef boost::shared_ptr<struct SMFrameInfo> SMFrameInfoPtr; 
 
+typedef boost::shared_ptr<smBase> smBasePtr; 
 
 //============================================================
 struct SMFrameInfo: public FrameInfo {
-  SMFrameInfo(int w, int h, int d, int lod, string fname, uint32_t frame, boost::shared_ptr<smBase> sm):
-    FrameInfo(w,h,d,lod,fname, frame), mSM(sm) {
+  
+  SMFrameInfo(string fname, int w, int h, int d, int lod, uint32_t smframe, smBasePtr sm): FrameInfo(fname, w,h,d,lod,smframe), mSM(sm) {
     return; 
   }
   
@@ -19,13 +20,11 @@ struct SMFrameInfo: public FrameInfo {
     return; 
   }
   
-  virtual int LoadImage(ImageFormat */*fmt*/, 
+  virtual int LoadImage(ImagePtr image, ImageFormat */*fmt*/, 
                         const Rectangle */*region*/, 
-                        int /*lod*/) {
-     return 0; 
-  }
+                        int /*lod*/);
 
-  boost::shared_ptr<smBase> mSM; 
+  smBasePtr mSM; 
  
 }; 
 

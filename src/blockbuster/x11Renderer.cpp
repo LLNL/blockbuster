@@ -16,7 +16,7 @@
 #include <X11/Xutil.h>
 #include <X11/extensions/Xdbe.h>
 
-x11Renderer::x11Renderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow):
+x11Renderer::x11Renderer(ProgramOptions *opt, Canvas * canvas, Window parentWindow):
   Renderer(opt, canvas, parentWindow, "x11"), mSwapAction(XdbeBackground) {
   return; 
 }
@@ -97,7 +97,6 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
                          int destX, int destY, float zoom, int lod){
   ECHO_FUNCTION(5);
   XImage *xImage;
-  Image *image;
   char *start;
   int stride;
   int lodScale;
@@ -121,7 +120,6 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
   /*
    * Compute possibly reduced-resolution image region to display.
    */
-  bb_assert(lod <= mFrameList->getFrame(localFrameNumber)->maxLOD);
   lodScale = 1 << lod;
   region.x = imageRegion->x / lodScale;
   region.y = imageRegion->y / lodScale;
@@ -130,8 +128,8 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
   zoom *= (float) lodScale;
   
   /* Pull the image from our cache */
-  image = GetImage(localFrameNumber, &region, lod);
-  if (image == NULL) {
+  ImagePtr image = GetImage(localFrameNumber, &region, lod);
+  if (!image) {
     /* error has already been reported */
     return;
   }
@@ -151,12 +149,11 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
    */
   
   if (zoom != 1.0) {
-    Image *zoomedImage;
     
     subWidth = (int) (region.width * zoom + 0.0);
     subHeight = (int) (region.height * zoom + 0.0);
     
-    zoomedImage = ScaleImage(image, region.x, region.y,
+    ImagePtr zoomedImage = ScaleImage(image, region.x, region.y,
                              region.width, region.height,
                              subWidth, subHeight);
     
@@ -164,9 +161,9 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
      * that's in the cache.  But we'll have to free this
      * image later.
      */
-    ReleaseImage(image);
+    DecrementLockCount(image);
     image = zoomedImage;
-    if (image == NULL) {
+    if (!image) {
       /* error has already been reported */
       return;
     }
@@ -263,18 +260,14 @@ void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
   xImage->data = NULL;
   XDestroyImage(xImage);
   
-  /* If we zoomed, we've already released the image from the image
-   * cache and we're using a locally-allocated image instead; in this
-   * case, we need to deallocate the local image.  If we haven't zoomed,
+  /* If we haven't zoomed,
    * we're still using the original image from the cache; we need to
    * release it so that the image cache knows we're done with it.
    */
-  if (zoom != 1.0) {
-    delete image;
+  if (zoom == 1.0) {
+    mCanvas->mRenderer->DecrementLockCount( image);
   }
-  else {
-    mCanvas->mRenderer->ReleaseImage( image);
-  }
+  return; 
 }
 
 //========================================================
