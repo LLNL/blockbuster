@@ -13,7 +13,8 @@
 
 
 struct Canvas {
-  Canvas(qint32 parentWindowID, ProgramOptions *options, 
+
+ Canvas(qint32 parentWindowID, ProgramOptions *options, 
          BlockbusterInterface *gui=NULL);
   
   ~Canvas(); 

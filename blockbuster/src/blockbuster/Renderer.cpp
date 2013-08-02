@@ -5,6 +5,8 @@
 #ifndef NO_DMX
 #include "dmxRenderer.h"
 #endif
+#include "x11Renderer.h"
+
 #include "settings.h"
 
 Renderer * Renderer::CreateRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow) {
@@ -19,6 +21,7 @@ Renderer * Renderer::CreateRenderer(ProgramOptions *opt, Canvas *canvas, Window 
 #ifdef USE_DMX
   if (name == "dmx") renderer = new dmxRenderer(opt, canvas, parentWindow); 
 #endif  
+  if (name == "x11") renderer = new x11Renderer(opt, canvas, parentWindow); 
   // this has to be called after ChooseVisual() virtual functions are in place
   renderer->FinishInit(opt); 
   return renderer;
