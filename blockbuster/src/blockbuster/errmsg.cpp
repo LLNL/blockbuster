@@ -3,7 +3,6 @@
 #include "common.h"
 #include <sys/time.h>
 #include "SidecarServer.h"
-#include "canvas.h"
 #include "util.h"
 #include <iostream>
 #include <fstream>

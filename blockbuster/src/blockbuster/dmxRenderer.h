@@ -34,8 +34,8 @@ class DMXSlave: public QObject {
   void SendMessage(QString msg); 
 
 
-  bool HaveCanvas(void) { return mHaveCanvas; }
-  void HaveCanvas(bool setval) { mHaveCanvas = setval; }
+  bool HaveRenderer(void) { return mHaveRenderer; }
+  void HaveRenderer(bool setval) { mHaveRenderer = setval; }
 
   /*! 
 	Check to see if a message is waiting from the slave.  Return 1 if a message, 0 if not.  Includes network and process error messages (e.g., if the process sends us something over the socket, or if it exits or otherwise reports something to stdout/stderr that we understand, etc).
@@ -51,7 +51,7 @@ class DMXSlave: public QObject {
   void SetSlaveProcess(QProcess *proc) {mSlaveProcess = proc; }
 
   void SendFrameList(vector<string> &frameFiles) {
-	// this is the old code from UpdateBackendCanvases --
+	// this is the old code from UpdateBackendRendereres --
 	// need to implement
 	DEBUGMSG("SendFrameList called"); 
 	QString filestring("SetFrameList"); 
@@ -66,8 +66,8 @@ class DMXSlave: public QObject {
 	return; 
   }
 
-  void MoveResizeCanvas(int x, int y, int width, int height) {
-	SendMessage(QString("MoveResizeCanvas %1 %2 %3 %4")
+  void MoveResizeRenderer(int x, int y, int width, int height) {
+	SendMessage(QString("MoveResizeRenderer %1 %2 %3 %4")
 				.arg(width).arg(height).arg(x).arg(y));
 	return; 
   }
@@ -134,7 +134,7 @@ class DMXSlave: public QObject {
   string mRemoteHostname; // remote host to launch the slave on 
   QHostInfo mRemoteHostInfo; // as extracted from socket
   
-  bool mHaveCanvas; 
+  bool mHaveRenderer; 
 
   int32_t mCurrentFrame, mLastSwapID; 
 
@@ -178,13 +178,17 @@ typedef DMXWindowAttributes DMXWindowInfo;
 class dmxRenderer: public QObject, public Renderer {
   Q_OBJECT
  public:
-  dmxRenderer(ProgramOptions *opt, Canvas * canvas, Window parentWindow, QObject *parent = NULL);
-  virtual XVisualInfo *ChooseVisual(void) {
-    return XWindow::ChooseVisual(); 
-  }
+  dmxRenderer(ProgramOptions *opt, Window parentWindow, 
+              BlockbusterInterface *gui, QString name = "dmx");
   
   virtual void FinishRendererInit(ProgramOptions *);
   virtual ~dmxRenderer(); 
+
+  // DMX SPECIFIC STUFF from Canvas: 
+ /* thump-thump */
+  virtual void DMXSendHeartbeat(void); 
+  virtual void DMXSpeedTest(void);
+  virtual void DMXCheckNetwork(void);
 
   void ShutDownSlaves(void); 
 
@@ -212,9 +216,6 @@ class dmxRenderer: public QObject, public Renderer {
   */ 
   void SpeedTest(void); 
   
-  /* thump-thump */
-  void SendHeartbeatToSlaves(void); 
-
   int IsDMXDisplay(Display *dpy);
 
   // FROM SLAVESERVER: 
@@ -239,7 +240,7 @@ class dmxRenderer: public QObject, public Renderer {
     }
     return ;
   }
-  void UpdateBackendCanvases(void);
+  void UpdateBackendRenderers(void);
   void GetBackendInfo(void);
 #ifdef FAKE_DMX
   void FakeBackendInfo(void);
@@ -260,15 +261,15 @@ class dmxRenderer: public QObject, public Renderer {
   bool mSlavesReady; 
  
   // FROM RENDERINFO: 
-  int haveDMX;
+  int mHaveDMX;
   
-  vector<DMXScreenInfo> dmxScreenInfos;  /* [numScreens] */
-  vector<QHostAddress > dmxHostAddresses; // Qt goodness for convenience
-  vector<DMXWindowInfo> dmxWindowInfos;  /* up to numScreens */
-  int numValidWindowInfos; 
+  vector<DMXScreenInfo> mDmxScreenInfos;  /* [numScreens] */
+  vector<QHostAddress > mDmxHostAddresses; // Qt goodness for convenience
+  vector<DMXWindowInfo> mDmxWindowInfos;  /* up to numScreens */
+  int mNumValidWindowInfos; 
   
-  vector<string> files;
-  int sentSwapBuffers[MAX_SCREENS]; /* is there an outstanding SwapBuffers? */
+  vector<string> mFiles;
+  // int mSentSwapBuffers[MAX_SCREENS]; /* is there an outstanding SwapBuffers? */
   
   
 } ; // end dmxRenderer

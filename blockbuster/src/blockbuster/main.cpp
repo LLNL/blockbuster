@@ -48,7 +48,6 @@
 #include <iostream> 
 #include "movie.h"
 #include <sys/stat.h>
-#include "xwindow.h"
 #include "frames.h"
 #include "slave.h"
 #include "util.h"

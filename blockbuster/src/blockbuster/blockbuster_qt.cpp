@@ -34,7 +34,6 @@
 #include "QMessageBox"
 
 #include "blockbuster_qt.h"
-#include "xwindow.h"
 #include "errmsg.h"
 #include <X11/Xlib.h>
 #include <X11/cursorfont.h>

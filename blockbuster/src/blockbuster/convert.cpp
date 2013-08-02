@@ -18,7 +18,6 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "canvas.h"
 #include "errmsg.h"
 #include <stdio.h>
 #include <stdlib.h>

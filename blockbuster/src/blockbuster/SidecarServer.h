@@ -13,10 +13,9 @@
 #include "deque"
 #include "errmsg.h"
 #include "settings.h"
+#include "Renderer.h"
 
 #include "boost/shared_ptr.hpp"
-class Canvas; 
-typedef boost::shared_ptr<struct Canvas> CanvasPtr; 
 
 extern class SidecarServer *gSidecarServer;
 
@@ -60,7 +59,7 @@ class SidecarServer : public QObject {
     }
   }
 
-  void SetCanvas(Canvas * c){mCanvas = c; }
+  void SetRenderer(Renderer * r){mRenderer = r; }
 
   EventQueue mPendingEvents; 
 
@@ -73,7 +72,7 @@ class SidecarServer : public QObject {
   void sidecarDisconnected();
  protected: 
   QTcpServer mTcpServer;
-  Canvas * mCanvas; 
+  Renderer *mRenderer; 
   static bool mPromptForConnections; 
   QTcpSocket *mSidecarSocket;
   uint32_t mLastReceivedCommandID, mLastSentCommandID; 

@@ -10,13 +10,14 @@
 /* Base GL rendering class for all other GL renderers */ 
 class glRenderer: public Renderer {
  public:
-  glRenderer(ProgramOptions *opt, Canvas* canvas, Window parentWindow, QString name="gl");
+  glRenderer(ProgramOptions *opt,  Window parentWindow,
+             BlockbusterInterface *gui, QString name="gl");
 
   virtual void FinishRendererInit(ProgramOptions *opt);
   virtual ~glRenderer() ;
 
   virtual XVisualInfo *ChooseVisual(void);  
-  void DrawString(int row, int column, const char *str);
+  virtual void DrawString(int row, int column, const char *str);
 
   virtual void Render(int frameNumber,
                       const Rectangle *imageRegion,
@@ -31,10 +32,14 @@ class glRenderer: public Renderer {
   vector<float> timeSamples; 
 } ;
 
+// ==================================================================
+// glStereoRenderer
+// ==================================================================
 class glStereoRenderer: public glRenderer {
  public:
-  glStereoRenderer(ProgramOptions *opt, Canvas * canvas, Window parentWindow):
-    glRenderer(opt, canvas, parentWindow, "gl_stereo") {
+  glStereoRenderer(ProgramOptions *opt,  Window parentWindow,
+                   BlockbusterInterface *gui, QString name="gl_stereo"):
+  glRenderer(opt, parentWindow, gui, name)    {
     return; 
   }
   virtual ~glStereoRenderer() {}
@@ -63,7 +68,8 @@ struct TextureObject {
 
 class glTextureRenderer: public glRenderer {
  public:
-  glTextureRenderer(ProgramOptions *opt, Canvas *canvas, Window parentWindow);
+  glTextureRenderer(ProgramOptions *opt,  Window parentWindow,
+                    BlockbusterInterface *gui, QString name="gltexture"); 
   virtual ~glTextureRenderer() {}
 
   int32_t MinPowerOf2(int x); 
