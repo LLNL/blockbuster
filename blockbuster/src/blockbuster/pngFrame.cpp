@@ -24,9 +24,7 @@
 #include <string.h>
 #include <pngFrame.h>
 #include "errmsg.h"
-#include "frames.h"
 #include "util.h"
-#include "frames.h"
 #include <X11/Xlib.h>
 
 /* A guess as to the gamma exponent for our display.  It'll

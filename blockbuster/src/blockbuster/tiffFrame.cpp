@@ -18,17 +18,15 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include "tiffFrame.h"
 #include "errmsg.h"
-#include "frames.h"
 #include "util.h"
-#include "frames.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "errmsg.h"
 #include <errno.h> 
 #include <X11/Xlib.h>
-#include "tiffFrame.h"
 
 #define int16 myint16
 #define int32 myint32
