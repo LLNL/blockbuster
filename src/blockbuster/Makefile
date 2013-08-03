@@ -97,7 +97,7 @@ SOURCES=main.cpp blockbuster_qt.cpp movie.cpp  ../common/timer.C \
 HEADERS= errmsg.h events.h remotecommands.h  \
 	../common/stringutil.h ../common/timer.h ../config/version.h \
 	MovieCues.h errmsg.h pure_C.h util.h blockbuster_qt.h  \
-	sgi-rgbFrame.h convert.h smFrame.h pngFrame.h \
+	sgi-rgbFrame.h convert.h smFrame.h pathutil.h pngFrame.h \
 	splash.h pnmFrame.h tiffFrame.h \
 	Renderer.h glRenderer.h dmxRenderer.h 
 

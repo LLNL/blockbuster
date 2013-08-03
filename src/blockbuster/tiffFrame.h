@@ -46,9 +46,10 @@ struct TiffFrameInfo: public FrameInfo {
    * correct types, as the function is a varargs function
    * and expects these types.
    */
-  uint16_t  bitsPerSample, samplesPerPixel, photometric, planarConfiguration;
-  double minSample, maxSample;
-  vector<unsigned char> scanlineBuffer; /* if scanline conversion is needed */
+  uint16_t  mBitsPerSample, mSamplesPerPixel, 
+    mPhotometric, mPlanarConfiguration;
+  double mMinSample, mMaxSample;
+  vector<unsigned char> mScanlineBuffer; /* if scanline conversion is needed */
   int mTiffType; 
   
 }; 

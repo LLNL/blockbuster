@@ -1375,7 +1375,7 @@ int PNMFrameInfo::LoadImage(ImagePtr image,
   /* Calculate how much image data we need. */
   extraBytesPerPixel = requiredImageFormat->bytesPerPixel - 3;
   scanlineBytes = ROUND_TO_MULTIPLE(
-                                    requiredImageFormat->bytesPerPixel * this->width,
+                                    requiredImageFormat->bytesPerPixel * mWidth,
                                     requiredImageFormat->scanlineByteMultiple
                                     );
   if (requiredImageFormat->rowOrder == ROW_ORDER_DONT_CARE)
@@ -1384,14 +1384,14 @@ int PNMFrameInfo::LoadImage(ImagePtr image,
     rowOrder = requiredImageFormat->rowOrder;
   byteOrder = requiredImageFormat->byteOrder;
 
-  if (!image->allocate(this->height * scanlineBytes)) {
+  if (!image->allocate(mHeight * scanlineBytes)) {
     ERROR("could not allocate %dx%dx%d image data ",
-          this->width, this->height, this->depth);
+          mWidth, mHeight, mDepth);
     return 0;
   }
   
-  image->width = this->width;
-  image->height = this->height;
+  image->width = mWidth;
+  image->height = mHeight;
   image->imageFormat.bytesPerPixel = requiredImageFormat->bytesPerPixel;
   image->imageFormat.scanlineByteMultiple = requiredImageFormat->scanlineByteMultiple;
   image->imageFormat.byteOrder = byteOrder;
@@ -1403,20 +1403,20 @@ int PNMFrameInfo::LoadImage(ImagePtr image,
    * specific format (RGB, 3 bytes per pixel).  We'll rely on the
    * conversion module to handle anything different.
    */
-  f = pm_openr(this->filename.c_str());
+  f = pm_openr(mFilename.c_str());
   if (f == NULL) {
-	WARNING("cannot open file %s", this->filename.c_str());
+	WARNING("cannot open file %s", mFilename.c_str());
 	return 0;
   }
   if (pnm_readpnminit(f, &width,&height,&value,&fmt) == -1) {
-	SYSERROR("%s is not a PNM file", this->filename.c_str());
+	SYSERROR("%s is not a PNM file", mFilename.c_str());
 	pm_closer(f);
 	return 0;
   }
   switch(PNM_FORMAT_TYPE(fmt)) {
   case PBM_TYPE:
     WARNING("The file '%s' is a PNM bitmap file, and not supported.",
-            this->filename.c_str());
+            mFilename.c_str());
     return 0;
     break;
   case PPM_TYPE:
@@ -1426,13 +1426,13 @@ int PNMFrameInfo::LoadImage(ImagePtr image,
     depth = 1;
     break;
   }
-  if (this->width != width ||
-      this->height != height ||
-      this->depth != 8*depth) {
+  if (mWidth != (uint32_t)width ||
+      mHeight != (uint32_t)height ||
+      mDepth != 8*(uint32_t)depth) {
 	ERROR("PNM file %s is %dx%dx%d, expected %dx%dx%d",
-          this->filename.c_str(),
+          mFilename.c_str(),
           width, height, 8*depth,
-          this->width, this->height, this->depth);
+          mWidth, mHeight, mDepth);
 	pm_closer(f);
 	return 0;
   }
@@ -1497,13 +1497,13 @@ PNMFrameInfo::PNMFrameInfo(string fname): FrameInfo(fname) {
   FILE *f;
   int 	pnmwidth, pnmheight, pnmfmt;
   xelval	lvalue;
-  f = pm_openr(filename.c_str());
+  f = pm_openr(mFilename.c_str());
   if (!f) {
-    WARNING("Cannot open the file '%s'", filename.c_str());
+    WARNING("Cannot open the file '%s'", mFilename.c_str());
     return ;
   }
   if (pnm_readpnminit(f, &pnmwidth,&pnmheight,&lvalue,&pnmfmt) == -1) {
-    DEBUGMSG("The file '%s' is not in PNM format.", filename.c_str());
+    DEBUGMSG("The file '%s' is not in PNM format.", mFilename.c_str());
     pm_closer(f);
     return ;
   }
@@ -1513,20 +1513,20 @@ PNMFrameInfo::PNMFrameInfo(string fname): FrameInfo(fname) {
   switch(PNM_FORMAT_TYPE(pnmfmt)) {
   case PBM_TYPE:
     WARNING("The file '%s' is a PNM bitmap file, and not supported.",
-            filename.c_str());
+            mFilename.c_str());
     return ;
     break;
   case PPM_TYPE:
-    depth = 24;
+    mDepth = 24;
     break;
   default:
-    depth = 8;
+    mDepth = 8;
     break;
   }
-  width = pnmwidth; 
-  height = pnmheight; 
+  mWidth = pnmwidth; 
+  mHeight = pnmheight; 
 
-  DEBUGMSG("The file '%s' is a valid PNM file.", filename.c_str());
+  DEBUGMSG("The file '%s' is a valid PNM file.", mFilename.c_str());
   mValid = true; 
   return; 
 }

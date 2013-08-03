@@ -125,13 +125,13 @@ struct FrameInfo {
 
   void init(string fname, uint32_t w, uint32_t h,    
             uint32_t  d,  uint32_t maxlod, uint32_t frameinfile) {
-    width = w; 
-    height = h; 
-    depth = d; 
-    maxLOD = maxlod; 
+    mWidth = w; 
+    mHeight = h; 
+    mDepth = d; 
+    mMaxLOD = maxlod; 
     mFrameNumberInFile = frameinfile; // always known at construction
     mFrameNumber = 0; // usually not known at construction time
-    filename = fname; 
+    mFilename = fname; 
     mValid = false; 
     return; 
   }
@@ -141,7 +141,7 @@ struct FrameInfo {
   }
 
   QString toString(void) {
-    return QString("{ FrameInfo: frameNumber = %1 in file %2}").arg(mFrameNumberInFile).arg(filename.c_str()); 
+    return QString("{ FrameInfo: frameNumber = %1 in file %2}").arg(mFrameNumberInFile).arg(mFilename.c_str()); 
   }
 
   virtual int LoadImage(ImagePtr, ImageFormat */*requiredImageFormat*/, 
@@ -154,9 +154,9 @@ struct FrameInfo {
                              const Rectangle *region, int levelOfDetail);
   
   /* Basic statistics */
-  uint32_t width, height, depth;
+  uint32_t mWidth, mHeight, mDepth;
   
-  uint32_t maxLOD; /* 0 if LOD not supported */
+  uint32_t mMaxLOD; /* 0 if LOD not supported */
   
   /* If there is more than one frame in a single file, the format
    * driver can use this integer to distinguish them.
@@ -167,7 +167,7 @@ struct FrameInfo {
   uint32_t mFrameNumber;
 
   /* Associated file */
-  string filename;
+  string mFilename;
   
 
   /* Pointer to frame data that's specific to the canvas */

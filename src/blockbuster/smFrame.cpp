@@ -36,14 +36,14 @@
 
 int SMFrameInfo::LoadImage(ImagePtr image, ImageFormat *, const Rectangle *desiredSub, int levelOfDetail) {
  
-  const uint32_t imgWidth = this->width >> levelOfDetail;
-  const uint32_t imgHeight = this->height >> levelOfDetail;
+  const uint32_t imgWidth = mWidth >> levelOfDetail;
+  const uint32_t imgHeight = mHeight >> levelOfDetail;
   bb_assert(imgWidth > 0);
   bb_assert(imgHeight > 0);
   
   if (!image->allocate(imgWidth * imgHeight * 3)) {
     ERROR("could not allocate %dx%dx24 image data",
-          this->width, this->height);
+          mWidth, mHeight);
     return 0;
   }
   image->width = imgWidth;

@@ -32,7 +32,7 @@
 #include "qmetatype.h"
 #include <QFileDialog>
 #include "QMessageBox"
-
+#include "pathutil.h"
 #include "blockbuster_qt.h"
 #include "errmsg.h"
 #include <X11/Xlib.h>
@@ -267,9 +267,10 @@ void BlockbusterInterface::on_quitButton_clicked() {
 void BlockbusterInterface::on_openButton_clicked() {
   QString filename = 
     QFileDialog::  getOpenFileName(this, "Choose a movie file",
-                                   "",
+                                   mPreviousDir,
                                    "Readable Files (*.sm *png *tiff *pnm *raw *sgi);;Any (*)");
   if (filename != "") {
+    mPreviousDir = Dirname(filename.toStdString()).c_str(); 
     mEventQueue.push_back(MovieEvent(MOVIE_OPEN_FILE, filename)); 
   }
 }

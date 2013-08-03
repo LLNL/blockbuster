@@ -227,8 +227,8 @@ void Renderer::WriteImageToFile(int frameNumber)
 
   region.x = 0;
   region.y = 0;
-  region.height = mFrameList->getFrame(localFrameNumber)->height;
-  region.width = mFrameList->getFrame(localFrameNumber)->width;
+  region.height = mFrameList->getFrame(localFrameNumber)->mHeight;
+  region.width = mFrameList->getFrame(localFrameNumber)->mWidth;
 
   image = GetImage(localFrameNumber, &region, 0);
 
@@ -331,7 +331,7 @@ void Renderer::ReportFrameListChange(FrameListPtr iframeList) {
   if (mBlockbusterInterface) {
     mBlockbusterInterface->setFrameRange(1, mFrameList->numStereoFrames()); 
     mBlockbusterInterface->setFrameNumber(1); 
-    QString moviename = mFrameList->getFrame(0)->filename.c_str(); 
+    QString moviename = mFrameList->getFrame(0)->mFilename.c_str(); 
     if (moviename.size() > 32) moviename = QString("...") + moviename.right(32); 
     mBlockbusterInterface->setTitle(QString("Blockbuster Control (%1)").arg(moviename)); 
     SetTitle(QString("Blockbuster (%1)").arg(moviename)); 

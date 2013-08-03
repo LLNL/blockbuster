@@ -433,9 +433,9 @@ void dmxRenderer::SetFrameList(FrameListPtr frameList) {
    */
   mFiles.clear(); 
   for (framenum = 0; framenum < frameList->numActualFrames(); framenum++) {
-    if (previousName != frameList->getFrame(framenum)->filename.c_str()) {
-      mFiles.push_back(frameList->getFrame(framenum)->filename); 
-      previousName = frameList->getFrame(framenum)->filename.c_str();        
+    if (previousName != frameList->getFrame(framenum)->mFilename.c_str()) {
+      mFiles.push_back(frameList->getFrame(framenum)->mFilename); 
+      previousName = frameList->getFrame(framenum)->mFilename.c_str();        
     }
   }
   

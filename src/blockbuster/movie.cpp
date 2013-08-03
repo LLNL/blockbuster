@@ -87,7 +87,7 @@ void ClampStartEndFrames(FrameListPtr allFrames,
 						 int32_t &endFrame, 
 						 int32_t &frameNumber, 
 						 bool warn = false) {
-  DEBUGMSG(QString("BEGIN ClampStartEndFrames(%1, %2, %3, %4...").arg(allFrames->getFrame(0)->filename.c_str()).arg(startFrame).arg(endFrame).arg(frameNumber)); 
+  DEBUGMSG(QString("BEGIN ClampStartEndFrames(%1, %2, %3, %4...").arg(allFrames->getFrame(0)->mFilename.c_str()).arg(startFrame).arg(endFrame).arg(frameNumber)); 
   if (endFrame <= 0) {
     endFrame = allFrames->numStereoFrames()-1;
   }
@@ -111,7 +111,7 @@ void ClampStartEndFrames(FrameListPtr allFrames,
   }
   if (frameNumber > endFrame) frameNumber = endFrame; 
   if (frameNumber < startFrame) frameNumber = startFrame; 
-  DEBUGMSG(QString("END ClampStartEndFrames(%1, %2, %3, %4...").arg(allFrames->getFrame(0)->filename.c_str()).arg(startFrame).arg(endFrame).arg(frameNumber)); 
+  DEBUGMSG(QString("END ClampStartEndFrames(%1, %2, %3, %4...").arg(allFrames->getFrame(0)->mFilename.c_str()).arg(startFrame).arg(endFrame).arg(frameNumber)); 
   return;
 }
 
@@ -315,7 +315,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         break; 
       case MOVIE_PWD:
         {
-          QString pwd =  ParentDir(QString(frameInfo->filename.c_str()));
+          QString pwd =  ParentDir(QString(frameInfo->mFilename.c_str()));
           gSidecarServer->SendEvent(MovieEvent(MOVIE_PWD, pwd)); 
         }
         break; 
@@ -344,8 +344,8 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
       case MOVIE_FULLSCREEN:
         //DEBUGMSG("fullscreen"); renderer->mWidth
         if(!frameInfo) {
-          /*newZoom = ComputeZoomToFit(renderer, frameInfo->width,
-                                   frameInfo->height);
+          /*newZoom = ComputeZoomToFit(renderer, frameInfo->mWidth,
+                                   frameInfo->mHeight);
           */
           newZoom = ComputeZoomToFit(renderer, renderer->mWidth,
                                    renderer->mHeight);
@@ -391,7 +391,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
             /* if there are frames, use the frame width for the window width 
                else use the current width */ 
             if(frameInfo) {
-              event.width = frameInfo->width;
+              event.width = frameInfo->mWidth;
             } else {
               event.width = renderer->mWidth;
             }
@@ -404,7 +404,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
             /* if there are frames, use the frame height for the window height 
                else use the current height */ 
             if(frameInfo) {
-              event.height = frameInfo->height;
+              event.height = frameInfo->mHeight;
             } else {
               event.height = renderer->mHeight;
             }
@@ -501,15 +501,15 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
       case MOVIE_ZOOM_FIT: 
       MOVIE_ZOOM_FIT: 
         if(frameInfo) {
-          newZoom = ComputeZoomToFit(renderer, frameInfo->width,
-                                   frameInfo->height);
+          newZoom = ComputeZoomToFit(renderer, frameInfo->mWidth,
+                                   frameInfo->mHeight);
           DEBUGMSG("Zoom to Fit: %f", newZoom);
         } else {
           // Caution:  RDC: Zooming was not working right upon movie startup, so here I'm reusing some old code that was commented out -- maybe assumption that allFrames->frames[0] is not NULL is not valid?  
           //bb_assert (allFrames->frames[0] != NULL); 
           newZoom = ComputeZoomToFit(renderer,
-                                     allFrames->getFrame(0)->width,
-                                     allFrames->getFrame(0)->height);
+                                     allFrames->getFrame(0)->mWidth,
+                                     allFrames->getFrame(0)->mHeight);
         }
         xOffset = yOffset = 0;
         options->zoomFit = true; 
@@ -755,7 +755,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
                getText(NULL, "Filename",
                        "Please give the image a name.",
                        QLineEdit::Normal,
-                       ParentDir(QString(frameInfo->filename.c_str())),
+                       ParentDir(QString(frameInfo->mFilename.c_str())),
                        &ok);
            }
            
@@ -765,8 +765,8 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
              }
              Rectangle region; 
              region.x = region.y = 0; 
-             region.width = frameInfo->width; 
-             region.height = frameInfo->height; 
+             region.width = frameInfo->mWidth; 
+             region.height = frameInfo->mHeight; 
              ImagePtr image = renderer->GetImage(frameNumber,&region,0); 
              int size[3] = {region.width, region.height, 3}; 
              int result = 
@@ -909,15 +909,15 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
       QString filename("none"); 
       
       if (allFrames && static_cast<int32_t>(allFrames->numStereoFrames()) > frameNumber) {
-        filename = allFrames->getFrame(frameNumber)->filename.c_str(); 
+        filename = allFrames->getFrame(frameNumber)->mFilename.c_str(); 
       }
       int loopmsg = 0, imageHeight=0, imageWidth = 0;
       if (loopCount < 0) loopmsg = -1;
       if (loopCount > 1) loopmsg = 1;
       if (loopCount == 1 || loopCount == 0) loopmsg = 0; 
       if (allFrames->numStereoFrames()) {
-        imageHeight = allFrames->getFrame(0)->height; 
-        imageWidth = allFrames->getFrame(0)->width;
+        imageHeight = allFrames->getFrame(0)->mHeight; 
+        imageWidth = allFrames->getFrame(0)->mWidth;
       }
       
       { 
@@ -941,8 +941,8 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
       * Compute ROI: region of the image that's visible in the window 
       */
       {
-        const int imgWidth = frameInfo->width;
-        const int imgHeight = frameInfo->height;
+        const int imgWidth = frameInfo->mWidth;
+        const int imgHeight = frameInfo->mHeight;
         const int winWidth = renderer->mWidth;
         const int winHeight = renderer->mHeight;
         int x, y;
@@ -1032,7 +1032,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
       if (lodBias < 0) {
         lodBias = 0; 
       }        
-      if ((uint32_t) lodBias > frameInfo->maxLOD) {
+      if ((uint32_t) lodBias > frameInfo->mMaxLOD) {
         lodBias = maxLOD; 
       }        
       renderer->ReportDetailChange(lodBias);
@@ -1043,8 +1043,8 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         baseLOD = LODFromZoom(currentZoom);
       }
       lod = baseLOD > lodBias? baseLOD: lodBias;
-      if ((uint32_t)lod > frameInfo->maxLOD) {
-        lod = frameInfo->maxLOD;
+      if ((uint32_t)lod > frameInfo->mMaxLOD) {
+        lod = frameInfo->mMaxLOD;
       }
       /* Call the renderer to render the desired area of the frame.
        * Most rendereres will refer to their own image caches to load
@@ -1082,7 +1082,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
              sprintf(str, "Frame %d of %d", frameNumber + 1, allFrames->numStereoFrames());
              renderer->DrawString(row++, 0, str);
              sprintf(str, "Frame Size: %d by %d pixels",
-             frameInfo->width, frameInfo->height);
+             frameInfo->mWidth, frameInfo->mHeight);
              renderer->DrawString(row++, 0, str);
              sprintf(str, "Position: %d, %d",
              -(xOffset + panDeltaX), yOffset + panDeltaY);
