@@ -445,7 +445,7 @@ void ImageCache::ClearImages(void)
   /* Any images in the cache must be released */
   mCachedImages.clear(); 
   mCachedImages.resize(mMaxCachedImages); 
-  for (uint32_t i = 0; i < mMaxCachedImages; i++) {
+  for (int32_t i = 0; i < mMaxCachedImages; i++) {
     mCachedImages[i].reset(new CachedImage()); 
   }
 

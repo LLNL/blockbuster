@@ -151,19 +151,19 @@ int PNGFrameInfo::LoadImage(ImagePtr mImage,
   }
 
   scanlineBytes = ROUND_TO_MULTIPLE(
-                                    bytesPerPixel * this->width,
+                                    bytesPerPixel * mWidth,
                                     byteMultiple
                                     );
 
-  if (!mImage->allocate(this->height * scanlineBytes)) {
+  if (!mImage->allocate(mHeight * scanlineBytes)) {
     ERROR("could not allocate %dx%dx%d image data",
-          this->width, this->height, bytesPerPixel);
+          mWidth, mHeight, bytesPerPixel);
     return 0;
   }
     
     
-  mImage->width = this->width;
-  mImage->height = this->height;
+  mImage->width = mWidth;
+  mImage->height = mHeight;
   mImage->imageFormat.bytesPerPixel = bytesPerPixel;
   mImage->imageFormat.scanlineByteMultiple = byteMultiple;
   mImage->imageFormat.byteOrder = byteOrder;
@@ -177,22 +177,22 @@ int PNGFrameInfo::LoadImage(ImagePtr mImage,
  
   /* PNG requires an array of row pointers.  Allocate the array
    */
-  png_bytep *rowPointers = new png_bytep[this->height]; 
+  png_bytep *rowPointers = new png_bytep[mHeight]; 
   if (rowPointers == NULL) {
     ERROR("could not allocate row pointers for frame");
     return 0;
   }
   bb_assert(scanlineBytes > 0);
-  for (uint32_t i = 0; i < this->height; i++) {
+  for (uint32_t i = 0; i < mHeight; i++) {
 	if (mImage->imageFormat.rowOrder == TOP_TO_BOTTOM) {
       rowPointers[i] = (png_bytep) mImage->Data() + i * scanlineBytes;
 	}
 	else {
-      rowPointers[this->height - i - 1] = (png_bytep) mImage->Data() + i * scanlineBytes;
+      rowPointers[mHeight - i - 1] = (png_bytep) mImage->Data() + i * scanlineBytes;
 	}
   }
 
-  if (!PrepPng(this->filename.c_str(), &f, &readStruct, &infoStruct)) {
+  if (!PrepPng(mFilename.c_str(), &f, &readStruct, &infoStruct)) {
 	/* Error has already been reported */
 	delete rowPointers;
 	return 0;
@@ -270,8 +270,8 @@ int PNGFrameInfo::LoadImage(ImagePtr mImage,
    */
   mImage->loadedRegion.x = 0;
   mImage->loadedRegion.y = 0;
-  mImage->loadedRegion.height = this->height;
-  mImage->loadedRegion.width = this->width;
+  mImage->loadedRegion.height = mHeight;
+  mImage->loadedRegion.width = mWidth;
 
   return 1;
 }
@@ -290,7 +290,7 @@ PNGFrameInfo::PNGFrameInfo(string fname): FrameInfo(fname)  {
    */
 
   /* Start reading the file straight away */
-  if (!PrepPng(filename, &f, &readStruct, &infoStruct)) {
+  if (!PrepPng(mFilename, &f, &readStruct, &infoStruct)) {
     /* Error has already been reported */
     return ;
   }
@@ -317,19 +317,19 @@ PNGFrameInfo::PNGFrameInfo(string fname): FrameInfo(fname)  {
   case PNG_COLOR_TYPE_GRAY_ALPHA:
   case PNG_COLOR_TYPE_RGB:
   case PNG_COLOR_TYPE_RGB_ALPHA:
-    this->depth = pngdepth * 3; 
+    mDepth = pngdepth * 3; 
     break;
   case PNG_COLOR_TYPE_PALETTE:
-    this->depth = pngdepth;
+    mDepth = pngdepth;
     break;
   default:
     WARNING("Unrecognized PNG color type %d ignored.", colorType);
     return; 
   }
-  width = pngwidth; 
-  height = pngheight; 
+  mWidth = pngwidth; 
+  mHeight = pngheight; 
 
-  DEBUGMSG("The file '%s' is a valid PNG file.", filename.c_str());
+  DEBUGMSG("The file '%s' is a valid PNG file.", mFilename.c_str());
 
   mValid = true; 
   return; 

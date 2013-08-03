@@ -62,15 +62,15 @@ int TiffFrameInfo::RGBALoadImage(ImagePtr image,
   /* Calculate how much image data we need. */
   extraBytesPerPixel = requiredImageFormat->bytesPerPixel - 3;
   scanlineBytes = 
-    ROUND_TO_MULTIPLE(requiredImageFormat->bytesPerPixel * this->width,
+    ROUND_TO_MULTIPLE(requiredImageFormat->bytesPerPixel * mWidth,
                       requiredImageFormat->scanlineByteMultiple );
 
   extraBytesPerScanline = scanlineBytes - 
-    requiredImageFormat->bytesPerPixel * this->width;
+    requiredImageFormat->bytesPerPixel * mWidth;
 
-  if (!image->allocate(this->height * scanlineBytes)) {
+  if (!image->allocate(mHeight * scanlineBytes)) {
     ERROR("could not allocate %dx%dx%d image data",
-          this->width, this->height, this->depth);
+          mWidth, mHeight, mDepth);
     return 0;
   }
 
@@ -83,17 +83,17 @@ int TiffFrameInfo::RGBALoadImage(ImagePtr image,
   /* We sent only the necessary rows, but all pixels in each row.
    * So tell this to the caller.
    */
-  image->width = this->width;
-  image->height = this->height;
+  image->width = mWidth;
+  image->height = mHeight;
   image->imageFormat.bytesPerPixel = requiredImageFormat->bytesPerPixel;
   image->imageFormat.scanlineByteMultiple = requiredImageFormat->scanlineByteMultiple;
   image->imageFormat.byteOrder = requiredImageFormat->byteOrder;
   image->levelOfDetail = levelOfDetail;
 
 
-  f = TIFFOpen(this->filename.c_str(), "r");
+  f = TIFFOpen(this->mFilename.c_str(), "r");
   if (f == NULL) {
-	SYSERROR("cannot open TIFF file %s", this->filename.c_str());
+	SYSERROR("cannot open TIFF file %s", this->mFilename.c_str());
 	return 0;
   }
 
@@ -115,7 +115,7 @@ int TiffFrameInfo::RGBALoadImage(ImagePtr image,
 	TIFFClose( f );
 	return 0;
   }
-  uint32* raster = (uint32*)(&this->scanlineBuffer[0]);
+  uint32* raster = (uint32*)(&this->mScanlineBuffer[0]);
   dest = (unsigned char *)image->Data();
   for (i = 0; i < image->height; i++) {
 	const int row = /*desiredSub->y +*/ i;
@@ -125,7 +125,7 @@ int TiffFrameInfo::RGBALoadImage(ImagePtr image,
 	 * otherwise, it should still be well-placed for what we need.
 	 */
 	if (image->imageFormat.rowOrder == BOTTOM_TO_TOP) {
-      dest = (unsigned char *)image->Data() + (this->height - row - 1) * scanlineBytes;
+      dest = (unsigned char *)image->Data() + (mHeight - row - 1) * scanlineBytes;
 	}
     else {
       bb_assert(image->imageFormat.rowOrder == TOP_TO_BOTTOM);
@@ -133,7 +133,7 @@ int TiffFrameInfo::RGBALoadImage(ImagePtr image,
     }
 
     /* Use width 1 to get a single full width scanline */
-	rv = TIFFRGBAImageGet( &rgbaImg, raster, this->width, 1);
+	rv = TIFFRGBAImageGet( &rgbaImg, raster, mWidth, 1);
 	if (rv != 1) {
       WARNING("TIFFRGBAImageGet() row=%d i=%d returned %d", row, i, rv);
       TIFFClose( f );
@@ -144,7 +144,7 @@ int TiffFrameInfo::RGBALoadImage(ImagePtr image,
     /* Move down a row for next ImageGet call */
 	rgbaImg.row_offset++;
 
-	for (j = 0; j < static_cast<uint32_t>(this->width); j++) {
+	for (j = 0; j < static_cast<uint32_t>(mWidth); j++) {
       unsigned char red, green, blue;
       red = TIFFGetR( raster[j] );
       green = TIFFGetG( raster[j] );
@@ -172,8 +172,8 @@ int TiffFrameInfo::RGBALoadImage(ImagePtr image,
 
   image->loadedRegion.x = 0;
   image->loadedRegion.y = 0;
-  image->loadedRegion.width = this->width;
-  image->loadedRegion.height = this->height;
+  image->loadedRegion.width = mWidth;
+  image->loadedRegion.height = mHeight;
 
   return 1;
 }
@@ -201,16 +201,16 @@ TiffFrameInfo::Color24LoadImage(ImagePtr image,
   /* Calculate how much image data we need. */
   extraBytesPerPixel = requiredImageFormat->bytesPerPixel - 3;
   scanlineBytes = ROUND_TO_MULTIPLE(
-                                    requiredImageFormat->bytesPerPixel * this->width,
+                                    requiredImageFormat->bytesPerPixel * mWidth,
                                     requiredImageFormat->scanlineByteMultiple
                                     );
   extraBytesPerScanline = scanlineBytes - 
-    requiredImageFormat->bytesPerPixel * this->width;
+    requiredImageFormat->bytesPerPixel * mWidth;
 
 
-  if (!image->allocate(this->height * scanlineBytes)) {
+  if (!image->allocate(mHeight * scanlineBytes)) {
     ERROR("could not allocate %dx%dx%d image data ",
-          this->width, this->height, this->depth);
+          mWidth, mHeight, mDepth);
     return 0;
   }
   
@@ -223,17 +223,17 @@ TiffFrameInfo::Color24LoadImage(ImagePtr image,
   /* We sent only the necessary rows, but all pixels in each row.
    * So tell this to the caller.
    */
-  image->width = this->width;
-  image->height = this->height;
+  image->width = mWidth;
+  image->height = mHeight;
   image->imageFormat.bytesPerPixel = requiredImageFormat->bytesPerPixel;
   image->imageFormat.scanlineByteMultiple = requiredImageFormat->scanlineByteMultiple;
   image->imageFormat.byteOrder = requiredImageFormat->byteOrder;
   image->levelOfDetail = levelOfDetail;
   
 
-  f = TIFFOpen(this->filename.c_str(), "r");
+  f = TIFFOpen(this->mFilename.c_str(), "r");
   if (f == NULL) {
-	SYSERROR("cannot open TIFF file %s", this->filename.c_str());
+	SYSERROR("cannot open TIFF file %s", this->mFilename.c_str());
 	return 0;
   }
 
@@ -252,12 +252,12 @@ TiffFrameInfo::Color24LoadImage(ImagePtr image,
   for (i = 0; i < image->height; i++) {
 	const int row = /*desiredSub->y +*/ i;
 	int rv;
-	src = &this->scanlineBuffer[0];
+	src = &this->mScanlineBuffer[0];
 	/* If we're going from bottom to top, put the scanline at the bottom;
 	 * otherwise, it should still be well-placed for what we need.
 	 */
 	if (image->imageFormat.rowOrder == BOTTOM_TO_TOP) {
-      dest = (unsigned char *)image->Data() + (this->height - row - 1) * scanlineBytes;
+      dest = (unsigned char *)image->Data() + (mHeight - row - 1) * scanlineBytes;
 	}
     else {
       bb_assert(image->imageFormat.rowOrder == TOP_TO_BOTTOM);
@@ -268,7 +268,7 @@ TiffFrameInfo::Color24LoadImage(ImagePtr image,
       WARNING("TIFFReadScanline(row=%d) i=%d returned %d", row, i, rv);
       return 0;
 	}
-	for (j = 0; j < static_cast<uint32_t>(this->width); j++) {
+	for (j = 0; j < static_cast<uint32_t>(mWidth); j++) {
       unsigned char red, green, blue;
       red = *src++;
       green = *src++;
@@ -295,8 +295,8 @@ TiffFrameInfo::Color24LoadImage(ImagePtr image,
 
   image->loadedRegion.x = 0;
   image->loadedRegion.y = 0;
-  image->loadedRegion.width = this->width;
-  image->loadedRegion.height = this->height;
+  image->loadedRegion.width = mWidth;
+  image->loadedRegion.height = mHeight;
 
   return 1;
 }
@@ -311,57 +311,57 @@ TiffFrameInfo::TiffFrameInfo(string fname): FrameInfo(fname), mTiffType(TIFF_INV
    */
   TIFFSetErrorHandler(NULL);
 
-  f = TIFFOpen(filename.c_str(), "r");
+  f = TIFFOpen(mFilename.c_str(), "r");
   if (!f) {
-	DEBUGMSG("The file '%s' is not a TIFF file.", filename.c_str());
+	DEBUGMSG("The file '%s' is not a TIFF file.", mFilename.c_str());
 	return ;
   }
-  if (!TIFFGetField(f, TIFFTAG_BITSPERSAMPLE, &bitsPerSample))
-	bitsPerSample = 1;
-  if (!TIFFGetField(f, TIFFTAG_SAMPLESPERPIXEL, &samplesPerPixel))
-	samplesPerPixel = 1;
-  (void) TIFFGetField(f, TIFFTAG_IMAGEWIDTH, &width);
-  (void) TIFFGetField(f, TIFFTAG_IMAGELENGTH, &height);
-  (void) TIFFGetField(f, TIFFTAG_PHOTOMETRIC, &photometric);
-  (void) TIFFGetField(f, TIFFTAG_PLANARCONFIG, &planarConfiguration);
-  (void) TIFFGetFieldDefaulted(f, TIFFTAG_MINSAMPLEVALUE, &minSample);
-  (void) TIFFGetFieldDefaulted(f, TIFFTAG_MAXSAMPLEVALUE, &maxSample);
+  if (!TIFFGetField(f, TIFFTAG_BITSPERSAMPLE, &mBitsPerSample))
+	mBitsPerSample = 1;
+  if (!TIFFGetField(f, TIFFTAG_SAMPLESPERPIXEL, &mSamplesPerPixel))
+	mSamplesPerPixel = 1;
+  (void) TIFFGetField(f, TIFFTAG_IMAGEWIDTH, &mWidth);
+  (void) TIFFGetField(f, TIFFTAG_IMAGELENGTH, &mHeight);
+  (void) TIFFGetField(f, TIFFTAG_PHOTOMETRIC, &mPhotometric);
+  (void) TIFFGetField(f, TIFFTAG_PLANARCONFIG, &mPlanarConfiguration);
+  (void) TIFFGetFieldDefaulted(f, TIFFTAG_MINSAMPLEVALUE, &mMinSample);
+  (void) TIFFGetFieldDefaulted(f, TIFFTAG_MAXSAMPLEVALUE, &mMaxSample);
   DEBUGMSG(
            "%s is a %dx%d TIFF [%d] file with %d bits per sample and %d samples per pixel",
-           filename.c_str(), width, height, planarConfiguration, bitsPerSample, samplesPerPixel);
+           mFilename.c_str(), mWidth, mHeight, mPlanarConfiguration, mBitsPerSample, mSamplesPerPixel);
   DEBUGMSG("scanline size %d", TIFFScanlineSize(f));
 
   TIFFClose(f);
   
-  if (bitsPerSample == 8 && samplesPerPixel == 3) {
-    scanlineBuffer.resize(width * 3); 
+  if (mBitsPerSample == 8 && mSamplesPerPixel == 3) {
+    mScanlineBuffer.resize(mWidth * 3); 
     mTiffType = TIFF_24BIT; 
   }
   else if ( TIFFRGBAImageOK( f, errMesg ) ) {
     /* Each scan line will hold 3 bytes per pixel */
-    scanlineBuffer.resize(width * sizeof(uint32));
+    mScanlineBuffer.resize(mWidth * sizeof(uint32));
     mTiffType = TIFF_RGBA; 
   }
 #if 0
-  else if (bitsPerSample == 16 && samplesPerPixel == 3) {
+  else if (mBitsPerSample == 16 && mSamplesPerPixel == 3) {
     /* 48-bit color image!?! */
   }
-  else if (bitsPerSample == 8 && samplesPerPixel == 1) {
+  else if (mBitsPerSample == 8 && mSamplesPerPixel == 1) {
     /* 8-bit grayscale */
   }
-  else if (bitsPerSample == 16 && samplesPerPixel == 1) {
+  else if (mBitsPerSample == 16 && mSamplesPerPixel == 1) {
     /* 16-bit grayscale */
   }
 #endif
   else {
     WARNING("%s: unsupported %d bps/%d spp TIFF file",
-            filename.c_str(), bitsPerSample, samplesPerPixel);
+            mFilename.c_str(), mBitsPerSample, mSamplesPerPixel);
     return ;
   }
   /* Fill out the rest of the frameInfo information */
-  this->depth = 8*samplesPerPixel;
+  mDepth = 8*mSamplesPerPixel;
   this->mFrameNumberInFile = 0;
-  DEBUGMSG("The file '%s' is a valid TIFF file.", filename.c_str());
+  DEBUGMSG("The file '%s' is a valid TIFF file.", mFilename.c_str());
   mValid = true; 
   return; 
 }

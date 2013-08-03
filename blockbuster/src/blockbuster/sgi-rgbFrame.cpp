@@ -202,14 +202,14 @@ int SGIFrameInfo::LoadImage(ImagePtr image,
                             const Rectangle */*desiredSubRegion*/,
                             int /*LOD*/) {
   
-  image->width = this->width;
-  image->height = this->height;
+  image->width = mWidth;
+  image->height = mHeight;
   image->levelOfDetail = 0;
   image->imageFormat = *format;
 
-  if (!image->allocate(this->height * this->width * image->imageFormat.bytesPerPixel)) {
+  if (!image->allocate(mHeight * mWidth * image->imageFormat.bytesPerPixel)) {
     ERROR("could not allocate %dx%dx%d image data",
-          this->width, this->height, this->depth);
+          mWidth, mHeight, mDepth);
     return 0;
   }
 
@@ -224,10 +224,11 @@ int SGIFrameInfo::LoadImage(ImagePtr image,
   if (image->imageFormat.scanlineByteMultiple == 0)
     image->imageFormat.scanlineByteMultiple = 1;
   
-  int rowWidth = ROUND_TO_MULTIPLE(image->width * image->imageFormat.bytesPerPixel,
-                               image->imageFormat.scanlineByteMultiple);
+  /*  int rowWidth = ROUND_TO_MULTIPLE(image->width * 
+                                   image->imageFormat.bytesPerPixel,
+                                   image->imageFormat.scanlineByteMultiple);
   
-  
+  */
   
   /* OK, now really load the image */
   {
@@ -236,9 +237,9 @@ int SGIFrameInfo::LoadImage(ImagePtr image,
 	int i, j, rowStride;
 	int rIndex, gIndex, bIndex;
 
-	rec = RawImageOpen(this->filename.c_str());
+	rec = RawImageOpen(mFilename.c_str());
 	if (!rec) {
-      DEBUGMSG("SGI reader could not open filename %s", filename.c_str());     
+      DEBUGMSG("SGI reader could not open filename %s", mFilename.c_str());     
       return 0;
     }
 
@@ -260,12 +261,12 @@ int SGIFrameInfo::LoadImage(ImagePtr image,
 
 	if (image->imageFormat.rowOrder == TOP_TO_BOTTOM) {
       rowStart = (char *) image->Data()
-		+ (image->height - 1) * this->width;
-      rowStride = -this->width ;
+		+ (image->height - 1) * mWidth;
+      rowStride = -mWidth ;
 	}
 	else {
       rowStart = (char *) image->Data();
-      rowStride = this->width;
+      rowStride = mWidth;
 	}
 
 	for (i = 0; i < (int) rec->sizeY; i++) {
@@ -293,27 +294,27 @@ int SGIFrameInfo::LoadImage(ImagePtr image,
 
   image->loadedRegion.x = 0;
   image->loadedRegion.y = 0;
-  image->loadedRegion.height = this->height;
-  image->loadedRegion.width = this->width;
+  image->loadedRegion.height = mHeight;
+  image->loadedRegion.width = mWidth;
 
 
   return 1;
 }
 
 SGIFrameInfo::SGIFrameInfo(string fname): FrameInfo(fname) {
-  rawImageRec *rec = RawImageOpen(filename.c_str());
+  rawImageRec *rec = RawImageOpen(mFilename.c_str());
   if (!rec) {
-	DEBUGMSG("The file '%s' is NOT an SGI RGB file.", filename.c_str());
+	DEBUGMSG("The file '%s' is NOT an SGI RGB file.", mFilename.c_str());
 	return ;
   }
   /* Fill out the rest of the frameInfo information */
-  width = rec->sizeX;
-  height = rec->sizeY;
-  depth = rec->sizeZ * 8;
+  mWidth = rec->sizeX;
+  mHeight = rec->sizeY;
+  mDepth = rec->sizeZ * 8;
   mFrameNumberInFile = 0;
-  filename = filename;
+  mFilename = fname;
   RawImageClose(rec);
-  DEBUGMSG("The file '%s' is a valid SGI file.", filename.c_str());
+  DEBUGMSG("The file '%s' is a valid SGI file.", mFilename.c_str());
   mValid = true; 
   return; 
 }

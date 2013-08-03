@@ -90,7 +90,7 @@ ImagePtr FrameInfo::LoadAndConvertImage(unsigned int frameNumber,
 	ERROR("could not load frame %d (frame %d of file name %s) for the cache",
           frameNumber,
           mFrameNumberInFile,
-          filename.c_str()
+          mFilename.c_str()
           );
 	return ImagePtr();
   }
@@ -143,10 +143,10 @@ void FrameList::GetInfo(int &maxWidth, int &maxHeight, int &maxDepth,
   maxWidth = maxHeight = maxDepth = maxLOD = 0; 
   for (uint32_t i = 0; i < frames.size(); i++) {
     FrameInfoPtr frameInfoPtr = frames[i]; 
-    maxWidth = MAX2(maxWidth, frameInfoPtr->width);
-    maxHeight = MAX2(maxHeight, frameInfoPtr->height);
-    maxDepth = MAX2(maxDepth, frameInfoPtr->depth);
-    maxLOD = MAX2(maxLOD, frameInfoPtr->maxLOD);
+    maxWidth = MAX2((uint32_t)maxWidth, frameInfoPtr->mWidth);
+    maxHeight = MAX2((uint32_t)maxHeight, frameInfoPtr->mHeight);
+    maxDepth = MAX2((uint32_t)maxDepth, frameInfoPtr->mDepth);
+    maxLOD = MAX2((uint32_t)maxLOD, frameInfoPtr->mMaxLOD);
   }
   
   fps = targetFPS;

@@ -94,7 +94,7 @@ class BlockbusterInterface: public QWidget, public Ui::BlockbusterControl  {
   int mLOD; 
   double mFrameRate, mZoom; 
   int mPingPong, mLoop; 
-
+  QString mPreviousDir; 
 
 }; 
 #endif
