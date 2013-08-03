@@ -1,56 +1,102 @@
 This is a story about the journey from disk to screen of a little old movie frame.  
 
-=========================================================================================
+It seems to me the paths of interest are:
+1.  Blockbuster:         Read frame from SM  --->  display on screen
+2.  Blockbuster:         Read image file     --->  display on screen
+3.  sm2img, Blockuster:  Read frame from SM  --->  write to image file. 
+4.  smcat:               Read frame from SM  --->  write to SM 
+5.  img2sm:              Reading image file  --->  write to SM 
+ 
+I.e., there are two sources, SM file and image file.  There are three destinations:  screen, SM file, image file.  We do not consider image file ---> image file as there is no tool for this, but it could be added later.    
+
+In blockbuster, the important data structures are I believe only these:  
+
+-- Image (frames.h)       -- contains actual image data
+-- ImageFormat (frames.h) -- contains information about how to convert images
+-- FrameInfo (frames.h)   -- contains a hodgepodge of information including a pointer to the LoadImage function, which really belongs in Image
+-- FrameList (frames.h)   -- just a fancy vector<FrameInfo*> 
+
+=============================================================
+SETUP FUNCTIONS in blockbuster: 
+1. movie.cpp gets MOVIE_OPEN_FILE.  It deletes the frames from its FrameList and then calls FrameList::LoadFrames().  
+2. frames.cpp:FrameList::LoadFrames() calls blahGetFrameList(), e.g. pngGetFrameList(), for each filename. It concatenates the results of all these calls into its internal single list of FrameInfos.  
+3. Each call to *GetFrameList() allocates a FrameList.  It then sets up the LoadImage and privateData and DefaultDestroyFrameInfo and other stuff in one or more FrameInfo structures and places these into the FrameList, which it returns.  
+
+blahGetFrameList is now a static factory function that gets the right kind of FrameList that knows how to do LoadImage() correctly.  
+
+
+=============================================================================
+CASE 1:  blockbuster: Reading a frame from SM file and displaying on screen
+=============================================================================
+
 NORMAL MOVIE LOOP: 
-
+0.  movie.cpp creates a FrameList for the given input file(s) and keeps it around
 1.  movie.cpp calls  
-    canvas->mRenderer->mCache->PreloadHint(preloadFrames, playDirection, 
-                                              startFrame, endFrame);
-       canvas->Render(frameNumber, &roi, destX, destY, currentZoom, lod);
-       
- 
+    renderer->reloadHint(preloadFrames, playDirection, 
+                          startFrame, endFrame);
+                                   
+    renderer->Render(frameNumber, &roi, destX, destY, currentZoom, lod);
+      
 2.  Renderer calls its GetImage, which is simply a pointer to
-     mCache->GetImage(frameNumber, newRegion, levelOfDetail); 
+     Image * mCache->GetImage(frameNumber, newRegion, levelOfDetail); 
 
-3.  the CacheThread calls 
-    LoadAndConvertImage(&job->frameInfo, job->frameNumber, 
-                        this->cache->mCanvas, &job->region, 
-                        job->levelOfDetail);
+3.  cache.cpp: ImageCache::GetImage() gets images stored by its cache thread.  The CacheThread calls: 
+    ImagePtr FrameInfo::LoadAndConvertImage(job->frameNumber, canvasFormat, &job->region,  job->levelOfDetail);
 
-4.  LoadAndConvertImage calls
-    /* Call the file format module to load the image */
-    rv = (*frameInfo->LoadImage)(image, frameInfo, 
-                                 &canvas->requiredImageFormat,
-                                 region, levelOfDetail);
-NOTE: LoadImage is a pointer to a LoadImageFunc, defined in png.cpp, pnm.cpp, sgi-rgb.cpp, sm.cpp (smLoadImage), and tiff.cpp and then assigned to the FrameInfo in the worst example of object oriented programming in known history.  
-typedef int (*LoadImageFunc)
-  ( Image *image,
-    struct FrameInfo *frameInfo,
-    ImageFormat *requiredImageFormat, 
-    const Rectangle *region,
-    int levelOfDetail
-    );
+4.   ImagePtr FrameInfo::LoadAndConvertImage() calls xxxFrameInfo::LoadImage(image, requiredImageFormat, region, levelOfDetail) and ;
+
  
-5.  In sm.cpp, the LoadImageFunc is called smLoadImage
-    In here it calls  getFrameBlock to load the data into image->imageData at the correct offset
-    ((privateData*) p)->sm->getFrameBlock(frameInfo->mFrameNumberInFile, (void *) dest, 
+  4A.  smFrame.cpp: smFrameInfo::LoadImage() calls  getFrameBlock to load the data into 
+    image->imageData at the correct offset
+    sm->getFrameBlock(frameInfo->mFrameNumberInFile, (void *) dest, 
                        GetCurrentThreadID(), destStride,
                        size, pos, step, levelOfDetail);
   
-6. Next, cache.cpp LoadAndConvertImage() calls convert.cpp:ConvertImageToFormat(image, canvas) to prepare for screen display.  It returns the converted image to the cachethread->GetImage() function, which then returns it to the renderer->Render() function, which calls glDrawPixels in the imageData.  
-=========================================================================================
+  4B. Next, FrameInfo::LoadAndConvertImage() calls ConvertImageToFormat(image, format) to prepare for screen display by converting from the "format" .  It returns the converted image to the cachethread->GetImage() function, which then returns it to the renderer->Render() function, which calls glDrawPixels on the imageData.  
+
+==================================================================================
+CASE 2.  blockbuster:  Read an image file from disk and display it on screen
+==================================================================================
+Exactly as per CASE 1 but instead of smFrameInfo::LoadImage(), we call e.g. pngFrameInfo::LoadImage() 
+
+==================================================================================
+CASE 3a.  sm2img: Reading a frame from an SM file and writing it into e.g. a PNG file.
+
+==================================================================================
+workproc calls  sm->getFrameBlock()  or sm->getFrame() for version 1
+depending on image type, workproc write the frame out directly using library calls
+
+==================================================================================
+CASE 3b.  blockbuster: Reading a frame from an SM file and writing it into e.g. a PNG file.
+==================================================================================
+
 If MOVIE_SAVE_IMAGE is encountered in the movie loop, then:
 
 1.  MovieLoop calls 
-    image = canvas->mRenderer->GetImage(frameNumber, &region, 0);
-
-2.  MovieLoop calls 
-               write_png_file(filename.toAscii().data(), 
-                              static_cast<unsigned char*>(image->imageData), 
+    image = renderer->GetImage(frameNumber, &region, 0);
+    write_png_file(filename.toAscii().data(), 
+                              static_cast<unsigned char*>(&image->imageData[0]), 
                               size);
-this is defined in libpng
+    write_png_file is defined in libpng
 
-
-=========================================================================================
+-----------------------------------------------------------
 FOR THUMBNAILS:  
 So it looks to me like sm->getFrameBlock() --> (fileformat-function)->LoadAndConvertImage() --> write_png_file() is the magic path. 
+
+
+==================================================================================
+CASE 4.  smcat: Read a frame from an SM file and write it into another SM file.
+==================================================================================
+Just a bunch of loops that do essentially this:
+     for pos in movies: 
+         for inframe in pos: 
+             for outframe in sm: 
+                 pos->sm->getCompFrame(inframe,0,buffer,size,res);
+                 sm->writeCompFrame(outframe,buffer,&size,res);
+
+==================================================================================
+CASE 5.  img2sm: Reading an image file from disk and placing it into an SM file
+==================================================================================
+img2sm.C:workproc calls img2sm.C: FillInputBuffer() which has custom, simple code to read the files into the standard format. 
+The data is then passed to sm->compressAndBufferFrame(wrk->frame,wrk->buffer);
+ 
