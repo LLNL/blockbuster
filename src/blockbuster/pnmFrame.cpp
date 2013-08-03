@@ -4,16 +4,14 @@
  *   in order to print error messages correctly; it is no longer needed.
  */
 
+#include "pnmFrame.h"
 #include "errmsg.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include "errmsg.h"
-#include "frames.h"
 #include "util.h"
-#include "frames.h"
 #include <X11/Xlib.h>
-#include "pnmFrame.h"
 
 /* pnmrw.h - header file for PBM/PGM/PPM read/write library
 **

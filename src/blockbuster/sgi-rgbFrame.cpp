@@ -26,7 +26,6 @@
 #include "cache.h"
 #include "util.h"
 #include "errmsg.h"
-#include "frames.h"
 #include "sgi-rgbFrame.h"
 
 /*
