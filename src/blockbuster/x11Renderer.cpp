@@ -5,7 +5,6 @@
 #include "util.h"
 #include "frames.h"
 #include "errmsg.h"
-#include "convert.h"
 #include "errmsg.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -89,6 +88,89 @@ int x11Renderer::ComputeShift(unsigned long mask) {
 	shiftCount++;
   }
   return shiftCount;
+}
+
+//====================================================================
+/*
+ * Take the indicated source region (srcX, srcY, srcWidth, srcHeight) of
+ * the image and return a new image of that region scaled to zoomeWidth
+ * by zoomedHeight
+ */
+ImagePtr x11Renderer::ScaleImage( ImagePtr image, int srcX, int srcY,
+                  int srcWidth, int srcHeight,
+                  int zoomedWidth, int zoomedHeight)
+{
+  const ImageFormat *format = &image->imageFormat;
+  register int x, y, i;
+  const int bytesPerScanline = ROUND_TO_MULTIPLE(
+                                                 format->bytesPerPixel * image->width,
+                                                 format->scanlineByteMultiple
+                                                 );
+  const int zoomedBytesPerScanline = ROUND_TO_MULTIPLE(
+                                                       format->bytesPerPixel * zoomedWidth,
+                                                       format->scanlineByteMultiple
+                                                       );
+
+  /*fprintf(stderr,"ScaleImage [%d,%d]->[%d,%d]\n",srcWidth,srcHeight,zoomedWidth,zoomedHeight); */
+  register unsigned char *zoomedScanline, *zoomedData, *pixelData;
+
+  ImagePtr zoomedImage(new Image()); 
+  if (!zoomedImage) {
+	ERROR("could not allocate Image structure");
+	return ImagePtr();
+  }
+  if (!zoomedImage->allocate(zoomedHeight * zoomedBytesPerScanline)) {
+	ERROR("could not allocate %dx%dx%d zoomed image data",
+          zoomedHeight, zoomedWidth, format->bytesPerPixel*8);
+	return ImagePtr();
+  }
+  zoomedImage->height = zoomedHeight;
+  zoomedImage->width = zoomedWidth;
+  zoomedImage->imageFormat = *format;
+  zoomedImage->loadedRegion.x = 0;
+  zoomedImage->loadedRegion.y = 0;
+  zoomedImage->loadedRegion.width = zoomedWidth;
+  zoomedImage->loadedRegion.height = zoomedHeight;
+  zoomedImage->width = zoomedWidth;
+  zoomedImage->height = zoomedHeight;
+
+  zoomedScanline = (unsigned char *) zoomedImage->Data();
+  for (y = 0; y < zoomedHeight; y++) {
+	const int unzoomedY = srcY + y * srcHeight / zoomedHeight;
+	zoomedData = zoomedScanline;
+	if (format->bytesPerPixel == 4) {
+      const int *srcRow = (int *)
+		((const char *) image->ConstData() + unzoomedY * bytesPerScanline);
+      int *dstRow = (int *) zoomedData;
+      for (x = 0; x < zoomedWidth; x++) {
+		/* Figure out where the source pixel is */
+		const int unzoomedX = srcX + x * srcWidth / zoomedWidth;
+		dstRow[x] = srcRow[unzoomedX];
+      }
+	}
+	else {
+      /* arbitrary bytes per pixel */
+      /* XXX optimize someday */
+      for (x = 0; x < zoomedWidth; x++) {
+		/* Figure out where the source pixel is */
+		const int unzoomedX = srcX + x * srcWidth / zoomedWidth;
+
+		pixelData = (unsigned char *) image->ConstData() + 
+          unzoomedY * bytesPerScanline +
+          unzoomedX * format->bytesPerPixel;
+
+		/* Copy over the pixel */
+		for (i = 0; i < format->bytesPerPixel; i++) {
+          *zoomedData++ = *pixelData++;
+		}
+      }
+	}
+
+	/* Adjust the scanline */
+	zoomedScanline += zoomedBytesPerScanline;
+  }
+
+  return zoomedImage;
 }
 
 //====================================================================

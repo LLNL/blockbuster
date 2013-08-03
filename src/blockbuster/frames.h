@@ -149,6 +149,12 @@ struct FrameInfo {
                         int /*levelOfDetail*/) = 0;
 
   
+  void ConvertPixel(const ImageFormat *srcFormat,
+                    const ImageFormat *destFormat,
+                    const unsigned char *src, unsigned char *dest);
+
+  ImagePtr ConvertImageToFormat(ImagePtr image, ImageFormat *canvasFormat);
+
   ImagePtr LoadAndConvertImage(unsigned int frameNumber,
                              ImageFormat *canvasFormat, 
                              const Rectangle *region, int levelOfDetail);
