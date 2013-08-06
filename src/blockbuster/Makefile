@@ -90,11 +90,11 @@ SOURCES=main.cpp blockbuster_qt.cpp movie.cpp  ../common/timer.C \
 	cache.cpp  common.cpp \
 	sgi-rgbFrame.cpp convert.cpp smFrame.cpp pngFrame.cpp \
 	splash.cpp pnmFrame.cpp tiffFrame.cpp \
-	libdmx/dmx.c MovieCues.cpp events.cpp   \
+	libdmx/dmx.c MovieCues.cpp events.cpp ImageCache.cpp  \
 	MovieRenderer.cpp util.cpp settings.cpp errmsg.cpp \
 	Renderer.cpp x11Renderer.cpp glRenderer.cpp dmxRenderer.cpp 
 
-HEADERS= errmsg.h events.h remotecommands.h  \
+HEADERS= errmsg.h events.h remotecommands.h  ImageCache.h \
 	../common/stringutil.h ../common/timer.h ../config/version.h \
 	MovieCues.h errmsg.h pure_C.h util.h blockbuster_qt.h  \
 	sgi-rgbFrame.h convert.h smFrame.h pathutil.h pngFrame.h \

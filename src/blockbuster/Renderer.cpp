@@ -8,7 +8,6 @@
 #include <stdarg.h>
 #include <sys/times.h>
 #include "errmsg.h"
-#include "cache.h"
 #include "settings.h"
 
 #include <X11/extensions/XTest.h>
@@ -104,17 +103,17 @@ void Renderer::FinishInit(ProgramOptions *opt) {
   mVisInfo = ChooseVisual(); 
   FinishXWindowInit(opt); 
   FinishRendererInit(opt); 
-  mCache = CreateImageCache(mOptions->readerThreads,
-                            mOptions->frameCacheSize, mRequiredImageFormat);
+  mCache.reset(new ImageCache(mOptions->readerThreads,
+                              mOptions->frameCacheSize, mRequiredImageFormat));
   return;
 }
 
 // ======================================================================
 void Renderer::SetFrameList(FrameListPtr frameList) {
   if (!mCache) {
-    mCache = CreateImageCache(mThreads, mCacheSize, mRequiredImageFormat);
+    mCache.reset(new ImageCache(mThreads, mCacheSize, mRequiredImageFormat));
   }
-  if (mCache == NULL) {
+  if (!mCache) {
     ERROR("could not recreate image cache when changing frame list");
     exit(1); 
   }

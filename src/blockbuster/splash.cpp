@@ -24,7 +24,6 @@
 #include <string.h>
 #include <unistd.h>
 #include "errmsg.h"
-#include "cache.h"
 #include "splash.h"
 
 extern unsigned char splashImageData[92700];  // defined at the bottom of this file

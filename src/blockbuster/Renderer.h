@@ -7,6 +7,7 @@
 #include "frames.h"
 #include "settings.h"
 #include "cache.h"
+#include "ImageCache.h"
 
 #include "QString"
 #include <stdio.h>
@@ -68,9 +69,31 @@ class Renderer {
   
  // ======================================================================
   // The fundamental operation of the Renderer is to render.     
-  virtual void Render(int frameNumber,
-                      const Rectangle *imageRegion,
-                      int destX, int destY, float zoom, int lod) = 0;
+  void Render(int frameNumber, int previousFrame, 
+              uint32_t preloadFrames, int playDirection, 
+              uint32_t startFrame, uint32_t endFrame,
+              const Rectangle *imageRegion,
+              int destX, int destY, float zoom, int lod) {
+    mCache->PreloadHint(preloadFrames, playDirection, 
+                        startFrame, endFrame);
+
+    RenderActual(frameNumber, imageRegion, destX, destY, zoom, lod); 
+
+    if (frameNumber != previousFrame && previousFrame >= 0) {
+      DecrementLockCounts(previousFrame); 
+    }
+  }
+
+  // ======================================================================
+  virtual void DecrementLockCounts(int frameToDecrement) {
+    mCache->DecrementLockCount(frameToDecrement); 
+  }
+
+  // ======================================================================
+  // This is the actual renderer, minus the cache decorations
+  virtual void RenderActual(int frameNumber,
+                            const Rectangle *imageRegion,
+                            int destX, int destY, float zoom, int lod) = 0; 
 
  // ======================================================================
   virtual void SetFrameList(FrameListPtr frameList) ;
@@ -197,11 +220,12 @@ class Renderer {
   // END  stuff from XWindow 
   // ==============================================================
   QString mName; 
-  ImageCachePtr mCache; // if not using DMX
 
  protected:   
   //  " good to have around to reduce arguments" (??)
   ProgramOptions *mOptions; 
+  ImageCachePtr mCache; // if not using DMX
+  NewImageCachePtr mNewCache; 
 
 
 } ;

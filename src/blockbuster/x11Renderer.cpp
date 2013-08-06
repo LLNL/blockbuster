@@ -1,7 +1,6 @@
 
 #include "x11Renderer.h"
 #include "errmsg.h"
-#include "cache.h"
 #include "util.h"
 #include "frames.h"
 #include "errmsg.h"
@@ -174,7 +173,7 @@ ImagePtr x11Renderer::ScaleImage( ImagePtr image, int srcX, int srcY,
 }
 
 //====================================================================
-void x11Renderer::Render(int frameNumber,const Rectangle *imageRegion,
+void x11Renderer::RenderActual(int frameNumber,const Rectangle *imageRegion,
                          int destX, int destY, float zoom, int lod){
   ECHO_FUNCTION(5);
   XImage *xImage;

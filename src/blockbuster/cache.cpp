@@ -246,15 +246,6 @@ void CacheThread::run() {
 }
 
 //==================================================================
-ImageCachePtr CreateImageCache(int numReaderThreads, int maxCachedImages, ImageFormat &required)
-{
-  ImageCachePtr newCache(new ImageCache(numReaderThreads, maxCachedImages, required));
-  if (!newCache) {
-	SYSERROR("cannot allocate image cache");
-  }
-  return newCache; 
-}
-//==================================================================
 ImageCache::ImageCache(int numthreads, int numimages, ImageFormat &required): 
   mNumReaderThreads(numthreads), mMaxCachedImages(numimages), 
   mRequiredImageFormat(required), mRequestNumber(0), 

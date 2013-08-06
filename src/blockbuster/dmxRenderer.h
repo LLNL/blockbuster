@@ -197,9 +197,14 @@ class dmxRenderer: public QObject, public Renderer {
 
   void DrawString(int row, int col , const char *str); 
   
-  void Render(int frameNumber,
+  void RenderActual(int frameNumber,
               const Rectangle *imageRegion,
               int destX, int destY, float zoom, int lod);
+
+  virtual void DecrementLockCounts(int ) {
+    return; 
+  }
+
   virtual void SwapBuffers(void);
  
   void SetFrameList(FrameListPtr frameList);

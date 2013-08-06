@@ -284,8 +284,8 @@ int dmxRenderer::IsDMXDisplay(Display *dpy) {
 }
 
 //  =============================================================
-void dmxRenderer::Render(int frameNumber,const Rectangle *imageRegion,
-                         int destX, int destY, float zoom, int lod)
+void dmxRenderer::RenderActual(int frameNumber,const Rectangle *imageRegion,
+                               int destX, int destY, float zoom, int lod)
 {
   
   ECHO_FUNCTION(5);
