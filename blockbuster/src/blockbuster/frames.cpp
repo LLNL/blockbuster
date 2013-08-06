@@ -332,8 +332,8 @@ ImagePtr FrameInfo::LoadAndConvertImage(unsigned int frameNumber,
 void FrameList::GetInfo(int &maxWidth, int &maxHeight, int &maxDepth,
                         int &maxLOD, float &fps){
   maxWidth = maxHeight = maxDepth = maxLOD = 0; 
-  for (uint32_t i = 0; i < frames.size(); i++) {
-    FrameInfoPtr frameInfoPtr = frames[i]; 
+  for (uint32_t i = 0; i < mFrames.size(); i++) {
+    FrameInfoPtr frameInfoPtr = mFrames[i]; 
     maxWidth = MAX2((uint32_t)maxWidth, frameInfoPtr->mWidth);
     maxHeight = MAX2((uint32_t)maxHeight, frameInfoPtr->mHeight);
     maxDepth = MAX2((uint32_t)maxDepth, frameInfoPtr->mDepth);
@@ -457,7 +457,19 @@ bool FrameList::LoadFrames(QStringList &files) {
     delete fileList; 
   }
   
-  return frames.size()>0;
+  return mFrames.size()>0;
 }
 
+
+//===============================================================
+void FrameList::ReleaseFramesFromCache(void) {
+  for (vector<FrameInfoPtr>::iterator pos = mFrames.begin(); pos != mFrames.end(); pos++) {
+    if ((*pos)->mOwnerThread >= 0) {
+      pos->reset((*pos)->Clone()); // get the proper subclass
+      (*pos)->mAbort = (*pos)->mComplete = false; 
+      (*pos)->mOwnerThread = -1; 
+    }
+  }
+  return; 
+}
 

@@ -12,6 +12,16 @@ struct PNMFrameInfo: public FrameInfo {
                         const Rectangle */*region*/, 
                         int /*lod*/);
   
+  // ----------------------------------------------
+  PNMFrameInfo(const PNMFrameInfo &other) :FrameInfo(other) {
+    return; 
+  }
+  
+  // ----------------------------------------------
+  virtual PNMFrameInfo* Clone()  const{
+    return new PNMFrameInfo(*this); 
+  }
+  
 }; 
 
 

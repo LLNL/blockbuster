@@ -24,6 +24,17 @@ struct SMFrameInfo: public FrameInfo {
                         const Rectangle */*region*/, 
                         int /*lod*/);
 
+  // ----------------------------------------------
+  SMFrameInfo(const SMFrameInfo &other) :
+    FrameInfo(other), mSM(other.mSM) {
+    return; 
+  }
+  
+  // ----------------------------------------------
+  virtual SMFrameInfo* Clone()  const{
+    return new SMFrameInfo(*this); 
+  }
+
   smBasePtr mSM; 
  
 }; 
