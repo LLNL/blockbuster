@@ -23,7 +23,6 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
-#include "cache.h"
 #include "util.h"
 #include "errmsg.h"
 #include "sgi-rgbFrame.h"

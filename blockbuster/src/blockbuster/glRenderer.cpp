@@ -125,7 +125,7 @@ void glRenderer::DrawString(int row, int column, const char *str)
   return; 
 }
 //=============================================================
-void glRenderer::Render(int frameNumber, 
+void glRenderer::RenderActual(int frameNumber, 
                         const Rectangle *imageRegion,
                         int destX, int destY, float zoom, int lod){
   int lodScale;
@@ -285,7 +285,7 @@ void glRenderer::SwapBuffers(void) {
 
 
 //***********************************************************************
-void glStereoRenderer::Render(int frameNumber,
+void glStereoRenderer::RenderActual(int frameNumber,
                               const Rectangle *imageRegion,
                               int destX, int destY, float zoom, int lod)
 {
@@ -596,7 +596,7 @@ TextureObjectPtr glTextureRenderer::GetTextureObject(int frameNumber)
 }
 
 
-void glTextureRenderer::Render(int frameNumber, const Rectangle *imageRegion,
+void glTextureRenderer::RenderActual(int frameNumber, const Rectangle *imageRegion,
                                int destX, int destY, float zoom, int lod) {
   GLfloat s0, t0, s1, t1;
   GLfloat x0, y0, x1, y1;

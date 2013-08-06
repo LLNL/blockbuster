@@ -21,8 +21,6 @@ using namespace std;
 typedef boost::shared_ptr<class ImageCache> ImageCachePtr; 
 typedef boost::shared_ptr<class CacheThread> CacheThreadPtr; 
 
-ImageCachePtr CreateImageCache(int numReaderThreads, int maxCachedImages, ImageFormat &required);
-
 
 // =================================================================
 //! ImageCacheJob:  a request for the workers to get an image

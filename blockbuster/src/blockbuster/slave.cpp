@@ -34,7 +34,6 @@
 #include "splash.h"
 #include "frames.h"
 #include "smFrame.h"
-#include "cache.h"
 #include <time.h>
 #include "util.h"
 #include <fstream>
@@ -373,19 +372,13 @@ int Slave::Loop(void)
             destY = messageList[7].toLong();
             lod = messageList[9].toLong();
             zoom = messageList[8].toFloat();
-            
             if (mRenderer->mFrameList) {
-              mRenderer->Render(imageNum, &currentRegion, 
-                              destX, destY, zoom, lod);
+              mRenderer->Render(imageNum, lastImageRendered,  
+                                preload, playStep, 
+                                playFirstFrame, playLastFrame, 
+                                &currentRegion, destX, destY, zoom, lod);
               
-              if (imageNum != lastImageRendered && lastImageRendered >= 0) {
-                if (mRenderer->mFrameList->stereo) {
-                  mRenderer->mCache->DecrementLockCount(lastImageRendered*2); 
-                  mRenderer->mCache->DecrementLockCount(lastImageRendered*2+1); 
-                } else {
-                  mRenderer->mCache->DecrementLockCount(lastImageRendered); 
-                }
-              } 
+             
               lastImageRendered = imageNum; 
             }
             else {
@@ -594,8 +587,10 @@ int Slave::Loop(void)
       */ 
       if (0 && playStep) {
         if (mRenderer && mRenderer->mFrameList) {
-          mRenderer->Render(playFrame, &currentRegion, 
-                          destX, destY, zoom, lod);
+          mRenderer->Render(playFrame, lastImageRendered,  
+                            preload, playStep, 
+                            playFirstFrame, playLastFrame, &currentRegion, 
+                            destX, destY, zoom, lod);
         }
         lastImageRendered = playFrame; 
 #ifdef USE_MPI
@@ -626,8 +621,10 @@ int Slave::Loop(void)
           
           /* render the next frame and advance the counter */
           if (mRenderer && mRenderer->mFrameList) {
-            mRenderer->Render(playFrame, &currentRegion, 
-                            destX, destY, zoom, lod);
+            mRenderer->Render(playFrame, lastImageRendered,  
+                              preload, playStep, 
+                              playFirstFrame, playLastFrame, &currentRegion, 
+                              destX, destY, zoom, lod);
           }
           lastImageRendered = playFrame; 
           playFrame ++; 

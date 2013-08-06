@@ -22,7 +22,6 @@
 #include "QDir"
 #include "blockbuster_qt.h"
 #include "timer.h"
-#include "cache.h"
 #include "splash.h"
 #include "SidecarServer.h"
 #include "util.h"
@@ -152,7 +151,6 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
   /*int izoom = 0*/  // for mouse zoom
   float currentZoom = 1.0, newZoom, startZoom, oldZoom; // actual zoom factor
   int lod = 0, maxLOD, baseLOD = 0, lodBias = options->LOD;
-  bool usingDmx = (QString(options->rendererName) == "dmx"); 
   long sleepAmt=1; // for incremental backoff during idle
   /* Region Of Interest of the image */
   Rectangle roi;
@@ -1058,18 +1056,11 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
        */
       
        TIMER_PRINT("before render"); 
-       renderer->mCache->PreloadHint(preloadFrames, playDirection, 
-                                              startFrame, endFrame);
-       renderer->Render(frameNumber, &roi, destX, destY, currentZoom, lod);
+       renderer->Render(frameNumber, previousFrame, 
+                        preloadFrames, playDirection, 
+                        startFrame, endFrame, &roi, destX, destY, 
+                        currentZoom, lod);
        
-       if (!usingDmx && frameNumber != previousFrame && previousFrame >= 0) {
-         if (allFrames->stereo) {
-           renderer->mCache->DecrementLockCount(previousFrame*2); 
-           renderer->mCache->DecrementLockCount(previousFrame*2+1); 
-         } else {
-           renderer->mCache->DecrementLockCount(previousFrame); 
-         }
-       }
        TIMER_PRINT("after render"); 
      
       /* Print info in upper-left corner */
