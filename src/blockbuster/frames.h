@@ -5,6 +5,7 @@
 #include "common.h"
 #include <vector>
 #include "boost/shared_ptr.hpp"
+#include "boost/atomic.hpp"
 #include <QStringList>
 using namespace std; 
 struct Canvas; 
@@ -114,15 +115,36 @@ struct Image {
 
 
 //============================================================
-/* Information about one frame of the movie. */ 
+/*
+  Information about one frame of the movie. 
+  Knows how to load its image. 
+  Also subclasses CacheElement to allow being managed by cache.  
+*/ 
 struct FrameInfo {
 
-  FrameInfo(string fname="", uint32_t w=0, uint32_t h=0, uint32_t d=0, uint32_t maxlod=0, uint32_t frameInFile=0) {
+  // ----------------------------------------------
+  FrameInfo(string fname="", uint32_t w=0, uint32_t h=0, uint32_t d=0, 
+            uint32_t maxlod=0, uint32_t frameInFile=0): 
+    mComplete(false), mAbort(false), mOwnerThread(-1) {
     init(fname,w,h,d,maxlod,frameInFile); 
     return; 
   }
   
+  // ----------------------------------------------
+  virtual FrameInfo* Clone() const = 0; 
 
+  // ----------------------------------------------
+  FrameInfo(const FrameInfo &other) :
+    mWidth(other.mWidth), mHeight(other.mHeight),  
+    mDepth(other.mDepth), mMaxLOD(other.mMaxLOD), 
+    mFrameNumberInFile(other.mFrameNumberInFile), 
+    mFrameNumber(other.mFrameNumber), mFilename(other.mFilename), 
+    mValid(other.mValid),  mComplete(other.mComplete), 
+    mAbort(other.mAbort), mOwnerThread(-1) {
+    return; 
+  }
+
+  // ----------------------------------------------
   void init(string fname, uint32_t w, uint32_t h,    
             uint32_t  d,  uint32_t maxlod, uint32_t frameinfile) {
     mWidth = w; 
@@ -136,29 +158,38 @@ struct FrameInfo {
     return; 
   }
 
+  // ----------------------------------------------
   virtual ~FrameInfo() {
     return; 
   }
 
+  
+  // ----------------------------------------------
   QString toString(void) {
     return QString("{ FrameInfo: frameNumber = %1 in file %2}").arg(mFrameNumberInFile).arg(mFilename.c_str()); 
   }
 
+  // ----------------------------------------------
   virtual int LoadImage(ImagePtr, ImageFormat */*requiredImageFormat*/, 
                         const Rectangle */*region*/,
-                        int /*levelOfDetail*/) = 0;
+                        int /*levelOfDetail*/) = 0; 
+
 
   
+  // ----------------------------------------------
   void ConvertPixel(const ImageFormat *srcFormat,
                     const ImageFormat *destFormat,
                     const unsigned char *src, unsigned char *dest);
 
+  // ----------------------------------------------
   ImagePtr ConvertImageToFormat(ImagePtr image, ImageFormat *canvasFormat);
 
+  // ----------------------------------------------
   ImagePtr LoadAndConvertImage(unsigned int frameNumber,
-                             ImageFormat *canvasFormat, 
-                             const Rectangle *region, int levelOfDetail);
+                               ImageFormat *canvasFormat, 
+                               const Rectangle *region, int levelOfDetail);
   
+ // ----------------------------------------------
   /* Basic statistics */
   uint32_t mWidth, mHeight, mDepth;
   
@@ -181,16 +212,21 @@ struct FrameInfo {
   
   bool mValid; 
 
-  
+  /* Cache management fields */ 
+  bool mComplete, mAbort; 
+  boost::atomic<int> mOwnerThread; // a worker owns this if nonnegative
+
 } ;
 
 
 typedef boost::shared_ptr<struct FrameList> FrameListPtr; 
 //============================================================
 
-  /* A FrameList contains an array of frame pointers and associated metadata.  
-   * This structure basically represents a movie.
-   */
+/* A FrameList contains an array of frame pointers and associated metadata.  
+ * This structure basically represents a movie.
+ * Since a FrameList also contains FrameInfos, which are Cache elements, 
+ * it subclasses from ImageCacheElementManager. 
+ */
 struct FrameList {
   // ----------------------------------------------------
   FrameList() { 
@@ -219,43 +255,49 @@ struct FrameList {
 
   // ----------------------------------------------------
   ~FrameList() {
-    frames.clear(); 
+    mFrames.clear(); 
   }
 
-   // ----------------------------------------------------
- void init(void) {
-    stereo = false; 
+  // ----------------------------------------------------
+  void init(void) {
+    mCacheDirection =0;  // we don't skip frames when caching
+    mCurrentFrame= 0; 
+    mStartFrame= 0; 
+    mEndFrame= 0;   
+    mMaxFrames= 0;  
+    mFramesInProgress= 0; 
+    mFramesCompleted = 0;    stereo = false; 
     targetFPS = 30.0;
   }
 
   // ----------------------------------------------------
   void DeleteFrames(void) {
-    frames.clear(); 
+    mFrames.clear(); 
   }
 
   // ----------------------------------------------------
   FrameInfoPtr getFrame(uint32_t num) {
-    return frames[num]; 
+    return mFrames[num]; 
   }
 
   // ----------------------------------------------------
   uint32_t numStereoFrames(void) const {
-    if (stereo) return frames.size()/2; 
-    return frames.size(); 
+    if (stereo) return mFrames.size()/2; 
+    return mFrames.size(); 
   }
 
   // ----------------------------------------------------
-  uint32_t numActualFrames(void) const { return frames.size(); }
+  uint32_t numActualFrames(void) const { return mFrames.size(); }
 
   // ----------------------------------------------------
   void GetInfo(int &maxWidth, int &maxHeight, int &maxDepth,
-		    int &maxLOD, float &fps);
+               int &maxLOD, float &fps);
 
   // ----------------------------------------------------
   void append(FrameListPtr other) {
     if (other) {
-      for  (uint32_t i=0; i < other->frames.size(); i++) {
-        frames.push_back(other->frames[i]); 
+      for  (uint32_t i=0; i < other->mFrames.size(); i++) {
+        mFrames.push_back(other->mFrames[i]); 
       }  
     }
     return; 
@@ -263,7 +305,7 @@ struct FrameList {
 
   // ----------------------------------------------------
   void append(FrameInfoPtr frame) {
-    frames.push_back(frame); 
+    mFrames.push_back(frame); 
     return; 
   }
   
@@ -271,11 +313,20 @@ struct FrameList {
   bool LoadFrames(QStringList &files);
 
   // ----------------------------------------------------
+  void ReleaseFramesFromCache(void) ;
+
+  // ----------------------------------------------------
   bool stereo;
   float targetFPS;      /* desired/target frames/second playback rate */
   QString formatName, formatDescription; 
-  private:
-  vector<FrameInfoPtr> frames; 
+
+  vector<FrameInfoPtr> mFrames; 
+
+  // Info for the cache: 
+  int mCacheDirection; 
+  uint32_t mCurrentFrame, mStartFrame, mEndFrame, mMaxFrames; 
+  boost::atomic<uint32_t> mFramesInProgress, mFramesCompleted; 
+
 } ;
 
 

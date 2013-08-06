@@ -12,22 +12,42 @@ typedef boost::shared_ptr<struct TiffFrameInfo> TiffFrameInfoPtr;
 
 // ==================================================================
 struct TiffFrameInfo: public FrameInfo {
-  TiffFrameInfo(string fname) ; 
+  // ----------------------------------------------
+  TiffFrameInfo(string fname); 
 
+  // ----------------------------------------------
   virtual ~TiffFrameInfo() {
     return;
   }
 
+  // ----------------------------------------------
+  TiffFrameInfo(const TiffFrameInfo &other) :
+    FrameInfo(other), mBitsPerSample(other.mBitsPerSample), 
+    mSamplesPerPixel(other.mSamplesPerPixel), mPhotometric(other.mPhotometric),
+    mPlanarConfiguration(other.mPlanarConfiguration), 
+    mMinSample(other.mMinSample), mMaxSample(other.mMaxSample),
+    mScanlineBuffer(other.mScanlineBuffer), mTiffType(other.mTiffType) {
+    return; 
+  }
+  
+  // ----------------------------------------------
+  virtual TiffFrameInfo* Clone()  const{
+    return new TiffFrameInfo(*this); 
+  }
+  
+  // ----------------------------------------------
   int RGBALoadImage(ImagePtr image,  
                     ImageFormat *requiredImageFormat, 
                     const Rectangle *,
                     int levelOfDetail);
 
+  // ----------------------------------------------
   int Color24LoadImage(ImagePtr image,  
                        ImageFormat *requiredImageFormat, 
                        const Rectangle *,
                        int levelOfDetail);
 
+  // ----------------------------------------------
   virtual int LoadImage(ImagePtr image,  
                        ImageFormat *fmt, 
                         const Rectangle *region, 

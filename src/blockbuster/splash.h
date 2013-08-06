@@ -7,9 +7,22 @@
 extern FrameListPtr splashScreenFrameListPtr;
 
 struct SplashFrameInfo: public FrameInfo {
+  SplashFrameInfo(): FrameInfo() {
+    return; 
+  }
+
   int LoadImage(ImagePtr image,
                 ImageFormat *, const Rectangle *, int );
   
+  // ----------------------------------------------
+  SplashFrameInfo(const SplashFrameInfo &other) :FrameInfo(other) {
+    return; 
+  }
+  
+  // ----------------------------------------------
+  virtual SplashFrameInfo* Clone()  const{
+    return new SplashFrameInfo(*this); 
+  }
 }; 
 
 
