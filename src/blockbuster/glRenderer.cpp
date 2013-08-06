@@ -46,8 +46,7 @@ void glRenderer::FinishRendererInit(ProgramOptions *) {
   Font id = mFontInfo->fid;
   unsigned int first = mFontInfo->min_char_or_byte2;
   unsigned int last = mFontInfo->max_char_or_byte2;
-  //  glRenderer *renderer = dynamic_cast<glRenderer*>(canvas->mRenderer); 
-  
+   
   /* All GL rendering in X11 requires a glX context. */
   context = glXCreateContext(mDisplay, mVisInfo,
                                        NULL, GL_TRUE);
