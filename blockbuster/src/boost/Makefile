@@ -29,7 +29,7 @@
 #
 include ../config/config
 
-BOOST_VERSION = 1_53_0
+BOOST_VERSION = 1_54_0
 INSTALL_DIR ?= $(shell pwd)
 
 HEADER_EVIDENCE = $(INSTALL_DIR)/include/boost/random.hpp 
