@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
 
   TCLAP::SwitchArg canonical("C", "canonical", "List all canonical tags for each movie.  If no movie name is given, simply list all canonical metadata with default values.", cmd); 
 
-  TCLAP::SwitchArg exportThumb("e", "export-thumbnail", "Export thumbnail frame (not working yet)", cmd); 
+  TCLAP::SwitchArg exportThumb("e", "export-thumbnail", "Export thumbnail frame", cmd); 
 
   TCLAP::SwitchArg filenameOnly("f", "only-filename", "Only print the filename of the matching movie(s).", cmd); 
 
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
 
   TCLAP::SwitchArg list("l", "list", "Lists all tags in movie(s) with their values.  Equivalent to -T '.*' -s.  This is the default behavior", cmd); 
 
-  TCLAP::SwitchArg thumbnailInfo("n", "thumbnail-info", "get number of thumbnail and resolution", cmd); 
+  TCLAP::SwitchArg thumbnailInfo("n", "thumbnail-info", "print frame number of thumbnail and thumbnail resolution", cmd); 
 
   TCLAP::SwitchArg quiet("q", "quiet", "wDo not echo the tags to stdout.  Just return 0 on successful match. ", cmd); 
 

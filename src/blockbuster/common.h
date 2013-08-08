@@ -9,6 +9,8 @@
 #include "QThread"
 #include <unistd.h>
 #include <stdint.h>
+#include "boost/shared_ptr.hpp"
+
 //#include "blockbuster_qt.h"
 class BlockbusterInterface; 
 
@@ -96,6 +98,9 @@ void real_dbprintf(const char *fmt, ...);
 #define MOVIE_BAD_FLAG    2
 #define MOVIE_FATAL_ERROR 3
 
+
+typedef boost::shared_ptr<struct Rectangle> RectanglePtr; 
+
 struct Rectangle {
   Rectangle():x(0),y(0),width(0), height(0){}
   Rectangle(qint32 ix, qint32 iy, qint32 w, qint32 h):
@@ -108,8 +113,8 @@ struct Rectangle {
 } ;
 
 //! RectContainsRect: Return 1 if r1 contains r2, else return 0.
-int RectContainsRect(const Rectangle *r1, const Rectangle *r2);
-Rectangle RectUnionRect(const Rectangle *r1, const Rectangle *r2);
+int RectContainsRect(const Rectangle * r1, const Rectangle * r2);
+Rectangle RectUnionRect(const Rectangle * r1, const Rectangle * r2);
 
 double GetCurrentTime(void);
 

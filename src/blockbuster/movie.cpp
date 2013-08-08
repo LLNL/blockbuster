@@ -153,7 +153,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
   int lod = 0, maxLOD, baseLOD = 0, lodBias = options->LOD;
   long sleepAmt=1; // for incremental backoff during idle
   /* Region Of Interest of the image */
-  Rectangle roi;
+  RectanglePtr roi;
   int destX, destY; // position on canvas to render the image
 
   
@@ -962,20 +962,21 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
          * its position destX,destY relative to upper-left corner of window.
          */
         /* X axis */
-        roi.width = imgRight - imgLeft;
-        roi.x = imgLeft;
-        if (roi.x < 0) { // left edge of the image is off screen
+        qint32 region_x,region_y,region_width,region_height; 
+        region_width = imgRight - imgLeft;
+        region_x = imgLeft;
+        if (region_x < 0) { // left edge of the image is off screen
           /* clip left */
-          roi.x = 0;
-          roi.width += roi.x; // this is odd. 
+          region_x = 0;
+          region_width += region_x; // this is odd. 
         }
-        if (roi.x + roi.width > imgWidth) {
+        if (region_x + region_width > imgWidth) {
           /* clip right */
-          roi.width = imgWidth - roi.x;
+          region_width = imgWidth - region_x;
         }
-        if (roi.width < 0) {
+        if (region_width < 0) {
           /* check for null image */
-          roi.x = roi.width = 0;
+          region_x = region_width = 0;
         }
         
         // placement of image on renderer:  destX
@@ -984,44 +985,47 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
           /* left clip */
           destX = 0;
         }
-        if (destX + roi.width * currentZoom > winWidth) {
+        if (destX + region_width * currentZoom > winWidth) {
           /* right clip */
-          roi.width = static_cast<int>((winWidth - destX) / currentZoom);
-          if (roi.width < 0)
-            roi.width = 0;
+          region_width = static_cast<int>((winWidth - destX) / currentZoom);
+          if (region_width < 0)
+            region_width = 0;
         }
         
         /* Y axis */
-        roi.height = imgBottom - imgTop;
-        roi.y = imgTop;
-        if (roi.y < 0) {
+        region_height = imgBottom - imgTop;
+        region_y = imgTop;
+        if (region_y < 0) {
           /* clip top */
-          roi.y = 0;
-          roi.height += roi.y; // huh?  it's 0! 
+          region_y = 0;
+          region_height += region_y; // huh?  it's 0! 
         }
-        if (roi.y + roi.height > imgHeight) {
+        if (region_y + region_height > imgHeight) {
           /* clip bottom */
-          roi.height = imgHeight - roi.y;
+          region_height = imgHeight - region_y;
         }
-        if (roi.height < 0) {
+        if (region_height < 0) {
           /* check for null image */
-          roi.y = roi.height = 0;
+          region_y = region_height = 0;
         }
-        
         // placement of image on renderer:  destY
         destY = static_cast<int>(-imgTop * currentZoom);
         if (destY < 0) {
           /* top clip */
           destY = 0;
         }
-        if (destY + roi.height * currentZoom > winHeight) {
+        if (destY + region_height * currentZoom > winHeight) {
           /* bottom clip */
-          roi.height = static_cast<int>((winHeight - destY) / currentZoom);
-          if (roi.height < 0)
-            roi.height = 0;
+          region_height = static_cast<int>((winHeight - destY) / currentZoom);
+          if (region_height < 0)
+            region_height = 0;
         }
         
-        /*
+         if (!roi || region_y != roi->y || region_x != roi->x || 
+            region_height != roi->height || region_width != roi->width) {
+          roi.reset(new Rectangle(region_x,region_y,region_width,region_height)); 
+        }
+       /*
           printf("roi: %d, %d  %d x %d  dest: %d, %d\n",
           roi.x, roi.y, roi.width, roi.height, destX, destY);
         */
@@ -1058,7 +1062,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
        TIMER_PRINT("before render"); 
        renderer->Render(frameNumber, previousFrame, 
                         preloadFrames, playDirection, 
-                        startFrame, endFrame, &roi, destX, destY, 
+                        startFrame, endFrame, roi, destX, destY, 
                         currentZoom, lod);
        
        TIMER_PRINT("after render"); 

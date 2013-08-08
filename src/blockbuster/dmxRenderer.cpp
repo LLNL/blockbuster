@@ -284,7 +284,7 @@ int dmxRenderer::IsDMXDisplay(Display *dpy) {
 }
 
 //  =============================================================
-void dmxRenderer::RenderActual(int frameNumber,const Rectangle *imageRegion,
+void dmxRenderer::RenderActual(int frameNumber,const RectanglePtr imageRegion,
                                int destX, int destY, float zoom, int lod)
 {
   
@@ -335,7 +335,7 @@ void dmxRenderer::RenderActual(int frameNumber,const Rectangle *imageRegion,
       Rectangle newRegion;
       int newDestX, newDestY;
       
-      ClipImageRegion(destX, destY, imageRegion, vis, zoom,
+      ClipImageRegion(destX, destY, imageRegion.get(), vis, zoom,
                       &newDestX, &newDestY, &newRegion);
       
       mActiveSlaves[scrn]->SetCurrentFrame(frameNumber); 

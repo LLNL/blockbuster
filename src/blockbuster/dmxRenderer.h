@@ -21,7 +21,7 @@
 class DMXSlave: public QObject {
   /* Q_OBJECT enables Qt's signals and slots to work */ 
   Q_OBJECT
- public:
+    public:
   DMXSlave(QString hostname, QTcpSocket *mSocket, int preloadFrames);
   ~DMXSlave();
 
@@ -177,7 +177,7 @@ typedef DMXWindowAttributes DMXWindowInfo;
 
 class dmxRenderer: public QObject, public Renderer {
   Q_OBJECT
- public:
+    public:
   dmxRenderer(ProgramOptions *opt, Window parentWindow, 
               BlockbusterInterface *gui, QString name = "dmx");
   
@@ -185,7 +185,7 @@ class dmxRenderer: public QObject, public Renderer {
   virtual ~dmxRenderer(); 
 
   // DMX SPECIFIC STUFF from Canvas: 
- /* thump-thump */
+  /* thump-thump */
   virtual void DMXSendHeartbeat(void); 
   virtual void DMXSpeedTest(void);
   virtual void DMXCheckNetwork(void);
@@ -198,8 +198,8 @@ class dmxRenderer: public QObject, public Renderer {
   void DrawString(int row, int col , const char *str); 
   
   void RenderActual(int frameNumber,
-              const Rectangle *imageRegion,
-              int destX, int destY, float zoom, int lod);
+                    RectanglePtr imageRegion,
+                    int destX, int destY, float zoom, int lod);
 
   virtual void DecrementLockCounts(int ) {
     return; 

@@ -22,12 +22,12 @@ class x11Renderer: public Renderer {
     return NULL; // does not apply to X11
   }
  
- ImagePtr ScaleImage(ImagePtr image, 
-                     int srcX, int srcY, int srcWidth, int srcHeight,
-                     int zoomedWidth, int zoomedHeight);
- virtual void RenderActual(int frameNumber,
-              const Rectangle *imageRegion,
-              int destX, int destY, float zoom, int lod);
+  ImagePtr ScaleImage(ImagePtr image, 
+                      int srcX, int srcY, int srcWidth, int srcHeight,
+                      int zoomedWidth, int zoomedHeight);
+  virtual void RenderActual(int frameNumber,
+                            RectanglePtr imageRegion,
+                            int destX, int destY, float zoom, int lod);
   virtual void DrawString(int row, int column, const char *str);
   virtual void SwapBuffers(void);
  

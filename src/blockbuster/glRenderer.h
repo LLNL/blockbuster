@@ -20,8 +20,8 @@ class glRenderer: public Renderer {
   virtual void DrawString(int row, int column, const char *str);
 
   virtual void RenderActual(int frameNumber,
-                      const Rectangle *imageRegion,
-                      int destX, int destY, float zoom, int lod);  
+                            RectanglePtr imageRegion,
+                            int destX, int destY, float zoom, int lod);  
   virtual void SwapBuffers(void);
    
   bool mXSynchronize; // for debugging, presumably. 
@@ -44,7 +44,7 @@ class glStereoRenderer: public glRenderer {
   }
   virtual ~glStereoRenderer() {}
   virtual XVisualInfo *ChooseVisual(void);
-  void RenderActual(int frameNumber, const Rectangle *imageRegion,
+  void RenderActual(int frameNumber,  RectanglePtr imageRegion,
               int destX, int destY, float zoom, int lod);
 
   virtual void DecrementLockCounts(int decrementFrame) {
@@ -79,8 +79,8 @@ class glTextureRenderer: public glRenderer {
   virtual ~glTextureRenderer() {}
 
   int32_t MinPowerOf2(int x); 
-  void RenderActual(int frameNumber, const Rectangle *imageRegion,
-              int destX, int destY, float zoom, int lod);
+  void RenderActual(int frameNumber, RectanglePtr imageRegion,
+                    int destX, int destY, float zoom, int lod);
   TextureObjectPtr GetTextureObject(int frameNumber);
   void UpdateProjectionAndViewport(int newWidth, int newHeight);
 
