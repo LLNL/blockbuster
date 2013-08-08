@@ -486,8 +486,8 @@ void dmxRenderer::LaunchSlave(QString hostname) {
     if (mOptions->readerThreads > 0) {
       args << QString(" -threads %1 ").arg(mOptions->readerThreads);
     } 
-    if (mOptions->frameCacheSize > 0) {
-      args << QString(" -cache %1 ").arg(mOptions->frameCacheSize);
+    if (mOptions->mMaxCachedImages > 0) {
+      args << QString(" -cachesize %1 ").arg(mOptions->mMaxCachedImages);
     } 
     if (mOptions->preloadFrames > 0) {
       args << QString(" -preload %1 ").arg(mOptions->preloadFrames);
@@ -638,7 +638,7 @@ void dmxRenderer::UpdateBackendRenderers(void)
                     .arg(mDmxWindowInfos[i].pos.width)
                     .arg(mDmxWindowInfos[i].pos.height)
                     .arg(mDepth)
-                    .arg(mOptions->frameCacheSize)
+                    .arg(mOptions->mMaxCachedImages)
                     .arg(mOptions->readerThreads));
 
       mActiveSlaves[scrn]->HaveRenderer(true);

@@ -64,7 +64,7 @@ Renderer::Renderer(ProgramOptions *opt, qint32 parentWindowID,
   mHeight(0), mWidth(0), mScreenHeight(0), mScreenWidth(0), 
   mXPos(0), mYPos(0), mDepth(0), 
   mThreads(opt->readerThreads),
-  mCacheSize(opt->frameCacheSize), 
+  mCacheSize(opt->mMaxCachedImages), 
   mBlockbusterInterface(gui), 
   // from XWindow: 
   mVisInfo(NULL), mScreenNumber(0), mWindow(0), mIsSubWindow(0), 
@@ -104,7 +104,7 @@ void Renderer::FinishInit(ProgramOptions *opt) {
   FinishXWindowInit(opt); 
   FinishRendererInit(opt); 
   mCache.reset(new ImageCache(mOptions->readerThreads,
-                              mOptions->frameCacheSize, mRequiredImageFormat));
+                              mOptions->mMaxCachedImages, mRequiredImageFormat));
   return;
 }
 
@@ -947,7 +947,7 @@ void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
   XEvent event;
   Display *dpy = mDisplay;
   if (!block && !XPending(dpy)) {
-    movieEvent->eventType = MOVIE_NONE;
+    movieEvent->mEventType = MOVIE_NONE;
     return;
   }
   
@@ -965,7 +965,7 @@ void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
       else
         break;
     }
-    movieEvent->eventType = MOVIE_EXPOSE;
+    movieEvent->mEventType = MOVIE_EXPOSE;
     return;
   case ConfigureNotify:
     while (XPending(dpy)) {
@@ -981,11 +981,11 @@ void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
       else
         break;
     }
-    movieEvent->width = event.xconfigure.width;
-    movieEvent->height = event.xconfigure.height;
-    movieEvent->x = event.xconfigure.x;
-    movieEvent->y = event.xconfigure.y;
-    movieEvent->number = 1; // means "I got this from X, so don't call XMoveResize again" -- to prevent certain loops from happening, especially on the Mac where the window will keep marching down the screen.  Other window managers might have similar pathologies, so I did not implement a Mac-specific hack. 
+    movieEvent->mWidth = event.xconfigure.width;
+    movieEvent->mHeight = event.xconfigure.height;
+    movieEvent->mX = event.xconfigure.x;
+    movieEvent->mY = event.xconfigure.y;
+    movieEvent->mNumber = 1; // means "I got this from X, so don't call XMoveResize again" -- to prevent certain loops from happening, especially on the Mac where the window will keep marching down the screen.  Other window managers might have similar pathologies, so I did not implement a Mac-specific hack. 
     
     // Check if the size really changed.  If it did, send the event.
     // Suppress it otherwise.
@@ -994,62 +994,62 @@ void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
       resize = true; 
       mOldHeight = event.xconfigure.height;
       mOldWidth = event.xconfigure.width;
-      movieEvent->eventType = MOVIE_RESIZE;
+      movieEvent->mEventType = MOVIE_RESIZE;
     }
     
     if (mOldX != event.xconfigure.x || mOldY != event.xconfigure.y) {
       move = true; 
       mOldX = event.xconfigure.x;
       mOldY = event.xconfigure.y;
-      movieEvent->eventType = MOVIE_MOVE;
+      movieEvent->mEventType = MOVIE_MOVE;
     }
     
     
     /* do not process these events here, as they are spurious
-       if (resize && move)  movieEvent->eventType = MOVIE_MOVE_RESIZE;
+       if (resize && move)  movieEvent->mEventType = MOVIE_MOVE_RESIZE;
        else*/
-    if (resize)  movieEvent->eventType = MOVIE_RESIZE;
-    else if (move)  movieEvent->eventType = MOVIE_MOVE;
-    else movieEvent->eventType = MOVIE_NONE;
+    if (resize)  movieEvent->mEventType = MOVIE_RESIZE;
+    else if (move)  movieEvent->mEventType = MOVIE_MOVE;
+    else movieEvent->mEventType = MOVIE_NONE;
     
     return;
   case KeyPress:
     {
       int code = XLookupKeysym(&event.xkey, 0);
       if (code == XK_Left && event.xkey.state & ControlMask) {
-        movieEvent->eventType = MOVIE_SECTION_BACKWARD;
+        movieEvent->mEventType = MOVIE_SECTION_BACKWARD;
         return;
       }
       if (code == XK_Left && event.xkey.state & ShiftMask) {
-        movieEvent->eventType = MOVIE_SKIP_BACKWARD;
+        movieEvent->mEventType = MOVIE_SKIP_BACKWARD;
         return;
       }
       else if (code == XK_Left) {
-        movieEvent->eventType = MOVIE_STEP_BACKWARD;
+        movieEvent->mEventType = MOVIE_STEP_BACKWARD;
         return;
       }
       else if (code == XK_Right && event.xkey.state & ControlMask) {
-        movieEvent->eventType = MOVIE_SECTION_FORWARD;
+        movieEvent->mEventType = MOVIE_SECTION_FORWARD;
         return;
       }
       else if (code == XK_Right && event.xkey.state & ShiftMask) {
-        movieEvent->eventType = MOVIE_SKIP_FORWARD;
+        movieEvent->mEventType = MOVIE_SKIP_FORWARD;
         return;
       }
       else if (code == XK_Right) {
-        movieEvent->eventType = MOVIE_STEP_FORWARD;
+        movieEvent->mEventType = MOVIE_STEP_FORWARD;
         return;
       }
       else if (code == XK_Home) {
-        movieEvent->eventType = MOVIE_GOTO_START;
+        movieEvent->mEventType = MOVIE_GOTO_START;
         return;
       }
       else if (code == XK_Escape) {
-        movieEvent->eventType = MOVIE_QUIT;
+        movieEvent->mEventType = MOVIE_QUIT;
         return;
       }  
       else if (code == XK_End) {
-        movieEvent->eventType = MOVIE_GOTO_END;
+        movieEvent->mEventType = MOVIE_GOTO_END;
         return;
       }
       else {
@@ -1060,46 +1060,46 @@ void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
           switch (buffer[0]) {
           case 27:
           case 'c':
-            movieEvent->eventType = MOVIE_CENTER;
+            movieEvent->mEventType = MOVIE_CENTER;
             return;
           case 'p':
-            movieEvent->eventType = MOVIE_PLAY_FORWARD;
+            movieEvent->mEventType = MOVIE_PLAY_FORWARD;
             return;
           case 'q':
-            movieEvent->eventType = MOVIE_QUIT;
+            movieEvent->mEventType = MOVIE_QUIT;
             return;
           case 'r':
-            movieEvent->eventType = MOVIE_PLAY_BACKWARD;
+            movieEvent->mEventType = MOVIE_PLAY_BACKWARD;
             return;
           case 'z':
-            movieEvent->eventType = MOVIE_ZOOM_UP;
+            movieEvent->mEventType = MOVIE_ZOOM_UP;
             return;
           case 'Z':
-            movieEvent->eventType = MOVIE_ZOOM_DOWN;
+            movieEvent->mEventType = MOVIE_ZOOM_DOWN;
             return;
           case ' ':
-            movieEvent->eventType = MOVIE_PAUSE;
+            movieEvent->mEventType = MOVIE_PAUSE;
             return;
           case 'f':
-            movieEvent->eventType = MOVIE_ZOOM_FIT;
+            movieEvent->mEventType = MOVIE_ZOOM_FIT;
             return;
           case '1':
-            movieEvent->eventType = MOVIE_ZOOM_ONE;
+            movieEvent->mEventType = MOVIE_ZOOM_ONE;
             return;
           case '+':
-            movieEvent->eventType = MOVIE_INCREASE_RATE;
+            movieEvent->mEventType = MOVIE_INCREASE_RATE;
             return;
           case '-':
-            movieEvent->eventType = MOVIE_DECREASE_RATE;
+            movieEvent->mEventType = MOVIE_DECREASE_RATE;
             return;
           case 'l':
-            movieEvent->eventType = MOVIE_INCREASE_LOD;
+            movieEvent->mEventType = MOVIE_INCREASE_LOD;
             return;
           case 'L':
-            movieEvent->eventType = MOVIE_DECREASE_LOD;
+            movieEvent->mEventType = MOVIE_DECREASE_LOD;
             return;
           case 'i':
-            movieEvent->eventType = MOVIE_TOGGLE_INTERFACE;
+            movieEvent->mEventType = MOVIE_TOGGLE_INTERFACE;
             return;
           case '?':
           case 'h':
@@ -1117,18 +1117,18 @@ void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
     }
     break;
   case ButtonPress:
-    movieEvent->x = event.xbutton.x;
-    movieEvent->y = event.xbutton.y;
-    movieEvent->eventType = 
+    movieEvent->mX = event.xbutton.x;
+    movieEvent->mY = event.xbutton.y;
+    movieEvent->mEventType = 
       event.xbutton.button == Button1 ? MOVIE_MOUSE_PRESS_1:
       event.xbutton.button == Button2 ? MOVIE_MOUSE_PRESS_2:
       event.xbutton.button == Button3 ? MOVIE_MOUSE_PRESS_3:
       MOVIE_NONE;
     return;
   case ButtonRelease:
-    movieEvent->x = event.xbutton.x;
-    movieEvent->y = event.xbutton.y;
-    movieEvent->eventType = 
+    movieEvent->mX = event.xbutton.x;
+    movieEvent->mY = event.xbutton.y;
+    movieEvent->mEventType = 
       event.xbutton.button == Button1 ? MOVIE_MOUSE_RELEASE_1:
       event.xbutton.button == Button2 ? MOVIE_MOUSE_RELEASE_2:
       event.xbutton.button == Button3 ? MOVIE_MOUSE_RELEASE_3:
@@ -1136,25 +1136,25 @@ void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
     return;
   case MotionNotify:
     /* filter/skip extra motion events */
-    movieEvent->x = event.xmotion.x;
-    movieEvent->y = event.xmotion.y;
+    movieEvent->mX = event.xmotion.x;
+    movieEvent->mY = event.xmotion.y;
     while (XPending(dpy)) {
       XPeekEvent(dpy, &event);
       if (event.type == MotionNotify) {
         XNextEvent(dpy, &event);
-        movieEvent->x = event.xmotion.x;
-        movieEvent->y = event.xmotion.y;
+        movieEvent->mX = event.xmotion.x;
+        movieEvent->mY = event.xmotion.y;
       }
       else
         break;
     }
-    movieEvent->eventType = MOVIE_MOUSE_MOVE;
+    movieEvent->mEventType = MOVIE_MOUSE_MOVE;
     return;
     
   default:
     DEBUGMSG("Got X event %d (%s)", event.type, EVENT_TYPE_STRING(event.type));
   }
-  movieEvent->eventType = MOVIE_NONE;
+  movieEvent->mEventType = MOVIE_NONE;
   return;
 }
 

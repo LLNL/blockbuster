@@ -392,7 +392,7 @@ void BlockbusterInterface::on_foreverCheckBox_stateChanged(int state)  {
 
   MovieEvent event(MOVIE_SET_LOOP, -1); 
   if (!state) {
-    event.number = loopCheckBox->isChecked(); 
+    event.mNumber = loopCheckBox->isChecked(); 
   }
   mEventQueue.push_back(event); 
   return; 

@@ -42,23 +42,23 @@ MovieCue::MovieCue(MovieCue *other, QListWidget *parent): QListWidgetItem(other-
 //======================================================================
 void MovieCue::ReadScript(const MovieScript &iScript) {
   std::vector<MovieEvent>::const_iterator pos = iScript.begin(), end = iScript.end(); while (pos != end) {
-    switch (pos->eventType) {
+    switch (pos->mEventType) {
     case MOVIE_CUE_BEGIN:
-      setText(pos->mString); 
+      setText(QString(pos->mString.c_str())); 
       break; 
     case MOVIE_OPEN_FILE_NOCHANGE:
       mLoadMovie = true; 
-      mMovieName = pos->mString; 
-      mCurrentFrame = pos->number; 
+      mMovieName = pos->mString.c_str(); 
+      mCurrentFrame = pos->mNumber; 
       break; 
     case MOVIE_CUE_PLAY_ON_LOAD: 
-      mPlayMovie = pos->height; 
+      mPlayMovie = pos->mHeight; 
       break; 
     case MOVIE_SET_PINGPONG: 
-      mPingPong = pos->height; 
+      mPingPong = pos->mHeight; 
       break; 
     case MOVIE_SET_LOOP: 
-      mLoopFrames = pos->height; 
+      mLoopFrames = pos->mHeight; 
       break; 
     case MOVIE_SHOW_INTERFACE:
 	  mShowControls = true;
@@ -67,20 +67,20 @@ void MovieCue::ReadScript(const MovieScript &iScript) {
 	  mShowControls = false;
 	  break;
     case MOVIE_CUE_PLAY_BACKWARD: 
-      mPlayBackward = pos->height; 
+      mPlayBackward = pos->mHeight; 
       break; 
     case MOVIE_GOTO_FRAME:
-      mCurrentFrame = pos->number; 
+      mCurrentFrame = pos->mNumber; 
       break; 
     case MOVIE_START_END_FRAMES: 
-      mStartFrame = pos->width; 
-      mEndFrame = pos->height; 
+      mStartFrame = pos->mWidth; 
+      mEndFrame = pos->mHeight; 
       break; 
    case MOVIE_ZOOM_SET:
-      mZoom = pos->rate;
+      mZoom = pos->mRate;
       break; 
     case MOVIE_SET_RATE: 
-	  mFrameRate = pos->rate; 
+	  mFrameRate = pos->mRate; 
 	  break; 
     case MOVIE_FULLSCREEN:
       mFullScreen = true;
@@ -94,20 +94,20 @@ void MovieCue::ReadScript(const MovieScript &iScript) {
       mWindowYPos = 0; 
     case MOVIE_MOVE_RESIZE: 
       mFullScreen = false;
-      mWindowXPos = pos->x; 
-      mWindowYPos = pos->y; 
-      mWindowWidth = pos->width; 
-      mWindowHeight = pos->height; 
+      mWindowXPos = pos->mX; 
+      mWindowYPos = pos->mY; 
+      mWindowWidth = pos->mWidth; 
+      mWindowHeight = pos->mHeight; 
       break; 
     case MOVIE_IMAGE_MOVE: 
-      mImageXPos = pos->x; 
-      mImageYPos = pos->y; 
+      mImageXPos = pos->mX; 
+      mImageYPos = pos->mY; 
       break; 
     case MOVIE_SET_LOD:
-      mLOD = pos->x; 
+      mLOD = pos->mX; 
       break; 
     default:
-      cerr << "Warning:  unknown event in Cue script: " << pos->eventType << endl; 
+      cerr << "Warning:  unknown event in Cue script: " << pos->mEventType << endl; 
       break; 
     }
     ++pos; 
@@ -1142,7 +1142,7 @@ QTcpSocket  &operator >> (QTcpSocket &iSocket,  MovieCue &iCue){
   MovieEvent event; 
   iCue.isValid = false; 
   int eventnum = 0; 
-  while (event.eventType != MOVIE_CUE_END && !iSocket.atEnd()) {
+  while (event.mEventType != MOVIE_CUE_END && !iSocket.atEnd()) {
     try {
       dbprintf(5, "Reading event %d\n", eventnum ); 
       iSocket >> event;   
@@ -1152,13 +1152,13 @@ QTcpSocket  &operator >> (QTcpSocket &iSocket,  MovieCue &iCue){
         iCue.mEOF = true;  // assume that we have hit EOF
         return iSocket; 
       } else {
-        errmsg = QString("Error receiving cue event ")+QString::number(MovieEventTypeToUint32(event.eventType))+": "+errmsg;
+        errmsg = QString("Error receiving cue event ")+QString::number(MovieEvent::MovieEventTypeToUint32(event.mEventType))+": "+errmsg;
         throw(errmsg);
       }
     }
     ++eventnum;
   }
-  if (event.eventType == MOVIE_CUE_END) iCue.isValid = true; 
+  if (event.mEventType == MOVIE_CUE_END) iCue.isValid = true; 
   iCue.ReadScript(script); 
   return iSocket; 
 }

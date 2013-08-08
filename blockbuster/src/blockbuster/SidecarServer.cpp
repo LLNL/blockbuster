@@ -82,10 +82,10 @@ void SidecarServer::incomingSidecarData() {
       /*!
         Enforce monotonically increasing Command IDs
       */
-      if (event.ID <= mLastReceivedCommandID) {
-        cerr << "Event ID " << event.ID << " is out of sequence, ignoring" << endl; 
+      if (event.mID <= mLastReceivedCommandID) {
+        cerr << "Event ID " << event.mID << " is out of sequence, ignoring" << endl; 
       } else {
-        mLastReceivedCommandID = event.ID; 
+        mLastReceivedCommandID = event.mID; 
         mPendingEvents.AddEvent(event); 
       }
     }
@@ -124,7 +124,7 @@ void SidecarServer::AddEvent(MovieEvent &event){
 /* return 0 if an event was NOT gotten, 1 if it WAS */
 int SidecarServer::GetNetworkEvent(MovieEvent *event){
   if (mRenderer) mRenderer->DMXCheckNetwork();
-  event->eventType = MOVIE_NONE;
+  event->mEventType = MOVIE_NONE;
   int result = mPendingEvents.GetEvent(event); 
   return result; 
 }

@@ -3,6 +3,8 @@
 #include <QApplication>
 #include "common.h"
 #include <string>
+#include <vector>
+
 class Renderer; 
 struct RendererSpecificGlue; 
 
@@ -10,6 +12,7 @@ class ProgramOptions *GetGlobalOptions(void);
 
 void ConsumeArg(int &argc, char *argv[], int position); 
 
+// =====================================================================
 struct Setting {
   std::string variable, origin, value; 
   /* char *variable;
@@ -20,6 +23,7 @@ struct Setting {
   struct Setting *next;
 } ;
 
+// =====================================================================
 struct Settings {
   Setting *head;
   Setting *tail;
@@ -29,6 +33,7 @@ struct Settings {
 
 #define DEFAULT_X_FONT "fixed"
 
+// =====================================================================
   /* This structure is used to pass around the options that control
    * the workings of the entire program.
    */
@@ -40,12 +45,12 @@ struct ProgramOptions {
     messageLevelName("error"), 
 #endif
     messageLevel(NULL),  mRenderer(NULL),
-    frameCacheSize(8), readerThreads(-1), loopCountName("1"), 
+    readerThreads(-1), loopCountName("1"),
     startFrame(0), currentFrame(0), endFrame(-1), loopCount(1), LOD(0),
     slaveLaunchMethod("rsh"), useMPI(0), 
     play(0), playExit(0),  speedTest(0), frameRate(0.0), 
     zoom(1.0), zoomFit(1), fullScreen(0), slaveMode(0), masterPort(0), 
-    preloadFrames(40), noAutoRes(0), 
+    preloadFrames(40), mMaxCachedImages(100), noAutoRes(0), 
     drawInterface(1), splashScreen(0), noscreensaver(0), 
     gui(1), decorations(1), 
     suggestedTitle("blockbuster"), fontName(DEFAULT_X_FONT), 
@@ -61,12 +66,12 @@ struct ProgramOptions {
   QString messageLevelName;
   struct MessageLevel *messageLevel;
   QString logFile;  
+  QString mScript; 
   int rendererIndex;
   QString rendererName;
   RendererSpecificGlue *mRendererSpecificGlue; 
   Renderer *mRenderer; 
   QString backendRendererName;
-  int frameCacheSize;
   int readerThreads;
   QString loopCountName;
   int32_t startFrame, currentFrame, endFrame; 
@@ -88,7 +93,7 @@ struct ProgramOptions {
   int slaveMode;
   int masterPort;
   int preloadFrames;
-  int cacheMegabytes;
+  int mMaxCachedImages;
   int noAutoRes; 
   int drawInterface;
   int splashScreen;
@@ -104,6 +109,7 @@ struct ProgramOptions {
   int allowIdleSlaves; 
 } ;
 
+// =====================================================================
 #define SETTINGS_FROM_PROGRAM   0x01
 #define SETTINGS_FROM_FILE    0x02
 #define SETTINGS_FROM_ALL_FILES   0x04

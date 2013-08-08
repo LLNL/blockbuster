@@ -512,7 +512,7 @@ int Slave::Loop(void)
              * imageCache.
              */
             ProgramOptions *options=  GetGlobalOptions();
-            options->frameCacheSize = cacheFrames;
+            options->mMaxCachedImages = cacheFrames;
             options->readerThreads = numThreads;
             options->fontName = DEFAULT_X_FONT;
             options->geometry.width = w;
