@@ -1,56 +1,22 @@
 #!/usr/bin/env bash
 
 function usage() {
-    echo "usage: finalizeVersion.h <-temp/-final> versionstring"
-    echo "This script creates a new version, either with or without committing the changes.  "
+    echo "usage: finalizeVersion.h [options] versionstring"
+    echo "This script creates a new version, either with or without committing the changes. "
     echo "This means: "
     echo "updates version.h "
     echo "greps Changelog to make sure there is an entry there.  Updates the Changelog entry. "
-    echo "If -temp is given, then stops here without checking in anything. "
-    echo "If -final is given, then continues:  "
-    echo " checks in version.h and Changelog to the trunk, "
-    echo " creates a tarball in the current directory with proper naming scheme.  "
+    echo " OPTIONS: " 
+    echo "-c/--commit: Commit all directories before proceeding. Default: no."
+    echo "-t/--temp: Just update Changelog and version.h as needed."
+    echo "-f/--final: updates version.h and Changelog, creates a tarball in the current directory with proper naming scheme. " 
+
+    echo "NOTE: You must give either --temp or --final."
 }
 
 
 tmpdir=/nfs/tmp2/rcook/blockbuster-install-tmp/finalizeVersion-tmp
 
-# requires a version as an argument.  
-#=================================
-function errexit() {
-    echo 
-    echo '*******************************************************'
-    echo "$0: $1"
-    rm -rf $tmpdir
-    exit ${2:-1}
-}
-
-export PATH=/usr/local/tools/qt-4.8.4/bin:$PATH
-if [ -f /usr/local/tools/dotkit/init.sh ]; then
-    . /usr/local/tools/dotkit/init.sh
-    if use qt; then 
-        echo "Warning: used dotkit to set Qt."
-    else
-        echo "Warning: Could not set Qt dotkit."
-    fi
-fi
-echo  "qmake is " $(which qmake)
-
-# must give either -temp or -final: 
-if echo $1 | grep -- -temp >/dev/null; then
-    skipcheckin=true
-    shift 1
-elif echo $1 | grep -- -final >/dev/null; then
-    skipcheckin=false
-    shift 1
-else
-    usage
-    errexit "ERROR:  You must give either -temp or -final as an argument"
-fi
-#=================================
-function testbool () {
-    (nonnull "$1" && [ "$1" != false ] && [ "$1" != no ] && [ "$1" != 0 ] && return 0) || return 1
-}
 #=================================
 # test if a string has nonzero length
 function nonnull () { 
@@ -66,7 +32,72 @@ function isnull() {
 fi
     return 1
 }
+#=================================
+function testbool () {
+    (nonnull "$1" && [ "$1" != false ] && [ "$1" != no ] && [ "$1" != 0 ] && return 0) || return 1
+}
 
+# requires a version as an argument.  
+#=================================
+function errexit() {
+    echo 
+    echo '*******************************************************'
+    echo "ERROR"
+    echo "ERROR:  $1"
+    echo "ERROR"
+    echo '*******************************************************'
+    echo 
+    rm -rf $tmpdir
+    exit ${2:-1}
+}
+
+#=================================
+export PATH=/usr/local/tools/qt-4.8.4/bin:$PATH
+if [ -f /usr/local/tools/dotkit/init.sh ]; then
+    . /usr/local/tools/dotkit/init.sh
+    if use qt; then 
+        echo "Warning: used dotkit to set Qt."
+    else
+        echo "Warning: Could not set Qt dotkit."
+    fi
+fi
+echo  "qmake is " $(which qmake)
+#=================================
+temp=false
+final=false
+commit=false
+# must give either -temp or -final: 
+for arg in "$@"; do 
+    if [ "$arg" == --commit ]  ||  [ "$arg" == -c ] ; then
+        commit=true
+    elif [ "$arg" == --temp ]  ||  [ "$arg" == -t ] ; then
+        temp=true
+    elif [ "$arg" == --final ]  ||  [ "$arg" == -f ] ; then
+        final=true
+    elif [ "$arg" == --help ] ||  [ "$arg" == -h ] ; then
+        usage
+        exit 0
+    elif [ "${arg:0:1}" == '-' ]; then
+        usage
+        errexit "Bad argument: $arg"
+    else
+       version="$arg"
+    fi 
+done
+
+#=================================
+if ! testbool "$temp" && ! testbool "$final"; then
+    usage
+    errexit "You must give either -t/--temp or -f/--final as an argument"
+fi
+if [ "$final" == true ]; then 
+    skipcheckin=false
+fi
+#=================================
+commitfiles="doc/Changelog.txt src/config/version.h  src/config/versionstring.txt"
+if testbool "$commit"; then 
+    commitfiles=$(pwd)
+fi
 #=================================
 function sedfilesusage() {
     echo "usage: sedfiles [opts] (expression | -e expression1 -e expression2 ...) files"
@@ -129,9 +160,8 @@ function sedfiles () {
 
 #======================================================
 # Update version.h
-version=$1
 if [ x$version = x ]; then 
-    errexit "You need to supply a version number or I'll kill you." 
+    errexit "You need to supply a version number or I'll kill you.  Seriously."
 fi
 
 cd $(dirname $0)
@@ -153,7 +183,7 @@ fi
 
 #======================================================
 # Update Changelog
-revision=$(svn update | sed 's/At revision \(.*\)\./\1/')
+revision=$(svn update | grep 'revision' | sed 's/At revision \(.*\)\./\1/')
 newrevision=$(expr $revision + 2)
 echo "Current SVN revision is $revision and new revision will be $newrevision..." 
 
@@ -170,7 +200,7 @@ fi
 #======================================================
 # Update Subversion repository
 echo "Checking in source..."
-svn commit -m "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)" doc/Changelog.txt src/config/version.h  src/config/versionstring.txt || errexit "svn commit failed"
+svn commit -m "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)" $commitfiles || errexit "svn commit failed"
 
 #======================================================
 # Update and install on LC cluster
