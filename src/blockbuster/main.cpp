@@ -90,21 +90,22 @@ void usage(void) {
   fprintf(stderr, "'file' is an optional file name, or a prefix of a set of file names\n");
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "   Note: substrings are also matched, so -h is the same as -help, but beware of non-unique prefixes!\n");
-  fprintf(stderr, "-cachesize <num> specifies cache limit in megabytes (you can leave this unset unless you are running out of memory) (default 500MB) \n");
+  fprintf(stderr, "-cachesize <num> specifies cache limit in frames (you can leave this unset unless you are running out of memory)\n");
   fprintf(stderr, "-DecorationsDisable (or -no-decorations): same as -fullscreen\n");
   fprintf(stderr, "-display <display> specifies X display\n");
+  fprintf(stderr, "-dmxstereo: short for -r dmx -stereo.\n");
   fprintf(stderr, "-font <fontname> specifies X font\n");
   fprintf(stderr, "-framerate (or -Framerate) <rate> sets the initial frame rate target for the movie [30.0 or movie-specified]\n");
   fprintf(stderr, "-fullscreen: turns off window decorations and goes to full-screen display\n"); 
   fprintf(stderr, "-geometry <geometrystring> specifies X window geometry\n");
   fprintf(stderr, "-help displays this help message\n");
-  fprintf(stderr, "-noscreensaver: use fake mouse clicks to defeat screensaver\n");
   fprintf(stderr, "-keyhelp:  display list of keyboard controls\n");
   fprintf(stderr, "-lod num: specifies a starting level of detail for the given movie\n");
   fprintf(stderr, "-loops <loops> specifies how many times to loop (number or 'forever')\n");
   fprintf(stderr, "-messageLevel sets the message level, in order of chattiness:  quiet, syserr, error, warning, info, debug\n"); 
   fprintf(stderr, "-no-autores:  normally, you want blockbuster to decrease resolution when the zoom increases.  This flag suppresses this, for testing.\n");
   fprintf(stderr, "-no-controls (or -withoutControls) turns off the control window (if defined for the user interface)\n");
+  fprintf(stderr, "-noscreensaver: use fake mouse clicks to defeat screensaver\n");
   fprintf(stderr, "-no-splash (or -S) suppresses display of splash screen\n");
   fprintf(stderr, "-no-stereo-switch suppresses automatic stereo or mono mode switches based on movie being stereo or mono\n");
   fprintf(stderr, "-play (or -Play) automatically starts the movie after loading\n");
@@ -123,22 +124,22 @@ void usage(void) {
   fprintf(stderr, "\t    (supported in 'gtk', 'x11' user interfaces)\n");
   
   fprintf(stderr, "-stereo: short for -r gl_stereo, unless -dmx is given, in which case it is short for -R gl_stereo.\n");
-  fprintf(stderr, "-timer: enable timer (makes things very verbose, you probably do not want this)\n"); 
-  fprintf(stderr, "-dmxstereo: short for -r dmx -stereo.\n");
+  fprintf(stderr, "-script filename: run the given blockbuster script\n"); 
   fprintf(stderr, "-threads <num> specifies how many threads to use for reading from disk.\n");
+  fprintf(stderr, "-timer: enable timer (makes things very verbose, you probably do not want this)\n"); 
   fprintf(stderr, "-verbose num: sets verbosity, with 0=quiet, 1=system, 2=error, 3=warning, 4=info, 5=debug.  Same behavior as -messageLevel but with numbers, basically.\n");
   fprintf(stderr, "-version prints the current blockbuster version\n");
   fprintf(stderr, "-zoom <zoom> sets the initial zoom ['auto' tracks window size,\n");
   fprintf(stderr, "                          0 is 'use default'] ['auto']\n");
   
   fprintf(stderr, "\nSLAVE OPTIONS\n"); 
-  fprintf(stderr, "-slave: Run blockbuster as a backend slave\n");
-  fprintf(stderr, "-ports <\"ports\"> specifies, in a quoted space-delimited list as a single argument, the port that each slave will use to communicate back to the master\n");
   fprintf(stderr, "-backend-renderer <renderer> (or RendererOnBackend <renderer>) specifies the renderer for the backend slaves to use (e.g., gl)\n");
   fprintf(stderr, "-backend-path <renderer> specifies the path to the backend slaves (defaults to \"blockbuster\"\n");
   fprintf(stderr, "-mpi:  Instead of connecting to each backend node and running blockbuster, connect to one backend node and launch $BLOCKBUSTER_MPI_SCRIPT on that host with args given in the string $BLOCKBUSTER_MPI_SCRIPT_ARGS\n");  
   fprintf(stderr, "-mpiscript script argstring:  Same as -mpi, but instead of running $BLOCKBUSTER_MPI_SCRIPT, run \"script\" with args given in \"argstring\"\n"); 
+  fprintf(stderr, "-ports <\"ports\"> specifies, in a quoted space-delimited list as a single argument, the port that each slave will use to communicate back to the master\n");
   fprintf(stderr, "-speedTest: DEBUG ONLY: (consider using with -play option) when playing the movie, let the slaves run as fast as they can and stop responding. Does not by itself begin playing the movie.\n");
+  fprintf(stderr, "-slave: Run blockbuster as a backend slave\n");
   
   fprintf(stderr, "The following file formats are supported:\n");
   fprintf(stderr, "    PNG: Single-frame image in a PNG file\n");
@@ -281,7 +282,9 @@ static void ParseOptions(int &argc, char *argv[])
     DEBUGMSG("Checking arg %s\n", argv[1]); 
 	QString zoomString; 
 	QString geometryString; 
-	if (CHECK_ATOI_ARG("-cache", argc, argv, opt->frameCacheSize)) continue; 
+	if (CHECK_ATOI_ARG("-cachesize", argc, argv,  opt->mMaxCachedImages)) {
+      continue;
+    }
 	else if (SET_BOOL_ARG("-no-decorations", argc, argv, opt->decorations, 0) || 
              SET_BOOL_ARG("-DecorationsDisable", argc, argv, opt->decorations, 0) || 
              SET_BOOL_ARG("-fullscreen", argc, argv, opt->fullScreen, 1)) {
@@ -289,6 +292,10 @@ static void ParseOptions(int &argc, char *argv[])
 	  continue;
 	} 
 	else if (CHECK_STRING_ARG("-display", argc, argv, opt->displayName)) {
+      continue;
+    }
+	else if (SET_BOOL_ARG("-dmxstereo", argc, argv, doStereo, 1)) {
+      opt->rendererName = "dmx"; 
       continue;
     }
 	else if (CHECK_STRING_ARG("-font", argc, argv, opt->fontName)) continue;
@@ -361,9 +368,6 @@ static void ParseOptions(int &argc, char *argv[])
       continue;
     }
     */ 
-	else if (CHECK_ATOI_ARG("-cachesize", argc, argv,  opt->cacheMegabytes)) {
-      continue;
-    }
 	else if (CHECK_STRING_ARG("-renderer", argc, argv, opt->rendererName)) continue;
 	else if (CHECK_STRING_ARG("-sidecar", argc, argv, opt->sidecarHostPort)) {
       gSidecarServer->PromptForConnections(false); 
@@ -373,11 +377,8 @@ static void ParseOptions(int &argc, char *argv[])
       cerr << "speedTest detected, speedTest is " << opt->speedTest << endl; 
       continue;
     }
-	else if (SET_BOOL_ARG("-dmxstereo", argc, argv, doStereo, 1)) {
-      opt->rendererName = "dmx"; 
+	else if (CHECK_STRING_ARG("-script", argc, argv, opt->mScript)) 
       continue;
-    }
-	else if (SET_BOOL_ARG("-stereo", argc, argv, doStereo, 1)) continue;
     else if (CHECK_ATOI_ARG("-threads", argc, argv, opt->readerThreads)) 
       continue; 
 	//else if (SET_BOOL_ARG("-timer", argc, argv, gTimerOn, 0)) continue;
@@ -503,13 +504,13 @@ static void ParseOptions(int &argc, char *argv[])
           .arg(opt->masterHost).arg(opt->masterPort));  
   }
   
-  if (opt->frameCacheSize < opt->preloadFrames+1 || 
-      (doStereo && opt->frameCacheSize < 2*opt->preloadFrames+1)) {
-    DEBUGMSG("Need to adjust the frame cache size to a larger value, from %d to %d", opt->frameCacheSize, opt->preloadFrames * 4); 
-    if (doStereo) opt->frameCacheSize = opt->preloadFrames * 4 + 1;
-    else opt->frameCacheSize = opt->preloadFrames * 2 + 1;
+  if (opt->mMaxCachedImages < opt->preloadFrames+1 || 
+      (doStereo && opt->mMaxCachedImages < 2*opt->preloadFrames+1)) {
+    DEBUGMSG("Need to adjust the frame cache size to a larger value, from %d to %d", opt->mMaxCachedImages, opt->preloadFrames * 4); 
+    if (doStereo) opt->mMaxCachedImages = opt->preloadFrames * 4 + 1;
+    else opt->mMaxCachedImages = opt->preloadFrames * 2 + 1;
   }
-  DEBUGMSG("Preload is %d and cache size is %d\n", opt->preloadFrames, opt->frameCacheSize); 
+  DEBUGMSG("Preload is %d and cache size is %d\n", opt->preloadFrames, opt->mMaxCachedImages); 
 
   /* We've read all the command line options, so everything is set.
    * Pull out some of the information we'll need later.
@@ -555,6 +556,7 @@ InterruptHandler(int)
   ExitHandler(); 
   exit(1);
 }
+
 
 // =====================================================================
 /*!  

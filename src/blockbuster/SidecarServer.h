@@ -53,7 +53,7 @@ class SidecarServer : public QObject {
 
   void SendEvent(MovieEvent event) {
     if (connected())  {
-      event.ID = ++mLastSentCommandID; 
+      event.mID = ++mLastSentCommandID; 
       *mSidecarSocket << event; 
       mSidecarSocket->flush(); 
     }
