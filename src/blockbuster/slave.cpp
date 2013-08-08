@@ -301,7 +301,7 @@ int Slave::Loop(void)
   int32_t lastImageRendered = -1; 
   gCoreApp = new QApplication(argc, NULL); 
   bool idle = false; 
-  Rectangle currentRegion; 
+  RectanglePtr currentRegion; 
   qint32 destX = 0,  destY = 0,  lod = 0;
   float zoom;
   /* contact the master movie player */
@@ -364,10 +364,17 @@ int Slave::Loop(void)
             }
             //Rectangle src;
             qint32 imageNum = messageList[1].toLong(); 
-            currentRegion.x = messageList[2].toLong(); 
-            currentRegion.y = messageList[3].toLong(); 
-            currentRegion.width = messageList[4].toLong(); 
-            currentRegion.height = messageList[5].toLong(); 
+            qint32 region_x = messageList[2].toLong(); 
+            qint32 region_y = messageList[3].toLong(); 
+            qint32 region_width = messageList[4].toLong(); 
+            qint32 region_height = messageList[5].toLong(); 
+            if (!currentRegion || region_x != currentRegion->x ||
+                region_y != currentRegion->y || 
+                region_width != currentRegion->width ||
+                region_height != currentRegion->height) {
+              currentRegion.reset(new Rectangle(region_x, region_y, region_width, region_height)); 
+            }
+                
             destX = messageList[6].toLong();
             destY = messageList[7].toLong();
             lod = messageList[9].toLong();
@@ -376,7 +383,7 @@ int Slave::Loop(void)
               mRenderer->Render(imageNum, lastImageRendered,  
                                 preload, playStep, 
                                 playFirstFrame, playLastFrame, 
-                                &currentRegion, destX, destY, zoom, lod);
+                                currentRegion, destX, destY, zoom, lod);
               
              
               lastImageRendered = imageNum; 
@@ -589,7 +596,7 @@ int Slave::Loop(void)
         if (mRenderer && mRenderer->mFrameList) {
           mRenderer->Render(playFrame, lastImageRendered,  
                             preload, playStep, 
-                            playFirstFrame, playLastFrame, &currentRegion, 
+                            playFirstFrame, playLastFrame, currentRegion, 
                             destX, destY, zoom, lod);
         }
         lastImageRendered = playFrame; 
@@ -623,7 +630,7 @@ int Slave::Loop(void)
           if (mRenderer && mRenderer->mFrameList) {
             mRenderer->Render(playFrame, lastImageRendered,  
                               preload, playStep, 
-                              playFirstFrame, playLastFrame, &currentRegion, 
+                              playFirstFrame, playLastFrame, currentRegion, 
                               destX, destY, zoom, lod);
           }
           lastImageRendered = playFrame; 

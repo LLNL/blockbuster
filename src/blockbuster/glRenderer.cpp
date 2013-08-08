@@ -49,7 +49,7 @@ void glRenderer::FinishRendererInit(ProgramOptions *) {
    
   /* All GL rendering in X11 requires a glX context. */
   context = glXCreateContext(mDisplay, mVisInfo,
-                                       NULL, GL_TRUE);
+                             NULL, GL_TRUE);
   if (!context) {
     ERROR("couldn't create GLX context");
     return ;
@@ -126,8 +126,8 @@ void glRenderer::DrawString(int row, int column, const char *str)
 }
 //=============================================================
 void glRenderer::RenderActual(int frameNumber, 
-                        const Rectangle *imageRegion,
-                        int destX, int destY, float zoom, int lod){
+                              RectanglePtr imageRegion,
+                              int destX, int destY, float zoom, int lod){
   int lodScale;
   int localFrameNumber;
   Rectangle region = *imageRegion;
@@ -143,10 +143,10 @@ void glRenderer::RenderActual(int frameNumber,
    * Compute possibly reduced-resolution image region to display.
    */
   if (mFrameList->stereo) {
-        localFrameNumber = frameNumber *2; /* we'll display left frame only */
+    localFrameNumber = frameNumber *2; /* we'll display left frame only */
   }
   else {
-        localFrameNumber = frameNumber;
+    localFrameNumber = frameNumber;
   }
 
  
@@ -267,7 +267,7 @@ void glRenderer::RenderActual(int frameNumber,
 
   // move the raster position back to 0,0
   glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
- //  glRasterPos2i(0,0); 
+  //  glRasterPos2i(0,0); 
   
 #ifdef RENDER_TIMING
   t2 = GetExactSecondsDouble(); 
@@ -286,8 +286,8 @@ void glRenderer::SwapBuffers(void) {
 
 //***********************************************************************
 void glStereoRenderer::RenderActual(int frameNumber,
-                              const Rectangle *imageRegion,
-                              int destX, int destY, float zoom, int lod)
+                                    RectanglePtr imageRegion,
+                                    int destX, int destY, float zoom, int lod)
 {
   int lodScale;
   int localFrameNumber;
@@ -307,12 +307,12 @@ void glStereoRenderer::RenderActual(int frameNumber,
    */
  
   if (mFrameList->stereo) {
-        localFrameNumber = frameNumber *2; 
-        /* start with left frame*/
-        glDrawBuffer(GL_BACK_LEFT);
+    localFrameNumber = frameNumber *2; 
+    /* start with left frame*/
+    glDrawBuffer(GL_BACK_LEFT);
   }
   else {
-        localFrameNumber = frameNumber;
+    localFrameNumber = frameNumber;
   }
 
   
@@ -497,7 +497,7 @@ XVisualInfo *glStereoRenderer::ChooseVisual(void)
 // ==========================================================
 
 glTextureRenderer::glTextureRenderer(ProgramOptions *opt, Window parentWindowID, 
-           BlockbusterInterface *gui, QString name):
+                                     BlockbusterInterface *gui, QString name):
   glRenderer(opt, parentWindowID, gui, name) {
 
   printf("using texture rendering\n"); 
@@ -596,8 +596,8 @@ TextureObjectPtr glTextureRenderer::GetTextureObject(int frameNumber)
 }
 
 
-void glTextureRenderer::RenderActual(int frameNumber, const Rectangle *imageRegion,
-                               int destX, int destY, float zoom, int lod) {
+void glTextureRenderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
+                                     int destX, int destY, float zoom, int lod) {
   GLfloat s0, t0, s1, t1;
   GLfloat x0, y0, x1, y1;
   int32_t lodScale;
@@ -729,7 +729,7 @@ void glTextureRenderer::RenderActual(int frameNumber, const Rectangle *imageRegi
                       image->Data());
       
       if (texObj->anyLoaded)
-        texObj->valid[lod] = RectUnionRect(&texObj->valid[lod], imageRegion);
+        texObj->valid[lod] = RectUnionRect(&texObj->valid[lod], imageRegion.get());
       else
         texObj->valid[lod] = *imageRegion;
       texObj->anyLoaded = GL_TRUE;

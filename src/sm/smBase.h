@@ -699,7 +699,6 @@ class smBase {
   
   static void registerType(u_int t, smBase *(*)(const char *, int));
   
-  
  private:
   void readHeader(void);
   void initWin(void);
