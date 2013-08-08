@@ -19,7 +19,8 @@ typedef boost::shared_ptr<class NewCacheThread> NewCacheThreadPtr;
 class NewCacheThread: public QThread {
   Q_OBJECT
     public:
-  NewCacheThread(): mStop(false) {
+  NewCacheThread(FrameListPtr frameList, ImageFormatPtr format): 
+    mStop(false), mFrameList(frameList), mRequiredFormat(format) {
     CACHEDEBUG("CacheThread constructor");     
     RegisterThread(this); 
   }
@@ -27,35 +28,45 @@ class NewCacheThread: public QThread {
     return; 
   }
   
+  FrameInfoPtr FindJob(void); 
 
-  void run(void) {
-    return; 
-  }
+  void run(void);
   void stop(void) { mStop = true; }
   bool mStop; 
+  FrameListPtr mFrameList; 
+  ImageFormatPtr mRequiredFormat; 
+  RectanglePtr mRegionOfInterest; 
+  int mLOD; 
 };
 
 
 // ====================================================================
 class NewImageCache {
-  NewImageCache(int numthreads, int maximages,  ImageFormat &required):
-    mNumThreads(numthreads), mMaxImages(maximages), mRequiredFormat(required) {
+  NewImageCache(int numthreads, int maximages,  
+                ImageFormatPtr required, FrameListPtr frameList):
+    mNumThreads(numthreads), mMaxImages(maximages), 
+    mFrameList(frameList), mRequiredFormat(required)  {
+
+    for (uint32_t i = 0; i < mNumThreads; i++) {
+      mThreads.push_back(NewCacheThreadPtr(new NewCacheThread(mFrameList, mRequiredFormat))); 
+      mThreads[i]->start(); 
+    }
+
     return; 
   }
     
-  ~NewImageCache() {
-    return; 
-  }
+    ~NewImageCache();
   
-  void ManageFrameList(FrameListPtr frameList) ;       
-
   ImagePtr GetImage(uint32_t frameNumber, int playDirection, 
-                  const Rectangle *newRegion, uint32_t levelOfDetail);
+                    RectanglePtr newRegion, uint32_t levelOfDetail);
   
-  FrameListPtr mFrameList; 
 
   uint32_t mNumThreads, mMaxImages; 
-  ImageFormat mRequiredFormat; 
+  std::vector<NewCacheThreadPtr> mThreads;
+  FrameListPtr mFrameList; 
+  ImageFormatPtr mRequiredFormat; 
+  RectanglePtr mRegionOfInterest; 
+  int mLOD; 
 }; 
 
 #endif

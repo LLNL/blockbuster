@@ -255,12 +255,11 @@ ImagePtr FrameInfo::ConvertImageToFormat( ImagePtr image, ImageFormat *canvasFor
  * for both the single-threaded and multi-threaded cases.
  */
 #define MAX_CONVERSION_WARNINGS 10
-ImagePtr FrameInfo::LoadAndConvertImage(unsigned int frameNumber,
-                                      ImageFormat *canvasFormat, 
-                                      const Rectangle *region, 
-                                      int levelOfDetail)
+ImagePtr FrameInfo::LoadAndConvertImage(ImageFormat *canvasFormat, 
+                                        const Rectangle *region, 
+                                        int levelOfDetail)
 {
-  DEBUGMSG(QString("LoadAndConvertImage frame %1, region %2, frameInfo %3").arg( frameNumber).arg(region->toString()).arg((uint64_t)this)); 
+  DEBUGMSG(QString("LoadAndConvertImage frame %1, region %2, frameInfo %3").arg( mFrameNumber).arg(region->toString()).arg((uint64_t)this)); 
 
   int rv;
   static int conversionCount = 0;
@@ -279,13 +278,13 @@ ImagePtr FrameInfo::LoadAndConvertImage(unsigned int frameNumber,
 
   if (!rv ) {
 	ERROR("could not load frame %d (frame %d of file name %s) for the cache",
-          frameNumber,
+          mFrameNumber,
           mFrameNumberInFile,
           mFilename.c_str()
           );
 	return ImagePtr();
   }
-  image->frameNumber = frameNumber; 
+  image->frameNumber = mFrameNumber; 
   DEBUGMSG("LoadImage done"); 
 
 
@@ -304,7 +303,7 @@ ImagePtr FrameInfo::LoadAndConvertImage(unsigned int frameNumber,
      */  
     image = convertedImage;
     if (!image) {
-      ERROR("failed to convert frame %d", frameNumber);
+      ERROR("failed to convert frame %d", mFrameNumber);
     }
     else {
       conversionCount++;
@@ -312,7 +311,7 @@ ImagePtr FrameInfo::LoadAndConvertImage(unsigned int frameNumber,
         /* We'll issue a warning anyway, as conversion is an expensive
          * process.
          */
-        WARNING("had to convert frame %d", frameNumber);
+        WARNING("had to convert frame %d", mFrameNumber);
           
         if (conversionCount +1 == MAX_CONVERSION_WARNINGS) {
           WARNING("(suppressing further conversion warnings)");
@@ -322,7 +321,7 @@ ImagePtr FrameInfo::LoadAndConvertImage(unsigned int frameNumber,
   }
 
   /* If we have a NULL image, the converter already reported it. */
-  DEBUGMSG("Done with LoadAndConvertImage, frame %d", frameNumber); 
+  DEBUGMSG("Done with LoadAndConvertImage, frame %d", mFrameNumber); 
   return image;
 }
 
@@ -464,12 +463,19 @@ bool FrameList::LoadFrames(QStringList &files) {
 //===============================================================
 void FrameList::ReleaseFramesFromCache(void) {
   for (vector<FrameInfoPtr>::iterator pos = mFrames.begin(); pos != mFrames.end(); pos++) {
+    // mAbort ensures we don't get false negatives when checking mOwnerThread
+    (*pos)->mAbort.store(true); 
     if ((*pos)->mOwnerThread >= 0) {
       pos->reset((*pos)->Clone()); // get the proper subclass
-      (*pos)->mAbort = (*pos)->mComplete = false; 
+      (*pos)->mAbort = false; 
+      (*pos)->mComplete.store(false); 
       (*pos)->mOwnerThread = -1; 
     }
+    (*pos)->mAbort.store(false); 
   }
+  mFramesInProgress.store(0); 
+  mFramesCompleted.store(0); 
+  mCacheDirection = 0; 
   return; 
 }
 

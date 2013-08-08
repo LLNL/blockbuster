@@ -750,7 +750,9 @@ void smBase::init(void)
 */
 //
 //----------------------------------------------------------------------------
-smBase::smBase(const char *_fname, int numthreads, uint32_t bufferSize):mNumThreads(numthreads), mWriteThreadRunning(false), mWriteThreadStopSignal(false) {
+smBase::smBase(const char *_fname, int numthreads, uint32_t bufferSize): 
+  mNumThreads(numthreads), mWriteThreadRunning(false), 
+  mWriteThreadStopSignal(false) {
   smdbprintf(5, "smBase::smBase(%s, %d)", _fname, numthreads);
   int i;
   setFlags(0);

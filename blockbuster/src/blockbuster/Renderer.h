@@ -72,7 +72,7 @@ class Renderer {
   void Render(int frameNumber, int previousFrame, 
               uint32_t preloadFrames, int playDirection, 
               uint32_t startFrame, uint32_t endFrame,
-              const Rectangle *imageRegion,
+              RectanglePtr imageRegion,
               int destX, int destY, float zoom, int lod) {
     mCache->PreloadHint(preloadFrames, playDirection, 
                         startFrame, endFrame);
@@ -92,7 +92,7 @@ class Renderer {
   // ======================================================================
   // This is the actual renderer, minus the cache decorations
   virtual void RenderActual(int frameNumber,
-                            const Rectangle *imageRegion,
+                            RectanglePtr imageRegion,
                             int destX, int destY, float zoom, int lod) = 0; 
 
  // ======================================================================

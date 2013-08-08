@@ -12,6 +12,7 @@ struct Canvas;
 
 typedef boost::shared_ptr<struct FrameInfo> FrameInfoPtr; 
 typedef boost::shared_ptr<struct TextureObject> TextureObjectPtr;
+typedef boost::shared_ptr<struct ImageFormat> ImageFormatPtr;
 
 //============================================================
 struct ImageFormat{
@@ -139,8 +140,8 @@ struct FrameInfo {
     mDepth(other.mDepth), mMaxLOD(other.mMaxLOD), 
     mFrameNumberInFile(other.mFrameNumberInFile), 
     mFrameNumber(other.mFrameNumber), mFilename(other.mFilename), 
-    mValid(other.mValid),  mComplete(other.mComplete), 
-    mAbort(other.mAbort), mOwnerThread(-1) {
+    mValid(other.mValid),  mComplete(other.mComplete.load()), 
+    mAbort(other.mAbort.load()), mOwnerThread(-1) {
     return; 
   }
 
@@ -182,12 +183,16 @@ struct FrameInfo {
                     const unsigned char *src, unsigned char *dest);
 
   // ----------------------------------------------
-  ImagePtr ConvertImageToFormat(ImagePtr image, ImageFormat *canvasFormat);
+  ImagePtr ConvertImageToFormat(ImagePtr image, ImageFormat *canvasFormat);    
 
   // ----------------------------------------------
-  ImagePtr LoadAndConvertImage(unsigned int frameNumber,
-                               ImageFormat *canvasFormat, 
+  ImagePtr LoadAndConvertImage(ImageFormat *canvasFormat, 
                                const Rectangle *region, int levelOfDetail);
+
+  ImagePtr LoadAndConvertImage(ImageFormatPtr canvasFormat, 
+                               RectanglePtr region, int levelOfDetail) {
+    return LoadAndConvertImage(canvasFormat.get(), region.get(), levelOfDetail); 
+  }
   
  // ----------------------------------------------
   /* Basic statistics */
@@ -213,9 +218,9 @@ struct FrameInfo {
   bool mValid; 
 
   /* Cache management fields */ 
-  bool mComplete, mAbort; 
+  boost::atomic<bool> mComplete, mAbort; // atomic so they can be used as barriers
   boost::atomic<int> mOwnerThread; // a worker owns this if nonnegative
-
+  
 } ;
 
 
@@ -266,7 +271,8 @@ struct FrameList {
     mEndFrame= 0;   
     mMaxFrames= 0;  
     mFramesInProgress= 0; 
-    mFramesCompleted = 0;    stereo = false; 
+    mFramesCompleted = 0;    
+    stereo = false; 
     targetFPS = 30.0;
   }
 
@@ -313,6 +319,7 @@ struct FrameList {
   bool LoadFrames(QStringList &files);
 
   // ----------------------------------------------------
+  // NOT USED
   void ReleaseFramesFromCache(void) ;
 
   // ----------------------------------------------------
@@ -321,10 +328,14 @@ struct FrameList {
   QString formatName, formatDescription; 
 
   vector<FrameInfoPtr> mFrames; 
-
+  
   // Info for the cache: 
   int mCacheDirection; 
-  uint32_t mCurrentFrame, mStartFrame, mEndFrame, mMaxFrames; 
+  uint32_t mCurrentFrame; // the last frame requested
+  uint32_t mFirstAvailable; // the last frame not marked as mInProgress -- not strict but close
+  uint32_t mStartFrame; // play limits as set by user
+  uint32_t mEndFrame; // play limits as set by user -- influences distance
+  uint32_t mMaxFrames; // max allowed in cached as set by user
   boost::atomic<uint32_t> mFramesInProgress, mFramesCompleted; 
 
 } ;
