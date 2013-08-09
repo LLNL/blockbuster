@@ -310,7 +310,7 @@ static void ParseOptions(int &argc, char *argv[])
 	  opt->geometry.width = w;
 	  opt->geometry.height = h;
       if ((mask&XNegative) || (mask&YNegative))
-          WARNING("Negative positions not yet supported.");
+        WARNING("Negative positions not yet supported.");
 	}
 	else if (SET_BOOL_ARG("-help", argc, argv, help, 1)) {
 	  usage(); 
@@ -328,7 +328,7 @@ static void ParseOptions(int &argc, char *argv[])
         // user thinks LOD 1 is lowest level... 
         opt->LOD--; 
       }
-    continue;
+      continue;
     }
 	else if (CHECK_STRING_ARG("-loops", argc, argv,  opt->loopCountName)) continue;
 	else if (CHECK_STRING_ARG("-messageLevel", argc, argv, opt->messageLevelName))  {
@@ -365,8 +365,8 @@ static void ParseOptions(int &argc, char *argv[])
       continue;
     }
     /* 	else if (CHECK_ATOI_ARG("-preload", argc, argv,  opt->preloadFrames)) {
-      continue;
-    }
+       continue;
+       }
     */ 
 	else if (CHECK_STRING_ARG("-renderer", argc, argv, opt->rendererName)) continue;
 	else if (CHECK_STRING_ARG("-sidecar", argc, argv, opt->sidecarHostPort)) {
@@ -420,7 +420,7 @@ static void ParseOptions(int &argc, char *argv[])
 	else if (CHECK_STRING_ARG("-backend-renderer", argc, argv,  opt->backendRendererName) || 
              CHECK_STRING_ARG("-RendererOnBackend", argc, argv,  opt->backendRendererName)) continue;
     else if (CHECK_STRING_ARG("-backend-path", argc, argv, opt->executable) || 
-        CHECK_STRING_ARG("-BackendPath", argc, argv, opt->executable)) continue;
+             CHECK_STRING_ARG("-BackendPath", argc, argv, opt->executable)) continue;
 	else if (SET_BOOL_ARG("-mpi", argc, argv, opt->useMPI, 1)){
       cerr << "mpi flags given, useMPI is " << opt->useMPI << endl; 
       char *envp = getenv("BLOCKBUSTER_MPI_SCRIPT");
@@ -501,7 +501,7 @@ static void ParseOptions(int &argc, char *argv[])
     }
     // }
     DEBUGMSG(QString("SlaveHost: %1 Port: %2\n")
-          .arg(opt->masterHost).arg(opt->masterPort));  
+             .arg(opt->masterHost).arg(opt->masterPort));  
   }
   
   if (opt->mMaxCachedImages < opt->preloadFrames+1 || 
@@ -662,6 +662,7 @@ int main(int argc, char *argv[])
   /* initialize the smlibrary with the number of threads */
   //   smBase::init(opt->readerThreads); 
 
+
   /* count the remaining newargs and treat them as files */ 
   printargs("Before framelist", newargs, newargc); 
   int count = 0; 
@@ -682,31 +683,53 @@ int main(int argc, char *argv[])
    * (i.e. we're not a slave), give the user interface one last
    * chance to supply us with some frames.
    */
-  if (!opt->slaveMode && !allFrames) {
-    QString filename;
-    if (opt->sidecarHostPort == "") { 
-      /* Try to get a filename from the user interface */
-      //    char *filename = someObject->ChooseFile(opt);
-      filename = 
-        QFileDialog::getOpenFileName(NULL, "Choose a movie file", 
-                                     "Navigate to a movie file to play",
-                                     "Movie Files (*.sm)");
-    }
-    if (filename == "") {
-      WARNING("No frames found - nothing to display");
-      gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
-      exit(MOVIE_OK);
-    }
-    
-    
-    allFrames.reset(new FrameList); 
-    QStringList names(filename); 
-    if (!allFrames->LoadFrames(names) ||
-        !allFrames->numActualFrames()) {
-      gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
-      exit(1);
+  vector<MovieEvent> script; 
+  string scriptFirstMovie; 
+  if (opt->mScript != "") {
+    script = MovieEvent::ParseScript(opt->mScript.toStdString()); 
+    // look through the script for special events of note
+    for (vector<MovieEvent>::iterator event = script.begin(); event != script.end(); event++) {
+      if (event->mEventType == MOVIE_DISABLE_DIALOGS) {
+        SuppressMessageDialogs(true); 
+      }
+      if (scriptFirstMovie == "" && event->mEventType == MOVIE_OPEN_FILE) {
+        scriptFirstMovie = event->mString;
+      }
     }
   }
+  if (!opt->slaveMode && !allFrames) {
+    // see if we have a script that gives us a movie:
+    if (scriptFirstMovie != "") {
+       allFrames.reset(new FrameList(scriptFirstMovie));
+      if (allFrames->numActualFrames() == 0) {
+        allFrames.reset(); // now allFrames != true
+      }           
+    }
+    if (!allFrames) {
+      QString filename;
+      if (opt->sidecarHostPort == "") { 
+        /* Try to get a filename from the user interface */
+        //    char *filename = someObject->ChooseFile(opt);
+        filename = 
+          QFileDialog::getOpenFileName(NULL, "Choose a movie file", 
+                                       "Navigate to a movie file to play",
+                                       "Movie Files (*.sm)");
+      }
+      if (filename == "") {
+        WARNING("No frames found - nothing to display");
+        gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
+        exit(MOVIE_OK);
+      }
+      allFrames.reset(new FrameList); 
+      QStringList names(filename); 
+      if (!allFrames->LoadFrames(names) ||
+          !allFrames->numActualFrames()) {
+        gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
+        exit(1);
+      }
+    }
+  }
+  
 
   /* At this point, we should have a full list of frames.  If we don't,
    * we obviously cannot play anything.
@@ -755,7 +778,8 @@ int main(int argc, char *argv[])
         }
       }
     } 
-    while (DisplayLoop(allFrames, opt)) {
+    while (DisplayLoop(allFrames, opt, script)) {
+      script.clear(); 
       continue; 
     }
   }
@@ -770,7 +794,7 @@ int main(int argc, char *argv[])
 
     if (localSettingsFileExists) {
       WriteSettingsToFile(opt->settings, localSettingsFilename,
-                                                  settingsSources);
+                          settingsSources);
       settingsSources &= ~SETTINGS_FROM_PROGRAM;
     }
 
@@ -781,7 +805,7 @@ int main(int argc, char *argv[])
      * store it here.
      */
     WriteSettingsToFile(opt->settings, homeSettingsFilename,
-                                                settingsSources);
+                        settingsSources);
   }
   DestroySettings(opt->settings);
   opt->settings = NULL;

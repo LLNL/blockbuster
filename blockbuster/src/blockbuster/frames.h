@@ -259,6 +259,15 @@ struct FrameList {
   }
 
   // ----------------------------------------------------
+  FrameList(string file) {    
+    init(); 
+    QStringList filenames; 
+    filenames.append(file.c_str());
+    LoadFrames(filenames); 
+    return; 
+  }
+
+  // ----------------------------------------------------
   ~FrameList() {
     mFrames.clear(); 
   }

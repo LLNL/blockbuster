@@ -18,9 +18,9 @@
   /* Event codes */
   typedef enum {
     MOVIE_NONE = 0, /* 0 */
-    MOVIE_EXPOSE,
-    MOVIE_RESIZE,
-    MOVIE_FULLSCREEN,  
+    MOVIE_EXPOSE, // no value
+    MOVIE_RESIZE,  // height and width
+    MOVIE_FULLSCREEN, // no value
     MOVIE_IMAGE_MOVE,  /* move image to new x,y position in canvas */
     MOVIE_MOVE,  /* 5 */ /* move canvas to new x,y position on display */
     MOVIE_MOVE_RESIZE,  /* move and resize to new x,y position */
@@ -28,6 +28,7 @@
     MOVIE_TOGGLE_CURSOR,
     MOVIE_NOSCREENSAVER, /* Stop screensaver with fake mouse clicks */
     MOVIE_SET_STEREO, 
+    MOVIE_DISABLE_DIALOGS, /* do not display alerts in GUI -- for scripting and testing  */  
 
     MOVIE_ZOOM_IN = 50,
     MOVIE_ZOOM_OUT,
@@ -149,16 +150,19 @@
       mID = 0; 
 	  mEventType = ieventType; 
 	  mNumber = 0; 
-	  mRate = 0; mWidth = 0; mHeight = 0;
-	  mX = 0; mY = 0;
+	  mRate = 0; 
+      mWidth = 0; 
+      mHeight = 0;
+	  mX = 0; 
+      mY = 0;
       mString = "";
 	}
     
     static uint32_t MovieEventTypeToUint32(MovieEventType iType); 
     static MovieEventType Uint32ToMovieEventType (uint32_t iInt);
 
-#define MovieEventTypeToString(et) #et
-    MovieEventType StringToMovieEventType(string iType);
+    static string MovieEventTypeToString(MovieEventType); 
+    static MovieEventType StringToMovieEventType(string);
 
     static vector<MovieEvent> ParseScript(string filename); 
     bool  ParseScriptLine(string line); 

@@ -66,91 +66,108 @@ MovieEventType MovieEvent::Uint32ToMovieEventType (uint32_t iInt) {
   return result; 
 }
   
+//==========================================================================
+// CREATE THE FOLLOWING TWO FUNCTIONS USING MACROS:
+//string MovieEvent::MovieEventTypeToString(MovieEventType  iType) {
+//==========================================================================
+//MovieEventType MovieEvent::StringToMovieEventType(string  iType) {
+  
+#define STRING2EVENT(event,argname) if (argname == #event) return event
+#define RETURNSTRING(s) return #s
+#define EVENT2STRING(event,argname) if (argname == event) return #event
+#define RETURNEVENT(e) return e
+
+#define CREATEFUNC(rname,fname,pname,mac,retmac)    \
+  rname MovieEvent::fname(pname p) {                \
+    mac(MOVIE_NONE,p);                              \
+    mac(MOVIE_EXPOSE,p);                            \
+    mac(MOVIE_RESIZE ,p);                           \
+    mac(MOVIE_FULLSCREEN,p);                        \
+    mac(MOVIE_IMAGE_MOVE,p );                       \
+    mac(MOVIE_MOVE,p);                              \
+    mac(MOVIE_MOVE_RESIZE,p);                       \
+    mac(MOVIE_CENTER,p);                            \
+    mac(MOVIE_TOGGLE_CURSOR,p);                     \
+    mac(MOVIE_NOSCREENSAVER,p);                     \
+    mac(MOVIE_SET_STEREO,p);                        \
+    mac(MOVIE_DISABLE_DIALOGS,p);                   \
+    mac(MOVIE_ZOOM_IN,p);                           \
+    mac(MOVIE_ZOOM_OUT,p);                          \
+    mac(MOVIE_ZOOM_FIT,p);                          \
+    mac(MOVIE_ZOOM_ONE,p);                          \
+    mac(MOVIE_ZOOM_SET,p);                          \
+    mac(MOVIE_ZOOM_UP,p);                           \
+    mac(MOVIE_ZOOM_DOWN,p);                         \
+    mac(MOVIE_INCREASE_LOD,p);                      \
+    mac(MOVIE_DECREASE_LOD,p);                      \
+    mac(MOVIE_SET_LOD,p);                           \
+    mac(MOVIE_OPEN_FILE,p);                         \
+    mac(MOVIE_OPEN_FILE_NOCHANGE,p);                \
+    mac(MOVIE_PLAY_FORWARD,p);                      \
+    mac(MOVIE_PLAY_BACKWARD,p);                     \
+    mac(MOVIE_SET_LOOP,p);                          \
+    mac(MOVIE_SET_PINGPONG,p);                      \
+    mac(MOVIE_CONTINUE,p);                          \
+    mac(MOVIE_PAUSE,p);                             \
+    mac(MOVIE_STOP,p);                              \
+    mac(MOVIE_STEP_FORWARD,p);                      \
+    mac(MOVIE_STEP_BACKWARD,p);                     \
+    mac(MOVIE_SKIP_FORWARD,p);                      \
+    mac(MOVIE_SKIP_BACKWARD,p);                     \
+    mac(MOVIE_SECTION_FORWARD,p);                   \
+    mac(MOVIE_SECTION_BACKWARD,p);                  \
+    mac(MOVIE_SLOWER,p);                            \
+    mac(MOVIE_INCREASE_RATE,p);                     \
+    mac(MOVIE_DECREASE_RATE,p);                     \
+    mac(MOVIE_SET_RATE,p);                          \
+    mac(MOVIE_START_END_FRAMES,p);                  \
+    mac(MOVIE_GOTO_START,p);                        \
+    mac(MOVIE_GOTO_END,p);                          \
+    mac(MOVIE_GOTO_FRAME,p);                        \
+    mac(MOVIE_SAVE_FRAME,p);                        \
+    mac(MOVIE_MOUSE_PRESS_1,p);                     \
+    mac(MOVIE_MOUSE_PRESS_2,p);                     \
+    mac(MOVIE_MOUSE_PRESS_3,p);                     \
+    mac(MOVIE_MOUSE_RELEASE_1,p);                   \
+    mac(MOVIE_MOUSE_RELEASE_2,p);                   \
+    mac(MOVIE_MOUSE_RELEASE_3,p);                   \
+    mac(MOVIE_MOUSE_MOVE,p);                        \
+    mac(MOVIE_SHOW_INTERFACE,p);                    \
+    mac(MOVIE_HIDE_INTERFACE,p);                    \
+    mac(MOVIE_TOGGLE_INTERFACE,p);                  \
+    mac(MOVIE_QUIT,p);                              \
+    mac(MOVIE_STOP_ERROR,p);                        \
+    mac(MOVIE_SIDECAR_BACKCHANNEL,p);               \
+    mac(MOVIE_SIDECAR_MESSAGE,p);                   \
+    mac(MOVIE_SIDECAR_STATUS,p);                    \
+    mac(MOVIE_SNAPSHOT,p);                          \
+    mac(MOVIE_SNAPSHOT_STARTFRAME,p);               \
+    mac(MOVIE_SNAPSHOT_ENDFRAME,p);                 \
+    mac(MOVIE_SNAPSHOT_ALT_ENDFRAME,p);             \
+    mac(MOVIE_PWD,p);                               \
+    mac(MOVIE_CUE_BEGIN,p);                         \
+    mac(MOVIE_CUE_MOVIE_NAME,p);                    \
+    mac(MOVIE_CUE_PLAY_ON_LOAD,p);                  \
+    mac(MOVIE_CUE_PLAY_BACKWARD,p);                 \
+    mac(MOVIE_CUE_END,p);                           \
+    mac(MOVIE_CUE_COMPLETE,p);                      \
+    mac(MOVIE_SLAVE_SWAP_COMPLETE,p);               \
+    mac(MOVIE_SLAVE_EXIT,p);                        \
+    mac(MOVIE_SLAVE_COMMAND_FAILED,p);              \
+    mac(MOVIE_SLAVE_ERROR,p);                       \
+    mac(MOVIE_SAVE_IMAGE,p);                        \
+    mac(MOVIE_MESSAGE,p);                           \
+    mac(MOVIE_DISABLE_CURRENT_FRAME,p);             \
+    retmac(MOVIE_NONE);                             \
+  }
+
+CREATEFUNC(string, MovieEventTypeToString, MovieEventType, EVENT2STRING, RETURNSTRING);
+
+CREATEFUNC(MovieEventType, StringToMovieEventType, string, STRING2EVENT,RETURNEVENT);
+
 
 //==========================================================================
-MovieEventType MovieEvent::StringToMovieEventType(string  iType) {
-  if (iType == "MOVIE_NONE") return MOVIE_NONE; 
-  if (iType == "MOVIE_EXPOSE") return MOVIE_EXPOSE; 
-  if (iType == "MOVIE_RESIZE") return MOVIE_RESIZE; 
-  if (iType == "MOVIE_FULLSCREEN") return MOVIE_FULLSCREEN; 
-  if (iType == "MOVIE_IMAGE_MOVE") return MOVIE_IMAGE_MOVE; 
-  if (iType == "MOVIE_MOVE") return MOVIE_MOVE; 
-  if (iType == "MOVIE_MOVE_RESIZE") return MOVIE_MOVE_RESIZE; 
-  if (iType == "MOVIE_CENTER") return MOVIE_CENTER; 
-  if (iType == "MOVIE_TOGGLE_CURSOR") return MOVIE_TOGGLE_CURSOR; 
-  if (iType == "MOVIE_ZOOM_IN") return MOVIE_ZOOM_IN; 
-  if (iType == "MOVIE_ZOOM_OUT") return MOVIE_ZOOM_OUT; 
-  if (iType == "MOVIE_ZOOM_FIT") return MOVIE_ZOOM_FIT; 
-  if (iType == "MOVIE_ZOOM_ONE") return MOVIE_ZOOM_ONE; 
-  if (iType == "MOVIE_ZOOM_SET") return MOVIE_ZOOM_SET; 
-  if (iType == "MOVIE_ZOOM_UP") return MOVIE_ZOOM_UP; 
-  if (iType == "MOVIE_ZOOM_DOWN") return MOVIE_ZOOM_DOWN; 
-  if (iType == "MOVIE_INCREASE_LOD") return MOVIE_INCREASE_LOD; 
-  if (iType == "MOVIE_DECREASE_LOD") return MOVIE_DECREASE_LOD; 
-  if (iType == "MOVIE_SET_LOD") return MOVIE_SET_LOD; 
-  if (iType == "MOVIE_OPEN_FILE") return MOVIE_OPEN_FILE; 
-  if (iType == "MOVIE_OPEN_FILE_NOCHANGE") return MOVIE_OPEN_FILE_NOCHANGE; 
-  if (iType == "MOVIE_PLAY_FORWARD") return MOVIE_PLAY_FORWARD; 
-  if (iType == "MOVIE_PLAY_BACKWARD") return MOVIE_PLAY_BACKWARD; 
-  if (iType == "MOVIE_SET_LOOP") return MOVIE_SET_LOOP; 
-  if (iType == "MOVIE_SET_PINGPONG") return MOVIE_SET_PINGPONG; 
-  if (iType == "MOVIE_CONTINUE") return MOVIE_CONTINUE; 
-  if (iType == "MOVIE_PAUSE") return MOVIE_PAUSE; 
-  if (iType == "MOVIE_STOP") return MOVIE_STOP; 
-  if (iType == "MOVIE_STEP_FORWARD") return MOVIE_STEP_FORWARD; 
-  if (iType == "MOVIE_STEP_BACKWARD") return MOVIE_STEP_BACKWARD; 
-  if (iType == "MOVIE_SKIP_FORWARD") return MOVIE_SKIP_FORWARD; 
-  if (iType == "MOVIE_SKIP_BACKWARD") return MOVIE_SKIP_BACKWARD; 
-  if (iType == "MOVIE_SECTION_FORWARD") return MOVIE_SECTION_FORWARD; 
-  if (iType == "MOVIE_SECTION_BACKWARD") return MOVIE_SECTION_BACKWARD; 
-  if (iType == "MOVIE_SLOWER") return MOVIE_SLOWER; 
-  if (iType == "MOVIE_INCREASE_RATE") return MOVIE_INCREASE_RATE; 
-  if (iType == "MOVIE_DECREASE_RATE") return MOVIE_DECREASE_RATE; 
-  if (iType == "MOVIE_SET_RATE") return MOVIE_SET_RATE; 
-  if (iType == "MOVIE_START_END_FRAMES") return MOVIE_START_END_FRAMES; 
-  if (iType == "MOVIE_GOTO_START") return MOVIE_GOTO_START; 
-  if (iType == "MOVIE_GOTO_END") return MOVIE_GOTO_END; 
-  if (iType == "MOVIE_GOTO_FRAME") return MOVIE_GOTO_FRAME; 
-  if (iType == "MOVIE_SAVE_FRAME") return MOVIE_SAVE_FRAME; 
-  if (iType == "MOVIE_MOUSE_PRESS_1") return MOVIE_MOUSE_PRESS_1; 
-  if (iType == "MOVIE_MOUSE_PRESS_2") return MOVIE_MOUSE_PRESS_2; 
-  if (iType == "MOVIE_MOUSE_PRESS_3") return MOVIE_MOUSE_PRESS_3; 
-  if (iType == "MOVIE_MOUSE_RELEASE_1") return MOVIE_MOUSE_RELEASE_1; 
-  if (iType == "MOVIE_MOUSE_RELEASE_2") return MOVIE_MOUSE_RELEASE_2; 
-  if (iType == "MOVIE_MOUSE_RELEASE_3") return MOVIE_MOUSE_RELEASE_3; 
-  if (iType == "MOVIE_MOUSE_MOVE") return MOVIE_MOUSE_MOVE; 
-  if (iType == "MOVIE_SHOW_INTERFACE") return MOVIE_SHOW_INTERFACE; 
-  if (iType == "MOVIE_HIDE_INTERFACE") return MOVIE_HIDE_INTERFACE; 
-  if (iType == "MOVIE_TOGGLE_INTERFACE") return MOVIE_TOGGLE_INTERFACE; 
-  if (iType == "MOVIE_QUIT") return MOVIE_QUIT; 
-  if (iType == "MOVIE_STOP_ERROR") return MOVIE_STOP_ERROR; 
-  if (iType == "MOVIE_SIDECAR_BACKCHANNEL") return MOVIE_SIDECAR_BACKCHANNEL; 
-  if (iType == "MOVIE_SIDECAR_MESSAGE") return MOVIE_SIDECAR_MESSAGE; 
-  if (iType == "MOVIE_SIDECAR_STATUS") return MOVIE_SIDECAR_STATUS; 
-  if (iType == "MOVIE_SNAPSHOT") return MOVIE_SNAPSHOT; 
-  if (iType == "MOVIE_SNAPSHOT_STARTFRAME") return MOVIE_SNAPSHOT_STARTFRAME; 
-  if (iType == "MOVIE_SNAPSHOT_ENDFRAME") return MOVIE_SNAPSHOT_ENDFRAME; 
-  if (iType == "MOVIE_SNAPSHOT_ALT_ENDFRAME") return MOVIE_SNAPSHOT_ALT_ENDFRAME; 
-  if (iType == "MOVIE_PWD") return MOVIE_PWD; 
-  if (iType == "MOVIE_CUE_BEGIN") return MOVIE_CUE_BEGIN; 
-  if (iType == "MOVIE_CUE_MOVIE_NAME") return MOVIE_CUE_MOVIE_NAME; 
-  if (iType == "MOVIE_CUE_PLAY_ON_LOAD") return MOVIE_CUE_PLAY_ON_LOAD; 
-  if (iType == "MOVIE_CUE_PLAY_BACKWARD") return MOVIE_CUE_PLAY_BACKWARD; 
-  if (iType == "MOVIE_CUE_END") return MOVIE_CUE_END; 
-  if (iType == "MOVIE_CUE_COMPLETE") return MOVIE_CUE_COMPLETE; 
-  if (iType == "MOVIE_SLAVE_SWAP_COMPLETE") return MOVIE_SLAVE_SWAP_COMPLETE; 
-  if (iType == "MOVIE_SLAVE_EXIT") return MOVIE_SLAVE_EXIT; 
-  if (iType == "MOVIE_SLAVE_COMMAND_FAILED") return MOVIE_SLAVE_COMMAND_FAILED; 
-  if (iType == "MOVIE_SLAVE_ERROR") return MOVIE_SLAVE_ERROR; 
-  if (iType == "MOVIE_SAVE_IMAGE") return MOVIE_SAVE_IMAGE; 
-  if (iType == "MOVIE_MESSAGE") return MOVIE_MESSAGE; 
-  if (iType == "MOVIE_DISABLE_CURRENT_FRAME") return MOVIE_DISABLE_CURRENT_FRAME; 
-  
-  return MOVIE_NONE; 
-}
-  
-//==========================================================================
-vector<MovieEvent> MovieEvent::ParseScript(string filename) {
+  vector<MovieEvent> MovieEvent::ParseScript(string filename) {
   vector<MovieEvent> script; 
   ifstream sfile(filename.c_str()); 
   if (!sfile.is_open()) {
@@ -164,7 +181,9 @@ vector<MovieEvent> MovieEvent::ParseScript(string filename) {
     if (! event.ParseScriptLine(line)) {
       return script; 
     }
-    script.push_back(event); 
+    if (event.mEventType != MOVIE_NONE) {
+      script.push_back(event); 
+    }
   }
       
   return script; 
@@ -174,16 +193,31 @@ vector<MovieEvent> MovieEvent::ParseScript(string filename) {
 // Scripts are simple:  
 // EVENT CODE ( :  OPTIONAL VALUE )
 bool MovieEvent::ParseScriptLine(string line) {
+
+  init(MOVIE_NONE); 
+
   vector<string>tokens; 
   boost::split(tokens, line, boost::is_any_of(":"), boost::token_compress_on);
-  mEventType = MOVIE_NONE; 
-  MovieEventType eventType = StringToMovieEventType(tokens[0]); 
-  for (uint32_t i = 0; i< tokens.size(); i++) {
-    boost::trim(tokens[i]); 
+
+  for (vector<string>::iterator pos = tokens.begin(); pos != tokens.end(); pos++) {
+    if (pos->size() != 0 && (*pos)[0] == '#') {
+      tokens.erase(pos, tokens.end()); 
+      break; 
+    }
+    boost::trim(*pos); 
   }
+  if (!tokens.size()) {
+    // comment or empty line
+    return true; 
+  }
+  MovieEventType eventType = StringToMovieEventType(tokens[0]); 
+  mEventType = eventType; 
 
   switch (eventType) {
+  case MOVIE_STOP_ERROR:    // StringToMovieEventType failed
+    return false; 
   case MOVIE_OPEN_FILE: // or any other string-based event
+  case MOVIE_SAVE_FRAME:  // string to name the file
     if (tokens.size() < 2) {
       dbprintf(0, "ERROR: MovieEvent::ParseScriptLine: bad line: %s", line.c_str()); 
       return false; 
@@ -192,18 +226,42 @@ bool MovieEvent::ParseScriptLine(string line) {
     mEventType = eventType; 
     return true; 
 
-  case MOVIE_GOTO_FRAME:  // or any other single-integer-based event
+    // Handle all integer events.  
+  case MOVIE_GOTO_FRAME: 
+  case MOVIE_SET_LOD:  
+  case MOVIE_RESIZE:
+  case MOVIE_MOVE:
+  case MOVIE_IMAGE_MOVE:
+  case MOVIE_MOUSE_PRESS_1:
+  case MOVIE_MOUSE_PRESS_2:
+  case MOVIE_MOUSE_PRESS_3:
+  case MOVIE_MOUSE_RELEASE_1:
+  case MOVIE_MOUSE_RELEASE_2:
+  case MOVIE_MOUSE_RELEASE_3:
+  case MOVIE_MOUSE_MOVE:
     if (tokens.size() < 2) {
-      dbprintf(0, "ERROR: MovieEvent::ParseScriptLine: bad line: %s", line.c_str()); 
+      dbprintf(0, "ERROR: MovieEvent::ParseScriptLine: argument(s) missing in line: %s", line.c_str()); 
       return false; 
     }
-    mNumber = boost::lexical_cast<int32_t> (tokens[1]); 
-    mEventType = eventType; 
+    mNumber = boost::lexical_cast<int32_t> (tokens[1]); // always a safe bet
+    if (tokens.size() > 2) {
+      mX = boost::lexical_cast<int32_t> (tokens[1]); // reuse first argument.
+      mY = boost::lexical_cast<int32_t> (tokens[2]); 
+    }
+    if (tokens.size() > 4) {
+      mWidth = boost::lexical_cast<int32_t> (tokens[3]); 
+      mHeight = boost::lexical_cast<int32_t> (tokens[4]); 
+    } 
     return true; 
 
+  case MOVIE_ZOOM_SET:  // or any other float-based event
+  case MOVIE_SET_RATE:
+    mRate = boost::lexical_cast<float> (tokens[1]);
+    return true; 
   default:
-    return false; 
+    return true;     
   }
+  // not possible to get here: 
   return false;  
 }
 
@@ -238,7 +296,7 @@ void MovieEvent::FromQString(QString line) {
   QStringList tokens = line.split(" ");                       
   int numtokens = tokens.size(); 
   if (numtokens < 8) {
-    throw QString("Bad event in FromQString(): numtokens in \"%1\"should be 8 but is %2").arg(line).arg(numtokens); 
+    throw QString("Bad event in FromQString(): numtokens in \"%1\"should be at least 8 but is %2").arg(line).arg(numtokens); 
   }
   QStringList::iterator pos = tokens.begin(); 
   mEventType = Uint32ToMovieEventType(pos->toInt()); ++pos; 
