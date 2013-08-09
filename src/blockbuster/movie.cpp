@@ -49,13 +49,13 @@
  */
 int LODFromZoom(float zoom)
 {
-    /* XXX this may need tuning */
-    int lod = 0;
-    while (zoom <= 0.5) {
-       zoom *= 2.0;
-       lod++;
-    }
-    return lod;
+  /* XXX this may need tuning */
+  int lod = 0;
+  while (zoom <= 0.5) {
+    zoom *= 2.0;
+    lod++;
+  }
+  return lod;
 }
 
 // ====================================================================
@@ -119,7 +119,7 @@ void ClampStartEndFrames(FrameListPtr allFrames,
  * Main UI / image display loop
  * XXX this should get moved to a new file.
  */
-int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
+int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEvent> events)
 {
   int32_t previousFrame = -1, cueEndFrame = 0;
   uint totalFrameCount = 0, recentFrameCount = 0;
@@ -157,7 +157,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
   int destX, destY; // position on canvas to render the image
 
   
- /* We'll need this for timing */
+  /* We'll need this for timing */
   Hertz = sysconf(_SC_CLK_TCK);
 
   /* Insert splash screen code here. 
@@ -190,7 +190,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
     endFrame = options->endFrame; 
   
   /* Tell the Renderer about the frames it's going to render.
-    Generate a warning if the frames are out of whack */
+     Generate a warning if the frames are out of whack */
   renderer->SetFrameList(allFrames);
   renderer->ReportFrameListChange(allFrames);
   ClampStartEndFrames(allFrames, startFrame, endFrame, frameNumber, true); 
@@ -231,24 +231,24 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
   if ( options->zoom != 1.0 )
     newZoom =options->zoom;
 
+  if (options->fullScreen) {
+    DEBUGMSG("fullScreen from options\n"); 
+    events.push_back(MovieEvent(MOVIE_FULLSCREEN)); 
+    options->fullScreen=false; 
+  }
+
   renderer->ReportRateChange(options->frameRate);
 					
   time_t lastheartbeat = time(NULL); 
-  bool fullScreen = options->fullScreen, zoomOne = false; 
+  bool fullScreen = false, zoomOne = false; 
   MovieSnapshot oldSnapshot; 
-
 
   while(! done) {
     // TIMER_PRINT("loop start"); 
-    vector<MovieEvent> events;
     MovieEvent newEvent; 
     int oldPlay = playDirection;
 
-    if (fullScreen && options->fullScreen) {
-      DEBUGMSG("fullScreen from options\n"); 
-      events.push_back(MovieEvent(MOVIE_FULLSCREEN)); 
-      options->fullScreen=false; 
-    }
+
     /* Get an event from the renderer or network and process it.
      */   
     /* every minute or so, tell any DMX slaves we are alive */ 
@@ -271,19 +271,20 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
     }   
     events.push_back(newEvent); 
     
-    //renderer->GetEvent(renderer, 0, &newEvent);
- 
-   // we now have at least one event
-    uint32_t eventNum = 0; 
-    while (eventNum < events.size()) {
+    // we now have at least one event
+    while (events.size()) {
       bool swapBuffers = false; 
-     MovieEvent event = events[eventNum];
-     bool sendSnapshot = false; 
-     if (event.mEventType != MOVIE_NONE) {
-       DEBUGMSG("Got %s\n", event.Stringify().c_str()); 
-     }
-      eventNum ++; 
+      MovieEvent event = events[0];
+      events.erase(events.begin()); 
+
+      bool sendSnapshot = false; 
+      if (event.mEventType != MOVIE_NONE) {
+        DEBUGMSG("Got %s\n", event.Stringify().c_str()); 
+      }
       switch(event.mEventType) {
+      case   MOVIE_DISABLE_DIALOGS:   
+        SuppressMessageDialogs(true); 
+        continue;
       case   MOVIE_SIDECAR_STATUS:   
       case   MOVIE_SNAPSHOT:   
       case   MOVIE_SNAPSHOT_STARTFRAME:   
@@ -343,10 +344,10 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         //DEBUGMSG("fullscreen"); renderer->mWidth
         if(!frameInfo) {
           /*newZoom = ComputeZoomToFit(renderer, frameInfo->mWidth,
-                                   frameInfo->mHeight);
+            frameInfo->mHeight);
           */
           newZoom = ComputeZoomToFit(renderer, renderer->mWidth,
-                                   renderer->mHeight);
+                                     renderer->mHeight);
           //DEBUGMSG("Zoom to Fit: %f", newZoom);
         } else {
           //DEBUGMSG("No zooming done"); 
@@ -365,8 +366,8 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
       MOVIE_MOVE_RESIZE:
         if (0) // (event.mEventType == MOVIE_RESIZE || event.mEventType == MOVIE_MOVE_RESIZE) 
           {
-          zoomOne = fullScreen = false; 
-        }
+            zoomOne = fullScreen = false; 
+          }
         // The code below moves, resizes or does both as appropriate.  Doing it this way was easier than making two new functions, so sue me.  
         // =====================================
         // MOVE ===========================
@@ -384,7 +385,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         
         // RESIZE ===========================
         if (event.mEventType == MOVIE_RESIZE || event.mEventType == MOVIE_MOVE_RESIZE) {
-            //DEBUGMSG("RESIZE"); 
+          //DEBUGMSG("RESIZE"); 
           if (event.mWidth == 0) {
             /* if there are frames, use the frame width for the window width 
                else use the current width */ 
@@ -414,7 +415,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
             event.mHeight = renderer->mScreenHeight; 
           }
           renderer->Resize(event.mWidth,
-                         event.mHeight, event.mNumber);
+                           event.mHeight, event.mNumber);
           /* Set these in case there is no Resize function */
           renderer->mWidth = event.mWidth;
           renderer->mHeight = event.mHeight;
@@ -500,7 +501,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
       MOVIE_ZOOM_FIT: 
         if(frameInfo) {
           newZoom = ComputeZoomToFit(renderer, frameInfo->mWidth,
-                                   frameInfo->mHeight);
+                                     frameInfo->mHeight);
           DEBUGMSG("Zoom to Fit: %f", newZoom);
         } else {
           // Caution:  RDC: Zooming was not working right upon movie startup, so here I'm reusing some old code that was commented out -- maybe assumption that allFrames->frames[0] is not NULL is not valid?  
@@ -546,7 +547,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
       case MOVIE_NOSCREENSAVER:
         options->noscreensaver = event.mNumber;
         noscreensaverStartTime = GetCurrentTime();
-       break; 
+        break; 
       case MOVIE_MOUSE_PRESS_1:
         panning = 1;
         panStartX = event.mX;
@@ -649,7 +650,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
           gMainWindow->hide(); 
           gMainWindow->setVisible(false); 
         }
-       break;
+        break;
        
       case MOVIE_SET_STEREO:
       MOVIE_SET_STEREO:
@@ -680,109 +681,109 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         return 1; 
       case MOVIE_OPEN_FILE:   
       case MOVIE_OPEN_FILE_NOCHANGE: 
-	{
-	  DEBUGMSG("Got Open_File command"); 
-	  QStringList filenames; 
-	  filenames.append(event.mString.c_str());
-
-      renderer->DestroyImageCache();
-
-      allFrames.reset(new FrameList); // this should delete our old FrameList
- 	  if (allFrames->LoadFrames(filenames)) {	    
-	    allFrames->GetInfo(maxWidth, maxHeight, maxDepth, maxLOD, targetFPS);
-        renderer->SetFrameList(allFrames);
-        renderer->ReportFrameListChange(allFrames);
-	    renderer->ReportRateChange(targetFPS); 
-	    
-	    startFrame = 0; 
-	    endFrame = allFrames->numStereoFrames()-1; 
-	    frameNumber = event.mNumber;  
-	    if (event.mEventType != MOVIE_OPEN_FILE_NOCHANGE) {
-	      /* Compute a Shrink to Fit zoom */
-	      newZoom = ComputeZoomToFit(renderer, maxWidth, maxHeight);
-	      if (newZoom > 1.0) {
-		newZoom = 1.0; /* don't need expanding initially */
-	      }
-	      /* Reset our various parameters regarding positions */
-	      xOffset = yOffset = 0; 
-	      panStartX = panStartY = 0; 
-	      panDeltaX = panDeltaY = 0;
-	      zoomStartY = 0; zoomDelta = 0;
-          if (options->LOD) {
-            lodBias = options->LOD;
-          } else {
-            lodBias = 0;
-          }
-	      playDirection = 0;
-	      panning = 0; 
-	      zoomOne = fullScreen = false; 
-	      
-	    }
-	    renderer->ReportFrameChange(frameNumber);
-	    renderer->ReportDetailRangeChange(-maxLOD, maxLOD);
-	    renderer->ReportZoomChange(newZoom);
-        swapBuffers = true; 
-	  } else { 
-	    ERROR("Could not open movie file %s", event.mString.c_str()); 
-        gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
-        return 0; 
-	  }
-	  frameInfo =  renderer->GetFrameInfoPtr(0);
-	  preloadFrames = MIN2(options->preloadFrames, static_cast<int32_t>(allFrames->numStereoFrames()));
-	}
-    if (!options->stereoSwitchDisable) {
-      if ((allFrames->stereo && options->rendererName != "gl_stereo") ||
-          (!allFrames->stereo && options->rendererName == "gl_stereo"))
         {
-          cerr << "toggle stereo automatically"<< endl; 
-          event.mNumber = (!allFrames->stereo); 
-          goto MOVIE_SET_STEREO;          
+          DEBUGMSG("Got Open_File command"); 
+          QStringList filenames; 
+          filenames.append(event.mString.c_str());
+
+          renderer->DestroyImageCache();
+
+          allFrames.reset(new FrameList); // this should delete our old FrameList
+          if (allFrames->LoadFrames(filenames)) {	    
+            allFrames->GetInfo(maxWidth, maxHeight, maxDepth, maxLOD, targetFPS);
+            renderer->SetFrameList(allFrames);
+            renderer->ReportFrameListChange(allFrames);
+            renderer->ReportRateChange(targetFPS); 
+	    
+            startFrame = 0; 
+            endFrame = allFrames->numStereoFrames()-1; 
+            frameNumber = event.mNumber;  
+            if (event.mEventType != MOVIE_OPEN_FILE_NOCHANGE) {
+              /* Compute a Shrink to Fit zoom */
+              newZoom = ComputeZoomToFit(renderer, maxWidth, maxHeight);
+              if (newZoom > 1.0) {
+                newZoom = 1.0; /* don't need expanding initially */
+              }
+              /* Reset our various parameters regarding positions */
+              xOffset = yOffset = 0; 
+              panStartX = panStartY = 0; 
+              panDeltaX = panDeltaY = 0;
+              zoomStartY = 0; zoomDelta = 0;
+              if (options->LOD) {
+                lodBias = options->LOD;
+              } else {
+                lodBias = 0;
+              }
+              playDirection = 0;
+              panning = 0; 
+              zoomOne = fullScreen = false; 
+	      
+            }
+            renderer->ReportFrameChange(frameNumber);
+            renderer->ReportDetailRangeChange(-maxLOD, maxLOD);
+            renderer->ReportZoomChange(newZoom);
+            swapBuffers = true; 
+          } else { 
+            ERROR("Could not open movie file %s", event.mString.c_str()); 
+            gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
+            return 0; 
+          }
+          frameInfo =  renderer->GetFrameInfoPtr(0);
+          preloadFrames = MIN2(options->preloadFrames, static_cast<int32_t>(allFrames->numStereoFrames()));
         }
-    } 
+        if (!options->stereoSwitchDisable) {
+          if ((allFrames->stereo && options->rendererName != "gl_stereo") ||
+              (!allFrames->stereo && options->rendererName == "gl_stereo"))
+            {
+              cerr << "toggle stereo automatically"<< endl; 
+              event.mNumber = (!allFrames->stereo); 
+              goto MOVIE_SET_STEREO;          
+            }
+        } 
              
-    break;
+        break;
       case MOVIE_SAVE_IMAGE:
         renderer->WriteImageToFile(frameNumber);
         break;
-       case MOVIE_SAVE_FRAME:
-         if (frameInfo ) {
-           QString filename = event.mString.c_str(); 
-           bool ok = true; 
-           if (filename == "") {          
-             filename =  QInputDialog::
-               getText(NULL, "Filename",
-                       "Please give the image a name.",
-                       QLineEdit::Normal,
-                       ParentDir(QString(frameInfo->mFilename.c_str())),
-                       &ok);
-           }
+      case MOVIE_SAVE_FRAME:
+        if (frameInfo ) {
+          QString filename = event.mString.c_str(); 
+          bool ok = true; 
+          if (filename == "") {          
+            filename =  QInputDialog::
+              getText(NULL, "Filename",
+                      "Please give the image a name.",
+                      QLineEdit::Normal,
+                      ParentDir(QString(frameInfo->mFilename.c_str())),
+                      &ok);
+          }
            
-           if (ok && !filename.isEmpty()) {
-             if (! filename.endsWith(".png")) {
-               filename += ".png"; 
-             }
-             Rectangle region; 
-             region.x = region.y = 0; 
-             region.width = frameInfo->mWidth; 
-             region.height = frameInfo->mHeight; 
-             ImagePtr image = renderer->GetImage(frameNumber,&region,0); 
-             int size[3] = {region.width, region.height, 3}; 
-             int result = 
-               write_png_file(filename.toAscii().data(), 
-                              (unsigned char*)image->Data(), 
-                              size);
-             if (result == -1) {
-               ERROR("Could not write png file %s.", filename.toAscii().data()); 
-             } else {
-               WARNING("Successfully wrote png file %s.", filename.toAscii().data()); 
-             }
-           }
-         }
+          if (ok && !filename.isEmpty()) {
+            if (! filename.endsWith(".png")) {
+              filename += ".png"; 
+            }
+            Rectangle region; 
+            region.x = region.y = 0; 
+            region.width = frameInfo->mWidth; 
+            region.height = frameInfo->mHeight; 
+            ImagePtr image = renderer->GetImage(frameNumber,&region,0); 
+            int size[3] = {region.width, region.height, 3}; 
+            int result = 
+              write_png_file(filename.toAscii().data(), 
+                             (unsigned char*)image->Data(), 
+                             size);
+            if (result == -1) {
+              ERROR("Could not write png file %s.", filename.toAscii().data()); 
+            } else {
+              WARNING("Successfully wrote png file %s.", filename.toAscii().data()); 
+            }
+          }
+        }
         
-         break; 
+        break; 
         
       default:
-        WARNING("Unrecognized movie event %d ignored", event.mEventType);
+        WARNING("Unrecognized movie event %s ignored", MovieEvent::MovieEventTypeToString(event.mEventType).c_str());
         break;
       } 
 
@@ -847,7 +848,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
           nextSwapTime = 0.0;
       }
       
-     //=====================================================================
+      //=====================================================================
       // The frame number manipulations above may have advanced
       // or recessed the frame number beyond bounds.  We do the right thing here.
       if (frameNumber > endFrame) {    
@@ -935,9 +936,9 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
           oldSnapshot = newSnapshot; 
         }
       }
-        /*
-      * Compute ROI: region of the image that's visible in the window 
-      */
+      /*
+       * Compute ROI: region of the image that's visible in the window 
+       */
       {
         const int imgWidth = frameInfo->mWidth;
         const int imgHeight = frameInfo->mHeight;
@@ -1021,11 +1022,11 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
             region_height = 0;
         }
         
-         if (!roi || region_y != roi->y || region_x != roi->x || 
+        if (!roi || region_y != roi->y || region_x != roi->x || 
             region_height != roi->height || region_width != roi->width) {
           roi.reset(new Rectangle(region_x,region_y,region_width,region_height)); 
         }
-       /*
+        /*
           printf("roi: %d, %d  %d x %d  dest: %d, %d\n",
           roi.x, roi.y, roi.width, roi.height, destX, destY);
         */
@@ -1059,13 +1060,13 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
        * the given level of detail.
        */
       
-       TIMER_PRINT("before render"); 
-       renderer->Render(frameNumber, previousFrame, 
-                        preloadFrames, playDirection, 
-                        startFrame, endFrame, roi, destX, destY, 
-                        currentZoom, lod);
+      TIMER_PRINT("before render"); 
+      renderer->Render(frameNumber, previousFrame, 
+                       preloadFrames, playDirection, 
+                       startFrame, endFrame, roi, destX, destY, 
+                       currentZoom, lod);
        
-       TIMER_PRINT("after render"); 
+      TIMER_PRINT("after render"); 
      
       /* Print info in upper-left corner */
       /*!
@@ -1090,7 +1091,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
              }
       */
  
-       if (playDirection) {
+      if (playDirection) {
         /* See if we need to introduce a pause to prevent exceeding
          * the target frame rate.
          */
@@ -1105,18 +1106,18 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
         }
         /* Compute next targetted swap time */
         nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
-       }
-       dbprintf(5, "check to swap buffers\n"); 
-       if ( 1 ) {
-         /* ( swapBuffers == true ||
-            frameNumber != previousFrame ||
-            currentZoom != oldZoom ||
-            oldXOffset != xOffset ||
-            oldYOffset != yOffset)  {
-         */
-         renderer->mPreloadFrames = preloadFrames; 
-         renderer->mPlayDirection = playDirection;
-         renderer->mStartFrame = startFrame; 
+      }
+      dbprintf(5, "check to swap buffers\n"); 
+      if ( 1 ) {
+        /* ( swapBuffers == true ||
+           frameNumber != previousFrame ||
+           currentZoom != oldZoom ||
+           oldXOffset != xOffset ||
+           oldYOffset != yOffset)  {
+        */
+        renderer->mPreloadFrames = preloadFrames; 
+        renderer->mPlayDirection = playDirection;
+        renderer->mStartFrame = startFrame; 
         renderer->mEndFrame = endFrame; 
         renderer->SwapBuffers();
         if (playDirection && options->speedTest) {
@@ -1132,12 +1133,12 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options)
          * THIS IS ICKY.  But it is going away when I rewrite the cache.  
          */
         /* renderer->Preload(frameNumber, preloadFrames, playDirection, 
-                        startFrame, endFrame, &roi, lod); 
+           startFrame, endFrame, &roi, lod); 
         */
-       }
-       if (frameNumber != previousFrame) {
-         renderer->ReportFrameChange(frameNumber);
-       }
+      }
+      if (frameNumber != previousFrame) {
+        renderer->ReportFrameChange(frameNumber);
+      }
       previousFrame = frameNumber; 
       oldZoom = currentZoom; 
       oldXOffset = xOffset;
