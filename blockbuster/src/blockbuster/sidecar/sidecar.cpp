@@ -366,18 +366,18 @@ void SideCar::checkBlockbusterData() {
     } catch (QString errmsg) {
       cerr << "Exception thrown in checkBlockbusterData from operator >>: \"" << errmsg.toStdString() << "\"" << endl;
     }
-    dbprintf(5, "checkBlockbusterData: Got event %d\n", event.eventType); 
-    switch(event.eventType) {
+    dbprintf(5, "checkBlockbusterData: Got event %d\n", event.mEventType); 
+    switch(event.mEventType) {
     case MOVIE_SIDECAR_MESSAGE:
-      dbprintf(5, QString("Message received from blockbuster:  \"%1\"").arg(event.mString)); 
+      dbprintf(5, QString("Message received from blockbuster:  \"%1\"").arg(event.mString.c_str())); 
       break; 
     case MOVIE_PWD:
-      dbprintf(5, QString("Blockbuster changed directories to %1\n").arg(event.mString)); 
-      mBlockbusterCWD = event.mString; 
+      dbprintf(5, QString("Blockbuster changed directories to %1\n").arg(event.mString.c_str())); 
+      mBlockbusterCWD = event.mString.c_str(); 
       break; 
     case MOVIE_SIDECAR_STATUS:
       { 
-        MovieSnapshot snapshot(QString(event.mString)); 
+        MovieSnapshot snapshot(QString(event.mString.c_str())); 
         switch(snapshot.mSnapshotType) {
         case MOVIE_SNAPSHOT:
         case MOVIE_SNAPSHOT_ENDFRAME:
@@ -404,7 +404,7 @@ void SideCar::checkBlockbusterData() {
       { 
         QMessageBox::critical(this, "Blockbuster error", 
                               QString("Message from blockbuster:  %1.")
-                              .arg(event.mString)); 
+                              .arg(event.mString.c_str())); 
         break; 
       }
     default:
@@ -858,7 +858,7 @@ void SideCar::on_actionGo_To_Frame_triggered() {
                tr("Frame Number:"), 0, 0, 2147483647, 1, &ok);
   if (ok) {
     MovieEvent event(MOVIE_GOTO_FRAME); 
-    event.number = frameNum-1;
+    event.mNumber = frameNum-1;
     SendEvent(event); 
   }
   return ;
@@ -1014,7 +1014,7 @@ void SideCar::fpsSpinBox_valueChanged(double value){
 void SideCar::foreverCheckBox_stateChanged(int state) {
   MovieEvent event(MOVIE_SET_LOOP, -1); 
   if (!state) {
-    event.number = mRemoteControl->loopCheckBox->isChecked(); 
+    event.mNumber = mRemoteControl->loopCheckBox->isChecked(); 
   }
   SendEvent(event); 
 }
@@ -1046,7 +1046,7 @@ void SideCar::sendString() {
 //================================================================
 void SideCar::SendEvent(MovieEvent event) {
   try {
-    event.ID = mNextCommandID++; 
+    event.mID = mNextCommandID++; 
     if (mBlockbusterSocket && mBlockbusterSocket->state() == QAbstractSocket::ConnectedState) {
       *mBlockbusterSocket << event; 
       mBlockbusterSocket->flush(); 

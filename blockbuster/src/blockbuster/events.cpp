@@ -231,6 +231,7 @@ bool MovieEvent::ParseScriptLine(string line) {
   case MOVIE_SET_LOD:  
   case MOVIE_RESIZE:
   case MOVIE_MOVE:
+  case MOVIE_MOVE_RESIZE:
   case MOVIE_IMAGE_MOVE:
   case MOVIE_MOUSE_PRESS_1:
   case MOVIE_MOUSE_PRESS_2:
@@ -243,7 +244,9 @@ bool MovieEvent::ParseScriptLine(string line) {
       dbprintf(0, "ERROR: MovieEvent::ParseScriptLine: argument(s) missing in line: %s", line.c_str()); 
       return false; 
     }
-    mNumber = boost::lexical_cast<int32_t> (tokens[1]); // always a safe bet
+    if (tokens.size() == 2) {
+      mNumber = boost::lexical_cast<int32_t> (tokens[1]); 
+    }
     if (tokens.size() > 2) {
       mX = boost::lexical_cast<int32_t> (tokens[1]); // reuse first argument.
       mY = boost::lexical_cast<int32_t> (tokens[2]); 
@@ -277,7 +280,7 @@ std::string MovieEvent::Stringify(void) {
  
 //==========================================================================
 string MovieEvent::ToString(void) {
-  return str(boost::format("%1 %2 %3 %4 %5 %6 %7 %8 string: %9\n")
+  return str(boost::format("%1% %2% %3% %4% %5% %6% %7% %8% string: %9%\n")
              % (MovieEventTypeToUint32(mEventType))
              % (mID)
              % (mNumber)

@@ -282,16 +282,6 @@ void MovieCueManager::setCueRunning(bool running) {
 
 //======================================================================
 void MovieCueManager::on_deleteCueButton_clicked(){
-  /*
-    QMessageBox msgBox; 
-  msgBox.setText("Really delete cue?");
-  msgBox.setInformativeText("There is no undo.  Are you sure?");
-  QPushButton *cancelButton = msgBox.addButton("Cancel", QMessageBox::NoRole),*deleteButton = msgBox.addButton("Delete", QMessageBox::YesRole); 
-  int ret = msgBox.exec();
-  if (msgBox.clickedButton() == cancelButton) {
-    return; 
-  }
-  */
   int definitely =  QMessageBox::
     question( this,
               tr("Delete Cue"),
