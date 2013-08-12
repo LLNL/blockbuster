@@ -119,7 +119,7 @@ void ClampStartEndFrames(FrameListPtr allFrames,
  * Main UI / image display loop
  * XXX this should get moved to a new file.
  */
-int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEvent> events)
+int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEvent> script)
 {
   int32_t previousFrame = -1, cueEndFrame = 0;
   uint totalFrameCount = 0, recentFrameCount = 0;
@@ -231,6 +231,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
   if ( options->zoom != 1.0 )
     newZoom =options->zoom;
 
+  vector<MovieEvent>  events; 
   if (options->fullScreen) {
     DEBUGMSG("fullScreen from options\n"); 
     events.push_back(MovieEvent(MOVIE_FULLSCREEN)); 
@@ -247,7 +248,6 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
     // TIMER_PRINT("loop start"); 
     MovieEvent newEvent; 
     int oldPlay = playDirection;
-
 
     /* Get an event from the renderer or network and process it.
      */   
@@ -278,8 +278,15 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
       events.erase(events.begin()); 
 
       bool sendSnapshot = false; 
+      if (event.mEventType == MOVIE_NONE) {
+        if (script.size()) {
+          event = script[0]; 
+          script.erase(script.begin()); 
+          //dbprintf(5, "Pushed back event %s\n", event.Stringify().c_str());
+        }
+      }
       if (event.mEventType != MOVIE_NONE) {
-        DEBUGMSG("Got %s\n", event.Stringify().c_str()); 
+        DEBUGMSG("GOT EVENT ------- %s\n", event.Stringify().c_str()); 
       }
       switch(event.mEventType) {
       case   MOVIE_DISABLE_DIALOGS:   
@@ -430,8 +437,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
         break; // END MOVIE_MOVE, MOVIE_RESIZE OR MOVIE_MOVE_RESIZE
         
       case MOVIE_EXPOSE:
-        /* Fall-through to rendering code */
-        break;
+         break;
 
       case MOVIE_NONE:
         break; 

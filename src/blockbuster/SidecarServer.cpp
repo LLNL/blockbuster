@@ -87,6 +87,7 @@ void SidecarServer::incomingSidecarData() {
       } else {
         mLastReceivedCommandID = event.mID; 
         mPendingEvents.AddEvent(event); 
+        dbprintf(5, "Added sidecar event to pending events: %s\n", event.ToString().c_str()); 
       }
     }
     catch (QString msg) {

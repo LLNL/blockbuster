@@ -793,6 +793,7 @@ void Renderer::SetTitle(QString title) {
 // ==============================================================
 void Renderer::Resize(int newWidth, int newHeight, int cameFromX){
   ECHO_FUNCTION(5);
+  dbprintf(5, "Renderer::Resize(%d, %d, %d)\n", newWidth, newHeight, cameFromX); 
   if (cameFromX) {
     mHeight = newHeight; 
     mWidth = newWidth; 
