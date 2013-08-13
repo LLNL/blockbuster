@@ -67,7 +67,7 @@ tests = [
     {"name": "quicksand-11frames-gz",
      "need_data": "quicksand-short-6fps", 
      "cmd": "img2sm",
-    "args": "-v 5 -c gz --first 20 -l 30 quicksand-short-6fps/quicksand-short-6fps%03d.png quicksand-11frames-gz.sm", 
+    "args": "-v 5 -c gz -T sometag:somevalue --first 20 -l 30 quicksand-short-6fps/quicksand-short-6fps%03d.png quicksand-11frames-gz.sm", 
      "output": "quicksand-11frames-gz.sm",
      "failure_pattern": IMG2SM_FAILURE,
      "success_pattern": IMG2SM_SUCCESS,
@@ -83,6 +83,22 @@ tests = [
      "success_pattern": SMQUERY_SUCCESS
      },
     
+    # --------------------------------------------          
+    # Make sure that adding tags to a movie do not cause the movie to be unviewable
+    { "name": "blockbuster-test-img2sm-safety",
+      "need_data": ["quicksand-11frames-gz.sm",
+                    "blockbuster-test-img2sm-safety.script"],
+      "cmd": "blockbuster",
+      "args": "-script blockbuster-test-img2sm-safety.script -v 5",
+      "output": ["quicksand-11frames-gz-frame-10.png",
+                 "quicksand-11frames-gz-frame-0.png"],
+      "failure_pattern": BLOCKBUSTER_FAILURE,
+      "success_pattern": ["bad magic .* at pos 654665",
+                          "window 10: 594098 size 60591"],    
+      "frame diffs": [["quicksand-11frames-gz-frame-10.png", -1],
+                      ["quicksand-11frames-gz-frame-0.png", -1]],
+      "return": 0
+      },
     # ===============================================       
     {"name": "quicksand-11frames-lzma",
      "need_data": "quicksand-short-6fps", 
@@ -182,6 +198,7 @@ tests = [
     },
     
     # ===============================================
+    # Make sure that adding tags to a movie do not cause the movie to be unviewable
     { "name": "blockbuster-test-smtag-safety",
       "need_data": ["quicksand-wildcard-11frames-lzma.sm",
                     "blockbuster-test-smtag-safety.script"],

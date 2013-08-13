@@ -259,12 +259,14 @@ def FrameDiffs(test):
         frame = diff[1]
         if frame == -1:
             outframe = diff[0]
+            if outframe[0] != '/':
+                outframe = os.getcwd()+'/'+outframe
             standard = "%s/standards/%s"%(gDatadir, diff[0])
         else:
-            outframe = "%s_test_frame.png"%test['name']
+            outframe = "%s/%s_test_frame.png"%(os.getcwd(), test['name'])
             standard = "%s/standards/%s_standard_frame.png"%(gDatadir, test['name'])
             fullcmd = "%s/sm2img --first %d --last %d %s %s"%(gBindir, frame, frame, movie, outframe)
-            outfilename = "%s/%s.frame_diff.txt"%(os.getcwd(), outframe)
+            outfilename = "%s.frame_diff.txt"%outframe
             dbprint("FrameDiffs: outfile is %s\n"%outfilename)
             outfile = open(outfilename, "w")
             outfile.close()
@@ -279,13 +281,17 @@ def FrameDiffs(test):
             shutil.copy(outframe, standard)
             if not os.path.exists(standard):
                 return "Could not copy %s to %s\n"%(outframe, standard)
-
-        img = Image.open(outframe)
-        gold = Image.open(standard)
-        diff = ImageChops.difference(img,gold)
-        for t in diff.getextrema():
-            if t[0] or t[1]:
-                return "FrameDiffs(): Images %s and %s differ."%(outframe, standard)
+        try:
+            img = Image.open(outframe)
+            gold = Image.open(standard)
+            diff = ImageChops.difference(img,gold)
+            for t in diff.getextrema():
+                if t[0] or t[1]:
+                    return "FrameDiffs(): Images %s and %s differ."%(outframe, standard)
+        except:
+            dbprint("Caught error \"%s\"\n" % sys.exc_info()[0])
+            return "FrameDiffs(): Got exception trying to diff images %s and %s."%(outframe, standard)
+        
         dbprint ("FrameDiffs():  output image matches gold standard.\n")
     return 'SUCCESS'
 
