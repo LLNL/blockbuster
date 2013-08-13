@@ -16,6 +16,8 @@ SMQUERY_SUCCESS = None
 SMQUERY_FAILURE = ["ERROR", "UNKNOWN"]
 SCRIPT_SUCCESS = None
 SCRIPT_FAILURE = ["ERROR"]
+BLOCKBUSTER_SUCCESS = None
+BLOCKBUSTER_FAILURE = ["ERROR"]
 
 tests = [
     # ===============================================       
@@ -160,7 +162,8 @@ tests = [
     
     # ===============================================       
     {"name": "smtag-from-file",
-     "need_data": ["quicksand-wildcard-11frames-lzma.sm","tags.tagfile"], 
+     "need_data": ["quicksand-wildcard-11frames-lzma.sm",
+                   "tags.tagfile"], 
      'cmd': "smtag",
      "args": "-v 5 --report -T 'testtag2: 82 :INT64' -T 'doubletag2: 47.4 :DOUBLE' -T 'horsie tag:new horsie tag' -E -F tags.tagfile quicksand-wildcard-11frames-lzma.sm", 
      "output": "quicksand-wildcard-11frames-lzma.tagfile",
@@ -175,6 +178,20 @@ tests = [
      "frame diffs": ["quicksand-wildcard-11frames-lzma.sm", 1]
     },
     
+    # ===============================================
+    { "name": "blockbuster-test-smtag-safety",
+      "need_data": ["quicksand-wildcard-11frames-lzma.sm",
+                    "blockbuster-test-smtag-safety.script"],
+      "cmd": "blockbuster",
+      "args": "-script blockbuster-test-smtag-safety.script -v 5",
+      "output": ["quicksand-wildcard-11frames-lzma-frame-10.png",
+                 "quicksand-wildcard-11frames-lzma-frame-0.png"],
+      "failure_pattern": BLOCKBUSTER_FAILURE,
+      "success_pattern": "window 10: 473312 size 43940",    
+      "frame diffs": [["quicksand-wildcard-11frames-lzma-frame-10.png", -1],
+                      ["quicksand-wildcard-11frames-lzma-frame-0.png", -1]],
+      "return": 0
+      },
     # ===============================================       
      {"name": "query-and",
      "need_data": ["quicksand-wildcard-11frames-lzma.sm"], 
@@ -186,7 +203,7 @@ tests = [
       "return": 0
       },
     # ===============================================       
-     {"name": "query-and",
+     {"name": "query-and-failure",
      "need_data": ["quicksand-wildcard-11frames-lzma.sm"], 
      'cmd': "smquery",
      "args": " -T 'horsie' -T badtag -A quicksand-wildcard-11frames-lzma.sm", 
