@@ -33,14 +33,6 @@ bindist:
 	$(MAKE) all 
 	SYS_TYPE=$(SYS_TYPE) ./make-bindist.sh 
 
-old-bindist-deleteme: 
-	INSTALL_DIR=linux-dmx remake.sh all
-	INSTALL_DIR=install-linux-DMX ./make-bindist.sh 
-	rm -rf linux-dmx
-	INSTALL_DIR=linux-basic-nodmx remake.sh nodmx
-	INSTALL_DIR=install-linux-basic ./make-bindist.sh 
-	rm -rf linux-basic-nodmx
-
 dmx: mpi
 	echo YES > src/config/dmx
 
