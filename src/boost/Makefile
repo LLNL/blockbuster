@@ -44,15 +44,11 @@ boost_$(BOOST_VERSION)/boost/random.hpp:
 	[ -f $@ ] && touch $@
 	@echo '********************' finished with UNTAR_BOOST $@; echo
 
-$(INSTALL_DIR)/include/boost/random.hpp: boost_$(BOOST_VERSION)/boost/random.hpp
-	-echo apparently $< is newer than $@; ls -l $<; ls -l $@
-	cp -r boost_$(BOOST_VERSION)/boost $(INSTALL_DIR)/include/
-	@echo '********************' finished with HEADER_EVIDENCE $@; echo
-
-$(LIB_EVIDENCE): $(INSTALL_DIR)/include/boost/random.hpp
+$(LIB_EVIDENCE): boost_$(BOOST_VERSION)/boost/random.hpp
 	-echo apparently $< is newer than $@; ls -l $<; ls -l $@
 	rm -f $@  # ensure all libs are newer than headers when done
 	cd boost_$(BOOST_VERSION) && tar -xzf ../process-0.5.tgz && ./bootstrap.sh --with-libraries=thread,regex,system,date_time && ./bjam -j 20 install --prefix=$(INSTALL_DIR)
+	cp -r boost_$(BOOST_VERSION)/boost $(INSTALL_DIR)/include/
 	@echo '********************' finished with LIB_EVIDENCE $@; echo
 
 clean:
