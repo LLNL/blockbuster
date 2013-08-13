@@ -16,6 +16,7 @@ if [ $(uname) == Linux ]; then
             export INSTALL_NAME=linux-basic-nodmx-v$version-$(uname -r)
         fi
         export INSTALL_DIR=$tmpdir/$INSTALL_NAME
+        mkdir -p $INSTALL_DIR
         INSTALL_DIR=$INSTALL_DIR remake.sh $buildarg || errexit "build failed for $INSTALL_DIR"
         cp -fp bindist-src/README-install.txt bindist-src/install.sh ${INSTALL_DIR}
         tarball=$tmpdir/${INSTALL_NAME}.tgz
