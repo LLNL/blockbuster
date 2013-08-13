@@ -58,7 +58,8 @@ $(OFILES) : % : %.o $(SMLIB) simple_jpeg.o debugutil.o
 	@echo '***********************************************'
 	@echo BUILDING $@
 	@echo
-		$(CXX)  $^ -o $@ $(CXXFLAGS) $(LIBS) 
+	$(CXX)  $^ -o $@ $(CXXFLAGS) $(LIBS) 
+	$(INSTALL_DIR)/bin/patchelf --set-rpath $(INSTALL_DIR)/lib $@ || rm -f $@ 
 	@echo
 	@echo DONE BUILDING $@
 	@echo
