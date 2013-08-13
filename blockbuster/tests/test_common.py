@@ -5,22 +5,101 @@ import signal
 from subprocess import *
 
 # =================================================================
-gTestdir = "/tmp/"+os.getenv("USER")+"/blockbuster_tests/"
-gBindir = "" # almost certainly bad
-gDatadir = "" # almost certainly bad
+gTestdir = None
+gBindir = None
+gDatadir = None
 gDBFile = None
 gDBFilename = None
 
 # =================================================================
+def SetBindir(dirname):
+    global gBindir
+    gBindir = dirname
+
+# =================================================================
+def SetDatadir(dirname):
+    global gDatadir
+    gDatadir = dirname
+    
+# =================================================================
 def SetDBFile(outfilename=None):
-    global gDBFilename, gDBFile
-    if not gDBFile:
-        if not gDBFilename:
-            if not outfilename:
-                outfilename = os.getcwd() + "/" + "testing-results.out"
-            gDBFilename = outfilename
-            dbprint("Debug output file is %s\n"%gDBFilename)
-        gDBFile = open(gDBFilename, "w")
+    global gDBFilename, gDBFile, gTestdir
+    if gDBFile:
+        return
+    
+    if not gDBFilename:
+        if not outfilename:
+            outfilename = "%s/testing-results.out"%gTestdir                
+        gDBFilename = outfilename
+        dbprint("Debug output file is %s\n"%gDBFilename)
+
+    gDBFile = open(gDBFilename, "w")
+        
+    return
+
+# =================================================================
+# Helper for FindPaths(). 
+def FindBinDir(progname):
+    bindir = None
+    # try ../$SYS_TYPE/bin (usual case) and ../../$SYS_TYPE/bin (dev on LC)
+    for dots in ['..','../..','../../..']:
+        for subdir in [systype, '.']:
+            trydir = "%s/%s/%s/bin"%(testdir,dots,subdir)
+            # dbprint( "trying directory: %s\n"%trydir)
+            if  os.path.exists(trydir+'/' + progname):
+                return trydir
+    return "%s/../%s/bin"%(testdir,systype)
+
+# =================================================================
+# Helper for FindPaths().  Do not call from elsewhere. 
+def FindDataDir():
+    datadir = os.path.abspath(os.path.dirname(sys.argv[0])+'/../sample-data')
+    if not os.path.exists(datadir):
+        proc = Popen(("tar -C %s -xzf %s.tgz"%(datadir.replace('sample-data',''), datadir)).split())
+        proc.wait()
+    if not os.path.exists(datadir):
+        dbprint("WARNING: Cannot find or create data dir %s"%datadir)
+        return None
+    return datadir
+
+# =================================================================
+def FindPaths():
+    global gBindir, gDatadir, gTestdir
+
+    if gBindir and gDatadir and gTestdir:
+        return
+
+    # gTestdir
+    if not gTestdir:
+        gTestdir = "/tmp/"+os.getenv("USER")+"/blockbuster_tests/" 
+        print "Creating new empty directory %s\n"%gTestdir
+        if os.path.exists(gTestdir):
+            shutil.rmtree(gTestdir)
+        CreateDir(gTestdir)
+            
+    # gBindir
+    if not gBindir:
+        gBindir= FindBinDir('smtag')
+        
+    if not os.path.exists(gBindir):
+        errexit("gBindir %s does not exist."%gBindir)
+        # fix relative paths and stuff:
+    if gBindir[-1] != '/':
+        gBindir = gBindir + "/" 
+    if gBindir[0] != '/':
+        gBindir = os.getcwd() + '/' + gBindir
+    binary = "%s/img2sm"%gBindir   
+    gBindir = os.path.realpath(os.path.abspath(os.path.dirname(binary)))
+    
+    gDatadir = FindDataDir()
+    if not gDatadir:
+        errexit("Failed to create data directory!\n");
+        
+    dbprint( "gBindir  is: %s\n"%gBindir)
+    dbprint( "gDatadir is: %s\n"%gDatadir)
+    dbprint( "gTestdir is: %s\n"%gTestdir)
+    
+    
     return
 
 # =================================================================
@@ -32,23 +111,10 @@ def dbprint(msg, outfile=None):
     gDBFile.write(msg)
     
 # =================================================================
-def FindBinDir(progname):
-    global gBindir
-    # try ../$SYS_TYPE/bin (usual case) and ../../$SYS_TYPE/bin (dev on LC)
-    for dots in ['..','../..','../../..']:
-        for subdir in [systype, '.']:
-            trydir = "%s/%s/%s/bin"%(testdir,dots,subdir)
-            # dbprint( "trying directory: %s\n"%trydir)
-            if  os.path.exists(trydir+'/' + progname):
-                gBindir = trydir
-                return gBindir         
-    gBindir = "%s/../%s/bin"%(testdir,systype)
-    return gBindir
-
-# =================================================================
 def get_arg_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-b', '--bindir', help="set directory where smtools live", default=FindBinDir('smtag'))
+    parser.add_argument('-b', '--bindir', help="set directory where smtools live", default="")
+    parser.add_argument('-o', '--output-dir', help="Where to put the test results", default="")
     return parser
 
 # =================================================================
@@ -125,39 +191,6 @@ def run_command(cmd, outfile):
     dbprint("run_command completed.\n")
     return 
 
-# =================================================================
-def FindDataDir():
-    global gDatadir
-    gDatadir = os.path.abspath(os.path.dirname(sys.argv[0])+'/../sample-data')
-    if not os.path.exists(gDatadir):
-        proc = Popen(("tar -C %s -xzf %s.tgz"%(gDatadir.replace('sample-data',''), gDatadir)).split())
-        proc.wait()
-    if not os.path.exists(gDatadir):
-        errexit("Cannot find or create data dir %s"%gDatadir)
-    return gDatadir
-
-# =================================================================
-def FindPaths(bindir):
-    global gBindir, gDatadir
-    if bindir:
-        if not os.path.exists(bindir):
-            errexit("bindir %s does not exist."%bindir)
-        # fix relative paths and stuff:
-        if bindir[-1] != '/':
-            bindir = bindir + "/" 
-        if bindir[0] != '/':
-            bindir = os.getcwd() + '/' + bindir
-        binary = "%s/img2sm"%bindir   
-        bindir = os.path.realpath(os.path.abspath(os.path.dirname(binary)))
-        gBindir = bindir
-    
-    gDatadir = FindDataDir()
-    
-    dbprint( "bindir is: %s\n"%bindir)
-    dbprint( "datadir is: %s\n"%gDatadir)
-    
-    return
-
 # ===================================================================
 def CreateDir(outdir, clean=False):
     # CREATE OUTPUT DIRECTORY
@@ -167,13 +200,6 @@ def CreateDir(outdir, clean=False):
         os.makedirs(outdir)
     if not os.path.exists(outdir):
         errexit("Cannot create test output directory "+outdir)
-    return
-
-# ===================================================================
-def SetBaseDir(basedir, clean=True):
-    global gTestdir
-    gTestdir = basedir
-    CreateDir(gTestdir, clean=clean)
     return
 
 
@@ -397,11 +423,8 @@ def run_test(test):
 
 # ========================================================================
 def RunTests(tests, stoponfail, create_gold_standard):
-
-    if os.path.exists(gTestdir):
-        shutil.rmtree(gTestdir)
-
-    CreateDir(gTestdir)
+    
+    FindPaths()
 
     successes = 0
     results = []
