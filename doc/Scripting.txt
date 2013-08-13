@@ -1,0 +1,89 @@
+A blockbuster script is a series of "events" each optionally followed by a string, a float, or one, two or four integers, as appropriate.  
+The allowed events are listed below, but might be out of date.  Look at src/blockbuster/events.h for a more up to date list.  MOVIE_DISABLE_DIALOGS is highly recommended at the beginning of your script.  
+
+========================================================
+EXAMPLE SCRIPT: 
+
+MOVIE_DISABLE_DIALOGS  # I am a comment
+MOVIE_OPEN_FILE : langer.sm
+MOVIE_GOTO_FRAME : 20
+MOVIE_SAVE_FRAME : langer-frame20.png
+MOVIE_GOTO_FRAME : 797
+MOVIE_SAVE_FRAME : langer-frame797.png
+MOVIE_OPEN_FILE : /g/g0/rcook/dataAndImages/Manhattan.sm
+MOVIE_SET_LOD: 2
+MOVIE_GOTO_FRAME : 1650
+MOVIE_SAVE_FRAME : manhattan-lod2-frame2650.png
+MOVIE_QUIT
+
+========================================================
+ALLOWED VALUES:  
+
+    MOVIE_NONE = 0, /* 0 */
+    MOVIE_EXPOSE, 
+    MOVIE_RESIZE,  // int X and Y
+    MOVIE_FULLSCREEN, 
+    MOVIE_IMAGE_MOVE, // int X and Y /* move image to new x,y pos in canvas */
+    MOVIE_MOVE, // int X and Y  /* move canvas to new x,y position on display */
+    MOVIE_MOVE_RESIZE, // int X Y W H /* move and resize to new x,y position */
+    MOVIE_CENTER,
+    MOVIE_TOGGLE_CURSOR,
+    MOVIE_NOSCREENSAVER, /* Stop screensaver with fake mouse clicks */
+    MOVIE_SET_STEREO, 
+    MOVIE_DISABLE_DIALOGS, /* do not display alerts in GUI -- for scripting and testing  */  
+
+    MOVIE_ZOOM_IN = 50,
+    MOVIE_ZOOM_OUT,
+    MOVIE_ZOOM_FIT, 
+    MOVIE_ZOOM_ONE,
+    MOVIE_ZOOM_SET, // float Z
+    MOVIE_ZOOM_UP, /* 55 */
+    MOVIE_ZOOM_DOWN,
+    MOVIE_INCREASE_LOD,
+    MOVIE_DECREASE_LOD,
+    MOVIE_SET_LOD, // int L
+
+    MOVIE_OPEN_FILE = 100, // string filename 
+    MOVIE_OPEN_FILE_NOCHANGE,  // string filename 
+    MOVIE_PLAY_FORWARD,
+    MOVIE_PLAY_BACKWARD, 
+    MOVIE_SET_LOOP,
+    MOVIE_SET_PINGPONG,/* 105 */ 
+    MOVIE_CONTINUE,
+    MOVIE_PAUSE, 
+    MOVIE_STOP,
+    MOVIE_STEP_FORWARD,
+    MOVIE_STEP_BACKWARD, /* 110 */
+    MOVIE_SKIP_FORWARD, 
+    MOVIE_SKIP_BACKWARD, 
+    MOVIE_SECTION_FORWARD,
+    MOVIE_SECTION_BACKWARD,
+    MOVIE_SLOWER,  /* 115 */ 
+    MOVIE_INCREASE_RATE, 
+    MOVIE_DECREASE_RATE,
+    MOVIE_SET_RATE,  // float R
+    MOVIE_START_END_FRAMES, // int first last
+    MOVIE_GOTO_START,/* 120 */ 
+    MOVIE_GOTO_END,
+    MOVIE_GOTO_FRAME, // int frame
+    MOVIE_SAVE_FRAME, 
+
+    MOVIE_MOUSE_PRESS_1 = 200, // int x y
+    MOVIE_MOUSE_RELEASE_1, // int x y
+    MOVIE_MOUSE_PRESS_2, // int x y
+    MOVIE_MOUSE_RELEASE_2, // int x y
+    MOVIE_MOUSE_PRESS_3, // int x y
+    MOVIE_MOUSE_RELEASE_3, /* 205 */  // int x y 
+    MOVIE_MOUSE_MOVE,  // int x y
+
+    MOVIE_SHOW_INTERFACE = 300,
+    MOVIE_HIDE_INTERFACE,
+    MOVIE_TOGGLE_INTERFACE,
+    MOVIE_QUIT, 
+    MOVIE_STOP_ERROR,
+
+   /* ========================================================================*/
+    /* This is useful if saving a splash screen image */
+    MOVIE_SAVE_IMAGE,
+    /* A way to force an error message to appear NOTE:  DOES NOT APPEAR TO DO ANYTHING */
+    MOVIE_MESSAGE,
