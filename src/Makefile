@@ -23,8 +23,8 @@ QTHOME ?= /usr/mic/dvsviz/Trolltech/latest/$(SYS_TYPE)
 export PATH=$(QTHOME)/bin:$(shell echo $${PATH})
 export BUILD_ROOT ?= $(shell pwd)
 
-BLOCKBUSTERBUILDDIRS =  boost tclap-1.2.1 xzlib zlib lzolib pt  sndplay \
-	libimage libpnmrw libpng libjpeg libtiff mpegdir \
+BLOCKBUSTERBUILDDIRS =  boost tclap-1.2.1 xzlib zlib lzolib pt patchelf \
+	sndplay libimage libpnmrw libpng libjpeg libtiff mpegdir \
 	evolib sm smapp blockbuster
 
 
