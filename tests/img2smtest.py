@@ -6,9 +6,12 @@ parser.add_argument('-s', '--stop-on-failure', help="Stop testing when a failure
 parser.add_argument('-g', '--create-gold-standard', help="Create baseline images and files for use in later testing.  Assumes the current code is perfect", action='store_true')
 args = parser.parse_args()
 
-test_common.FindPaths(args.bindir)
+if args.bindir != "":
+    test_common.SetBindir(args.bindir)
+if args.output_dir != "":
+    test_common.SetOutputdir(args.output_dir)
 
-# ============================================================================================
+# ==============================================================
 # DEFINE TESTS
 IMG2SM_SUCCESS = "img2sm successfully created movie"
 IMG2SM_FAILURE = ["ERROR", "UNKNOWN"]
