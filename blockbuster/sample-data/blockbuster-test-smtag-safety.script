@@ -1,0 +1,8 @@
+MOVIE_DISABLE_DIALOGS
+MOVIE_OPEN_FILE : quicksand-wildcard-11frames-lzma.sm
+MOVIE_GOTO_FRAME : 10
+MOVIE_SAVE_FRAME : quicksand-wildcard-11frames-lzma-frame-10.png
+MOVIE_GOTO_FRAME : 0
+MOVIE_SAVE_FRAME : quicksand-wildcard-11frames-lzma-frame-0.png
+MOVIE_MOVE_RESIZE : 400 : 500 : 1000 : 1000 
+MOVIE_QUIT
