@@ -218,37 +218,49 @@ def RunTestCommand(fullcmd, test, outfile):
 # ================================================================
 def FrameDiffs(test):
     errmsg = "SUCCESS"
-    if "frame diffs" not in test.keys():
+    if "frame diffs" not in test.keys() or not test['frame diffs']:
         return "SUCCESS"
     # extract the frame
-    movie = test['frame diffs'][0]
-    frame = test['frame diffs'][1]
-    outframe = "%s_test_frame.png"%test['name']
-    standard = "%s/standards/%s_standard_frame.png"%(gDatadir, test['name'])
-    fullcmd = "%s/sm2img --first %d --last %d %s %s"%(gBindir, frame, frame, movie, outframe)
-    outfilename = "%s/%s"%(os.getcwd(), test['name']+'.frame_diff.txt')
-    dbprint("FrameDiffs: outfile is %s\n"%outfilename)
-    outfile = open(outfilename, "w")
-    outfile.close()
-    outfile = open(outfilename, "r+")
-    run_command(fullcmd.split(), outfile)
-    errmsg = CheckOutput(outfile, "Successful completion", "ERROR")
-    if errmsg != "SUCCESS":
-        return errmsg
+    dbprint("FrameDiffs: diff are \"%s\"\n"%str(test['frame diffs']));
+    if type(test['frame diffs'][0]) != type((2,)) and type(test['frame diffs'][0]) != type([2,]):
+        if len(test['frame diffs']) != 2:
+            return "Bad frame diffs option: \"%s\""% str(test['frame diffs'])
+        test['frame diffs'] = [[test['frame diffs'][0], test['frame diffs'][1]]]
+    
+    for diff in test['frame diffs']:
+        dbprint("Diffing %s\n"%str(diff))
+        movie = diff[0]
+        frame = diff[1]
+        if frame == -1:
+            outframe = diff[0]
+            standard = "%s/standards/%s"%(gDatadir, diff[0])
+        else:
+            outframe = "%s_test_frame.png"%test['name']
+            standard = "%s/standards/%s_standard_frame.png"%(gDatadir, test['name'])
+            fullcmd = "%s/sm2img --first %d --last %d %s %s"%(gBindir, frame, frame, movie, outframe)
+            outfilename = "%s/%s.frame_diff.txt"%(os.getcwd(), outframe)
+            dbprint("FrameDiffs: outfile is %s\n"%outfilename)
+            outfile = open(outfilename, "w")
+            outfile.close()
+            outfile = open(outfilename, "r+")
+            run_command(fullcmd.split(), outfile)
+            errmsg = CheckOutput(outfile, "Successful completion", "ERROR")
+            if errmsg != "SUCCESS":
+                dbprint("ERROR: sm2img failed in FrameDiff(), output is in %s\n"%outfilename)
+                return errmsg
+        if test['create gold standard']:
+            dbprint("Copying %s to %s to create new gold standard\n"%(outframe, standard))
+            shutil.copy(outframe, standard)
+            if not os.path.exists(standard):
+                return "Could not copy %s to %s\n"%(outframe, standard)
 
-    if test['create gold standard']:
-        dbprint("Copying %s to %s to create new gold standard\n"%(outframe, standard))
-        shutil.copy(outframe, standard)
-        if not os.path.exists(standard):
-            errexit("Could not copy %s to %s\n"%(outframe, standard))
-
-    img = Image.open(outframe)
-    gold = Image.open(standard)
-    diff = ImageChops.difference(img,gold)
-    for t in diff.getextrema():
-        if t[0] or t[1]:
-            return "FrameDiffs(): Images %s and %s differ."%(outframe, standard)
-    dbprint ("FrameDiffs():  output image matches gold standard.\n")
+        img = Image.open(outframe)
+        gold = Image.open(standard)
+        diff = ImageChops.difference(img,gold)
+        for t in diff.getextrema():
+            if t[0] or t[1]:
+                return "FrameDiffs(): Images %s and %s differ."%(outframe, standard)
+        dbprint ("FrameDiffs():  output image matches gold standard.\n")
     return 'SUCCESS'
 
 # ================================================================
