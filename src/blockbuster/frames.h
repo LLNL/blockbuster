@@ -125,8 +125,7 @@ struct FrameInfo {
 
   // ----------------------------------------------
   FrameInfo(string fname="", uint32_t w=0, uint32_t h=0, uint32_t d=0, 
-            uint32_t maxlod=0, uint32_t frameInFile=0): 
-    mComplete(false), mAbort(false), mOwnerThread(-1) {
+            uint32_t maxlod=0, uint32_t frameInFile=0){
     init(fname,w,h,d,maxlod,frameInFile); 
     return; 
   }
@@ -139,9 +138,7 @@ struct FrameInfo {
     mWidth(other.mWidth), mHeight(other.mHeight),  
     mDepth(other.mDepth), mMaxLOD(other.mMaxLOD), 
     mFrameNumberInFile(other.mFrameNumberInFile), 
-    mFrameNumber(other.mFrameNumber), mFilename(other.mFilename), 
-    mValid(other.mValid),  mComplete(other.mComplete.load()), 
-    mAbort(other.mAbort.load()), mOwnerThread(-1) {
+    mFrameNumber(other.mFrameNumber), mFilename(other.mFilename) {
     return; 
   }
 
@@ -217,9 +214,6 @@ struct FrameInfo {
   
   bool mValid; 
 
-  /* Cache management fields */ 
-  boost::atomic<bool> mComplete, mAbort; // atomic so they can be used as barriers
-  boost::atomic<int> mOwnerThread; // a worker owns this if nonnegative
   
 } ;
 
@@ -274,13 +268,6 @@ struct FrameList {
 
   // ----------------------------------------------------
   void init(void) {
-    mCacheDirection =0;  // we don't skip frames when caching
-    mCurrentFrame= 0; 
-    mStartFrame= 0; 
-    mEndFrame= 0;   
-    mMaxFrames= 0;  
-    mFramesInProgress= 0; 
-    mFramesCompleted = 0;    
     stereo = false; 
     targetFPS = 30.0;
   }
@@ -338,16 +325,8 @@ struct FrameList {
 
   vector<FrameInfoPtr> mFrames; 
   
-  // Info for the cache: 
-  int mCacheDirection; 
-  uint32_t mCurrentFrame; // the last frame requested
-  uint32_t mFirstAvailable; // the last frame not marked as mInProgress -- not strict but close
-  uint32_t mStartFrame; // play limits as set by user
-  uint32_t mEndFrame; // play limits as set by user -- influences distance
-  uint32_t mMaxFrames; // max allowed in cached as set by user
-  boost::atomic<uint32_t> mFramesInProgress, mFramesCompleted; 
+ }; 
 
-} ;
 
 
 

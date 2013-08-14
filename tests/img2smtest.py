@@ -281,15 +281,16 @@ tests = [
      "success_pattern": "\( *ASCII\) UCRL *: value = "
       },
     # ===============================================       
-     {"name": "lorenz-tagfile",
+    {"name": "lorenz-tagfile",
      "need_data": ["lorenz.tagfile.goldstandard"], 
      'cmd': "smtag",
-     "args": " --report -T 'LorenzTag:Lorenz value' -L lorenz.tagfile -F tags.tagfile *.sm; diff lorenz.tagfile.goldstandard lorenz.tagfile", 
+     "args": " --report -T 'LorenzTag:Lorenz value' -L lorenz.tagfile -F tags.tagfile *.sm", 
      "output": "lorenz.tagfile",
      "failure_pattern": SMQUERY_FAILURE,
      "success_pattern": None,
-     "frame diffs": ["img2sm-canonical-tags.sm",1]
-      },
+     "frame diffs": ["img2sm-canonical-tags.sm",1],
+     "tagfile diffs": ["lorenz.tagfile"]
+     },
     # ===============================================       
     
    ]
