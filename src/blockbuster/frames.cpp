@@ -460,22 +460,3 @@ bool FrameList::LoadFrames(QStringList &files) {
 }
 
 
-//===============================================================
-void FrameList::ReleaseFramesFromCache(void) {
-  for (vector<FrameInfoPtr>::iterator pos = mFrames.begin(); pos != mFrames.end(); pos++) {
-    // mAbort ensures we don't get false negatives when checking mOwnerThread
-    (*pos)->mAbort.store(true); 
-    if ((*pos)->mOwnerThread >= 0) {
-      pos->reset((*pos)->Clone()); // get the proper subclass
-      (*pos)->mAbort = false; 
-      (*pos)->mComplete.store(false); 
-      (*pos)->mOwnerThread = -1; 
-    }
-    (*pos)->mAbort.store(false); 
-  }
-  mFramesInProgress.store(0); 
-  mFramesCompleted.store(0); 
-  mCacheDirection = 0; 
-  return; 
-}
-
