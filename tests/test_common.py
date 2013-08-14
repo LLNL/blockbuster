@@ -242,6 +242,55 @@ def RunTestCommand(fullcmd, test, outfile):
 
 
 # ================================================================
+# helper function for TagfileDiffs()
+        # pattern to remove directory names from binaries:
+        # JSON creates things like this:
+        # '        "value": "\\/nfs\\/tmp2\\/rcook\\/blockbuster-copy\\/chaos_5_x86_64_ib\\/bin\\/img2sm steamboat\\/m00006.png steamboat\\/m00007.png steamboat\\/m00009.png --report -C -T steamtag:boats -E img2sm-canonical-tags.sm "'
+        # we want to strip away build-specific paths:  
+        # '        "value": "img2sm steamboat\\/m00006.png steamboat\\/m00007.png steamboat\\/m00009.png --report -C -T steamtag:boats -E img2sm-canonical-tags.sm "'
+        # so here is the magic sauce:
+        # searchexp = re.compile('\\\\[^ ]*/')
+def RemoveBindirFromLine(line):
+    r = re.search('\\\\[^ ]*/', line)
+    if r:
+        newline = line.replace(r.group(0), '')
+        # dbprint("RemoveBindirFromLine: removing bindir from line.\n'%s' ------> '%s'\n"%(line,newline))
+        line = newline
+    return line
+
+# ================================================================
+def TagfileDiffs(test):
+    errmsg = "SUCCESS"
+    if "tagfile diffs" not in test.keys() or not test['tagfile diffs']:
+        return "SUCCESS"
+    
+    if type(test['tagfile diffs']) != type((2,)) and type(test['tagfile diffs']) != type([2]):
+        test['tagfile diffs'] = [test['tagfile diffs']]
+
+    for diff in test['tagfile diffs']:
+        if diff[0] != '/':
+            diff = "%s/%s"%(gTestdir, diff)
+        dbprint("Diffing %s\n"%str(diff))
+
+        standard = "%s.goldstandard"%diff
+        tagfile = open(diff,'r')
+        stdfile = open(standard, 'r')
+        dbprint("Diffing %s and %s\n"%(diff,standard))
+    
+        taglines = tagfile.readlines()
+        stdlines = stdfile.readlines()
+        if len(taglines) != len(stdlines):
+            return "Different number of lines in %s than %s"%(diff, standard)
+
+        for lineno in range(len(taglines)):
+            tagline = RemoveBindirFromLine(taglines[lineno])
+            stdline = RemoveBindirFromLine(stdlines[lineno])
+            
+            if tagline != stdline:
+                return "Mismatched fixed line between tagfile %s and standard %s at line %d:tagline: \"%s\"\nstdline: \"%s\""%(diff, standard, lineno, tagline, stdline)
+    return "SUCCESS"
+
+# ================================================================
 def FrameDiffs(test):
     errmsg = "SUCCESS"
     if "frame diffs" not in test.keys() or not test['frame diffs']:
@@ -350,6 +399,8 @@ def run_test(test):
         else:
             src_data = "%s/%s"%(gDatadir,data)
             if not os.path.exists(src_data):
+                src_data = "%s/standards/%s"%(gDatadir,data)
+            if not os.path.exists(src_data):            
                 errmsg = "Error: Cannot find or copy needed data %s from %s"% (need_data,src_data)
             else:
                 dbprint("copying %s to %s\n"%( src_data, need_data))
@@ -407,7 +458,10 @@ def run_test(test):
     if errmsg == "SUCCESS":
         errmsg = FrameDiffs(test)
         
-    
+    # ------------------------------------------------------------
+    if errmsg == "SUCCESS":
+        errmsg = TagfileDiffs(test)
+        
     # ------------------------------------------------------------
     # pretty things up a bit
     if errmsg != "SUCCESS":
