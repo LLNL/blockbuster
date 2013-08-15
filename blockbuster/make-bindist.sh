@@ -9,7 +9,7 @@ mkdir -p $tmpdir
 
 version="$(cat src/config/versionstring.txt)"
 if [ $(uname) == Linux ]; then 
-    for buildarg in all nodmx; do 
+    for buildarg in dmx nodmx; do 
         if [ $buildarg == all ]; then
             export INSTALL_NAME=linux-dmx-v$version-$(uname -r)
         else
@@ -17,7 +17,7 @@ if [ $(uname) == Linux ]; then
         fi
         export INSTALL_DIR=$tmpdir/$INSTALL_NAME
         mkdir -p $INSTALL_DIR
-        INSTALL_DIR=$INSTALL_DIR remake.sh $buildarg || errexit "build failed for $INSTALL_DIR"
+        remake.sh $buildarg || errexit "build failed for $INSTALL_DIR"
         cp -fp bindist-src/README-install.txt bindist-src/install.sh ${INSTALL_DIR}
         tarball=$tmpdir/${INSTALL_NAME}.tgz
         pushd ${INSTALL_DIR}/..
