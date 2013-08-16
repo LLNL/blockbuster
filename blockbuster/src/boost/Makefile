@@ -48,7 +48,8 @@ $(LIB_EVIDENCE): boost_$(BOOST_VERSION)/boost/random.hpp
 	-echo apparently $< is newer than $@; ls -l $<; ls -l $@
 	rm -f $@  # ensure all libs are newer than headers when done
 	cd boost_$(BOOST_VERSION) && tar -xzf ../process-0.5.tgz && ./bootstrap.sh --with-libraries=thread,regex,system,date_time && ./bjam -j 20 install --prefix=$(INSTALL_DIR)
-	cp -r boost_$(BOOST_VERSION)/boost $(INSTALL_DIR)/include/
+	mv boost_$(BOOST_VERSION)/boost $(INSTALL_DIR)/include/
+	ln -s $(INSTALL_DIR)/include/boost  boost_$(BOOST_VERSION)/boost
 	@echo '********************' finished with LIB_EVIDENCE $@; echo
 
 clean:
