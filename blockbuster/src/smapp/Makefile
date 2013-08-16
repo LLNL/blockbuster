@@ -35,11 +35,12 @@ LIBS = $(LDFLAGS) -L$(INSTALL_DIR)/lib -lsmovie -lptutil  -levomovie $(IFL_LIBS)
 
 SMLIB = $(INSTALL_DIR)/lib/libsmovie.a $(INSTALL_DIR)/lib/libptutil.a
 SFILES = smtag.C smquery.C smmake.C smtest.C ifl2sm.C img2sm.C sm2img.C rename.C smcat.C smevo.C debugutil.c
-OFILES = smtag smquery smmake smtest ifl2sm img2sm sm2img rename smcat smevo 
-
+OFILES = ifl2sm img2sm rename sm2img smcat smevo  sminfo smmake smquery smtag  smtest
+TARGETS = $(INSTALL_DIR)/bin/smquery $(INSTALL_DIR)/bin/smtag $(INSTALL_DIR)/bin/smevo  $(INSTALL_DIR)/bin/smmake $(INSTALL_DIR)/bin/smtest $(INSTALL_DIR)/bin/ifl2sm $(INSTALL_DIR)/bin/img2sm $(INSTALL_DIR)/bin/rename $(INSTALL_DIR)/bin/sm2img $(INSTALL_DIR)/bin/sminfo $(INSTALL_DIR)/bin/smcat $(INSTALL_DIR)/bin/smevo $(INSTALL_DIR)/bin/sm2qt $(INSTALL_DIR)/bin/ps2sm $(INSTALL_DIR)/bin/sm2mpg  manpages
 CPPFLAGS += -g 
 
-default: $(INSTALL_DIR)/bin/smquery $(INSTALL_DIR)/bin/smtag $(INSTALL_DIR)/bin/smevo  $(INSTALL_DIR)/bin/smmake $(INSTALL_DIR)/bin/smtest $(INSTALL_DIR)/bin/ifl2sm $(INSTALL_DIR)/bin/img2sm $(INSTALL_DIR)/bin/rename $(INSTALL_DIR)/bin/sm2img $(INSTALL_DIR)/bin/sminfo $(INSTALL_DIR)/bin/smcat $(INSTALL_DIR)/bin/smevo $(INSTALL_DIR)/bin/sm2qt $(INSTALL_DIR)/bin/ps2sm $(INSTALL_DIR)/bin/sm2mpg  manpages
+default: 
+	$(MAKE) -j 20 $(TARGETS)	
 
 $(INSTALL_DIR)/bin/%: %
 	@echo '***********************************************'
@@ -65,7 +66,7 @@ $(OFILES) : % : %.o $(SMLIB) simple_jpeg.o debugutil.o
 	@echo
 
 clean:
-	rm -rf $(CC_CACHE) *.o core $(OFILES) sminfo
+	rm -rf $(CC_CACHE) *.o core $(TARGETS) sminfo
 
 # use this carefully!  
 depend: $(SFILES)
