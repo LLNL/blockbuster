@@ -31,9 +31,9 @@
 export OPT = -g
 include ../config/config
 
-LIBS = $(LDFLAGS) -L$(INSTALL_DIR)/lib -lsmovie -lptutil  -levomovie $(IFL_LIBS) -lpthread -lm -ltiff -lpnmrw -lsrwpng -lz -llzo2 -llzma -limage -lm $(GZIP_LIBS) $(TIFF_LIBS) $(PNG_LIBS) $(PNM_LIBS) -ljpeg  -lboost_regex -lboost_thread -lboost_system -lboost_date_time -lreadline
+LIBS = $(LDFLAGS) -L$(INSTALL_DIR)/lib -lsmovie -lptutil  -levomovie $(IFL_LIBS) -lpthread -lm -ltiff -lpnmrw  -lz -llzo2 -llzma -limage -lm $(GZIP_LIBS) $(TIFF_LIBS) $(PNG_LIBS) $(PNM_LIBS) -ljpeg  -lboost_regex -lboost_thread -lboost_system -lboost_date_time -lreadline
 
-SMLIB = $(INSTALL_DIR)/lib/libsmovie.a $(INSTALL_DIR)/lib/libptutil.a
+SMLIB = $(INSTALL_DIR)/lib/libsmovie.a $(INSTALL_DIR)/lib/libptutil.a $(INSTALL_DIR)/lib/libsrwpng.a 
 SFILES = smtag.C smquery.C smmake.C smtest.C ifl2sm.C img2sm.C sm2img.C rename.C smcat.C smevo.C debugutil.c
 OFILES = ifl2sm img2sm rename sm2img smcat smevo  sminfo smmake smquery smtag  smtest
 TARGETS = $(INSTALL_DIR)/bin/smquery $(INSTALL_DIR)/bin/smtag $(INSTALL_DIR)/bin/smevo  $(INSTALL_DIR)/bin/smmake $(INSTALL_DIR)/bin/smtest $(INSTALL_DIR)/bin/ifl2sm $(INSTALL_DIR)/bin/img2sm $(INSTALL_DIR)/bin/rename $(INSTALL_DIR)/bin/sm2img $(INSTALL_DIR)/bin/sminfo $(INSTALL_DIR)/bin/smcat $(INSTALL_DIR)/bin/smevo $(INSTALL_DIR)/bin/sm2qt $(INSTALL_DIR)/bin/ps2sm $(INSTALL_DIR)/bin/sm2mpg  manpages
@@ -70,7 +70,7 @@ clean:
 
 # use this carefully!  
 depend: $(SFILES)
-	makedepend -Y. -Y.. $(INCLUDES) $(SFILES)
+	makedepend -Y. -Y..  $(INCLUDES) $(SFILES)
 
 # DO NOT DELETE
 
@@ -89,8 +89,8 @@ smtest.o: ../common/timer.h ../common/stringutil.h ../config/version.h
 img2sm.o: ../sm/sm.h ../sm/smLZO.h ../sm/smBase.h ../sm/smBaseP.h
 img2sm.o: ../common/stringutil.h ../common/timer.h ../common/stringutil.h
 img2sm.o: ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h ../sm/smRaw.h ../sm/smJPG.h
-img2sm.o: ../libimage/sgilib.h ../libpnmrw/libpnmrw.h simple_jpeg.h
-img2sm.o: ../pt/pt.h
+img2sm.o: ../libimage/sgilib.h ../libpnmrw/libpnmrw.h ../libpng/pngsimple.h
+img2sm.o: simple_jpeg.h ../pt/pt.h
 sm2img.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smBaseP.h ../common/stringutil.h
 sm2img.o: ../common/timer.h ../common/stringutil.h ../sm/smGZ.h ../sm/smLZO.h
 sm2img.o: ../sm/smRaw.h ../pt/pt.h ../libimage/sgilib.h
