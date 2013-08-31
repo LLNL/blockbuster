@@ -37,8 +37,8 @@
 extern "C" {
 #endif 
 
-int check_if_png(char *file_name,int *iSize);
-int read_png_image(char *file_name,int *iSize,unsigned char *buff);
+  int check_if_png(char *file_name,int *iSize);
+int read_png_image(char *file_name,int *iSize,unsigned char *buff, int verbose);
 int write_png_file(char *name, unsigned char *img, int *iSize);
 
 #ifdef __cplusplus

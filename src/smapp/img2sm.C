@@ -53,7 +53,7 @@
 
 #include "libimage/sgilib.h"
 #include "../libpnmrw/libpnmrw.h"
-#include "pngsimple.h"
+#include "../libpng/pngsimple.h"
 #include "simple_jpeg.h"
 #include "version.h"
 #include <tclap_utils.h>
@@ -411,7 +411,7 @@ void FillInputBuffer(Work *wrk) {
   }
     break;
   case 4: // PNG
-    if (!read_png_image((char*)wrk->filename.c_str(),&wrk->Dims[0],wrk->buffer)) {
+    if (!read_png_image((char*)wrk->filename.c_str(),&wrk->Dims[0],wrk->buffer, true)) {
       fprintf(stderr,"Unable to read PNG file: %s\n",wrk->filename.c_str());
       exit(1);
     }
