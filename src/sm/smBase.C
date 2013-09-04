@@ -1921,14 +1921,22 @@ bool smBase::flushFrames(bool force) {
   smdbprintf(4, "flushFrames() swapped buffers\n");
   smdbprintf(5, "flushFrames() unlocking mutex\n");     
   pthread_mutex_unlock(&mBufferMutex); 
-  smdbprintf(2, "flushing %d frames from output buffer\n", mOutputBuffer->mNumFrames); 
+  smdbprintf(2, "flushing %d frames from output buffer\n", mOutputBuffer->mNumFrames.load());
   
   // see how much of a write buffer we need and reallocate if needed: 
   if (mOutputBuffer->mRequiredWriteBufferSize > mWriteBuffer.size()) {
-    smdbprintf(3, "Resizing write buffer to %d\n", mOutputBuffer->mRequiredWriteBufferSize); 
+    smdbprintf(3, "Resizing write buffer to %d\n", mOutputBuffer->mRequiredWriteBufferSize.load());
     mWriteBuffer.resize(mOutputBuffer->mRequiredWriteBufferSize, 42); 
   }
 
+  // temporary debug measure:  at what point did a NULL frame show up?
+  for (uint32_t slot = 0; slot < mOutputBuffer->mNumFrames; slot++){
+      if (!mOutputBuffer->mFrameBuffer[slot]) {
+          smdbprintf(0, "During preflight check found frameData is NULL on slot %d\n", slot);
+          abort();
+
+      }
+  }
   // copy each level of the output buffer: 
   int res = 0; 
   int firstFrame = mOutputBuffer->mFirstFrameNum, 
@@ -1960,6 +1968,10 @@ bool smBase::flushFrames(bool force) {
     // copy all frames in this resolution to the output buffer:
     while (frame < stopFrame) {
       FrameCompressionWork *frameData = mOutputBuffer->mFrameBuffer[frame-firstFrame]; 
+      if (!frameData) {
+          smdbprintf(0, "frameData is NULL on frame %d\n", frame);
+          abort();
+      }
       smdbprintf(5, "Writing frameData:  %s\n", frameData->toString().c_str());
       mFrameOffsets[resFrame] = fileOffset; 
       mFrameLengths[resFrame] = 0;
@@ -1978,7 +1990,7 @@ bool smBase::flushFrames(bool force) {
       int frameBytes = frameData->mCompFrameSizes[res]; 
       buffBytes += frameBytes;
       if (buffBytes >  mOutputBuffer->mRequiredWriteBufferSize) {
-        smdbprintf(0, "Houston, we have a buffer overflow. buffBytes = %lu, mRequiredWriteBufferSize = %lu  :-(\n", buffBytes, mOutputBuffer->mRequiredWriteBufferSize); 
+        smdbprintf(0, "Houston, we have a buffer overflow. buffBytes = %lu, mRequiredWriteBufferSize = %lu  :-(\n", buffBytes, mOutputBuffer->mRequiredWriteBufferSize.load());
         abort(); 
       }
       memcpy(bufptr, &frameData->mCompressed[res][0], frameBytes); 
@@ -1993,7 +2005,7 @@ bool smBase::flushFrames(bool force) {
     LSEEK64(fd, firstFileOffset, SEEK_SET); 
     WRITE(fd, &mWriteBuffer[0], buffBytes); 
     mResFileBytes[res] += buffBytes; 
-    smdbprintf(3, "flushFrames( is writing resolution frames to buffer:  Res=%d, startFrame=%d, numFrames=%d, bufbytes = %d , requiredBytes=%d, firstFileOffset = %lld, mResFileBytes = %lld, actual res file length = %lld, filename=%s.\n", res, firstFrame, stopFrame-firstFrame, buffBytes, mOutputBuffer->mRequiredWriteBufferSize, firstFileOffset, mResFileBytes[res], LSEEK64(fd, 0, SEEK_END), filename.c_str()); 
+    smdbprintf(3, "flushFrames( is writing resolution frames to buffer:  Res=%d, startFrame=%d, numFrames=%d, bufbytes = %d , requiredBytes=%d, firstFileOffset = %lld, mResFileBytes = %lld, actual res file length = %lld, filename=%s.\n", res, firstFrame, stopFrame-firstFrame, buffBytes, mOutputBuffer->mRequiredWriteBufferSize.load(), firstFileOffset, mResFileBytes[res], LSEEK64(fd, 0, SEEK_END), filename.c_str());
     ++res; 
   }
   uint32_t f = mOutputBuffer->mFrameBuffer.size(); 
