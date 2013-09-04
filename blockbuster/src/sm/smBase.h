@@ -36,6 +36,7 @@
 
 #include "smBaseP.h"
 #include "smdfc.h"
+#include <boost/atomic.hpp>
 //
 // smBase.h - base class for "streamed movies"
 //
@@ -499,23 +500,30 @@ struct OutputBuffer {
   
   bool addFrame(FrameCompressionWork* frame){
     int32_t slotnum = frame->mFrame - mFirstFrameNum;
-    if (full() || slotnum < 0) {      
-      return false; 
+    if (full() || slotnum < 0 || slotnum >= mFrameBuffer.size()) {
+      smdbprintf(2, "Warning: Attempted to place frame %d into slot %d failed!  (full == %d)\n", frame->mFrame, slotnum, int(full()));
+      return false;
     }
     if (mFrameBuffer[slotnum]) {
       smdbprintf(0, "Bad thing:  placing frame %d in an occupied slot!\n", frame->mFrame);
+      abort();
     }
     mRequiredWriteBufferSize += frame->mCompFrameSizes[0] + frame->mCompTileSizes[0].size()*sizeof(uint32_t); 
     mFrameBuffer[slotnum] = frame; 
-    mNumFrames++; 
+    if (!frame) {
+        smdbprintf(0, "NULL frame %d being added in addFrame()\n", frame->mFrame);
+        abort();
+    }
+    smdbprintf(5, "Frame %d added in slot %d\n", frame->mFrame, slotnum);
+    mNumFrames.fetch_add(1, boost::memory_order_acq_rel);
     return true; 
   }
   
   
   vector<FrameCompressionWork*> mFrameBuffer; // stored as work quanta until actually rewritten; then marshalled into mWriteBuffer for efficient I/O 
-  int64_t mRequiredWriteBufferSize; // computed as frames are buffered
+  boost::atomic<int64_t> mRequiredWriteBufferSize; // computed as frames are buffered
   int32_t mFirstFrameNum;  
-  uint32_t mNumFrames;  // number of entries in mDataBuffer -- can't use size() because elements are placed out of order, and resize() is called only once.  
+  boost::atomic<uint32_t> mNumFrames;  // number of entries in mDataBuffer -- can't use size() because elements are placed out of order, and resize() is called only once.
 }; 
 
 /*!
