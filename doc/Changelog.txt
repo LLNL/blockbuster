@@ -2,6 +2,10 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
+VERSION 2.8.0e (r964) Wed Sep  4 14:24:54 PDT 2013
+-- fix segfault in img2sm
+
+===============================================================================
 VERSION 2.8.0d (r957) Fri Aug 30 17:53:35 PDT 2013
 -- img2sm: Give better error message when a frame has a different size than other frames
 -- img2sm: Search for the first 100 possible files in a sequence, rather than assuming file number is 0.  (This was the old behavior)
