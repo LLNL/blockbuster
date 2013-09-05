@@ -2,7 +2,7 @@
 
 function usage() {
     echo "usage: finalizeVersion.h [options] versionstring"
-    echo "This script creates a new version, either with or without committing the changes. "
+    echo "This script creates a new version, either with or without committing the changes.   It is designed to be run on rzgpu or rzbeast."
     echo "This means: "
     echo "updates version.h "
     echo "greps Changelog to make sure there is an entry there.  Updates the Changelog entry. "
@@ -62,7 +62,18 @@ if [ -f /usr/local/tools/dotkit/init.sh ]; then
     fi
 fi
 echo  "qmake is " $(which qmake)
-#=================================
+#========================================
+if [ "${SYS_TYPE}" == chaos_5_x86_64 ] ; then
+    # we are on rzbeast or equivalent
+    remotehost=rzgpu
+elif [ "${SYS_TYPE}" == chaos_5_x86_64_ib ] ; then
+    remotehost=rzbeast
+fi
+if [ "$remotehost" == "" ]; then
+    errexit "Unknown SYS_TYPE or non-RZ host.  Please run on an RZ cluster"
+fi
+
+# =======================================
 temp=false
 final=false
 commit=false
@@ -230,23 +241,44 @@ popd
 echo "Cleaning up tempdir..." 
 rm -rf $tmpdir
 
+
+# =============================================================
 echo "Installing software..." 
-if echo $SYS_TYPE | grep _ib>/dev/null; then
-    altsystype=$(echo $SYS_TYPE | sed 's/_ib//')
-else 
-    altsystype=${SYS_TYPE}_ib
-fi
 
-rm -rf $installdir/$SYS_TYPE $installdir/$altsystype
-mkdir -p $installdir/$SYS_TYPE 
-ln -s $installdir/$SYS_TYPE $installdir/$altsystype
+echo '#!/usr/bin/env bash'"
+. $HOME/.profile
 
-pushd $installdir/$SYS_TYPE || errexit "Cannot cd to install directory $SYS_TYPE"
-tar -xzf ../blockbuster-v${version}.tgz || errexit "Cannot untar tarball!?" 
-pushd blockbuster-v${version} || errexit "Cannot cd to blockbuster source directory" 
-make || errexit "Could not make software" 
+function errexit() {
+    echo 
+    echo '*******************************************************'
+    echo \"ERROR\"
+    echo \"ERROR:  \$1\"
+    echo \"ERROR\"
+    echo '*******************************************************'
+    echo 
+    rm -rf $tmpdir
+    exit ${2:-1}
+}
+
+rm -rf $installdir/\$SYS_TYPE
+mkdir -p $installdir/\$SYS_TYPE
+pushd $installdir/\$SYS_TYPE || errexit \"Cannot cd to install directory $SYS_TYPE\"
+
+tar -xzf ../blockbuster-v${version}.tgz || errexit \"Cannot untar tarball\" 
+
+pushd blockbuster-v${version} || errexit \"Cannot cd to blockbuster source directory\" 
+
+make || errexit \"Could not make software\" 
+
 popd
+
 popd
+echo INSTALLATION FINISHED
+" > ${installdir}/installer.sh
+chmod 700 ${installdir}/installer.sh
+${installdir}/installer.sh || errexit "installer failed on localhost"
+
+ssh $remothost "${installdir}/installer.sh" || errexit "installer failed on remotehost"
 
 echo "Creating symlink of new version to /usr/gapps/asciviz/blockbuster/test"
 
