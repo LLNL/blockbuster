@@ -278,7 +278,7 @@ echo INSTALLATION FINISHED
 chmod 700 ${installdir}/installer.sh
 ${installdir}/installer.sh || errexit "installer failed on localhost"
 
-ssh $remothost "${installdir}/installer.sh" || errexit "installer failed on remotehost"
+ssh $remotehost "${installdir}/installer.sh" || errexit "installer failed on remotehost"
 
 echo "Creating symlink of new version to /usr/gapps/asciviz/blockbuster/test"
 
