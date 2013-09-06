@@ -2,6 +2,10 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
+VERSION 2.8.0f (r968) Fri Sep  6 14:08:34 PDT 2013
+-- change "H" to "M" to hide mouse in sidecar to match blockbuster behavior
+
+===============================================================================
 VERSION 2.8.0e (r964) Wed Sep  4 14:24:54 PDT 2013
 -- fix segfault in img2sm
 
