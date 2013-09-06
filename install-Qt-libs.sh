@@ -16,7 +16,7 @@ elif [ $(uname) == Linux ]; then
         rpath=$(echo $rpath | sed 's~::~:~g' ); 
         rpath='${ORIGIN}/../lib:'
         # chrpath -r $rpath $exe ; 
-        patchelf --set-rpath $rpath $exe
+        ${INSTALL_DIR}/bin/patchelf --set-rpath $rpath $exe
     done
 fi
 	
