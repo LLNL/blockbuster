@@ -1099,7 +1099,7 @@ void SideCar::InterestingKey(QKeyEvent *event){
   case Qt::Key_F : // zoom to fit window
     SendEvent(MovieEvent(MOVIE_ZOOM_FIT));
     break;
-  case Qt::Key_H : // toggle hiding/showing the cursor
+  case Qt::Key_M : // toggle hiding/showing the cursor
     SendEvent(MovieEvent(MOVIE_TOGGLE_CURSOR));
     break;
   case Qt::Key_Z : // zoom to fit window
