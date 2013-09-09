@@ -136,6 +136,24 @@ void img2sm_fail_check(const char *file,int line) {
   exit(1);
 }
 
+// =======================================================================
+bool check_if_pnm(string filename) {
+  int   dx,dy,fmt,f;
+  xelval    value;
+  
+  FILE *fp = pm_openr((char*)filename.c_str());
+  if (!fp) {
+    smdbprintf(5, "check_if_pnm: Unable to open the file: %s\n",filename.c_str());
+    return false;
+  }
+  if (pnm_readpnminit(fp, &dx,&dy,&value,&fmt) == -1) {
+    smdbprintf(5, "check_if_pnm: file \"%s\" is not in PNM format.\n",filename.c_str());
+    pm_closer(fp);
+    return false; 
+  }
+  return true; 
+}
+
 
 // =======================================================================
 /*!
@@ -489,14 +507,16 @@ int main(int argc,char **argv) {
   allowedformats.push_back("TIFF");
   allowedformats.push_back("sgi");
   allowedformats.push_back("SGI");
+  allowedformats.push_back("raw");
+  allowedformats.push_back("RAW");
   allowedformats.push_back("pnm");
   allowedformats.push_back("PNM");
   allowedformats.push_back("png");
   allowedformats.push_back("PNG");
   allowedformats.push_back("jpg");
   allowedformats.push_back("JPG");
-  allowedformats.push_back("yuv");
-  allowedformats.push_back("YUV");
+  allowedformats.push_back("jpeg");
+  allowedformats.push_back("JPEG");
   TCLAP::ValuesConstraint<string> *allowed = new TCLAP::ValuesConstraint<string>(allowedformats);
   if (!allowed)
     errexit("Cannot create values constraint for formats\n");
@@ -686,26 +706,6 @@ int main(int argc,char **argv) {
   //============================================================
 
 
-  int imageType = -1;
-  string::size_type idx = inputfiles[0].rfind('.');
-  if (idx == string::npos) {
-    cerr << "Error:  Cannot find a file type suffix in your output template.  Please use -form to tell me what to do if you're not going to give a suffix." << endl;
-    exit(1);
-  }
-  string suffix = inputfiles[0].substr(idx+1,3);
-
-  if (suffix == "tif" || suffix == "TIF")  imageType = 0;
-  else if (suffix == "sgi" || suffix == "SGI")  imageType = 1;
-  else if (suffix == "pnm" || suffix == "PNM")  imageType = 2;
-  else if (suffix == "yuv" || suffix == "YUV")  imageType = 3;
-  else if (suffix == "png" || suffix == "PNG")  imageType = 4;
-  else if (suffix == "jpg" || suffix == "JPG" ||
-           suffix == "jpe" || suffix == "JPE")  imageType = 5;
-  else {
-    cerr << "Warning:  Cannot deduce format from input files.  Using PNG format but leaving inputfiles unchanged." << endl;
-    imageType = 4;
-  }
-
 
   if ((rotate.getValue() != 0) && (rotate.getValue() != 90) &&
       (rotate.getValue() != 180) && (rotate.getValue() != 270)) {
@@ -780,33 +780,61 @@ int main(int argc,char **argv) {
     smdbprintf(1,"Resolution[%d] Tilesize=[%dx%d]\n",n,tsizes[n][0],tsizes[n][1]);
   }
 
-
-
-  // Check the file type
+  smdbprintf(2, " Checking the file type.\n"); 
   string filename = inputfiles[0];
-  smdbprintf(5, "Checking file type of first file %s\n", filename.c_str());
-  TIFFErrorHandler prev = TIFFSetErrorHandler(NULL); // suppress error messages
-  if (imageType == -1) {
+  int imageType = -1;
+  string suffix = format.getValue(); 
+  if (suffix == "default") {
+    string::size_type idx = inputfiles[0].rfind('.');
+    if (idx == string::npos) {
+      cerr << "Error:  Cannot find a file type suffix in your output template.  Please use -form to tell me what to do if you're not going to give a suffix." << endl;
+      exit(1);
+    }
+    suffix = inputfiles[0].substr(idx+1,3);
+  } 
+  
+  if (suffix == "tif" || suffix == "TIF")  imageType = 0;
+  else if (suffix == "sgi" || suffix == "SGI")  imageType = 1;
+  else if (suffix == "raw" || suffix == "RAW")  imageType = 2;
+  else if (suffix == "pnm" || suffix == "PNM")  imageType = 3;
+  else if (suffix == "png" || suffix == "PNG")  imageType = 4;
+  else if (suffix == "jpg" || suffix == "JPG" ||
+           suffix.substr(0,3) == "jpe" || 
+           suffix.substr(0,3) == "JPE")         imageType = 5;
+  else {
+    TIFFErrorHandler prev = TIFFSetErrorHandler(NULL); // suppress error messages
+    smdbprintf(2, "Cannot figure out file type by filename and you did not use --format.  Checking file type of first file %s\n", filename.c_str());
     if ((tiff = TIFFOpen((char*)filename.c_str(),"r"))!=0) {
       TIFFSetErrorHandler(prev); //restore diagnostics -- we want them now.
       smdbprintf(1,"TIFF input format detected\n");
       imageType = 0;
+      suffix = "PNG"; 
       TIFFClose(tiff);
     } else if (libi = sgiOpen((char*)filename.c_str(),SGI_READ,0,0,0,0,0)) {
       smdbprintf(1,"SGI input format detected\n");
       imageType = 1;
       sgiClose(libi);
+      suffix = "SGI"; 
+    }     
+    // NOTE: there is no check_if_raw as the format is completely headerless.
+    else if (check_if_pnm(filename)) {
+      smdbprintf(1,"PNM input format detected\n");
+      imageType = 3; /* PNM */
+      suffix = "PNM"; 
     } else if (check_if_png((char*)filename.c_str(),NULL)) {
       smdbprintf(1,"PNG input format detected\n");
       imageType = 4; /* PNG */
+      suffix = "PNG"; 
     } else if (check_if_jpeg((char*)filename.c_str(),NULL)) {
       smdbprintf(1,"JPEG input format detected\n");
       imageType = 5; /* JPEG */
+      suffix = "JPG"; 
     } else {
-      smdbprintf(1,"Assuming PNG format\n");
-      imageType = 4;
+      errexit("No file format detected. Please use --format flag to help me out.\n");
     }
   }
+  smdbprintf(3, "File type is %s and imageType is %d\n", suffix.c_str(), imageType); 
+
   // get the frame size
   if (imageType == 0) {  // TIFF
     tiff = TIFFOpen((char*)filename.c_str(),"r");
