@@ -1,3 +1,3 @@
 #ifndef BLOCKBUSTER_VERSION
-#define BLOCKBUSTER_VERSION "2.8.0f -- Fri Sep  6 14:08:30 PDT 2013"
+#define BLOCKBUSTER_VERSION "2.8.0g -- Mon Sep  9 14:35:31 PDT 2013"
 #endif
