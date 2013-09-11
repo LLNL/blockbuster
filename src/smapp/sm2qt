@@ -1,28 +1,58 @@
-#!/bin/csh -f
+#!/usr/bin/env bash 
 #
 #       Convert an sm file into an QuickTime file...
 #
-if ($#argv != 3) then
-	echo Usage: $0 smfile qtfilename fps
-	exit
-endif
+function usage() {
+    echo "sm2qt: usage:"
+    echo "sm2qt smfile qtfilename fps"
+}
 
-#
-#       On an SGI, use dmconvert
-#
-set OS = `uname`
-if (( $OS != "IRIX" ) && ( $OS != "IRIX64" )) then
-	echo "Sorry, $0 is only supported under Irix"
-	exit
-endif
+function errexit() {    
+    echo '*************************************************'
+    echo "ERROR: $1"
+    echo '*************************************************'
+    rm -f ${outframebase}_*png
+    exit 1
+}
 
-sm2img -form sgi $1 $2_junk_%0.5d.rgb
-dmconvert -f qt -n $2_"junk_#####.rgb"  \
-	-p video,squal=0.9,tqual=0.9,comp=qt_anim,inrate=$3,rate=$3 \
-	$2_"junk_#####.rgb" $2
+tmpdir=/tmp/$USER/sm2mpg.tmp/
+mkdir -p $tmpdir || errexit "Cannot make tmp directory $tmpdir"
+if [ "$3" == "" ];  then
+    usage
+    errexit "Not enough args" 
+fi
+
+infile="$1"
+if [ ${1:0:1} != '/' ]; then 
+    infile=$(pwd)/$infile
+fi
+outfile="$2"
+if [ ${2:0:2} != '/' ]; then 
+    outfile=$(pwd)/$outfile
+fi
+outfiledot=$(expr ${#outfile} - 4)
+if [ "${outfile:$outfiledot}" != '.mov' ]; then 
+    errexit "Please specify a movie name ending with '.mov'"
+fi
+# set -xv
+outframebase=_$(basename $outfile | sed 's/.mov//')
+function runecho(){
+    echo "$@"
+    "$@"
+}
+pushd $tmpdir 
+runecho sm2img -F png $1 ${outframebase}_%05d.png || errexit "sm2img failed" 
+
+runecho ffmpeg -v -1 -mbd rd -trellis 2 -cmp 2 -subcmp 2 -g 300 -r $3 -i "${outframebase}_%05d.png" $outfile || errexit  "ffmpeg failed" 
+
+rm -f ${outframebase}_*png
+popd
 
 #
 #	Lots of files...
 #
-find . -name "$2_junk_?????.rgb" -exec rm -f {} \;
+
+#echo "to clean up do this: "
+#echo 'find $tmpdir -name "$2_junk_?????.rgb" -exec rm -f {} \;'
+#find . -name "$2_junk_?????.rgb" -exec rm -f {} \;
 
