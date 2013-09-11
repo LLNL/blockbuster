@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
 
     // Movie info case... (both sminfo and sm2img file)
     if (getinfo) {  
-      smdbprintf(0, (sm->InfoString(verbosity.getValue())+"\n").c_str()); 
+      cout << sm->InfoString(verbosity.getValue()) << endl; 
     }
     if (exportTagfile.getValue()) {
       TagMap moviedata = sm->GetMetaData(); 
@@ -244,11 +244,11 @@ int main(int argc, char *argv[]) {
       cout << str(boost::format("%1%: thumbnail frame: %2%, res: %3%\n") % filename % frame % res) << endl; 
     }
     if (canonical.getValue()) {
-      dbprintf(0, "Canonical tags for movie %s:\n", filename.c_str()); 
+      cout << str(boost::format("Canonical tags for movie %s:")% filename) << endl; 
       vector<SM_MetaData> cmdata = SM_MetaData::CanonicalMetaData(false);
       for (uint i = 0; i<cmdata.size()-1; i++) {
         SM_MetaData * smdp = &canonicalTags[cmdata[i].mTag];
-        dbprintf(0, str(boost::format("%1%: (%2%) %3%:\n") % (smdp->mTag) % (smdp->TypeAsString()) % (smdp->ValueAsString())).c_str());
+        cout << str(boost::format("%1%: (%2%) %3%:\n") % (smdp->mTag) % (smdp->TypeAsString()) % (smdp->ValueAsString()));
       }
     } 
     if (exportThumb.getValue()) {
@@ -264,7 +264,7 @@ int main(int argc, char *argv[]) {
         }
       } else {
         if (tagMatches.size()) {
-          dbprintf(0, "Tags --------------------------------------\n", filename.c_str()); 
+          cout << str(boost::format("Tags --------------------------------------\n")% filename)<< endl;
         } 
         else {
           printf( "No tags for movie %s matched.\n", filename.c_str()); 

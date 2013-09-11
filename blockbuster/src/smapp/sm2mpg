@@ -1,85 +1,116 @@
-#!/bin/csh -f
+#!/usr/bin/env bash 
+#set -xv
 #
 #       Convert an sm file into an MPEG file...
 #
-if ($#argv != 3) then
-        echo Usage: $0 smfile mpegfilename fps
-        exit
-endif
+function usage() {
+    echo "sm2mpg: usage:"
+    echo "sm2mpg infile.sm outfile.mpg fps"
+}
+
+function errexit() {    
+    echo '*************************************************'
+    echo "ERROR: $1"
+    echo '*************************************************'
+    rm -f ${outframebase}_*png
+    exit 1
+}
+
+tmpdir=/tmp/$USER/sm2mpg.tmp/
+mkdir -p $tmpdir || errexit "Cannot make tmp directory $tmpdir"
+if [ "$3" == "" ];  then
+    usage
+    errexit "Not enough args" 
+fi
 
 #
-#       nframes/Stereo?
+#       nframes/Stereo
 #
-set ninput = `sm2img $1 | grep Frames | cut "-d " -f2`
-set stereo = `sm2img $1 | grep Stereo`
-set skip = 1
-if ("$stereo" != "" ) then
-        set skip = 2
-        @ ninput = $ninput / 2
-endif
+infile="$1"
+if [ ${1:0:1} != '/' ]; then 
+    infile=$(pwd)/$infile
+fi
+outfile="$2"
+if [ ${2:0:2} != '/' ]; then 
+    outfile=$(pwd)/$outfile
+fi
+outfiledot=$(expr ${#outfile} - 3)
+if [ "${outfile:$outfiledot}" != '.sm' ]; then 
+    errexit "Please specify a movie name ending with '.sm'"
+fi
+
+outframebase=_$(basename $outfile | sed 's/.sm//')
+
+ninput=$(sminfo $infile | grep Frames | cut "-d " -f2)
+tmp=$(sminfo $infile)
+skip=1
+if echo $tmp | grep Stereo >/dev/null 2>&1; then
+    skip=2
+    ninput=$(expr $ninput / 2)
+    stereo=true
+fi
+
 #
 #	Grab frame sizes
 #
-set tmp = `sminfo $1`
-set sizes = `echo $tmp | cut -f5 -d":"`
-@ xsize1 = `echo $sizes | cut -f1 -d" "`
-@ ysize1 = `echo $sizes | cut -f2 -d" "`
+sizes=$(echo $tmp | cut -f5 -d":")
+xsize1=$(echo $sizes | cut -f1 -d" ")
+ysize1=$(echo $sizes | cut -f2 -d" ")
 
 #
 #       Size to the lower factor of 2...
 #
-@ xsize = $xsize1 / 2
-@ xsize = $xsize * 2
-@ ysize = $ysize1 / 2
-@ ysize = $ysize * 2
+xsize=$(expr $xsize1 / 2)
+xsize=$(expr $xsize \* 2)
+ysize=$(expr $ysize1 / 2)
+ysize=$(expr $ysize \* 2)
 
 #
 #       Frames/fps/time...
 #
-set outfps = $3
-set outspf = `echo "scale=10; 1.0/${outfps} " | bc -l`
-set tlen = `echo "scale=10; ${ninput}*${outspf} " | bc -l`
-set noutput = `echo "scale=10; ${tlen}*30.0 " | bc -l`
-set noutput = ${noutput:r}
-if (${noutput:r} == "") set noutput = 1
+outfps=$3
+outspf=$(python -c "print 1.0/${outfps} ")
+tlen=$(python -c "print ${ninput}*${outspf} ")
+noutput=$(python -c "print int(${tlen}*30.0) ")
 
 #
 #       Extract the frames in YUV format
 #
-sm2img -form YUV -step $skip $1 $2_junk_%d
+echo "Extract the frames in YUV format using img2sm"
+pushd $tmpdir
 
+sm2img  -F yuv -s $skip $infile ${outframebase}_junk_%d || errexit "sm2img failed"
 #
 #       walk the movie duration, linking to the proper
 #       source frame to approximate the desired framerate
 #
-set img = 0
-set t = `echo "scale=10; ${img}/30.0 " | bc -l`
-while ($img < $noutput)
-
-        set n = `echo "scale=10; ${t}/${outspf} " | bc -l`
-        set n = ${n:r}
-        if (${n} == "") set n = 0
-        @ n *= $skip
- 
-        ln -s $2_junk_${n}.Y $2_junk_ln_${img}.Y
-        ln -s $2_junk_${n}.U $2_junk_ln_${img}.U
-        ln -s $2_junk_${n}.V $2_junk_ln_${img}.V
- 
-        @ img += 1
-        set t = `echo "scale=10; ${img}/30.0 " | bc -l`
-end
- 
+echo "Linking frames  to approximate the desired framerate"
+img=0
+while [ $img -lt $noutput ] ; do 
+    echo -e "\rFrame: $img out of $noutput\c"
+    t=$(python -c "print ${img}/30.0 ")
+    n=$(python -c "print int(${t}/${outspf} * $skip)")
+    
+    ln -s ${outframebase}_junk_${n}.Y ${outframebase}_junk_ln_${img}.Y
+    ln -s ${outframebase}_junk_${n}.U ${outframebase}_junk_ln_${img}.U
+    ln -s ${outframebase}_junk_${n}.V ${outframebase}_junk_ln_${img}.V
+    let img++
+done
+    
 #
 #       convert to mpeg using LibGen mpeg command
 #
-@ last = $noutput - 1
-mpeg -a 0 -b $last -h $xsize -v $ysize $2_junk_ln_ -s $2 -PF > /dev/null
- 
+echo "convert to mpeg using LibGen mpeg command...." 
+last=$(python -c "print int($noutput - 1)")
+if ! mpeg -a 0 -b $last -h $xsize -v $ysize ${outframebase}_junk_ln_ -s $outfile -PF > /dev/null; then
+    errexit "LibGen mpeg command failed"
+fi
+
 #
 #       clean up...
 #
-find . -name "$2_junk_*.[YUV]" -exec rm -f {} \;
-
+find . -name "${outframebase}_junk_*.[YUV]" -exec rm -f {} \;
+popd
 #
 #	Done!
 #
