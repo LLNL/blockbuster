@@ -26,7 +26,7 @@
 
 include ../config/config
 
-LDFLAGS += -lboost_regex -lreadline 
+LDFLAGS += -lboost_regex -lreadline -ltermcap 
 ifeq ($(shell uname),Darwin)
 	blockbuster = blockbuster.app
 	X11_LIBS += -lXext -lXtst
