@@ -264,7 +264,7 @@ int main(int argc, char *argv[]) {
         }
       } else {
         if (tagMatches.size()) {
-          cout << str(boost::format("Tags --------------------------------------\n")% filename)<< endl;
+          cout << "Tags --------------------------------------" << endl;
         } 
         else {
           printf( "No tags for movie %s matched.\n", filename.c_str()); 

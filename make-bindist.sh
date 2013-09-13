@@ -8,9 +8,12 @@ tmpdir=/tmp/$(whoami)
 mkdir -p $tmpdir
 
 version="$(cat src/config/versionstring.txt)"
+
+echo yes > src/boost/nolinks
+
 if [ $(uname) == Linux ]; then 
     for buildarg in dmx nodmx; do 
-        if [ $buildarg == all ]; then
+        if [ $buildarg == never ]; then # we do not do DMX any more
             export INSTALL_NAME=linux-dmx-v$version-$(uname -r)
         else
             export INSTALL_NAME=linux-basic-nodmx-v$version-$(uname -r)
@@ -34,5 +37,7 @@ elif [ $(uname) == Darwin ]; then
 else
     errexit "Error: Unrecognized uname results: $(uname).  Nothing done."
 fi
+
+rm -f src/boost/nolinks
 
 exit 0

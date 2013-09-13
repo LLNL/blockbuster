@@ -2,7 +2,7 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.0h (r975) Wed Sep 11 16:39:57 PDT 2013
+VERSION 2.8.0h (r984) Fri Sep 13 11:45:03 PDT 2013
 -- Fix sm2mpg and sm2qt scripts to work properly
 
 ===============================================================================
