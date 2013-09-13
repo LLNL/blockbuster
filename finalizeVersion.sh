@@ -226,16 +226,14 @@ svn cp -m "Version $version, automatic version creation by finalizeVersion.sh, b
 echo "Checking out the new version from SVN repo..." 
 svn co $versiondir || errexit "could not check out versiondir $versiondir from svn repo" 
 
+builddir=/nfs/tmp2/rcook/blockbuster/$version
 installdir=/usr/gapps/asciviz/blockbuster/$version
-echo "Creating version directory $installdir..."
-rm -rf $installdir 
-mkdir -p $installdir
-
-echo "Cleaning up install dir from previous attempts..." 
-rm -f $installdir/blockbuster-v${version}.tgz
+echo "Creating fresh build directory $builddir and installation directory $installdir..."
+rm -rf $installdir $builddir
+mkdir -p $installdir $builddir
 
 echo "Creating actual tarball..." 
-tar -czf ${installdir}/blockbuster-v${version}.tgz blockbuster-v${version}
+tar -czf ${builddir}/blockbuster-v${version}.tgz blockbuster-v${version}
 
 popd
 echo "Cleaning up tempdir..." 
@@ -260,25 +258,25 @@ function errexit() {
     exit ${2:-1}
 }
 
-rm -rf $installdir/\$SYS_TYPE
-mkdir -p $installdir/\$SYS_TYPE
-pushd $installdir/\$SYS_TYPE || errexit \"Cannot cd to install directory $SYS_TYPE\"
+rm -rf $installdir/\$SYS_TYPE $builddir/\$SYS_TYPE
+mkdir -p $builddir/\$SYS_TYPE
+pushd $builddir/\$SYS_TYPE || errexit \"Cannot cd to install directory $SYS_TYPE\"
 
-tar -xzf ../blockbuster-v${version}.tgz || errexit \"Cannot untar tarball\" 
+tar -xzf $builddir/blockbuster-v${version}.tgz || errexit \"Cannot untar tarball\" 
 
 pushd blockbuster-v${version} || errexit \"Cannot cd to blockbuster source directory\" 
 
-make || errexit \"Could not make software\" 
+INSTALL_DIR=$installdir/\$SYS_TYPE make || errexit \"Could not make software\" 
 
 popd
 
 popd
 echo INSTALLATION FINISHED
-" > ${installdir}/installer.sh
-chmod 700 ${installdir}/installer.sh
-${installdir}/installer.sh || errexit "installer failed on localhost"
+" > ${builddir}/installer.sh
+chmod 700 ${builddir}/installer.sh
+${builddir}/installer.sh || errexit "installer failed on localhost"
 
-ssh $remotehost "${installdir}/installer.sh" || errexit "installer failed on remotehost"
+ssh $remotehost "${builddir}/installer.sh" || errexit "installer failed on remotehost"
 
 echo "Creating symlink of new version to /usr/gapps/asciviz/blockbuster/test"
 
