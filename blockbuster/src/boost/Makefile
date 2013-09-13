@@ -40,7 +40,7 @@ UNTAR_BOOST = boost_$(BOOST_VERSION)/boost/random.hpp
 all: $(LIB_EVIDENCE)
 
 $(LIB_EVIDENCE): 
-	linkboost.sh || $(MAKE) build_boost
+	if ! linkboost.sh ; then echo calling build_boost; $(MAKE) build_boost; fi
 
 build_boost: boost_$(BOOST_VERSION)/boost/random.hpp
 	rm -f $@  # ensure all libs are newer than headers when done
