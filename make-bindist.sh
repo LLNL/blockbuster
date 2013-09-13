@@ -13,7 +13,7 @@ echo yes > src/boost/nolinks
 
 if [ $(uname) == Linux ]; then 
     for buildarg in dmx nodmx; do 
-        if [ $buildarg == all ]; then
+        if [ $buildarg == never ]; then # we do not do DMX any more
             export INSTALL_NAME=linux-dmx-v$version-$(uname -r)
         else
             export INSTALL_NAME=linux-basic-nodmx-v$version-$(uname -r)

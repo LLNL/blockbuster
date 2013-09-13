@@ -31,7 +31,7 @@
 export OPT = -g
 include ../config/config
 
-LIBS = $(LDFLAGS) -L$(INSTALL_DIR)/lib -lsmovie -lptutil  -levomovie $(IFL_LIBS) -lpthread -lm -ltiff -lpnmrw  -lz -llzo2 -llzma -limage -lm $(GZIP_LIBS) $(TIFF_LIBS) $(PNG_LIBS) $(PNM_LIBS) -ljpeg  -lboost_regex -lboost_thread -lboost_system -lboost_date_time -lreadline
+LIBS = $(LDFLAGS) -L$(INSTALL_DIR)/lib -lsmovie -lptutil  -levomovie $(IFL_LIBS) -lpthread -lm -ltiff -lpnmrw  -lz -llzo2 -llzma -limage -lm $(GZIP_LIBS) $(TIFF_LIBS) $(PNG_LIBS) $(PNM_LIBS) -ljpeg  -lboost_regex -lboost_thread -lboost_system -lboost_date_time -lreadline -ltermcap
 
 SMLIB = $(INSTALL_DIR)/lib/libsmovie.a $(INSTALL_DIR)/lib/libptutil.a $(INSTALL_DIR)/lib/libsrwpng.a 
 SFILES = smtag.C smquery.C smmake.C smtest.C ifl2sm.C img2sm.C sm2img.C rename.C smcat.C smevo.C debugutil.c
