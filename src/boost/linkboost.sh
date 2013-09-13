@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+if [ -f nolinks ]; then 
+    echo "nolinks cookie found; all links will be deleted"
+    if [ -h $INSTALL_DIR/include/boost ]; then
+        rm -f $INSTALL_DIR/boost $INSTALL_DIR/lib/libboost*
+    fi
+    exit 1
+fi
+
 for prefix in /usr/local/tools /usr/local/ /opt/local; do
     for infix in -nompi -mpi ""; do 
         for version in -1.54.0 -1.53.0 -1.49.0 ""; do 
