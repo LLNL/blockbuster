@@ -460,7 +460,7 @@ int main(int argc,char **argv) {
 
   TCLAP::SwitchArg exportTagfile("E", "export-tagfile", "Create a tag file from the current session which can be read by img2sm or smtag.", cmd);
 
-  TCLAP::ValueArg<string> tagfile("F", "tagfile", "a file containing name:value pairs to be set", false, "", "filename", cmd);
+  TCLAP::ValueArg<string> tagfile("G", "tagfile", "a file containing name:value pairs to be set", false, "", "filename", cmd);
 
   TCLAP::MultiArg<string> taglist("T", "tag", "a name:value[:type] for a tag being set or added.  'type' can be 'ASCII', 'DOUBLE', or 'INT64' and defaults to 'ASCII'.", false, "tagname:value[:type]", cmd);
 
@@ -520,7 +520,7 @@ int main(int argc,char **argv) {
   TCLAP::ValuesConstraint<string> *allowed = new TCLAP::ValuesConstraint<string>(allowedformats);
   if (!allowed)
     errexit("Cannot create values constraint for formats\n");
-  TCLAP::ValueArg<string>format("", "format", "Format of output files (use if name does not make this clear)", false, "default", allowed);
+  TCLAP::ValueArg<string>format("F", "Format", "Format of output files (use if name does not make this clear)", false, "default", allowed);
   cmd.add(format);
   //delete allowed;
 
@@ -563,7 +563,7 @@ int main(int argc,char **argv) {
     =====================================================
   */
   TCLAP::ValueArg<int> threads("t", "threads", "Number of threads to use",false, 4, "integer", cmd);
-  TCLAP::ValueArg<int> verbosity("v", "Verbosity", "Verbosity level",false, 0, "integer", cmd);
+  TCLAP::ValueArg<int> verbosity("v", "verbosity", "Verbosity level",false, 0, "integer", cmd);
 
   // Note this is an UnlabeledMultiArg.  There must be at least two words given here, the last is the output name, all others are input files.
   TCLAP::UnlabeledMultiArg<string> filenames("filenames", "Either a list of input filenames, or a filename template, followed by a moviename.  A filename template is aa C-style string containing C++ template notation for specifying multiple movie frame files, e.g. \"filename%04d.png\" specifies a list of png files with 4 digit 0-padded numbers. Boost-style %1% notation is also supported.", true, "filename", cmd);
