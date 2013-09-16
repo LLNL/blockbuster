@@ -113,7 +113,7 @@ int main(int argc,char **argv)
   cmd.add(format); 
 
 
-  TCLAP::ValueArg<int> verbosity("v", "Verbosity", "Verbosity level",false, 0, "integer", cmd);   
+  TCLAP::ValueArg<int> verbosity("v", "verbosity", "Verbosity level",false, 0, "integer", cmd);   
 
   TCLAP::UnlabeledValueArg<string> moviename("moviename", "Name of the movie",true, "", "path", cmd); 
 
