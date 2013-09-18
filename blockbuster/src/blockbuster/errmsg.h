@@ -37,7 +37,7 @@ extern pthread_mutex_t debug_message_lock;
    #endif
 */
 void set_verbose(int level); 
-
+int get_verbose(void);
 
 //void real_dbprintf(const char *fmt, ...); 
 #ifdef __cplusplus

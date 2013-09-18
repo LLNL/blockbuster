@@ -44,7 +44,7 @@ struct ProgramOptions {
 #else
     messageLevelName("error"), 
 #endif
-    messageLevel(NULL),  mRenderer(NULL),
+    messageLevel(NULL),  mCacheDebug(false), mRenderer(NULL),
     readerThreads(-1), loopCountName("1"),
     startFrame(0), currentFrame(0), endFrame(-1), loopCount(1), LOD(0),
     slaveLaunchMethod("rsh"), useMPI(0), 
@@ -65,6 +65,7 @@ struct ProgramOptions {
   QString executable; /* path to the backend blockbuster */ 
   QString messageLevelName;
   struct MessageLevel *messageLevel;
+  int mCacheDebug; 
   QString logFile;  
   QString mScript; 
   int rendererIndex;

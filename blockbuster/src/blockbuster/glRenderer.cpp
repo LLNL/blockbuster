@@ -936,8 +936,6 @@ void glTextureRenderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
     }
   }
   
-  /* Have to release the image, or the cache will fill up */
-  DecrementLockCount( image);
   
   glDisable(GL_TEXTURE_2D);
 }

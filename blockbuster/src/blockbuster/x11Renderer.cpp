@@ -241,7 +241,6 @@ void x11Renderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
      * that's in the cache.  But we'll have to free this
      * image later.
      */
-    DecrementLockCount(image);
     image = zoomedImage;
     if (!image) {
       /* error has already been reported */
@@ -344,9 +343,6 @@ void x11Renderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
    * we're still using the original image from the cache; we need to
    * release it so that the image cache knows we're done with it.
    */
-  if (zoom == 1.0) {
-    DecrementLockCount( image);
-  }
   return; 
 }
 

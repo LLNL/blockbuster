@@ -70,6 +70,9 @@ void enableLogging(bool enable, QString logfile) {
 void set_verbose(int level) {
   maxMessageLevel = gVerbose = level; 
 }
+int get_verbose(void) { 
+  return maxMessageLevel; 
+}
 
 #define DBPRINTF_PREAMBLE QString("<t=%1> %2:%3, %4():  ").arg(getExactSeconds()).arg(theMessage.file).arg(theMessage.line).arg(theMessage.function).toStdString()
 
@@ -201,11 +204,8 @@ void Message(const char *format,...)
     (void) vsnprintf(buffer, BLOCKBUSTER_PATH_MAX, format, args);
     va_end(args);
 
-	if (gDoDialogs && DisplayDialog(buffer)) return; 
 
-    /* If we get to here, either we don't have a messaging canvas,
-     * or it failed to report the message.  We'll handle it on
-     * the console instead.
+    /* Always output to console, then perhaps to dialog
      */
     QString errmsg("BLOCKBUSTER ("); 
     errmsg += localHostname.c_str(); 
@@ -243,6 +243,11 @@ void Message(const char *format,...)
     if (theMessage.level == M_SYSERROR) {
       perror("blockbuster");
     }
+
+	if (gDoDialogs) {
+      DisplayDialog(buffer);
+    }
+    
   }
 }
 #ifdef __cplusplus 

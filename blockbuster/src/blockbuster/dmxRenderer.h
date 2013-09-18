@@ -201,9 +201,6 @@ class dmxRenderer: public QObject, public Renderer {
                     RectanglePtr imageRegion,
                     int destX, int destY, float zoom, int lod);
 
-  virtual void DecrementLockCounts(int ) {
-    return; 
-  }
 
   virtual void SwapBuffers(void);
  

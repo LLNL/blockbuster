@@ -2,8 +2,12 @@
 #define BLOCKBUSTER_CACHE_H
 
 //=======================================================
-// if you don't want verbose cache messages, use this:
-#define CACHEDEBUG if (0) DEBUGMSG
+// if youwant verbose cache messages, use these:
+void enableCacheDebug(bool onoff); 
+bool cacheDebug_enabled(void); 
+#define CACHEDEBUG(...) if (cacheDebug_enabled()) DEBUGMSG( __VA_ARGS__)
+
+// #define CACHEDEBUG if (0) DEBUGMSG
 // else use this:
 //#define CACHEDEBUG DEBUGMSG
 //=======================================================
@@ -16,6 +20,7 @@
 #include "errmsg.h"
 #include <deque>
 using namespace std; 
+
 
 
 typedef boost::shared_ptr<class ImageCache> ImageCachePtr; 
@@ -51,7 +56,7 @@ struct ImageCacheJob {
 typedef boost::shared_ptr<struct CachedImage> CachedImagePtr; 
 //! CachedImage: a slot in the image cache
 struct CachedImage{
-  CachedImage():requestNumber(0), loaded(0), lockCount(0), frameNumber(0), levelOfDetail(0) {
+  CachedImage():requestNumber(0), loaded(0), frameNumber(0), levelOfDetail(0) {
     return; 
   }
   ~CachedImage() {
@@ -60,7 +65,6 @@ struct CachedImage{
     
   unsigned long requestNumber;
   int loaded;
-  uint32_t lockCount;
   uint32_t frameNumber;
   uint32_t levelOfDetail;
   ImagePtr image;
@@ -108,6 +112,8 @@ class ImageCache {
   ImageCache(int numthreads, int numimages, ImageFormat &required);
   ~ImageCache(); 
   
+  unsigned int Distance(unsigned int oldFrame, unsigned int newFrame);
+
   ImagePtr GetImage(uint32_t frameNumber,
                   const Rectangle *newRegion, uint32_t levelOfDetail);
   void ManageFrameList(FrameListPtr frameList);
@@ -125,8 +131,6 @@ class ImageCache {
   void PreloadImage(uint32_t frameNumber, 
                     const Rectangle *region, uint32_t levelOfDetail);
  
-  void DecrementLockCount(ImagePtr image); // called from glRenderer, x11Renderer and splash.cpp -- decrements lockCounts 
-  void DecrementLockCount(int framenum); // called from movie.cpp and slave.cpp
  protected:
   CachedImagePtr GetCachedImageSlot(uint32_t newFrameNumber);
   
@@ -143,7 +147,7 @@ class ImageCache {
   void ClearImages(void); 
   void ClearJobQueue(void);
   CachedImagePtr FindImage(uint32_t frame, uint32_t lod);
-  void Print(void); 
+  void Print(string where); 
 #define PrintJobQueue(q) __PrintJobQueue(#q,q)
   void __PrintJobQueue(QString name, deque<ImageCacheJobPtr>&q); 
   void  lock(string reason, string file="unknown file", int line=0) {
@@ -204,6 +208,7 @@ class ImageCache {
   vector<CachedImagePtr> mCachedImages;
   unsigned int mHighestFrameNumber;
   
+  bool mSuppressStereo; // for playing stereo movies in mono -- do not preload odd frames.
   /* New approach:  start managing preloads from the cache */ 
   uint32_t mPreloadFrames;
   int32_t mCurrentPlayDirection; 
