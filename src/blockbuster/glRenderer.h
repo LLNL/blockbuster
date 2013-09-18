@@ -47,11 +47,6 @@ class glStereoRenderer: public glRenderer {
   void RenderActual(int frameNumber,  RectanglePtr imageRegion,
               int destX, int destY, float zoom, int lod);
 
-  virtual void DecrementLockCounts(int decrementFrame) {
-    mCache->DecrementLockCount(decrementFrame*2); 
-    mCache->DecrementLockCount(decrementFrame*2+1); 
-    return; 
-  }
 };
 
 // ==================================================================

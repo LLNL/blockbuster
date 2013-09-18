@@ -2,6 +2,12 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
+VERSION 2.8.0i (r987) Wed Sep 18 15:40:09 PDT 2013
+-- Changed sm2mpg and sm2qt args with identical meanings to match each other. 
+-- Fixed builds on older machines.
+-- Fixed bug playing stereo movies with -no-stereo-switch flag.
+
+===============================================================================
 VERSION 2.8.0h (r984) Fri Sep 13 11:45:03 PDT 2013
 -- Fix sm2mpg and sm2qt scripts to work properly
 

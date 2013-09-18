@@ -90,6 +90,7 @@ void usage(void) {
   fprintf(stderr, "'file' is an optional file name, or a prefix of a set of file names\n");
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "   Note: substrings are also matched, so -h is the same as -help, but beware of non-unique prefixes!\n");
+  fprintf(stderr, "-cachedebug: turn on verbose cache debugging messages (also enabled if verbosity is > 5)"); 
   fprintf(stderr, "-cachesize <num> specifies cache limit in frames (you can leave this unset unless you are running out of memory)\n");
   fprintf(stderr, "-DecorationsDisable (or -no-decorations): same as -fullscreen\n");
   fprintf(stderr, "-display <display> specifies X display\n");
@@ -285,6 +286,9 @@ static void ParseOptions(int &argc, char *argv[])
 	if (CHECK_ATOI_ARG("-cachesize", argc, argv,  opt->mMaxCachedImages)) {
       continue;
     }
+	else if (SET_BOOL_ARG("-cachedebug", argc, argv, opt->mCacheDebug, 1)) {
+      continue; 
+    }
 	else if (SET_BOOL_ARG("-no-decorations", argc, argv, opt->decorations, 0) || 
              SET_BOOL_ARG("-DecorationsDisable", argc, argv, opt->decorations, 0) || 
              SET_BOOL_ARG("-fullscreen", argc, argv, opt->fullScreen, 1)) {
@@ -458,6 +462,11 @@ static void ParseOptions(int &argc, char *argv[])
       opt->rendererName = "gl_stereo"; 
     }
   }
+  
+  if (get_verbose() > 5) {
+    opt->mCacheDebug = true; 
+  }
+  enableCacheDebug(opt->mCacheDebug);
     
   numProcessors = GetNumProcessors();
   if (opt->readerThreads == -1) {

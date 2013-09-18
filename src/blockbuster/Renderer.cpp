@@ -240,7 +240,6 @@ void Renderer::WriteImageToFile(int frameNumber)
   f = fopen("tmp.c", "w");
   if (f == NULL) {
 	WARNING("Cannot write image to file - cannot open tmp.c");
-	DecrementLockCount( image);
 	return;
   }
 
@@ -299,7 +298,6 @@ void Renderer::WriteImageToFile(int frameNumber)
   fprintf(f, "    (void *)imageData,\n");
   fprintf(f, "};\n");
   fclose(f);
-  DecrementLockCount(image);
   INFO("Saved image in tmp.c");
 }
 

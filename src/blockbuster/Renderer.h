@@ -62,14 +62,10 @@ class Renderer {
     return mCache->GetImage(frameNumber, newRegion, levelOfDetail); 
   }
 
- // ======================================================================
-  virtual void DecrementLockCount(ImagePtr image) {
-    mCache->DecrementLockCount(image); 
-  }
   
  // ======================================================================
   // The fundamental operation of the Renderer is to render.     
-  void Render(int frameNumber, int previousFrame, 
+ void Render(int frameNumber, int /*previousFrame */, 
               uint32_t preloadFrames, int playDirection, 
               uint32_t startFrame, uint32_t endFrame,
               RectanglePtr imageRegion,
@@ -79,14 +75,6 @@ class Renderer {
 
     RenderActual(frameNumber, imageRegion, destX, destY, zoom, lod); 
 
-    if (frameNumber != previousFrame && previousFrame >= 0) {
-      DecrementLockCounts(previousFrame); 
-    }
-  }
-
-  // ======================================================================
-  virtual void DecrementLockCounts(int frameToDecrement) {
-    mCache->DecrementLockCount(frameToDecrement); 
   }
 
   // ======================================================================

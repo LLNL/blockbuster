@@ -31,6 +31,12 @@
 #include "util.h"
 #include "errmsg.h"
 
+#define NEW_CACHE 1
+
+bool cacheDebug = false; 
+void enableCacheDebug(bool onoff) { cacheDebug = onoff; }
+bool cacheDebug_enabled(void) { return cacheDebug; }
+
 /* This file contains routines for manipulating the Image Cache.
  *
  * An Image Cache is a collection of images, both read from the
@@ -70,29 +76,6 @@ bool jobComparer(const ImageCacheJobPtr first, const ImageCacheJobPtr second){
 }
 
 
-
-// ======================================================================
-#define NEW_CACHE 1
-#ifdef NEW_CACHE
-/*
- * Evalute the "distance" between two frame numbers and return a score.
- * The higher the score, the farther apart the frames are in sequence.
- * In cache replacement, we'll use the highest score to determine the victim.
- */
-static unsigned int Distance(unsigned int oldFrame, unsigned int newFrame,
-                             unsigned int totalFrames)
-{
-  if (oldFrame > newFrame) {
-    /* wrap-around; use modular/ring/clock arithmetic */
-    unsigned int d1 = oldFrame - newFrame;
-    unsigned int d2 = newFrame + totalFrames - oldFrame;
-    return MIN2(d1, d2);
-  }
-  else {
-    return newFrame - oldFrame;
-  }
-}
-#endif
 
 
 // ======================================================================
@@ -226,7 +209,6 @@ void CacheThread::run() {
       imageSlot->image = image;
       imageSlot->loaded = 1;
       imageSlot->requestNumber = job->requestNumber;
-      imageSlot->lockCount = 0;
 
       mCache->unlock("job success", __FILE__, __LINE__);
       mCache->WakeAllJobDone("job success", __FILE__, __LINE__); 
@@ -251,7 +233,7 @@ ImageCache::ImageCache(int numthreads, int numimages, ImageFormat &required):
   mRequiredImageFormat(required), mRequestNumber(0), 
   mValidRequestThreshold(0), 
   mCachedImages(numimages), 
-  mHighestFrameNumber(0), mPreloadFrames(0),  mCurrentPlayDirection(0),
+  /*mHighestFrameNumber(0),*/ mPreloadFrames(0),  mCurrentPlayDirection(0),
   mCurrentStartFrame(0),  mCurrentEndFrame(0) {
   CACHEDEBUG("ImageCache constructor"); 
   
@@ -331,50 +313,41 @@ CachedImagePtr ImageCache::GetCachedImageSlot(uint32_t newFrameNumber)
 
   for (vector<CachedImagePtr>::iterator cachedImage = mCachedImages.begin(); 
        cachedImage != mCachedImages.end();  cachedImage++) {
-#ifdef NEW_CACHE
     /* Look for an empty slot, or a slot who's frame number is
      * furthest away from the one about to be loaded.
      */
-    if ((*cachedImage)->lockCount == 0) {
-      unsigned long dist;
-      
-      if ((*cachedImage)->requestNumber == 0) {
-        imageSlot = *cachedImage;
-        break;
-      }
-      
-      dist = Distance((*cachedImage)->frameNumber, newFrameNumber,
-                      mHighestFrameNumber);
-      if (dist > maxDist){
-        maxDist = dist;
-        imageSlot = *cachedImage; 
-      }
+    unsigned long dist;
+    
+    if ((*cachedImage)->requestNumber == 0) {
+      imageSlot = *cachedImage;
+      break;
     }
-#else
-    /* Look for the best image to replace.  We're allowed to replace any
-     * image that is not locked; if we have a choice, we'll choose one
-     * that has not been loaded (and hence has a requestNumber of 0)
-     * or that has not been used in the longest time (and hence has
-     * the lowest request number).
-     */
-    if ((*cachedImage)->lockCount == 0 &&
-        (!imageSlot ||
-         (*cachedImage)->requestNumber < imageSlot->requestNumber ) ) {
-      imageSlot = cachedImage;
+    
+    dist = Distance((*cachedImage)->frameNumber, newFrameNumber);
+    if (dist > maxDist){
+      maxDist = dist;
+      imageSlot = *cachedImage; 
     }
-#endif
   }
   
   /* If we couldn't find an image slot, something's wrong. */
   if (!imageSlot) {
+    Print("Cannot find image slot!");
+    int i = 0; 
+    for (vector<CachedImagePtr>::iterator cachedImage = mCachedImages.begin(); 
+         cachedImage != mCachedImages.end();  cachedImage++, i++) {
+      if ((int)(*cachedImage)->frameNumber%2) {
+        CACHEDEBUG("Found odd frame number in slot %d: %d\n", i, (*cachedImage)->frameNumber); 
+      }
+    }
     ERROR("image cache is full, with all %d images locked",
           mMaxCachedImages);
     return imageSlot;
   }
     
-  CACHEDEBUG("Removing frame %u to make room for %u  max %u", 
-             imageSlot->frameNumber, newFrameNumber, mHighestFrameNumber);
-  Print();
+  CACHEDEBUG("Removing frame %u to make room for %u", 
+             imageSlot->frameNumber, newFrameNumber);
+  Print("Removing frame");
 
   /* Otherwise, if we found a slot that wasn't vacant, clear it out
    * before returning it.
@@ -439,7 +412,6 @@ void ImageCache::ClearImages(void)
     mCachedImages[i].reset(new CachedImage()); 
   }
 
-  mHighestFrameNumber = 0;
 }
 
 
@@ -524,6 +496,27 @@ CachedImagePtr ImageCache::FindImage(uint32_t frame, uint32_t lod) {
 }
 
 // ======================================================================
+/*
+ * Evalute the "distance" between two frame numbers and return a score.
+ * The higher the score, the farther apart the frames are in sequence.
+ * In cache replacement, we'll use the highest score to determine the victim.
+ */
+unsigned int ImageCache::Distance(unsigned int oldFrame, unsigned int newFrame)
+{
+  int totalFrames = mCurrentEndFrame - mCurrentStartFrame + 1; 
+  if (oldFrame > newFrame) {
+    /* wrap-around; use modular/ring/clock arithmetic */
+    unsigned int d1 = oldFrame - newFrame;
+    unsigned int d2 = newFrame + totalFrames - oldFrame;
+    return MIN2(d1, d2);
+  }
+  else {
+    return newFrame - oldFrame;
+  }
+}
+
+
+// ======================================================================
 //! GetImage()
 /*!
  * This routine gets an image from the cache, specified by frameNumber,
@@ -575,12 +568,6 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
   }
 
   CACHEDEBUG("ImageCache::GetImage frame %d\n",frameNumber); 
-  
-  /* Keep track of highest frame number.  We need it for cache
-   * replacement.
-   */
-  if (frameNumber > mHighestFrameNumber)
-    mHighestFrameNumber = frameNumber;
   
   /* This counts as an additional cache request; we keep track of such
    * things so we can decide which of the cache entries is the oldest.
@@ -635,17 +622,14 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
 		bb_assert(cachedImage->image->imageFormat.rowOrder != ROW_ORDER_DONT_CARE);
         
 		cachedImage->requestNumber = mRequestNumber;
-		//cachedImage->lockCount++;
 		if (mNumReaderThreads > 0) {
-          cachedImage->lockCount = 1;
-          unlock("found and locked interesting frame", __FILE__, __LINE__); 
+          unlock("found interesting frame", __FILE__, __LINE__); 
 		}
         CACHEDEBUG("Returning found image %d", frameNumber); 
 		return cachedImage->image;
       }
       else {
         CACHEDEBUG("Frame %d does not fully match, so augment rectangle", frameNumber); 
-        if (cachedImage->lockCount) cachedImage->lockCount=0;
         region = RectUnionRect(&cachedImage->image->loadedRegion, &region);
       }
 	}
@@ -769,17 +753,6 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
     imageSlot = cachedImage;
   }
   else {
-#if 0 && DEBUG
-	/* this image better not already be in the cache! */
-	int i;
-	CachedImagePtr img;
-	for (i = 0, img = mCachedImages; i < mMaxCachedImages;
-	     i++, img++) {
-      if (img->lockCount > 0) {
-		bb_assert(img->image != image);
-      }
-	}
-#endif
     imageSlot = GetCachedImageSlot(frameNumber);
   }
 
@@ -802,7 +775,6 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
   imageSlot->levelOfDetail = levelOfDetail;
   imageSlot->image = image;
   imageSlot->loaded = 1;
-  imageSlot->lockCount = 1;
   imageSlot->requestNumber = mRequestNumber;
   if (mNumReaderThreads > 0) {
     unlock("image stored and locked successfully", __FILE__, __LINE__); 
@@ -815,9 +787,6 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
     preloadmax = mPreloadFrames;
   }
 
-  /* Check to see how much room we have in the cache and free up any if needed or just return without more preloading.  */
-  // if ((mJobQueue.size() + mPendingQueue.size() + preloadmax) * mAverageFrameBytes > mMaxCacheBytes) {
-      
   while (preloaded++ < preloadmax) {
     frame += mCurrentPlayDirection; 
     if (frame > mCurrentEndFrame) frame = mCurrentEndFrame; 
@@ -829,90 +798,6 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
   return image;
 }
 
-// ======================================================================
-/* 
- * I do not think this is needed any more because we are using 
- * boost::shared_ptrs to manage images etc.  
- * This routine is poorly named.  It unlocks the specified image, so that its
- * entry can be re-used, but only "if no one else is using it", 
- * whatever that means.  The entire cache needs a rewrite.  
- * Callers should not need to understand the cache internals to use it.  
- * Encapsulation is a problem here.  
- * Unfortunately, the actual image stays around; it will only actually be deleted
- * if the cache is destroyed or if the space is required
- * for another image.  This makes it hard to know when an image is actually released.  
- */
-void ImageCache::DecrementLockCount(ImagePtr image)
-{
-  CACHEDEBUG("DecrementLockCount one image, frame %d", image->frameNumber); 
-  
-  // OLD CODE BELOW -- boost is probably doing fine with all this
-  //int rv;
-  /* Look for the given image in the cache. */
-  if (mNumReaderThreads > 0) {
-    lock("DecrementLockCount on an image", __FILE__, __LINE__);
-  }
-  for (vector<CachedImagePtr>::iterator cachedImage = mCachedImages.begin(); 
-       cachedImage != mCachedImages.end();  cachedImage++) {
-	if ((*cachedImage)->image == image) {
-      CACHEDEBUG("Releasing frame %d from cache", (*cachedImage)->frameNumber); 
-      /* Unlock it and return. */
-      if ((*cachedImage)->lockCount == 0) {
-        CACHEDEBUG("unlocking an unlocked image, frame %d",
-                   (*cachedImage)->frameNumber);
-        
-      }
-      else {
-		(*cachedImage)->lockCount--;
-        CACHEDEBUG("Image for frame %d has new lock count %d", (*cachedImage)->frameNumber, (*cachedImage)->lockCount); 
-      }
-      if (mNumReaderThreads > 0) {
-        unlock("image released", __FILE__, __LINE__); 
-      }
-      return;
-	}
-  }
-  
-  /* If we get here, we couldn't find the image */
-  unlock("no such image", __FILE__, __LINE__); 
-  return;
-}
-
-// ======================================================================
-/*!
-  Releases all images associated with the given frame number.  Does not know about stereo, uses actual frame numbers, not stereo frame numbers.
-*/ 
-void ImageCache::DecrementLockCount(int frameNumber) {
-  register int numreleased = 0, i=0;
-  CACHEDEBUG("DecrementLockCount frame %d", frameNumber); 
-  //int rv;
-  /* Look for the given image in the cache. */
-  if (mNumReaderThreads > 0) {
-    lock("releasing an image", __FILE__, __LINE__);
-  }
-  for (vector<CachedImagePtr>::iterator cachedImage = mCachedImages.begin(); 
-       cachedImage != mCachedImages.end();  cachedImage++, i++) {
-	if ((int)(*cachedImage)->frameNumber == frameNumber) {
-      CACHEDEBUG("Releasing frame slot %d from cache", i); 
-      /* Unlock it and return. */
-      if ((*cachedImage)->lockCount == 0) {
-        CACHEDEBUG("unlocking an unlocked image, slot %d",i);
-        
-      }
-      else {
-		(*cachedImage)->lockCount = 0;
-        numreleased++; 
-        CACHEDEBUG("Image slot %d new lock count %d", i, (*cachedImage)->lockCount); 
-      }
-	}
-  }
-  CACHEDEBUG("decremented lockcount on %d images", numreleased); 
-
-  if (mNumReaderThreads > 0) {
-    unlock("image(s) decremented", __FILE__, __LINE__); 
-  }
-  return;
-}
 
 // ======================================================================
 /* This routine is informatory; it notifies the cache that a particular frame
@@ -1004,7 +889,7 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
   PrintJobQueue(mJobQueue); 
 
   unlock("new job added", __FILE__, __LINE__); 
-  Print(); 
+  Print("new job added"); 
   /* If there's a worker thread that's snoozing, this will
    * wake him up.
    */
@@ -1015,26 +900,34 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
 
 // ======================================================================
 /* For debugging */
-void ImageCache::Print(void)
+void ImageCache::Print(string description)
 {
-  register int i, numlocked=0;
+
+  if (!cacheDebug) return; 
+
+  register int i=0, minframe = -1, maxframe = -1;
   QString msg; 
-  CACHEDEBUG("Printing cache state."); 
+  CACHEDEBUG("%s: Printing cache state.", description.c_str()); 
   for (vector<CachedImagePtr>::iterator cachedImage = mCachedImages.begin(); 
        cachedImage != mCachedImages.end();  cachedImage++, i++) {
-    msg = QString("  Slot %1: lockCount:%2  frame:%3 lod:%4  req:%5  ")
+    msg = QString("%1:  Slot %2: frame:%3 lod:%4  req:%5  ")
+      .arg(description.c_str())
       .arg( i)
-      .arg((*cachedImage)->lockCount)
       .arg((*cachedImage)->frameNumber)
       .arg((*cachedImage)->levelOfDetail)
       .arg((*cachedImage)->requestNumber);
     if ((*cachedImage)->image) {
       msg += QString("roi:%1").arg((*cachedImage)->image->loadedRegion.toString()); 
     }
-    if ((*cachedImage)->lockCount) numlocked++; 
+    if (minframe == -1 || minframe > (*cachedImage)->frameNumber) {
+      minframe = (*cachedImage)->frameNumber;
+    }
+    if (maxframe == -1 || maxframe < (*cachedImage)->frameNumber) {
+      maxframe = (*cachedImage)->frameNumber;
+    }
     CACHEDEBUG(msg); 
   }
-  CACHEDEBUG("mHighest = %d, numlocked = %d", mHighestFrameNumber, numlocked); 
+  CACHEDEBUG("mHighest = %d, minframe = %d, maxframe = %d\n", mHighestFrameNumber, minframe, maxframe); 
 }
 
 /*!
