@@ -245,6 +245,7 @@ echo "Installing software..."
 
 echo '#!/usr/bin/env bash'"
 . $HOME/.profile
+export PATH=/usr/local/tools/qt-4.8.4/bin:\$PATH
 
 function errexit() {
     echo 
