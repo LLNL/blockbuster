@@ -31,16 +31,11 @@ include ../config/config
 
 BOOST_VERSION = 1_54_0
 INSTALL_DIR ?= $(shell pwd)
+BOOST_DIR ?= $(shell findboost.sh)
 
-HEADER_EVIDENCE = $(INSTALL_DIR)/include/boost/random.hpp 
-LIB_EVIDENCE = $(INSTALL_DIR)/lib/libboost_thread.a  $(INSTALL_DIR)/lib/libboost_system.a  $(INSTALL_DIR)/lib/libboost_regex.a $(INSTALL_DIR)/lib/libboost_date_time.a
-UNTAR_BOOST = boost_$(BOOST_VERSION)/boost/random.hpp
+all: 
+	echo $(BOOST_DIR) >  BOOSTDIR
 
-
-all: $(LIB_EVIDENCE)
-
-$(LIB_EVIDENCE): 
-	if ! linkboost.sh ; then echo calling build_boost; $(MAKE) build_boost; fi
 
 build_boost: boost_$(BOOST_VERSION)/boost/random.hpp
 	rm -f $@  # ensure all libs are newer than headers when done
@@ -50,8 +45,8 @@ build_boost: boost_$(BOOST_VERSION)/boost/random.hpp
 boost_$(BOOST_VERSION)/boost/random.hpp: 
 	if [ ! -f $@ ]; then \
 		tar -xzf boost_$(BOOST_VERSION).tar.gz ; \
-		[ -f $@ ] && touch $@; \
 	fi	
+	[ -f $@ ] && touch $@; 
 	@echo '********************' finished with UNTAR_BOOST $@; echo
 
 clean:
