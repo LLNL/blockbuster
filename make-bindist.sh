@@ -9,7 +9,7 @@ mkdir -p $tmpdir
 
 version="$(cat src/config/versionstring.txt)"
 
-echo yes > src/boost/nolinks
+make noboostlink
 
 if [ $(uname) == Linux ]; then 
     for buildarg in dmx nodmx; do 
@@ -38,6 +38,6 @@ else
     errexit "Error: Unrecognized uname results: $(uname).  Nothing done."
 fi
 
-rm -f src/boost/nolinks
+make boostlink
 
 exit 0

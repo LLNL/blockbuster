@@ -13,6 +13,7 @@ export NO_DMX ?= $(call GET_VAR_VALUE,nodmx)
 export DEBUG ?= $(call GET_VAR_VALUE,debug)
 export MPI ?= $(call GET_VAR_VALUE,mpi)
 export GPROF ?= $(call GET_VAR_VALUE,gprof)
+export NOBOOSTLINK ?= $(call GET_VAR_VALUE,noboostlink)
 
 all:
 	mkdir -p $(INSTALL_DIR)/man/man1 
@@ -37,25 +38,32 @@ dmx: mpi
 	echo YES > src/config/dmx
 
 nodmx: nompi
-	echo  NO > src/config/dmx
+	rm -f src/config/dmx
 
 debug:
 	echo YES > src/config/debug
 
 opt:
-	echo  NO > src/config/debug
+	rm -f src/config/debug
 
 gprof: debug
 	echo YES > src/config/gprof
 
 nogprof: 
-	echo  NO > src/config/gprof
+	rm -f src/config/gprof
 
 mpi: 
-	echo  NO > src/config/nompi
+	rm -f src/config/nompi
 
 nompi: 
 	echo YES > src/config/nompi
+
+boostlink:
+	rm -f src/config/noboostlink
+
+noboostlink:
+	echo YES > src/config/noboostlink
+
 
 clean: 
 	cd src &&	$(MAKE) clean
