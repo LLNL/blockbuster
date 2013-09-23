@@ -1131,7 +1131,6 @@ void smBase::readHeader(void)
        tileNxNy[i][1] = 1;
      }
    }
-   
    // Get the framestart offsets
    mFrameOffsets.resize(mNumFrames*mNumResolutions+1, 0); 
    READ(lfd, &mFrameOffsets[0], sizeof(off64_t)*mNumFrames*mNumResolutions);
@@ -1168,7 +1167,53 @@ void smBase::readHeader(void)
        mMetaData[md.mTag] = md; 
      }
    }
+   
+   mMetaData["Name"] = SM_MetaData("Name", mMovieName); 
+   mMetaData["Version"] = SM_MetaData("Version", (int64_t)mVersion); 
+   if (getType() == 0) {
+     mMetaData["Format"] = SM_MetaData("Format", "RAW");
+   } else  if (getType() == 0) {
+     mMetaData["Format"] = SM_MetaData("Format", "RLE");
+   } else  if (getType() == 0) {
+     mMetaData["Format"] = SM_MetaData("Format", "GZIP");
+   } else  if (getType() == 0) {
+     mMetaData["Format"] = SM_MetaData("Format", "LZO");
+   } else  if (getType() == 0) {
+     mMetaData["Format"] = SM_MetaData("Format", "JPG");
+   } else  if (getType() == 0) {
+     mMetaData["Format"] = SM_MetaData("Format", "LZMA");
+   } else  {
+     mMetaData["Format"] = SM_MetaData("Format", "UNKNOWN");
+   } 
+   mMetaData["Xsize"] = SM_MetaData("Xsize", (int64_t)getWidth()); 
+   mMetaData["Ysize"] = SM_MetaData("Ysize", (int64_t)getHeight()); 
+   mMetaData["Frames"] = SM_MetaData("Frames", (int64_t)getNumFrames()); 
+   if (getFlags() & SM_FLAGS_STEREO) {
+     mMetaData["Stereo"] = SM_MetaData("Stereo", "YES"); 
+   } else {
+     mMetaData["Stereo"] = SM_MetaData("Stereo", "NO"); 
+   }
+   mMetaData["FPS"] = SM_MetaData("FPS", str(boost::format("FPS: %0.2f\n")%(getFPS())));
 
+   double len = 0;
+   double len_u = 0;
+   for(uint res=0;res<getNumResolutions();res++) {
+     for(uint frame=0;frame<getNumFrames();frame++) {
+       len += (double)(getCompFrameSize(frame,res));
+       len_u += (double)(getWidth(res)*getHeight(res)*3);
+     }
+   }
+   mMetaData["Compression"] = SM_MetaData("Compression", (len/len_u)); 
+   mMetaData["LOD"] = SM_MetaData("LOD", (int64_t)mNumResolutions); 
+   for (uint i =0; i< mNumResolutions; i++) {
+     string lodname = str(boost::format("Res %1%")%i); 
+     string lodstring = 
+       str(boost::format("Level:%1% size:%2%x%3% tile:%4%x%5%")
+           % i 
+           % framesizes[i][0] % framesizes[i][1]
+           % tilesizes[i][0] % tilesizes[i][1]);              
+     mMetaData[lodname] = SM_MetaData(lodname, lodstring); 
+   }
 
 #if SM_VERBOSE
    for (w=0; w<mNumFrames; w++) {

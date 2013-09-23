@@ -4,6 +4,7 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 ===============================================================================
 VERSION 2.8.0j (r987) Wed Sep 18 15:40:09 PDT 2013
 -- support builds of boost on machines where needed
+-- establish "reserved tags" that always match for every movie, corresponding to metadata output from sminfo.  See smquery --reserved-tag-list for details.
 
 ===============================================================================
 VERSION 2.8.0i (r987) Wed Sep 18 15:40:09 PDT 2013

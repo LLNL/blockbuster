@@ -79,6 +79,7 @@ using std::map;
 //#define SM_VERBOSE
 
 // On top of the movie "type".  Room for 256 "types".
+// Flags/masks are old-school -- use SM 3.0 tags moving forward for new tags.  
 #define SM_FLAGS_MASK	0xffffff00
 #define SM_TYPE_MASK	0x000000ff
 #define SM_FLAGS_STEREO	0x00000100
@@ -116,12 +117,10 @@ struct smMsgStruct {
   int line; 
   string file, function; 
 }; 
-//static smMsgStruct gMsgStruct; 
 
 #define SMPREAMBLE 
 #define smdbprintf(args...)                                  \
   sm_real_dbprintf( smMsgStruct(__LINE__,__FILE__,__FUNCTION__), args)   
-//  gMsgStruct.line = __LINE__, gMsgStruct.file=__FILE__, gMsgStruct.function=__FUNCTION__, sm_real_dbprintf
 
 extern double gBaseTime; /* initialized to -1 in constructor */  
 inline void sm_initTimer(void) {
@@ -609,9 +608,6 @@ class smBase {
   }
   void DeleteMetaData(string tag) {
     mMetaData.erase(tag); 
-    /*    map<string,SM_MetaData>::iterator pos = mMetaData.begin(), endpos = mMetaData.end(); 
-    mMetaData.erase(remove(mMetaData.begin(), mMetaData.end(), tag), mMetaData.end()); 
-    */ 
   }
 
   // Add the tag/value pairs from tagvec. 
