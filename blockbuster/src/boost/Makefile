@@ -37,9 +37,12 @@ all:
 	echo $(BOOST_DIR) >  BOOSTDIR
 
 
-build_boost: boost_$(BOOST_VERSION)/boost/random.hpp
+build_boost: $(INSTALL_DIR)/include/boost/random.hpp
+
+$(INSTALL_DIR)/include/boost/random.hpp: boost_$(BOOST_VERSION)/boost/random.hpp
 	rm -f $@  # ensure all libs are newer than headers when done
 	cd boost_$(BOOST_VERSION) && tar -xzf ../process-0.5.tgz && ./bootstrap.sh --with-libraries=atomic,thread,regex,system,date_time && ./bjam -j 20 install --prefix=$(INSTALL_DIR)
+	touch $@
 	@echo '********************' finished with LIB_EVIDENCE $@; echo
 
 boost_$(BOOST_VERSION)/boost/random.hpp: 

@@ -23,7 +23,9 @@ if [ "$NOBOOSTLINK" != "YES" ]; then
         done
     done
 fi
-rm -rf $INSTALL_DIR/include/boost $INSTALL_DIR/lib/libboost_*
+if [ ! -d $INSTALL_DIR/include/boost ] || [ ! -f $INSTALL_DIR/lib/libboost_thread.a ]; then
+    rm -rf $INSTALL_DIR/include/boost $INSTALL_DIR/lib/libboost_*
+fi
 export INSTALL_DIR=$INSTALL_DIR
 make -e build_boost 1>&2 || exit 1
 echo $INSTALL_DIR
