@@ -30,13 +30,18 @@ infile="$1"
 if [ ${1:0:1} != '/' ]; then 
     infile=$(pwd)/$infile
 fi
+infiledot=$(expr ${#outfile} - 3)
+if [ "${infile:$infiledot}" != '.sm' ]; then 
+    errexit "Please specify an input movie name ending with '.sm'"
+fi
+
 outfile="$2"
 if [ ${2:0:2} != '/' ]; then 
     outfile=$(pwd)/$outfile
 fi
-outfiledot=$(expr ${#outfile} - 3)
-if [ "${outfile:$outfiledot}" != '.sm' ]; then 
-    errexit "Please specify a movie name ending with '.sm'"
+outfiledot=$(expr ${#outfile} - 4)
+if [ "${outfile:$outfiledot}" != '.mpg' ]; then 
+    errexit "Please specify an output movie name ending with '.mpg'"
 fi
 
 outframebase=_$(basename $outfile | sed 's/.sm//')
