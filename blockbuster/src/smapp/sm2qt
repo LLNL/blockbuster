@@ -4,9 +4,17 @@
 #
 function usage() {
     echo "sm2qt: usage:"
-    echo "sm2qt smfile qtfilename fps"
+    echo "sm2qt [OPTIONS] smfile qtfilename [fps]"
+    echo "If fps is not given, the default is 30"
+    echo "If the input movie is stereo, then only the left hand frames (odd frames) are used." 
+    echo "OPTIONS:"
+    echo "-s/--stereo: interpret the input movie as stereo." 
 }
 
+function runecho(){
+    echo "$@"
+    "$@"
+}
 function errexit() {    
     echo '*************************************************'
     echo "ERROR: $1"
@@ -15,9 +23,16 @@ function errexit() {
     exit 1
 }
 
+stereo=false
+if [ "$1" == "-s" ] || [ "$1" == "--stereo" ]; then 
+    shift 1
+    stereo=true
+fi
+
+
 tmpdir=/tmp/$USER/sm2mpg.tmp/
 mkdir -p $tmpdir || errexit "Cannot make tmp directory $tmpdir"
-if [ "$3" == "" ];  then
+if [ "$2" == "" ];  then
     usage
     errexit "Not enough args" 
 fi
@@ -39,18 +54,43 @@ outfiledot=$(expr ${#outfile} - 4)
 if [ "${outfile:$outfiledot}" != '.mov' ]; then 
     errexit "Please specify an outpu movie name ending with '.mov'"
 fi
+
+fps=${3:-30}
+
+tmp=$(sminfo $infile)
+if echo $tmp | grep Stereo >/dev/null 2>&1; then
+    stereo=true
+fi
+
+ninput=$(sminfo $infile | grep Frames | cut "-d " -f2)
+
+skip=1
+if $stereo; then 
+    skip=2
+    ninput=$(expr $ninput / 2)
+fi
+
 # set -xv
 outframebase=_$(basename $outfile | sed 's/.mov//')
-function runecho(){
-    echo "$@"
-    "$@"
-}
 pushd $tmpdir 
-runecho sm2img -F png $1 ${outframebase}_%05d.png || errexit "sm2img failed" 
+runecho sm2img -F png -s $skip $1 ${outframebase}_%05d.png || errexit "sm2img failed" 
 
-runecho ffmpeg -v -1 -mbd rd -trellis 2 -cmp 2 -subcmp 2 -g 300 -r $3 -i "${outframebase}_%05d.png" $outfile || errexit  "ffmpeg failed" 
+if [ $skip != 1 ]; then 
+    echo "renumbering output files..."
+    framenum=0
+    for frame in ${outframebase}_*png; do
+        outnum=$(printf "%05d" $framenum)   
+        outframe=${outframebase}_${outnum}.png
+        if [ $outframe != $frame ]; then
+            mv $frame ${outframebase}_${outnum}.png
+        fi
+        let framenum++
+    done
+fi
 
-rm -f ${outframebase}_*png
+runecho ffmpeg -v -1 -mbd rd -trellis 2 -cmp 2 -subcmp 2 -g 300 -r $fps -i "${outframebase}_%05d.png" $outfile || errexit  "ffmpeg failed" 
+
+rm -f $tmpdir/${outframebase}_*png
 popd
 
 #
