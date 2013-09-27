@@ -1,5 +1,5 @@
 #!/usr/bin/env bash 
-#set -xv
+set -xv
 #
 #       Convert an sm file into an MPEG file...
 #
@@ -22,7 +22,7 @@ function errexit() {
 
 tmpdir=/tmp/$USER/sm2mpg.tmp/
 mkdir -p $tmpdir || errexit "Cannot make tmp directory $tmpdir"
-if [ "$3" == "" ];  then
+if [ "$2" == "" ];  then
     usage
     errexit "Not enough args" 
 fi
@@ -44,8 +44,8 @@ outfps=${3:-30}
 if [ ${1:0:1} != '/' ]; then 
     infile=$(pwd)/$infile
 fi
-infiledot=$(expr ${#outfile} - 3)
-if [ "${infile:$infiledot}" != '.sm' ]; then 
+infiledot=$(expr ${#infile} - 3)
+if [ "${infile:${infiledot}}" != '.sm' ]; then 
     errexit "Please specify an input movie name ending with '.sm'"
 fi
 
