@@ -12,15 +12,16 @@ function usage() {
     echo "-s/--stereo: interpret the input movie as stereo." 
 }
 
+
 function errexit() {    
     echo '*************************************************'
     echo "ERROR: $1"
     echo '*************************************************'
-    rm -f ${outframebase}_*png
+    rm -rf $tmpdir
     exit 1
 }
 
-tmpdir=/tmp/$USER/sm2mpg.tmp/
+tmpdir=/tmp/$USER/sm2mpg.tmp.$RANDOM/
 mkdir -p $tmpdir || errexit "Cannot make tmp directory $tmpdir"
 if [ "$2" == "" ];  then
     usage
@@ -129,7 +130,7 @@ fi
 #
 #       clean up...
 #
-find . -name "${outframebase}_junk_*.[YUV]" -exec rm -f {} \;
+rm -rf $tmpdir
 popd
 #
 #	Done!

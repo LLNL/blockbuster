@@ -19,7 +19,7 @@ function errexit() {
     echo '*************************************************'
     echo "ERROR: $1"
     echo '*************************************************'
-    rm -f ${outframebase}_*png
+    rm -rf $tmpdir
     exit 1
 }
 
@@ -30,7 +30,7 @@ if [ "$1" == "-s" ] || [ "$1" == "--stereo" ]; then
 fi
 
 
-tmpdir=/tmp/$USER/sm2mpg.tmp/
+tmpdir=/tmp/$USER/sm2mpg.tmp.$RANDOM/
 mkdir -p $tmpdir || errexit "Cannot make tmp directory $tmpdir"
 if [ "$2" == "" ];  then
     usage
@@ -90,7 +90,7 @@ fi
 
 runecho ffmpeg -v -1 -mbd rd -trellis 2 -cmp 2 -subcmp 2 -g 300 -r $fps -i "${outframebase}_%05d.png" $outfile || errexit  "ffmpeg failed" 
 
-rm -f $tmpdir/${outframebase}_*png
+rm -rf $tmpdir
 popd
 
 #
