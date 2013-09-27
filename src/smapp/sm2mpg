@@ -1,5 +1,5 @@
 #!/usr/bin/env bash 
-set -xv
+#set -xv
 #
 #       Convert an sm file into an MPEG file...
 #

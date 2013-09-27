@@ -2,7 +2,7 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.0k (r1002) Thu Sep 26 17:21:30 PDT 2013
+VERSION 2.8.0k (r1005) Thu Sep 26 17:48:05 PDT 2013
 -- fix bug sm2mpg that prevented valid movies from being processed
 -- allow user to specify that a movie is stereo even if stereo flag is not set
 
