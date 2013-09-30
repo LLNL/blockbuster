@@ -51,24 +51,23 @@
 
 class smGZ : public smBase {
    public:
-      smGZ(const char *fname, int _nwin=1);
+      smGZ(int mode, const char *fname, int _nwin=1);
       virtual ~smGZ();
 
-      static smGZ *newFile(const char *fname, u_int w, u_int h, u_int nframes,
-		      u_int *tilesizes = NULL, u_int nres=1, 
-                           int numthreads=1);
+      smGZ(const char *_fname, 
+                    u_int _width, u_int _height, u_int _nframes, 
+                    u_int *_tile = NULL, u_int _nres = 1, 
+                    int numthreads=1) : 
+        smBase(_fname, _width, _height, _nframes, _tile, _nres, numthreads) {
+        mTypeID = 2;
+      }
 
       static void init(void);
 
-      int getType(void) { return typeID; }
-
    protected:
-      static smBase *create(const char *_fname, int _nwin);
       void compBlock(void *, void *, int&, int *dim);
       bool decompBlock(u_char *cdata,u_char *image,int size, int *dim);
 
-   private:
-      static u_int typeID;
 };
 
 #endif

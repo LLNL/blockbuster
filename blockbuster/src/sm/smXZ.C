@@ -45,25 +45,14 @@
 #define lzmadbprintf fprintf(stderr, "%s line %d: ", __FILE__, __LINE__); fprintf
 #define smcerr if (0) cerr 
 
-u_int smXZ::typeID = 5;
-
-smXZ::smXZ(const char *_fname, int _nwin)
-  :smBase(_fname, _nwin)
+smXZ::smXZ(int mode, const char *_fname, int _nwin)
+  :smBase(mode, _fname, _nwin)
 {
+  mTypeID = 5; 
 }
 
 smXZ::~smXZ()
 {
-}
-
-void smXZ::init(void)
-{
-   smBase::registerType(typeID, create);
-}
-
-smBase *smXZ::create(const char *_fname, int _nwin)
-{
-   return(new smXZ(_fname, _nwin));
 }
 
 bool smXZ::decompBlock(u_char *in,u_char *out,int size,int *dim)
@@ -100,7 +89,7 @@ bool smXZ::decompBlock(u_char *in,u_char *out,int size,int *dim)
    return true;
 }
 
-smXZ *smXZ::newFile(const char *_fname, 
+/*smXZ *smXZ::newFile(const char *_fname, 
                     u_int _width, u_int _height, u_int _nframes, 
                     u_int *_tile, u_int _nres, 
                     int numthreads)
@@ -113,7 +102,7 @@ smXZ *smXZ::newFile(const char *_fname,
    }
  
    return(r);
-}
+   }*/
 
 void smXZ::compBlock(void *in, void *out, int &outsize,int *dim)
 {

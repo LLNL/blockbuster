@@ -41,28 +41,16 @@
 #include <stdlib.h>
 #include "smRLE.h"
 
-u_int smRLE::typeID = 1;
-
-smRLE::smRLE(const char *_fname, int _nwin)
-  :smBase(_fname, _nwin)
+smRLE::smRLE(int mode, const char *_fname, int _nwin)
+  : smBase(mode, _fname, _nwin)
 {
+  mTypeID = 1;
 }
 
 smRLE::~smRLE()
 {
 }
 
-void
-smRLE::init(void)
-{
-   smBase::registerType(typeID, create);
-}
-
-smBase *
-smRLE::create(const char *_fname, int _nwin)
-{
-   return(new smRLE(_fname, _nwin));
-}
 
 bool smRLE::decompBlock(u_char *cdata,u_char *image,int,int *dim)
 {
@@ -91,7 +79,7 @@ bool smRLE::decompBlock(u_char *cdata,u_char *image,int,int *dim)
 }
 
 
-smRLE *
+/*smRLE *
 smRLE::newFile(const char *_fname, u_int _width, u_int _height,
                u_int _nframes, u_int *_tiles,u_int _nres, 
                int numthreads)
@@ -105,7 +93,7 @@ smRLE::newFile(const char *_fname, u_int _width, u_int _height,
  
    return(r);
 }
-
+*/
 void
 smRLE::compBlock(void *data, void *cdata, int &size,int *dim)
 {

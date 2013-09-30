@@ -56,7 +56,7 @@ main(int argc, char *argv[])
    int t, x, y;
 
 #if 0
-   sm= smRLE::newFile("test.smrle", 40, 40, 40);
+   sm= new smRLE("test.smrle", 40, 40, 40);
 
    for (t=0; t<40; t++) {
       for (x=0; x<40; x++)
@@ -74,7 +74,7 @@ main(int argc, char *argv[])
    tilesizes[0] = 10;
    tilesizes[1] = 10;
    int frames = 1;
-   sm2 = smRaw::newFile("test.smraw", 40, 40, frames, &tilesizes[0], 1);
+   sm2 = new smRaw("test.smraw", 40, 40, frames, &tilesizes[0], 1);
    u_char *bufp = &buf[0][0][0];
    for (t=0; t<frames; t++) {
      for (x=0; x<40; x++)

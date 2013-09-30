@@ -578,6 +578,8 @@ int main(int argc,char **argv) {
     std::cout << e.what() << std::endl;
     return 1;
   }
+  
+  sm_setVerbose(verbosity.getValue());  
 
   int lastFrame = lastFrameFlag.getValue(), firstFrame = firstFrameFlag.getValue(), frameStep = frameStepFlag.getValue();
 
@@ -631,6 +633,7 @@ int main(int argc,char **argv) {
         fp = fopen(nameTemplate.c_str(),"r");
         if (fp) {
           smdbprintf(5, str(boost::format("Warning: single input file \"%1%\" given.  This is not a valid filename template, so I'm assuming it's actually a single input file, which is going to make a pretty stupid movie.\n")%nameTemplate).c_str());
+          inputfiles.push_back(nameTemplate); 
           break;
         }
         else {
@@ -712,7 +715,6 @@ int main(int argc,char **argv) {
     errexit(cmd, str(boost::format("Invalid rotation: %1%.  Only 0,90,180,270 allowed.\n")% rotate.getValue()));
   }
 
-  sm_setVerbose(verbosity.getValue());
 
   if (mipmaps.getValue() < 1 || mipmaps.getValue() > 8) {
     errexit(cmd, str(boost::format("Invalid mipmap level: %1%.  Must be from 1 to 8.\n")% mipmaps.getValue()));
@@ -916,24 +918,23 @@ int main(int argc,char **argv) {
   //count = abs((lastFrame-firstFrame.getValue())/frameStep.getValue()) + 1;
 
   // Open the sm file...
-  smBase::init();
   uint32_t *tsizes_ptr = NULL;
   tsizes_ptr = &tsizes[0][0];
 
   smBase  *sm = NULL;
   if (compression.getValue() == "raw" || compression.getValue() == "RAW") {
-    sm = smRaw::newFile(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
+    sm = new smRaw(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
   } else if (compression.getValue() == "rle" || compression.getValue() == "RLE") {
-    sm = smRLE::newFile(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
+    sm = new smRLE(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
   } else if (compression.getValue() == "gz" || compression.getValue() == "GZ") {
-    sm = smGZ::newFile(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
+    sm = new smGZ(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
   } else if (compression.getValue() == "lzo" || compression.getValue() == "LZO") {
-    sm = smLZO::newFile(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
+    sm = new smLZO(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
   } else if (compression.getValue() == "jpg" || compression.getValue() == "JPG") {
-    sm = smJPG::newFile(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
+    sm = new smJPG(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
     ((smJPG *)sm)->setQuality(quality.getValue());
   } else if (compression.getValue() == "lzma" || compression.getValue() == "LZMA") {
-    sm = smXZ::newFile(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
+    sm = new smXZ(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
   } else {
     errexit(str(boost::format("Bad encoding type: %1%")%compression.getValue()));
   }

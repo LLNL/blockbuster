@@ -46,7 +46,7 @@
 
 #include "setjmp.h"
 
-u_int smJPG::typeID = 4;
+
 
 typedef struct {               // derived from default jdatadst.c data manager
 	struct jpeg_destination_mgr pub; // public fields
@@ -79,24 +79,20 @@ static void jpg_term_destination(j_compress_ptr cinfo);
 
 
 
-smJPG::smJPG(const char *_fname, int _nwin)
-  :smBase(_fname, _nwin)
+smJPG::smJPG(int mode, const char *_fname, int _nwin)
+  :smBase(mode, _fname, _nwin)
 {
-   setQuality(75);
-   if (getenv("JPG_COMPRESSION_QUALITY")) {
-      int tmp;
-      sscanf(getenv("JPG_COMPRESSION_QUALITY"),"%d",&tmp);
-      setQuality(tmp);
-   }
+  mTypeID = 4;
+  setQuality(75);
+  if (getenv("JPG_COMPRESSION_QUALITY")) {
+    int tmp;
+    sscanf(getenv("JPG_COMPRESSION_QUALITY"),"%d",&tmp);
+    setQuality(tmp);
+  }
 }
 
 smJPG::~smJPG()
 {
-}
-
-void smJPG::init(void)
-{
-   smBase::registerType(typeID, create);
 }
 
 void smJPG::setQuality(int qual)
@@ -104,11 +100,6 @@ void smJPG::setQuality(int qual)
    jpg_quality = qual;
    if (jpg_quality > 100) jpg_quality = 100;
    if (jpg_quality < 0) jpg_quality = 0;
-}
-
-smBase *smJPG::create(const char *_fname, int _nwin)
-{
-   return(new smJPG(_fname, _nwin));
 }
 
 bool smJPG::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
@@ -157,7 +148,7 @@ bool smJPG::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
    return true;
 }
 
-smJPG *smJPG::newFile(const char *_fname, 
+/*smJPG *smJPG::newFile(const char *_fname, 
                       u_int _width, u_int _height, 
                       u_int _nframes, u_int *_tile, u_int _nres, 
                       int numthreads)
@@ -170,7 +161,7 @@ smJPG *smJPG::newFile(const char *_fname,
    }
  
    return(r);
-}
+   }*/
 
 void smJPG::compBlock(void *data, void *cdata, int &size,int *dim)
 {
