@@ -492,7 +492,7 @@ def RunTests(tests, stoponfail, create_gold_standard):
     for test in tests:
         test['number'] = n
         dbprint("\n"+ "="*80 +"\n" )
-        dbprint("RUNNING TEST %d\n\n"%n)
+        dbprint("RUNNING TEST %d: \"%s\"\n\n"%(n,test["name"]))
         dbprint("CWD is %s\n"%os.getcwd())
         dbprint("TEST: %s\n\n"%str(test))
         dbprint("\n"+ "-"*40 +"\n" )
