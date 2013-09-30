@@ -45,25 +45,14 @@
 #define gzdbprintf fprintf(stderr, "%s line %d: ", __FILE__, __LINE__); fprintf
 #define smcerr if (0) cerr 
 
-u_int smGZ::typeID = 2;
-
-smGZ::smGZ(const char *_fname, int _nwin)
-  :smBase(_fname, _nwin)
+smGZ::smGZ(int mode, const char *_fname, int _nwin)
+  :smBase(mode, _fname, _nwin)
 {
+  mTypeID = 2;
 }
 
 smGZ::~smGZ()
 {
-}
-
-void smGZ::init(void)
-{
-   smBase::registerType(typeID, create);
-}
-
-smBase *smGZ::create(const char *_fname, int _nwin)
-{
-   return(new smGZ(_fname, _nwin));
 }
 
 bool smGZ::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
@@ -108,7 +97,7 @@ bool smGZ::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
    return true;
 }
 
-smGZ *smGZ::newFile(const char *_fname, 
+/*smGZ *smGZ::newFile(const char *_fname, 
                     u_int _width, u_int _height, u_int _nframes, 
                     u_int *_tile, u_int _nres, 
                     int numthreads)
@@ -122,7 +111,7 @@ smGZ *smGZ::newFile(const char *_fname,
  
    return(r);
 }
-
+*/
 void smGZ::compBlock(void *data, void *cdata, int &size,int *dim)
 {
   smcerr << "smGZ::compBlock("<<data<<", "<<cdata<<", "<<size<<", ["<<dim[0]<<", "<<dim[1]<<"])" << endl;

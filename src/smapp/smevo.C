@@ -104,15 +104,13 @@ int main(int argc,char **argv)
 		i++;
 	}
 
-	smBase::init();
-
 	if (argc-i != 2) cmdline(argv[0]);
 
 	infile = argv[i++];
 	outfile = argv[i++];
 
 /* convert to evo */
-	sm = smBase::openFile(infile);
+	sm = smBase::openFile(infile, O_RDONLY, 1);
 	if (sm) { 
 		isize[0] = sm->getWidth();
 		isize[1] = sm->getHeight();
@@ -158,15 +156,15 @@ int main(int argc,char **argv)
 		if (iStereo) nFrames *= 2;
 
 	        if (iSMComp == 1) {
-     	  	        sm = smRLE::newFile(outfile,isize[0],isize[1],nFrames);
+     	  	        sm = new smRLE(outfile,isize[0],isize[1],nFrames);
    		} else if (iSMComp == 2) {
-  	              	sm = smGZ::newFile(outfile,isize[0],isize[1],nFrames);
+  	              	sm = new smGZ(outfile,isize[0],isize[1],nFrames);
  	        } else if (iSMComp == 3) {
-	                sm = smLZO::newFile(outfile,isize[0],isize[1],nFrames);
+	                sm = new smLZO(outfile,isize[0],isize[1],nFrames);
  	        } else if (iSMComp == 4) {
-	                sm = smJPG::newFile(outfile,isize[0],isize[1],nFrames);
+	                sm = new smJPG(outfile,isize[0],isize[1],nFrames);
       	        } else {
-     	       		sm = smRaw::newFile(outfile,isize[0],isize[1],nFrames);
+     	       		sm = new smRaw(outfile,isize[0],isize[1],nFrames);
     	        }
 		if (iStereo) sm->setFlags(SM_FLAGS_STEREO);
 

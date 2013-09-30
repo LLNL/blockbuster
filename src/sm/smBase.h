@@ -41,6 +41,10 @@
 // smBase.h - base class for "streamed movies"
 //
 
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -530,7 +534,19 @@ struct OutputBuffer {
 */ 
 class smBase {
  public:
-  smBase(const char *fname, int numthreads=1, uint32_t bufferSize=50);
+  smBase(int mode, const char *fname, int numthreads=1, uint32_t bufferSize=50) {
+    init(mode, fname, numthreads, bufferSize); 
+  }
+
+  smBase(const char *fname, u_int w, u_int h,
+         u_int nframes, u_int *tilesizes = NULL, u_int nres=1, 
+         int numthreads=1); 
+
+  void init(int mode, const char *fname, int numthreads=1, uint32_t bufferSize=50);
+    // create a new movie for writing
+  /* int newFile(const char *fname, u_int w, u_int h,
+     u_int nframes, u_int *tilesizes = NULL, u_int nres=1, int numthreads=1);*/
+
   virtual ~smBase();
   
   /// set size of output buffers. 
@@ -597,9 +613,9 @@ class smBase {
   
   // open a movie
 #ifdef WIN32
-  static smBase * __cdecl openFile(const char *fname, int numthreads=1);
+  static smBase * __cdecl openFile(const char *fname,  int mode, int numthreads);
 #else
-  static smBase *openFile(const char *fname, int numthreads=1);
+  static smBase *openFile(const char *fname, int mode, int numthreads);
 #endif
 
   void DeleteMetaData(void) {
@@ -664,12 +680,12 @@ class smBase {
     return false; 
   }
 
-        
+  
   // close a movie
   void closeFile(void);
   
   // various flag/type info
-  virtual int getType(void) {return(-1);};
+  int getType(void) { return mTypeID;}
   u_int getFlags(void) { return(flags); };
   void setStereo(void) { flags |= SM_FLAGS_STEREO; }
   void setFlags(u_int f) { flags = f; };
@@ -689,7 +705,7 @@ class smBase {
 
   // metadata
   TagMap mMetaData; 
-  
+
  protected:
   
   // internal functions to compress or decompress a rectangle of pixels
@@ -697,12 +713,11 @@ class smBase {
   virtual void compBlock(void *in, void *out, int &outsize, int *dim) = 0;
   virtual bool decompBlock(u_char *in,u_char *out,int insize, int *dim) = 0;
   
-  // create a new movie for writing
-  int newFile(const char *fname, u_int w, u_int h,
-		      u_int nframes, u_int *tilesizes = NULL, u_int nres=1, int numthreads=1);
   
-  static void registerType(u_int t, smBase *(*)(const char *, int));
   
+ protected:
+  int mTypeID; // for an instance.  
+
  private:
   void readHeader(void);
   void initWin(void);
@@ -758,7 +773,6 @@ class smBase {
 
   pthread_t mWriteThread; 
   bool mWriteThreadRunning, mWriteThreadStopSignal; 
-
 
   // directory of movie types
   static u_int ntypes;

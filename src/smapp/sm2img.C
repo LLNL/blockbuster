@@ -161,10 +161,9 @@ int main(int argc,char **argv)
   }
   
 
-  smBase::init();
   sm_setVerbose(verbosity.getValue());  
   
-  smBase *sm = smBase::openFile(moviename.getValue().c_str(), nThreads);
+  smBase *sm = smBase::openFile(moviename.getValue().c_str(), O_RDONLY, nThreads);
   if (!sm) {
     fprintf(stderr,"Unable to open the file: %s\n",moviename.getValue().c_str());
     exit(1);

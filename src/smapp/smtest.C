@@ -276,15 +276,7 @@ int main(int argc, char *argv[])
    vector<pthread_t> threads;
    float *retval;
    float mm[2] = {1e+8,-1e+8};
-   
-   smBase::init();
-
-#ifdef irix
-   if (pthread_setconcurrency(24) != 0)
-     fprintf(stderr, "pthread_setconcurrency failed\n");
-   printf("concurrency set to %d\n", pthread_getconcurrency());
-#endif
-   
+      
    for (i=1; i<argc && argv[i][0]=='-'; i++) {
      if (strncmp(argv[i], "-h", 2) == 0) {
        usage(argv[0]); 
@@ -343,7 +335,7 @@ int main(int argc, char *argv[])
      usage(argv[0]);
      exit(2); 
    }
-   sm = smBase::openFile(argv[i], nthreads);
+   sm = smBase::openFile(argv[i], O_RDONLY, nthreads);
    threads.resize(nthreads); 
    bytesRead.resize(nthreads); 
     

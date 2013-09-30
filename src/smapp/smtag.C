@@ -95,7 +95,6 @@ int main(int argc, char *argv[]) {
 	return 1;
   }
     
-  smBase::init();
   sm_setVerbose(verbosity.getValue());  
   dbg_setverbose(verbosity.getValue()); 
   
@@ -174,7 +173,7 @@ int main(int argc, char *argv[]) {
   for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {  
     string moviename = movienames.getValue()[0]; 
     dbprintf(1, str(boost::format("Opening movie file %1%\n")% moviename).c_str()); 
-    smBase *sm = smBase::openFile(moviename.c_str(), 1);
+    smBase *sm = smBase::openFile(moviename.c_str(), O_RDWR, 1);
     if (!sm) {
       dbprintf(0,"smtag: Error: Unable to open the file: %s\n", moviename.c_str());
       continue;

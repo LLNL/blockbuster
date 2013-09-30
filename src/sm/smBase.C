@@ -194,18 +194,18 @@ map<string,string> SM_MetaData::GetUserInfo(void) {
   
   /*
     Example output: 
-rcook@rzgpu2 (blockbuster): finger rcook
-Login: portly1                            Name: Armando X. Portly
-Directory: /var/home/portly1                  Shell: /bin/bash
-Office:  123-456-7890
-On since Tue Jun 25 12:26 (PDT) on pts/1 from 134.9.48.241
-   3 days 3 hours idle
-On since Tue Jun 25 15:13 (PDT) on pts/3 from 134.9.48.241
-   56 minutes 48 seconds idle
-On since Fri Jun 28 10:55 (PDT) on pts/5 from 134.9.48.241
-Mail forwarded to funnyguy@somewhere.de
-No mail.
-No Plan.
+    rcook@rzgpu2 (blockbuster): finger rcook
+    Login: portly1                            Name: Armando X. Portly
+    Directory: /var/home/portly1                  Shell: /bin/bash
+    Office:  123-456-7890
+    On since Tue Jun 25 12:26 (PDT) on pts/1 from 134.9.48.241
+    3 days 3 hours idle
+    On since Tue Jun 25 15:13 (PDT) on pts/3 from 134.9.48.241
+    56 minutes 48 seconds idle
+    On since Fri Jun 28 10:55 (PDT) on pts/5 from 134.9.48.241
+    Mail forwarded to funnyguy@somewhere.de
+    No mail.
+    No Plan.
   */ 
 
   // we will store our results based on the expected finger label
@@ -220,8 +220,8 @@ No Plan.
   while (getline(finger, line)) {
     for (map <string,string>::iterator pos = info.begin(); pos != info.end(); ++pos) {
       // set up a regular expression to capture the output
-     // http://www.boost.org/doc/libs/1_53_0/libs/regex/doc/html/boost_regex/syntax/basic_extended.html
-     string pattern = str(boost::format(" *%1%: *(\\<[[:word:]\\. -]*\\>) *")%(pos->first)); 
+      // http://www.boost.org/doc/libs/1_53_0/libs/regex/doc/html/boost_regex/syntax/basic_extended.html
+      string pattern = str(boost::format(" *%1%: *(\\<[[:word:]\\. -]*\\>) *")%(pos->first)); 
       if (regex_search(line.c_str(), results, boost::regex(pattern,  boost::regex::extended))) {
         smdbprintf(5, str(boost::format("GOT MATCH in line \"%1%\" for \"%2%\", pattern \"%3%\": \"%4%\"\n")%line%(pos->first)%pattern%results[1]).c_str()); 
         info[pos->first] = results[1];
@@ -699,9 +699,9 @@ string TileInfo::toString(void) {
     + "}}"; 
 } 
 
-#define CHECK(v) \
-if(v == NULL) \
-sm_fail_check(__FILE__,__LINE__)
+#define CHECK(v)                                \
+  if(v == NULL)                                 \
+    sm_fail_check(__FILE__,__LINE__)
 
 void sm_fail_check(const char *file,int line)
 {
@@ -714,33 +714,33 @@ void sm_fail_check(const char *file,int line)
 
 u_int smBase::ntypes = 0;
 u_int *smBase::typeID = NULL;
-smBase *(**smBase::smcreate)(const char *, int) = NULL;
+//smBase *(**smBase::smcreate)(const char *, int) = NULL;
 
 static void  byteswap(void *buffer,off64_t len,int swapsize);
 static void Sample2d(unsigned char *in,int idx,int idy,
-		     unsigned char *out,int odx,int ody,
-		     int s_left,int s_top,int s_dx,int s_dy,int filter);
+                     unsigned char *out,int odx,int ody,
+                     int s_left,int s_top,int s_dx,int s_dy,int filter);
 //!  The init() routine must be called before using the SM library
 /*!
   init() just gets the subclasses ready, which registers them with the 
   smcreate() factory function used in openFile()
 */ 
-void smBase::init(void)
-{
-  static int initialized = 0; 
-  if (initialized) return; 
-  initialized = 1;
+/* void smBase::init(void)
+   {
+   static int initialized = 0; 
+   if (initialized) return; 
+   initialized = 1;
 
-  smJPG::init();
-  smLZO::init();
-  smGZ::init();
-  smXZ::init();
-  smRLE::init();
-  smRaw::init();
+   smJPG::init();
+   smLZO::init();
+   smGZ::init();
+   smXZ::init();
+   smRLE::init();
+   smRaw::init();
 
  
-  return; 
-}
+   return; 
+   }*/ 
 
 //----------------------------------------------------------------------------
 //! smBase - constructor initializes the synchronization primitives
@@ -750,9 +750,10 @@ void smBase::init(void)
 */
 //
 //----------------------------------------------------------------------------
-smBase::smBase(const char *_fname, int numthreads, uint32_t bufferSize): 
-  mNumThreads(numthreads), mWriteThreadRunning(false), 
-  mWriteThreadStopSignal(false) {
+void smBase::init(int mode, const char *_fname, int numthreads, uint32_t bufferSize) {
+  mNumThreads = numthreads; 
+  mWriteThreadRunning = false; 
+  mWriteThreadStopSignal = false; 
   smdbprintf(5, "smBase::smBase(%s, %d)", _fname, numthreads);
   int i;
   setFlags(0);
@@ -771,7 +772,7 @@ smBase::smBase(const char *_fname, int numthreads, uint32_t bufferSize):
     mMovieName = strdup(_fname);
     int threadnum = mNumThreads;
     while (threadnum--) {
-      mThreadData[threadnum].fd = OPEN(mMovieName, O_RDWR);
+      mThreadData[threadnum].fd = OPEN(mMovieName, mode);
     }
     readHeader();
     initWin(); // only does something for version 1.0
@@ -799,6 +800,7 @@ void smBase::setBufferSize(uint32_t frames) {
   return; 
 }
 
+
 //----------------------------------------------------------------------------
 //! ~smBase - destructor
 /*!
@@ -808,12 +810,13 @@ void smBase::setBufferSize(uint32_t frames) {
 //----------------------------------------------------------------------------
 smBase::~smBase()
 {
-   int i;
+  int i;
 
-   smdbprintf(5,"smBase destructor : %s",mMovieName);
-   if ((bModFile == TRUE) && (mThreadData[0].fd)) CLOSE(mThreadData[0].fd);
-   if (mMovieName) free(mMovieName);
+  smdbprintf(5,"smBase destructor : %s",mMovieName);
+  if ((bModFile == TRUE) && (mThreadData[0].fd)) CLOSE(mThreadData[0].fd);
+  if (mMovieName) free(mMovieName);
 }
+
 
 //----------------------------------------------------------------------------
 //! openFile - open an SM file of unknown compression type
@@ -825,44 +828,43 @@ smBase::~smBase()
 */
 //
 //----------------------------------------------------------------------------
-smBase *smBase::openFile(const char *_fname, int numthreads)
+smBase *smBase::openFile(const char *_fname, int mode, int numthreads)
 {
-   smBase *base;
-   u_int magic;
-   u_int type;
-   int fd;
-   int i;
+  smBase *base = NULL;
+  u_int magic;
+  u_int type;
+  int fd;
+  int i;
 
-   smdbprintf(5, "smBase::openFile(%s, %d)\n", _fname, numthreads);
+  smdbprintf(5, "smBase::openFile(%s, %d)\n", _fname, numthreads);
 
-   if ((fd = OPEN(_fname, O_RDONLY )) == -1)
-      return(NULL);
+  if ((fd = OPEN(_fname, mode )) == -1) {
+    smdbprintf(0, "Cannot open file %s in mode %d\n", _fname, mode); 
+    return(NULL);
+  }
 
  
-   READ(fd, &magic, sizeof(u_int));
-   magic = ntohl(magic);
-   READ(fd, &type, sizeof(u_int));
-   type = ntohl(type) & SM_TYPE_MASK;
+  READ(fd, &magic, sizeof(u_int));
+  magic = ntohl(magic);
+  READ(fd, &type, sizeof(u_int));
+  type = ntohl(type) & SM_TYPE_MASK;
+  CLOSE(fd);
 
-   if ((SM_MAGIC_3 != magic)  && (SM_MAGIC_2 != magic)  && (SM_MAGIC_1 != magic)) {
-      CLOSE(fd);
-      return(NULL);
-   }
+  if ((SM_MAGIC_3 != magic)  && (SM_MAGIC_2 != magic)  && (SM_MAGIC_1 != magic)) {
+    return(NULL);
+  }
 
-   for (i=0; i<ntypes; i++) {
-      if (typeID[i] == type) break;
-   }
+  switch (type) {
+  case 0: return new smRaw(mode, _fname, numthreads); 
+  case 1: return new smRLE(mode, _fname, numthreads); 
+  case 2: return new smGZ( mode, _fname, numthreads); 
+  case 3: return new smLZO(mode, _fname, numthreads); 
+  case 4: return new smJPG(mode, _fname, numthreads); 
+  case 5: return new smXZ( mode, _fname, numthreads); 
+  default: 
+    return NULL; 
+  }
 
-   if (i == ntypes) {
-      CLOSE(fd);
-      return(NULL);
-   }
-
-   base = (*(smcreate[i]))(_fname, numthreads);
-
-   CLOSE(fd);
-
-   return(base);
 }
 
 string smBase::InfoString(bool verbose) {
@@ -933,7 +935,7 @@ void smBase::printFrameDetails(FILE *fp,int f, int res)
   fprintf(fp,"%d\t%lld\t%d\n",f,mFrameOffsets[f],mFrameLengths[f]);
 #endif
      
-   return;
+  return;
 }
 
 //! Create a new SM File for writing
@@ -945,110 +947,86 @@ void smBase::printFrameDetails(FILE *fp,int f, int res)
   \param _tsizes size of tiles for each resolution, laid out as xyxyxy
   \param _nres  number of resolutions (levels of detail)
 */
-int smBase::newFile(const char *_fname, u_int _width, u_int _height, 
+/*int smBase::newFile(const char *_fname, u_int _width, u_int _height, 
                     u_int _nframes, u_int *_tsizes, u_int _nres, 
-                    int numthreads)
-{
-   int i;
-   mNumFrames = _nframes;
-   mNumThreads = numthreads;
-   framesizes[0][0] = _width;
-   framesizes[0][1] = _height;
-   for(i=1;i<8;i++) {
-       framesizes[i][0] = framesizes[i-1][0]/2;
-       framesizes[i][1] = framesizes[i-1][1]/2;
-   }
-   memcpy(tilesizes,framesizes,sizeof(framesizes));
-   mNumResolutions = _nres;
-   if (mNumResolutions < 1) mNumResolutions = 1;
-   if (mNumResolutions > 8) mNumResolutions = 8;
+                    int numthreads) */
+smBase::smBase(const char *_fname, u_int _width, u_int _height, 
+                    u_int _nframes, u_int *_tsizes, u_int _nres, 
+               int numthreads) {
+  init(O_WRONLY|O_CREAT|O_TRUNC, NULL, numthreads) ; 
 
-   mVersion = 2;
+  int i;
+  mNumFrames = _nframes;
+  mNumThreads = numthreads;
+  framesizes[0][0] = _width;
+  framesizes[0][1] = _height;
+  for(i=1;i<8;i++) {
+    framesizes[i][0] = framesizes[i-1][0]/2;
+    framesizes[i][1] = framesizes[i-1][1]/2;
+  }
+  memcpy(tilesizes,framesizes,sizeof(framesizes));
+  mNumResolutions = _nres;
+  if (mNumResolutions < 1) mNumResolutions = 1;
+  if (mNumResolutions > 8) mNumResolutions = 8;
+
+  mVersion = 2;
    
   
-   for(i=0;i<mNumResolutions;i++) {
-     if (_tsizes) {
-       if (_tsizes[(i*2)+0] < tilesizes[i][0]) {
-         tilesizes[i][0] = _tsizes[(i*2)+0];
-       }
-       if (_tsizes[(i*2)+1] < tilesizes[i][1]) {
-         tilesizes[i][1] = _tsizes[(i*2)+1];
-       }
-       tileNxNy[i][0] = (u_int)ceil((double)framesizes[i][0]/(double)tilesizes[i][0]);
-       tileNxNy[i][1] = (u_int)ceil((double)framesizes[i][1]/(double)tilesizes[i][1]);
-       assert(tileNxNy[i][0] < 1000);
-       assert(tileNxNy[i][1] < 1000);
-     }
-     else {
-       tileNxNy[i][0] = (u_int) 1;
-       tileNxNy[i][1] = (u_int) 1;
-     }
-     smdbprintf(5,"newFile tile %dX%d of [%d,%d]",
-                tileNxNy[i][0],tileNxNy[i][1], tilesizes[i][0], 
-                tilesizes[i][1]);
-   }
+  for(i=0;i<mNumResolutions;i++) {
+    if (_tsizes) {
+      if (_tsizes[(i*2)+0] < tilesizes[i][0]) {
+        tilesizes[i][0] = _tsizes[(i*2)+0];
+      }
+      if (_tsizes[(i*2)+1] < tilesizes[i][1]) {
+        tilesizes[i][1] = _tsizes[(i*2)+1];
+      }
+      tileNxNy[i][0] = (u_int)ceil((double)framesizes[i][0]/(double)tilesizes[i][0]);
+      tileNxNy[i][1] = (u_int)ceil((double)framesizes[i][1]/(double)tilesizes[i][1]);
+      assert(tileNxNy[i][0] < 1000);
+      assert(tileNxNy[i][1] < 1000);
+    }
+    else {
+      tileNxNy[i][0] = (u_int) 1;
+      tileNxNy[i][1] = (u_int) 1;
+    }
+    smdbprintf(5,"newFile tile %dX%d of [%d,%d]",
+               tileNxNy[i][0],tileNxNy[i][1], tilesizes[i][0], 
+               tilesizes[i][1]);
+  }
    
   
-   smdbprintf(5,"init: w %d h %d frames %d", framesizes[0][0], framesizes[0][1], 
-		mNumFrames);
+  smdbprintf(5,"init: w %d h %d frames %d", framesizes[0][0], framesizes[0][1], 
+             mNumFrames);
 
-   mMovieName = strdup(_fname);
+  mMovieName = strdup(_fname);
 
-   mThreadData[0].fd = OPENC(_fname, O_WRONLY|O_CREAT|O_TRUNC, 0666);   
-   mResFileNames.push_back(_fname); 
-   mResFDs.push_back(mThreadData[0].fd); 
-   mResFileBytes.resize(mNumResolutions, 0); 
-   if (mNumResolutions > 1) {
-     int res = 1;
-     while (res < mNumResolutions) {
-       char filename[] = "/tmp/smBase-tmpfileXXXXXX";
-       int fd = mkstemp(filename); 
-       smdbprintf(2, "Res file %d is named %s", res, filename); 
-       mResFileNames.push_back(filename); 
-       mResFDs.push_back(fd); 
-       ++res; 
-     }
-   }
+  mThreadData[0].fd = OPENC(_fname, O_WRONLY|O_CREAT|O_TRUNC, 0666);   
+  mResFileNames.push_back(_fname); 
+  mResFDs.push_back(mThreadData[0].fd); 
+  mResFileBytes.resize(mNumResolutions, 0); 
+  if (mNumResolutions > 1) {
+    int res = 1;
+    while (res < mNumResolutions) {
+      char filename[] = "/tmp/smBase-tmpfileXXXXXX";
+      int fd = mkstemp(filename); 
+      smdbprintf(2, "Res file %d is named %s", res, filename); 
+      mResFileNames.push_back(filename); 
+      mResFDs.push_back(fd); 
+      ++res; 
+    }
+  }
    
-   mFrameOffsets.resize(mNumFrames*mNumResolutions+1, 0); 
-   mFrameOffsets[0] = SM_HDR_SIZE*sizeof(u_int) +
-	   mNumFrames*mNumResolutions*(sizeof(off64_t)+sizeof(u_int));
+  mFrameOffsets.resize(mNumFrames*mNumResolutions+1, 0); 
+  mFrameOffsets[0] = SM_HDR_SIZE*sizeof(u_int) +
+    mNumFrames*mNumResolutions*(sizeof(off64_t)+sizeof(u_int));
    
-   mFrameLengths.resize(mNumFrames*mNumResolutions, 0);
-   if (LSEEK64(mThreadData[0].fd, mFrameOffsets[0], SEEK_SET) < 0)
-     smdbprintf(0, "Error seeking to frame 0\n");
+  mFrameLengths.resize(mNumFrames*mNumResolutions, 0);
+  if (LSEEK64(mThreadData[0].fd, mFrameOffsets[0], SEEK_SET) < 0)
+    smdbprintf(0, "Error seeking to frame 0\n");
 
-   bModFile = TRUE;
+  bModFile = TRUE;
 
-   return(0);
-}
-//! register a subclass as a possible compression method for SM
-/*!
-  \param id a unique ID for the type which can be used to identify the file type. 
-  \param create  A factory function that returns the subclass 
-  \bug The create function smells funny to me, but it works. 
-*/ 
-void smBase::registerType(u_int id, smBase *(*create)(const char *, int))
-{
-   if (ntypes == 0) {
-      typeID = (u_int *)malloc(sizeof(u_int) * 32);
-      CHECK(typeID);
-      smcreate = (smBase *(**)(const char *, int))malloc(
-                    sizeof(smBase *(*)()) * 32);
-      CHECK(smcreate);
-   }
-   else if ((ntypes % 32) == 0) {
-      typeID = (u_int *)realloc(typeID, sizeof(u_int) * (ntypes+32));
-      CHECK(typeID);
-      smcreate = (smBase *(**)(const char *, int))realloc(
-                   smcreate, sizeof(smBase *(*)()) * (ntypes+32));
-      CHECK(smcreate);
-   }
-
-   typeID[ntypes] = id;
-   smcreate[ntypes] = create;
-
-   ntypes++;
+  return;
 }
 
 //! Get the juicy goodness of the header and store the info internally
@@ -1060,190 +1038,191 @@ void smBase::readHeader(void)
 {
 
   int lfd; /* local file descriptor for movie file */ 
-   u_int magic, type;
-   u_int maxtilesize;
-   u_int maxFrameSize;
+  u_int magic, type;
+  u_int maxtilesize;
+  u_int maxFrameSize;
 
-   int i, w;
+  int i, w;
 
-   lfd = OPEN(mMovieName, O_RDONLY);
-   READ(lfd, &magic, sizeof(u_int));
-   magic = ntohl(magic);
-   if (magic == SM_MAGIC_1) mVersion = 1;
-   if (magic == SM_MAGIC_2) mVersion = 2;
+  lfd = OPEN(mMovieName, O_RDONLY);
+  READ(lfd, &magic, sizeof(u_int));
+  magic = ntohl(magic);
+  if (magic == SM_MAGIC_1) mVersion = 1;
+  if (magic == SM_MAGIC_2) mVersion = 2;
    
    
-   READ(lfd, &type, sizeof(u_int));
-   setFlags(ntohl(type) & SM_FLAGS_MASK);
-   type = ntohl(type) & SM_TYPE_MASK;
+  READ(lfd, &type, sizeof(u_int));
+  setFlags(ntohl(type) & SM_FLAGS_MASK);
+  mTypeID = ntohl(type) & SM_TYPE_MASK;
 
-   READ(lfd, &mNumFrames, sizeof(u_int));
-   mNumFrames = ntohl(mNumFrames);
-   smdbprintf(4,"smBase::readHeader(): opened file, magic says file version = %d, mNumFrames = %d\n", mVersion, mNumFrames);
+  READ(lfd, &mNumFrames, sizeof(u_int));
+  mNumFrames = ntohl(mNumFrames);
+  smdbprintf(4,"smBase::readHeader(): opened file, magic says file version = %d, mNumFrames = %d\n", mVersion, mNumFrames);
 
-   READ(lfd, &i, sizeof(u_int));
-   framesizes[0][0] = ntohl(i);
-   READ(lfd, &i, sizeof(u_int));
-   framesizes[0][1] = ntohl(i);
-   for(i=1;i<8;i++) {
-     framesizes[i][0] = framesizes[i-1][0]/2;
-     framesizes[i][1] = framesizes[i-1][1]/2;
-   }
-   memcpy(tilesizes,framesizes,sizeof(framesizes));
-   mNumResolutions = 1;
+  READ(lfd, &i, sizeof(u_int));
+  framesizes[0][0] = ntohl(i);
+  READ(lfd, &i, sizeof(u_int));
+  framesizes[0][1] = ntohl(i);
+  for(i=1;i<8;i++) {
+    framesizes[i][0] = framesizes[i-1][0]/2;
+    framesizes[i][1] = framesizes[i-1][1]/2;
+  }
+  memcpy(tilesizes,framesizes,sizeof(framesizes));
+  mNumResolutions = 1;
 
-   smdbprintf(4,"smBase::readHeader(): image size: %d %d\n", framesizes[0][0], framesizes[0][1]);
-   smdbprintf(4,"smBase::readHeader(): mNumFrames=%d\n",mNumFrames);
+  smdbprintf(4,"smBase::readHeader(): image size: %d %d\n", framesizes[0][0], framesizes[0][1]);
+  smdbprintf(4,"smBase::readHeader(): mNumFrames=%d\n",mNumFrames);
 
-   // Version 2 header is bigger...
-   if (mVersion == 2) {
-     maxtilesize = 0;
-     maxNumTiles = 0;
-     u_int arr[SM_HDR_SIZE];
-     LSEEK64(lfd,0,SEEK_SET);
-     READ(lfd, arr, sizeof(u_int)*SM_HDR_SIZE);
-     byteswap(arr,sizeof(u_int)*SM_HDR_SIZE,sizeof(u_int));
-     mNumResolutions = arr[5];
-     //smdbprintf(5,"mNumResolutions : %d",mNumResolutions);
-     for(i=0;i<mNumResolutions;i++) {
-       tilesizes[i][1] = (arr[6+i] & 0xffff0000) >> 16;
-       tilesizes[i][0] = (arr[6+i] & 0x0000ffff);
-       tileNxNy[i][0] = (u_int)ceil((double)framesizes[i][0]/(double)tilesizes[i][0]);
-       tileNxNy[i][1] = (u_int)ceil((double)framesizes[i][1]/(double)tilesizes[i][1]);
+  // Version 2 header is bigger...
+  if (mVersion == 2) {
+    maxtilesize = 0;
+    maxNumTiles = 0;
+    u_int arr[SM_HDR_SIZE];
+    LSEEK64(lfd,0,SEEK_SET);
+    READ(lfd, arr, sizeof(u_int)*SM_HDR_SIZE);
+    byteswap(arr,sizeof(u_int)*SM_HDR_SIZE,sizeof(u_int));
+    mNumResolutions = arr[5];
+    //smdbprintf(5,"mNumResolutions : %d",mNumResolutions);
+    for(i=0;i<mNumResolutions;i++) {
+      tilesizes[i][1] = (arr[6+i] & 0xffff0000) >> 16;
+      tilesizes[i][0] = (arr[6+i] & 0x0000ffff);
+      tileNxNy[i][0] = (u_int)ceil((double)framesizes[i][0]/(double)tilesizes[i][0]);
+      tileNxNy[i][1] = (u_int)ceil((double)framesizes[i][1]/(double)tilesizes[i][1]);
        
-       if (maxtilesize < (tilesizes[i][1] * tilesizes[i][0])) {
-	 maxtilesize = tilesizes[i][1] * tilesizes[i][0];
-       }
-       if(maxNumTiles < (tileNxNy[i][0] * tileNxNy[i][1])) {
-	 maxNumTiles = tileNxNy[i][0] * tileNxNy[i][1];
-       }
-       smdbprintf(5,"smBase::readHeader(): tileNxNy[%ld,%ld] : maxnumtiles %ld\n", tileNxNy[i][0], tileNxNy[i][1],maxNumTiles);
-     }
-     smdbprintf(5,"smBase::readHeader(): maxtilesize = %ld, maxnumtiles = %ld\n",maxtilesize,maxNumTiles);
+      if (maxtilesize < (tilesizes[i][1] * tilesizes[i][0])) {
+        maxtilesize = tilesizes[i][1] * tilesizes[i][0];
+      }
+      if(maxNumTiles < (tileNxNy[i][0] * tileNxNy[i][1])) {
+        maxNumTiles = tileNxNy[i][0] * tileNxNy[i][1];
+      }
+      smdbprintf(5,"smBase::readHeader(): tileNxNy[%ld,%ld] : maxnumtiles %ld\n", tileNxNy[i][0], tileNxNy[i][1],maxNumTiles);
+    }
+    smdbprintf(5,"smBase::readHeader(): maxtilesize = %ld, maxnumtiles = %ld\n",maxtilesize,maxNumTiles);
      
-   }
-   else {
-     // initialize tile info to reasonable defaults
-     for (i = 0; i < mNumResolutions; i++) {
-       tilesizes[i][0] = framesizes[i][0];
-       tilesizes[i][1] = framesizes[i][1];
-       tileNxNy[i][0] = 1;
-       tileNxNy[i][1] = 1;
-     }
-   }
-   // Get the framestart offsets
-   mFrameOffsets.resize(mNumFrames*mNumResolutions+1, 0); 
-   READ(lfd, &mFrameOffsets[0], sizeof(off64_t)*mNumFrames*mNumResolutions);
-   byteswap(&mFrameOffsets[0],sizeof(off64_t)*mNumFrames*mNumResolutions,sizeof(off64_t));
+  }
+  else {
+    // initialize tile info to reasonable defaults
+    for (i = 0; i < mNumResolutions; i++) {
+      tilesizes[i][0] = framesizes[i][0];
+      tilesizes[i][1] = framesizes[i][1];
+      tileNxNy[i][0] = 1;
+      tileNxNy[i][1] = 1;
+    }
+  }
+  // Get the framestart offsets
+  mFrameOffsets.resize(mNumFrames*mNumResolutions+1, 0); 
+  READ(lfd, &mFrameOffsets[0], sizeof(off64_t)*mNumFrames*mNumResolutions);
+  byteswap(&mFrameOffsets[0],sizeof(off64_t)*mNumFrames*mNumResolutions,sizeof(off64_t));
 
-   // Get the compressed frame lengths...
-   mFrameLengths.resize(mNumFrames*mNumResolutions, 0); 
-   maxFrameSize = 0; //maximum frame size
-   if (mVersion == 2) {
-     READ(lfd, &mFrameLengths[0], sizeof(u_int)*mNumFrames*mNumResolutions);
-     byteswap(&mFrameLengths[0],sizeof(u_int)*mNumFrames*mNumResolutions,sizeof(u_int));
-     for (w=0; w<mNumFrames*mNumResolutions; w++) {
-       if (mFrameLengths[w] > maxFrameSize) maxFrameSize = mFrameLengths[w];
-     }
-   } else {
-     // Compute this for older format files...
-     for (w=0; w<mNumFrames*mNumResolutions; w++) {
-	   mFrameLengths[w] = (mFrameOffsets[w+1] - mFrameOffsets[w]);
-       if (mFrameLengths[w] > maxFrameSize) maxFrameSize = mFrameLengths[w];
-     }
-   }
-   /* locate the end of the last frame */ 
-   mFrameOffsets[mNumFrames*mNumResolutions] = mFrameOffsets[mNumFrames*mNumResolutions-1] + mFrameLengths[mNumFrames*mNumResolutions-1];
+  // Get the compressed frame lengths...
+  mFrameLengths.resize(mNumFrames*mNumResolutions, 0); 
+  maxFrameSize = 0; //maximum frame size
+  if (mVersion == 2) {
+    READ(lfd, &mFrameLengths[0], sizeof(u_int)*mNumFrames*mNumResolutions);
+    byteswap(&mFrameLengths[0],sizeof(u_int)*mNumFrames*mNumResolutions,sizeof(u_int));
+    for (w=0; w<mNumFrames*mNumResolutions; w++) {
+      if (mFrameLengths[w] > maxFrameSize) maxFrameSize = mFrameLengths[w];
+    }
+  } else {
+    // Compute this for older format files...
+    for (w=0; w<mNumFrames*mNumResolutions; w++) {
+      mFrameLengths[w] = (mFrameOffsets[w+1] - mFrameOffsets[w]);
+      if (mFrameLengths[w] > maxFrameSize) maxFrameSize = mFrameLengths[w];
+    }
+  }
+  /* locate the end of the last frame */ 
+  mFrameOffsets[mNumFrames*mNumResolutions] = mFrameOffsets[mNumFrames*mNumResolutions-1] + mFrameLengths[mNumFrames*mNumResolutions-1];
 
-   // Read the metadata if present   
-   off64_t filepos = LSEEK64(lfd,0,SEEK_END);
-   SM_MetaData md; 
-   while (md.Read(lfd)) {
-     smdbprintf(5, "smBase::readHeader(): Read metadata: %s\n", md.toString().c_str());
-     if (md.mType == METADATA_TYPE_UNKNOWN) {
-       cerr << "Read METADATA_TYPE_UNKNOWN, skipping import." << endl; 
-     } 
-     else {
-       mMetaData[md.mTag] = md; 
-     }
-   }
+  // Read the metadata if present   
+  off64_t filepos = LSEEK64(lfd,0,SEEK_END);
+  SM_MetaData md; 
+  while (md.Read(lfd)) {
+    smdbprintf(5, "smBase::readHeader(): Read metadata: %s\n", md.toString().c_str());
+    if (md.mType == METADATA_TYPE_UNKNOWN) {
+      cerr << "Read METADATA_TYPE_UNKNOWN, skipping import." << endl; 
+    } 
+    else {
+      mMetaData[md.mTag] = md; 
+    }
+  }
    
-   mMetaData["Name"] = SM_MetaData("Name", mMovieName); 
-   mMetaData["Version"] = SM_MetaData("Version", (int64_t)mVersion); 
-   if (getType() == 0) {
-     mMetaData["Format"] = SM_MetaData("Format", "RAW");
-   } else  if (getType() == 0) {
-     mMetaData["Format"] = SM_MetaData("Format", "RLE");
-   } else  if (getType() == 0) {
-     mMetaData["Format"] = SM_MetaData("Format", "GZIP");
-   } else  if (getType() == 0) {
-     mMetaData["Format"] = SM_MetaData("Format", "LZO");
-   } else  if (getType() == 0) {
-     mMetaData["Format"] = SM_MetaData("Format", "JPG");
-   } else  if (getType() == 0) {
-     mMetaData["Format"] = SM_MetaData("Format", "LZMA");
-   } else  {
-     mMetaData["Format"] = SM_MetaData("Format", "UNKNOWN");
-   } 
-   mMetaData["Xsize"] = SM_MetaData("Xsize", (int64_t)getWidth()); 
-   mMetaData["Ysize"] = SM_MetaData("Ysize", (int64_t)getHeight()); 
-   mMetaData["Frames"] = SM_MetaData("Frames", (int64_t)getNumFrames()); 
-   if (getFlags() & SM_FLAGS_STEREO) {
-     mMetaData["Stereo"] = SM_MetaData("Stereo", "YES"); 
-   } else {
-     mMetaData["Stereo"] = SM_MetaData("Stereo", "NO"); 
-   }
-   mMetaData["FPS"] = SM_MetaData("FPS", str(boost::format("FPS: %0.2f\n")%(getFPS())));
+  mMetaData["Name"] = SM_MetaData("Name", mMovieName); 
+  mMetaData["Version"] = SM_MetaData("Version", (int64_t)mVersion); 
+  if (getType() == 0) {
+    mMetaData["Format"] = SM_MetaData("Format", "RAW");
+  } else  if (getType() == 1) {
+    mMetaData["Format"] = SM_MetaData("Format", "RLE");
+  } else  if (getType() == 2) {
+    mMetaData["Format"] = SM_MetaData("Format", "GZIP");
+  } else  if (getType() == 3) {
+    mMetaData["Format"] = SM_MetaData("Format", "LZO");
+  } else  if (getType() == 4) {
+    mMetaData["Format"] = SM_MetaData("Format", "JPG");
+  } else  if (getType() == 5) {
+    mMetaData["Format"] = SM_MetaData("Format", "LZMA");
+  } else  {
+    mMetaData["Format"] = SM_MetaData("Format", "UNKNOWN");
+  } 
+  mMetaData["Xsize"] = SM_MetaData("Xsize", (int64_t)getWidth()); 
+  mMetaData["Ysize"] = SM_MetaData("Ysize", (int64_t)getHeight()); 
+  mMetaData["Frames"] = SM_MetaData("Frames", (int64_t)getNumFrames()); 
+  if (getFlags() & SM_FLAGS_STEREO) {
+    mMetaData["Stereo"] = SM_MetaData("Stereo", "YES"); 
+  } else {
+    mMetaData["Stereo"] = SM_MetaData("Stereo", "NO"); 
+  }
+  mMetaData["FPS"] = SM_MetaData("FPS", str(boost::format("FPS: %0.2f\n")%(getFPS())));
 
-   double len = 0;
-   double len_u = 0;
-   for(uint res=0;res<getNumResolutions();res++) {
-     for(uint frame=0;frame<getNumFrames();frame++) {
-       len += (double)(getCompFrameSize(frame,res));
-       len_u += (double)(getWidth(res)*getHeight(res)*3);
-     }
-   }
-   mMetaData["Compression"] = SM_MetaData("Compression", (len/len_u)); 
-   mMetaData["LOD"] = SM_MetaData("LOD", (int64_t)mNumResolutions); 
-   for (uint i =0; i< mNumResolutions; i++) {
-     string lodname = str(boost::format("Res %1%")%i); 
-     string lodstring = 
-       str(boost::format("Level:%1% size:%2%x%3% tile:%4%x%5%")
-           % i 
-           % framesizes[i][0] % framesizes[i][1]
-           % tilesizes[i][0] % tilesizes[i][1]);              
-     mMetaData[lodname] = SM_MetaData(lodname, lodstring); 
-   }
+  double len = 0;
+  double len_u = 0;
+  uint numRes = getNumResolutions();
+  for(uint res=0;res<numRes;res++) {
+    for(uint frame=0;frame<getNumFrames();frame++) {
+      len += (double)(getCompFrameSize(frame,res));
+      len_u += (double)(getWidth(res)*getHeight(res)*3);
+    }
+  }
+  mMetaData["Compression"] = SM_MetaData("Compression", (len/len_u)); 
+  mMetaData["LOD"] = SM_MetaData("LOD", (int64_t)mNumResolutions); 
+  for (uint i =0; i< mNumResolutions; i++) {
+    string lodname = str(boost::format("Res %1%")%i); 
+    string lodstring = 
+      str(boost::format("Level:%1% size:%2%x%3% tile:%4%x%5%")
+          % i 
+          % framesizes[i][0] % framesizes[i][1]
+          % tilesizes[i][0] % tilesizes[i][1]);              
+    mMetaData[lodname] = SM_MetaData(lodname, lodstring); 
+  }
 
 #if SM_VERBOSE
-   for (w=0; w<mNumFrames; w++) {
-     smdbprintf(5,"smBase::readHeader(): window %d: %d size %ld\n", w, (int)mFrameOffsets[w],mFrameLengths[w]);
-   }
+  for (w=0; w<mNumFrames; w++) {
+    smdbprintf(5,"smBase::readHeader(): window %d: %d size %ld\n", w, (int)mFrameOffsets[w],mFrameLengths[w]);
+  }
 #endif
-   smdbprintf(4,"smBase::readHeader(): maximum frame size is %ld\n", maxFrameSize);
-   if (maxFrameSize < 0) {
-     smdbprintf(0,"smBase::readHeader(): Error! maximum frame size is %ld\n", maxFrameSize);
-     exit(1); 
-   }
+  smdbprintf(4,"smBase::readHeader(): maximum frame size is %ld\n", maxFrameSize);
+  if (maxFrameSize < 0) {
+    smdbprintf(0,"smBase::readHeader(): Error! maximum frame size is %ld\n", maxFrameSize);
+    exit(1); 
+  }
      
-   // bump up the size to the next multiple of the DIO requirements
-   maxFrameSize += 2;
+  // bump up the size to the next multiple of the DIO requirements
+  maxFrameSize += 2;
 
    
-   CLOSE(lfd);
-   for (i=0; i<mThreadData.size(); i++) {
-     unsigned long w;
-     //if(mVersion == 2) {
-       // put preallocated tilebufs and tile info support here as well
-       mThreadData[i].io_buf.clear(); 
-       mThreadData[i].io_buf.resize(maxFrameSize, 0);
-       mThreadData[i].tile_buf.clear();
-       mThreadData[i].tile_buf.resize(maxtilesize*3, 0);
-       mThreadData[i].tile_infos.clear(); 
-       mThreadData[i].tile_infos.resize(maxNumTiles);
-       //}
-   }
-   return; 
+  CLOSE(lfd);
+  for (i=0; i<mThreadData.size(); i++) {
+    unsigned long w;
+    //if(mVersion == 2) {
+    // put preallocated tilebufs and tile info support here as well
+    mThreadData[i].io_buf.clear(); 
+    mThreadData[i].io_buf.resize(maxFrameSize, 0);
+    mThreadData[i].tile_buf.clear();
+    mThreadData[i].tile_buf.resize(maxtilesize*3, 0);
+    mThreadData[i].tile_infos.clear(); 
+    mThreadData[i].tile_infos.resize(maxNumTiles);
+    //}
+  }
+  return; 
 }
 
 /*!
@@ -1255,7 +1234,7 @@ void smBase::initWin(void)
   u_int i;
   
   if(mVersion == 1) {
-     readFrame(0,0);
+    readFrame(0,0);
   }
 }
 
@@ -1270,15 +1249,15 @@ uint32_t smBase::readData(int fd, u_char *buf, int bytes) {
   while  (remaining >0) {
     int r=READ(fd, buf, remaining);
     if (!r) {
-        smdbprintf(0, "smBase::readData() error: read=%d remaining=%d, unsuccessful read, giving up\n",r, remaining); 
-        return bytes-remaining; 
+      smdbprintf(0, "smBase::readData() error: read=%d remaining=%d, unsuccessful read, giving up\n",r, remaining); 
+      return bytes-remaining; 
     }
     if (r < 0) {
       if ((errno != EINTR) && (errno != EAGAIN)) {
         smdbprintf(0, "smBase::readData() error: read=%d remaining=%d: %s",r, remaining, strerror(errno)); 
         /* char	s[80];
-        sprintf(s,"xmovie I/O error : r=%d k=%d: ",r, remaining);
-        perror(s);*/
+           sprintf(s,"xmovie I/O error : r=%d k=%d: ",r, remaining);
+           perror(s);*/
         return -1;
       }
     } else {
@@ -1625,7 +1604,7 @@ uint32_t smBase::getFrame(int f, void *data, int threadnum, int res)
 /*!
   This is where many CPU cycles will be spent when you are CPU bound.  Lots of pointer copies.  
   This function will "autores" the returned block based on "step" 
-   \param f frame number
+  \param f frame number
   \param data an appropriately allocated pointer to receive the data, based on the size and resolution of the region of interest.
   \param threadnum A zero-based thread id.  Threadnum must be less than numthreads.  No other thread should be using this threadnum, as there is one buffer per thread and collisions can happen. 
   \param destRowStride The X dimension of the output buffer ("data"), to properly locate output stripes 
@@ -1637,186 +1616,186 @@ uint32_t smBase::getFrame(int f, void *data, int threadnum, int res)
 uint32_t smBase::getFrameBlock(int frame, void *data, int threadnum,  int destRowStride, int *inDim, int *inPos, int *inStep, int res)
 {
   smdbprintf(5,"smBase::getFrameBlock, frame %d, thread %d, data %p\n", frame, threadnum, data); 
-   u_char *ioBuf;
-   uint32_t size;
-   u_char *image;
-   u_char *out = (u_char *)data;
-   u_char *rowPtr = (u_char *)data;
-   uint32_t bytesRead=0; 
-   int full_frame_dims[2], _dim[2],_step[2],_pos[2],tilesize[2];
+  u_char *ioBuf;
+  uint32_t size;
+  u_char *image;
+  u_char *out = (u_char *)data;
+  u_char *rowPtr = (u_char *)data;
+  uint32_t bytesRead=0; 
+  int full_frame_dims[2], _dim[2],_step[2],_pos[2],tilesize[2];
    
-   if((res < 0) || (res > (mNumResolutions - 1))) {
-     res = 0;
-   }
+  if((res < 0) || (res > (mNumResolutions - 1))) {
+    res = 0;
+  }
  
-   if (inStep) {
-       _step[0] = inStep[0]; _step[1] = inStep[1];
-   } else {
-       _step[0] = 1; _step[1] = 1;
-   }
-   if (inDim) {
-       _dim[0] = inDim[0]; _dim[1] = inDim[1];
-   } else {
-       _dim[0] = getWidth(res); _dim[1] = getHeight(res);
-   }
-   if (inPos) {
-       _pos[0] = inPos[0]; _pos[1] = inPos[1];
-   } else {
-       _pos[0] = 0; _pos[1] = 0;
-   }
+  if (inStep) {
+    _step[0] = inStep[0]; _step[1] = inStep[1];
+  } else {
+    _step[0] = 1; _step[1] = 1;
+  }
+  if (inDim) {
+    _dim[0] = inDim[0]; _dim[1] = inDim[1];
+  } else {
+    _dim[0] = getWidth(res); _dim[1] = getHeight(res);
+  }
+  if (inPos) {
+    _pos[0] = inPos[0]; _pos[1] = inPos[1];
+  } else {
+    _pos[0] = 0; _pos[1] = 0;
+  }
    
-   if(_dim[0] <= 0 || _dim[1] <= 0)
-     return 0;
-   if (_dim[0] + _pos[0] > getWidth(0) ||
-       _dim[1] + _pos[1] > getHeight(0)) {
-     fprintf(stderr, "dim(%d,%d) + _pos(%d,%d) > dims(%u, %u)\n", 
-             _dim[0], _dim[1], _pos[0], _pos[1], getWidth(0), getHeight(0));
-     abort(); 
-   }
+  if(_dim[0] <= 0 || _dim[1] <= 0)
+    return 0;
+  if (_dim[0] + _pos[0] > getWidth(0) ||
+      _dim[1] + _pos[1] > getHeight(0)) {
+    fprintf(stderr, "dim(%d,%d) + _pos(%d,%d) > dims(%u, %u)\n", 
+            _dim[0], _dim[1], _pos[0], _pos[1], getWidth(0), getHeight(0));
+    abort(); 
+  }
   
-   /* move frame into initial resolution */
-   if(res > 0)
-     frame += mNumFrames * res;
+  /* move frame into initial resolution */
+  if(res > 0)
+    frame += mNumFrames * res;
    
-   /* pick a resolution based on stepping */
-   while((res+1 < getNumResolutions()) && (_step[0] > 1)) {
-     res++;
-     _step[0] >>= 1;
-     _step[1] >>= 1;
-     _pos[0] >>= 1;
-     _pos[1] >>= 1;
-     _dim[0] >>= 1;
-     _dim[1] >>=1;
-     frame += mNumFrames;
-   }
+  /* pick a resolution based on stepping */
+  while((res+1 < getNumResolutions()) && (_step[0] > 1)) {
+    res++;
+    _step[0] >>= 1;
+    _step[1] >>= 1;
+    _pos[0] >>= 1;
+    _pos[1] >>= 1;
+    _dim[0] >>= 1;
+    _dim[1] >>=1;
+    frame += mNumFrames;
+  }
    
-   full_frame_dims[0] = getWidth(res);
-   full_frame_dims[1] = getHeight(res);
+  full_frame_dims[0] = getWidth(res);
+  full_frame_dims[1] = getHeight(res);
    
-   if (!destRowStride)
-     destRowStride = _dim[0] * 3;
+  if (!destRowStride)
+    destRowStride = _dim[0] * 3;
    
-   tilesize[0] = getTileWidth(res);
-   tilesize[1] = getTileHeight(res);
+  tilesize[0] = getTileWidth(res);
+  tilesize[1] = getTileHeight(res);
    
-   // tile support 
-   int nx = 0;
-   int ny = 0;
-   int numTiles = 0;
-   u_char *tbuf;
+  // tile support 
+  int nx = 0;
+  int ny = 0;
+  int numTiles = 0;
+  u_char *tbuf;
     
-   nx = getTileNx(res);
-   ny = getTileNy(res);
-   numTiles =  nx * ny;
+  nx = getTileNx(res);
+  ny = getTileNy(res);
+  numTiles =  nx * ny;
 
-   //assert(numTiles < 1000);
+  //assert(numTiles < 1000);
 
-   ioBuf = (u_char *)NULL;
+  ioBuf = (u_char *)NULL;
 
-   if((mVersion == 2) && (numTiles > 1)) {
-     bytesRead = readTiledFrame(frame, &_dim[0], &_pos[0], res, threadnum);
-   }
-   else {
-     bytesRead = readFrame(frame, threadnum);
-   }
-   ioBuf = &(mThreadData[threadnum].io_buf[0]); 
-   size = mFrameLengths[frame];
-   tbuf = (u_char *)&(mThreadData[threadnum].tile_buf[0]);
-   TileInfo *tileInfoList = (TileInfo *)&(mThreadData[threadnum].tile_infos[0]);
+  if((mVersion == 2) && (numTiles > 1)) {
+    bytesRead = readTiledFrame(frame, &_dim[0], &_pos[0], res, threadnum);
+  }
+  else {
+    bytesRead = readFrame(frame, threadnum);
+  }
+  ioBuf = &(mThreadData[threadnum].io_buf[0]); 
+  size = mFrameLengths[frame];
+  tbuf = (u_char *)&(mThreadData[threadnum].tile_buf[0]);
+  TileInfo *tileInfoList = (TileInfo *)&(mThreadData[threadnum].tile_infos[0]);
 
    
-   if(numTiles < 2) {
-     smdbprintf(5,"Calling decompBlock on frame %d since numTiles < 2\n", frame);
-     if ((_pos[0] == 0) && (_pos[1] == 0) && 
-         (_step[0] == 1) && (_step[1] == 1) &&
-         (_dim[0] == full_frame_dims[0]) && (_dim[1] == full_frame_dims[1])) {
-       smdbprintf(5,"getFrameBlock: decompBlock on entire frame\n"); 
-       if (!decompBlock(ioBuf,out,size,full_frame_dims)) {
-         smdbprintf(0, "Error decompressing block in frame %d, with dim=(%d,%d), pos=(%d,%d), res=%d\n", frame, _dim[0], _dim[1], _pos[0], _pos[1], res); 
-         return 0; 
-       }       
-     } else {
-       smdbprintf(5, "downsampled or partial frame %d\n", frame); 
-       image = (u_char *)malloc(3*full_frame_dims[0]*full_frame_dims[1]);
-       CHECK(image);
-       if (!decompBlock(ioBuf,image,size,full_frame_dims)) {
-         smdbprintf(0, "Error decompressing block in frame %d\n", frame); 
-         return 0; 
-       }       
-       for(int y=_pos[1];y<_pos[1]+_dim[1];y+=_step[1]) {
-         u_char *dest = rowPtr;
-         const u_char *p = image + 3*full_frame_dims[0]*y + _pos[0]*3;
-         for(int x=0;x<_dim[0];x+=_step[0]) {
-           *dest++ = p[0];
-           *dest++ = p[1];
-           *dest++ = p[2];
-           p += 3*_step[0];
-         }
-         rowPtr += destRowStride;
-       }
-       free(image);
-     }
-     smdbprintf(5, "Done with single tiled image\n"); 
-   } /* END single tiled simage */ 
-   else { 
-     smdbprintf(5,"smBase::getFrameBlock(frame %d, thread %d): process across %d overlapping tiles\n", frame, threadnum, numTiles); 
-     uint32_t copied=0;
-     for(int tile=0; tile<numTiles; tile++){
-       //smdbprintf(5,"tile %d", tile); 
-       TileInfo tileInfo = tileInfoList[tile];
-       //smdbprintf(5, "thread %d, Frame %d, tile %s", threadnum, f, tileInfo.toString().c_str());        
-       if(tileInfo.overlaps && (tileInfo.skipCorruptFlag == 0)) {
+  if(numTiles < 2) {
+    smdbprintf(5,"Calling decompBlock on frame %d since numTiles < 2\n", frame);
+    if ((_pos[0] == 0) && (_pos[1] == 0) && 
+        (_step[0] == 1) && (_step[1] == 1) &&
+        (_dim[0] == full_frame_dims[0]) && (_dim[1] == full_frame_dims[1])) {
+      smdbprintf(5,"getFrameBlock: decompBlock on entire frame\n"); 
+      if (!decompBlock(ioBuf,out,size,full_frame_dims)) {
+        smdbprintf(0, "Error decompressing block in frame %d, with dim=(%d,%d), pos=(%d,%d), res=%d\n", frame, _dim[0], _dim[1], _pos[0], _pos[1], res); 
+        return 0; 
+      }       
+    } else {
+      smdbprintf(5, "downsampled or partial frame %d\n", frame); 
+      image = (u_char *)malloc(3*full_frame_dims[0]*full_frame_dims[1]);
+      CHECK(image);
+      if (!decompBlock(ioBuf,image,size,full_frame_dims)) {
+        smdbprintf(0, "Error decompressing block in frame %d\n", frame); 
+        return 0; 
+      }       
+      for(int y=_pos[1];y<_pos[1]+_dim[1];y+=_step[1]) {
+        u_char *dest = rowPtr;
+        const u_char *p = image + 3*full_frame_dims[0]*y + _pos[0]*3;
+        for(int x=0;x<_dim[0];x+=_step[0]) {
+          *dest++ = p[0];
+          *dest++ = p[1];
+          *dest++ = p[2];
+          p += 3*_step[0];
+        }
+        rowPtr += destRowStride;
+      }
+      free(image);
+    }
+    smdbprintf(5, "Done with single tiled image\n"); 
+  } /* END single tiled simage */ 
+  else { 
+    smdbprintf(5,"smBase::getFrameBlock(frame %d, thread %d): process across %d overlapping tiles\n", frame, threadnum, numTiles); 
+    uint32_t copied=0;
+    for(int tile=0; tile<numTiles; tile++){
+      //smdbprintf(5,"tile %d", tile); 
+      TileInfo tileInfo = tileInfoList[tile];
+      //smdbprintf(5, "thread %d, Frame %d, tile %s", threadnum, f, tileInfo.toString().c_str());        
+      if(tileInfo.overlaps && (tileInfo.skipCorruptFlag == 0)) {
          
-         u_char *tdata = (u_char *)(ioBuf + tileInfo.readBufferOffset);
-         smdbprintf(5,"decompBlock, tile %d\n", tile); 
-         decompBlock(tdata,tbuf,tileInfo.compressedSize,tilesize);
-         // 
-         u_char *to = (u_char*)(out + (tileInfo.blockOffsetY * destRowStride) + (tileInfo.blockOffsetX * 3));
-         u_char *from = (u_char*)(tbuf + (tileInfo.tileOffsetY * tilesize[0] * 3) + (tileInfo.tileOffsetX * 3));
-         int maxX = tileInfo.tileLengthX, maxY = tileInfo.tileLengthY; 
-         uint32_t newBytes = 3*maxX*maxY, maxAllowed = (_dim[0]*_dim[1]*3);
-         uint32_t newTotal = newBytes + copied; 
+        u_char *tdata = (u_char *)(ioBuf + tileInfo.readBufferOffset);
+        smdbprintf(5,"decompBlock, tile %d\n", tile); 
+        decompBlock(tdata,tbuf,tileInfo.compressedSize,tilesize);
+        // 
+        u_char *to = (u_char*)(out + (tileInfo.blockOffsetY * destRowStride) + (tileInfo.blockOffsetX * 3));
+        u_char *from = (u_char*)(tbuf + (tileInfo.tileOffsetY * tilesize[0] * 3) + (tileInfo.tileOffsetX * 3));
+        int maxX = tileInfo.tileLengthX, maxY = tileInfo.tileLengthY; 
+        uint32_t newBytes = 3*maxX*maxY, maxAllowed = (_dim[0]*_dim[1]*3);
+        uint32_t newTotal = newBytes + copied; 
          
-         smdbprintf(5, "thread %d, Frame %d, tile %d, copying %d rows %d pixels per row, %d new bytes, %d copied so far, new total will be %d, max allowed is %d x %d x 3 = %d\n", 
-           threadnum, frame, tile, maxY, maxX, newBytes, 
-           copied, newTotal,  
-           _dim[0], _dim[1], maxAllowed ); 
+        smdbprintf(5, "thread %d, Frame %d, tile %d, copying %d rows %d pixels per row, %d new bytes, %d copied so far, new total will be %d, max allowed is %d x %d x 3 = %d\n", 
+                   threadnum, frame, tile, maxY, maxX, newBytes, 
+                   copied, newTotal,  
+                   _dim[0], _dim[1], maxAllowed ); 
          
-         if (newTotal > maxAllowed) {
-           smdbprintf(0, "Houston, we have a problem. Dump core here. new total %lu > maxAllowed  %lu\n", newTotal, maxAllowed); 
-           abort(); 
-         }
-         for(int rows = 0; rows < maxY; rows += _step[1]) {
-           if(_step[0] == 1) {
-             copied += maxX * 3;
+        if (newTotal > maxAllowed) {
+          smdbprintf(0, "Houston, we have a problem. Dump core here. new total %lu > maxAllowed  %lu\n", newTotal, maxAllowed); 
+          abort(); 
+        }
+        for(int rows = 0; rows < maxY; rows += _step[1]) {
+          if(_step[0] == 1) {
+            copied += maxX * 3;
 #if 1
-             assert(copied <= maxAllowed);
+            assert(copied <= maxAllowed);
 #endif
-             //smdbprintf(5,"frame %d tile %d",f,tile);
-             memcpy(to,from,maxX * 3);
+            //smdbprintf(5,"frame %d tile %d",f,tile);
+            memcpy(to,from,maxX * 3);
              
-           }
-           else {
-             u_char *tx = to;
-             u_char *p = from;
-             for(int x=0; x<maxX; x+=_step[0]) {
-               *tx++ = p[0];
-               *tx++ = p[1];
-               *tx++ = p[2];
-               p += 3*_step[0];
-             }
-           }
-           to += destRowStride;
-           from += tilesize[0] * _step[1] * 3;
-         }
-       } 
+          }
+          else {
+            u_char *tx = to;
+            u_char *p = from;
+            for(int x=0; x<maxX; x+=_step[0]) {
+              *tx++ = p[0];
+              *tx++ = p[1];
+              *tx++ = p[2];
+              p += 3*_step[0];
+            }
+          }
+          to += destRowStride;
+          from += tilesize[0] * _step[1] * 3;
+        }
+      } 
        
-     }
-   } /* end process across overlapping tiles */
+    }
+  } /* end process across overlapping tiles */
    
-   smdbprintf(5,"END smBase::getFrameBlock, frame %d, thread %d, bytes read = %d\n", frame, threadnum, bytesRead); 
-   return bytesRead; 
- }
+  smdbprintf(5,"END smBase::getFrameBlock, frame %d, thread %d, bytes read = %d\n", frame, threadnum, bytesRead); 
+  return bytesRead; 
+}
 
 /*!
   Work proc for the writing thread -- just calls sm->writeThread()
@@ -1920,15 +1899,15 @@ void smBase::combineResolutionFiles(void) {
       
       uint64_t bytesWritten = WRITE(mResFDs[0], buf, bytesRead); 
       if (bytesWritten != bytesRead) {
-         smdbprintf(0, "Error: failed write from res file %s to movie file\n", mResFileNames[res].c_str()); 
+        smdbprintf(0, "Error: failed write from res file %s to movie file\n", mResFileNames[res].c_str()); 
         perror("combineResolutionFiles"); 
         abort(); 
       }       
       bytesRemaining -= bytesRead;
       smdbprintf(1, "Res %d: Wrote %lld MB, %0.1f%%, size of movie file is %lld MB\n", 
                  res, 
-		 (inputFileSize - bytesRemaining)/(1000*1000), 
-		 ((float)inputFileSize - bytesRemaining)/(float)inputFileSize, 
+                 (inputFileSize - bytesRemaining)/(1000*1000), 
+                 ((float)inputFileSize - bytesRemaining)/(float)inputFileSize, 
                  LSEEK64(mResFDs[0], 0, SEEK_CUR)/(1000*1000)); 
                  
     }
@@ -1976,11 +1955,11 @@ bool smBase::flushFrames(bool force) {
 
   // temporary debug measure:  at what point did a NULL frame show up?
   for (uint32_t slot = 0; slot < mOutputBuffer->mNumFrames; slot++){
-      if (!mOutputBuffer->mFrameBuffer[slot]) {
-          smdbprintf(0, "During preflight check found frameData is NULL on slot %d\n", slot);
-          abort();
+    if (!mOutputBuffer->mFrameBuffer[slot]) {
+      smdbprintf(0, "During preflight check found frameData is NULL on slot %d\n", slot);
+      abort();
 
-      }
+    }
   }
   // copy each level of the output buffer: 
   int res = 0; 
@@ -2014,8 +1993,8 @@ bool smBase::flushFrames(bool force) {
     while (frame < stopFrame) {
       FrameCompressionWork *frameData = mOutputBuffer->mFrameBuffer[frame-firstFrame]; 
       if (!frameData) {
-          smdbprintf(0, "frameData is NULL on frame %d\n", frame);
-          abort();
+        smdbprintf(0, "frameData is NULL on frame %d\n", frame);
+        abort();
       }
       smdbprintf(5, "Writing frameData:  %s\n", frameData->toString().c_str());
       mFrameOffsets[resFrame] = fileOffset; 
@@ -2070,7 +2049,7 @@ bool smBase::flushFrames(bool force) {
   In order for buffered frames to actually get written,  call flushFrames() 
   occasionally, whether from the same thread or another.  Make sure enough 
   frames are buffered so that I/O proceeds in large chunks.  
- */
+*/
 void smBase::compressAndBufferFrame(int f,  u_char *data) {  
   smdbprintf(4, "compressAndBufferFrame(frame=%d)\n", f); 
   FrameCompressionWork *wrk = new FrameCompressionWork(f, data); 
@@ -2214,8 +2193,8 @@ void smBase::writeCompFrame(int f, void *data, int *sizes, int res)
    
   }
   else {
-     size += sizes[0];
-     mFrameLengths[f+res*mNumFrames] = size;
+    size += sizes[0];
+    mFrameLengths[f+res*mNumFrames] = size;
   }
   //smdbprintf(5,"write %d bytes\n",size);
   WRITE(fd, data, size);
@@ -2235,16 +2214,16 @@ void smBase::writeCompFrame(int f, void *data, int *sizes, int res)
 */
 void smBase::getCompFrame(int frame, int threadnum, void *data, int &rsize, int res) 
 {
-   u_int size;
-   void *ioBuf;
-   readFrame(frame+res*mNumFrames, threadnum);
-   ioBuf = &(mThreadData[threadnum].io_buf[0]); 
-   size = mFrameLengths[frame];
+  u_int size;
+  void *ioBuf;
+  readFrame(frame+res*mNumFrames, threadnum);
+  ioBuf = &(mThreadData[threadnum].io_buf[0]); 
+  size = mFrameLengths[frame];
    
-   if (data) memcpy(data, ioBuf, size);
-   rsize = (int)size;
+  if (data) memcpy(data, ioBuf, size);
+  rsize = (int)size;
 
-   return;
+  return;
 }
 //! Convenience function for external programs
 /*!
@@ -2253,7 +2232,7 @@ void smBase::getCompFrame(int frame, int threadnum, void *data, int &rsize, int 
 */
 int smBase::getCompFrameSize(int frame, int res)
 {
-	return(mFrameLengths[frame+res*mNumFrames]);
+  return(mFrameLengths[frame+res*mNumFrames]);
 }
 
 
@@ -2267,93 +2246,93 @@ int smBase::getCompFrameSize(int frame, int res)
 */ 
 int smBase::compFrame(void *in, void *out, int *outsizes, int res)
 {
-   int compressedSize = 0;
-   int nx = getTileNx(res);
-   int ny = getTileNy(res);
-   int numTiles = nx*ny; 
+  int compressedSize = 0;
+  int nx = getTileNx(res);
+  int ny = getTileNy(res);
+  int numTiles = nx*ny; 
    
-   int frameDims[2];
-   frameDims[0] = getWidth(res);
-   frameDims[1] = getHeight(res);
+  int frameDims[2];
+  frameDims[0] = getWidth(res);
+  frameDims[1] = getHeight(res);
 
    
-   if (mVersion == 1 || numTiles == 1) {
-     if (!out) {
-       // How big is the frame
-       compBlock(in,NULL,compressedSize,frameDims);
-     } else {
-       // build the compressed frame...
-       compBlock(in,out,compressedSize,frameDims);
-     }
-     outsizes[0] = compressedSize; 
-     return compressedSize;
-   }
+  if (mVersion == 1 || numTiles == 1) {
+    if (!out) {
+      // How big is the frame
+      compBlock(in,NULL,compressedSize,frameDims);
+    } else {
+      // build the compressed frame...
+      compBlock(in,out,compressedSize,frameDims);
+    }
+    outsizes[0] = compressedSize; 
+    return compressedSize;
+  }
 
-   int tileDims[2];
-   tileDims[0] = getTileWidth(res);
-   tileDims[1] = getTileHeight(res);
+  int tileDims[2];
+  tileDims[0] = getTileWidth(res);
+  tileDims[1] = getTileHeight(res);
 
-   smdbprintf(5,"smBase::compFrame: frameDims[%d,%d] , tileDims[%d,%d]\n",frameDims[0],frameDims[1],tileDims[0],tileDims[1]);
+  smdbprintf(5,"smBase::compFrame: frameDims[%d,%d] , tileDims[%d,%d]\n",frameDims[0],frameDims[1],tileDims[0],tileDims[1]);
    
-   uint32_t tilepixelbytes = tileDims[0] * tileDims[1] * 3;
-   char *tilebuf = new char[tilepixelbytes];
-   CHECK(tilebuf);
-   char *outp = (char*)out;
-   char *base  = (char*)in;
+  uint32_t tilepixelbytes = tileDims[0] * tileDims[1] * 3;
+  char *tilebuf = new char[tilepixelbytes];
+  CHECK(tilebuf);
+  char *outp = (char*)out;
+  char *base  = (char*)in;
    
-   for(uint32_t j=0;j<ny;j++) {
-     for(uint32_t i=0;i<nx;i++) {
-       int size =0, tileLineBytes=tileDims[0]*3; 
-       long offset =  (((j * tileDims[1] * frameDims[0]) + (i * tileDims[0]))*3); 
-       smdbprintf(5,"compFrame tile index[%d,%d], offset = %d\n",i,j,offset);
-       base = (char*)in + offset;
-       if(((i+1) * tileDims[0]) > frameDims[0]) {
-         tileLineBytes = (frameDims[0] - (i*tileDims[0])) * 3;
-         memset(tilebuf,0,tilepixelbytes);
-       }
-       else {
-         //msize = tileDims[0]*3;
-         if(((j+1) * tileDims[1]) > frameDims[1]) {
-           memset(tilebuf,0,tilepixelbytes);
-         }
-       }
-       uint32_t maxk = tileDims[1];
-       if (maxk > frameDims[1] - (j * tileDims[1])) {
-         maxk = frameDims[1] - (j * tileDims[1]);
-       }
-       for(int k=0; k<maxk; k++) {
-         /*       for(int k=0;k<tileDims[1];k++) {
-                  if(((j * tileDims[1])+k) == frameDims[1]) 
-                  break;
-         */
-         memcpy(tilebuf+(k*tileDims[0]*3),
-                base+(k*frameDims[0]*3),
-                tileLineBytes);
-       }
+  for(uint32_t j=0;j<ny;j++) {
+    for(uint32_t i=0;i<nx;i++) {
+      int size =0, tileLineBytes=tileDims[0]*3; 
+      long offset =  (((j * tileDims[1] * frameDims[0]) + (i * tileDims[0]))*3); 
+      smdbprintf(5,"compFrame tile index[%d,%d], offset = %d\n",i,j,offset);
+      base = (char*)in + offset;
+      if(((i+1) * tileDims[0]) > frameDims[0]) {
+        tileLineBytes = (frameDims[0] - (i*tileDims[0])) * 3;
+        memset(tilebuf,0,tilepixelbytes);
+      }
+      else {
+        //msize = tileDims[0]*3;
+        if(((j+1) * tileDims[1]) > frameDims[1]) {
+          memset(tilebuf,0,tilepixelbytes);
+        }
+      }
+      uint32_t maxk = tileDims[1];
+      if (maxk > frameDims[1] - (j * tileDims[1])) {
+        maxk = frameDims[1] - (j * tileDims[1]);
+      }
+      for(int k=0; k<maxk; k++) {
+        /*       for(int k=0;k<tileDims[1];k++) {
+                 if(((j * tileDims[1])+k) == frameDims[1]) 
+                 break;
+        */
+        memcpy(tilebuf+(k*tileDims[0]*3),
+               base+(k*frameDims[0]*3),
+               tileLineBytes);
+      }
        
        
-       if (!out) {
-         // How big is the tile
-         compBlock(tilebuf,NULL,size,tileDims);
-       } else {
-         // build the compressed frame...
-         compBlock(tilebuf,outp,size,tileDims);
-         outp += size;
-       }
+      if (!out) {
+        // How big is the tile
+        compBlock(tilebuf,NULL,size,tileDims);
+      } else {
+        // build the compressed frame...
+        compBlock(tilebuf,outp,size,tileDims);
+        outp += size;
+      }
        
-       *(outsizes + (j*nx) + i) = size;
-       compressedSize += size; 
-     }
-   }
+      *(outsizes + (j*nx) + i) = size;
+      compressedSize += size; 
+    }
+  }
 #if SM_DUMP  
-   if(out) {
-     char *p = (char *)out;
-     for(int dd = 0; dd < frameDims[0]*3*frameDims[1];dd++)
-       smdbprintf(5," %d ",p[dd]);
-   }
+  if(out) {
+    char *p = (char *)out;
+    for(int dd = 0; dd < frameDims[0]*3*frameDims[1];dd++)
+      smdbprintf(5," %d ",p[dd]);
+  }
 #endif 
-   delete [] tilebuf;
-   return compressedSize;
+  delete [] tilebuf;
+  return compressedSize;
 }
  
 //============================================================
@@ -2420,11 +2399,11 @@ void smBase::WriteMetaData(void) {
  */
 void smBase::closeFile(void)
 {
-   u_int arr[64] = {0};
-   smdbprintf(3, "smBase::closeFile"); 
+  u_int arr[64] = {0};
+  smdbprintf(3, "smBase::closeFile"); 
 
-   if (bModFile == TRUE) {
-     this->combineResolutionFiles(); 
+  if (bModFile == TRUE) {
+    this->combineResolutionFiles(); 
 	int i;
 
    	LSEEK64(mThreadData[0].fd, 0, SEEK_SET);
@@ -2437,7 +2416,7 @@ void smBase::closeFile(void)
 	arr[5] = mNumResolutions;
 	//smdbprintf(5,"mNumResolutions = %d\n",mNumResolutions);
 	for(i=0;i<mNumResolutions;i++) {
-		arr[i+6] = (tilesizes[i][1] << 16) | tilesizes[i][0];
+      arr[i+6] = (tilesizes[i][1] << 16) | tilesizes[i][0];
 	}
    	byteswap(arr,sizeof(u_int)*SM_HDR_SIZE,sizeof(u_int));
    	WRITE(mThreadData[0].fd, arr, sizeof(u_int)*SM_HDR_SIZE);
@@ -2451,18 +2430,18 @@ void smBase::closeFile(void)
    	byteswap(&mFrameLengths[0],sizeof(u_int)*mNumFrames*mNumResolutions,sizeof(u_int));
 
 	//smdbprintf(5,"seek header end is %d\n",LSEEK64(mThreadData[0].fd, 0, SEEK_CUR));
-   }
-   // note the end of the file
-   mFrameOffsets[mNumFrames*mNumResolutions] = mFrameOffsets[mNumFrames*mNumResolutions-1] + mFrameLengths[mNumFrames*mNumResolutions-1];
+  }
+  // note the end of the file
+  mFrameOffsets[mNumFrames*mNumResolutions] = mFrameOffsets[mNumFrames*mNumResolutions-1] + mFrameLengths[mNumFrames*mNumResolutions-1];
 
-   WriteMetaData(); 
+  WriteMetaData(); 
 
-   int i=mNumThreads; 
-   while (i--) {
-     CLOSE(mThreadData[i].fd);
-   }
-   smdbprintf(1, "Finished with movie %s\n", mMovieName);
-   return;
+  int i=mNumThreads; 
+  while (i--) {
+    CLOSE(mThreadData[i].fd);
+  }
+  smdbprintf(1, "Finished with movie %s\n", mMovieName);
+  return;
 }
 //! convenience function
 /*!
@@ -2472,47 +2451,47 @@ void smBase::closeFile(void)
 */
 static void  byteswap(void *buffer,off64_t len,int swapsize)
 {
-        off64_t num;
-        char    *p = (char *)buffer;
-        char    t;
+  off64_t num;
+  char    *p = (char *)buffer;
+  char    t;
 
-// big endian check...
-	short   sh[] = {1};
-	char    *by;
+  // big endian check...
+  short   sh[] = {1};
+  char    *by;
 
-	by = (char *)sh;
-	if (by[0] == 0) return;
+  by = (char *)sh;
+  if (by[0] == 0) return;
 
-        switch(swapsize) {
-                case 2:
-                        num = len/swapsize;
-                        while(num--) {
-                                t = p[0]; p[0] = p[1]; p[1] = t;
-                                p += swapsize;
-                        }
-                        break;
-                case 4:
-                        num = len/swapsize;
-                        while(num--) {
-                                t = p[0]; p[0] = p[3]; p[3] = t;
-                                t = p[1]; p[1] = p[2]; p[2] = t;
-                                p += swapsize;
-                        }
-                        break;
-                case 8:
-                        num = len/swapsize;
-                        while(num--) {
-                                t = p[0]; p[0] = p[7]; p[7] = t;
-                                t = p[1]; p[1] = p[6]; p[6] = t;
-                                t = p[2]; p[2] = p[5]; p[5] = t;
-                                t = p[3]; p[3] = p[4]; p[4] = t;
-                                p += swapsize;
-                        }
-                        break;
-                default:
-                        break;
-        }
-        return;
+  switch(swapsize) {
+  case 2:
+    num = len/swapsize;
+    while(num--) {
+      t = p[0]; p[0] = p[1]; p[1] = t;
+      p += swapsize;
+    }
+    break;
+  case 4:
+    num = len/swapsize;
+    while(num--) {
+      t = p[0]; p[0] = p[3]; p[3] = t;
+      t = p[1]; p[1] = p[2]; p[2] = t;
+      p += swapsize;
+    }
+    break;
+  case 8:
+    num = len/swapsize;
+    while(num--) {
+      t = p[0]; p[0] = p[7]; p[7] = t;
+      t = p[1]; p[1] = p[6]; p[6] = t;
+      t = p[2]; p[2] = p[5]; p[5] = t;
+      t = p[3]; p[3] = p[4]; p[4] = t;
+      p += swapsize;
+    }
+    break;
+  default:
+    break;
+  }
+  return;
 }
 
 //! Convolvement (see Google if you don't know what that is)
@@ -2524,37 +2503,37 @@ static void  byteswap(void *buffer,off64_t len,int swapsize)
 */
 static void smoothx(unsigned char *image, int dx, int dy)
 {
-        register int x,y;
-	int	p1[3],p2[3],p3[3];
+  register int x,y;
+  int	p1[3],p2[3],p3[3];
 
-        for(y=0;y<dy;y++) {
-                p1[0] = image[(y*dx)*3+0];
-                p1[1] = image[(y*dx)*3+1];
-                p1[2] = image[(y*dx)*3+2];
+  for(y=0;y<dy;y++) {
+    p1[0] = image[(y*dx)*3+0];
+    p1[1] = image[(y*dx)*3+1];
+    p1[2] = image[(y*dx)*3+2];
 
-                p2[0] = image[((y*dx)+1)*3+0];
-                p2[1] = image[((y*dx)+1)*3+1];
-                p2[2] = image[((y*dx)+1)*3+2];
+    p2[0] = image[((y*dx)+1)*3+0];
+    p2[1] = image[((y*dx)+1)*3+1];
+    p2[2] = image[((y*dx)+1)*3+2];
 
-                for(x=1;x<dx-1;x++) {
-                        p3[0] = image[((y*dx)+x+1)*3+0];
-                        p3[1] = image[((y*dx)+x+1)*3+1];
-                        p3[2] = image[((y*dx)+x+1)*3+2];
+    for(x=1;x<dx-1;x++) {
+      p3[0] = image[((y*dx)+x+1)*3+0];
+      p3[1] = image[((y*dx)+x+1)*3+1];
+      p3[2] = image[((y*dx)+x+1)*3+2];
 
-                        image[((y*dx)+x)*3+0]=((p1[0]*2)+(p2[0]*4)+(p3[0]*2))/8;
-                        image[((y*dx)+x)*3+1]=((p1[1]*2)+(p2[1]*4)+(p3[1]*2))/8;
-                        image[((y*dx)+x)*3+2]=((p1[2]*2)+(p2[2]*4)+(p3[2]*2))/8;
+      image[((y*dx)+x)*3+0]=((p1[0]*2)+(p2[0]*4)+(p3[0]*2))/8;
+      image[((y*dx)+x)*3+1]=((p1[1]*2)+(p2[1]*4)+(p3[1]*2))/8;
+      image[((y*dx)+x)*3+2]=((p1[2]*2)+(p2[2]*4)+(p3[2]*2))/8;
 
-                        p1[0] = p2[0];
-                        p1[1] = p2[1];
-                        p1[2] = p2[2];
+      p1[0] = p2[0];
+      p1[1] = p2[1];
+      p1[2] = p2[2];
 
-                        p2[0] = p3[0];
-                        p2[1] = p3[1];
-                        p2[2] = p3[2];
-                }
-        }
-        return;
+      p2[0] = p3[0];
+      p2[1] = p3[1];
+      p2[2] = p3[2];
+    }
+  }
+  return;
 }
 
 //! Convolvement (see Google if you don't know what that is)
@@ -2566,38 +2545,38 @@ static void smoothx(unsigned char *image, int dx, int dy)
 */
 static void smoothy(unsigned char *image, int dx, int dy)
 {
-        register int x,y;
-	int	p1[3],p2[3],p3[3];
+  register int x,y;
+  int	p1[3],p2[3],p3[3];
 
-/* smooth along Y scanlines using 242 kernel */
-        for(x=0;x<dx;x++) {
-                p1[0] = image[x*3+0];
-                p1[1] = image[x*3+1];
-                p1[2] = image[x*3+2];
+  /* smooth along Y scanlines using 242 kernel */
+  for(x=0;x<dx;x++) {
+    p1[0] = image[x*3+0];
+    p1[1] = image[x*3+1];
+    p1[2] = image[x*3+2];
 
-                p2[0] = image[(x+dx)*3+0];
-                p2[1] = image[(x+dx)*3+1];
-                p2[2] = image[(x+dx)*3+2];
+    p2[0] = image[(x+dx)*3+0];
+    p2[1] = image[(x+dx)*3+1];
+    p2[2] = image[(x+dx)*3+2];
 
-                for(y=1;y<dy-1;y++) {
-                        p3[0] = image[((y*dx)+x+dx)*3+0];
-                        p3[1] = image[((y*dx)+x+dx)*3+1];
-                        p3[2] = image[((y*dx)+x+dx)*3+2];
+    for(y=1;y<dy-1;y++) {
+      p3[0] = image[((y*dx)+x+dx)*3+0];
+      p3[1] = image[((y*dx)+x+dx)*3+1];
+      p3[2] = image[((y*dx)+x+dx)*3+2];
 
-                        image[((y*dx)+x)*3+0]=((p1[0]*2)+(p2[0]*4)+(p3[0]*2))/8;
-                        image[((y*dx)+x)*3+1]=((p1[1]*2)+(p2[1]*4)+(p3[1]*2))/8;
-                        image[((y*dx)+x)*3+2]=((p1[2]*2)+(p2[2]*4)+(p3[2]*2))/8;
+      image[((y*dx)+x)*3+0]=((p1[0]*2)+(p2[0]*4)+(p3[0]*2))/8;
+      image[((y*dx)+x)*3+1]=((p1[1]*2)+(p2[1]*4)+(p3[1]*2))/8;
+      image[((y*dx)+x)*3+2]=((p1[2]*2)+(p2[2]*4)+(p3[2]*2))/8;
 
-                        p1[0] = p2[0];
-                        p1[1] = p2[1];
-                        p1[2] = p2[2];
+      p1[0] = p2[0];
+      p1[1] = p2[1];
+      p1[2] = p2[2];
 
-                        p2[0] = p3[0];
-                        p2[1] = p3[1];
-                        p2[2] = p3[2];
-                }
-        }
-        return;
+      p2[0] = p3[0];
+      p2[1] = p3[1];
+      p2[2] = p3[2];
+    }
+  }
+  return;
 }
 
 //! Subsample the data
@@ -2615,43 +2594,43 @@ static void smoothy(unsigned char *image, int dx, int dy)
   \param filter ? 
 */
 static void Sample2d(unsigned char *in,int idx,int idy,
-        unsigned char *out,int odx,int ody,
-        int s_left,int s_top,int s_dx,int s_dy,int filter)
+                     unsigned char *out,int odx,int ody,
+                     int s_left,int s_top,int s_dx,int s_dy,int filter)
 {
-        register double xinc,yinc,xp,yp;
-        register int x,y;
-        register int i,j;
-        register int ptr;
+  register double xinc,yinc,xp,yp;
+  register int x,y;
+  register int i,j;
+  register int ptr;
 
-        xinc = (double)s_dx / (double)odx;
-        yinc = (double)s_dy / (double)ody;
+  xinc = (double)s_dx / (double)odx;
+  yinc = (double)s_dy / (double)ody;
 
-/* prefilter if decimating */
-        if (filter) {
-                if (xinc > 1.0) smoothx(in,idx,idy);
-                if (yinc > 1.0) smoothy(in,idx,idy);
-        }
-/* resample */
-        ptr = 0;
-        yp = s_top;
-        for(y=0; y < ody; y++) {  /* over all scan lines in output image */
-                j = (int)yp;
-                xp = s_left;
-                for(x=0; x < odx; x++) {  /* over all pixel in each scanline of
-output */
-                        i = (int)xp;
-			i = (i+(j*idx))*3;
-                        out[ptr++] = in[i++];
-                        out[ptr++] = in[i++];
-                        out[ptr++] = in[i++];
-                        xp += xinc;
-                }
-                yp += yinc;
-        }
-/* postfilter if magnifing */
-        if (filter) {
-                if (xinc < 1.0) smoothx(out,odx,ody);
-                if (yinc < 1.0) smoothy(out,odx,ody);
-        }
-        return;
+  /* prefilter if decimating */
+  if (filter) {
+    if (xinc > 1.0) smoothx(in,idx,idy);
+    if (yinc > 1.0) smoothy(in,idx,idy);
+  }
+  /* resample */
+  ptr = 0;
+  yp = s_top;
+  for(y=0; y < ody; y++) {  /* over all scan lines in output image */
+    j = (int)yp;
+    xp = s_left;
+    for(x=0; x < odx; x++) {  /* over all pixel in each scanline of
+                                 output */
+      i = (int)xp;
+      i = (i+(j*idx))*3;
+      out[ptr++] = in[i++];
+      out[ptr++] = in[i++];
+      out[ptr++] = in[i++];
+      xp += xinc;
+    }
+    yp += yinc;
+  }
+  /* postfilter if magnifing */
+  if (filter) {
+    if (xinc < 1.0) smoothx(out,odx,ody);
+    if (yinc < 1.0) smoothy(out,odx,ody);
+  }
+  return;
 }  

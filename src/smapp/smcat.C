@@ -189,7 +189,6 @@ int main(int argc,char **argv)
   unsigned int    tsizes[8][2];
   int             tiled = 0;
 
-  smBase::init();
   gVerbosity = verbosity.getValue(); 
   sm_setVerbose(gVerbosity);  
   /*
@@ -207,7 +206,7 @@ int main(int argc,char **argv)
     boost::split(tokens, *pos, boost::is_any_of("@")); 
     minfo.name = tokens[0];
     /* handle the @first[@last[@step]] syntax */
-    minfo.sm = smBase::openFile(minfo.name.c_str(), nThreads);
+    minfo.sm = smBase::openFile(minfo.name.c_str(),O_RDONLY,  nThreads);
     if (minfo.sm == NULL) {
       errexit(cmd, str(boost::format("Unable to open: %1%")%minfo.name));
     }
@@ -356,16 +355,16 @@ int main(int argc,char **argv)
     tsizep = &tsizes[0][0];
   }
   if (compressionType == 1) {
-    sm = smRLE::newFile(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
+    sm = new smRLE(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
   } else if (compressionType == 2) {
-    sm = smGZ::newFile(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
+    sm = new smGZ(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
   } else if (compressionType == 3) {
-    sm = smLZO::newFile(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
+    sm = new smLZO(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
   } else if (compressionType == 4) {
-    sm = smJPG::newFile(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
+    sm = new smJPG(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
     ((smJPG *)sm)->setQuality(jqual.getValue());
   } else {
-    sm = smRaw::newFile(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
+    sm = new smRaw(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
   }
   if (!sm) {
     fprintf(stderr,"Unable to create the file: %s\n",

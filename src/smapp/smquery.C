@@ -148,7 +148,6 @@ int main(int argc, char *argv[]) {
   }
   bool singleTag = (tagPatterns.size() == 1 && valuePatterns.size() == 0); 
   bool matchedAll = true, matchedAny = false; 
-  smBase::init();
   sm_setVerbose(verbosity.getValue());  
   dbg_setverbose(verbosity.getValue()); 
   for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {
@@ -156,7 +155,7 @@ int main(int argc, char *argv[]) {
       canonicalTags = SM_MetaData::CanonicalMetaDataAsMap(false); 
     }
     string filename = movienames.getValue()[fileno]; 
-    smBase *sm = smBase::openFile(filename.c_str(), 1);
+    smBase *sm = smBase::openFile(filename.c_str(), O_RDONLY, 1);
     if (!sm) {
       errexit(cmd, str(boost::format("ERROR: could not open movie file %s.")% filename)); 
     }
@@ -338,5 +337,5 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  return (matchedAny?0:1);
+  return (matchedAny || matchedAll)? 0 : 1;
 }

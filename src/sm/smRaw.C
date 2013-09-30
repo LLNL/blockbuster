@@ -41,31 +41,20 @@
 #include <stdio.h>
 #include "smRaw.h"
 
-u_int smRaw::typeID = 0;
-
-smRaw::smRaw(const char *_fname, int _nwin)
-  :smBase(_fname, _nwin)
+smRaw::smRaw(int mode, const char *_fname, int _nwin)
+  :smBase(mode, _fname, _nwin)
 {
+  mTypeID = 0; 
 }
 
 smRaw::~smRaw()
 {
 }
 
-void smRaw::init(void)
-{
-   smBase::registerType(typeID, create);
-}
-
-smBase *smRaw::create(const char *_fname, int _nwin)
-{
-   return(new smRaw(_fname, _nwin));
-}
-
-smRaw *smRaw::newFile(const char *_fname, u_int _width,  u_int _height,
+/* smRaw *smRaw::newFile(const char *_fname, u_int _width,  u_int _height,
                       u_int _nframes, u_int *_tile, u_int _nres, 
-                    int numthreads)
-{
+                      int numthreads)
+{  
    smRaw *r = new smRaw(NULL);
 
    if (r->smBase::newFile(_fname, _width, _height, _nframes, _tile, _nres, numthreads)) {
@@ -74,7 +63,7 @@ smRaw *smRaw::newFile(const char *_fname, u_int _width,  u_int _height,
    }
  
    return(r);
-}
+   } */ 
 
 void smRaw::compBlock(void *data, void *cdata, int &size,int *dim)
 {

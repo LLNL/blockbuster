@@ -60,35 +60,25 @@ void lzo_fail_check(const char *file,int line)
 
 
 
-u_int smLZO::typeID = 3;
 
-smLZO::smLZO(const char *_fname, int _nwin)
-  :smBase(_fname, _nwin)
+smLZO::smLZO(int mode, const char *_fname, int _nwin)
+  :smBase(mode, _fname, _nwin)
 {
-	eCompressionOpt = LZO_OPT_1;
-	if (getenv("LZO_COMPRESSION_OPTION")) {
-		if (!strcmp(getenv("LZO_COMPRESSION_OPTION"),
-			"999")) eCompressionOpt = LZO_OPT_999;
-	}
+  mTypeID = 3;
+  if (lzo_init() != LZO_E_OK) {
+    fprintf(stderr,"Warning: Unable to initialize LZO library\n");
+  }
+  eCompressionOpt = LZO_OPT_1;
+  if (getenv("LZO_COMPRESSION_OPTION")) {
+    if (!strcmp(getenv("LZO_COMPRESSION_OPTION"),
+                "999")) eCompressionOpt = LZO_OPT_999;
+  }
 }
 
 smLZO::~smLZO()
 {
 }
 
-void smLZO::init(void)
-{
-   if (lzo_init() == LZO_E_OK) {
-	   smBase::registerType(typeID, create);
-   } else {
-	   fprintf(stderr,"Warning: Unable to initialize LZO library\n");
-   }
-}
-
-smBase *smLZO::create(const char *_fname, int _nwin)
-{
-   return(new smLZO(_fname, _nwin));
-}
 
 bool smLZO::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
 {
@@ -106,7 +96,7 @@ bool smLZO::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
    return true;
 }
 
-smLZO *smLZO::newFile(const char *_fname, 
+/*smLZO *smLZO::newFile(const char *_fname, 
                       u_int _width, u_int _height, u_int _nframes, 
                       u_int *_tile, u_int _nres, 
                       int numthreads)
@@ -119,7 +109,7 @@ smLZO *smLZO::newFile(const char *_fname,
    }
  
    return(r);
-}
+   } */ 
 
 void smLZO::compBlock(void *data, void *cdata, int &size,int *dim)
 {
