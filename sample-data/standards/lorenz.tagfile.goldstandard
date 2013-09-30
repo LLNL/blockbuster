@@ -10,15 +10,40 @@
         "type": "ASCII",
         "value": ""
     },
+    "Compression":
+    {
+        "type": "DOUBLE",
+        "value": "0.619028"
+    },
     "Description":
     {
         "type": "ASCII",
         "value": ""
     },
+    "FPS":
+    {
+        "type": "ASCII",
+        "value": "FPS: 30.00\n"
+    },
+    "Format":
+    {
+        "type": "ASCII",
+        "value": "GZIP"
+    },
+    "Frames":
+    {
+        "type": "INT64",
+        "value": "3"
+    },
     "Keywords":
     {
         "type": "ASCII",
         "value": "salmon, trout"
+    },
+    "LOD":
+    {
+        "type": "INT64",
+        "value": "1"
     },
     "LorenzTag":
     {
@@ -45,6 +70,16 @@
         "type": "ASCII",
         "value": "Richard D. Cook (rcook): 925-423-9605"
     },
+    "Name":
+    {
+        "type": "ASCII",
+        "value": "img2sm-canonical-tags.sm"
+    },
+    "Res 0":
+    {
+        "type": "ASCII",
+        "value": "Level:0 size:1024x768 tile:512x512"
+    },
     "Science Type":
     {
         "type": "ASCII",
@@ -70,6 +105,11 @@
         "type": "ASCII",
         "value": ""
     },
+    "Stereo":
+    {
+        "type": "ASCII",
+        "value": "NO"
+    },
     "Title":
     {
         "type": "ASCII",
@@ -79,6 +119,21 @@
     {
         "type": "ASCII",
         "value": ""
+    },
+    "Version":
+    {
+        "type": "INT64",
+        "value": "2"
+    },
+    "Xsize":
+    {
+        "type": "INT64",
+        "value": "1024"
+    },
+    "Ysize":
+    {
+        "type": "INT64",
+        "value": "768"
     },
     "doubletag":
     {
@@ -113,15 +168,40 @@
         "type": "ASCII",
         "value": ""
     },
+    "Compression":
+    {
+        "type": "DOUBLE",
+        "value": "0.619028"
+    },
     "Description":
     {
         "type": "ASCII",
         "value": ""
     },
+    "FPS":
+    {
+        "type": "ASCII",
+        "value": "FPS: 30.00\n"
+    },
+    "Format":
+    {
+        "type": "ASCII",
+        "value": "GZIP"
+    },
+    "Frames":
+    {
+        "type": "INT64",
+        "value": "3"
+    },
     "Keywords":
     {
         "type": "ASCII",
         "value": "salmon, trout"
+    },
+    "LOD":
+    {
+        "type": "INT64",
+        "value": "1"
     },
     "LorenzTag":
     {
@@ -148,6 +228,16 @@
         "type": "ASCII",
         "value": "Richard D. Cook (rcook): 925-423-9605"
     },
+    "Name":
+    {
+        "type": "ASCII",
+        "value": "img2sm-canonical-tags.sm"
+    },
+    "Res 0":
+    {
+        "type": "ASCII",
+        "value": "Level:0 size:1024x768 tile:512x512"
+    },
     "Science Type":
     {
         "type": "ASCII",
@@ -173,6 +263,11 @@
         "type": "ASCII",
         "value": ""
     },
+    "Stereo":
+    {
+        "type": "ASCII",
+        "value": "NO"
+    },
     "Title":
     {
         "type": "ASCII",
@@ -182,6 +277,21 @@
     {
         "type": "ASCII",
         "value": ""
+    },
+    "Version":
+    {
+        "type": "INT64",
+        "value": "2"
+    },
+    "Xsize":
+    {
+        "type": "INT64",
+        "value": "1024"
+    },
+    "Ysize":
+    {
+        "type": "INT64",
+        "value": "768"
     },
     "doubletag":
     {
@@ -216,15 +326,40 @@
         "type": "ASCII",
         "value": ""
     },
+    "Compression":
+    {
+        "type": "DOUBLE",
+        "value": "0.619028"
+    },
     "Description":
     {
         "type": "ASCII",
         "value": ""
     },
+    "FPS":
+    {
+        "type": "ASCII",
+        "value": "FPS: 30.00\n"
+    },
+    "Format":
+    {
+        "type": "ASCII",
+        "value": "GZIP"
+    },
+    "Frames":
+    {
+        "type": "INT64",
+        "value": "3"
+    },
     "Keywords":
     {
         "type": "ASCII",
         "value": "salmon, trout"
+    },
+    "LOD":
+    {
+        "type": "INT64",
+        "value": "1"
     },
     "LorenzTag":
     {
@@ -251,6 +386,16 @@
         "type": "ASCII",
         "value": "Richard D. Cook (rcook): 925-423-9605"
     },
+    "Name":
+    {
+        "type": "ASCII",
+        "value": "img2sm-canonical-tags.sm"
+    },
+    "Res 0":
+    {
+        "type": "ASCII",
+        "value": "Level:0 size:1024x768 tile:512x512"
+    },
     "Science Type":
     {
         "type": "ASCII",
@@ -276,6 +421,11 @@
         "type": "ASCII",
         "value": ""
     },
+    "Stereo":
+    {
+        "type": "ASCII",
+        "value": "NO"
+    },
     "Title":
     {
         "type": "ASCII",
@@ -285,6 +435,21 @@
     {
         "type": "ASCII",
         "value": ""
+    },
+    "Version":
+    {
+        "type": "INT64",
+        "value": "2"
+    },
+    "Xsize":
+    {
+        "type": "INT64",
+        "value": "1024"
+    },
+    "Ysize":
+    {
+        "type": "INT64",
+        "value": "768"
     },
     "doubletag":
     {
@@ -319,15 +484,40 @@
         "type": "ASCII",
         "value": ""
     },
+    "Compression":
+    {
+        "type": "DOUBLE",
+        "value": "0.619028"
+    },
     "Description":
     {
         "type": "ASCII",
         "value": ""
     },
+    "FPS":
+    {
+        "type": "ASCII",
+        "value": "FPS: 30.00\n"
+    },
+    "Format":
+    {
+        "type": "ASCII",
+        "value": "GZIP"
+    },
+    "Frames":
+    {
+        "type": "INT64",
+        "value": "3"
+    },
     "Keywords":
     {
         "type": "ASCII",
         "value": "salmon, trout"
+    },
+    "LOD":
+    {
+        "type": "INT64",
+        "value": "1"
     },
     "LorenzTag":
     {
@@ -354,6 +544,16 @@
         "type": "ASCII",
         "value": "Richard D. Cook (rcook): 925-423-9605"
     },
+    "Name":
+    {
+        "type": "ASCII",
+        "value": "img2sm-canonical-tags.sm"
+    },
+    "Res 0":
+    {
+        "type": "ASCII",
+        "value": "Level:0 size:1024x768 tile:512x512"
+    },
     "Science Type":
     {
         "type": "ASCII",
@@ -379,6 +579,11 @@
         "type": "ASCII",
         "value": ""
     },
+    "Stereo":
+    {
+        "type": "ASCII",
+        "value": "NO"
+    },
     "Title":
     {
         "type": "ASCII",
@@ -388,6 +593,21 @@
     {
         "type": "ASCII",
         "value": ""
+    },
+    "Version":
+    {
+        "type": "INT64",
+        "value": "2"
+    },
+    "Xsize":
+    {
+        "type": "INT64",
+        "value": "1024"
+    },
+    "Ysize":
+    {
+        "type": "INT64",
+        "value": "768"
     },
     "doubletag":
     {
@@ -422,15 +642,40 @@
         "type": "ASCII",
         "value": ""
     },
+    "Compression":
+    {
+        "type": "DOUBLE",
+        "value": "0.619028"
+    },
     "Description":
     {
         "type": "ASCII",
         "value": ""
     },
+    "FPS":
+    {
+        "type": "ASCII",
+        "value": "FPS: 30.00\n"
+    },
+    "Format":
+    {
+        "type": "ASCII",
+        "value": "GZIP"
+    },
+    "Frames":
+    {
+        "type": "INT64",
+        "value": "3"
+    },
     "Keywords":
     {
         "type": "ASCII",
         "value": "salmon, trout"
+    },
+    "LOD":
+    {
+        "type": "INT64",
+        "value": "1"
     },
     "LorenzTag":
     {
@@ -457,6 +702,16 @@
         "type": "ASCII",
         "value": "Richard D. Cook (rcook): 925-423-9605"
     },
+    "Name":
+    {
+        "type": "ASCII",
+        "value": "img2sm-canonical-tags.sm"
+    },
+    "Res 0":
+    {
+        "type": "ASCII",
+        "value": "Level:0 size:1024x768 tile:512x512"
+    },
     "Science Type":
     {
         "type": "ASCII",
@@ -482,6 +737,11 @@
         "type": "ASCII",
         "value": ""
     },
+    "Stereo":
+    {
+        "type": "ASCII",
+        "value": "NO"
+    },
     "Title":
     {
         "type": "ASCII",
@@ -491,6 +751,21 @@
     {
         "type": "ASCII",
         "value": ""
+    },
+    "Version":
+    {
+        "type": "INT64",
+        "value": "2"
+    },
+    "Xsize":
+    {
+        "type": "INT64",
+        "value": "1024"
+    },
+    "Ysize":
+    {
+        "type": "INT64",
+        "value": "768"
     },
     "doubletag":
     {
@@ -525,15 +800,40 @@
         "type": "ASCII",
         "value": ""
     },
+    "Compression":
+    {
+        "type": "DOUBLE",
+        "value": "0.619028"
+    },
     "Description":
     {
         "type": "ASCII",
         "value": ""
     },
+    "FPS":
+    {
+        "type": "ASCII",
+        "value": "FPS: 30.00\n"
+    },
+    "Format":
+    {
+        "type": "ASCII",
+        "value": "GZIP"
+    },
+    "Frames":
+    {
+        "type": "INT64",
+        "value": "3"
+    },
     "Keywords":
     {
         "type": "ASCII",
         "value": "salmon, trout"
+    },
+    "LOD":
+    {
+        "type": "INT64",
+        "value": "1"
     },
     "LorenzTag":
     {
@@ -560,6 +860,16 @@
         "type": "ASCII",
         "value": "Richard D. Cook (rcook): 925-423-9605"
     },
+    "Name":
+    {
+        "type": "ASCII",
+        "value": "img2sm-canonical-tags.sm"
+    },
+    "Res 0":
+    {
+        "type": "ASCII",
+        "value": "Level:0 size:1024x768 tile:512x512"
+    },
     "Science Type":
     {
         "type": "ASCII",
@@ -585,6 +895,11 @@
         "type": "ASCII",
         "value": ""
     },
+    "Stereo":
+    {
+        "type": "ASCII",
+        "value": "NO"
+    },
     "Title":
     {
         "type": "ASCII",
@@ -594,6 +909,21 @@
     {
         "type": "ASCII",
         "value": ""
+    },
+    "Version":
+    {
+        "type": "INT64",
+        "value": "2"
+    },
+    "Xsize":
+    {
+        "type": "INT64",
+        "value": "1024"
+    },
+    "Ysize":
+    {
+        "type": "INT64",
+        "value": "768"
     },
     "doubletag":
     {
@@ -628,15 +958,40 @@
         "type": "ASCII",
         "value": ""
     },
+    "Compression":
+    {
+        "type": "DOUBLE",
+        "value": "0.619028"
+    },
     "Description":
     {
         "type": "ASCII",
         "value": ""
     },
+    "FPS":
+    {
+        "type": "ASCII",
+        "value": "FPS: 30.00\n"
+    },
+    "Format":
+    {
+        "type": "ASCII",
+        "value": "GZIP"
+    },
+    "Frames":
+    {
+        "type": "INT64",
+        "value": "3"
+    },
     "Keywords":
     {
         "type": "ASCII",
         "value": "salmon, trout"
+    },
+    "LOD":
+    {
+        "type": "INT64",
+        "value": "1"
     },
     "LorenzTag":
     {
@@ -663,6 +1018,16 @@
         "type": "ASCII",
         "value": "Richard D. Cook (rcook): 925-423-9605"
     },
+    "Name":
+    {
+        "type": "ASCII",
+        "value": "img2sm-canonical-tags.sm"
+    },
+    "Res 0":
+    {
+        "type": "ASCII",
+        "value": "Level:0 size:1024x768 tile:512x512"
+    },
     "Science Type":
     {
         "type": "ASCII",
@@ -688,6 +1053,11 @@
         "type": "ASCII",
         "value": ""
     },
+    "Stereo":
+    {
+        "type": "ASCII",
+        "value": "NO"
+    },
     "Title":
     {
         "type": "ASCII",
@@ -697,6 +1067,21 @@
     {
         "type": "ASCII",
         "value": ""
+    },
+    "Version":
+    {
+        "type": "INT64",
+        "value": "2"
+    },
+    "Xsize":
+    {
+        "type": "INT64",
+        "value": "1024"
+    },
+    "Ysize":
+    {
+        "type": "INT64",
+        "value": "768"
     },
     "doubletag":
     {
