@@ -12,12 +12,11 @@ function usage() {
     echo "-s/--stereo: interpret the input movie as stereo." 
 }
 
-
 function errexit() {    
     echo '*************************************************'
     echo "ERROR: $1"
     echo '*************************************************'
-    rm -rf $tmpdir
+    rm -rf ${tmpdir}
     exit 1
 }
 
@@ -105,17 +104,16 @@ sm2img  -F yuv -s $skip $infile ${outframebase}_junk_%d || errexit "sm2img faile
 #       walk the movie duration, linking to the proper
 #       source frame to approximate the desired framerate
 #
-echo "Linking frames  to approximate the desired framerate"
-img=0
-while [ $img -lt $noutput ] ; do 
-    echo -e "\rFrame: $img out of $noutput\c"
-    t=$(python -c "print ${img}/30.0 ")
-    n=$(python -c "print int(${t}/${outspf} * $skip)")
-    
-    ln -s ${outframebase}_junk_${n}.Y ${outframebase}_junk_ln_${img}.Y
-    ln -s ${outframebase}_junk_${n}.U ${outframebase}_junk_ln_${img}.U
-    ln -s ${outframebase}_junk_${n}.V ${outframebase}_junk_ln_${img}.V
-    let img++
+echo "Linking frames to approximate the desired framerate"
+linknum=0
+while [ $linknum -lt $noutput ] ; do 
+    echo -e "\rFrame: $linknum out of $noutput\c"
+    t=$(python -c "print ${linknum}/30.0 ")
+    outframe=$(python -c "print int(${t}/${outspf}) * $skip")
+    ln -s ${outframebase}_junk_${outframe}.Y ${outframebase}_junk_ln_${linknum}.Y
+    ln -s ${outframebase}_junk_${outframe}.U ${outframebase}_junk_ln_${linknum}.U
+    ln -s ${outframebase}_junk_${outframe}.V ${outframebase}_junk_ln_${linknum}.V
+    let linknum++
 done
     
 #
@@ -123,14 +121,14 @@ done
 #
 echo "convert to mpeg using LibGen mpeg command...." 
 last=$(python -c "print int($noutput - 1)")
-if ! mpeg -a 0 -b $last -h $xsize -v $ysize ${outframebase}_junk_ln_ -s $outfile -PF > /dev/null; then
-    errexit "LibGen mpeg command failed"
+if ! mpeg -a 0 -b $last -h $xsize -v $ysize ${outframebase}_junk_ln_ -s $outfile -PF >mpeg.outlog; then
+    errexit "LibGen mpeg command failed: $(cat mpeg.outlog)"
 fi
 
 #
 #       clean up...
 #
-rm -rf $tmpdir
+rm -rf ${tmpdir}
 popd
 #
 #	Done!
