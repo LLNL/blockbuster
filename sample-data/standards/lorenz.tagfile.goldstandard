@@ -216,7 +216,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Tue Oct  1 17:50:06 2013 PDT"
+        "value": "Wed Oct  2 08:53:20 2013 PDT"
     },
     "Movie Create Host":
     {
@@ -369,7 +369,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Tue Oct  1 17:50:10 2013 PDT"
+        "value": "Wed Oct  2 08:53:24 2013 PDT"
     },
     "Movie Create Host":
     {
@@ -527,7 +527,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Tue Oct  1 17:50:11 2013 PDT"
+        "value": "Wed Oct  2 08:53:26 2013 PDT"
     },
     "Movie Create Host":
     {
@@ -680,7 +680,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Tue Oct  1 17:50:10 2013 PDT"
+        "value": "Wed Oct  2 08:53:24 2013 PDT"
     },
     "Movie Create Host":
     {
@@ -833,7 +833,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Tue Oct  1 17:50:12 2013 PDT"
+        "value": "Wed Oct  2 08:53:27 2013 PDT"
     },
     "Movie Create Host":
     {
@@ -996,7 +996,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Tue Oct  1 17:50:13 2013 PDT"
+        "value": "Wed Oct  2 08:53:27 2013 PDT"
     },
     "Movie Create Host":
     {
@@ -1149,12 +1149,12 @@
     "Movie Create Command":
     {
         "type": "ASCII",
-        "value": "\/collab\/usr\/gapps\/asciviz\/blockbuster\/dev\/chaos_5_x86_64_ib\/bin\/img2sm -v 5 --Stereo stereo-frames\/<LR>_stereo-test%04d.png stereo-lowercase.sm "
+        "value": "\/collab\/usr\/gapps\/asciviz\/blockbuster\/dev\/chaos_5_x86_64_ib\/bin\/img2sm -v 5 --Stereo stereo-frames\/<LR>_stereo-test%04d.png stereo-lowercase-template.sm "
     },
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Tue Oct  1 17:50:09 2013 PDT"
+        "value": "Wed Oct  2 08:53:24 2013 PDT"
     },
     "Movie Create Host":
     {
@@ -1169,7 +1169,7 @@
     "Name":
     {
         "type": "ASCII",
-        "value": "stereo-lowercase.sm"
+        "value": "stereo-lowercase-template.sm"
     },
     "Res 0":
     {
@@ -1209,7 +1209,7 @@
     "Title":
     {
         "type": "ASCII",
-        "value": "stereo-lowercase.sm"
+        "value": "stereo-lowercase-template.sm"
     },
     "UCRL":
     {

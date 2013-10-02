@@ -250,12 +250,18 @@ def RunTestCommand(fullcmd, test, outfile):
         # '        "value": "img2sm steamboat\\/m00006.png steamboat\\/m00007.png steamboat\\/m00009.png --report -C -T steamtag:boats -E img2sm-canonical-tags.sm "'
         # so here is the magic sauce:
         # searchexp = re.compile('\\\\[^ ]*/')
-def RemoveBindirFromLine(line):
+def RemoveBindirAndDateFromLine(line):
     r = re.search('\\\\[^ ]*/', line)
     if r:
         newline = line.replace(r.group(0), '')
         # dbprint("RemoveBindirFromLine: removing bindir from line.\n'%s' ------> '%s'\n"%(line,newline))
         line = newline
+    else:
+        # Remove the date line, as for tests this changes every time
+        r = re.search('.*"value": (".*:.*:.*T")', line)
+        if r:
+            newline = line.replace(r.group(1), '"GENERIC-DATESTRING"')
+            line = newline
     return line
 
 # ================================================================
@@ -283,8 +289,8 @@ def TagfileDiffs(test):
             return "Different number of lines in %s than %s"%(diff, standard)
 
         for lineno in range(len(taglines)):
-            tagline = RemoveBindirFromLine(taglines[lineno])
-            stdline = RemoveBindirFromLine(stdlines[lineno])
+            tagline = RemoveBindirAndDateFromLine(taglines[lineno])
+            stdline = RemoveBindirAndDateFromLine(stdlines[lineno])
             
             if tagline != stdline:
                 return "Mismatched fixed line between tagfile %s and standard %s at line %d:tagline: \"%s\"\nstdline: \"%s\""%(diff, standard, lineno, tagline, stdline)
