@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
       errexit(cmd, str(boost::format("ERROR: could not open movie file %s.")% filename)); 
     }
 
-    // Movie info case... (both sminfo and sm2img file)
+    // Movie info case... (both sminfo and smquery file)
     if (getinfo) {  
       cout << sm->InfoString(verbosity.getValue()) << endl; 
     }

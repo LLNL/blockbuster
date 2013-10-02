@@ -2,6 +2,10 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
+VERSION 2.8.0m (r1010) Mon Sep 30 11:14:44 PDT 2013
+-- Added ability to recognize frame sequences containing "left" and "right" in the names as being stereo and properly order them.
+
+===============================================================================
 VERSION 2.8.0l (r1010) Mon Sep 30 11:14:44 PDT 2013
 -- fix how files are cleaned up in sm2mpg and sm2qt scripts and to handle stereo movies correctly. 
 -- Fix bug in opening files that required movies to be write-enabled even when only reading them.

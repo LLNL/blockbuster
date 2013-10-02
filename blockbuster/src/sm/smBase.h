@@ -122,15 +122,29 @@ struct smMsgStruct {
   string file, function; 
 }; 
 
-#define SMPREAMBLE 
-#define smdbprintf(args...)                                  \
-  sm_real_dbprintf( smMsgStruct(__LINE__,__FILE__,__FUNCTION__), args)   
-
 extern double gBaseTime; /* initialized to -1 in constructor */  
 inline void sm_initTimer(void) {
   gBaseTime = timer::GetExactSeconds(); 
 } 
 extern int smVerbose;
+
+#define SMPREAMBLE 
+
+// NON-FORMATTED: (for the rare case where you want to print a string without interpreting it
+#define smdbprint(args...)                                  \
+  sm_real_dbprint( smMsgStruct(__LINE__,__FILE__,__FUNCTION__), args)   
+
+inline void sm_real_dbprint(const smMsgStruct msg, int level, string s) {  
+  if (smVerbose < level) return; 
+  if (gBaseTime == -1) sm_initTimer(); 
+  cerr << " SMDEBUG [" << msg.file << ":"<< msg.function << "(), line "<< msg.line << ", time=" << doubleToString(timer::GetExactSeconds() - gBaseTime, 3) << "]: "  << s;
+  return; 
+}
+
+// FORMATTED: 
+#define smdbprintf(args...)                                  \
+  sm_real_dbprintf( smMsgStruct(__LINE__,__FILE__,__FUNCTION__), args)   
+
 inline void sm_real_dbprintf(const smMsgStruct msg, int level, const char *fmt, ...) {  
   if (smVerbose < level) return; 
   if (gBaseTime == -1) sm_initTimer(); 

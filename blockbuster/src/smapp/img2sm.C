@@ -446,6 +446,142 @@ void FillInputBuffer(Work *wrk) {
 
 
 // =======================================================================
+// Order the files for stereo using "left/right" labels as needed.  
+bool ReorderInputFilesForStereo(vector<string> &inputfiles) {
+  string leftstring, rightstring; 
+  string::size_type rlstringpos = string::npos; 
+  vector<string> leftstrings, rightstrings; 
+  leftstrings.push_back("left"); rightstrings.push_back("right"); 
+  leftstrings.push_back("Left"); rightstrings.push_back("Right"); 
+  leftstrings.push_back("LEFT"); rightstrings.push_back("RIGHT"); 
+  for (int i = 0; rlstringpos == -1 && i<leftstrings.size(); i++) {
+    rlstringpos = inputfiles[0].find(leftstrings[i]);
+    if (rlstringpos  != string::npos) {
+      leftstring = leftstrings[i]; 
+      rightstring = rightstrings[i]; 
+    }
+  }
+  if (rlstringpos == string::npos) {
+    smdbprintf(2, "ReorderInputFilesForStereo Did not find right/left string in first frame of inputs; assuming they are ordered properly.\n");
+    return true; 
+  }
+  vector<string> leftframes, rightframes; 
+  smdbprintf(1, "ReorderInputFilesForStereo found the string \"%s\" in the first file name.  We will attempt to place the files sequentially into right and left channels, checking that the name patterns are coherent, and then interleave them.\n", leftstring.c_str()); 
+  
+  for (uint32_t fileno = 0; fileno < inputfiles.size(); fileno++) {
+    string::size_type leftcheck = inputfiles[fileno].find(leftstring), 
+      rightcheck = inputfiles[fileno].find(rightstring);
+    if (leftcheck == rlstringpos) {
+      leftframes.push_back(inputfiles[fileno]); 
+    } else if (rightcheck == rlstringpos) {
+      rightframes.push_back(inputfiles[fileno]); 
+    } else {
+      if (leftcheck != string::npos) {
+        smdbprintf(0, "Error: ReorderInputFilesForStereo found the string \"%s\" in the first file name, but found it in a different place in filename \"%s\".  \n", leftstring.c_str(), inputfiles[fileno].c_str()); 
+        return false; 
+      }
+      if (rightcheck != string::npos) {
+        smdbprintf(0, "Error: ReorderInputFilesForStereo found the string \"%s\" in the first file name, but found it in a different place in filename \"%s\".\n", leftstring.c_str(), inputfiles[fileno].c_str()); 
+        return false; 
+      }
+      smdbprintf(0, "Error: ReorderInputFilesForStereo found the string \"%s\" in the first file name, but did not find any right or left marker in filename \"%s\".\n", leftstring.c_str(), inputfiles[fileno].c_str()); 
+      return false; 
+    }
+  }
+  if (leftframes.size() != rightframes.size()) {
+    smdbprintf(0, "Error:  ReorderInputFilesForStereo found %d right frames and %d left frames.  This cannot be made into a stereo movie.\n", rightframes.size(), leftframes.size()); 
+    return false; 
+  }
+  inputfiles.clear(); 
+  for (uint32_t i = 0; i< leftframes.size(); i++) {
+    inputfiles.push_back(leftframes[i]); 
+    smdbprintf(2, "ReorderInputFilesForStereo pushing back frame %s\n", leftframes[i].c_str()); 
+    inputfiles.push_back(rightframes[i]); 
+    smdbprintf(2, "ReorderInputFilesForStereo pushing back frame %s\n", rightframes[i].c_str()); 
+  }
+  return true; 
+}
+
+// =======================================================================
+bool FindFirstFile(vector<string> &inputfiles, string &leftTemplate, string &rightTemplate, uint32_t &filenum, int firstFrame, int lastFrame) {
+  // Single input file given.  See if it is a filename template
+  string nameTemplate = inputfiles[0];
+  inputfiles.clear();
+  try {
+    string filename = str(boost::format(nameTemplate)%filenum);
+  } catch (...) {
+    // Not a template.  
+    return false;
+  }
+  
+
+  smdbprintf(5, "FindFirstFile(): First frame is %d, last is %d\n",  firstFrame, lastFrame);
+
+  filenum = 0; 
+  if (firstFrame != -1) filenum = firstFrame; 
+  if (lastFrame == -1) lastFrame = 100;
+
+  string::size_type lrpos = nameTemplate.find("<LR>"); 
+  if (lrpos == string::npos) {
+    smdbprintf(5, "FindFirstFile(): No <LR> tag found in template.\n", filenum);
+    while (filenum <= lastFrame) {
+      smdbprintf(5, "FindFirstFile(): Checking frame number %d\n", filenum);
+      string filename = str(boost::format(nameTemplate)%filenum);
+      FILE *fp = fopen(filename.c_str(),"r");
+      if (!fp) {
+        if (firstFrame != -1) {
+          smdbprintf(0,  str(boost::format("FindFirstFile(): User specified first frame %1% does not exist.\n")%firstFrame).c_str()); 
+          return false; 
+        }
+      } else {
+        firstFrame = filenum; 
+        leftTemplate = nameTemplate; 
+        inputfiles.push_back(filename); 
+        return true; 
+      }
+      filenum++; 
+    } 
+  }
+  else {  
+    smdbprintf(3, "FindFirstFile(): <LR> found in template.  We have \"left/right\" patterns to parse.\n"); 
+    vector<string> leftstrings, rightstrings; 
+    leftstrings.push_back("left"); rightstrings.push_back("right"); 
+    leftstrings.push_back("Left"); rightstrings.push_back("Right"); 
+    leftstrings.push_back("LEFT"); rightstrings.push_back("RIGHT"); 
+
+    while (filenum <= lastFrame) {
+      FILE * fp = NULL; 
+      for (int i = 0; i<leftstrings.size(); i++) {
+        string leftfilet = boost::replace_all_copy(nameTemplate, "<LR>", leftstrings[i]); 
+        string leftfile = str(boost::format(leftfilet)%filenum); 
+        string rightfilet = boost::replace_all_copy(nameTemplate, "<LR>", rightstrings[i]); 
+        string rightfile = str(boost::format(rightfilet)%filenum); 
+        if (fp = fopen(leftfile.c_str(), "r")) {
+          smdbprintf(3, "FindFirstFile(): Found first left frame %s.\n", leftfile.c_str()); 
+          fclose(fp); 
+          if (fp = fopen(rightfile.c_str(), "r")) {
+            fclose(fp); 
+            smdbprintf(3, "FindFirstFile(): Found first right frame %s.\n", rightfile.c_str()); 
+            inputfiles.push_back(leftfile);
+            inputfiles.push_back(rightfile); 
+            leftTemplate = leftfilet; 
+            rightTemplate = rightfilet; 
+            firstFrame = filenum; 
+            return true; 
+          }
+        }
+      }
+      filenum++; 
+    }
+  }
+
+  if (firstFrame == -1) firstFrame = 0; 
+  
+  smdbprint(0, str(boost::format("I tried 100 files with input template \"%1%\" starting at \"%2%\" and gave up.  Try using the \"--first\" option if you have an unusual file sequence.")%nameTemplate%firstFrame).c_str());
+  return false; 
+}
+
+// =======================================================================
 int main(int argc,char **argv) {
   TCLAP::CmdLine  cmd(str(boost::format("%1% converts a set of images into a streaming movie, optionally setting movie meta data.")%argv[0]), ' ', BLOCKBUSTER_VERSION);
 
@@ -553,7 +689,9 @@ int main(int argc,char **argv) {
 
   TCLAP::ValueArg<string> size("", "raw-image-dims", "Specify raw img dims", false, "", "'width:height:depth:header'", cmd);
 
-  TCLAP::SwitchArg stereo("S", "Stereo", "Specify the output file is L/R stereo.", cmd, false);
+  TCLAP::SwitchArg noReorder("", "no-stereo-reorder", "Normally, file sequences for movies are assumed to be stereographic left/right frames if they have the words \"left\" and \"right\" in them, and appropriately reordered.  Use this flag to override this behavior.", cmd, false);
+
+  TCLAP::SwitchArg stereo("S", "Stereo", "Specify the output file is L/R stereo.  In this case, the input images will be interpreted first by whether they have any version of the words \"left\" and \"right\" in their names.  If not, then the odd frames will be taken as \"left\" and the even will be \"right.\"  If you are using a filename template, you can use \"<LR>\" as a placeholder for \"left/right\".  Example for VisIt output frames, you might use \"<LR>_stereo-blah%04d.png\"", cmd, false);
 
 
 
@@ -615,77 +753,75 @@ int main(int argc,char **argv) {
   inputfiles.pop_back();
 
   bool haveTemplate = false;
+  string origTemplate, leftTemplate, rightTemplate; 
+  uint32_t filenum = firstFrame; 
   if (inputfiles.size() == 1) {
-    // See if we have a filename template
-    string nameTemplate = inputfiles[0];
-    inputfiles.clear();
-    FILE *fp = NULL;
-    uint filenum = firstFrame;
-    smdbprintf(5, "First frame is %d, last is %d\n",  firstFrame, lastFrame);
-    string filename;
-    bool foundFirst = false;
-    while (lastFrame == -1 || filenum <= lastFrame) {
-      smdbprintf(5, "Beginning frame number %d\n", filenum);
-      try {
-        filename = str(boost::format(nameTemplate)%filenum);
-      } catch (...) {
-        // see if the filename exists as given in non-template single arg:
-        fp = fopen(nameTemplate.c_str(),"r");
-        if (fp) {
-          smdbprintf(5, str(boost::format("Warning: single input file \"%1%\" given.  This is not a valid filename template, so I'm assuming it's actually a single input file, which is going to make a pretty stupid movie.\n")%nameTemplate).c_str());
-          inputfiles.push_back(nameTemplate); 
-          break;
-        }
-        else {
-          errexit(cmd, str(boost::format("Cannot open single file %1% -- probably you made a mistake in your template name.")%nameTemplate)); 
-        }
+    FILE *fp = fopen(inputfiles[0].c_str(),"r");
+    if (fp) {
+      smdbprintf(5, str(boost::format("Warning: single input file \"%1%\" given.  This is going to make a pretty stupid movie.\n")%inputfiles[0]).c_str());
+      fclose(fp); 
+    } 
+    else { 
+      smdbprint(1, str(boost::format("Warning: single input \"%s\" given.  Checking to see if it is a template...\n")%inputfiles[0]).c_str());
+      origTemplate = inputfiles[0]; 
+      if (!FindFirstFile(inputfiles, leftTemplate, rightTemplate, filenum, firstFrame, lastFrame)) {
+        errexit(cmd, "Could not find first file(s).\n"); 
       }
-      smdbprintf(5, "Opening file %s\n", filename.c_str());
-      fp = fopen(filename.c_str(),"r");
-      if (!fp) {
-        if (foundFirst) {
+      filenum += frameStep; 
+      haveTemplate = true; 
+
+      // Find the rest of the files... 
+      while (lastFrame == -1 || filenum <= lastFrame) {
+        string leftFilename = str(boost::format(leftTemplate)%filenum), rightFilename;
+        smdbprintf(5, "Checking next file %s\n", leftFilename.c_str());
+        FILE *fp = fopen(leftFilename.c_str(),"r");
+        if (!fp) {
           if (lastFrame == -1) {
             break; // we have found all the frames
           } else {
             // We found the first frame and the user specified last frame but a frame is missing 
-            errexit(cmd, str(boost::format("Cannot open file \"%1%\", #%2% in sequence for template \"%3%\"")%filename%filenum%nameTemplate));
-          } 
+            errexit(cmd, str(boost::format("Cannot open left file \"%1%\", #%2% in sequence for template \"%3%\"")%leftFilename%filenum%origTemplate));
+          }       
         }
         else {
-          // we have not found the first frame yet
-          if (firstFrameFlag.getValue() == -1) {
-            // user did not specify a first frame
-            if (filenum > 100) {
-              errexit(cmd, str(boost::format("File sequence should start at file 0 or 1 -- I tried 100 files with your template \"%1%\" and gave up.  Try using the \"--first\" option if you have an unusual file sequence.")%nameTemplate));
-            }           
-            // keep looking for the first valid file in the sequence
-            filenum ++; 
+          fclose(fp);
+          smdbprintf(5, "Successfully opened left file %s\n",  leftFilename.c_str()); 
+          if (rightTemplate != "") {
+            rightFilename  = str(boost::format(rightTemplate)%filenum);        
+            smdbprintf(5, "Checking right file %s\n", rightFilename.c_str()); 
+            fp = fopen(rightFilename.c_str(),"r");
+            if (!fp) {
+              errexit(cmd, str(boost::format("Cannot open right file \"%1%\", #%2% in sequence for template \"%3%\"")%rightFilename%filenum%rightTemplate));
+            }       
+            fclose(fp);
           }
-          else {
-            errexit (cmd, str(boost::format("Cannot open first file %1% for template %2%")%filenum%nameTemplate));
+          smdbprintf(2, "Adding left or mono frame %s for timestep %d.\n", leftFilename.c_str(), filenum); 
+          inputfiles.push_back(leftFilename);
+          if (rightFilename != "") {
+            smdbprintf(2, "Adding right stereo frame %s for timestep %d.\n", rightFilename.c_str(), filenum); 
+            inputfiles.push_back(rightFilename);
           }
+          filenum += frameStep;
         }
       }
-      else {
-        smdbprintf(5, "successfully opened file %s\n", filename.c_str()); 
-        foundFirst = true;
-        inputfiles.push_back(filename);
-        filenum += frameStep;
-        fclose(fp);
-      }
-    }
-    smdbprintf(1, "Found %d files for template %s.\n", inputfiles.size(), nameTemplate.c_str());
-    haveTemplate = true;
-    firstFrame = 0;
-    lastFrame = inputfiles.size()-1;
-    frameStep = 1;
-  } /* end parsing filenames by name template */
+      smdbprintf(1, "Found %d files for template %s.\n", inputfiles.size(), origTemplate.c_str());
+      firstFrame = 0;
+      lastFrame = inputfiles.size()-1;
+      frameStep = 1;
+    } /* end parsing filenames by name template */
+  }
 
   if (lastFrame == -1) {
     lastFrame = inputfiles.size()-1;
   }
-  /* If no template, then filter out explicit filenames using --first and --last and --step if given */
   if (!haveTemplate) {
+    smdbprintf(3, "No template found.  Filter out explicit filenames using --first and --last and --step if given\n"); 
+    if (stereo.getValue() && !noReorder.getValue()) {
+      if (!ReorderInputFilesForStereo(inputfiles)) {
+        errexit(cmd, "Could not reorder frames for stereo movie.  This seems suspicious.  If you are sure about your filenames, please use the --no-stereo-reorder flag to override this."); 
+      }
+    }
+        
     vector<string> filtered;
     for (uint frame = firstFrame;
          (frameStep > 0 && frame <= lastFrame)  ||
@@ -700,6 +836,7 @@ int main(int argc,char **argv) {
         errexit(cmd, str(boost::format("Cannot open file #%1%, in file list.  Filename: \"%2%\"")%frame%filename));
       }
       fclose(fp);
+      smdbprintf(3, "Pushing back file %s\n",  filename.c_str()); 
       filtered.push_back(filename);
     }
     inputfiles = filtered;
