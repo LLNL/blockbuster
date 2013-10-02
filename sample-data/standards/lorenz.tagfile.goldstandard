@@ -171,7 +171,7 @@
     "Compression":
     {
         "type": "DOUBLE",
-        "value": "0.619028"
+        "value": "0.573926"
     },
     "Description":
     {
@@ -191,12 +191,12 @@
     "Frames":
     {
         "type": "INT64",
-        "value": "3"
+        "value": "1"
     },
     "Keywords":
     {
         "type": "ASCII",
-        "value": "salmon, trout"
+        "value": ""
     },
     "LOD":
     {
@@ -211,12 +211,12 @@
     "Movie Create Command":
     {
         "type": "ASCII",
-        "value": "\/collab\/usr\/gapps\/asciviz\/blockbuster\/dev\/chaos_5_x86_64_ib\/bin\/img2sm steamboat\/m00006.png steamboat\/m00007.png steamboat\/m00009.png --report -C -T steamtag:boats -E img2sm-canonical-tags.sm "
+        "value": "\/collab\/usr\/gapps\/asciviz\/blockbuster\/dev\/chaos_5_x86_64_ib\/bin\/img2sm -v 5 mountains.tiff mountains.sm "
     },
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "June 18 "
+        "value": "Tue Oct  1 17:50:06 2013 PDT"
     },
     "Movie Create Host":
     {
@@ -231,22 +231,22 @@
     "Name":
     {
         "type": "ASCII",
-        "value": "img2sm-canonical-tags.sm"
+        "value": "mountains.sm"
     },
     "Res 0":
     {
         "type": "ASCII",
-        "value": "Level:0 size:1024x768 tile:512x512"
+        "value": "Level:0 size:1600x1200 tile:512x512"
     },
     "Science Type":
     {
         "type": "ASCII",
-        "value": "bogus"
+        "value": ""
     },
     "Sim CPUs":
     {
         "type": "INT64",
-        "value": "10"
+        "value": "1"
     },
     "Sim Cluster":
     {
@@ -256,7 +256,7 @@
     "Sim Date":
     {
         "type": "DATE",
-        "value": "Thu Jan  1 01:00:00 2013"
+        "value": ""
     },
     "Sim Duration":
     {
@@ -271,7 +271,7 @@
     "Title":
     {
         "type": "ASCII",
-        "value": "img2sm-canonical-tags.sm"
+        "value": "mountains.sm"
     },
     "UCRL":
     {
@@ -286,12 +286,12 @@
     "Xsize":
     {
         "type": "INT64",
-        "value": "1024"
+        "value": "1600"
     },
     "Ysize":
     {
         "type": "INT64",
-        "value": "768"
+        "value": "1200"
     },
     "doubletag":
     {
@@ -303,15 +303,637 @@
         "type": "ASCII",
         "value": "horse feathers are fluffy"
     },
-    "steamtag":
+    "testtag":
+    {
+        "type": "INT64",
+        "value": "78"
+    }
+}
+,
+{
+    "Authors":
     {
         "type": "ASCII",
-        "value": "boats"
+        "value": ""
+    },
+    "Code Name":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Compression":
+    {
+        "type": "DOUBLE",
+        "value": "0.258168"
+    },
+    "Description":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "FPS":
+    {
+        "type": "ASCII",
+        "value": "FPS: 30.00\n"
+    },
+    "Format":
+    {
+        "type": "ASCII",
+        "value": "GZIP"
+    },
+    "Frames":
+    {
+        "type": "INT64",
+        "value": "11"
+    },
+    "Keywords":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "LOD":
+    {
+        "type": "INT64",
+        "value": "1"
+    },
+    "LorenzTag":
+    {
+        "type": "ASCII",
+        "value": "Lorenz value"
+    },
+    "Movie Create Command":
+    {
+        "type": "ASCII",
+        "value": "\/collab\/usr\/gapps\/asciviz\/blockbuster\/dev\/chaos_5_x86_64_ib\/bin\/img2sm -v 5 -c gz -T sometag:somevalue --first 20 -l 30 quicksand-short-6fps\/quicksand-short-6fps%03d.png quicksand-11frames-gz.sm "
+    },
+    "Movie Create Date":
+    {
+        "type": "ASCII",
+        "value": "Tue Oct  1 17:50:10 2013 PDT"
+    },
+    "Movie Create Host":
+    {
+        "type": "ASCII",
+        "value": "rzgpu2"
+    },
+    "Movie Creator":
+    {
+        "type": "ASCII",
+        "value": "Richard D. Cook (rcook): 925-423-9605"
+    },
+    "Name":
+    {
+        "type": "ASCII",
+        "value": "quicksand-11frames-gz.sm"
+    },
+    "Res 0":
+    {
+        "type": "ASCII",
+        "value": "Level:0 size:320x240 tile:320x240"
+    },
+    "Science Type":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Sim CPUs":
+    {
+        "type": "INT64",
+        "value": "1"
+    },
+    "Sim Cluster":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Sim Date":
+    {
+        "type": "DATE",
+        "value": ""
+    },
+    "Sim Duration":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Stereo":
+    {
+        "type": "ASCII",
+        "value": "NO"
+    },
+    "Title":
+    {
+        "type": "ASCII",
+        "value": "quicksand-11frames-gz.sm"
+    },
+    "UCRL":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Version":
+    {
+        "type": "INT64",
+        "value": "2"
+    },
+    "Xsize":
+    {
+        "type": "INT64",
+        "value": "320"
+    },
+    "Ysize":
+    {
+        "type": "INT64",
+        "value": "240"
+    },
+    "doubletag":
+    {
+        "type": "DOUBLE",
+        "value": "42.400000"
+    },
+    "horsie tag":
+    {
+        "type": "ASCII",
+        "value": "horse feathers are fluffy"
+    },
+    "sometag":
+    {
+        "type": "ASCII",
+        "value": "somevalue"
     },
     "testtag":
     {
         "type": "INT64",
         "value": "78"
+    }
+}
+,
+{
+    "Authors":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Code Name":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Compression":
+    {
+        "type": "DOUBLE",
+        "value": "0.206225"
+    },
+    "Description":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "FPS":
+    {
+        "type": "ASCII",
+        "value": "FPS: 30.00\n"
+    },
+    "Format":
+    {
+        "type": "ASCII",
+        "value": "LZMA"
+    },
+    "Frames":
+    {
+        "type": "INT64",
+        "value": "11"
+    },
+    "Keywords":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "LOD":
+    {
+        "type": "INT64",
+        "value": "1"
+    },
+    "LorenzTag":
+    {
+        "type": "ASCII",
+        "value": "Lorenz value"
+    },
+    "Movie Create Command":
+    {
+        "type": "ASCII",
+        "value": "\/collab\/usr\/gapps\/asciviz\/blockbuster\/dev\/chaos_5_x86_64_ib\/bin\/img2sm -v 5 --compression lzma --first 20 --last 30 quicksand-short-6fps\/quicksand-short-6fps%03d.png quicksand-11frames-lzma.sm "
+    },
+    "Movie Create Date":
+    {
+        "type": "ASCII",
+        "value": "Tue Oct  1 17:50:11 2013 PDT"
+    },
+    "Movie Create Host":
+    {
+        "type": "ASCII",
+        "value": "rzgpu2"
+    },
+    "Movie Creator":
+    {
+        "type": "ASCII",
+        "value": "Richard D. Cook (rcook): 925-423-9605"
+    },
+    "Name":
+    {
+        "type": "ASCII",
+        "value": "quicksand-11frames-lzma.sm"
+    },
+    "Res 0":
+    {
+        "type": "ASCII",
+        "value": "Level:0 size:320x240 tile:320x240"
+    },
+    "Science Type":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Sim CPUs":
+    {
+        "type": "INT64",
+        "value": "1"
+    },
+    "Sim Cluster":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Sim Date":
+    {
+        "type": "DATE",
+        "value": ""
+    },
+    "Sim Duration":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Stereo":
+    {
+        "type": "ASCII",
+        "value": "NO"
+    },
+    "Title":
+    {
+        "type": "ASCII",
+        "value": "quicksand-11frames-lzma.sm"
+    },
+    "UCRL":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Version":
+    {
+        "type": "INT64",
+        "value": "2"
+    },
+    "Xsize":
+    {
+        "type": "INT64",
+        "value": "320"
+    },
+    "Ysize":
+    {
+        "type": "INT64",
+        "value": "240"
+    },
+    "doubletag":
+    {
+        "type": "DOUBLE",
+        "value": "42.400000"
+    },
+    "horsie tag":
+    {
+        "type": "ASCII",
+        "value": "horse feathers are fluffy"
+    },
+    "testtag":
+    {
+        "type": "INT64",
+        "value": "78"
+    }
+}
+,
+{
+    "Authors":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Code Name":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Compression":
+    {
+        "type": "DOUBLE",
+        "value": "0.271350"
+    },
+    "Description":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "FPS":
+    {
+        "type": "ASCII",
+        "value": "FPS: 30.00\n"
+    },
+    "Format":
+    {
+        "type": "ASCII",
+        "value": "GZIP"
+    },
+    "Frames":
+    {
+        "type": "INT64",
+        "value": "1"
+    },
+    "Keywords":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "LOD":
+    {
+        "type": "INT64",
+        "value": "1"
+    },
+    "LorenzTag":
+    {
+        "type": "ASCII",
+        "value": "Lorenz value"
+    },
+    "Movie Create Command":
+    {
+        "type": "ASCII",
+        "value": "\/collab\/usr\/gapps\/asciviz\/blockbuster\/dev\/chaos_5_x86_64_ib\/bin\/img2sm -v 5 --first 084 --last 084 quicksand-short-6fps\/quicksand-short-6fps%03d.png quicksand-single-gz.sm "
+    },
+    "Movie Create Date":
+    {
+        "type": "ASCII",
+        "value": "Tue Oct  1 17:50:10 2013 PDT"
+    },
+    "Movie Create Host":
+    {
+        "type": "ASCII",
+        "value": "rzgpu2"
+    },
+    "Movie Creator":
+    {
+        "type": "ASCII",
+        "value": "Richard D. Cook (rcook): 925-423-9605"
+    },
+    "Name":
+    {
+        "type": "ASCII",
+        "value": "quicksand-single-gz.sm"
+    },
+    "Res 0":
+    {
+        "type": "ASCII",
+        "value": "Level:0 size:320x240 tile:320x240"
+    },
+    "Science Type":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Sim CPUs":
+    {
+        "type": "INT64",
+        "value": "1"
+    },
+    "Sim Cluster":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Sim Date":
+    {
+        "type": "DATE",
+        "value": ""
+    },
+    "Sim Duration":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Stereo":
+    {
+        "type": "ASCII",
+        "value": "NO"
+    },
+    "Title":
+    {
+        "type": "ASCII",
+        "value": "quicksand-single-gz.sm"
+    },
+    "UCRL":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Version":
+    {
+        "type": "INT64",
+        "value": "2"
+    },
+    "Xsize":
+    {
+        "type": "INT64",
+        "value": "320"
+    },
+    "Ysize":
+    {
+        "type": "INT64",
+        "value": "240"
+    },
+    "doubletag":
+    {
+        "type": "DOUBLE",
+        "value": "42.400000"
+    },
+    "horsie tag":
+    {
+        "type": "ASCII",
+        "value": "horse feathers are fluffy"
+    },
+    "testtag":
+    {
+        "type": "INT64",
+        "value": "78"
+    }
+}
+,
+{
+    "Authors":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Code Name":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Compression":
+    {
+        "type": "DOUBLE",
+        "value": "0.203939"
+    },
+    "Description":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "FPS":
+    {
+        "type": "ASCII",
+        "value": "FPS: 30.00\n"
+    },
+    "Format":
+    {
+        "type": "ASCII",
+        "value": "LZMA"
+    },
+    "Frames":
+    {
+        "type": "INT64",
+        "value": "11"
+    },
+    "Keywords":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "LOD":
+    {
+        "type": "INT64",
+        "value": "1"
+    },
+    "LorenzTag":
+    {
+        "type": "ASCII",
+        "value": "Lorenz value"
+    },
+    "Movie Create Command":
+    {
+        "type": "ASCII",
+        "value": "\/collab\/usr\/gapps\/asciviz\/blockbuster\/dev\/chaos_5_x86_64_ib\/bin\/img2sm -v 5 --compression lzma --first 20 --last 30 quicksand-short-6fps\/quicksand-short-6fps001.png quicksand-short-6fps\/quicksand-short-6fps002.png quicksand-short-6fps\/quicksand-short-6fps003.png quicksand-short-6fps\/quicksand-short-6fps004.png quicksand-short-6fps\/quicksand-short-6fps005.png quicksand-short-6fps\/quicksand-short-6fps006.png quicksand-short-6fps\/quicksand-short-6fps007.png quicksand-short-6fps\/quicksand-short-6fps008.png quicksand-short-6fps\/quicksand-short-6fps009.png quicksand-short-6fps\/quicksand-short-6fps010.png quicksand-short-6fps\/quicksand-short-6fps011.png quicksand-short-6fps\/quicksand-short-6fps012.png quicksand-short-6fps\/quicksand-short-6fps013.png quicksand-short-6fps\/quicksand-short-6fps014.png quicksand-short-6fps\/quicksand-short-6fps015.png quicksand-short-6fps\/quicksand-short-6fps016.png quicksand-short-6fps\/quicksand-short-6fps017.png quicksand-short-6fps\/quicksand-short-6fps018.png quicksand-short-6fps\/quicksand-short-6fps019.png quicksand-short-6fps\/quicksand-short-6fps020.png quicksand-short-6fps\/quicksand-short-6fps021.png quicksand-short-6fps\/quicksand-short-6fps022.png quicksand-short-6fps\/quicksand-short-6fps023.png quicksand-short-6fps\/quicksand-short-6fps024.png quicksand-short-6fps\/quicksand-short-6fps025.png quicksand-short-6fps\/quicksand-short-6fps026.png quicksand-short-6fps\/quicksand-short-6fps027.png quicksand-short-6fps\/quicksand-short-6fps028.png quicksand-short-6fps\/quicksand-short-6fps029.png quicksand-short-6fps\/quicksand-short-6fps030.png quicksand-short-6fps\/quicksand-short-6fps031.png quicksand-short-6fps\/quicksand-short-6fps032.png quicksand-short-6fps\/quicksand-short-6fps033.png quicksand-short-6fps\/quicksand-short-6fps034.png quicksand-short-6fps\/quicksand-short-6fps035.png quicksand-short-6fps\/quicksand-short-6fps036.png quicksand-short-6fps\/quicksand-short-6fps037.png quicksand-short-6fps\/quicksand-short-6fps038.png quicksand-short-6fps\/quicksand-short-6fps039.png quicksand-short-6fps\/quicksand-short-6fps040.png quicksand-short-6fps\/quicksand-short-6fps041.png quicksand-short-6fps\/quicksand-short-6fps042.png quicksand-short-6fps\/quicksand-short-6fps043.png quicksand-short-6fps\/quicksand-short-6fps044.png quicksand-short-6fps\/quicksand-short-6fps045.png quicksand-short-6fps\/quicksand-short-6fps046.png quicksand-short-6fps\/quicksand-short-6fps047.png quicksand-short-6fps\/quicksand-short-6fps048.png quicksand-short-6fps\/quicksand-short-6fps049.png quicksand-short-6fps\/quicksand-short-6fps050.png quicksand-short-6fps\/quicksand-short-6fps051.png quicksand-short-6fps\/quicksand-short-6fps052.png quicksand-short-6fps\/quicksand-short-6fps053.png quicksand-short-6fps\/quicksand-short-6fps054.png quicksand-short-6fps\/quicksand-short-6fps055.png quicksand-short-6fps\/quicksand-short-6fps056.png quicksand-short-6fps\/quicksand-short-6fps057.png quicksand-short-6fps\/quicksand-short-6fps058.png quicksand-short-6fps\/quicksand-short-6fps059.png quicksand-short-6fps\/quicksand-short-6fps060.png quicksand-short-6fps\/quicksand-short-6fps061.png quicksand-short-6fps\/quicksand-short-6fps062.png quicksand-short-6fps\/quicksand-short-6fps063.png quicksand-short-6fps\/quicksand-short-6fps064.png quicksand-short-6fps\/quicksand-short-6fps065.png quicksand-short-6fps\/quicksand-short-6fps066.png quicksand-short-6fps\/quicksand-short-6fps067.png quicksand-short-6fps\/quicksand-short-6fps068.png quicksand-short-6fps\/quicksand-short-6fps069.png quicksand-short-6fps\/quicksand-short-6fps070.png quicksand-short-6fps\/quicksand-short-6fps071.png quicksand-short-6fps\/quicksand-short-6fps072.png quicksand-short-6fps\/quicksand-short-6fps073.png quicksand-short-6fps\/quicksand-short-6fps074.png quicksand-short-6fps\/quicksand-short-6fps075.png quicksand-short-6fps\/quicksand-short-6fps076.png quicksand-short-6fps\/quicksand-short-6fps077.png quicksand-short-6fps\/quicksand-short-6fps078.png quicksand-short-6fps\/quicksand-short-6fps079.png quicksand-short-6fps\/quicksand-short-6fps080.png quicksand-short-6fps\/quicksand-short-6fps081.png quicksand-short-6fps\/quicksand-short-6fps082.png quicksand-short-6fps\/quicksand-short-6fps083.png quicksand-short-6fps\/quicksand-short-6fps084.png quicksand-short-6fps\/quicksand-short-6fps085.png quicksand-short-6fps\/quicksand-short-6fps086.png quicksand-short-6fps\/quicksand-short-6fps087.png quicksand-short-6fps\/quicksand-short-6fps088.png quicksand-short-6fps\/quicksand-short-6fps089.png quicksand-short-6fps\/quicksand-short-6fps090.png quicksand-short-6fps\/quicksand-short-6fps091.png quicksand-short-6fps\/quicksand-short-6fps092.png quicksand-short-6fps\/quicksand-short-6fps093.png quicksand-short-6fps\/quicksand-short-6fps094.png quicksand-short-6fps\/quicksand-short-6fps095.png quicksand-short-6fps\/quicksand-short-6fps096.png quicksand-short-6fps\/quicksand-short-6fps097.png quicksand-short-6fps\/quicksand-short-6fps098.png quicksand-short-6fps\/quicksand-short-6fps099.png quicksand-short-6fps\/quicksand-short-6fps100.png quicksand-short-6fps\/quicksand-short-6fps101.png quicksand-short-6fps\/quicksand-short-6fps102.png quicksand-short-6fps\/quicksand-short-6fps103.png quicksand-short-6fps\/quicksand-short-6fps104.png quicksand-short-6fps\/quicksand-short-6fps105.png quicksand-short-6fps\/quicksand-short-6fps106.png quicksand-short-6fps\/quicksand-short-6fps107.png quicksand-short-6fps\/quicksand-short-6fps108.png quicksand-short-6fps\/quicksand-short-6fps109.png quicksand-short-6fps\/quicksand-short-6fps110.png quicksand-short-6fps\/quicksand-short-6fps111.png quicksand-short-6fps\/quicksand-short-6fps112.png quicksand-short-6fps\/quicksand-short-6fps113.png quicksand-short-6fps\/quicksand-short-6fps114.png quicksand-short-6fps\/quicksand-short-6fps115.png quicksand-short-6fps\/quicksand-short-6fps116.png quicksand-short-6fps\/quicksand-short-6fps117.png quicksand-short-6fps\/quicksand-short-6fps118.png quicksand-short-6fps\/quicksand-short-6fps119.png quicksand-short-6fps\/quicksand-short-6fps120.png quicksand-short-6fps\/quicksand-short-6fps121.png quicksand-short-6fps\/quicksand-short-6fps122.png quicksand-short-6fps\/quicksand-short-6fps123.png quicksand-short-6fps\/quicksand-short-6fps124.png quicksand-wildcard-11frames-lzma.sm "
+    },
+    "Movie Create Date":
+    {
+        "type": "ASCII",
+        "value": "Tue Oct  1 17:50:12 2013 PDT"
+    },
+    "Movie Create Host":
+    {
+        "type": "ASCII",
+        "value": "rzgpu2"
+    },
+    "Movie Creator":
+    {
+        "type": "ASCII",
+        "value": "Richard D. Cook (rcook): 925-423-9605"
+    },
+    "Name":
+    {
+        "type": "ASCII",
+        "value": "quicksand-wildcard-11frames-lzma.sm"
+    },
+    "Res 0":
+    {
+        "type": "ASCII",
+        "value": "Level:0 size:320x240 tile:320x240"
+    },
+    "Science Type":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Sim CPUs":
+    {
+        "type": "INT64",
+        "value": "1"
+    },
+    "Sim Cluster":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Sim Date":
+    {
+        "type": "DATE",
+        "value": ""
+    },
+    "Sim Duration":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Stereo":
+    {
+        "type": "ASCII",
+        "value": "NO"
+    },
+    "Title":
+    {
+        "type": "ASCII",
+        "value": "quicksand-wildcard-11frames-lzma.sm"
+    },
+    "UCRL":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Version":
+    {
+        "type": "INT64",
+        "value": "2"
+    },
+    "Xsize":
+    {
+        "type": "INT64",
+        "value": "320"
+    },
+    "Ysize":
+    {
+        "type": "INT64",
+        "value": "240"
+    },
+    "doubletag":
+    {
+        "type": "DOUBLE",
+        "value": "42.400000"
+    },
+    "doubletag2":
+    {
+        "type": "DOUBLE",
+        "value": "47.400000"
+    },
+    "horsie tag":
+    {
+        "type": "ASCII",
+        "value": "horse feathers are fluffy"
+    },
+    "testtag":
+    {
+        "type": "INT64",
+        "value": "78"
+    },
+    "testtag2":
+    {
+        "type": "INT64",
+        "value": "82"
     }
 }
 ,
@@ -354,7 +976,7 @@
     "Keywords":
     {
         "type": "ASCII",
-        "value": "salmon, trout"
+        "value": ""
     },
     "LOD":
     {
@@ -369,12 +991,12 @@
     "Movie Create Command":
     {
         "type": "ASCII",
-        "value": "\/collab\/usr\/gapps\/asciviz\/blockbuster\/dev\/chaos_5_x86_64_ib\/bin\/img2sm steamboat\/m00006.png steamboat\/m00007.png steamboat\/m00009.png --report -C -T steamtag:boats -E img2sm-canonical-tags.sm "
+        "value": "\/collab\/usr\/gapps\/asciviz\/blockbuster\/dev\/chaos_5_x86_64_ib\/bin\/img2sm --report -T testtag2:steamboat -E steamboat\/m00006.png steamboat\/m00007.png steamboat\/m00009.png steamboat-globbed-allframes.sm "
     },
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "June 18 "
+        "value": "Tue Oct  1 17:50:13 2013 PDT"
     },
     "Movie Create Host":
     {
@@ -389,7 +1011,7 @@
     "Name":
     {
         "type": "ASCII",
-        "value": "img2sm-canonical-tags.sm"
+        "value": "steamboat-globbed-allframes.sm"
     },
     "Res 0":
     {
@@ -399,12 +1021,12 @@
     "Science Type":
     {
         "type": "ASCII",
-        "value": "bogus"
+        "value": ""
     },
     "Sim CPUs":
     {
         "type": "INT64",
-        "value": "10"
+        "value": "1"
     },
     "Sim Cluster":
     {
@@ -414,7 +1036,7 @@
     "Sim Date":
     {
         "type": "DATE",
-        "value": "Thu Jan  1 01:00:00 2013"
+        "value": ""
     },
     "Sim Duration":
     {
@@ -429,7 +1051,7 @@
     "Title":
     {
         "type": "ASCII",
-        "value": "img2sm-canonical-tags.sm"
+        "value": "steamboat-globbed-allframes.sm"
     },
     "UCRL":
     {
@@ -461,15 +1083,15 @@
         "type": "ASCII",
         "value": "horse feathers are fluffy"
     },
-    "steamtag":
-    {
-        "type": "ASCII",
-        "value": "boats"
-    },
     "testtag":
     {
         "type": "INT64",
         "value": "78"
+    },
+    "testtag2":
+    {
+        "type": "ASCII",
+        "value": "steamboat"
     }
 }
 ,
@@ -487,7 +1109,7 @@
     "Compression":
     {
         "type": "DOUBLE",
-        "value": "0.619028"
+        "value": "0.033931"
     },
     "Description":
     {
@@ -507,12 +1129,12 @@
     "Frames":
     {
         "type": "INT64",
-        "value": "3"
+        "value": "22"
     },
     "Keywords":
     {
         "type": "ASCII",
-        "value": "salmon, trout"
+        "value": ""
     },
     "LOD":
     {
@@ -527,12 +1149,12 @@
     "Movie Create Command":
     {
         "type": "ASCII",
-        "value": "\/collab\/usr\/gapps\/asciviz\/blockbuster\/dev\/chaos_5_x86_64_ib\/bin\/img2sm steamboat\/m00006.png steamboat\/m00007.png steamboat\/m00009.png --report -C -T steamtag:boats -E img2sm-canonical-tags.sm "
+        "value": "\/collab\/usr\/gapps\/asciviz\/blockbuster\/dev\/chaos_5_x86_64_ib\/bin\/img2sm -v 5 --Stereo stereo-frames\/<LR>_stereo-test%04d.png stereo-lowercase.sm "
     },
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "June 18 "
+        "value": "Tue Oct  1 17:50:09 2013 PDT"
     },
     "Movie Create Host":
     {
@@ -547,181 +1169,23 @@
     "Name":
     {
         "type": "ASCII",
-        "value": "img2sm-canonical-tags.sm"
+        "value": "stereo-lowercase.sm"
     },
     "Res 0":
     {
         "type": "ASCII",
-        "value": "Level:0 size:1024x768 tile:512x512"
+        "value": "Level:0 size:958x900 tile:512x512"
     },
     "Science Type":
     {
         "type": "ASCII",
-        "value": "bogus"
+        "value": ""
     },
     "Sim CPUs":
-    {
-        "type": "INT64",
-        "value": "10"
-    },
-    "Sim Cluster":
-    {
-        "type": "ASCII",
-        "value": ""
-    },
-    "Sim Date":
-    {
-        "type": "DATE",
-        "value": "Thu Jan  1 01:00:00 2013"
-    },
-    "Sim Duration":
-    {
-        "type": "ASCII",
-        "value": ""
-    },
-    "Stereo":
-    {
-        "type": "ASCII",
-        "value": "NO"
-    },
-    "Title":
-    {
-        "type": "ASCII",
-        "value": "img2sm-canonical-tags.sm"
-    },
-    "UCRL":
-    {
-        "type": "ASCII",
-        "value": ""
-    },
-    "Version":
-    {
-        "type": "INT64",
-        "value": "2"
-    },
-    "Xsize":
-    {
-        "type": "INT64",
-        "value": "1024"
-    },
-    "Ysize":
-    {
-        "type": "INT64",
-        "value": "768"
-    },
-    "doubletag":
-    {
-        "type": "DOUBLE",
-        "value": "42.400000"
-    },
-    "horsie tag":
-    {
-        "type": "ASCII",
-        "value": "horse feathers are fluffy"
-    },
-    "steamtag":
-    {
-        "type": "ASCII",
-        "value": "boats"
-    },
-    "testtag":
-    {
-        "type": "INT64",
-        "value": "78"
-    }
-}
-,
-{
-    "Authors":
-    {
-        "type": "ASCII",
-        "value": ""
-    },
-    "Code Name":
-    {
-        "type": "ASCII",
-        "value": ""
-    },
-    "Compression":
-    {
-        "type": "DOUBLE",
-        "value": "0.619028"
-    },
-    "Description":
-    {
-        "type": "ASCII",
-        "value": ""
-    },
-    "FPS":
-    {
-        "type": "ASCII",
-        "value": "FPS: 30.00\n"
-    },
-    "Format":
-    {
-        "type": "ASCII",
-        "value": "GZIP"
-    },
-    "Frames":
-    {
-        "type": "INT64",
-        "value": "3"
-    },
-    "Keywords":
-    {
-        "type": "ASCII",
-        "value": "salmon, trout"
-    },
-    "LOD":
     {
         "type": "INT64",
         "value": "1"
     },
-    "LorenzTag":
-    {
-        "type": "ASCII",
-        "value": "Lorenz value"
-    },
-    "Movie Create Command":
-    {
-        "type": "ASCII",
-        "value": "\/collab\/usr\/gapps\/asciviz\/blockbuster\/dev\/chaos_5_x86_64_ib\/bin\/img2sm steamboat\/m00006.png steamboat\/m00007.png steamboat\/m00009.png --report -C -T steamtag:boats -E img2sm-canonical-tags.sm "
-    },
-    "Movie Create Date":
-    {
-        "type": "ASCII",
-        "value": "June 18 "
-    },
-    "Movie Create Host":
-    {
-        "type": "ASCII",
-        "value": "rzgpu2"
-    },
-    "Movie Creator":
-    {
-        "type": "ASCII",
-        "value": "Richard D. Cook (rcook): 925-423-9605"
-    },
-    "Name":
-    {
-        "type": "ASCII",
-        "value": "img2sm-canonical-tags.sm"
-    },
-    "Res 0":
-    {
-        "type": "ASCII",
-        "value": "Level:0 size:1024x768 tile:512x512"
-    },
-    "Science Type":
-    {
-        "type": "ASCII",
-        "value": "bogus"
-    },
-    "Sim CPUs":
-    {
-        "type": "INT64",
-        "value": "10"
-    },
     "Sim Cluster":
     {
         "type": "ASCII",
@@ -730,7 +1194,7 @@
     "Sim Date":
     {
         "type": "DATE",
-        "value": "Thu Jan  1 01:00:00 2013"
+        "value": ""
     },
     "Sim Duration":
     {
@@ -740,12 +1204,12 @@
     "Stereo":
     {
         "type": "ASCII",
-        "value": "NO"
+        "value": "YES"
     },
     "Title":
     {
         "type": "ASCII",
-        "value": "img2sm-canonical-tags.sm"
+        "value": "stereo-lowercase.sm"
     },
     "UCRL":
     {
@@ -760,12 +1224,12 @@
     "Xsize":
     {
         "type": "INT64",
-        "value": "1024"
+        "value": "958"
     },
     "Ysize":
     {
         "type": "INT64",
-        "value": "768"
+        "value": "900"
     },
     "doubletag":
     {
@@ -776,327 +1240,6 @@
     {
         "type": "ASCII",
         "value": "horse feathers are fluffy"
-    },
-    "steamtag":
-    {
-        "type": "ASCII",
-        "value": "boats"
-    },
-    "testtag":
-    {
-        "type": "INT64",
-        "value": "78"
-    }
-}
-,
-{
-    "Authors":
-    {
-        "type": "ASCII",
-        "value": ""
-    },
-    "Code Name":
-    {
-        "type": "ASCII",
-        "value": ""
-    },
-    "Compression":
-    {
-        "type": "DOUBLE",
-        "value": "0.619028"
-    },
-    "Description":
-    {
-        "type": "ASCII",
-        "value": ""
-    },
-    "FPS":
-    {
-        "type": "ASCII",
-        "value": "FPS: 30.00\n"
-    },
-    "Format":
-    {
-        "type": "ASCII",
-        "value": "GZIP"
-    },
-    "Frames":
-    {
-        "type": "INT64",
-        "value": "3"
-    },
-    "Keywords":
-    {
-        "type": "ASCII",
-        "value": "salmon, trout"
-    },
-    "LOD":
-    {
-        "type": "INT64",
-        "value": "1"
-    },
-    "LorenzTag":
-    {
-        "type": "ASCII",
-        "value": "Lorenz value"
-    },
-    "Movie Create Command":
-    {
-        "type": "ASCII",
-        "value": "\/collab\/usr\/gapps\/asciviz\/blockbuster\/dev\/chaos_5_x86_64_ib\/bin\/img2sm steamboat\/m00006.png steamboat\/m00007.png steamboat\/m00009.png --report -C -T steamtag:boats -E img2sm-canonical-tags.sm "
-    },
-    "Movie Create Date":
-    {
-        "type": "ASCII",
-        "value": "June 18 "
-    },
-    "Movie Create Host":
-    {
-        "type": "ASCII",
-        "value": "rzgpu2"
-    },
-    "Movie Creator":
-    {
-        "type": "ASCII",
-        "value": "Richard D. Cook (rcook): 925-423-9605"
-    },
-    "Name":
-    {
-        "type": "ASCII",
-        "value": "img2sm-canonical-tags.sm"
-    },
-    "Res 0":
-    {
-        "type": "ASCII",
-        "value": "Level:0 size:1024x768 tile:512x512"
-    },
-    "Science Type":
-    {
-        "type": "ASCII",
-        "value": "bogus"
-    },
-    "Sim CPUs":
-    {
-        "type": "INT64",
-        "value": "10"
-    },
-    "Sim Cluster":
-    {
-        "type": "ASCII",
-        "value": ""
-    },
-    "Sim Date":
-    {
-        "type": "DATE",
-        "value": "Thu Jan  1 01:00:00 2013"
-    },
-    "Sim Duration":
-    {
-        "type": "ASCII",
-        "value": ""
-    },
-    "Stereo":
-    {
-        "type": "ASCII",
-        "value": "NO"
-    },
-    "Title":
-    {
-        "type": "ASCII",
-        "value": "img2sm-canonical-tags.sm"
-    },
-    "UCRL":
-    {
-        "type": "ASCII",
-        "value": ""
-    },
-    "Version":
-    {
-        "type": "INT64",
-        "value": "2"
-    },
-    "Xsize":
-    {
-        "type": "INT64",
-        "value": "1024"
-    },
-    "Ysize":
-    {
-        "type": "INT64",
-        "value": "768"
-    },
-    "doubletag":
-    {
-        "type": "DOUBLE",
-        "value": "42.400000"
-    },
-    "horsie tag":
-    {
-        "type": "ASCII",
-        "value": "horse feathers are fluffy"
-    },
-    "steamtag":
-    {
-        "type": "ASCII",
-        "value": "boats"
-    },
-    "testtag":
-    {
-        "type": "INT64",
-        "value": "78"
-    }
-}
-,
-{
-    "Authors":
-    {
-        "type": "ASCII",
-        "value": ""
-    },
-    "Code Name":
-    {
-        "type": "ASCII",
-        "value": ""
-    },
-    "Compression":
-    {
-        "type": "DOUBLE",
-        "value": "0.619028"
-    },
-    "Description":
-    {
-        "type": "ASCII",
-        "value": ""
-    },
-    "FPS":
-    {
-        "type": "ASCII",
-        "value": "FPS: 30.00\n"
-    },
-    "Format":
-    {
-        "type": "ASCII",
-        "value": "GZIP"
-    },
-    "Frames":
-    {
-        "type": "INT64",
-        "value": "3"
-    },
-    "Keywords":
-    {
-        "type": "ASCII",
-        "value": "salmon, trout"
-    },
-    "LOD":
-    {
-        "type": "INT64",
-        "value": "1"
-    },
-    "LorenzTag":
-    {
-        "type": "ASCII",
-        "value": "Lorenz value"
-    },
-    "Movie Create Command":
-    {
-        "type": "ASCII",
-        "value": "\/collab\/usr\/gapps\/asciviz\/blockbuster\/dev\/chaos_5_x86_64_ib\/bin\/img2sm steamboat\/m00006.png steamboat\/m00007.png steamboat\/m00009.png --report -C -T steamtag:boats -E img2sm-canonical-tags.sm "
-    },
-    "Movie Create Date":
-    {
-        "type": "ASCII",
-        "value": "June 18 "
-    },
-    "Movie Create Host":
-    {
-        "type": "ASCII",
-        "value": "rzgpu2"
-    },
-    "Movie Creator":
-    {
-        "type": "ASCII",
-        "value": "Richard D. Cook (rcook): 925-423-9605"
-    },
-    "Name":
-    {
-        "type": "ASCII",
-        "value": "img2sm-canonical-tags.sm"
-    },
-    "Res 0":
-    {
-        "type": "ASCII",
-        "value": "Level:0 size:1024x768 tile:512x512"
-    },
-    "Science Type":
-    {
-        "type": "ASCII",
-        "value": "bogus"
-    },
-    "Sim CPUs":
-    {
-        "type": "INT64",
-        "value": "10"
-    },
-    "Sim Cluster":
-    {
-        "type": "ASCII",
-        "value": ""
-    },
-    "Sim Date":
-    {
-        "type": "DATE",
-        "value": "Thu Jan  1 01:00:00 2013"
-    },
-    "Sim Duration":
-    {
-        "type": "ASCII",
-        "value": ""
-    },
-    "Stereo":
-    {
-        "type": "ASCII",
-        "value": "NO"
-    },
-    "Title":
-    {
-        "type": "ASCII",
-        "value": "img2sm-canonical-tags.sm"
-    },
-    "UCRL":
-    {
-        "type": "ASCII",
-        "value": ""
-    },
-    "Version":
-    {
-        "type": "INT64",
-        "value": "2"
-    },
-    "Xsize":
-    {
-        "type": "INT64",
-        "value": "1024"
-    },
-    "Ysize":
-    {
-        "type": "INT64",
-        "value": "768"
-    },
-    "doubletag":
-    {
-        "type": "DOUBLE",
-        "value": "42.400000"
-    },
-    "horsie tag":
-    {
-        "type": "ASCII",
-        "value": "horse feathers are fluffy"
-    },
-    "steamtag":
-    {
-        "type": "ASCII",
-        "value": "boats"
     },
     "testtag":
     {

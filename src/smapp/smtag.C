@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
   }
   
   for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {  
-    string moviename = movienames.getValue()[0]; 
+    string moviename = movienames.getValue()[fileno]; 
     dbprintf(1, str(boost::format("Opening movie file %1%\n")% moviename).c_str()); 
     smBase *sm = smBase::openFile(moviename.c_str(), O_RDWR, 1);
     if (!sm) {

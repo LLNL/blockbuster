@@ -285,6 +285,6 @@ pushd /usr/gapps/asciviz/blockbuster/ || errexit "Could not cd to blockbuster pu
 rm -f test
 ln -s $version test
 popd
-echo "Done.  Tarball is $installdir/blockbuster-v${version}.tgz.  To use the new version, type \"use asciviz-test\""
+echo "Done.  Tarball is $builddir/blockbuster-v${version}.tgz.  To use the new version, type \"use asciviz-test\""
 exit 0
 
