@@ -216,7 +216,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Wed Oct  2 08:53:20 2013 PDT"
+        "value": "Wed Oct  2 08:59:40 2013 PDT"
     },
     "Movie Create Host":
     {
@@ -369,7 +369,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Wed Oct  2 08:53:24 2013 PDT"
+        "value": "Wed Oct  2 08:59:46 2013 PDT"
     },
     "Movie Create Host":
     {
@@ -527,7 +527,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Wed Oct  2 08:53:26 2013 PDT"
+        "value": "Wed Oct  2 08:59:47 2013 PDT"
     },
     "Movie Create Host":
     {
@@ -680,7 +680,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Wed Oct  2 08:53:24 2013 PDT"
+        "value": "Wed Oct  2 08:59:45 2013 PDT"
     },
     "Movie Create Host":
     {
@@ -833,7 +833,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Wed Oct  2 08:53:27 2013 PDT"
+        "value": "Wed Oct  2 08:59:48 2013 PDT"
     },
     "Movie Create Host":
     {
@@ -996,7 +996,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Wed Oct  2 08:53:27 2013 PDT"
+        "value": "Wed Oct  2 08:59:48 2013 PDT"
     },
     "Movie Create Host":
     {
@@ -1154,7 +1154,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Wed Oct  2 08:53:24 2013 PDT"
+        "value": "Wed Oct  2 08:59:44 2013 PDT"
     },
     "Movie Create Host":
     {
@@ -1210,6 +1210,159 @@
     {
         "type": "ASCII",
         "value": "stereo-lowercase-template.sm"
+    },
+    "UCRL":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Version":
+    {
+        "type": "INT64",
+        "value": "2"
+    },
+    "Xsize":
+    {
+        "type": "INT64",
+        "value": "958"
+    },
+    "Ysize":
+    {
+        "type": "INT64",
+        "value": "900"
+    },
+    "doubletag":
+    {
+        "type": "DOUBLE",
+        "value": "42.400000"
+    },
+    "horsie tag":
+    {
+        "type": "ASCII",
+        "value": "horse feathers are fluffy"
+    },
+    "testtag":
+    {
+        "type": "INT64",
+        "value": "78"
+    }
+}
+,
+{
+    "Authors":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Code Name":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Compression":
+    {
+        "type": "DOUBLE",
+        "value": "0.033931"
+    },
+    "Description":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "FPS":
+    {
+        "type": "ASCII",
+        "value": "FPS: 30.00\n"
+    },
+    "Format":
+    {
+        "type": "ASCII",
+        "value": "GZIP"
+    },
+    "Frames":
+    {
+        "type": "INT64",
+        "value": "22"
+    },
+    "Keywords":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "LOD":
+    {
+        "type": "INT64",
+        "value": "1"
+    },
+    "LorenzTag":
+    {
+        "type": "ASCII",
+        "value": "Lorenz value"
+    },
+    "Movie Create Command":
+    {
+        "type": "ASCII",
+        "value": "\/collab\/usr\/gapps\/asciviz\/blockbuster\/dev\/chaos_5_x86_64_ib\/bin\/img2sm -v 5 --Stereo stereo-frames\/LEFT_stereo-test0000.png stereo-frames\/LEFT_stereo-test0001.png stereo-frames\/LEFT_stereo-test0002.png stereo-frames\/LEFT_stereo-test0003.png stereo-frames\/LEFT_stereo-test0004.png stereo-frames\/LEFT_stereo-test0005.png stereo-frames\/LEFT_stereo-test0006.png stereo-frames\/LEFT_stereo-test0007.png stereo-frames\/LEFT_stereo-test0008.png stereo-frames\/LEFT_stereo-test0009.png stereo-frames\/LEFT_stereo-test0010.png stereo-frames\/RIGHT_stereo-test0000.png stereo-frames\/RIGHT_stereo-test0001.png stereo-frames\/RIGHT_stereo-test0002.png stereo-frames\/RIGHT_stereo-test0003.png stereo-frames\/RIGHT_stereo-test0004.png stereo-frames\/RIGHT_stereo-test0005.png stereo-frames\/RIGHT_stereo-test0006.png stereo-frames\/RIGHT_stereo-test0007.png stereo-frames\/RIGHT_stereo-test0008.png stereo-frames\/RIGHT_stereo-test0009.png stereo-frames\/RIGHT_stereo-test0010.png stereo-uppercase-glob.sm "
+    },
+    "Movie Create Date":
+    {
+        "type": "ASCII",
+        "value": "Wed Oct  2 08:59:45 2013 PDT"
+    },
+    "Movie Create Host":
+    {
+        "type": "ASCII",
+        "value": "rzgpu2"
+    },
+    "Movie Creator":
+    {
+        "type": "ASCII",
+        "value": "Richard D. Cook (rcook): 925-423-9605"
+    },
+    "Name":
+    {
+        "type": "ASCII",
+        "value": "stereo-uppercase-glob.sm"
+    },
+    "Res 0":
+    {
+        "type": "ASCII",
+        "value": "Level:0 size:958x900 tile:512x512"
+    },
+    "Science Type":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Sim CPUs":
+    {
+        "type": "INT64",
+        "value": "1"
+    },
+    "Sim Cluster":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Sim Date":
+    {
+        "type": "DATE",
+        "value": ""
+    },
+    "Sim Duration":
+    {
+        "type": "ASCII",
+        "value": ""
+    },
+    "Stereo":
+    {
+        "type": "ASCII",
+        "value": "YES"
+    },
+    "Title":
+    {
+        "type": "ASCII",
+        "value": "stereo-uppercase-glob.sm"
     },
     "UCRL":
     {
