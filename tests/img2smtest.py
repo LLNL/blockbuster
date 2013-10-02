@@ -54,6 +54,16 @@ tests = [
      "frame diffs": ["stereo-lowercase-template.sm",0]
      },
     # ===============================================       
+    {"name": "stereo-uppercase-glob",
+     "need_data": "stereo-frames", 
+     "cmd": "img2sm",
+     "args": "-v 5 --Stereo stereo-frames/*T_st*png stereo-uppercase-glob.sm",
+     "output": "stereo-uppercase-glob.sm",
+     "failure_pattern": IMG2SM_FAILURE,
+     "success_pattern": IMG2SM_SUCCESS,
+     "frame diffs": ["stereo-uppercase-glob.sm",0]
+     },
+    # ===============================================       
     {"name": "quicksand-single-gz",
      "need_data": "quicksand-short-6fps", 
      "cmd": "img2sm",
