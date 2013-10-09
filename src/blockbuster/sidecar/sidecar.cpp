@@ -868,7 +868,7 @@ void SideCar::on_actionGo_To_Frame_triggered() {
 //================================================================
 /* This function will open a dialog and then send the result to blockbuster */
 void SideCar::openButton_clicked(){   
-  QString filename = 
+  QString filename =
     QFileDialog::  getOpenFileName(this, "Choose a movie file",
                                    "",
                                    "Movie Files (*.sm)");
