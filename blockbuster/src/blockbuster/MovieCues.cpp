@@ -1,6 +1,7 @@
 /* 
 
 */
+#include "sm/smBase.h"
 #include <MovieCues.h>
 #include "QInputDialog"
 #include "QMessageBox"
@@ -983,8 +984,15 @@ void MovieCueManager::on_browseButton_clicked(){
     getOpenFileName(this, "Choose a movie file",
 		    "",
 		    "Movie Files (*.sm)");
-  if (filename != "")
-    movieNameField->setText(filename); 
+  if (filename != "") {
+    smBase *sm = smBase::openFile(filename.toStdString().c_str(), O_RDONLY, 1); 
+    if (!sm) {
+      throw str(boost::format("Cannot open SM file %s")%filename.toStdString()); 
+    }
+    float fps = sm->getFPS(); 
+    frameRateField->setText(str(boost::format("%1%")%fps).c_str()); 
+    movieNameField->setText(filename);
+  } 
   return; 
 } 
 
