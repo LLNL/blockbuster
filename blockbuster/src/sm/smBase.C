@@ -1171,7 +1171,8 @@ void smBase::readHeader(void)
   } else {
     mMetaData["Stereo"] = SM_MetaData("Stereo", "NO"); 
   }
-  mMetaData["FPS"] = SM_MetaData("FPS", str(boost::format("FPS: %0.2f\n")%(getFPS())));
+  mMetaData["FPS"] = SM_MetaData("FPS", getFPS());
+  //  mMetaData["FPS"] = SM_MetaData("FPS", str(boost::format("FPS: %0.2f")%(getFPS())));
 
   double len = 0;
   double len_u = 0;

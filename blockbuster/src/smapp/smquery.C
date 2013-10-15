@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
         if ((tagmatch || valuematch)) {
           string matchtype; 
           if (matchAll) {
-            matchtype = str(boost::format("Got Item: ")); 
+            matchtype = ""; 
           } else if (tagmatch && valuematch) {
             matchtype = "Both Match: "; 
           } else if (tagmatch) {

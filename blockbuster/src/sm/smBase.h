@@ -325,14 +325,18 @@ struct SM_MetaData {
   string toString(void)  const ; 
 
   string toShortString(string label="", int typeLength = 0, int tagLength = 0) const {
+    string formatString; 
+    if (label != "") {
+      formatString = str(boost::format("%1$12s")%label);
+    }
     if (!typeLength) typeLength = TypeAsString().size() + 2; 
     if (!tagLength) tagLength = mTag.size() + 4; 
-    string formatString = str(boost::format("%%1$12s(%%3$%1%s) %%2$-%2%s = ") % typeLength % tagLength );
+    formatString += str(boost::format("(%%2$%1%s) %%1$-%2%s = ") % typeLength % tagLength );
     string quote; 
     if (mType == METADATA_TYPE_ASCII || mType == METADATA_TYPE_DATE) {
       quote = "\""; 
     }
-    return str(boost::format(formatString + "%5%%4%%5%") % label % mTag % TypeAsString() % ValueAsString() % quote);
+    return str(boost::format(formatString + "%4%%3%%4%") % mTag % TypeAsString() % ValueAsString() % quote);
   }
   string TypeAsString(void) const ;
   string ValueAsString(void) const ; 
