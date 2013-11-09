@@ -104,7 +104,7 @@ sm2img  -F yuv -s $skip $infile ${outframebase}_junk_%d || errexit "sm2img faile
 #       walk the movie duration, linking to the proper
 #       source frame to approximate the desired framerate
 #
-echo "Linking frames to approximate the desired framerate"
+echo "Linking $noutput frames to approximate the desired framerate ($outfps)"
 linknum=0
 while [ $linknum -lt $noutput ] ; do 
     echo -e "\rFrame: $linknum out of $noutput\c"
@@ -115,7 +115,7 @@ while [ $linknum -lt $noutput ] ; do
     ln -s ${outframebase}_junk_${outframe}.V ${outframebase}_junk_ln_${linknum}.V
     let linknum++
 done
-    
+echo
 #
 #       convert to mpeg using LibGen mpeg command
 #
@@ -130,6 +130,7 @@ fi
 #
 rm -rf ${tmpdir}
 popd
+echo "movie $outfile created successfully"
 #
 #	Done!
 #

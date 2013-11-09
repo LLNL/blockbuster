@@ -1,0 +1,76 @@
+#!/usr/bin/env bash 
+#set -xv
+#
+#       Convert an sm file into an MPEG file...
+#
+function usage() {
+    echo "sm2mpg: usage:"
+    echo "sm2mpg infile.mpg outfile.sm"
+}
+
+function errexit() {    
+    echo '*************************************************'
+    echo "ERROR: $1"
+    echo '*************************************************'
+    rm -rf ${tmpdir}
+    exit 1
+}
+
+tmpdir=/tmp/$USER/sm2mpg.tmp.$RANDOM/
+mkdir -p $tmpdir || errexit "Cannot make tmp directory $tmpdir"
+if [ "$2" == "" ];  then
+    usage
+    errexit "Not enough args" 
+fi
+
+#
+#       nframes/Stereo
+#
+infile="$1"
+outfile="$2"
+outfps=${3:-30}
+
+# arg checking
+if [ ${1:0:1} != '/' ]; then 
+    infile=$(pwd)/$infile
+fi
+infiledot=$(expr ${#infile} - 4)
+if [ "${infile:${infiledot}}" != '.mpg' ]; then 
+    errexit "Please specify an input movie name ending with '.mpg'"
+fi
+
+if [ ${2:0:2} != '/' ]; then 
+    outfile=$(pwd)/$outfile
+fi
+outfiledot=$(expr ${#outfile} - 3)
+if [ "${outfile:$outfiledot}" != '.sm' ]; then 
+    errexit "Please specify an output movie name ending with '.sm'"
+fi
+
+outframebase=_$(basename $outfile | sed 's/.sm//')
+
+#
+#       Extract the frames in PNG format
+#
+echo "Extract the frames in PNG format using ffmpeg"
+pushd $tmpdir
+
+ffmpeg  -i  $infile ${outframebase}_%05d.png || errexit "ffmpeg failed"
+
+#
+#       convert to mpeg using LibGen mpeg command
+#
+echo "convert to SM using img2sm command...." 
+if ! img2sm  ${outframebase}_%05d.png $outfile; then
+    errexit "img2sm command failed"
+fi
+
+#
+#       clean up...
+#
+rm -rf ${tmpdir}
+popd
+echo "movie $outfile created successfully"
+#
+#	Done!
+#
