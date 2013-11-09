@@ -4,6 +4,7 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 ===============================================================================
 VERSION 2.8.0m (r1010) Mon Sep 30 11:14:44 PDT 2013
 -- Added ability to recognize frame sequences containing "left" and "right" in the names as being stereo and properly order them.
+-- Added mpg2sm and mpg2img utilities
 
 ===============================================================================
 VERSION 2.8.0l (r1010) Mon Sep 30 11:14:44 PDT 2013
