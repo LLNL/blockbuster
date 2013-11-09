@@ -1,0 +1,58 @@
+#!/usr/bin/env bash 
+#set -xv
+#
+#       Convert an sm file into an MPEG file...
+#
+function usage() {
+    echo "mpg2img: usage:"
+    echo "mpg2img infile.mpg <outfilepattern.png>"
+    echo " example: mpg2img mymovie.mpg frame_%05d.png"
+    echo " If not outfilepattern is given, then infile_%06d.png will be used"
+    echo " You can also use .jpg if desired."
+}
+
+function errexit() {    
+    echo '*************************************************'
+    echo "ERROR: $1"
+    echo '*************************************************'
+    rm -rf ${tmpdir}
+    exit 1
+}
+
+#
+#       nframes/Stereo
+#
+infile="$1"
+outfile="$2"
+outfps=${3:-30}
+
+if [ "$2" == "" ]; then 
+    usage
+    errexit "Not enough arguments."
+fi
+# arg checking
+if [ "${1:0:1}" != '/' ]; then 
+    infile=$(pwd)/$infile
+fi
+infiledot=$(expr ${#infile} - 4)
+if [ "${infile:${infiledot}}" != '.mpg' ]; then 
+    errexit "Please specify an input movie name ending with '.mpg'"
+fi
+
+outpattern=${2:-"frame_%06d.png"}
+if [ ${outpattern:0:2} != '/' ]; then 
+    outfilepattern=$(pwd)/$outfilepattern
+fi
+
+
+#
+#       Extract the frames using ffmpeg
+#
+echo "Extract the frames using ffmpeg"
+
+ffmpeg  -i  $infile $outpattern || errexit "ffmpeg failed"
+
+echo "all frames created successfully"
+#
+#	Done!
+#
