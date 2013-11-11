@@ -22,8 +22,8 @@
     },
     "FPS":
     {
-        "type": "ASCII",
-        "value": "FPS: 30.00\n"
+        "type": "DOUBLE",
+        "value": "30.000000"
     },
     "Format":
     {
@@ -180,8 +180,8 @@
     },
     "FPS":
     {
-        "type": "ASCII",
-        "value": "FPS: 30.00\n"
+        "type": "DOUBLE",
+        "value": "30.000000"
     },
     "Format":
     {
@@ -216,7 +216,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Wed Oct  2 08:59:40 2013 PDT"
+        "value": "Mon Nov 11 15:37:55 2013 PST"
     },
     "Movie Create Host":
     {
@@ -333,8 +333,8 @@
     },
     "FPS":
     {
-        "type": "ASCII",
-        "value": "FPS: 30.00\n"
+        "type": "DOUBLE",
+        "value": "30.000000"
     },
     "Format":
     {
@@ -369,7 +369,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Wed Oct  2 08:59:46 2013 PDT"
+        "value": "Mon Nov 11 15:38:02 2013 PST"
     },
     "Movie Create Host":
     {
@@ -491,8 +491,8 @@
     },
     "FPS":
     {
-        "type": "ASCII",
-        "value": "FPS: 30.00\n"
+        "type": "DOUBLE",
+        "value": "30.000000"
     },
     "Format":
     {
@@ -527,7 +527,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Wed Oct  2 08:59:47 2013 PDT"
+        "value": "Mon Nov 11 15:38:04 2013 PST"
     },
     "Movie Create Host":
     {
@@ -644,8 +644,8 @@
     },
     "FPS":
     {
-        "type": "ASCII",
-        "value": "FPS: 30.00\n"
+        "type": "DOUBLE",
+        "value": "30.000000"
     },
     "Format":
     {
@@ -680,7 +680,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Wed Oct  2 08:59:45 2013 PDT"
+        "value": "Mon Nov 11 15:38:01 2013 PST"
     },
     "Movie Create Host":
     {
@@ -797,8 +797,8 @@
     },
     "FPS":
     {
-        "type": "ASCII",
-        "value": "FPS: 30.00\n"
+        "type": "DOUBLE",
+        "value": "30.000000"
     },
     "Format":
     {
@@ -833,7 +833,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Wed Oct  2 08:59:48 2013 PDT"
+        "value": "Mon Nov 11 15:38:04 2013 PST"
     },
     "Movie Create Host":
     {
@@ -960,8 +960,8 @@
     },
     "FPS":
     {
-        "type": "ASCII",
-        "value": "FPS: 30.00\n"
+        "type": "DOUBLE",
+        "value": "30.000000"
     },
     "Format":
     {
@@ -996,7 +996,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Wed Oct  2 08:59:48 2013 PDT"
+        "value": "Mon Nov 11 15:38:05 2013 PST"
     },
     "Movie Create Host":
     {
@@ -1118,8 +1118,8 @@
     },
     "FPS":
     {
-        "type": "ASCII",
-        "value": "FPS: 30.00\n"
+        "type": "DOUBLE",
+        "value": "30.000000"
     },
     "Format":
     {
@@ -1154,7 +1154,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Wed Oct  2 08:59:44 2013 PDT"
+        "value": "Mon Nov 11 15:37:59 2013 PST"
     },
     "Movie Create Host":
     {
@@ -1271,8 +1271,8 @@
     },
     "FPS":
     {
-        "type": "ASCII",
-        "value": "FPS: 30.00\n"
+        "type": "DOUBLE",
+        "value": "30.000000"
     },
     "Format":
     {
@@ -1307,7 +1307,7 @@
     "Movie Create Date":
     {
         "type": "ASCII",
-        "value": "Wed Oct  2 08:59:45 2013 PDT"
+        "value": "Mon Nov 11 15:38:01 2013 PST"
     },
     "Movie Create Host":
     {
