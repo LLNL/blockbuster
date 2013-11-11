@@ -24,7 +24,7 @@ all:
 #	make testit
 
 test: 
-	./tests/img2smtest.py 
+	./tests/smtoolsTest.py 
 
 remake: 
 	SYS_TYPE=$(SYS_TYPE) ./remake.sh
