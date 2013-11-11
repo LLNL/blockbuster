@@ -3,12 +3,11 @@
 #       Convert an sm file into an QuickTime file...
 #
 function usage() {
-    echo "sm2qt: usage:"
-    echo "sm2qt [OPTIONS] smfile qtfilename [fps]"
-    echo "If fps is not given, the default is 30"
+    echo "sm2qt: Convert SM movie to QuickTime h264 mov file. Usage:"
+    echo "sm2qt [OPTIONS] smfile qtfile"
     echo "If the input movie is stereo, then only the left hand frames (odd frames) are used." 
     echo "OPTIONS:"
-    echo "-s/--stereo: interpret the input movie as stereo." 
+    echo "-f/--fps: Set FPS (default is 30)" 
 }
 
 function runecho(){
@@ -23,14 +22,19 @@ function errexit() {
     exit 1
 }
 
-stereo=false
-if [ "$1" == "-s" ] || [ "$1" == "--stereo" ]; then 
-    shift 1
-    stereo=true
-fi
+fps=30
+argnum=1
+while [ "${#@}" -gt 0 ]; do
+    if [ ${0:0:1} != '-' ]; then 
+        break; 
+    fi
+    case $1 in
+        -f|--fps) fps=${2:-30};  shift 2;;
+        *)        errexit "Unknown option: $1";;
+    esac
+done
 
-
-tmpdir=/tmp/$USER/sm2mpg.tmp.$RANDOM/
+tmpdir=/tmp/$USER/sm2qt.tmp.$RANDOM/
 mkdir -p $tmpdir || errexit "Cannot make tmp directory $tmpdir"
 if [ "$2" == "" ];  then
     usage
@@ -52,12 +56,11 @@ if [ ${2:0:2} != '/' ]; then
 fi
 outfiledot=$(expr ${#outfile} - 4)
 if [ "${outfile:$outfiledot}" != '.mov' ]; then 
-    errexit "Please specify an outpu movie name ending with '.mov'"
+    errexit "Please specify an output movie name ending with '.mov'"
 fi
 
-fps=${3:-30}
-
 tmp=$(sminfo $infile)
+stereo=false
 if echo $tmp | grep Stereo >/dev/null 2>&1; then
     stereo=true
 fi
@@ -73,6 +76,7 @@ fi
 # set -xv
 outframebase=_$(basename $outfile | sed 's/.mov//')
 pushd $tmpdir 
+echo "Extracting frames from SM using sm2img..." 
 runecho sm2img -F png -s $skip $1 ${outframebase}_%05d.png || errexit "sm2img failed" 
 
 if [ $skip != 1 ]; then 
@@ -88,7 +92,8 @@ if [ $skip != 1 ]; then
     done
 fi
 
-runecho ffmpeg -v -1 -mbd rd -trellis 2 -cmp 2 -subcmp 2 -g 300 -r $fps -i "${outframebase}_%05d.png" $outfile || errexit  "ffmpeg failed" 
+echo "Creating new Quicktime movie using ffmpeg..." 
+runecho ffmpeg -v -1 -mbd rd -trellis 2  -cmp 2 -subcmp 2 -g 300 -r $fps -i "${outframebase}_%05d.png" $outfile || errexit  "ffmpeg failed" 
 
 rm -rf $tmpdir
 popd
