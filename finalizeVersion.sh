@@ -15,8 +15,8 @@ function usage() {
 }
 
 
-tmpdir=${tmpdir:-/nfs/tmp2/rcook/blockbuster-install-tmp/finalizeVersion-tmp}
-
+stagedir=${stagedir:-/nfs/tmp2/rcook/blockbuster}
+tmpdir=$stagedir/install-tmp/finalizeVersion-tmp
 #=================================
 # test if a string has nonzero length
 function nonnull () { 
@@ -215,7 +215,7 @@ svn commit -m "Version $version, automatic checkin by finalizeVersion.sh, by use
 
 #======================================================
 # Update and install on LC cluster
-echo "Creating temp directory to work in for tarball creation..." 
+echo "Creating clean temp directory $tmpdir to work in..." 
 rm -rf $tmpdir
 mkdir -p $tmpdir || errexit "Could not create tmp directory for tarball"
 pushd $tmpdir || errexit "Could not cd into new tmp directory!?" 
@@ -226,7 +226,7 @@ svn cp -m "Version $version, automatic version creation by finalizeVersion.sh, b
 echo "Checking out the new version from SVN repo..." 
 svn co $versiondir || errexit "could not check out versiondir $versiondir from svn repo" 
 
-builddir=/nfs/tmp2/rcook/blockbuster/$version
+builddir=$stagedir/$version
 installdir=/usr/gapps/asciviz/blockbuster/$version
 echo "Creating fresh build directory $builddir and installation directory $installdir..."
 rm -rf $installdir $builddir
