@@ -15,7 +15,7 @@ function usage() {
 }
 
 
-tmpdir=/nfs/tmp2/rcook/blockbuster-install-tmp/finalizeVersion-tmp
+tmpdir=${tmpdir:-/nfs/tmp2/rcook/blockbuster-install-tmp/finalizeVersion-tmp}
 
 #=================================
 # test if a string has nonzero length
