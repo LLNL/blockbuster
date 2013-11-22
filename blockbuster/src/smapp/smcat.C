@@ -133,7 +133,7 @@ int main(int argc,char **argv)
   TCLAP::ValueArg<int> tilesizes("",  "tilesizes",  "Pixel size of the tiles within each frame (default: 512).  If set to 0, no tiling will be done.  Examples: '512' or '512,256'", false,  512,  "integer",  cmd); 
   
   TCLAP::ValueArg<string> destSize("", "dest-size", "Set output frame dimensions. Default: input size.  Format: XXXxYYY e.g. '300x500'",false, "", "e.g. '300x500'", cmd);   
-  TCLAP::ValueArg<string> subregion("", "src-subregion", "Select a rectangle of the input by giving region size and offset. Default: all. Format: 'Xsize Ysize Xoffset Yoffset' e.g. '300 500 20 50'",false, "", " e.g. '300 500 20 50'", cmd);   
+  TCLAP::ValueArg<string> subregion("", "src-subregion", "Select a rectangle of the input by giving region size and offset. Default: all. Format: 'Xoffset Yoffset Xsize Ysize' e.g. '20 50 300 500'",false, "", "'Xoffset Yoffset Xsize Ysize'", cmd);   
   TCLAP::ValueArg<float> fps("f", "fps", "Store Frames Per Second (FPS) in movie for playback (float).  Might be ignored.",false, 30, "positive floating point number", cmd);   
   
   TCLAP::UnlabeledValueArg<string> output("Output-movie", "Name of the movie to create", true, "", "output movie name", cmd); 
