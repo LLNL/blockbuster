@@ -547,12 +547,15 @@ struct OutputBuffer {
   boost::atomic<uint32_t> mNumFrames;  // number of entries in mDataBuffer -- can't use size() because elements are placed out of order, and resize() is called only once.
 }; 
 
+// =========================================================================
 /*!
   SMbASE base class for streaming movies
 */ 
+// =========================================================================
 class smBase {
  public:
   smBase(int mode, const char *fname, int numthreads=1, uint32_t bufferSize=50) {
+    mErrorState = 0; 
     init(mode, fname, numthreads, bufferSize); 
   }
 
@@ -701,6 +704,10 @@ class smBase {
   
   // close a movie
   void closeFile(void);
+  void deleteFile(void) { 
+    cerr << "Deleting file " << mMovieName << endl; 
+    unlink(mMovieName);
+  }
   
   // various flag/type info
   int getType(void) { return mTypeID;}
@@ -724,6 +731,18 @@ class smBase {
   // metadata
   TagMap mMetaData; 
 
+  bool haveError(void) { return mErrorState != 0; }
+  string errorMessage(void) { return mErrorMessage; }
+  // Set error state to true.  msg is not necessarily echoed. 
+  void SetError(string msg) {
+    if (!mErrorState) {
+      mErrorState = 1; 
+      mErrorMessage = msg; 
+      cerr << msg << endl; 
+    }
+    return; 
+  }
+
  protected:
   
   // internal functions to compress or decompress a rectangle of pixels
@@ -735,6 +754,8 @@ class smBase {
   
  protected:
   int mTypeID; // for an instance.  
+  int mErrorState; // 0 = none, -1 = reported, 1 = unreported
+  string mErrorMessage; // for reference -- the first occurring message.  
 
  private:
   void readHeader(void);

@@ -919,14 +919,14 @@ string smBase::InfoString(bool verbose) {
 
 //! convenience function
 /*!
-  \param fp FILE * to the file containing the frame
+  \param fp FILE * to the output stream
   \param f frame number
 */ 
 void smBase::printFrameDetails(FILE *fp,int f, int res)
 {
   f = res*getNumFrames() + f; 
   if ((f < 0) || (f >= mNumFrames*mNumResolutions)) {
-    fprintf(fp,"%d\tInvalid frame\n",f);
+    SetError(str(boost::format("%d\tInvalid frame")%f));
     return;
   }
 #ifdef WIN32
@@ -1022,7 +1022,7 @@ smBase::smBase(const char *_fname, u_int _width, u_int _height,
    
   mFrameLengths.resize(mNumFrames*mNumResolutions, 0);
   if (LSEEK64(mThreadData[0].fd, mFrameOffsets[0], SEEK_SET) < 0)
-    smdbprintf(0, "Error seeking to frame 0\n");
+    SetError("Error seeking to frame 0\n");
 
   bModFile = TRUE;
 
@@ -1246,16 +1246,19 @@ void smBase::initWin(void)
 */ 
 uint32_t smBase::readData(int fd, u_char *buf, int bytes) {
   ///smdbprintf(5, "readData: %d bytes", bytes); 
+
+  if (mErrorState) return -1; 
+
   uint32_t remaining = bytes; 
   while  (remaining >0) {
     int r=READ(fd, buf, remaining);
     if (!r) {
-      smdbprintf(0, "smBase::readData() error: read=%d remaining=%d, unsuccessful read, giving up\n",r, remaining); 
+      SetError(str(boost::format("smBase::readData() error: read=%d remaining=%d, unsuccessful read, giving up")%r% remaining)); 
       return bytes-remaining; 
     }
     if (r < 0) {
       if ((errno != EINTR) && (errno != EAGAIN)) {
-        smdbprintf(0, "smBase::readData() error: read=%d remaining=%d: %s",r, remaining, strerror(errno)); 
+        SetError(str(boost::format("smBase::readData() error: read=%d remaining=%d: %s")%r% remaining% strerror(errno)));
         /* char	s[80];
            sprintf(s,"xmovie I/O error : r=%d k=%d: ",r, remaining);
            perror(s);*/
@@ -1277,6 +1280,8 @@ uint32_t smBase::readData(int fd, u_char *buf, int bytes) {
 */
 uint32_t smBase::readFrame(u_int f, int threadnum)
 {
+  if (mErrorState) return -1; 
+
   off64_t size;
   
   size = mFrameLengths[f];
@@ -1286,7 +1291,8 @@ uint32_t smBase::readFrame(u_int f, int threadnum)
   
   long offset = LSEEK64(fd, mFrameOffsets[f], SEEK_SET); 
   if (offset < 0 || offset != mFrameOffsets[f]){
-    smdbprintf(0, "Error seeking to frame %d, offset is %d\n", f, offset);
+    SetError(str(boost::format("Error seeking to frame %d, offset is %d\n")% f% offset));
+    return -1; 
   }
 
   
@@ -1296,11 +1302,11 @@ uint32_t smBase::readFrame(u_int f, int threadnum)
   int r = readData(fd, buf, size); 
   if (r == -1) {
     char buf[2048]; 
-    smdbprintf(0, "Error in readCompressedFrame  for frame %d: %s\n", f, strerror(errno)); 
-    return 0; 
+    SetError(str(boost::format("Error in readCompressedFrame  for frame %d: %s")% f% strerror(errno))); 
+    return r; 
   }
   if (r != size) {
-    smdbprintf(0, "Error in readCompressedFrame  for frame %d: read %d bytes but expected %lu\n", f, r, size);
+    SetError(str(boost::format("Error in readCompressedFrame  for frame %d: read %d bytes but expected %lu")% f% r% size));
   }
   smdbprintf(5, "Done with readCompressedFrame, read %lu bytes\n", r); 
   return r; 
@@ -1319,6 +1325,8 @@ uint32_t smBase::readTiledFrame(u_int f, int *dim, int* pos, int res, int thread
 {
   // version 2 implied -- reads in only overlapping tiles 
   
+  if (mErrorState) return -1; 
+
   uint32_t bytesRead = 0; 
   u_int readBufferOffset=0;
   smdbprintf(5,"readTiledFrame version 2, frame %d, thread %d", f, threadnum); 
@@ -1327,12 +1335,12 @@ uint32_t smBase::readTiledFrame(u_int f, int *dim, int* pos, int res, int thread
   int fd = mThreadData[threadnum].fd; 
   
   if (LSEEK64(fd, frameOffset, SEEK_SET) < 0) {
-    smdbprintf(0, "Error seeking to frame %d, frameOffset %d: %s", f, frameOffset, strerror(errno));
-    exit(1);
+    SetError(str(boost::format("Error seeking to frame %d, frameOffset %d: %s") %f% frameOffset% strerror(errno)));
+    return -1;
   }
   if (res > mNumResolutions-1) {
-    smdbprintf(0, "Error: requested resolution %d does not exist in movie", res);
-    exit(1);
+    SetError(str(boost::format("Error: requested resolution %d does not exist in movie")% res));
+    return -1;
   }
     
   int nx = getTileNx(res);
@@ -1414,8 +1422,8 @@ uint32_t smBase::readTiledFrame(u_int f, int *dim, int* pos, int res, int thread
       return 0; 
     }
     if (firstByte > stopByte) {
-      smdbprintf(0, "Error: stop byte is before first byte.  Absolutely inconceivable!\n"); 
-      abort(); 
+      SetError("Error: stop byte is before first byte.  Absolutely inconceivable!"); 
+      return 0; 
     }
     smdbprintf(5, "Reading tiles %d to %d, from byte %lu to %lu\n", 
                firstTile, stopTile-1, firstByte, stopByte-1); 
@@ -1423,8 +1431,8 @@ uint32_t smBase::readTiledFrame(u_int f, int *dim, int* pos, int res, int thread
     uint64_t bytesNeeded = stopByte - firstByte, 
       firstOffset = frameOffset + firstByte; 
     if (LSEEK64(fd,  firstOffset, SEEK_SET) < 0) {
-      smdbprintf(0, "Error seeking to first needed tile of frame %d at offset %Ld\n", f, firstOffset);
-      exit(1);
+      SetError(str(boost::format("Error seeking to first needed tile of frame %d at offset %Ld\n")% f% firstOffset));
+      return 0; 
     }
     if (mThreadData[threadnum].tile_buf.size() < bytesNeeded) {
       mThreadData[threadnum].tile_buf.resize(bytesNeeded); 
@@ -1477,6 +1485,8 @@ uint32_t smBase::readTiledFrame(u_int f, int *dim, int* pos, int res, int thread
 */ 
 void smBase::computeTileOverlap(int *blockDim, int* blockPos, int res, int threadnum)
 {
+  if (mErrorState) return; 
+
   TileInfo *info = &(mThreadData[threadnum].tile_infos[0]);
 
   int nx = getTileNx(res);
@@ -1598,6 +1608,7 @@ void smBase::computeTileOverlap(int *blockDim, int* blockPos, int res, int threa
 */ 
 uint32_t smBase::getFrame(int f, void *data, int threadnum, int res)
 {
+  if (mErrorState) return -1;   
   return  getFrameBlock(f,data, threadnum, 0, NULL, NULL, NULL, res);
 }
 
@@ -1617,6 +1628,7 @@ uint32_t smBase::getFrame(int f, void *data, int threadnum, int res)
 uint32_t smBase::getFrameBlock(int frame, void *data, int threadnum,  int destRowStride, int *inDim, int *inPos, int *inStep, int res)
 {
   smdbprintf(5,"smBase::getFrameBlock, frame %d, thread %d, data %p\n", frame, threadnum, data); 
+  if (mErrorState) return -1; 
   u_char *ioBuf;
   uint32_t size;
   u_char *image;
@@ -1712,7 +1724,7 @@ uint32_t smBase::getFrameBlock(int frame, void *data, int threadnum,  int destRo
         (_dim[0] == full_frame_dims[0]) && (_dim[1] == full_frame_dims[1])) {
       smdbprintf(5,"getFrameBlock: decompBlock on entire frame\n"); 
       if (!decompBlock(ioBuf,out,size,full_frame_dims)) {
-        smdbprintf(0, "Error decompressing block in frame %d, with dim=(%d,%d), pos=(%d,%d), res=%d\n", frame, _dim[0], _dim[1], _pos[0], _pos[1], res); 
+        SetError(str(boost::format("Error decompressing block in frame %d, with dim=(%d,%d), pos=(%d,%d), res=%d")% frame% _dim[0]% _dim[1]% _pos[0]% _pos[1]% res)); 
         return 0; 
       }       
     } else {
@@ -1720,7 +1732,7 @@ uint32_t smBase::getFrameBlock(int frame, void *data, int threadnum,  int destRo
       image = (u_char *)malloc(3*full_frame_dims[0]*full_frame_dims[1]);
       CHECK(image);
       if (!decompBlock(ioBuf,image,size,full_frame_dims)) {
-        smdbprintf(0, "Error decompressing block in frame %d\n", frame); 
+        SetError(str(boost::format("Error decompressing block in frame %d")% frame)); 
         return 0; 
       }       
       for(int y=_pos[1];y<_pos[1]+_dim[1];y+=_step[1]) {
@@ -1763,8 +1775,8 @@ uint32_t smBase::getFrameBlock(int frame, void *data, int threadnum,  int destRo
                    _dim[0], _dim[1], maxAllowed ); 
          
         if (newTotal > maxAllowed) {
-          smdbprintf(0, "Houston, we have a problem. Dump core here. new total %lu > maxAllowed  %lu\n", newTotal, maxAllowed); 
-          abort(); 
+          SetError(str(boost::format("Houston, we have a problem. Dump core here. new total %lu > maxAllowed  %lu")% newTotal% maxAllowed)); 
+          return 0; 
         }
         for(int rows = 0; rows < maxY; rows += _step[1]) {
           if(_step[0] == 1) {
@@ -1811,8 +1823,9 @@ void *writeThreadFunction(void *arg) {
   Called by work proc for the writing thread -- keeps flushing the buffer. 
 */
 void smBase::writeThread(void) {
+  if (mErrorState) return ; 
   smdbprintf(2, "Starting writeThread\n"); 
-  while (!mWriteThreadStopSignal) {
+  while (!mErrorState && !mWriteThreadStopSignal) {
     if (!flushFrames(false)) {
       usleep(1000); 
     }
@@ -1849,6 +1862,8 @@ void smBase::stopWriteThread(void) {
 
 void smBase::combineResolutionFiles(void) {
   smdbprintf(1, "combining Resolution Files into final movie...\n"); 
+  if (mErrorState) return; 
+
   if (mResFDs.size() < 2) return; 
   boost::shared_array<char> bufptr(new char[CHUNK_SIZE+1]); 
   char *buf = bufptr.get(); 
@@ -1867,23 +1882,23 @@ void smBase::combineResolutionFiles(void) {
     // close the res file and reopen as readonly:
     int fd = mResFDs[res]; 
     if (close(fd) == -1) {
-      smdbprintf(0, "ERROR: failed to close res file %s.\n", mResFileNames[res].c_str());
+      SetError(str(boost::format("ERROR: failed to close res file %s")% mResFileNames[res].c_str()));
       perror("combineResolutionFiles"); 
-      abort(); 
+      return; 
     }
       
     fd = open(mResFileNames[res].c_str(), O_RDONLY); 
     if (fd == -1) {
-      smdbprintf(0, "ERROR: failed to open res file %s for reading.\n", mResFileNames[res].c_str());
+      SetError(str(boost::format("ERROR: failed to open res file %s for reading.")% mResFileNames[res].c_str()));
       perror("combineResolutionFiles"); 
-      abort(); 
+      return; 
     }
     // spin through the file and grab bytes and copy to "real" movie
     uint64_t inputFileSize = mResFileBytes[res], actualFileBytes = LSEEK64(fd, 0, SEEK_END);   
     if (actualFileBytes != inputFileSize) {
-      smdbprintf(0, "ERROR: Res file %s has %lld bytes but we expect %lld bytes.\n", mResFileNames[res].c_str(), actualFileBytes, inputFileSize);    
+      SetError(str(boost::format("ERROR: Res file %s has %lld bytes but we expect %lld bytes.")% mResFileNames[res].c_str()% actualFileBytes% inputFileSize));    
       perror("combineResolutionFiles"); 
-      abort(); 
+      return; 
     }
     LSEEK64(fd, 0, SEEK_SET); 
     uint64_t  bytesRemaining = inputFileSize; 
@@ -1893,16 +1908,16 @@ void smBase::combineResolutionFiles(void) {
       smdbprintf(3, "bytesRemaining: %lld, bytesToRead = %lld\n", bytesRemaining, bytesToRead); 
       uint64_t bytesRead = read(fd, buf, bytesToRead); 
       if (bytesRead <= 0) {
-        smdbprintf(0, "Error: failed read from res file %s\n", mResFileNames[res].c_str()); 
+        SetError(str(boost::format("Error: failed read from res file %s\n")% mResFileNames[res].c_str())); 
         perror("combineResolutionFiles"); 
-        abort(); 
+        return; 
       }
       
       uint64_t bytesWritten = WRITE(mResFDs[0], buf, bytesRead); 
       if (bytesWritten != bytesRead) {
-        smdbprintf(0, "Error: failed write from res file %s to movie file\n", mResFileNames[res].c_str()); 
+        SetError(str(boost::format("Error: failed write from res file %s to movie file")% mResFileNames[res].c_str())); 
         perror("combineResolutionFiles"); 
-        abort(); 
+        return; 
       }       
       bytesRemaining -= bytesRead;
       smdbprintf(1, "Res %d: Wrote %lld MB, %0.1f%%, size of movie file is %lld MB\n", 
@@ -1927,6 +1942,7 @@ void smBase::combineResolutionFiles(void) {
   To flush the buffer, first swap buffers, then write.  
 */
 bool smBase::flushFrames(bool force) {
+  if (mErrorState) return false; 
   //  smdbprintf(5, "flushFrames(%d)\n", (int)force); 
   if (!force && !mStagingBuffer->full()) {
     //smdbprintf(5, "flushFrames() returning false\n");     
@@ -1957,9 +1973,8 @@ bool smBase::flushFrames(bool force) {
   // temporary debug measure:  at what point did a NULL frame show up?
   for (uint32_t slot = 0; slot < mOutputBuffer->mNumFrames; slot++){
     if (!mOutputBuffer->mFrameBuffer[slot]) {
-      smdbprintf(0, "During preflight check found frameData is NULL on slot %d\n", slot);
-      abort();
-
+      SetError(str(boost::format("During preflight check found frameData is NULL on slot %1%")% slot));
+      return false; 
     }
   }
   // copy each level of the output buffer: 
@@ -1994,8 +2009,8 @@ bool smBase::flushFrames(bool force) {
     while (frame < stopFrame) {
       FrameCompressionWork *frameData = mOutputBuffer->mFrameBuffer[frame-firstFrame]; 
       if (!frameData) {
-        smdbprintf(0, "frameData is NULL on frame %d\n", frame);
-        abort();
+        SetError(str(boost::format("frameData is NULL on frame %d")% frame));
+        return false; 
       }
       smdbprintf(5, "Writing frameData:  %s\n", frameData->toString().c_str());
       mFrameOffsets[resFrame] = fileOffset; 
@@ -2015,8 +2030,8 @@ bool smBase::flushFrames(bool force) {
       int frameBytes = frameData->mCompFrameSizes[res]; 
       buffBytes += frameBytes;
       if (buffBytes >  mOutputBuffer->mRequiredWriteBufferSize) {
-        smdbprintf(0, "Houston, we have a buffer overflow. buffBytes = %lu, mRequiredWriteBufferSize = %lu  :-(\n", buffBytes, mOutputBuffer->mRequiredWriteBufferSize.load());
-        abort(); 
+        SetError(str(boost::format("Houston, we have a buffer overflow. buffBytes = %lu, mRequiredWriteBufferSize = %lu  :-(\n")% buffBytes% mOutputBuffer->mRequiredWriteBufferSize.load()));
+        return false; 
       }
       memcpy(bufptr, &frameData->mCompressed[res][0], frameBytes); 
       mFrameLengths[resFrame] += frameBytes;;
@@ -2043,7 +2058,7 @@ bool smBase::flushFrames(bool force) {
   mOutputBuffer->mNumFrames = 0; 
   mOutputBuffer->mRequiredWriteBufferSize = 0; 
   bModFile = TRUE;
-  return true; 
+  return !mErrorState; 
 }
 /*! 
   Compress the frame, then place it into the output buffer for writing.  
@@ -2053,13 +2068,15 @@ bool smBase::flushFrames(bool force) {
 */
 void smBase::compressAndBufferFrame(int f,  u_char *data) {  
   smdbprintf(4, "compressAndBufferFrame(frame=%d)\n", f); 
+  if (mErrorState) return; 
   FrameCompressionWork *wrk = new FrameCompressionWork(f, data); 
   compressFrame(wrk); 
+  if (mErrorState) return; 
 
   bool canBuffer = false; 
   smdbprintf(5, "compressAndBufferFrame: locking buffer mutex\n"); 
   pthread_mutex_lock(&mBufferMutex); 
-  while (!mStagingBuffer->addFrame(wrk)) {
+  while (!mErrorState && mStagingBuffer->addFrame(wrk)) {
     smdbprintf(5, "compressAndBufferFrame: unlocking buffer mutex\n"); 
     pthread_mutex_unlock(&mBufferMutex); 
     usleep(1500); 
@@ -2081,8 +2098,9 @@ void smBase::compressAndBufferFrame(int f,  u_char *data) {
 */ 
 void smBase::compressFrame(FrameCompressionWork *wrk) {
   smdbprintf(4, "START compressFrame, frame=%d\n", wrk->mFrame); 
+  if (mErrorState) return; 
   if (wrk->mCompressed.size()) {
-    smdbprintf(0, "Warning: Unexpected memory allocation present in work quantum.  Probably that should not ever happen.\n");      
+    SetError("Warning: Unexpected memory allocation present in work quantum.  Probably that should not ever happen.\n");      
   } 
   if (wrk->mCompressed.size() < mNumResolutions) {
     wrk->mCompressed.resize(mNumResolutions, NULL);  
@@ -2140,6 +2158,7 @@ void smBase::compressFrame(FrameCompressionWork *wrk) {
 */ 
 void smBase::compressAndWriteFrame(int f, u_char *data)
 {
+  if (mErrorState) return ; 
   smdbprintf(4, "compressAndWriteFrame(%d)\n", f); 
   FrameCompressionWork wrk(f, data); 
 
@@ -2166,6 +2185,7 @@ void smBase::compressAndWriteFrame(int f, u_char *data)
 */
 void smBase::writeCompFrame(int f, void *data, int *sizes, int res)
 {
+  if (mErrorState) return; 
   smdbprintf(4, "writeCompFrame(f=%d, res=%d)\n", f, res); 
   uint32_t tz;
   int numTiles = getTileNx(res)*getTileNy(res);
@@ -2215,6 +2235,7 @@ void smBase::writeCompFrame(int f, void *data, int *sizes, int res)
 */
 void smBase::getCompFrame(int frame, int threadnum, void *data, int &rsize, int res) 
 {
+  if (mErrorState) return; 
   u_int size;
   void *ioBuf;
   readFrame(frame+res*mNumFrames, threadnum);
@@ -2233,6 +2254,7 @@ void smBase::getCompFrame(int frame, int threadnum, void *data, int &rsize, int 
 */
 int smBase::getCompFrameSize(int frame, int res)
 {
+  if (mErrorState) return -1; 
   return(mFrameLengths[frame+res*mNumFrames]);
 }
 
@@ -2247,6 +2269,7 @@ int smBase::getCompFrameSize(int frame, int res)
 */ 
 int smBase::compFrame(void *in, void *out, int *outsizes, int res)
 {
+  if (mErrorState) return -1; 
   int compressedSize = 0;
   int nx = getTileNx(res);
   int ny = getTileNy(res);
@@ -2281,8 +2304,8 @@ int smBase::compFrame(void *in, void *out, int *outsizes, int res)
   char *outp = (char*)out;
   char *base  = (char*)in;
    
-  for(uint32_t j=0;j<ny;j++) {
-    for(uint32_t i=0;i<nx;i++) {
+  for(uint32_t j=0;j<ny && !mErrorState;j++) {
+    for(uint32_t i=0;i<nx && !mErrorState;i++) {
       int size =0, tileLineBytes=tileDims[0]*3; 
       long offset =  (((j * tileDims[1] * frameDims[0]) + (i * tileDims[0]))*3); 
       smdbprintf(5,"compFrame tile index[%d,%d], offset = %d\n",i,j,offset);
@@ -2376,6 +2399,7 @@ string smBase::MetaDataAsString(string label){
 
 // =====================================================================
 void smBase::WriteMetaData(void) { 
+  if (mErrorState) return; 
   ftruncate(mThreadData[0].fd, mFrameOffsets[mNumFrames*mNumResolutions]); 
   uint64_t filepos = LSEEK64(mThreadData[0].fd, 0, SEEK_END);
   smdbprintf(5, "Truncated file to %ld bytes, writing new meta data section.\n", filepos); 
@@ -2402,6 +2426,7 @@ void smBase::closeFile(void)
 {
   u_int arr[64] = {0};
   smdbprintf(3, "smBase::closeFile"); 
+  if (mErrorState) return; 
 
   if (bModFile == TRUE) {
     this->combineResolutionFiles(); 
@@ -2444,6 +2469,7 @@ void smBase::closeFile(void)
   smdbprintf(1, "Finished with movie %s\n", mMovieName);
   return;
 }
+
 //! convenience function
 /*!
   \param buffer data to swap

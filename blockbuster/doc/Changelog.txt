@@ -4,6 +4,7 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 ===============================================================================
 VERSION 2.8.0n (r1027) Wed Nov 20 09:34:06 PST 2013
 -- Fixed error in smcat documentation src-subregion flag
+-- Improve error handling in smtools so that empty movies are not left behind when errors are encountered during creation.  
 
 ===============================================================================
 VERSION 2.8.0m (r1027) Wed Nov 20 09:34:06 PST 2013
