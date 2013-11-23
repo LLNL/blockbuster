@@ -436,6 +436,12 @@ int main(int argc,char **argv)
   
   sm->closeFile();
   
+  if (sm->haveError()) {
+    cout << "Got error in movie creation.  No file is created.\n"; 
+    sm->deleteFile(); 
+    exit(1); 
+  } 
+
   /* clean up */
   // delete sm;
   //   for(i=0;i<nminfos;i++) delete input[i].sm;

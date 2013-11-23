@@ -187,14 +187,14 @@ void FillInputBuffer(Work *wrk) {
     unsigned int w, h;
     tiff = TIFFOpen(wrk->filename.c_str(),"r");
     if (!tiff) {
-      fprintf(stderr,"Error: Unable to open TIFF: %s\n",wrk->filename.c_str());
-      exit(1);
+      wrk->sm->SetError(str(boost::format("Error: Unable to open TIFF: %s")% wrk->filename));
+      return; 
     }
     TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH, &w);
     TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, &h);
     if ((w != wrk->Dims[0]) || (h != wrk->Dims[1])) {
-      fprintf(stderr,"Error: image size changed: %s\n",wrk->filename.c_str());
-      exit(1);
+      wrk->sm->SetError(str(boost::format("Error: image size changed: %s")%wrk->filename));
+      return; 
     }
 
     if (bitsPerSample == 16) {
@@ -266,13 +266,13 @@ void FillInputBuffer(Work *wrk) {
     CHECK(rowbuf);
     libi = sgiOpen((char*)wrk->filename.c_str(),SGI_READ,0,0,0,0,0);
     if (!libi) {
-      fprintf(stderr,"Error: Unable to open SGI: %s\n",wrk->filename.c_str());
-      exit(1);
+      wrk->sm->SetError(str(boost::format("Error: Unable to open SGI: %s")%wrk->filename));
+      return;
     }
     if ((libi->xsize != wrk->Dims[0]) ||
         (libi->ysize != wrk->Dims[1])) {
-      fprintf(stderr,"Error: image size changed: %s\n",wrk->filename.c_str());
-      exit(1);
+      wrk->sm->SetError(str(boost::format("Error: image size changed: %s")%wrk->filename));
+      return;
     }
     for(unsigned int y=0; y<wrk->Dims[1]; y++) {
       int x;
@@ -309,8 +309,8 @@ void FillInputBuffer(Work *wrk) {
     gzFile    fpz;
     fpz = gzopen(wrk->filename.c_str(),"r");
     if (!fpz) {
-      fprintf(stderr,"Error: Unable to open RAW compressed: %s\n",wrk->filename.c_str());
-      exit(1);
+      wrk->sm->SetError(str(boost::format("Error: Unable to open RAW compressed: %s")%wrk->filename));
+      return;
     }
     // Header
     if (wrk->Size[3]) {  // I don't believe this ever happens
@@ -361,19 +361,19 @@ void FillInputBuffer(Work *wrk) {
 
     fp = pm_openr((char*)wrk->filename.c_str());
     if (!fp) {
-      fprintf(stderr,"Unable to open the file: %s\n",wrk->filename.c_str());
-      exit(1);
+      wrk->sm->SetError(str(boost::format("Unable to open the file: %s")%wrk->filename));
+      return;
     }
     if (pnm_readpnminit(fp, &dx,&dy,&value,&fmt) == -1) {
-      fprintf(stderr,"The file is not in PNM format: %s.\n",wrk->filename.c_str());
+      wrk->sm->SetError(str(boost::format("The file is not in PNM format: %s.")%wrk->filename));
       pm_closer(fp);
-      exit(1);
+      return;
     }
     if ((dx != wrk->Dims[0]) ||
         (dy != wrk->Dims[1])) {
-      fprintf(stderr,"Error: image size changed: %s\n",wrk->filename.c_str());
+      wrk->sm->SetError(str(boost::format("Error: image size changed: %s")%wrk->filename));
       pm_closer(fp);
-      exit(1);
+      return;
     }
 
     if (PNM_FORMAT_TYPE(fmt) == PPM_TYPE) {
@@ -381,14 +381,14 @@ void FillInputBuffer(Work *wrk) {
     } else if(PNM_FORMAT_TYPE(fmt) == PGM_TYPE) {
       f = 1;
     } else {
-      fprintf(stderr,"Error: file type not supported:%s\n",wrk->filename.c_str());
+      wrk->sm->SetError(str(boost::format("Error: file type not supported:%s")%wrk->filename));
       pm_closer(fp);
-      exit(1);
+      return;
     }
     if (f != wrk->Size[2]) {
-      fprintf(stderr,"Error: file type changed:%s\n",wrk->filename.c_str());
+      wrk->sm->SetError(str(boost::format("Error: file type changed:%s")%wrk->filename));
       pm_closer(fp);
-      exit(1);
+      return;
     }
 
     xel*  xrow;
@@ -430,14 +430,14 @@ void FillInputBuffer(Work *wrk) {
     break;
   case 4: // PNG
     if (!read_png_image((char*)wrk->filename.c_str(),&wrk->Dims[0],wrk->buffer, true)) {
-      fprintf(stderr,"Unable to read PNG file: %s\n",wrk->filename.c_str());
-      exit(1);
+      wrk->sm->SetError(str(boost::format("Unable to read PNG file: %s")%wrk->filename));
+      return;
     }
     break;
   case 5: // JPEG
     if (!read_jpeg_image((char*)wrk->filename.c_str(),&wrk->Dims[0],wrk->buffer)) {
-      fprintf(stderr,"Unable to read JPEG file: %s\n",wrk->filename.c_str());
-      exit(1);
+      wrk->sm->SetError(str(boost::format("Unable to read JPEG file: %s")%wrk->filename));
+      return;
     }
     break;
   }
@@ -1189,11 +1189,17 @@ int main(int argc,char **argv) {
     cout << "Tags =============== \n";
     cout << sm->MetaDataAsString() << endl;
   }
-
   sm->closeFile();
 
-  cout << str(boost::format("img2sm successfully created movie %s\n")%moviename);
-  exit(0);
+  if (sm->haveError()) {
+    cout << "Got error in movie creation.  No file is created.\n"; 
+    sm->deleteFile(); 
+    exit(1); 
+  } 
+  else {
+    cout << str(boost::format("img2sm successfully created movie %s\n")%moviename);
+    exit(0);
+  }
 }
 
 void workproc(void *arg) {
