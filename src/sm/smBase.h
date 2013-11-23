@@ -555,7 +555,6 @@ struct OutputBuffer {
 class smBase {
  public:
   smBase(int mode, const char *fname, int numthreads=1, uint32_t bufferSize=50) {
-    mErrorState = 0; 
     init(mode, fname, numthreads, bufferSize); 
   }
 

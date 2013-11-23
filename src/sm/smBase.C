@@ -754,7 +754,8 @@ void smBase::init(int mode, const char *_fname, int numthreads, uint32_t bufferS
   mNumThreads = numthreads; 
   mWriteThreadRunning = false; 
   mWriteThreadStopSignal = false; 
-  smdbprintf(5, "smBase::smBase(%s, %d)", _fname, numthreads);
+  mErrorState = 0; 
+  smdbprintf(5, "smBase::init(%d, %s, %d, %d)", mode, _fname, numthreads, bufferSize);
   int i;
   setFlags(0);
   setFPS(getFPS());
@@ -2076,7 +2077,7 @@ void smBase::compressAndBufferFrame(int f,  u_char *data) {
   bool canBuffer = false; 
   smdbprintf(5, "compressAndBufferFrame: locking buffer mutex\n"); 
   pthread_mutex_lock(&mBufferMutex); 
-  while (!mErrorState && mStagingBuffer->addFrame(wrk)) {
+  while (!mErrorState && !mStagingBuffer->addFrame(wrk)) {
     smdbprintf(5, "compressAndBufferFrame: unlocking buffer mutex\n"); 
     pthread_mutex_unlock(&mBufferMutex); 
     usleep(1500); 
