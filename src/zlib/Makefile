@@ -29,12 +29,12 @@
 #
 include ../config/config
 
-all: $(INSTALL_DIR)/lib/libz.a
+all: $(INSTALL_DIR)/lib/libz.so
 
 $(INSTALL_DIR)/lib/libz.a:
 	[ -d zlib-1.1.3 ] || tar -xvzf zlib.tgz
 	cd zlib-1.1.3 ; \
-	CC="$(CC)" CFLAGS="$(CFLAGS)" ./configure --prefix=$(INSTALL_DIR); \
+	CC="$(CC)" CFLAGS="$(CFLAGS)" ./configure --prefix=$(INSTALL_DIR) --shared; \
 		$(MAKE) install
 
 clean:
