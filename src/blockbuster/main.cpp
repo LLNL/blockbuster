@@ -90,7 +90,7 @@ void usage(void) {
   fprintf(stderr, "'file' is an optional file name, or a prefix of a set of file names\n");
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "   Note: substrings are also matched, so -h is the same as -help, but beware of non-unique prefixes!\n");
-  fprintf(stderr, "-cachedebug: turn on verbose cache debugging messages (also enabled if verbosity is > 5)"); 
+  fprintf(stderr, "-cachedebug: turn on verbose cache debugging messages (also enabled if verbosity is > 5)\n"); 
   fprintf(stderr, "-cachesize <num> specifies cache limit in frames (you can leave this unset unless you are running out of memory)\n");
   fprintf(stderr, "-DecorationsDisable (or -no-decorations): same as -fullscreen\n");
   fprintf(stderr, "-display <display> specifies X display\n");

@@ -27,15 +27,17 @@
 #
 #	$Id: Makefile,v 1.1 2007/06/13 18:59:35 wealthychef Exp $
 #
+ZLIB_VERSION=1.2.8
+
 include ../config/config
 
-all: $(INSTALL_DIR)/lib/libz.a
+all: $(INSTALL_DIR)/lib/libz.so.$(ZLIB_VERSION)
 
-$(INSTALL_DIR)/lib/libz.a:
-	[ -d zlib-1.1.3 ] || tar -xvzf zlib.tgz
-	cd zlib-1.1.3 ; \
-	CC="$(CC)" CFLAGS="$(CFLAGS)" ./configure --prefix=$(INSTALL_DIR); \
+$(INSTALL_DIR)/lib/libz.so.$(ZLIB_VERSION):
+	[ -d zlib-$(ZLIB_VERSION) ] || tar -xvzf zlib-$(ZLIB_VERSION).tar.gz
+	cd zlib-$(ZLIB_VERSION) ; \
+	CC="$(CC)" CFLAGS="$(CFLAGS)" ./configure --prefix=$(INSTALL_DIR) --shared; \
 		$(MAKE) install
 
 clean:
-	rm -rf zlib-1.1.3 $(INSTALL_DIR)/lib/libz.a
+	rm -rf zlib-1.{2.8,1.3} $(INSTALL_DIR)/lib/libz.{a,so}.*
