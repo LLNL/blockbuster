@@ -2,7 +2,7 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.0m (r1035) Wed Dec  4 09:18:02 PST 2013
+VERSION 2.8.0m (r1039) Wed Dec  4 16:09:01 PST 2013
 -- Fixed error in smcat documentation src-subregion flag
 -- Improve error handling in smtools so that empty movies are not left behind when errors are encountered during creation.  
 -- Added ability to recognize frame sequences containing "left" and "right" in the names as being stereo and properly order them.
