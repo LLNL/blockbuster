@@ -77,7 +77,7 @@ RELEASE_QT =  CONFIG += release
 DEBUG=
 endif
 
-SOURCES = main.cpp sidecar.cpp MovieCues.cpp events.cpp Prefs.C RemoteControl.cpp settings.cpp ../../common/timer.h
+SOURCES = sidecar_main.cpp sidecar.cpp MovieCues.cpp events.cpp Prefs.C RemoteControl.cpp settings.cpp ../../common/timer.h
 HEADERS = sidecar.h MovieCues.h events.h common.h settings.h Prefs.h
 FORMS = MovieCueWidget.ui BlockbusterControl.ui InfoWindow.ui sidecar.ui blockbusterLaunchDialog.ui
 UI_HEADERS = ui_MovieCueWidget.h ui_BlockbusterControl.h ui_InfoWindow.h ui_sidecar.h ui_blockbusterLaunchDialog.h
