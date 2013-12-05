@@ -44,6 +44,7 @@
 #include "sm/smLZO.h"
 #include "sm/smRaw.h"
 #include "sm/smJPG.h"
+#include "sm/smXZ.h"
 #include "../config/version.h"
 #include <tclap_utils.h>
 #include <boost/algorithm/string.hpp>
@@ -126,6 +127,7 @@ int main(int argc,char **argv)
   TCLAP::SwitchArg rle("r", "rle", "Use Run-Length Encoding compression", cmd, false);
   TCLAP::SwitchArg gz("z", "gz", "Use GZ compression", cmd, false);
   TCLAP::SwitchArg lzo("l", "lzo", "Use LZO compression", cmd, false);
+  TCLAP::SwitchArg lzma("x", "lzma", "Use LZMA (xzlib) compression", cmd, false);
   TCLAP::SwitchArg jpg("j", "jpg", "Use JPEG compression", cmd, false);
   TCLAP::ValueArg<int> jqual("q",  "jqual",  "JPEG quality (0-99, default 75).  Higher is less compressed and higher quality.", false,  75,  "integer (0-99)",  cmd);   
   
@@ -141,6 +143,11 @@ int main(int argc,char **argv)
   TCLAP::UnlabeledMultiArg<string> movienames("moviename", "Names of the input movie(s) to cat. Syntax is \"file[@first[@last[@step]]]\", allowing the first, last and frame step to be specified for each input .sm file individually. The default is to take all frames in an input file, stepping by 1.",true, "movie names", cmd); 
   
   
+  // save the command line for meta data
+  string commandLine;
+  for (int i=0; i<argc; i++)
+    commandLine += (string(argv[i]) + " ");
+
   try {
     cmd.parse(argc, argv);
   } catch(std::exception &e) {
@@ -157,6 +164,7 @@ int main(int argc,char **argv)
   if (gz.getValue()) compressionType = 2;
   if (lzo.getValue()) compressionType = 3;
   if (jpg.getValue()) compressionType = 4;
+  if (lzma.getValue()) compressionType = 5;
   int		nRes = mipmaps.getValue();
   if (nRes < 1 || nRes > 8) {
     errexit(cmd, "Resolutions must be between 1 and 8."); 
@@ -363,6 +371,8 @@ int main(int argc,char **argv)
   } else if (compressionType == 4) {
     sm = new smJPG(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
     ((smJPG *)sm)->setQuality(jqual.getValue());
+  } else if (compressionType == 5) {
+    sm = new smXZ(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
   } else {
     sm = new smRaw(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
   }
