@@ -36,7 +36,7 @@ SOURCES = ../common.cpp \
            ../events.cpp \
     ../errmsg.cpp \
             ../util.cpp \
-           main.cpp \       
+           sidecar_main.cpp \       
         ../settings.cpp \
            ../MovieCues.cpp \
            Prefs.C \

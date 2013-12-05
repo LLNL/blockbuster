@@ -97,6 +97,7 @@ void usage(void) {
   fprintf(stderr, "-dmxstereo: short for -r dmx -stereo.\n");
   fprintf(stderr, "-font <fontname> specifies X font\n");
   fprintf(stderr, "-framerate (or -Framerate) <rate> sets the initial frame rate target for the movie [30.0 or movie-specified]\n");
+  fprintf(stderr, "-fpsSampleFrequency (or -FSF) <rate> sets the number of times per second that FPS is calculated [2.0]\n");
   fprintf(stderr, "-fullscreen: turns off window decorations and goes to full-screen display\n"); 
   fprintf(stderr, "-geometry <geometrystring> specifies X window geometry\n");
   fprintf(stderr, "-help displays this help message\n");
@@ -305,6 +306,8 @@ static void ParseOptions(int &argc, char *argv[])
 	else if (CHECK_STRING_ARG("-font", argc, argv, opt->fontName)) continue;
     else if (CHECK_ATOF_ARG("-Framerate", argc, argv,  opt->frameRate) || 
              CHECK_ATOF_ARG("-framerate", argc, argv,  opt->frameRate)) continue; 
+    else if (CHECK_ATOF_ARG("-fpsSampleFrequency", argc, argv,  opt->fpsSampleFrequency) || 
+             CHECK_ATOF_ARG("-FSF", argc, argv,  opt->fpsSampleFrequency)) continue; 
     else if (CHECK_STRING_ARG("-geometry", argc, argv, geometryString)) {
 	  unsigned int w = DONT_CARE, h = DONT_CARE;
       int mask = XParseGeometry((const char*)geometryString.toStdString().c_str(),

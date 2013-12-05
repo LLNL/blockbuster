@@ -1163,7 +1163,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
         
         recentEndTime = GetCurrentTime();
         elapsedTime = recentEndTime - recentStartTime;
-        if (elapsedTime >= 0.5) {
+        if (elapsedTime >= 1.0/(options->fpsSampleFrequency)) {
           fps = (double) recentFrameCount / elapsedTime;
           SuppressMessageDialogs(true); 
           WARNING("Frame Rate on frame %d: %g fps", frameNumber, fps);
