@@ -2,7 +2,7 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.0n (git tag blockbuster-v2.8.0n) Mon Jan 13 11:20:34 PST 2014
+VERSION 2.8.0n (git tag blockbuster-v2.8.0n) Mon Jan 13 11:29:24 PST 2014
 -- switched to git 
 
 ===============================================================================

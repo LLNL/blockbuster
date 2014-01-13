@@ -7,7 +7,7 @@ function usage() {
     echo "updates version.h "
     echo "greps Changelog to make sure there is an entry there.  Updates the Changelog entry. "
     echo " OPTIONS: " 
-    echo "-c/--commit: Commit changes to all directories and before proceeding. Default: no."
+    echo "-c/--commit: Commit changes to all tracked directories and files before proceeding. Default: only commit version-related files."
     echo "-t/--temp: Just update Changelog and version.h as needed."
     echo "-f/--final: updates version.h and Changelog, creates a tarball in the current directory with proper naming scheme. " 
     echo " -v: set -xv" 
@@ -200,7 +200,7 @@ sedfiles -e "s/VERSION $version.*/VERSION $version (git tag $tagname) $(date)/" 
 
 #======================================================
 # stage files 
-git add $commitfiles || errexit "git add failed"
+git add -u $commitfiles || errexit "git add failed"
 
 if testbool $nopush; then
     echo "Version updated.  No git push will be performed"
