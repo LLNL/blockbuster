@@ -198,9 +198,6 @@ fi
 
 sedfiles -e "s/VERSION $version.*/VERSION $version (git tag $tagname) $(date)/" doc/Changelog.txt || errexit "Could not place version in doc/Changelog.txt.  Please check the Changelog file for errors."  
 
-echo "Creating new tag" 
-git tag -d $tagname 2>/dev/null 
-git tag -a $tagname -m "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)"
 #======================================================
 # stage files 
 git add $commitfiles || errexit "git add failed"
@@ -212,9 +209,16 @@ fi
 
 #======================================================
 # push to remote
-echo "pushing source to remote..."
-git push origin
+echo "commiting local changes and pushing source to remote..."
+git commit -m  "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)"  || errexit "git commit failed"
+git push origin  || errexit "git push origin failed"
 
+echo "Creating new tag" 
+git tag -d $tagname 2>/dev/null  # ok to fail
+git tag -a $tagname -m "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)" || errexit "git tag failed"
+git push origin $tagname || errexit "git push origin  $tagname failed"
+
+exit 0
 #======================================================
 # Update and install on LC cluster
 echo "Creating clean temp directory $tmpdir to work in..." 
