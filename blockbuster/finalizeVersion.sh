@@ -232,10 +232,11 @@ echo "Creating fresh build directory $builddir and installation directory $insta
 rm -rf $installdir $builddir
 mkdir -p $installdir $builddir
 
+popd 
+
 echo "Exporting the new tag from git repo..." 
 git archive --prefix=$tagname/ $tagname | gzip > ${builddir}/$tagname.tgz || errexit "Could not export archive of tag $tagname from git repo to $tagname.tgz"
 
-popd
 echo "Cleaning up tempdir..." 
 rm -rf $tmpdir
 
