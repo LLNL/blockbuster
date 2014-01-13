@@ -7,10 +7,10 @@ function usage() {
     echo "updates version.h "
     echo "greps Changelog to make sure there is an entry there.  Updates the Changelog entry. "
     echo " OPTIONS: " 
-    echo "-c/--commit: Commit all directories before proceeding. Default: no."
+    echo "-c/--commit: Commit changes to all directories and before proceeding. Default: no."
     echo "-t/--temp: Just update Changelog and version.h as needed."
     echo "-f/--final: updates version.h and Changelog, creates a tarball in the current directory with proper naming scheme. " 
-
+    echo " -v: set -xv" 
     echo "NOTE: You must give either --temp or --final."
 }
 
@@ -88,6 +88,8 @@ for arg in "$@"; do
     elif [ "$arg" == --help ] ||  [ "$arg" == -h ] ; then
         usage
         exit 0
+    elif [ "$arg" == --verbose ]  ||  [ "$arg" == -v ] ; then
+        set -xv
     elif [ "${arg:0:1}" == '-' ]; then
         usage
         errexit "Bad argument: $arg"
@@ -101,13 +103,14 @@ if ! testbool "$temp" && ! testbool "$final"; then
     usage
     errexit "You must give either -t/--temp or -f/--final as an argument"
 fi
+nopush=true
 if [ "$final" == true ]; then 
-    skipcheckin=false
+    nopush=false
 fi
 #=================================
 commitfiles="doc/Changelog.txt src/config/version.h  src/config/versionstring.txt"
 if testbool "$commit"; then 
-    commitfiles=$(pwd)
+    commitfiles=.
 fi
 #=================================
 function sedfilesusage() {
@@ -184,34 +187,33 @@ sedfiles -e "s/#define BLOCKBUSTER_VERSION.*/#define BLOCKBUSTER_VERSION \"$vers
 echo "Saving version in src/config/versionstring.txt"
 echo $version > src/config/versionstring.txt || errexit "Could not echo string to file!"
 
-#======================================================
-# Remove duplicate version from repo if it exists. 
-if ! testbool $skipcheckin; then
-    echo "Removing version $version from SVN if it exists..." 
-    versiondir=svn+ssh://wealthychef@svn.code.sf.net/p/blockbuster/code/tags/blockbuster-v$version
-    svn rm -m "Removing version $version if it exists..."  $versiondir
-fi
+tagname=blockbuster-v$version
 
 #======================================================
 # Update Changelog
-revision=$(svn update | grep 'revision' | sed 's/At revision \(.*\)\./\1/')
-newrevision=$(expr $revision + 2)
-echo "Current SVN revision is $revision and new revision will be $newrevision..." 
-
 echo "Checking Changelog to make sure you have done your housekeeping..." 
 if ! grep $version doc/Changelog.txt >/dev/null; then 
     errexit "Could not find version $version in Changelog.txt.  Please update the Changelog and I will continue."
 fi
-sedfiles -e "s/VERSION $version.*/VERSION $version (r$newrevision) $(date)/" doc/Changelog.txt || errexit "Could not place version in doc/Changelog.txt.  Please check the Changelog file for errors."  
 
-if testbool $skipcheckin; then
-    echo "Version updated.  No checkin will be performed"
+sedfiles -e "s/VERSION $version.*/VERSION $version (git tag $tagname) $(date)/" doc/Changelog.txt || errexit "Could not place version in doc/Changelog.txt.  Please check the Changelog file for errors."  
+
+echo "Creating new tag" 
+git tag -d $tagname 2>/dev/null 
+git tag -a $tagname -m "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)"
+#======================================================
+# stage files 
+git add $commitfiles || errexit "git add failed"
+
+if testbool $nopush; then
+    echo "Version updated.  No git push will be performed"
     exit 0
 fi
+
 #======================================================
-# Update Subversion repository
-echo "Checking in source..."
-svn commit -m "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)" $commitfiles || errexit "svn commit failed"
+# push to remote
+echo "pushing source to remote..."
+git push origin
 
 #======================================================
 # Update and install on LC cluster
@@ -220,8 +222,6 @@ rm -rf $tmpdir
 mkdir -p $tmpdir || errexit "Could not create tmp directory for tarball"
 pushd $tmpdir || errexit "Could not cd into new tmp directory!?" 
 
-echo "Creating new version in SVN repo from trunk" 
-svn cp -m "Version $version, automatic version creation by finalizeVersion.sh, by user $(whoami)" svn+ssh://wealthychef@svn.code.sf.net/p/blockbuster/code/trunk/blockbuster  $versiondir || errexit "could not create version in svn" 
 
 echo "Checking out the new version from SVN repo..." 
 svn co $versiondir || errexit "could not check out versiondir $versiondir from svn repo" 
