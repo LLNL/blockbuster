@@ -218,7 +218,6 @@ git tag -d $tagname 2>/dev/null  # ok to fail
 git tag -a $tagname -m "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)" || errexit "git tag failed"
 git push origin $tagname || errexit "git push origin  $tagname failed"
 
-exit 0
 #======================================================
 # Update and install on LC cluster
 echo "Creating clean temp directory $tmpdir to work in..." 
@@ -227,17 +226,14 @@ mkdir -p $tmpdir || errexit "Could not create tmp directory for tarball"
 pushd $tmpdir || errexit "Could not cd into new tmp directory!?" 
 
 
-echo "Checking out the new version from SVN repo..." 
-svn co $versiondir || errexit "could not check out versiondir $versiondir from svn repo" 
-
 builddir=$stagedir/$version
 installdir=/usr/gapps/asciviz/blockbuster/$version
 echo "Creating fresh build directory $builddir and installation directory $installdir..."
 rm -rf $installdir $builddir
 mkdir -p $installdir $builddir
 
-echo "Creating actual tarball..." 
-tar -czf ${builddir}/blockbuster-v${version}.tgz blockbuster-v${version}
+echo "Exporting the new tag from git repo..." 
+git archive --prefix=$tagname/ $tagname | gzip > ${builddir}/$tagname.tgz || errexit "Could not export archive of tag $tagname from git repo to $tagname.tgz"
 
 popd
 echo "Cleaning up tempdir..." 
