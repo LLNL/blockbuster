@@ -243,37 +243,37 @@ rm -rf $tmpdir
 # =============================================================
 echo "Installing software..." 
 
-echo '#!/usr/bin/env bash'"
-. $HOME/.profile
-export PATH=/usr/local/tools/qt-4.8.4/bin:\$PATH
+echo '#!/usr/bin/env bash
+. '"$HOME/.profile"'
+export PATH=/usr/local/tools/qt-4.8.4/bin:$PATH
 
 function errexit() {
     echo 
-    echo '*******************************************************'
-    echo \"ERROR\"
-    echo \"ERROR:  \$1\"
-    echo \"ERROR\"
-    echo '*******************************************************'
+    echo "*******************************************************"
+    echo "ERROR"
+    echo "ERROR:  $1"
+    echo "ERROR"
+    echo "*******************************************************"
     echo 
-    rm -rf $tmpdir
+    rm -rf '"$tmpdir"'
     exit ${2:-1}
 }
+set -xv 
+rm -rf '"$installdir"'/$SYS_TYPE $builddir/$SYS_TYPE
+mkdir -p '"$builddir"'/$SYS_TYPE
+pushd '"$builddir"'/$SYS_TYPE || errexit "Cannot cd to install directory $SYS_TYPE"
 
-rm -rf $installdir/\$SYS_TYPE $builddir/\$SYS_TYPE
-mkdir -p $builddir/\$SYS_TYPE
-pushd $builddir/\$SYS_TYPE || errexit \"Cannot cd to install directory $SYS_TYPE\"
+tar -xzf '"$builddir/blockbuster-v${version}"'.tgz || errexit "Cannot untar tarball" 
 
-tar -xzf $builddir/blockbuster-v${version}.tgz || errexit \"Cannot untar tarball\" 
+pushd '"blockbuster-v${version}"' || errexit "Cannot cd to blockbuster source directory" 
 
-pushd blockbuster-v${version} || errexit \"Cannot cd to blockbuster source directory\" 
-
-INSTALL_DIR=$installdir/\$SYS_TYPE make || errexit \"Could not make software\" 
+INSTALL_DIR='"$installdir"'/$SYS_TYPE make || errexit "Could not make software" 
 
 popd
 
 popd
 echo INSTALLATION FINISHED
-" > ${builddir}/installer.sh
+' > ${builddir}/installer.sh
 chmod 700 ${builddir}/installer.sh
 ${builddir}/installer.sh || errexit "installer failed on localhost"
 
