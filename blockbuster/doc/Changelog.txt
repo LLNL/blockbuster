@@ -5,6 +5,7 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 VERSION 2.8.0n (git tag blockbuster-v2.8.0n) Mon Jan 13 11:51:03 PST 2014
 -- switched to git 
 -- Improved argument handling in img2sm and smcat
+-- Make a slightly better attempt to delete large "smBase*" temp files if sm2img or smcat are interrupted.  
 
 ===============================================================================
 VERSION 2.8.0m (r1049) Wed Dec  4 17:43:59 PST 2013

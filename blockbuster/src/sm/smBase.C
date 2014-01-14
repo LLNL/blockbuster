@@ -816,6 +816,10 @@ smBase::~smBase()
   smdbprintf(5,"smBase destructor : %s",mMovieName);
   if ((bModFile == TRUE) && (mThreadData[0].fd)) CLOSE(mThreadData[0].fd);
   if (mMovieName) free(mMovieName);
+  for (int i=0; i<mResFileNames.size(); i++) {
+    unlink (mResFileNames[i].c_str() ); 
+  }
+  return; 
 }
 
 
