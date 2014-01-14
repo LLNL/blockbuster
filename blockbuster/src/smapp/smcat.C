@@ -48,6 +48,7 @@
 #include "../config/version.h"
 #include <tclap_utils.h>
 #include <boost/algorithm/string.hpp>
+#include <boost/tokenizer.hpp>
 #include "pt/pt.h"
 
 #include "zlib.h"
@@ -79,6 +80,13 @@ void Sample2d(unsigned char *in,int idx,int idy,unsigned char *out,
         int odx,int ody,int s_left,int s_top,
         int s_dx,int s_dy,int filter);
 
+// =======================================================================
+void errexit(string msg) {
+  cerr << "ERROR: "  << msg << endl << endl;
+  exit(1);
+}
+
+// =======================================================================
 void errexit(TCLAP::CmdLine &cmd, string msg) {
   cerr << endl << "*** ERROR *** : " << msg  << endl<< endl;
   cmd.getOutput()->usage(cmd); 
@@ -150,7 +158,8 @@ int main(int argc,char **argv)
   TCLAP::ValueArg<int> jqual("q",  "jqual",  "JPEG quality (0-99, default 75).  Higher is less compressed and higher quality.", false,  75,  "integer (0-99)",  cmd);   
   
   TCLAP::ValueArg<int> mipmaps("", "mipmaps", "Number of levels of detail",false, 1, "integer", cmd);   
-  TCLAP::ValueArg<int> tilesizes("",  "tilesizes",  "Pixel size of the tiles within each frame (default: 512).  If set to 0, no tiling will be done.  Examples: '512' or '512,256'", false,  0,  "integer",  cmd); 
+  TCLAP::ValueArg<string> tilesizes("",  "tilesizes",  "Pixel size of the tiles within each frame (default: 0 -- no tiling).  Examples: '512' or '512x256'", false,  "0",  "M or MxN",  cmd); 
+  //  TCLAP::ValueArg<int> tilesizes("",  "tilesizes",  "Pixel size of the tiles within each frame (default: 0 -- no tiling).  Examples: '512' or '512,256'", false,  0,  "integer",  cmd); 
   
   TCLAP::ValueArg<string> destSize("", "dest-size", "Set output frame dimensions. Default: input size.  Format: XXXxYYY e.g. '300x500'",false, "", "e.g. '300x500'", cmd);   
   TCLAP::ValueArg<string> subregion("", "src-subregion", "Select a rectangle of the input by giving region size and offset. Default: all. Format: 'Xoffset Yoffset Xsize Ysize' e.g. '20 50 300 500'",false, "", "'Xoffset Yoffset Xsize Ysize'", cmd);   
@@ -182,15 +191,6 @@ int main(int argc,char **argv)
     errexit(cmd, "Resolutions must be between 1 and 8."); 
   }
   
-
-  //char		*sOutput = NULL;
-  //int		dst[2] = {-1,-1};
-  //int		src[4] = {-1,-1,-1,-1};
-  //int		iQual = 75;
-  
-  
-  //char	        tstr[1024],tstr2[1024];
-  //char            tsizestr[1024] = "512";
   
   // ===============================================
   int		iSize[2] = {-1};
@@ -351,7 +351,33 @@ int main(int argc,char **argv)
   /* We used to allow tilesizes to be specified in great detail, but it is sufficient now to use same tile size at all mipmaps, since after all the I/O is the same regardless of the level of detail.  
 	Formerly, you could say -tilesizes '512x256,256x128,128x64' and have things go the way you wanted them.  Not worth the hassle but worth noting here.  
    */ 
-  tsizes[0][0] = tsizes[0][1] = boost::lexical_cast<int>(tilesizes.getValue());
+  int xsize=0,ysize=0;
+  try {
+    xsize = boost::lexical_cast<int32_t>(tilesizes.getValue());
+    ysize = xsize;
+  } catch(boost::bad_lexical_cast &) {
+    smdbprintf(5, str(boost::format("Could not make %1% into an integer.  Trying MxN format.")%tilesizes.getValue()).c_str());
+    typedef boost::tokenizer<boost::char_separator<char> >  tokenizer;
+    boost::char_separator<char> sep("x");
+    tokenizer tok(tilesizes.getValue(), sep);
+    tokenizer::iterator pos = tok.begin(), endpos = tok.end();
+    try {
+      if (pos != endpos) {
+        xsize = boost::lexical_cast<int32_t>(*pos);
+        ++pos;
+      }
+      if (pos != endpos) {
+        ysize = boost::lexical_cast<int32_t>(*pos);
+      } else {
+        throw;
+      }
+    } catch(...) {
+      errexit(cmd, str(boost::format("Bad format string %1%.")%tilesizes.getValue()));
+    }
+  }
+  tsizes[0][0] = xsize;
+  tsizes[0][1] = ysize;
+
   for(int n=1; n< nRes; n++) {
     tsizes[n][0] = tsizes[n-1][0];
     tsizes[n][1] = tsizes[n-1][1];

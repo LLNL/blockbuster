@@ -73,7 +73,7 @@ extern "C" {
 
 // =======================================================================
 void errexit(string msg) {
-  cerr << "ERROR: "  << msg << endl;
+  cerr << "ERROR: "  << msg << endl << endl;
   exit(1);
 }
 
@@ -631,7 +631,7 @@ int main(int argc,char **argv) {
     contents, quality
     =====================================================
   */
-  TCLAP::ValueArg<string> tilesizes("", "tilesizes", "Size of tiles in movie", false, "512", "M for square tiles, MxN for rectangular tiles", cmd);
+  TCLAP::ValueArg<string> tilesizes("",  "tilesizes",  "Pixel size of the tiles within each frame (default: 0 -- no tiling).  Examples: '512' or '512x256'", false,  "0",  "M or MxN",  cmd); 
   TCLAP::ValueArg<int> mipmaps("m", "mipmaps", "Number of mipmaps (levels of detail) to create",false, 1, "integer", cmd);
   TCLAP::ValueArg<int> quality("", "quality", "Jpeg compression quality, from 0-100",false, 75, "integer", cmd);
 
@@ -884,10 +884,10 @@ int main(int argc,char **argv) {
   unsigned int  tsizes[8][2];
   //int count = 0;
   int parsed = 0;
-  int xsize=0,ysize=0;
+  int tile_xsize=0,tile_ysize=0;
   try {
-    xsize = boost::lexical_cast<int32_t>(tilesizes.getValue());
-    ysize = xsize;
+    tile_xsize = boost::lexical_cast<int32_t>(tilesizes.getValue());
+    tile_ysize = tile_xsize;
   } catch(boost::bad_lexical_cast &) {
     smdbprintf(5, str(boost::format("Could not make %1% into an integer.  Trying MxN format.")%tilesizes.getValue()).c_str());
     typedef boost::tokenizer<boost::char_separator<char> >  tokenizer;
@@ -896,11 +896,11 @@ int main(int argc,char **argv) {
     tokenizer::iterator pos = tok.begin(), endpos = tok.end();
     try {
       if (pos != endpos) {
-        xsize = boost::lexical_cast<int32_t>(*pos);
+        tile_xsize = boost::lexical_cast<int32_t>(*pos);
         ++pos;
       }
       if (pos != endpos) {
-        ysize = boost::lexical_cast<int32_t>(*pos);
+        tile_ysize = boost::lexical_cast<int32_t>(*pos);
       } else {
         throw;
       }
@@ -908,16 +908,16 @@ int main(int argc,char **argv) {
       errexit(str(boost::format("Bad format string %1%.")%tilesizes.getValue()));
     }
   }
-  tsizes[0][0] = xsize;
-  tsizes[0][1] = ysize;
+  tsizes[0][0] = tile_xsize;
+  tsizes[0][1] = tile_ysize;
 
   for (int count = 1; count < mipmaps.getValue(); ++count) {
     tsizes[count][0] = tsizes[count-1][0];
     tsizes[count][1] = tsizes[count-1][1];
-  }
-  for(int n=0; n < mipmaps.getValue(); n++) {
-    smdbprintf(1,"Resolution[%d] Tilesize=[%dx%d]\n",n,tsizes[n][0],tsizes[n][1]);
-  }
+    smdbprintf(1,"Resolution[%d] Tilesize=[%dx%d]\n", count, 
+               tsizes[count][0], tsizes[count][1]);
+  } 
+
 
   smdbprintf(2, " Checking the file type.\n"); 
   string filename = inputfiles[0];
@@ -1051,13 +1051,11 @@ int main(int argc,char **argv) {
   iInDims = iSize;
   rotate_dims(rotate.getValue(),&iSize[0],&iSize[1]);
 
-  // count the files
-  //count = abs((lastFrame-firstFrame.getValue())/frameStep.getValue()) + 1;
-
   // Open the sm file...
   uint32_t *tsizes_ptr = NULL;
-  tsizes_ptr = &tsizes[0][0];
-
+  if (tsizes[0][0]) {
+    tsizes_ptr = &tsizes[0][0];
+  }
   smBase  *sm = NULL;
   if (compression.getValue() == "" || compression.getValue() == "gz" || compression.getValue() == "GZ") {
     if (compression.getValue() == "") {
