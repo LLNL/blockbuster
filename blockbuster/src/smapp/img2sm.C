@@ -1059,12 +1059,15 @@ int main(int argc,char **argv) {
   tsizes_ptr = &tsizes[0][0];
 
   smBase  *sm = NULL;
-  if (compression.getValue() == "raw" || compression.getValue() == "RAW") {
+  if (compression.getValue() == "" || compression.getValue() == "gz" || compression.getValue() == "GZ") {
+    if (compression.getValue() == "") {
+      smdbprintf(1, "No compression given; using gzip compression by default.\n"); 
+    }
+    sm = new smGZ(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
+  } else if (compression.getValue() == "raw" || compression.getValue() == "RAW") {
     sm = new smRaw(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
   } else if (compression.getValue() == "rle" || compression.getValue() == "RLE") {
     sm = new smRLE(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
-  } else if (compression.getValue() == "gz" || compression.getValue() == "GZ") {
-    sm = new smGZ(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
   } else if (compression.getValue() == "lzo" || compression.getValue() == "LZO") {
     sm = new smLZO(moviename.c_str(),iSize[0],iSize[1],inputfiles.size(), tsizes_ptr,mipmaps.getValue());
   } else if (compression.getValue() == "jpg" || compression.getValue() == "JPG") {

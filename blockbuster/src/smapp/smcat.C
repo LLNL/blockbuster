@@ -124,15 +124,33 @@ int main(int argc,char **argv)
   TCLAP::SwitchArg filter("", "filter", "Enable smoothing filter for image scaling", cmd, false);
   TCLAP::ValueArg<int> 
     threads("t","threads","number of threads to use", false,1,"integer",cmd);
-  TCLAP::SwitchArg rle("r", "rle", "Use Run-Length Encoding compression", cmd, false);
-  TCLAP::SwitchArg gz("z", "gz", "Use GZ compression", cmd, false);
-  TCLAP::SwitchArg lzo("l", "lzo", "Use LZO compression", cmd, false);
-  TCLAP::SwitchArg lzma("x", "lzma", "Use LZMA (xzlib) compression", cmd, false);
-  TCLAP::SwitchArg jpg("j", "jpg", "Use JPEG compression", cmd, false);
+
+  vector<string> allowedcompression;
+  allowedcompression.push_back("gz");
+  allowedcompression.push_back("GZ");
+  allowedcompression.push_back("jpeg");
+  allowedcompression.push_back("JPEG");
+  allowedcompression.push_back("jpg");
+  allowedcompression.push_back("JPG");
+  allowedcompression.push_back("lzma");
+  allowedcompression.push_back("LZMA");
+  allowedcompression.push_back("lzo");
+  allowedcompression.push_back("LZO");
+  allowedcompression.push_back("raw");
+  allowedcompression.push_back("RAW");
+  allowedcompression.push_back("rle");
+  allowedcompression.push_back("RLE");
+  TCLAP::ValuesConstraint<string> *allowed = new TCLAP::ValuesConstraint<string>(allowedcompression);
+  if (!allowed)
+    errexit(cmd, "Cannot create values constraint for compression\n");
+
+  TCLAP::ValueArg<string>compression("c", "compression", "Compression to use on movie", false, "gz", allowed);
+  cmd.add(compression);
+
   TCLAP::ValueArg<int> jqual("q",  "jqual",  "JPEG quality (0-99, default 75).  Higher is less compressed and higher quality.", false,  75,  "integer (0-99)",  cmd);   
   
   TCLAP::ValueArg<int> mipmaps("", "mipmaps", "Number of levels of detail",false, 1, "integer", cmd);   
-  TCLAP::ValueArg<int> tilesizes("",  "tilesizes",  "Pixel size of the tiles within each frame (default: 512).  If set to 0, no tiling will be done.  Examples: '512' or '512,256'", false,  512,  "integer",  cmd); 
+  TCLAP::ValueArg<int> tilesizes("",  "tilesizes",  "Pixel size of the tiles within each frame (default: 512).  If set to 0, no tiling will be done.  Examples: '512' or '512,256'", false,  0,  "integer",  cmd); 
   
   TCLAP::ValueArg<string> destSize("", "dest-size", "Set output frame dimensions. Default: input size.  Format: XXXxYYY e.g. '300x500'",false, "", "e.g. '300x500'", cmd);   
   TCLAP::ValueArg<string> subregion("", "src-subregion", "Select a rectangle of the input by giving region size and offset. Default: all. Format: 'Xoffset Yoffset Xsize Ysize' e.g. '20 50 300 500'",false, "", "'Xoffset Yoffset Xsize Ysize'", cmd);   
@@ -159,12 +177,6 @@ int main(int argc,char **argv)
   // int		iStereo = stereo.getValue()? 0 : SM_STEREO;
   int		nThreads = threads.getValue();
   
-  int		compressionType = 0;
-  if (rle.getValue()) compressionType = 1;
-  if (gz.getValue()) compressionType = 2;
-  if (lzo.getValue()) compressionType = 3;
-  if (jpg.getValue()) compressionType = 4;
-  if (lzma.getValue()) compressionType = 5;
   int		nRes = mipmaps.getValue();
   if (nRes < 1 || nRes > 8) {
     errexit(cmd, "Resolutions must be between 1 and 8."); 
@@ -362,19 +374,24 @@ int main(int argc,char **argv)
   if(tsizes[0][0]) {
     tsizep = &tsizes[0][0];
   }
-  if (compressionType == 1) {
-    sm = new smRLE(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
-  } else if (compressionType == 2) {
+  else if (compression.getValue() == "" || compression.getValue() == "gz" || compression.getValue() == "GZ") {
+    if (compression.getValue() == "") {
+      dbprintf(1, "No compression given; using gzip compression by default.\n"); 
+    }
     sm = new smGZ(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
-  } else if (compressionType == 3) {
+  } else if (compression.getValue() == "raw" || compression.getValue() == "RAW") {
+    sm = new smRaw(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
+  } else if (compression.getValue() == "rle" || compression.getValue() == "RLE") {
+    sm = new smRLE(output.getValue().c_str(),iSize[0],iSize[1],count, tsizep,nRes, nThreads);
+  } else if (compression.getValue() == "lzo" || compression.getValue() == "LZO") {
     sm = new smLZO(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
-  } else if (compressionType == 4) {
+  } else if (compression.getValue() == "jpg" || compression.getValue() == "JPG") {
     sm = new smJPG(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
     ((smJPG *)sm)->setQuality(jqual.getValue());
-  } else if (compressionType == 5) {
+  } else if (compression.getValue() == "lzma" || compression.getValue() == "LZMA") {
     sm = new smXZ(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
   } else {
-    sm = new smRaw(output.getValue().c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
+    errexit(cmd, str(boost::format("Bad encoding type: %1%")%compression.getValue()));
   }
   if (!sm) {
     fprintf(stderr,"Unable to create the file: %s\n",

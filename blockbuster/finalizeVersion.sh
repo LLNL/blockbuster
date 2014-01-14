@@ -64,10 +64,9 @@ fi
 echo  "qmake is " $(which qmake)
 #========================================
 if [ "${SYS_TYPE}" == chaos_5_x86_64 ] ; then
-    # we are on rzbeast or equivalent
     remotehost=rzgpu
 elif [ "${SYS_TYPE}" == chaos_5_x86_64_ib ] ; then
-    remotehost=rzbeast
+    remotehost=pw453
 fi
 if [ "$remotehost" == "" ]; then
     errexit "Unknown SYS_TYPE or non-RZ host.  Please run on an RZ cluster"
