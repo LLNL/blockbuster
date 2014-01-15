@@ -633,11 +633,11 @@ int main(int argc,char **argv) {
   */
   TCLAP::ValueArg<string> tilesizes("",  "tilesizes",  "Pixel size of the tiles within each frame (default: 0 -- no tiling).  Examples: '512' or '512x256'", false,  "0",  "M or MxN",  cmd); 
   TCLAP::ValueArg<int> mipmaps("m", "mipmaps", "Number of mipmaps (levels of detail) to create",false, 1, "integer", cmd);
-  TCLAP::ValueArg<int> quality("", "quality", "Jpeg compression quality, from 0-100",false, 75, "integer", cmd);
+  TCLAP::ValueArg<int> quality("j", "jqual", "Jpeg compression quality, from 0-100",false, 75, "integer", cmd);
 
   TCLAP::ValueArg<int> buffersize("b", "buffersize", "Number of frames to buffer.  Default is 200.  Using lower values saves memory but may decrease performance, and vice versa.",false, 200, "integer", cmd);
 
-  TCLAP::ValueArg<float> frameRate("r", "framerate", " Set preferred frame rate.  Default is 30, max is 50.",false, 30, "float", cmd);
+  TCLAP::ValueArg<float> frameRate("r", "framerate (FPS)", " Set preferred frame rate.  Default is 30, max is 50.",false, 30, "float", cmd);
   vector<string> allowedformats;
   allowedformats.push_back("tiff");
   allowedformats.push_back("TIFF");
@@ -1129,59 +1129,10 @@ int main(int argc,char **argv) {
   sm->flushFrames(true);
 
   if (! noMetadata.getValue()) {
-    // populate with reasonable guesses by default:
-    TagMap mdmap = SM_MetaData::CanonicalMetaDataAsMap(true);
-    mdmap["Movie Create Command"] = SM_MetaData("Movie Create Command", commandLine);
-    mdmap["Movie Create Date"] = SM_MetaData("Movie Create Date", timestamp("%c %Z")); // NEED HOST NAME AND DATE
-    char *host = getenv("HOST");
-    if (host)
-      mdmap["Movie Create Host"] = SM_MetaData("Movie Create Host", host);
-    mdmap["Title"] = SM_MetaData("Title", moviename);
-    sm->SetMetaData(mdmap);
-
-    if (tagfile.getValue() != "") {
-      if (!sm->ImportMetaData(tagfile.getValue())) {
-        errexit (cmd, "Could not export meta data to file.");
-      }
-    }
-    if (canonical.getValue()) {
-      sm->SetMetaData(SM_MetaData::GetCanonicalMetaDataValuesFromUser(mdmap, true, false));
-    }
-
-    SM_MetaData::SetDelimiter(delimiter.getValue());
-    smdbprintf(2, "Adding command line metadata (%d entries)...\n", taglist.getValue().size());
-    vector<string>::const_iterator pos = taglist.begin(), endpos = taglist.end();
-    while (pos != endpos) {
-      try {
-        sm->SetMetaDataFromDelimitedString(*pos);
-      } catch (...) {
-        errexit(str(boost::format("Bad meta data tag string: \"%1%\"\n")%(*pos)));
-      }
-      ++pos;
-    }
-    if (thumbnail.getValue() != -1) {
-      sm->SetThumbnailFrame(thumbnail.getValue());
-      if (thumbres.getValue() != -1) {
-        sm->SetThumbnailRes(thumbres.getValue());
-      }
-      smdbprintf(2, "Set thumbnail metadata.\n");
-    }
-    //sm->WriteMetaData();
-    if (exportTagfile.getValue()) {
-      TagMap moviedata = sm->GetMetaData();
-      string filename = sm->getName();
-      boost::replace_last(filename, ".sm", ".tagfile");
-      if (filename == sm->getName()) {
-        filename = filename + ".tagfile";
-      }
-      ofstream tagfile(filename.c_str());
-      if (!tagfile) {
-        errexit(cmd, str(boost::format("Error:  could not open tag file %s for movie %s")% filename %  sm->getName()));
-      }
-      SM_MetaData::WriteMetaDataToStream(tagfile, moviedata);
-      if (!quiet.getValue()) {
-        cout << "Wrote movie meta data tag file " << filename << endl;
-      }
+    try {
+      sm->SetMetaData(commandLine, tagfile.getValue(), canonical.getValue(), delimiter.getValue(), taglist.getValue(), thumbnail.getValue(), thumbres.getValue(), exportTagfile.getValue(), quiet.getValue());
+    } catch (string msg) {
+      errexit(msg); 
     }
   }
 

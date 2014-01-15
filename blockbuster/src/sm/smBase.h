@@ -670,8 +670,9 @@ class smBase {
     SetMetaData(md); 
   }
   void SetMetaData(const SM_MetaData &md);
-  void SetMetaData(const TagMap mdmap);
+  void SetMetaData(const TagMap mdmap, string tagPrefix="");
   void SetMetaData(vector<SM_MetaData> &mdvec);
+  void SetMetaData(string commandLine, string tagfile, bool canonical, string delimiter, vector<string> taglist, int thumbnail, int thumbres, bool exportTagfile, bool quiet );
 
   template <class T> 
     void SetMetaData(const string tag, const T &value) {

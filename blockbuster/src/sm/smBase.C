@@ -2380,10 +2380,72 @@ void smBase::SetMetaData(vector<SM_MetaData> &mdvec) {
 }
 
 //============================================================
-void smBase::SetMetaData(const TagMap tagmap) {
+void smBase::SetMetaData(const TagMap tagmap, string tagPrefix) {
   for (TagMap::const_iterator pos = tagmap.begin(); pos != tagmap.end(); pos++) {
-    SetMetaData(pos->second); 
+    SM_MetaData md  = pos->second; 
+    md.mTag = tagPrefix+md.mTag; 
+    SetMetaData(md); 
   }
+  return; 
+}
+
+//============================================================
+void smBase::SetMetaData(string commandLine, string tagfile, bool canonical, string delimiter, vector<string> taglist, int thumbnail, int thumbres, bool exportTagfile, bool quiet ) {
+  
+  // populate with reasonable guesses by default:
+  TagMap mdmap = SM_MetaData::CanonicalMetaDataAsMap(true);
+  mdmap["Movie Create Command"] = SM_MetaData("Movie Create Command", commandLine);
+  mdmap["Movie Create Date"] = SM_MetaData("Movie Create Date", timestamp("%c %Z")); // NEED HOST NAME AND DATE
+  char *host = getenv("HOST");
+  if (host)
+    mdmap["Movie Create Host"] = SM_MetaData("Movie Create Host", host);
+  mdmap["Title"] = SM_MetaData("Title", getName());
+  SetMetaData(mdmap);
+  
+  if (tagfile != "") {
+    if (!ImportMetaData(tagfile)) {
+      throw string("smBase::SetMetaData Could not export meta data to file.");
+    }
+  }
+  if (canonical) {
+    SetMetaData(SM_MetaData::GetCanonicalMetaDataValuesFromUser(mdmap, true, false));
+  }
+  
+  SM_MetaData::SetDelimiter(delimiter);
+  smdbprintf(2, "Adding command line metadata (%d entries)...\n", taglist.size());
+  vector<string>::const_iterator pos = taglist.begin(), endpos = taglist.end();
+  while (pos != endpos) {
+    try {
+      SetMetaDataFromDelimitedString(*pos);
+    } catch (...) {
+      throw str(boost::format("smBase::SetMetaData Bad meta data tag string: \"%1%\"\n")%(*pos));
+    }
+    ++pos;
+  }
+  if (thumbnail != -1) {
+    SetThumbnailFrame(thumbnail);
+    if (thumbres != -1) {
+      SetThumbnailRes(thumbres);
+    }
+    smdbprintf(2, "Set thumbnail metadata.\n");
+  }
+  if (exportTagfile) {
+    TagMap moviedata = GetMetaData();
+    string filename = getName();
+    boost::replace_last(filename, ".sm", ".tagfile");
+    if (filename == getName()) {
+      filename = filename + ".tagfile";
+    }
+    ofstream tagfile(filename.c_str());
+    if (!tagfile) {
+      throw str(boost::format("smBase::SetMetaData Error:  could not open tag file %s for movie %s")% filename %  getName());
+    }
+    SM_MetaData::WriteMetaDataToStream(tagfile, moviedata);
+    if (!quiet) {
+      cout << "Wrote movie meta data tag file " << filename << endl;
+    }
+  }
+  
   return; 
 }
 

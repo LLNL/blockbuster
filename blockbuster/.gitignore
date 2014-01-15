@@ -3,6 +3,7 @@
 *.a
 *.la
 *.tmp
+*.core
 ../*/
 Makefile.qt.include
 src/blockbuster/blockbuster

@@ -126,7 +126,30 @@ int main(int argc,char **argv)
   
   TCLAP::ValueArg<int> verbosity("v", "Verbosity", "Verbosity level",false, 0, "integer", cmd);   
   
-  TCLAP::SwitchArg skipMetadata("N", "no-metadata", "Do not copy metadata.  Default: accumulate metadata in the order of the movies given.", cmd, false);
+  TCLAP::SwitchArg noMetadata("X", "no-metadata", "Do not copy or create metadata in the output movie.  Default: accumulate metadata in the order of the movies given.", cmd, false);
+
+  TCLAP::SwitchArg canonical("C", "canonical", "Enter the canonical metadata for a movie interactively.", cmd);
+ 
+  TCLAP::SwitchArg exportTagfile("E", "export-tagfile", "Create a tag file from the current session which can be read by img2sm or smtag.", cmd);
+
+  TCLAP::ValueArg<string> tagfile("G", "tagfile", "a file containing name:value pairs to be set", false, "", "filename", cmd);
+
+  TCLAP::MultiArg<string> taglist("T", "tag", "a name:value[:type] for a tag being set or added.  'type' can be 'ASCII', 'DOUBLE', or 'INT64' and defaults to 'ASCII'.", false, "tagname:value[:type]", cmd);
+
+  TCLAP::ValueArg<string> delimiter("D", "delimiter", "Sets the delimiter for all -T arguments.",false, ":", "string", cmd);
+
+  TCLAP::ValueArg<int> thumbnail("N", "thumbnail", "set frame number of thumbnail", false, -1, "frameNum", cmd);
+
+  TCLAP::ValueArg<int> thumbres("R", "thumbres", "the X resolution of the thumbnail (Y res will be autoscaled based on X res)", false, 0, "numpixels", cmd);
+
+  TCLAP::SwitchArg report("", "report", "After all operations are complete, list all the tags in the file.", cmd);
+
+  TCLAP::SwitchArg quiet("q", "quiet", "Do not echo the tags to stdout.  Just return 0 on successful match. ", cmd);
+
+  TCLAP::ValueArg<int> firstFrameFlag("f", "first", "First frame number in each source movie",false, -1, "integer", cmd);
+  TCLAP::ValueArg<int> lastFrameFlag("l", "last", "Last frame number in each source movie",false, -1, "integer", cmd);
+  TCLAP::ValueArg<int> frameStepFlag("s", "step", "Frame step size in each source movie",false, 1, "integer", cmd);
+
 
   TCLAP::SwitchArg stereo("s", "stereo", "output movie is stereo", cmd, false);
   TCLAP::SwitchArg filter("", "filter", "Enable smoothing filter for image scaling", cmd, false);
@@ -163,7 +186,7 @@ int main(int argc,char **argv)
   
   TCLAP::ValueArg<string> destSize("", "dest-size", "Set output frame dimensions. Default: input size.  Format: XXXxYYY e.g. '300x500'",false, "", "e.g. '300x500'", cmd);   
   TCLAP::ValueArg<string> subregion("", "src-subregion", "Select a rectangle of the input by giving region size and offset. Default: all. Format: 'Xoffset Yoffset Xsize Ysize' e.g. '20 50 300 500'",false, "", "'Xoffset Yoffset Xsize Ysize'", cmd);   
-  TCLAP::ValueArg<float> fps("f", "fps", "Store Frames Per Second (FPS) in movie for playback (float).  Might be ignored.",false, 30, "positive floating point number", cmd);   
+  TCLAP::ValueArg<float> fps("r", "framerate (FPS)", "Store Frames Per Second (FPS) in movie for playback (float).  Might be ignored.",false, 30, "positive floating point number", cmd);   
   
   TCLAP::UnlabeledValueArg<string> output("Output-movie", "Name of the movie to create", true, "", "output movie name", cmd); 
   
@@ -424,11 +447,21 @@ int main(int argc,char **argv)
             output.getValue().c_str());
     exit(1);
   }
-  if (!skipMetadata.getValue()) {
+  if (!noMetadata.getValue()) {
     for(uint i=0;i<minfos.size();i++) {
       TagMap tm = minfos[i].sm->GetMetaData();
-      sm->SetMetaData(tm); 
+      sm->SetMetaData(tm, string("Source movie ")+minfos[i].name + ": "); 
     }
+    try {
+      sm->SetMetaData(commandLine, tagfile.getValue(), canonical.getValue(), delimiter.getValue(), taglist.getValue(), thumbnail.getValue(), thumbres.getValue(), exportTagfile.getValue(), quiet.getValue());
+    } catch (string msg) {
+      errexit(msg); 
+    }
+  }
+  if (report.getValue()) {
+    cout << sm->InfoString(verbosity.getValue()) << endl;
+    cout << "Tags =============== \n";
+    cout << sm->MetaDataAsString() << endl;
   }
 
   /* set any flags */
@@ -439,6 +472,25 @@ int main(int argc,char **argv)
   /* init the parallel tools */
   pt_pool_init(pool, nThreads, nThreads*2, 0);
   
+  int lastFrame = lastFrameFlag.getValue(), firstFrame = firstFrameFlag.getValue(), frameStep = frameStepFlag.getValue();
+
+  if (firstFrame == -1) firstFrame = 0;
+
+  if (!frameStep) {
+    errexit(cmd, "frameStep cannot be 0.");
+  }
+
+  if (lastFrame != -1) {
+    if ( firstFrame > lastFrame) {
+      errexit(cmd, "Last frame must be greater than first frame.");
+    }
+    if (frameStep < 0) {
+      uint tmp = lastFrame;
+      lastFrame = firstFrame;
+      firstFrame = tmp;
+    }
+  }
+
   /* copy the frames */
   uint outframe = 0; 
   for (vector<MovieInfo>::iterator pos = minfos.begin(); pos != minfos.end(); ++pos) {
@@ -449,7 +501,7 @@ int main(int argc,char **argv)
              pos->step);
     }
     uint inframe = pos->first;
-    for(x=0;x<pos->numframes;x++) {
+    for(x=firstFrame;x<pos->numframes && x<=lastFrame;x+=frameStep) {
       if (gVerbosity) {
         printf("Working on %d of %d (frame %d)\n",x,count, inframe);
       }
@@ -528,16 +580,9 @@ void workproc(void *arg)
 		delete wrk->buffer;
 		wrk->buffer = pZoom;
 	}
-    //bool writeOK = (pt_pool_threadnum() == 0) ;
-	//wrk->sm->bufferFrame(wrk->outframe,wrk->buffer, writeOK);
-    /*   while (!wrk->sm->bufferReady(wrk->outframe))  {
-      // buffer cannot take this frame yet, needs to get written and swapped
-      usleep (1000); 
-    }
-    */
-    //wrk->sm->bufferFrame(wrk->frame,wrk->buffer, writeOK);
+
     wrk->sm->compressAndBufferFrame(wrk->outframe,wrk->buffer);
-	// do not delete wrk->buffer; sm will delete when finished
+
 	delete wrk;
 }
 
