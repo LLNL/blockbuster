@@ -5,6 +5,8 @@
 *.tmp
 *.core
 ../*/
+\#*
+src/config/debug
 Makefile.qt.include
 src/blockbuster/blockbuster
 src/blockbuster/blockbuster.pro
