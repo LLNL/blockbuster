@@ -63,6 +63,10 @@ int main(int argc, char *argv[]) {
 
   TCLAP::SwitchArg filenameOnly("f", "only-filename", "Only print the filename of the matching movie(s).", cmd); 
 
+  TCLAP::SwitchArg prependFilenameFlag("p", "prepend-filename", "Print the filename of the matching movie(s) before each match.  Default: false, unless you are querying multiple movies.  See also --dont-prepend-filename", cmd); 
+
+  TCLAP::SwitchArg dontPrependFilenameFlag("P", "dont-prepend-filename", "Never print the filename of the matching movie(s) before each match.", cmd); 
+
   TCLAP::SwitchArg getinfoFlag("i", "info", "Get old-style \"sminfo\" metadata for movie, such as compression type, number of frames, etc.", cmd); 
 
   TCLAP::SwitchArg list("l", "list", "Lists all tags in movie(s) with their values.  Equivalent to -T '.*' -s -i.  This is the default behavior", cmd); 
@@ -148,6 +152,12 @@ int main(int argc, char *argv[]) {
   }
   bool singleTag = (tagPatterns.size() == 1 && valuePatterns.size() == 0); 
   bool matchedAll = true, matchedAny = false; 
+
+  // should we print the filename of matches before the match? 
+  bool prependFilename = prependFilenameFlag.getValue(); 
+  if (movienames.getValue().size() > 1) prependFilename = true;
+  if (dontPrependFilenameFlag.getValue()) prependFilename = false; 
+
   sm_setVerbose(verbosity.getValue());  
   dbg_setverbose(verbosity.getValue()); 
   for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {
@@ -222,11 +232,11 @@ int main(int argc, char *argv[]) {
       }
 
       if (filenameOnly.getValue()) {
-        if (tagmatch || valuematch) {
+        if (tagmatch || valuematch) {          
           cout << filename << endl; 
           break; 
         }
-      }         
+      }
       else {
         if ((tagmatch || valuematch)) {
           string matchtype; 
@@ -277,29 +287,25 @@ int main(int argc, char *argv[]) {
     if (exportThumb.getValue()) {
       sm->ExportThumbnail(); 
     }
-
+    
     if (!quiet.getValue() ) {
       if (singleTag) {
-        cout << valueMatches[0] << endl; 
+        if (valueMatches.size()) {
+          if (prependFilename) {
+            cout << filename << ": "; 
+          }
+          cout << valueMatches[0] << endl; 
+        }
       } else {
-        if (!getinfo) {
-          if (tagMatches.size()) {
-            printf( "Matched tags for movie %s:\n", filename.c_str()); 
-          } 
-          else {
-            printf( "No tags for movie %s matched.\n", filename.c_str()); 
-          }
-        } else {
-          if (tagMatches.size()) {
-            cout << "Tags --------------------------------------" << endl;
-          } 
-          else {
-            printf( "No tags for movie %s matched.\n", filename.c_str()); 
-          }
+        if (!tagMatches.size()) {
+          printf( "No tags for movie %s matched.\n", filename.c_str()); 
         }
         
         for (uint i=0; i< tagMatches.size(); i++) {
           SM_MetaData md(tagMatches[i], valueTypes[i], valueMatches[i]); 
+          if (prependFilename) {
+            cout << filename << ": "; 
+          }
           cout << md.toShortString(matchTypes[i], longestValueType, longestTagMatch+2) << endl;
         }      
       }
