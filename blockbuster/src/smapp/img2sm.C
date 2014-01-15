@@ -637,7 +637,7 @@ int main(int argc,char **argv) {
 
   TCLAP::ValueArg<int> buffersize("b", "buffersize", "Number of frames to buffer.  Default is 200.  Using lower values saves memory but may decrease performance, and vice versa.",false, 200, "integer", cmd);
 
-  TCLAP::ValueArg<float> frameRate("r", "framerate (FPS)", " Set preferred frame rate.  Default is 30, max is 50.",false, 30, "float", cmd);
+  TCLAP::ValueArg<float> frameRate("r", "framerate", " Set preferred frame rate (FPS).  Default is 30, max is 50.",false, 30, "float", cmd);
   vector<string> allowedformats;
   allowedformats.push_back("tiff");
   allowedformats.push_back("TIFF");

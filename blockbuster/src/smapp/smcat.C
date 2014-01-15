@@ -151,7 +151,7 @@ int main(int argc,char **argv)
   TCLAP::ValueArg<int> frameStepFlag("s", "step", "Frame step size in each source movie",false, 1, "integer", cmd);
 
 
-  TCLAP::SwitchArg stereo("s", "stereo", "output movie is stereo", cmd, false);
+  TCLAP::SwitchArg stereo("S", "stereo", "output movie is stereo.", cmd, false);
   TCLAP::SwitchArg filter("", "filter", "Enable smoothing filter for image scaling", cmd, false);
   TCLAP::ValueArg<int> 
     threads("t","threads","number of threads to use", false,1,"integer",cmd);
@@ -186,7 +186,7 @@ int main(int argc,char **argv)
   
   TCLAP::ValueArg<string> destSize("", "dest-size", "Set output frame dimensions. Default: input size.  Format: XXXxYYY e.g. '300x500'",false, "", "e.g. '300x500'", cmd);   
   TCLAP::ValueArg<string> subregion("", "src-subregion", "Select a rectangle of the input by giving region size and offset. Default: all. Format: 'Xoffset Yoffset Xsize Ysize' e.g. '20 50 300 500'",false, "", "'Xoffset Yoffset Xsize Ysize'", cmd);   
-  TCLAP::ValueArg<float> fps("r", "framerate (FPS)", "Store Frames Per Second (FPS) in movie for playback (float).  Might be ignored.",false, 30, "positive floating point number", cmd);   
+  TCLAP::ValueArg<float> fps("r", "framerate", "Store Frames Per Second (FPS) in movie for playback (float).  Might be ignored.",false, 30, "positive floating point number", cmd);   
   
   TCLAP::UnlabeledValueArg<string> output("Output-movie", "Name of the movie to create", true, "", "output movie name", cmd); 
   
