@@ -21,6 +21,8 @@ SCRIPT_SUCCESS = None
 SCRIPT_FAILURE = ["ERROR"]
 BLOCKBUSTER_SUCCESS = None
 BLOCKBUSTER_FAILURE = ["ERROR"]
+SMCAT_FAILURE = ["ERROR"]
+SMCAT_SUCCESS = "smcat successfully created movie "
 
 tests = [
     # ===============================================       
@@ -282,6 +284,38 @@ tests = [
      "frame diffs": ["img2sm-canonical-tags.sm",1]
      },
     
+    # ===============================================
+     {"name": "smcat-quicksand-versions",
+     "need_data": ["quicksand-11frames-gz.sm", "quicksand-11frames-lzma.sm", "quicksand-single-gz.sm", "quicksand-wildcard-11frames-lzma.sm"], 
+     'cmd': "smcat",
+     "args": "quicksand*.sm smcat-quicksand-versions.sm", 
+     "output": None,
+     "failure_pattern": SMCAT_FAILURE,
+     "success_pattern": SMCAT_SUCCESS
+      },
+    
+    # ===============================================       
+     {"name": "smquery-multiple-files",
+     "need_data": "smquery-multiple-files.sh.rawout.goldstandard", 
+     'cmd': "smquery",
+     "args": "*.sm", 
+     "output": None,
+     "failure_pattern": SMQUERY_FAILURE,
+     "success_pattern": ["mountains.sm.*mountains.sm",
+                         "quicksand-11frames-gz.sm.*Level:0 size:320x240 tile:320x240"],
+     "tagfile diffs": ["smquery-multiple-files.sh.rawout"]
+      },
+    # ===============================================       
+     {"name": "smquery-multiple-files-nofilenames",
+     "need_data": "smquery-multiple-files-nofilenames.sh.rawout.goldstandard", 
+     'cmd': "smquery",
+     "args": "-P *.sm", 
+     "output": None,
+     "failure_pattern": SMQUERY_FAILURE,
+     "success_pattern": ["^\( ASCII\).*mountains.sm",
+                         "^\( ASCII\) \"Res 0\".*Level:0 size:320x240 tile:320x240"], 
+     "tagfile diffs": ["smquery-multiple-files-nofilenames.sh.rawout"]
+      },
     # ===============================================       
      {"name": "smquery-canonical-list",
      "need_data": None, 
@@ -302,14 +336,14 @@ tests = [
       },
     # ===============================================       
     {"name": "lorenz-tagfile",
-     "need_data": ["lorenz.tagfile.goldstandard"], 
+     "need_data": ["lorenz.json.goldstandard"], 
      'cmd': "smtag",
-     "args": " --report -T 'LorenzTag:Lorenz value' -L lorenz.tagfile -F tags.tagfile *.sm", 
-     "output": "lorenz.tagfile",
+     "args": " --report -T 'LorenzTag:Lorenz value' -L lorenz.json -F tags.tagfile *.sm", 
+     "output": "lorenz.json",
      "failure_pattern": SMQUERY_FAILURE,
      "success_pattern": None,
      "frame diffs": ["img2sm-canonical-tags.sm",1],
-     "tagfile diffs": ["lorenz.tagfile"]
+     "tagfile diffs": ["lorenz.json"]
      },
     # ===============================================       
     

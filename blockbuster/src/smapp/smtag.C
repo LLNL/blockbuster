@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   
   TCLAP::SwitchArg exportTagfile("E", "export-tagfile", "Instead of or in addition to applying tags to a movie, create a tag file from the current session which can be read with -f to feed another smtag session.  The tagfile name: moviename is used ending with '.tagfile' instead of '.sm'",  cmd); 
   
-  TCLAP::ValueArg<string> tagfile("F", "tagfile", "a file containing name:value pairs to be set", false, "", "filename", cmd); 
+  TCLAP::ValueArg<string> tagfile("F", "tagfile", "a JSON file containing name:value pairs to be set", false, "", "filename", cmd); 
   
   TCLAP::SwitchArg interactive("I", "interactive", "Enter the metadata for a movie interactively.", cmd); 
   

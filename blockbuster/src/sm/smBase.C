@@ -270,6 +270,9 @@ bool SM_MetaData::GetMetaDataFromFile(string tagfile,  TagMap&mdmap){
     read_json(tagfile, pt); 
     for (ptree::iterator pos = pt.begin(); pos != pt.end(); ++keynum, ++pos) {
       key = pos->first;
+      boost::replace_all(key, "-dot-", "."); 
+      //boost::replace_all(key, "-colon-", ":"); 
+     
       type = pos->second.get<string>("type");
       value = pos->second.get<string>("value");
       smdbprintf(4, str(boost::format("SM_MetaData::GetMetaDataFromFile(): Key \"%1%\", type \"%2%\", value \"%3%\"\n") % key % type % value).c_str()); 
@@ -277,7 +280,7 @@ bool SM_MetaData::GetMetaDataFromFile(string tagfile,  TagMap&mdmap){
       mdmap[key] = md;      
     }
   } catch (...) {
-    smdbprintf(0, str(boost::format("SM_MetaData::GetMetaDataFromFile(%1%): ERROR parsing key %2% : last known good Key \"%1%\", type \"%2%\", value \"%3%\"\n") % tagfile % keynum % key % type % value).c_str()); 
+    smdbprintf(0, str(boost::format("SM_MetaData::GetMetaDataFromFile(%1%): ERROR parsing key %2% : last known good Key \"%3%\", type \"%4%\", value \"%5%\"\n") % tagfile % keynum % key % type % value).c_str()); 
     success = false; 
   }
   return success; 
@@ -294,8 +297,10 @@ bool SM_MetaData::WriteMetaDataToStream(ofstream &ofile, TagMap &mdmap) {
       continue; 
     }
     string tag = pos->first; 
-    pt.put(str(boost::format("%1%.type")%pos->first), pos->second.TypeAsString()); 
-    pt.put(str(boost::format("%1%.value")%pos->first), pos->second.ValueAsString()); 
+    boost::replace_all(tag, ".", "-dot-"); 
+    //boost::replace_all(tag, ":", "-colon-"); 
+    pt.put(str(boost::format("%1%.type")%tag), pos->second.TypeAsString()); 
+    pt.put(str(boost::format("%1%.value")%tag), pos->second.ValueAsString()); 
   }    
   bool success = true; 
   try {

@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
 
   TCLAP::SwitchArg reservedList("", "reserved-tag-list", "List all reserved tags and exit.", cmd); 
 
-  TCLAP::MultiArg<string> tagPatternStrings("T", "Tag", "Regex pattern to match any substring of the tag name being queried.  Thus the pattern 'Duration' is the same as '.*Duration.*'  See --reserved-tag-list", false, "regexp", cmd); 
+  TCLAP::MultiArg<string> tagPatternStrings("T", "Tag", "Regex pattern to match any substring of the tag name being queried.  Thus the pattern 'Duration' is the same as '.*Duration.*'  To match an exact string, use '^' and '$', i.e., \"^pattern$\".  See --reserved-tag-list", false, "regexp", cmd); 
 
   TCLAP::MultiArg<string> valuePatternStrings("V", "Value", "Regex pattern to match the value of any tags being queried", false, "regexp", cmd); 
 
@@ -289,18 +289,18 @@ int main(int argc, char *argv[]) {
     }
     
     if (!quiet.getValue() ) {
-      if (singleTag) {
-        if (valueMatches.size()) {
-          if (prependFilename) {
-            cout << filename << ": "; 
-          }
-          cout << valueMatches[0] << endl; 
+      if (singleTag && valueMatches.size() == 1) {
+        if (prependFilename) {
+          cout << filename << ": "; 
         }
+        cout << valueMatches[0] << endl;         
       } else {
         if (!tagMatches.size()) {
           printf( "No tags for movie %s matched.\n", filename.c_str()); 
         }
-        
+        if (singleTag && valueMatches.size() > 1) {
+          cout <<  "Warning: a single tag was specified but multiple tags matched the expression given" << endl; 
+        }
         for (uint i=0; i< tagMatches.size(); i++) {
           SM_MetaData md(tagMatches[i], valueTypes[i], valueMatches[i]); 
           if (prependFilename) {
@@ -318,7 +318,7 @@ int main(int argc, char *argv[]) {
         matchedAll = *pos && matchedAll;           
       } 
     }
-    dbprintf(1, str(boost::format("Finished with movie %1%") % filename).c_str()); 
+    dbprintf(1, str(boost::format("Finished with movie %1%\n") % filename).c_str()); 
     delete sm;
   }
 

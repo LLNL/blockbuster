@@ -38,7 +38,10 @@
 #include <math.h>
 #include <libgen.h>
 
- #define SM_VERBOSE 1
+#include <iostream>
+#include <fstream>
+
+#define SM_VERBOSE 1
 #include "sm/smRLE.h"
 #include "sm/smGZ.h"
 #include "sm/smLZO.h"
@@ -146,9 +149,9 @@ int main(int argc,char **argv)
 
   TCLAP::SwitchArg quiet("q", "quiet", "Do not echo the tags to stdout.  Just return 0 on successful match. ", cmd);
 
-  TCLAP::ValueArg<int> firstFrameFlag("f", "first", "First frame number in each source movie",false, 0, "integer", cmd);
-  TCLAP::ValueArg<int> lastFrameFlag("l", "last", "Last frame number in each source movie",false, -1, "integer", cmd);
-  TCLAP::ValueArg<int> frameStepFlag("s", "step", "Frame step size in each source movie",false, 1, "integer", cmd);
+  TCLAP::ValueArg<int> firstFrameArg("f", "first", "First frame number in each source movie",false, 0, "integer", cmd);
+  TCLAP::ValueArg<int> lastFrameArg("l", "last", "Last frame number in each source movie",false, -1, "integer", cmd);
+  TCLAP::ValueArg<int> frameStepArg("s", "step", "Frame step size in each source movie",false, 1, "integer", cmd);
 
 
   TCLAP::SwitchArg stereo("S", "stereo", "output movie is stereo.", cmd, false);
@@ -205,6 +208,7 @@ int main(int argc,char **argv)
     return 1;
   }
   
+
   //int		iFilter = 0;
   // int		iStereo = stereo.getValue()? 0 : SM_STEREO;
   int		nThreads = threads.getValue();
@@ -260,12 +264,12 @@ int main(int argc,char **argv)
     }
     if (fFPS == 0.0) fFPS = minfo.sm->getFPS();
     
-    minfo.first = firstFrameFlag.getValue();
+    minfo.first = firstFrameArg.getValue();
     minfo.last = minfo.sm->getNumFrames()-1;
-    if (lastFrameFlag.getValue() != -1 && lastFrameFlag.getValue() < minfo.last) { 
-      minfo.last = lastFrameFlag.getValue(); 
+    if (lastFrameArg.getValue() != -1 && lastFrameArg.getValue() < minfo.last) { 
+      minfo.last = lastFrameArg.getValue(); 
     } 
-    minfo.step = frameStepFlag.getValue();    
+    minfo.step = frameStepArg.getValue();    
     try {
       if (tokens.size() > 1) {
         minfo.first = boost::lexical_cast<int>(tokens[1]); 
@@ -488,9 +492,11 @@ int main(int argc,char **argv)
       if (gVerbosity) {
         printf("Working on %d of %d (frame %d)\n",fnum,count, fnum);
       }
-      if (nThreads == 1 && (pos->sm->getType() == sm->getType()) && 
-          (iScale == 0) && 
-          (sm->getNumResolutions() == pos->sm->getNumResolutions())) {
+      if (0 && nThreads == 1 
+          /* && (pos->sm->getType() == sm->getType()) && 
+             (iScale == 0) && 
+             (sm->getNumResolutions() == pos->sm->getNumResolutions())*/
+          ) {
         int	size,res;
         for(res=0;res<sm->getNumResolutions();res++) {
           pos->sm->getCompFrame(fnum, 0, NULL, size, res);
@@ -535,7 +541,7 @@ int main(int argc,char **argv)
   // free(input);
   if (pZoom) free(pZoom);
   if (buffer) free(buffer);
-  
+  cout << "smcat successfully created movie " << sm->getName() << endl; 
   exit(0);
 }
 

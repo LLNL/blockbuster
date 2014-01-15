@@ -133,7 +133,7 @@ def errexit (msg):
 
 # ================================================================
 # Create a run script from the command, essentially to allow filename globbing in arguments
-def CreateScript(cmd, filename, verbose=True):
+def CreateScript(cmd, filename, verbose=True, rawout=True):
     if os.path.exists(filename):
         os.remove(filename)
     script = open(filename, "w")
@@ -141,7 +141,14 @@ def CreateScript(cmd, filename, verbose=True):
     if verbose:
         script.write("set -xv\n");
         script.write("echo script running...\n");
-    script.write(cmd + ' 2>&1 \n');
+    if rawout:
+        script.write(cmd + ' >%s.rawout  2>&1 \n'%filename);
+        script.write("savestat=$?\n")
+        script.write("cat %s.rawout\n"%filename);
+        script.write("exit $savestat\n")
+    else:
+        script.write(cmd + ' 2>&1 \n');
+        
     script.close()
     os.chmod(filename, stat.S_IRUSR | stat.S_IXUSR)
     return
@@ -223,8 +230,6 @@ def MakeCompiledList(thing):
 def RunTestCommand(fullcmd, test, outfile):
     timeout = 15
     name = test['name']
-    outfile.write(fullcmd+'\n')
-    outfile.write("Working directory: %s\n"%os.getcwd())
     outfile.flush()
     
     scriptname = "%s/%s.sh"%(os.getcwd(), name)
@@ -253,15 +258,16 @@ def RunTestCommand(fullcmd, test, outfile):
 def RemoveBindirAndDateFromLine(line):
     r = re.search('\\\\[^ ]*/', line)
     if r:
-        newline = line.replace(r.group(0), '')
+        newline = line.replace(r.group(0), 'GENERIC_BINDIR')
         # dbprint("RemoveBindirFromLine: removing bindir from line.\n'%s' ------> '%s'\n"%(line,newline))
         line = newline
-    else:
-        # Remove the date line, as for tests this changes every time
-        r = re.search('.*"value": (".*:.*:.*T")', line)
-        if r:
-            newline = line.replace(r.group(1), '"GENERIC-DATESTRING"')
-            line = newline
+
+    # Remove the date line, as for tests this changes every time
+    r = re.search('.*("\D{3} \D{3} \d\d \d\d:\d\d:\d\d \d{4} \D\DT"$)', line)
+    if r:
+        newline = line.replace(r.group(1), '"GENERIC-DATESTRING"')
+        line = newline
+        
     return line
 
 # ================================================================
@@ -279,8 +285,15 @@ def TagfileDiffs(test):
         dbprint("Diffing %s\n"%str(diff))
 
         standard = "%s.goldstandard"%diff
-        tagfile = open(diff,'r')
-        stdfile = open(standard, 'r')
+        try:
+            tagfile = open(diff,'r')
+        except:
+            return "Cannot open tagfile %s"%diff;
+        try:        
+            stdfile = open(standard, 'r')
+        except:
+            return "Cannot open gold standard %s"%standard;
+            
         dbprint("Diffing %s and %s\n"%(diff,standard))
     
         taglines = tagfile.readlines()
@@ -355,7 +368,7 @@ def FrameDiffs(test):
 def RunTestExpect(fullcmd, test, outfile):
     errmsg =  "SUCCESS"
     wrappername = "%s/%s.sh"%(os.getcwd(), test['name'])
-    CreateScript(fullcmd, wrappername)
+    CreateScript(fullcmd, wrappername, rawout=False)
     script = test['pexpect']
     dbprint("Running command in pexpect: %s\n"%wrappername, outfile)
     child = pexpect.spawn(wrappername)
@@ -425,11 +438,13 @@ def run_test(test):
     outfile.close()
     outfile = open(outfilename, "r+")
     if errmsg == "SUCCESS":
+        dbprint("Running command: %s\n"%fullcmd)
+        dbprint("In working directory: %s\n"%os.getcwd())
         if 'pexpect' in test.keys():
             errmsg = RunTestExpect(fullcmd, test, outfile)
         else:
             errmsg = RunTestCommand(fullcmd, test, outfile)
-    dbprint("Command completed; output saved in %s\n"% outfilename)
+        dbprint("Command completed; command output saved in %s\n"% outfilename)
 
         
     # ------------------------------------------------------------
