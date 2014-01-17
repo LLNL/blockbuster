@@ -54,7 +54,7 @@ lzo_fail_check(__FILE__,__LINE__)
 void lzo_fail_check(const char *file,int line)
 {
   perror("fail_check");
-  fprintf(stderr,"Failed at line %d in file %s\n",line,file);
+smdbprintf(0,"Failed at line %d in file %s\n",line,file);
   exit(1); 
 }
 
@@ -66,7 +66,7 @@ smLZO::smLZO(int mode, const char *_fname, int _nwin)
 {
   mTypeID = 3;
   if (lzo_init() != LZO_E_OK) {
-    fprintf(stderr,"Warning: Unable to initialize LZO library\n");
+  smdbprintf(0,"Warning: Unable to initialize LZO library\n");
   }
   eCompressionOpt = LZO_OPT_1;
   if (getenv("LZO_COMPRESSION_OPTION")) {
@@ -89,7 +89,7 @@ bool smLZO::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
    status = lzo1x_decompress((const lzo_byte *)cdata,size,
 		   (lzo_byte *)image,&dlen,NULL);
    if (status != LZO_E_OK) {
-	fprintf(stderr,"LZO decompression error: %d\n",status);
+	smdbprintf(0,"LZO decompression error: %d\n",status);
     return false; 
    }
 
@@ -135,7 +135,7 @@ void smLZO::compBlock(void *data, void *cdata, int &size,int *dim)
        }
        free(wrkmem);
        if (status != LZO_E_OK) {
-	   fprintf(stderr,"LZO compression error: %d\n",status);
+	 smdbprintf(0,"LZO compression error: %d\n",status);
        }
    }
    size = dlen;

@@ -280,7 +280,7 @@ static boolean jpg_empty_output_buffer(j_compress_ptr cinfo)
     jdst=(jpgdst_struct *)cinfo->dest; 
     jdst->pub.free_in_buffer=jdst->size;
     jdst->pub.next_output_byte=(JOCTET *)jdst->buf;
-    fprintf(stderr,"Warning: jpeg output buffer overflow...\n");
+  smdbprintf(0,"Warning: jpeg output buffer overflow...\n");
     jdst->final = -1;
     return TRUE;
 }

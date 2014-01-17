@@ -21,19 +21,19 @@ void errexit(TCLAP::CmdLine &cmd, string msg) {
 
 //===================================================================
 bool MatchesAPattern(const vector<boost::regex> &patterns, string &s, vector<bool> &matched) { 
-  dbprintf(5, "MatchesAPattern: %d patterns to check\n", patterns.size()); 
+smdbprintf(5, "MatchesAPattern: %d patterns to check\n", patterns.size()); 
 
   // check actual patterns in movie:
   for (uint patno=0; patno < patterns.size(); patno++) {
-    dbprintf(5, "MatchesAPattern: Comparing string \"%s\" to pattern \"%s\"\n",
+  smdbprintf(5, "MatchesAPattern: Comparing string \"%s\" to pattern \"%s\"\n",
              s.c_str(), patterns[patno].str().c_str()); 
     if (regex_search(s, patterns[patno])) {
-      dbprintf(5, "\n *** Found match. *** \n"); 
+    smdbprintf(5, "\n *** Found match. *** \n"); 
       matched[patno] = true; 
       return true; 
     }
   }
-  dbprintf(5, "Found no matches for string \"%s\".\n", s.c_str()); 
+smdbprintf(5, "Found no matches for string \"%s\".\n", s.c_str()); 
   return false; 
 }
 
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
       }
     }
       
-    dbprintf(3, "Metadata for %s: (%d entries)\n", filename.c_str(), sm->mMetaData.size()); 
+  smdbprintf(3, "Metadata for %s: (%d entries)\n", filename.c_str(), sm->mMetaData.size()); 
     int32_t thumbnum = -1, thumbres = -1;
     int numMatches = 0; 
      // for long list format:
@@ -262,11 +262,11 @@ int main(int argc, char *argv[]) {
       if (thumbnailInfo.getValue()) {
         if (mdtag == "SM__thumbframe") {
           thumbnum = pos->second.mInt64; 
-          dbprintf(5, "Found thumbnail frame %d\n", thumbnum); 
+        smdbprintf(5, "Found thumbnail frame %d\n", thumbnum); 
         }
         else if (mdtag == "SM__thumbres") {
           thumbres = pos->second.mInt64; 
-          dbprintf(5, "Found thumbnail res %d\n", thumbres); 
+        smdbprintf(5, "Found thumbnail res %d\n", thumbres); 
         }
       }
     }
@@ -318,17 +318,17 @@ int main(int argc, char *argv[]) {
         matchedAll = *pos && matchedAll;           
       } 
     }
-    dbprintf(1, str(boost::format("Finished with movie %1%\n") % filename).c_str()); 
+  smdbprintf(1, str(boost::format("Finished with movie %1%\n") % filename).c_str()); 
     delete sm;
   }
 
   if (andFlag.getValue()) {
     if (!quiet.getValue()) {
       if (matchedAll) {
-        dbprintf(1, "Matched all tags for all movies.\n"); 
+      smdbprintf(1, "Matched all tags for all movies.\n"); 
       } 
       else {
-        dbprintf(1, "Did not match all tags for all movies.\n"); 
+      smdbprintf(1, "Did not match all tags for all movies.\n"); 
       }
     }
     return matchedAll ? 0: 1; 
@@ -336,10 +336,10 @@ int main(int argc, char *argv[]) {
 
   if (!quiet.getValue()) {
     if (matchedAll) {
-      dbprintf(1, "Matched at least one tag among all movies.\n"); 
+    smdbprintf(1, "Matched at least one tag among all movies.\n"); 
     } 
     else {
-      dbprintf(1, "Did not match any tags for any movies.\n"); 
+    smdbprintf(1, "Did not match any tags for any movies.\n"); 
     }
   }
 

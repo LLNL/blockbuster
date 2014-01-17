@@ -132,7 +132,7 @@ int iVerb = 0;
 // =======================================================================
 void img2sm_fail_check(const char *file,int line) {
   perror("fail_check");
-  fprintf(stderr,"Failed at line %d in file %s\n",line,file);
+smdbprintf(0,"Failed at line %d in file %s\n",line,file);
   exit(1);
 }
 

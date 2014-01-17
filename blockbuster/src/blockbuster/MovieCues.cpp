@@ -800,7 +800,7 @@ void MovieCueManager::ReadCueFile(std::string filename) {
         //dbprintf(5, "EOF encountered 2\n"); 
         break; 
       } else {
-        fprintf(stderr, qPrintable(errmsg+"\n")); 
+        dbprintf(0, qPrintable(errmsg+"\n")); 
       }
     }
     if (cue->isValid) {

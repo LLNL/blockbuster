@@ -61,14 +61,14 @@ int		gVerbosity = 0;
 
 
 //===============================================
-#define dbprintf smdbprintf
+// #definsmdbprintf smdbprintf
 /*
-void dbprintf(int level, const char *fmt, ...) {
+voismdbprintf(int level, const char *fmt, ...) {
   if (gVerbosity < level) return; 
   // cerr <<  DBPRINTF_PREAMBLE; 
   va_list ap;
   va_start(ap, fmt);
-  vfprintf(stderr,fmt,ap);
+ smdbprintf(0,fmt,ap);
   va_end(ap);
   return; 
 }
@@ -289,20 +289,20 @@ int main(int argc,char **argv)
     } else {
       if ((iSize[0] != minfo.sm->getWidth()) ||
           (iSize[1] != minfo.sm->getHeight())) {
-        fprintf(stderr,"Error the file %s has a different framesize\n",minfo.name.c_str());
+      smdbprintf(0,"Error the file %s has a different framesize\n",minfo.name.c_str());
         exit(1);
       }
     }
     /* first/last/step error checking */
     if ((minfo.first < 0) || 
         (minfo.first >= minfo.sm->getNumFrames())) {
-      fprintf(stderr,"Invalid first frame %d for %s\n",
+    smdbprintf(0,"Invalid first frame %d for %s\n",
               minfo.first,minfo.name.c_str());
       exit(1);
     }
     if ((minfo.last < 0) ||
         (minfo.last >= minfo.sm->getNumFrames())) {
-      fprintf(stderr,"Invalid last frame %d for %s\n",
+    smdbprintf(0,"Invalid last frame %d for %s\n",
               minfo.last,minfo.name.c_str());
       exit(1);
     }
@@ -311,7 +311,7 @@ int main(int argc,char **argv)
          (minfo.last < minfo.first)) ||
         ((minfo.step < 0) && 
          (minfo.last > minfo.first))) {
-      fprintf(stderr,"Invalid first/last/step values (%d/%d/%d)\n",
+    smdbprintf(0,"Invalid first/last/step values (%d/%d/%d)\n",
               minfo.first,minfo.last,minfo.step);
       exit(1);
     }
@@ -356,11 +356,11 @@ int main(int argc,char **argv)
       errexit (cmd, str(boost::format("Improperly formatted subregion: %1%")%subregion.getValue())); 
     }
     if (src[0] + src[2] > iSize[0]) {
-      fprintf(stderr,"Invalid selection width\n");
+    smdbprintf(0,"Invalid selection width\n");
       exit(1);
     }
     if (src[1] + src[3] > iSize[1]) {
-      fprintf(stderr,"Invalid selection width\n");
+    smdbprintf(0,"Invalid selection width\n");
       exit(1);
     }
   }
@@ -434,7 +434,7 @@ int main(int argc,char **argv)
   }
   else if (compression.getValue() == "" || compression.getValue() == "gz" || compression.getValue() == "GZ") {
     if (compression.getValue() == "") {
-      dbprintf(1, "No compression given; using gzip compression by default.\n"); 
+    smdbprintf(1, "No compression given; using gzip compression by default.\n"); 
     }
     sm = new smGZ(outputMovie.c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
   } else if (compression.getValue() == "raw" || compression.getValue() == "RAW") {
@@ -452,7 +452,7 @@ int main(int argc,char **argv)
     errexit(cmd, str(boost::format("Bad encoding type: %1%")%compression.getValue()));
   }
   if (!sm) {
-    fprintf(stderr,"Unable to create the file: %s\n", outputMovie.c_str());
+  smdbprintf(0,"Unable to create the file: %s\n", outputMovie.c_str());
     exit(1);
   }
   if (!noMetadata.getValue()) {
@@ -553,7 +553,7 @@ void workproc(void *arg)
 	int	sizeout = 3*wrk->sm->getHeight()*wrk->sm->getWidth();
 	int	size;
 	wrk->buffer = new unsigned char[sizein];
-    dbprintf(3, "created new buffer %p for frame %d\n", 
+  smdbprintf(3, "created new buffer %p for frame %d\n", 
              wrk->buffer, wrk->outframe); 
 	wrk->insm->getFrame(wrk->inframe,wrk->buffer, pt_pool_threadnum());
 	if (wrk->iScale) {
@@ -564,7 +564,7 @@ void workproc(void *arg)
 			 pZoom,
 			 wrk->dst[0],wrk->dst[1],wrk->src[0],wrk->src[1],
 			 wrk->src[2],wrk->src[3],wrk->iFilter);
-        dbprintf(4, "workproc deleting new buffer %p, replacing with %p for frame %d\n", wrk->buffer, pZoom, wrk->outframe); 
+      smdbprintf(4, "workproc deleting new buffer %p, replacing with %p for frame %d\n", wrk->buffer, pZoom, wrk->outframe); 
 		delete wrk->buffer;
 		wrk->buffer = pZoom;
 	}

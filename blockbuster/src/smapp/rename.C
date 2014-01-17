@@ -35,26 +35,27 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <sm/sm.h>
 
 int	verbose = 0;
 
 void ex_err(char *s)
 {
-	fprintf(stderr,"Fatal error:%s\n",s);
+	smdbprintf(0,"Fatal error:%s\n",s);
 	exit(1);
 }
 
 void cmd_err(char *s)
 {
-	fprintf(stderr,"(%s) Usage: %s [options] intemp outtemp\n",__DATE__,s);
-	fprintf(stderr,"Options: -f(istart) first input file number default:1\n");
-	fprintf(stderr,"         -l(iend) last input file number default:124\n");
-	fprintf(stderr,"         -i(istep) input file number increment default:1\n");
-	fprintf(stderr,"         -F(ostart) first output file number default:(istart)\n");
-	fprintf(stderr,"         -I(ostep) output file number increment default:(istep)\n");
-	fprintf(stderr,"         -v verbose mode\n");
-	fprintf(stderr,"         -t test mode (print the commands only)\n");
-	fprintf(stderr,"         -c(cmd) unix command to issue default:mv\n");
+	smdbprintf(0,"(%s) Usage: %s [options] intemp outtemp\n",__DATE__,s);
+	smdbprintf(0,"Options: -f(istart) first input file number default:1\n");
+	smdbprintf(0,"         -l(iend) last input file number default:124\n");
+	smdbprintf(0,"         -i(istep) input file number increment default:1\n");
+	smdbprintf(0,"         -F(ostart) first output file number default:(istart)\n");
+	smdbprintf(0,"         -I(ostep) output file number increment default:(istep)\n");
+	smdbprintf(0,"         -v verbose mode\n");
+	smdbprintf(0,"         -t test mode (print the commands only)\n");
+	smdbprintf(0,"         -c(cmd) unix command to issue default:mv\n");
 	exit(1);
 }
 
@@ -132,7 +133,7 @@ int main(int argc,char **argv)
 		sprintf(tstr,outtemp,ostart);
 		strcat(syscmd,tstr);
 
-		if (verbose) fprintf(stderr,"%s\n",syscmd);
+		smdbprintf(verbose?1:0,"%s\n",syscmd);
 		if (testmode) {
 			fprintf(stdout,"%s\n",syscmd);
 		} else {

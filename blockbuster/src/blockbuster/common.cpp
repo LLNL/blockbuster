@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include "common.h"
 #include <QTime>
+#include <errmsg.h>
 //bool gDbprintf= false; 
 //static int gVerbose = 0; 
 
@@ -86,32 +87,32 @@ uint16_t GetCurrentThreadID(void) {
 
 void PrintKeyboardControls(void)
 {
-  fprintf(stderr, "\n=====================================================\n");
-  fprintf(stderr, "BLOCKBUSTER KEYBOARD CONTROLS\n");
-  fprintf(stderr, "Panning - press the left mouse button and drag the mouse to pan over the image.\n"); 
-  fprintf(stderr, "Zooming - press the middle mouse button and drag forward/backward to zoom in/out of the image.\n"); 
-  fprintf(stderr, "\n"); 
-  fprintf(stderr, "The following keyboard commands are recognized:\n"); 
-  fprintf(stderr, "\n"); 
-  fprintf(stderr, "Right/Left arrow - advance/backup by one frame.\n"); 
-  fprintf(stderr, "Shift + Right/Left arrow - advance/backup by 20 frames.\n"); 
-  fprintf(stderr, "Control + Right/Left arrow - advance/backup by 1/4 of movie length.\n"); 
-  fprintf(stderr, "Home - jump to the first frame, center the image and set zoom to one\n"); 
-  fprintf(stderr, "End - jump to the last frame in the movie\n"); 
-  fprintf(stderr, "Spacebar - play/pause\n"); 
-  fprintf(stderr, "c -   center the image in the window\n"); 
-  fprintf(stderr, "f -   zoom image to fit the window (minify only)\n"); 
-  fprintf(stderr, "m -   hide/unhide the mouse cursor over the movie window\n"); 
-  fprintf(stderr, "l/L - increase/decrease the current level of detail displayed\n"); 
-  fprintf(stderr, "q --  quit\n"); 
-  fprintf(stderr, "r -   play in reverse\n"); 
-  fprintf(stderr, "z/Z - zoom in or out\n"); 
-  fprintf(stderr, "1 -  (the number 1) set zoom to 1.0\n"); 
-  fprintf(stderr, "+/- - increase or decrease the frame rate\n"); 
-  fprintf(stderr, "i - display the GUI panel (interface) if it was hidden\n"); 
-  fprintf(stderr, "? or h -- print this menu\n"); 
-  fprintf(stderr, "Esc - exit Blockbuster\n"); 
-  fprintf(stderr, "=====================================================\n");
+  dbprintf(0, "\n=====================================================\n");
+  dbprintf(0, "BLOCKBUSTER KEYBOARD CONTROLS\n");
+  dbprintf(0, "Panning - press the left mouse button and drag the mouse to pan over the image.\n"); 
+  dbprintf(0, "Zooming - press the middle mouse button and drag forward/backward to zoom in/out of the image.\n"); 
+  dbprintf(0, "\n"); 
+  dbprintf(0, "The following keyboard commands are recognized:\n"); 
+  dbprintf(0, "\n"); 
+  dbprintf(0, "Right/Left arrow - advance/backup by one frame.\n"); 
+  dbprintf(0, "Shift + Right/Left arrow - advance/backup by 20 frames.\n"); 
+  dbprintf(0, "Control + Right/Left arrow - advance/backup by 1/4 of movie length.\n"); 
+  dbprintf(0, "Home - jump to the first frame, center the image and set zoom to one\n"); 
+  dbprintf(0, "End - jump to the last frame in the movie\n"); 
+  dbprintf(0, "Spacebar - play/pause\n"); 
+  dbprintf(0, "c -   center the image in the window\n"); 
+  dbprintf(0, "f -   zoom image to fit the window (minify only)\n"); 
+  dbprintf(0, "m -   hide/unhide the mouse cursor over the movie window\n"); 
+  dbprintf(0, "l/L - increase/decrease the current level of detail displayed\n"); 
+  dbprintf(0, "q --  quit\n"); 
+  dbprintf(0, "r -   play in reverse\n"); 
+  dbprintf(0, "z/Z - zoom in or out\n"); 
+  dbprintf(0, "1 -  (the number 1) set zoom to 1.0\n"); 
+  dbprintf(0, "+/- - increase or decrease the frame rate\n"); 
+  dbprintf(0, "i - display the GUI panel (interface) if it was hidden\n"); 
+  dbprintf(0, "? or h -- print this menu\n"); 
+  dbprintf(0, "Esc - exit Blockbuster\n"); 
+  dbprintf(0, "=====================================================\n");
 
   return;
 }
@@ -143,7 +144,7 @@ Rectangle RectUnionRect(const Rectangle *r1, const Rectangle *r2)
     u.y = MIN2(r1->y, r2->y);
     u.width = MAX2(r1->x + r1->width, r2->x + r2->width) - u.x;
     u.height = MAX2(r1->y + r1->height, r2->y + r2->height) - u.y;
-	/*fprintf(stderr," r1 %d %d %d %d  r2 %d %d %d %d\n",r1->x,r1->y,r1->width,r1->height,r2->x,r2->y,r2->width,r2->height);*/
+	/*dbprintf(0," r1 %d %d %d %d  r2 %d %d %d %d\n",r1->x,r1->y,r1->width,r1->height,r2->x,r2->y,r2->width,r2->height);*/
     return u;
 }
 

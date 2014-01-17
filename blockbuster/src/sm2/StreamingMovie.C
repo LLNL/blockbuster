@@ -161,7 +161,7 @@ bool StreamingMovie::FetchFrame(uint32_t framenum, CImg<unsigned char> &cimg) {
   }
   //read the whole frame off disk: 
   pos =  LSEEK64(lfd, 0, SEEK_CUR);
-  //smcdbprintf("After tilesizes, pos is %d\n", pos); 
+  //ssmdbprintf("After tilesizes, pos is %d\n", pos); 
   pos = read(lfd, &mFrameReadBuffer[0], mFrameLengths[virtualFrame]);   
   //cerr << "Read " << pos << " bytes from frame and mFrameLengths[virtualFrame] is " << mFrameLengths[virtualFrame] << endl; 
   // decompress each tile into the image:

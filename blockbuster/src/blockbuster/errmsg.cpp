@@ -89,7 +89,7 @@ void real_dbprintf(int level, const char *fmt, ...) {
   cerr <<  DBPRINTF_PREAMBLE; 
   va_list ap;
   va_start(ap, fmt);
-  vfprintf(stderr,fmt,ap);
+  vfprintf(0,fmt,ap);
   va_end(ap);
   return; 
 }

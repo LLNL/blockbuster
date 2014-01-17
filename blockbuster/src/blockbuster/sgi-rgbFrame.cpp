@@ -94,7 +94,7 @@ static rawImageRec *RawImageOpen(const char *fileName)
 
   raw = (rawImageRec *)malloc(sizeof(rawImageRec));
   if (raw == NULL) {
-    fprintf(stderr, "Out of memory!\n");
+    dbprintf(0, "Out of memory!\n");
     return NULL;
   }
   if ((raw->file = fopen(fileName, "rb")) == NULL) {
@@ -121,7 +121,7 @@ static rawImageRec *RawImageOpen(const char *fileName)
   raw->tmpA = (unsigned char *)malloc(raw->sizeX*256);
   if (raw->tmp == NULL || raw->tmpR == NULL || raw->tmpG == NULL ||
       raw->tmpB == NULL) {
-    fprintf(stderr, "Out of memory!\n");
+    dbprintf(0, "Out of memory!\n");
     return NULL;
   }
 
@@ -130,7 +130,7 @@ static rawImageRec *RawImageOpen(const char *fileName)
     raw->rowStart = (unsigned int *)malloc(x);
     raw->rowSize = (int *)malloc(x);
     if (raw->rowStart == NULL || raw->rowSize == NULL) {
-      fprintf(stderr, "Out of memory!\n");
+      dbprintf(0, "Out of memory!\n");
       return NULL;
     }
     raw->rleEnd = 512 + (2 * x);

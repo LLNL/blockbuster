@@ -234,7 +234,7 @@ ImagePtr ScaleImage( ImagePtr image, int srcX, int srcY,
                                                        format->scanlineByteMultiple
                                                        );
 
-  /*fprintf(stderr,"ScaleImage [%d,%d]->[%d,%d]\n",srcWidth,srcHeight,zoomedWidth,zoomedHeight); */
+  /*dbprintf(0,"ScaleImage [%d,%d]->[%d,%d]\n",srcWidth,srcHeight,zoomedWidth,zoomedHeight); */
   register unsigned char *zoomedScanline, *zoomedData, *pixelData;
 
   ImagePtr zoomedImage(new Image()); 

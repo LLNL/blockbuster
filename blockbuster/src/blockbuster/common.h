@@ -40,31 +40,7 @@ extern QApplication *gCoreApp; // Defined in movie.cpp
 extern QThread *gMainThread; 
 
 
-/* 
-   extern bool gDbprintf; 
-   void enable_dbprintf(bool enable=true); 
-   void real_dbprintf(const char *fmt, ...);
-   void real_dbprintf(QString msg);
-   
-   #define dbprintf if (gDbprintf) real_dbprintf
-*/ 
-//=============================================================
-/* this does not go in errmsg.h, as it is used by sidecar */
-/*
-#ifdef DEBUG
-// #warning turning on dbprintf statements
-#define dbprintf real_dbprintf
-#else
-// this is a noop for most compilers... 
-#define dbprintf if (0) real_dbprintf
-#endif
-void set_verbose(int level); 
 
-void real_dbprintf(int level, const char *fmt, ...);
-void real_dbprintf(int level, QString msg); 
-void real_dbprintf(QString msg); 
-void real_dbprintf(const char *fmt, ...); 
-*/
 /* BLOCKBUSTER_PATH_MAX is used not only for the maximum length of a filename,
  * but for the maximum length of just about any string read from
  * a file

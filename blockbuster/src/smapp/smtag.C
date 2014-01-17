@@ -172,13 +172,13 @@ int main(int argc, char *argv[]) {
   
   for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {  
     string moviename = movienames.getValue()[fileno]; 
-    dbprintf(1, str(boost::format("Opening movie file %1%\n")% moviename).c_str()); 
+  smdbprintf(1, str(boost::format("Opening movie file %1%\n")% moviename).c_str()); 
     smBase *sm = smBase::openFile(moviename.c_str(), O_RDWR, 1);
     if (!sm) {
-      dbprintf(0,"smtag: Error: Unable to open the file: %s\n", moviename.c_str());
+    smdbprintf(0,"smtag: Error: Unable to open the file: %s\n", moviename.c_str());
       continue;
     }
-    dbprintf(5, "Before setting metadata, there are %d metadata items\n", sm->mMetaData.size()); 
+  smdbprintf(5, "Before setting metadata, there are %d metadata items\n", sm->mMetaData.size()); 
     if (deleteMD.getValue()) {
       sm->DeleteMetaData(); 
       cout << "Deleted metadata from " << moviename << endl; 
@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
     }
     
     //--------------------------------------------------
-    dbprintf(5, "After setting metadata, there are %d metadata items\n", sm->mMetaData.size()); 
+  smdbprintf(5, "After setting metadata, there are %d metadata items\n", sm->mMetaData.size()); 
     
     // ----------------------------------------------
     if (report.getValue()) {        
@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
     
     sm->WriteMetaData(); 
     sm->closeFile(); 
-    dbprintf(1, str(boost::format("All flags applied for movie %1%\n") % moviename).c_str()); 
+  smdbprintf(1, str(boost::format("All flags applied for movie %1%\n") % moviename).c_str()); 
   } // end loop over movienames
   // } // end else (if doing movies instead of tagfile export)
   

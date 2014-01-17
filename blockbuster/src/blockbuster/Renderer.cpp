@@ -758,7 +758,7 @@ void Renderer::ShowCursor(bool show) {
     Cursor cursor;
     
     blank = XCreateBitmapFromData (mDisplay, mWindow, data, 1, 1); 
-    if(blank == None) fprintf(stderr, "error: out of memory.\n");
+    if(blank == None) dbprintf(0, "error: out of memory.\n");
     cursor = XCreatePixmapCursor(mDisplay, blank, blank, &dummy, &dummy, 0, 0);
     XFreePixmap (mDisplay, blank);
     
@@ -878,7 +878,7 @@ void Renderer::fakeMouseClick(void)
   XEvent event;
   
   if(mDisplay == NULL)  {
-    fprintf(stderr, "Warning:  fakeMouseClick() called with no active mDisplay.\n"); 
+    dbprintf(0, "Warning:  fakeMouseClick() called with no active mDisplay.\n"); 
     return; 
   }
   
@@ -900,11 +900,11 @@ void Renderer::fakeMouseClick(void)
   
   /*
     if(XSendEvent(mDisplay, PointerWindow, True, 0xfff, &event) == 0)  {
-    fprintf(stderr, "Warning: Error with XSendEvent in fakeMouseClick()\n");
+    dbprintf(0, "Warning: Error with XSendEvent in fakeMouseClick()\n");
     }
   */
   if(XSendEvent(mDisplay, mWindow, True, 0xfff, &event) == 0)  {
-    fprintf(stderr, "Warning: Error with XSendEvent in fakeMouseClick()\n");
+    dbprintf(0, "Warning: Error with XSendEvent in fakeMouseClick()\n");
   }
 
   XFlush(mDisplay);
@@ -916,11 +916,11 @@ void Renderer::fakeMouseClick(void)
   
   /*
     if(XSendEvent(mDisplay, PointerWindow, True, 0xfff, &event) == 0) {
-    fprintf(stderr, "Warning: Error with XSendEvent in fakeMouseClick()\n");
+    dbprintf(0, "Warning: Error with XSendEvent in fakeMouseClick()\n");
     }
   */
   if(XSendEvent(mDisplay, mWindow, True, 0xfff, &event) == 0) {
-    fprintf(stderr, "Warning: Error with XSendEvent in fakeMouseClick()\n");
+    dbprintf(0, "Warning: Error with XSendEvent in fakeMouseClick()\n");
   }
 
   return; 

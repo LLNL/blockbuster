@@ -42,7 +42,7 @@
 #include "smGZ.h"
 #include "zlib.h"
 
-#define gzdbprintf fprintf(stderr, "%s line %d: ", __FILE__, __LINE__); fprintf
+// #define smdbprintf smdbprintf(0, "%s line %d: ", __FILE__, __LINE__); fprintf
 #define smcerr if (0) cerr 
 
 smGZ::smGZ(int mode, const char *_fname, int _nwin)
@@ -75,7 +75,7 @@ bool smGZ::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
 
    err = inflateInit(&stream);
    if (err != Z_OK) {
-     gzdbprintf(stderr,"GZ decompression init error: %d\n",err);
+     smdbprintf(0,"GZ decompression init error: %d\n",err);
       return false;
    }
 
@@ -83,13 +83,13 @@ bool smGZ::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
       err = inflate(&stream, Z_NO_FLUSH);
    }
    if (err != Z_STREAM_END) {
-     gzdbprintf(stderr,"GZ decompression error: %d\n",err);
+     smdbprintf(0,"GZ decompression error: %d\n",err);
       return false;
    }
 
    err = inflateEnd(&stream);
    if (err != Z_OK) {
-      gzdbprintf(stderr,"GZ decompression end error: %d\n",err);
+      smdbprintf(0,"GZ decompression end error: %d\n",err);
       return false;
    }
    smcerr << "decoded " << stream.total_out << " bytes" << endl; 
@@ -123,7 +123,7 @@ void smGZ::compBlock(void *data, void *cdata, int &size,int *dim)
    if (cdata) {
        status = compress((Bytef *)cdata,&dlen,(Bytef *)data,len);
        if (status != Z_OK) {
-         fprintf(stderr,"GZ compression error: %d\n",status);
+       smdbprintf(0,"GZ compression error: %d\n",status);
          exit(1); 
        }
    }

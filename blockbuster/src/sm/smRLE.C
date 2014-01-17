@@ -56,14 +56,14 @@ bool smRLE::decompBlock(u_char *cdata,u_char *image,int,int *dim)
 {
   int i,n;
   int npix = 0;
-  //fprintf(stderr,"decompressing rle\n");
+  smdbprintf(0,"decompressing rle\n");
   while (npix < dim[0]*dim[1]) {
     
     n = *cdata++;
-    //fprintf(stderr,"npix %d : n %d\n",npix,n);
+    smdbprintf(0,"npix %d : n %d\n",npix,n);
     if (npix + n > getWidth()*getHeight()) 
       {
-        fprintf(stderr, "smRLE: rle code error\n");
+      smdbprintf(0, "smRLE: rle code error\n");
         n = getWidth()*getHeight() - npix;
       }
     for (i=0; i<n; i++) 

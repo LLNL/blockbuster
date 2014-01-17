@@ -165,7 +165,7 @@ int main(int argc,char **argv)
   
   smBase *sm = smBase::openFile(moviename.getValue().c_str(), O_RDONLY, nThreads);
   if (!sm) {
-    fprintf(stderr,"Unable to open the file: %s\n",moviename.getValue().c_str());
+  smdbprintf(0,"Unable to open the file: %s\n",moviename.getValue().c_str());
     exit(1);
   }
   int lod = mipmap.getValue(); 
@@ -174,7 +174,7 @@ int main(int argc,char **argv)
     lod = 0;
   }
   if(lod >= sm->getNumResolutions()) {
-    fprintf(stderr,"Error: Mipmap Level %d Not Available : Choose Levels 0->%d\n",lod,sm->getNumResolutions()-1);
+  smdbprintf(0,"Error: Mipmap Level %d Not Available : Choose Levels 0->%d\n",lod,sm->getNumResolutions()-1);
     exit(1);
   }
   /* originalImageSize[2] = 3; unused */
@@ -183,12 +183,12 @@ int main(int argc,char **argv)
   
   /* check user inputs for consistency with image size*/
   if (blockSize[0]+blockOffset[0] > originalImageSize[0]) {
-    fprintf(stderr, "Error: X size (%d) + X offset (%d) cannot be greater than image width (%d)\n", 
+  smdbprintf(0, "Error: X size (%d) + X offset (%d) cannot be greater than image width (%d)\n", 
             blockSize[0], blockOffset[0], originalImageSize[0]);
     exit(1);
   }
   if (blockSize[1]+blockOffset[1] > originalImageSize[1]) {
-    fprintf(stderr, "Error: Y size (%d) + Y offset (%d) cannot be greater than image height (%d)\n", 
+  smdbprintf(0, "Error: Y size (%d) + Y offset (%d) cannot be greater than image height (%d)\n", 
             blockSize[1], blockOffset[1], originalImageSize[1]);
     exit(1);
   }
@@ -205,7 +205,7 @@ int main(int argc,char **argv)
   if (lastFrame.getValue() >= sm->getNumFrames()) errexit(cmd, str(boost::format("last frame is %1%, but movie only has %2% frames in it")% lastFrame.getValue() % sm->getNumFrames()));
   
   if (frameStep.getValue() < 1) {
-    fprintf(stderr,"Error, frame stepping must be >= 1\n");
+  smdbprintf(0,"Error, frame stepping must be >= 1\n");
     exit(1);
   }
   int numFrames = (lastFrame.getValue() - firstFrame.getValue())/frameStep.getValue() + 1; 
@@ -217,7 +217,7 @@ int main(int argc,char **argv)
     useTemplate = true; 
   } catch(...) {
     if (numFrames > 1) {
-      fprintf(stderr,"If you are outputting multiple frames, then the output specification must be a C-style sprintf template\n");
+    smdbprintf(0,"If you are outputting multiple frames, then the output specification must be a C-style sprintf template\n");
       exit(1);
     }
   }
@@ -268,7 +268,7 @@ void workproc(void *vp) {
   //unsigned char *img = gBuffers[threadnum]; 
   vector<unsigned char> img(3*work->blockSize[0]*work->blockSize[1], 0); 
 
-  if (work->verbosity) fprintf(stderr, "Thread %d working on frame %d\n",
+  if (work->verbosity) smdbprintf(0, "Thread %d working on frame %d\n",
                           threadnum, work->frameNum); 
   
   if(work->sm->getVersion() > 1) {
@@ -439,7 +439,7 @@ void workproc(void *vp) {
     }
       break;
     }
-    /*if (work->verbosity) fprintf(stderr, "Thread %d done with frame %d)\n",
+    /*if (work->verbositysmdbprintf(0, "Thread %d done with frame %d)\n",
                             threadnum, framenum); 
     */
   

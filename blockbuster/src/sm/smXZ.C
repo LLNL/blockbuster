@@ -42,7 +42,7 @@
 #include "smXZ.h"
 #include "lzma.h"
 
-#define lzmadbprintf fprintf(stderr, "%s line %d: ", __FILE__, __LINE__); fprintf
+#define lzsmdbprintf smdbprintf(0, "%s line %d: ", __FILE__, __LINE__); fprintf
 #define smcerr if (0) cerr 
 
 smXZ::smXZ(int mode, const char *_fname, int _nwin)
@@ -62,7 +62,7 @@ bool smXZ::decompBlock(u_char *in,u_char *out,int size,int *dim)
    lzma_stream  stream = LZMA_STREAM_INIT;
    lzma_ret err = lzma_stream_decoder(&stream, UINT64_MAX, LZMA_CONCATENATED);
    if (err != LZMA_OK) {
-     lzmadbprintf(stderr,"XZ decompression init error: %d\n",err);
+     lzsmdbprintf(0,"XZ decompression init error: %d\n",err);
       return false;
    }
    
@@ -80,7 +80,7 @@ bool smXZ::decompBlock(u_char *in,u_char *out,int size,int *dim)
      err = lzma_code(&stream, LZMA_RUN);
    }
    if (err != LZMA_BUF_ERROR && err != LZMA_OK) {
-     lzmadbprintf(stderr,"XZ decompression error: %d\n",err);
+     lzsmdbprintf(0,"XZ decompression error: %d\n",err);
       return false;
    }
 
@@ -113,7 +113,7 @@ void smXZ::compBlock(void *in, void *out, int &outsize,int *dim)
      lzma_stream  stream = LZMA_STREAM_INIT;
      lzma_ret err = lzma_easy_encoder(&stream, 9, LZMA_CHECK_CRC64);
      if (err != LZMA_OK) {
-       lzmadbprintf(stderr,"XZ compression init error: %d\n",err);
+       lzsmdbprintf(0,"XZ compression init error: %d\n",err);
        return ;
      }
      stream.next_in = (const uint8_t*)in;
@@ -125,7 +125,7 @@ void smXZ::compBlock(void *in, void *out, int &outsize,int *dim)
        err = lzma_code(&stream, LZMA_FULL_FLUSH /*LZMA_RUN*/);
      }
      if (err != LZMA_BUF_ERROR && err != LZMA_STREAM_END) {
-       lzmadbprintf(stderr,"XZ compression error: %d\n",err);
+       lzsmdbprintf(0,"XZ compression error: %d\n",err);
        return ;
      }
      smcerr << "stream: avail_in = " << stream.avail_in << ", total_in = " << stream.total_in << ", avail_out = " << stream.avail_out << ", total_out = " << stream.total_out << endl; 

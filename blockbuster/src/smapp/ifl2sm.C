@@ -37,7 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-
+#include <sm/sm.h>
 #ifdef irix
 
 #include <ifl/iflFile.h>
@@ -338,7 +338,7 @@ int main(int argc,char **argv)
    }
 
    if (!sm) {
-	fprintf(stderr,"Unable to create new file: %s\n",filecat);
+	smdbprintf(0,"Unable to create new file: %s\n",filecat);
 	exit(1);
    }
 
@@ -411,7 +411,7 @@ void readFile(char *filename)
 
 int main(int argc, char **argv)
 {
-	fprintf(stderr,"%s : unsupported on this platform.\n",argv[0]);
+	smdbprintf(0,"%s : unsupported on this platform.\n",argv[0]);
 	exit(1);
 }
 #endif

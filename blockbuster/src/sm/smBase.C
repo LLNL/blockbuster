@@ -791,7 +791,7 @@ void smBase::init(int mode, const char *_fname, int numthreads, uint32_t bufferS
     smdbprintf(5, "smBase::smBase: initializing buffer mutex\n"); 
     int status = pthread_mutex_init(&mBufferMutex, NULL); 
     if (status) {
-      fprintf(stderr, "Error:  cannot initializes output buffer mutex\n"); 
+    smdbprintf(0, "Error:  cannot initializes output buffer mutex\n"); 
       exit(2); 
     }
   }
@@ -1671,7 +1671,7 @@ uint32_t smBase::getFrameBlock(int frame, void *data, int threadnum,  int destRo
     return 0;
   if (_dim[0] + _pos[0] > getWidth(0) ||
       _dim[1] + _pos[1] > getHeight(0)) {
-    fprintf(stderr, "dim(%d,%d) + _pos(%d,%d) > dims(%u, %u)\n", 
+  smdbprintf(0, "dim(%d,%d) + _pos(%d,%d) > dims(%u, %u)\n", 
             _dim[0], _dim[1], _pos[0], _pos[1], getWidth(0), getHeight(0));
     abort(); 
   }

@@ -54,16 +54,16 @@ void cmdline(char *app);
 
 void cmdline(char *app)
 {
-	fprintf(stderr,"%s (%s) usage: %s [options] evofile smfile | smfile evofile\n",
+	smdbprintf(0,"%s (%s) usage: %s [options] evofile smfile | smfile evofile\n",
 		basename(app), BLOCKBUSTER_VERSION, basename(app));
-	fprintf(stderr,"Options:\n");
-	fprintf(stderr,"\t-v Verbose mode.\n");
-	fprintf(stderr,"\t-rle Selects RLE sm compression\n");
-	fprintf(stderr,"\t-gz Selects gzip sm compression\n");
-	fprintf(stderr,"\t-lzo Selects LZO sm compression\n");
-	fprintf(stderr,"\t-jpg Selects JPG sm compression\n");
-	fprintf(stderr,"\t-jpeg Selects jpeg evo compression\n");
-	fprintf(stderr,"\t-stereo Treat the sm file as stereo\n");
+	smdbprintf(0,"Options:\n");
+	smdbprintf(0,"\t-v Verbose mode.\n");
+	smdbprintf(0,"\t-rle Selects RLE sm compression\n");
+	smdbprintf(0,"\t-gz Selects gzip sm compression\n");
+	smdbprintf(0,"\t-lzo Selects LZO sm compression\n");
+	smdbprintf(0,"\t-jpg Selects JPG sm compression\n");
+	smdbprintf(0,"\t-jpeg Selects jpeg evo compression\n");
+	smdbprintf(0,"\t-stereo Treat the sm file as stereo\n");
 	exit(1);
 }
 
@@ -127,7 +127,7 @@ int main(int argc,char **argv)
 
 		evo_img = evo_movie_alloc_image(isize[0],isize[1]);
 		if (!evo_img) {
-			fprintf(stderr,"Insufficient memory\n");
+	smdbprintf(0,"Insufficient memory\n");
 			exit(1);
 		}
 		img = evo_img->pixels;
@@ -170,7 +170,7 @@ int main(int argc,char **argv)
 
 		evo_img = evo_movie_alloc_image(isize[0],isize[1]);
 		if (!evo_img) {
-			fprintf(stderr,"Insufficient memory\n");
+	smdbprintf(0,"Insufficient memory\n");
 			exit(1);
 		}
 		img = evo_img->pixels;
@@ -200,6 +200,6 @@ int main(int argc,char **argv)
 
 	}
 
-	fprintf(stderr,"Input file %s was not in sm or evo format\n", infile);
+	smdbprintf(0,"Input file %s was not in sm or evo format\n", infile);
 	exit(1);
 }

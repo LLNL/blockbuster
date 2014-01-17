@@ -59,15 +59,15 @@ float dpos[2] = {0,0};
 float ddim[2] = {0,0};
 float dstep[2] = {0,0};
 
-void dbprintf(int level, const char *fmt, ...) {  
+/* void smdbprintf(int level, const char *fmt, ...) {  
   if (gVerbose<level) return; 
   va_list ap;
   va_start(ap, fmt);
-  vfprintf(stderr,fmt,ap);
+ smdbprintf(0,fmt,ap);
   va_end(ap);
   return; 
 }
-
+*/ 
 void calcrectpan(int x,int y,int *p,int *d,int *s)
 {
 
@@ -178,7 +178,7 @@ void *readThread(void *data)
              calcrect(f+loopNum*sm->getNumResolutions()*sm->getNumFrames(),
                       p,d,s);
              t0 = get_clock();
-             //fprintf(stderr," d = [%d,%d], p = [%d,%d], s = [%d,%d]\n",d[0],d[1],p[0],p[1],s[0],s[1]);
+             smdbprintf(0," d = [%d,%d], p = [%d,%d], s = [%d,%d]\n",d[0],d[1],p[0],p[1],s[0],s[1]);
              bytesRead[mynum] += sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s, lod);
            }
            else {
@@ -188,12 +188,12 @@ void *readThread(void *data)
              int stepsY = (int)floor((double)sm->getHeight()/dpos[1]);
              if(stepsX < 1) stepsX = 1;
              if(stepsY < 1) stepsY = 1;
-             fprintf(stderr,"Position Steps[%d,%d]\n",stepsX,stepsY);
+           smdbprintf(0,"Position Steps[%d,%d]\n",stepsX,stepsY);
              t0 = get_clock();
              for(yStep = 0; yStep < stepsY; yStep++) {
                for(xStep = 0; xStep < stepsX; xStep++) {
                  calcrectpan(xStep,yStep,p,d,s);
-                 //fprintf(stderr," d = [%d,%d], p = [%d,%d], s = [%d,%d]\n",d[0],d[1],p[0],p[1],s[0],s[1]);
+                 smdbprintf(0," d = [%d,%d], p = [%d,%d], s = [%d,%d]\n",d[0],d[1],p[0],p[1],s[0],s[1]);
                  bytesRead[mynum] += sm->getFrameBlock(f, frame, mynum, rowStride, d, p, s, lod);
                }
              }
@@ -205,7 +205,7 @@ void *readThread(void *data)
          threadData->numFramesRead++; 
          threadData->currentFrame = f; 
          
-         //dbprintf("Thread %d got frame %d\r", mynum, f);         
+         smdbprintf(0, "Thread %d got frame %d\r", mynum, f);         
          
        }
      }
@@ -216,17 +216,17 @@ void *readThread(void *data)
 
 void usage(char *prg)
 {
-   fprintf(stderr, "%s (%s) usage: %s [options] smfilename\n",__DATE__,prg);
-   fprintf(stderr,"Options:\n");
-   fprintf(stderr, "\t -h or -help:  display this menu\n"); 
-   fprintf(stderr,"\t-lod <num> Level of detail.  default: 0\n");
+ smdbprintf(0, "%s (%s) usage: %s [options] smfilename\n",__DATE__,prg);
+ smdbprintf(0,"Options:\n");
+ smdbprintf(0, "\t -h or -help:  display this menu\n"); 
+ smdbprintf(0,"\t-lod <num> Level of detail.  default: 0\n");
    
-   fprintf(stderr, "\t -range first last:  first and last frames to run over.  (1-based indexes, inclusive interval)\n"); 
-   fprintf(stderr,"\t-nt <num>   Select the number of threads/windows.  Default: 1\n");
-   fprintf(stderr,"\t-rect <xpos ypos xsize ysize xinc yinc>  Rect/step to sample.  Rect values are float.  Either pixels or window fractions between 0.01 and 0.99 are acceptable.  Default: whole\n");
-   fprintf(stderr,"\t-pan <xpos ypos xsize ysize xinc yinc> Pan across using giiven rect before advancing to next frame.  Rect values are floats.  Either pixels or window fractions between 0.01 and 0.99 are acceptable.  Default: no panning.\n");
-   fprintf(stderr,"\t-loops <n>  Number of loops to run. Default: 1\n");
-   fprintf(stderr, "\t-v n Set verbosity to level n (0-5)\n"); 
+ smdbprintf(0, "\t -range first last:  first and last frames to run over.  (1-based indexes, inclusive interval)\n"); 
+ smdbprintf(0,"\t-nt <num>   Select the number of threads/windows.  Default: 1\n");
+ smdbprintf(0,"\t-rect <xpos ypos xsize ysize xinc yinc>  Rect/step to sample.  Rect values are float.  Either pixels or window fractions between 0.01 and 0.99 are acceptable.  Default: whole\n");
+ smdbprintf(0,"\t-pan <xpos ypos xsize ysize xinc yinc> Pan across using giiven rect before advancing to next frame.  Rect values are floats.  Either pixels or window fractions between 0.01 and 0.99 are acceptable.  Default: no panning.\n");
+ smdbprintf(0,"\t-loops <n>  Number of loops to run. Default: 1\n");
+ smdbprintf(0, "\t-v n Set verbosity to level n (0-5)\n"); 
    return;
 }
 
@@ -254,7 +254,7 @@ void ConvertFractions(const char *name, float ffpos[2], float ffdim[2], float ff
   if (0.0 < ffstep[1] && ffstep[1] <  0.990) 
     ffstep[1] = ffstep[1]*sm->getHeight()-1;
 
-  fprintf(stderr, "After converting from fraction, %s is {%f, %f, %f, %f, %f, %f}\n", name, ffpos[0], ffpos[1], ffdim[0], ffdim[1], ffstep[0], ffstep[1]); 
+smdbprintf(0, "After converting from fraction, %s is {%f, %f, %f, %f, %f, %f}\n", name, ffpos[0], ffpos[1], ffdim[0], ffdim[1], ffstep[0], ffstep[1]); 
   return; 
 } 
 
@@ -265,7 +265,7 @@ void RoundRectToInt(void) {
   dim[1] = (int)(fltdim[1]+0.5); 
   step[0] = (int)(fltstep[0]+0.5); 
   step[1] = (int)(fltstep[1]+0.5); 
-  fprintf(stderr, "After rounding, crop rectangle is {%d, %d, %d, %d, %d, %d}\n", pos[0], pos[1], dim[0], dim[1], step[0], step[1]); 
+smdbprintf(0, "After rounding, crop rectangle is {%d, %d, %d, %d, %d, %d}\n", pos[0], pos[1], dim[0], dim[1], step[0], step[1]); 
   return; 
 }
 
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
        nloops=atoi(argv[i+1]);
        i++;
      } else if (strcmp(argv[i], "-pan") == 0) {
-       fprintf(stderr,"Panning selected\n");
+     smdbprintf(0,"Panning selected\n");
        if (i+6 >= argc) usage(argv[0]);
        dpos[0] = atof(argv[++i]);
        dpos[1] = atof(argv[++i]);
@@ -320,18 +320,18 @@ int main(int argc, char *argv[])
        sm_setVerbose(gVerbose); 
      }
      else {
-       fprintf(stderr,"\n******************\nUnknown arg: %s\n******************\n",argv[i]);
+     smdbprintf(0,"\n******************\nUnknown arg: %s\n******************\n",argv[i]);
        usage(argv[0]); 
        exit(1);
      }
    }
    if (argc < 2) {
-     fprintf(stderr, "Not enough arguments.  Require a filename.\n"); 
+   smdbprintf(0, "Not enough arguments.  Require a filename.\n"); 
      usage(argv[0]); 
      exit(3); 
    }
    if (i != argc-1) {
-     fprintf(stderr, "Error parsing arguments.\n"); 
+   smdbprintf(0, "Error parsing arguments.\n"); 
      usage(argv[0]);
      exit(2); 
    }
@@ -340,10 +340,10 @@ int main(int argc, char *argv[])
    bytesRead.resize(nthreads); 
     
    if (!sm) {
-      fprintf(stderr, "Unable to open movie: %s\n",argv[i]);
+    smdbprintf(0, "Unable to open movie: %s\n",argv[i]);
       exit(4);
    }
-   dbprintf(3, "movie is %dx%d\n", sm->getWidth(), sm->getHeight()); 
+ smdbprintf(3, "movie is %dx%d\n", sm->getWidth(), sm->getHeight()); 
    ConvertFractions("pan rect", dpos, ddim, dstep); 
    
    // Default values
@@ -365,18 +365,18 @@ int main(int argc, char *argv[])
    if ((pos[1]<0) || (pos[1]>=sm->getWidth())) i = 2;
    if ((step[0]<0) || (step[1]<0)) i = 3;
    if ((dim[0]<1) || (dim[0]+pos[0]*step[0]>sm->getWidth())) {
-     fprintf(stderr, "LH = %d, RH = %d\n", dim[0]+pos[0]*step[0], sm->getWidth()); 
+   smdbprintf(0, "LH = %d, RH = %d\n", dim[0]+pos[0]*step[0], sm->getWidth()); 
      i = 4;
    }
    if ((dim[1]<1) || (dim[1]+pos[1]*step[1]>sm->getHeight())) i = 5;
    
    if (i) {
-      fprintf(stderr,"Error: Invalid frame rectangle : Case %d\n",i);
+    smdbprintf(0,"Error: Invalid frame rectangle : Case %d\n",i);
       exit(5);
    }
 
    if (lod > sm->getNumResolutions()) {
-     fprintf(stderr, "Error:  lod %d specified, but movie has only %d\n", 
+   smdbprintf(0, "Error:  lod %d specified, but movie has only %d\n", 
              lod, sm->getNumResolutions()); 
      exit(6); 
    }
@@ -406,13 +406,13 @@ int main(int argc, char *argv[])
    for (f=range[0]; f<=range[1]; f++) {
      cur_size =      sm->getCompFrameSize(f, 0); 
      totalMegabytes += cur_size;
-     dbprintf(5, "size of frame %d is %d\n", f, cur_size); 
+   smdbprintf(5, "size of frame %d is %d\n", f, cur_size); 
 
    }
    totalMegabytes /= (1000.0*1000.0); 
    float mbPerFrameEst = totalMegabytes/(range[1]-range[0]+1)*windowFraction; 
    totalMegabytes *= nloops; 
-   fprintf(stderr, "Total size to read in %d frames, based on inputs: %f total MB, %f adjusted for given window fraction.  average MB/frame = %f\n", 
+ smdbprintf(0, "Total size to read in %d frames, based on inputs: %f total MB, %f adjusted for given window fraction.  average MB/frame = %f\n", 
            totalFrames, totalMegabytes, windowFraction*totalMegabytes, mbPerFrameEst); 
    vector<ThreadData> threadData(f); 
    for(f=0; f<nthreads; f++) { 
@@ -432,7 +432,7 @@ int main(int argc, char *argv[])
      elapsed = timer::GetExactSeconds() - previousTime; 
      totalTime += elapsed; 
      previousTime = timer::GetExactSeconds(); 
-     fprintf(stderr, "t = %05.3f: ", totalTime); 
+   smdbprintf(0, "t = %05.3f: ", totalTime); 
      totalMB = 0; 
      for(f=0; f<nthreads; f++) {
        previousFrames[f] = numFrames[f]; 
@@ -444,11 +444,11 @@ int main(int argc, char *argv[])
        megabytes = (bytesRead[f] - previousBytes[f])/(1000*1000); 
        totalMB += megabytes; 
        previousBytes[f] = bytesRead[f]; 
-       fprintf(stderr, "Thread %02d: frame %05d, %03.2f frames in %f secs =  %05.3f fps, actual MB/sec %f\n", f, threadData[f].currentFrame, nframes, elapsed, fps, megabytes/elapsed); 
+     smdbprintf(0, "Thread %02d: frame %05d, %03.2f frames in %f secs =  %05.3f fps, actual MB/sec %f\n", f, threadData[f].currentFrame, nframes, elapsed, fps, megabytes/elapsed); 
      }
      fps = (numFrames[nthreads]-previousFrames[nthreads])/elapsed; 
      float pct = (numFrames[nthreads])/totalFrames*100.0;
-     fprintf(stderr, "ALL THREADS: %4.2f%% complete, fps = %5.3f, actual MB/sec %f\n", pct, fps, totalMB/elapsed); 
+   smdbprintf(0, "ALL THREADS: %4.2f%% complete, fps = %5.3f, actual MB/sec %f\n", pct, fps, totalMB/elapsed); 
      usleep(500*1000); // half a second
    }
 

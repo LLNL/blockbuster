@@ -38,21 +38,21 @@ ProgramOptions *GetGlobalOptions (void) {
 }
 
 void printargv(int argc, char *argv[]) {
-  fprintf(stderr, "argv is: {"); 
+  dbprintf(0, "argv is: {"); 
   int argnum = 0; 
   while (argnum < argc) {
-    fprintf(stderr, argv[argnum]); 
+    dbprintf(0, argv[argnum]); 
     if (argnum < argc-1) {
-      fprintf(stderr, ", "); 
+      dbprintf(0, ", "); 
     } else {
-      fprintf(stderr, "}\n"); 
+      dbprintf(0, "}\n"); 
     }
     argnum ++; 
   }
 }
 /* "consume" the first arg in argv by shifting all later args one to the left */ 
 void ConsumeArg(int &argc, char *argv[], int position) {
-  //  fprintf(stderr, "Before ConsumeArg(%d, argv, %d): ", argc, position); 
+  //  dbprintf(0, "Before ConsumeArg(%d, argv, %d): ", argc, position); 
   //printargv(argc, argv); 
   if (position == 0 and argc == 1) {
     argv[0] = NULL; 
@@ -63,7 +63,7 @@ void ConsumeArg(int &argc, char *argv[], int position) {
     }
   }
   argc--; 
-  //fprintf(stderr, "After ConsumeArg: "); 
+  //dbprintf(0, "After ConsumeArg: "); 
   //printargv(argc, argv); 
   return; 
 }

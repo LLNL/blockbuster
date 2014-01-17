@@ -55,7 +55,7 @@ manpages:
 	mkdir -p $(INSTALL_DIR)/man/man1
 	cp *.1 $(INSTALL_DIR)/man/man1
 
-$(OFILES) : % : %.o $(SMLIB) simple_jpeg.o debugutil.o
+$(OFILES) : % : %.o $(SMLIB) simple_jpeg.o debugutil.o 
 	@echo '***********************************************'
 	@echo BUILDING $@
 	@echo
