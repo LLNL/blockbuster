@@ -76,8 +76,6 @@ bool jobComparer(const ImageCacheJobPtr first, const ImageCacheJobPtr second){
 }
 
 
-
-
 // ======================================================================
 /* This is the work function, which is used by child threads to 
  * "asynchronously" load images from disk.  Not used in single-threaded case. 

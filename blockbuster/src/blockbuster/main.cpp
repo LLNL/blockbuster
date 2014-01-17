@@ -602,9 +602,6 @@ int main(int argc, char *argv[])
   char noglib[] = "QT_NO_GLIB=1";
   putenv(noglib); 
 
-  /* This is the master list of frames, and some stats about the list */
-  FrameListPtr allFrames;
-  
   /* We might be saving settings files.  Look for them
    * in the user's home directory, and in the current
    * directory.
@@ -676,6 +673,8 @@ int main(int argc, char *argv[])
 
 
   /* count the remaining newargs and treat them as files */ 
+  FrameListPtr allFrames;
+  
   printargs("Before framelist", newargs, newargc); 
   int count = 0; 
   while (count < newargc && newargs[count]) count++;  
