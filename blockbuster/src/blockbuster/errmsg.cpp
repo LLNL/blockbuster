@@ -9,7 +9,9 @@
 #include "QThread"
 #include "QTime"
 #include "QMessageBox"
+#include <boost/format.hpp> 
 using namespace std; 
+
 
 /*!
   For certain tight timings -- generally want this off
@@ -30,7 +32,7 @@ static bool gDoDialogs = true;
 static int gVerbose = 0; 
 
 static QString gLogFileName; 
-static FILE *gLogFile = NULL; 
+static ofstream gLogFile; 
 
 //===============================================
 QString getExactSeconds(void) {
@@ -53,14 +55,14 @@ void enableLogging(bool enable, QString logfile) {
         gLogFileName = "blockbuster-log.txt";
       }
     }
-    gLogFile = fopen(gLogFileName.toStdString().c_str(), "w"); 
+    gLogFile.open(gLogFileName.toStdString().c_str(), std::ofstream::out ); 
     if (gLogFile) {
       cerr << "Blockbuster log is at " << gLogFileName.toStdString() << endl; 
     } else {
-      cerr << "Could not create blockbuster log at " << gLogFileName.toStdString() << endl; 
+      cerr << "Could not open blockbuster log " << gLogFileName.toStdString() << endl; 
     }
   } else {
-    gLogFile = NULL; 
+    gLogFile.close(); 
     gLogFileName = ""; 
   }
   return; 
@@ -74,23 +76,37 @@ int get_verbose(void) {
   return maxMessageLevel; 
 }
 
-#define DBPRINTF_PREAMBLE QString("<t=%1> %2:%3, %4():  ").arg(getExactSeconds()).arg(theMessage.file).arg(theMessage.line).arg(theMessage.function).toStdString()
+#define DBPRINTF_PREAMBLE str(boost::format("<t=%1%> %2%:%3%, %4%():  ") % \
+                              (getExactSeconds().toStdString())% \
+                              string(theMessage.file)% \
+                              string(theMessage.function)% \
+                              (theMessage.line))
 
 //===============================================
 void real_dbprintf(int level, QString msg) { 
   if (gVerbose < level) return; 
-  cerr << DBPRINTF_PREAMBLE << msg.toStdString() << endl;
+  std::string preamble = DBPRINTF_PREAMBLE; 
+  cerr << preamble << msg.toStdString() << endl;
+  if (gLogFile.is_open()) {
+    gLogFile << preamble << msg.toStdString() << endl;
+  }
   return ;
 }
+#define MAX_MSG_LENGTH (100*1024)
 
 //===============================================
 void real_dbprintf(int level, const char *fmt, ...) {
+  static char msgbuf[MAX_MSG_LENGTH+1]; 
   if (gVerbose < level) return; 
-  cerr <<  DBPRINTF_PREAMBLE; 
+  std::string preamble = DBPRINTF_PREAMBLE; 
   va_list ap;
   va_start(ap, fmt);
-  vfprintf(0,fmt,ap);
+  vsnprintf(msgbuf, MAX_MSG_LENGTH, fmt, ap);
   va_end(ap);
+  cerr <<  preamble << msgbuf; 
+  if (gLogFile.is_open()) {
+    gLogFile << preamble << msgbuf; 
+  }
   return; 
 }
 

@@ -108,6 +108,8 @@
     MOVIE_SAVE_IMAGE,
     /* A way to force an error message to appear NOTE:  DOES NOT APPEAR TO DO ANYTHING */
     MOVIE_MESSAGE,
+    /* redirect all dbprintf type stuff to a file -- actually redirects cerr and cout to a file */ 
+    MOVIE_LOG_TO_FILE, 
     /* A way to simulate the case that all or particular frames
      * fail to load
      */

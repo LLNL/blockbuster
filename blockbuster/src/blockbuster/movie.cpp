@@ -337,9 +337,9 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
         renderer->ReportFrameChange(frameNumber); 
         DEBUGMSG("START_END_FRAMES: start %d end %d current %d\n", startFrame, endFrame, frameNumber); 
         break; 
-        /*case MOVIE_REDIRECT_TO_FILE:
-        DEBUGMSG("MOVIE_REDIRECT_TO_FILE event: %s\n", event.mString.c_str()); 
-        */
+      case MOVIE_LOG_TO_FILE:
+        DEBUGMSG("MOVIE_LOG_TO_FILE event: %s\n", event.mString.c_str()); 
+        enableLogging(true, event.mString.c_str());         
       case MOVIE_MESSAGE:
         DEBUGMSG("MOVIE_MESSAGE event: %s\n", event.mString.c_str()); 
         break; 
