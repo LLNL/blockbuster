@@ -1116,35 +1116,28 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
         /* Compute next targetted swap time */
         nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
       }
-      dbprintf(5, "check to swap buffers\n"); 
-      if ( 1 ) {
-        /* ( swapBuffers == true ||
-           frameNumber != previousFrame ||
-           currentZoom != oldZoom ||
-           oldXOffset != xOffset ||
-           oldYOffset != yOffset)  {
-        */
-        renderer->mPreloadFrames = preloadFrames; 
-        renderer->mPlayDirection = playDirection;
-        renderer->mStartFrame = startFrame; 
-        renderer->mEndFrame = endFrame; 
-        renderer->SwapBuffers();
-        if (playDirection && options->speedTest) {
-          cerr << "requesting speedTest of slaves" << endl; 
-          renderer->DMXSpeedTest(); 
-          playDirection = 0; 
-        }
-        /* Give the renderer a chance to preload upcoming images
-         * while the display thread is displaying an image.
-         * (It's too late to preload the current image; that one
-         * will either have to be in the cache, or we'll load it
-         * directly.)
-         * THIS IS ICKY.  But it is going away when I rewrite the cache.  
-         */
-        /* renderer->Preload(frameNumber, preloadFrames, playDirection, 
-           startFrame, endFrame, &roi, lod); 
-        */
+      dbprintf(5, "Swap buffers\n"); 
+      renderer->mPreloadFrames = preloadFrames; 
+      renderer->mPlayDirection = playDirection;
+      renderer->mStartFrame = startFrame; 
+      renderer->mEndFrame = endFrame; 
+      renderer->SwapBuffers();
+      if (playDirection && options->speedTest) {
+        cerr << "requesting speedTest of slaves" << endl; 
+        renderer->DMXSpeedTest(); 
+        playDirection = 0; 
       }
+      /* Give the renderer a chance to preload upcoming images
+       * while the display thread is displaying an image.
+       * (It's too late to preload the current image; that one
+       * will either have to be in the cache, or we'll load it
+       * directly.)
+       * THIS IS ICKY.  But it is going away when I rewrite the cache.  
+       */
+      /* renderer->Preload(frameNumber, preloadFrames, playDirection, 
+         startFrame, endFrame, &roi, lod); 
+      */
+      
       if (frameNumber != previousFrame) {
         renderer->ReportFrameChange(frameNumber);
       }
