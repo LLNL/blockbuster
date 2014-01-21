@@ -169,11 +169,11 @@ FrameListPtr smGetFrameList(const char *filename)
      * the same private data structure.	 The use count for this structure
      * is obviously the number of frames.
      */
-    frameList->targetFPS = sm->getFPS();
-    frameList->stereo = stereo;
+    frameList->mTargetFPS = sm->getFPS();
+    frameList->mStereo = stereo;
 
-    frameList->formatName = "SM";
-    frameList->formatDescription =
+    frameList->mFormatName = "SM";
+    frameList->mFormatDescription =
       "Multiple frames in a shared SM (Streaming Movie) file";
   }
   return frameList;

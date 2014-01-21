@@ -329,7 +329,7 @@ ImagePtr FrameInfo::LoadAndConvertImage(ImageFormat *canvasFormat,
 
 //===============================================================
 void FrameList::GetInfo(int &maxWidth, int &maxHeight, int &maxDepth,
-                        int &maxLOD, float &fps){
+                        int &maxLOD, float &targetFPS){
   maxWidth = maxHeight = maxDepth = maxLOD = 0; 
   for (uint32_t i = 0; i < mFrames.size(); i++) {
     FrameInfoPtr frameInfoPtr = mFrames[i]; 
@@ -339,7 +339,7 @@ void FrameList::GetInfo(int &maxWidth, int &maxHeight, int &maxDepth,
     maxLOD = MAX2((uint32_t)maxLOD, frameInfoPtr->mMaxLOD);
   }
   
-  fps = targetFPS;
+  targetFPS = mTargetFPS;
   return; 
 }
 //===============================================================
@@ -431,20 +431,35 @@ bool FrameList::LoadFrames(QStringList &files) {
          * frames.  
          */
         DEBUGMSG(QString("Matched format '%1' with file '%2'").
-                 arg(frameListFromFile->formatName).arg(matchedFileName));
+                 arg(frameListFromFile->mFormatName).arg(matchedFileName));
         /* This operation will dump more information about the
          * matched frames, and will destroy frameListFromFile
          */
         //allFrames = AppendFrameList(allFrames, frameListFromFile);
         append(frameListFromFile); 
-        if (i==0) stereo = frameListFromFile->stereo; 
-      }
+        if (i==0) {
+          DEBUGMSG(QString("Using FPS and stereo settings from first file '%1'").
+                   arg(matchedFileName));
+          mStereo = frameListFromFile->mStereo; 
+          mTargetFPS = frameListFromFile->mTargetFPS; 
+          mWidth =frameListFromFile->mWidth; 
+          mHeight = frameListFromFile->mHeight; 
+          mDepth = frameListFromFile->mDepth; 
+        } else if (frameListFromFile->mWidth != mWidth || 
+                  frameListFromFile->mHeight != mHeight || 
+                  frameListFromFile->mDepth != mDepth ) {
+          ERROR(QString("Error: dimensions of file \"%1\" does not match with previous files in file set.").
+                arg(matchedFileName));
+          return false; 
+        }
+     }
       else {
         /* No format was able to open the file.  Give an error. */
-        ERROR(QString("No known format could open the file '%1' - skipping")
+        ERROR(QString("Error: no known format could open the file '%1'")
               .arg(matchedFileName));
+        return false; 
       }
-            
+      
     } /* loop scanning all file names that match a single argument */
     
     /* Done with this argument; free up the matching file list and

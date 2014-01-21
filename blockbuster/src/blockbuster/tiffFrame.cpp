@@ -384,10 +384,10 @@ FrameListPtr tiffGetFrameList(const char *filename) {
   if (!frameList) {
     ERROR("cannot allocate FrameInfo list structure");
   }
-  frameList->targetFPS = 0.0;
+  frameList->mTargetFPS = 0.0;
 
-  frameList->formatName = "TIFF";
-  frameList->formatDescription = "Single-frame image in a TIFF file";
+  frameList->mFormatName = "TIFF";
+  frameList->mFormatDescription = "Single-frame image in a TIFF file";
 
   return frameList;
 }

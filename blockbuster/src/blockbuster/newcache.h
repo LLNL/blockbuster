@@ -27,7 +27,7 @@ class DecompressorThread {
 }; 
 
 class FrameCache {
-  FrameCache(int numthreads, int numimages, ImageFormat &required);
+  FrameCache(int numthreads, FrameListPtr fl, ImageFormat &required);
   ~FrameCache(); 
   
   ImagePtr GetImage(uint32_t frameNumber,

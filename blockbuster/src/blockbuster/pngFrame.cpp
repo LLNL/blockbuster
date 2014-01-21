@@ -364,10 +364,10 @@ FrameListPtr pngGetFrameList(const char *filename)
     
     /* Fill out the final return form, and call it a day */
     frameList->append(frameInfo);
-    frameList->targetFPS = 0.0;
+    frameList->mTargetFPS = 0.0;
     
-    frameList->formatName = "PNG"; 
-    frameList->formatDescription = "Single-frame image in a PNG file"; 
+    frameList->mFormatName = "PNG"; 
+    frameList->mFormatDescription = "Single-frame image in a PNG file"; 
   }
   return frameList;
 }

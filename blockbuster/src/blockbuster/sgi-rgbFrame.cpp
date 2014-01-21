@@ -346,9 +346,9 @@ FrameListPtr sgirgbGetFrameList(const char *filename)
 
   /* Fill out the final return form, and call it a day */
   frameList->append(frameInfo);
-  frameList->targetFPS = 0.0;
-  frameList->formatName = "SGI RGB";
-  frameList->formatDescription = "Single-frame image in an SGI RGB file";
+  frameList->mTargetFPS = 0.0;
+  frameList->mFormatName = "SGI RGB";
+  frameList->mFormatDescription = "Single-frame image in an SGI RGB file";
   return frameList;
 }
 

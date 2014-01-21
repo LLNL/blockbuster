@@ -190,7 +190,7 @@ void x11Renderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
          destX, destY, zoom, lod);
 #endif
     
-  if (mFrameList->stereo) {
+  if (mFrameList->mStereo) {
     localFrameNumber = frameNumber *2; /* we'll display left frame only */
   }
   else {

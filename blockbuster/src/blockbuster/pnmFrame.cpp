@@ -1559,10 +1559,10 @@ FrameListPtr pnmGetFrameList(const char *filename)
 
   /* Fill out the final return form, and call it a day */
   frameList->append(frameInfo);
-  frameList->targetFPS = 0.0;
+  frameList->mTargetFPS = 0.0;
 
-  frameList->formatName = "PNM"; 
-  frameList->formatDescription = "Single-frame image in a PNM (PBM/PGM/PPM) file"; 
+  frameList->mFormatName = "PNM"; 
+  frameList->mFormatDescription = "Single-frame image in a PNM (PBM/PGM/PPM) file"; 
   return frameList;
 }
 

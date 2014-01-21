@@ -774,17 +774,17 @@ int main(int argc, char *argv[])
       // auto-switch stereo based on detected movie type     
       if (opt->rendererName != "dmx") { 
         // No DMX: switch frontend renderer as needed
-        if ((allFrames->stereo && opt->rendererName != "gl_stereo")) {
+        if ((allFrames->mStereo && opt->rendererName != "gl_stereo")) {
           opt->rendererName = "gl_stereo";
         }
-        if (!allFrames->stereo && opt->rendererName == "gl_stereo") {
+        if (!allFrames->mStereo && opt->rendererName == "gl_stereo") {
           opt->rendererName = "gl";
         }
       } else { // DMX case: switch backend renderer as needed
-        if ((allFrames->stereo && opt->backendRendererName != "gl_stereo")) {
+        if ((allFrames->mStereo && opt->backendRendererName != "gl_stereo")) {
           opt->backendRendererName = "gl_stereo";
         }
-        if (!allFrames->stereo && opt->backendRendererName == "gl_stereo") {
+        if (!allFrames->mStereo && opt->backendRendererName == "gl_stereo") {
           opt->backendRendererName = "gl";
         }
       }

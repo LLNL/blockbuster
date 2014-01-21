@@ -64,7 +64,7 @@ endif
 # this builds against Qt debuglibraries, which seems to break the auto-signal mechanism...
 #DEBUG_QT  = yes
 
-export OPT += -g -Wl,-rpath,$(shell cat $(INSTALL_DIR)/lib/BOOST_DIR)/lib
+# export OPT += -g -Wl,-rpath,$(shell cat $(INSTALL_DIR)/lib/BOOST_DIR)/lib
 
 ifdef DEBUG
 DEBUG_QT = CONFIG += debug 

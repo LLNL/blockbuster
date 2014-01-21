@@ -141,7 +141,7 @@ void Renderer::Preload(uint32_t frameNumber,
   lodROI.height = imageRegion->height >> levelOfDetail;
   
   
-  if(mFrameList->stereo) {
+  if(mFrameList->mStereo) {
     localFrameNumber = frameNumber * 2;
     mCache->PreloadImage( localFrameNumber++,
                           &lodROI, levelOfDetail);
@@ -202,7 +202,7 @@ void Renderer::WriteImageToFile(int frameNumber)
   uint32_t localFrameNumber = 0;
 
   /* explicitly use localFrameNumber as a reminder that we may be dealing with stereo movies */
-  if(mFrameList->stereo) {
+  if(mFrameList->mStereo) {
     localFrameNumber = frameNumber * 2;
 	
   }
@@ -308,7 +308,7 @@ FrameInfoPtr Renderer::GetFrameInfoPtr(int frameNumber)
   /* Assumes we have a valid FrameListPtr */
   int localFrameNumber = 0;
 
-  if(mFrameList->stereo) {
+  if(mFrameList->mStereo) {
 	localFrameNumber = frameNumber * 2;
 	
   }

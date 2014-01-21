@@ -36,6 +36,7 @@ dmxRenderer::dmxRenderer(ProgramOptions *opt, Window parentWindow,
   mAllowIdleSlaves(true), 
   mNumActiveSlaves(0), mSlavesReady(false),
   mHaveDMX(0) {
+  this->FinishInit(); 
 
   return; 
 } 

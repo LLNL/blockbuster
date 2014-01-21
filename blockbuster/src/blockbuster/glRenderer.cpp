@@ -142,7 +142,7 @@ void glRenderer::RenderActual(int frameNumber,
   /*
    * Compute possibly reduced-resolution image region to display.
    */
-  if (mFrameList->stereo) {
+  if (mFrameList->mStereo) {
     localFrameNumber = frameNumber *2; /* we'll display left frame only */
   }
   else {
@@ -300,13 +300,13 @@ void glStereoRenderer::RenderActual(int frameNumber,
            imageRegion->x, imageRegion->y,
            imageRegion->width, imageRegion->height,
            destX, destY, zoom, lod, 
-           (int)(mFrameList->stereo));
+           (int)(mFrameList->mStereo));
   
   /*
    * Compute possibly reduced-resolution image region to display.
    */
  
-  if (mFrameList->stereo) {
+  if (mFrameList->mStereo) {
     localFrameNumber = frameNumber *2; 
     /* start with left frame*/
     glDrawBuffer(GL_BACK_LEFT);
@@ -416,7 +416,7 @@ void glStereoRenderer::RenderActual(int frameNumber,
   glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
   
    
-  if(mFrameList->stereo) {
+  if(mFrameList->mStereo) {
     glDrawBuffer(GL_BACK_RIGHT);
     localFrameNumber++;
     
@@ -618,7 +618,7 @@ void glTextureRenderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
   UpdateProjectionAndViewport(mWidth, mHeight);
   glEnable(GL_TEXTURE_2D);
   
-  if (mFrameList->stereo) {
+  if (mFrameList->mStereo) {
     localFrameNumber = frameNumber *2; /* we'll display left frame only */
   }
   else {

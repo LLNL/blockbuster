@@ -163,7 +163,6 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
   /* Insert splash screen code here. 
    */
 
-
   allFrames->GetInfo(maxWidth, maxHeight, maxDepth, maxLOD, targetFPS);
   if (options->frameRate != 0.0) targetFPS = options->frameRate; 
   options->frameRate = targetFPS; 
@@ -742,11 +741,11 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
           preloadFrames = MIN2(options->preloadFrames, static_cast<int32_t>(allFrames->numStereoFrames()));
         }
         if (!options->stereoSwitchDisable) {
-          if ((allFrames->stereo && options->rendererName != "gl_stereo") ||
-              (!allFrames->stereo && options->rendererName == "gl_stereo"))
+          if ((allFrames->mStereo && options->rendererName != "gl_stereo") ||
+              (!allFrames->mStereo && options->rendererName == "gl_stereo"))
             {
               cerr << "toggle stereo automatically"<< endl; 
-              event.mNumber = (!allFrames->stereo); 
+              event.mNumber = (!allFrames->mStereo); 
               goto MOVIE_SET_STEREO;          
             }
         } 

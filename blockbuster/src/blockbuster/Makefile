@@ -71,7 +71,7 @@ endif
 $(warning QMAKE is $(QMAKE))
 
 # no matter what, this is a good idea:
-export OPT += -g -Wl,-rpath,$(shell cat $(INSTALL_DIR)/lib/BOOST_DIR)/lib
+# export OPT += -g -Wl,-rpath,$(shell cat $(INSTALL_DIR)/lib/BOOST_DIR)/lib
 ifdef GPROF
 export OPT = -g -pg
 endif

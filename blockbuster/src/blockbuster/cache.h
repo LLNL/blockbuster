@@ -32,7 +32,6 @@ typedef boost::shared_ptr<class CacheThread> CacheThreadPtr;
 typedef boost::shared_ptr<struct ImageCacheJob> ImageCacheJobPtr; 
 
 struct ImageCacheJob {
-  // ImageCacheJob(): frameNumber(0), levelOfDetail(0), requestNumber(0) {}
   ImageCacheJob(uint32_t frame, const Rectangle *reg, 
                 uint32_t  lod, uint32_t reqnum, FrameInfoPtr fInfo): 
     frameInfo(fInfo), frameNumber(frame), region(*reg),  

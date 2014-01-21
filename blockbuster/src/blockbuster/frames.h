@@ -225,6 +225,7 @@ typedef boost::shared_ptr<struct FrameList> FrameListPtr;
  * This structure basically represents a movie.
  * Since a FrameList also contains FrameInfos, which are Cache elements, 
  * it subclasses from ImageCacheElementManager. 
+ * All Frames in a FrameList have the same width, height, depth and LOD
  */
 struct FrameList {
   // ----------------------------------------------------
@@ -268,8 +269,8 @@ struct FrameList {
 
   // ----------------------------------------------------
   void init(void) {
-    stereo = false; 
-    targetFPS = 30.0;
+    mStereo = false; 
+    mTargetFPS = 30.0;
   }
 
   // ----------------------------------------------------
@@ -284,7 +285,7 @@ struct FrameList {
 
   // ----------------------------------------------------
   uint32_t numStereoFrames(void) const {
-    if (stereo) return mFrames.size()/2; 
+    if (mStereo) return mFrames.size()/2; 
     return mFrames.size(); 
   }
 
@@ -293,7 +294,7 @@ struct FrameList {
 
   // ----------------------------------------------------
   void GetInfo(int &maxWidth, int &maxHeight, int &maxDepth,
-               int &maxLOD, float &fps);
+               int &maxLOD, float &targetFPS);
 
   // ----------------------------------------------------
   void append(FrameListPtr other) {
@@ -319,10 +320,10 @@ struct FrameList {
   void ReleaseFramesFromCache(void) ;
 
   // ----------------------------------------------------
-  bool stereo;
-  float targetFPS;      /* desired/target frames/second playback rate */
-  QString formatName, formatDescription; 
-
+  bool mStereo;
+  float mTargetFPS;      /* desired/target frames/second playback rate */
+  QString mFormatName, mFormatDescription; 
+  int mWidth, mHeight, mDepth, mLOD; 
   vector<FrameInfoPtr> mFrames; 
   
  }; 
