@@ -5,6 +5,7 @@
 *.tmp
 *.core
 ../*/
+.#*
 \#*
 src/config/debug
 Makefile.qt.include

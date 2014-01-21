@@ -672,7 +672,10 @@ int main(int argc, char *argv[])
   //   smBase::init(opt->readerThreads); 
 
 
-  /* count the remaining newargs and treat them as files */ 
+  /*
+    Treat the remaining newargs as files. 
+    The way this SHOULD work is for the filenames to be given to the renderer instead of a frame list being generated outside and managed here.  
+  */ 
   FrameListPtr allFrames;
   
   printargs("Before framelist", newargs, newargc); 
@@ -689,7 +692,7 @@ int main(int argc, char *argv[])
     gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
     exit(1);
   } 
-
+ 
   /* If we still don't have any frames to display, and we need some
    * (i.e. we're not a slave), give the user interface one last
    * chance to supply us with some frames.
@@ -751,10 +754,7 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
-  /* Here we have a master frame list.  We can do all the nifty
-   * things we want to now.  Start by creating a window and an
-   * XImage, matching as closely as we can the height, width, and
-   * depth discovered in our list of frames.
+  /* Here we have a master frame list. 
    */
   if (opt->slaveMode) {
     /* The slave doesn't need frames - it will get the list from the master */

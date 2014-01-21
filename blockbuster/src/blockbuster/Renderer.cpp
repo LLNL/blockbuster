@@ -51,8 +51,9 @@ Renderer * Renderer::CreateRenderer(ProgramOptions *opt,
           arg(opt->rendererName)); 
     exit(1); 
   }
-  // this has to be called after ChooseVisual() has been called
-  renderer->FinishInit(opt); 
+
+  /* all renderers need to have this called polymorphically */  
+  renderer->FinishInit(); 
   return renderer;
   
 }
@@ -93,16 +94,15 @@ Renderer::Renderer(ProgramOptions *opt, qint32 parentWindowID,
 
   opt->mRenderer = this; // ugh -- this needs to be fixed! 
   DEBUGMSG(QString("frameCacheSize is %1").arg(mCacheSize));    
-
   return; 
 } 
 
 // ======================================================================
-void Renderer::FinishInit(ProgramOptions *opt) {
+void Renderer::FinishInit(void) {
   ECHO_FUNCTION(5); 
   mVisInfo = ChooseVisual(); 
-  FinishXWindowInit(opt); 
-  FinishRendererInit(opt); 
+  FinishXWindowInit(); 
+  FinishRendererInit(); 
   mCache.reset(new ImageCache(mOptions->readerThreads,
                               mOptions->mMaxCachedImages, mRequiredImageFormat));
   return;
@@ -484,11 +484,11 @@ void Renderer::reportMovieCueComplete(void){
 // BEGIN stuff from XWindow (all public): 
 // ==============================================================
 // ==============================================================
-void Renderer::FinishXWindowInit(ProgramOptions *options) {
+void Renderer::FinishXWindowInit(void) {
   ECHO_FUNCTION(5); 
-  const Rectangle *geometry = &options->geometry;
-  int decorations = options->decorations;
-  QString suggestedName = options->suggestedTitle;
+  const Rectangle *geometry = &mOptions->geometry;
+  int decorations = mOptions->decorations;
+  QString suggestedName = mOptions->suggestedTitle;
   Screen *screen;
   int x, y, width, height;
   int required_x_margin, required_y_margin;
@@ -629,10 +629,10 @@ void Renderer::FinishXWindowInit(ProgramOptions *options) {
    * window.
    */
   mFontInfo = XLoadQueryFont(mDisplay, 
-                             options->fontName.toAscii());
+                             mOptions->fontName.toAscii());
   if (!mFontInfo) {
     QString warning("Couldn't load font %s, trying %s");
-    WARNING(warning.arg(options->fontName).arg(DEFAULT_X_FONT));
+    WARNING(warning.arg(mOptions->fontName).arg(DEFAULT_X_FONT));
     
     mFontInfo = XLoadQueryFont(mDisplay,
                                DEFAULT_X_FONT);

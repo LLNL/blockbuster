@@ -6,11 +6,12 @@
    The read buffer is a contiguous chunk of memory read straight from disk.  
    Need to track first frame an
 */ 
-typedef boost::shared_ptr<struct IOBuffer> IOBufferPtr; 
-struct IOBuffer {
+typedef boost::shared_ptr<struct MovieBuffer> MovieBufferPtr; 
+struct MovieBuffer {
   int mLOD; 
   int mFirstFrame; 
   int mNumFrames; 
+  vector<int64_t> mRawOffsets; 
   boost::shared_ptr<char> mRawBytes; 
   boost::shared_ptr<char> mDecompressedFrames; 
 }; 

@@ -43,16 +43,16 @@ class Renderer {
   } 
   
   // ======================================================================
-  void FinishInit(ProgramOptions *opt);
+  void FinishInit(void);
   
   // ======================================================================
-  virtual void FinishRendererInit(ProgramOptions *opt) =0; 
+  virtual void FinishRendererInit(void) =0; 
   
   // ======================================================================
   // the following depend on whether DMX is being used: 
   virtual void DestroyImageCache(void)
   {
-    mCache.reset(); 
+    mCache.reset(); // reset the boost smart pointer
     return; 
   }
 
@@ -85,7 +85,7 @@ class Renderer {
 
  // ======================================================================
   virtual void SetFrameList(FrameListPtr frameList) ;
-    
+  
  // ======================================================================
   // from Canvas class 
   virtual void Preload(uint32_t frameNumber,
@@ -174,7 +174,7 @@ class Renderer {
     return  pureC_x11ChooseVisual(mDisplay,  mScreenNumber);
   }
     
-  void FinishXWindowInit(ProgramOptions *opt); 
+  void FinishXWindowInit(void); 
 
   virtual void DrawString(int row, int column, const char *str)=0;  
   virtual void SwapBuffers(void)=0;

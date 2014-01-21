@@ -13,7 +13,7 @@ class glRenderer: public Renderer {
   glRenderer(ProgramOptions *opt,  Window parentWindow,
              BlockbusterInterface *gui, QString name="gl");
 
-  virtual void FinishRendererInit(ProgramOptions *opt);
+  virtual void FinishRendererInit(void);
   virtual ~glRenderer() ;
 
   virtual XVisualInfo *ChooseVisual(void);  

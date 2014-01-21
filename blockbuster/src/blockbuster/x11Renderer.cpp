@@ -19,7 +19,7 @@ x11Renderer::x11Renderer(ProgramOptions *opt, Window parentWindow,
   return; 
 }
 
-void x11Renderer::FinishRendererInit(ProgramOptions *) {
+void x11Renderer::FinishRendererInit(void) {
   ECHO_FUNCTION(5);
    
   /* This graphics context and font will be used for rendering status messages,

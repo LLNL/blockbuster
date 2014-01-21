@@ -13,7 +13,7 @@ class x11Renderer: public Renderer {
  public:
   x11Renderer(ProgramOptions *opt, Window parentWindow, 
               BlockbusterInterface *gui, QString name="x11");
-  virtual void FinishRendererInit(ProgramOptions *opt);
+  virtual void FinishRendererInit(void);
 
   virtual ~x11Renderer() ;
   

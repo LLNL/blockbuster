@@ -181,7 +181,7 @@ class dmxRenderer: public QObject, public Renderer {
   dmxRenderer(ProgramOptions *opt, Window parentWindow, 
               BlockbusterInterface *gui, QString name = "dmx");
   
-  virtual void FinishRendererInit(ProgramOptions *);
+  virtual void FinishRendererInit(void);
   virtual ~dmxRenderer(); 
 
   // DMX SPECIFIC STUFF from Canvas: 

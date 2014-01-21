@@ -40,7 +40,7 @@ glRenderer::glRenderer(ProgramOptions *opt, Window parentWindow,
   return; 
 }
 
-void glRenderer::FinishRendererInit(ProgramOptions *) {
+void glRenderer::FinishRendererInit(void) {
   // from glFinishInitialization: 
   Bool rv;
   Font id = mFontInfo->fid;

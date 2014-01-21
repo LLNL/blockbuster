@@ -286,5 +286,6 @@ rm -f test
 ln -s $version test
 popd
 echo "Done.  Tarball is $builddir/blockbuster-v${version}.tgz.  To use the new version, type \"use asciviz-test\""
+ln -s $builddir/blockbuster-v${version}.tgz $installdir/blockbuster-v${version}.tgz
 exit 0
 
