@@ -76,6 +76,63 @@ bool jobComparer(const ImageCacheJobPtr first, const ImageCacheJobPtr second){
 }
 
 
+//=============================================================
+ImageCacheJobPtr  FindJobInQueue(deque<ImageCacheJobPtr> &queue,  
+                                 unsigned int frameNumber,
+                                 const Rectangle *region,
+                                 unsigned int levelOfDetail) {
+  deque<ImageCacheJobPtr>::iterator pos = queue.begin(), endpos = queue.end(); 
+  while (pos != endpos) {
+    if ((*pos)->frameNumber == frameNumber &&
+        (*pos)->levelOfDetail == levelOfDetail) {
+      if (region == NULL || RectContainsRect(&(*pos)->region, region)) {
+        return *pos;
+      } 
+    }
+    ++pos; 
+  }
+  return ImageCacheJobPtr();  
+}
+
+//=============================================================
+void RemoveJobFromQueue(deque<ImageCacheJobPtr> &queue, ImageCacheJobPtr job) {
+  deque<ImageCacheJobPtr>::iterator pos = queue.begin(), endpos = queue.end(); 
+  while (pos != endpos) {
+    if (*pos == job) {
+      queue.erase(pos); 
+      return; 
+    }
+    ++pos; 
+  }
+  ERROR("Attempted to remove nonexistent job from queue!"); 
+  return; 
+}
+
+/*!
+  You probably want to call the macro, PrintJobQueue(q)
+*/
+#define PrintJobQueue(q) __PrintJobQueue(#q,q)
+void __PrintJobQueue(QString name, deque<ImageCacheJobPtr>&q) {
+  deque<ImageCacheJobPtr>::iterator pos = q.begin(), endpos = q.end(); 
+  CACHEDEBUG(QString(" deque<ImageCacheJob *>%1 (length %2): ").arg(name).arg(q.size())); 
+  while (pos != endpos){
+    CACHEDEBUG((*pos)->toString()); 
+    ++pos; 
+  }
+  return; 
+}
+
+// ======================================================================
+void CacheThread::ResetImages(uint32_t numimages) {
+  mCachedImages.clear(); 
+  mCachedImages.resize(numimages); 
+  for (uint32_t i = 0; i < numimages; i++) {
+    mCachedImages[i].reset(new CachedImage()); 
+  }
+  return; 
+}
+
+
 // ======================================================================
 /* This is the work function, which is used by child threads to 
  * "asynchronously" load images from disk.  Not used in single-threaded case. 
@@ -96,7 +153,7 @@ void CacheThread::run() {
      * we're the only ones trying to do so at this particular
      * momemt, so grab the mutex.
      */
-    mCache->lock("check for job in work queue", __FILE__, __LINE__);
+    lock("check for job in work queue", __FILE__, __LINE__);
             
     /* Wait for a job to appear on the work queue (which we can do
      * because we currently hold the mutex for the queue).  This is
@@ -105,32 +162,32 @@ void CacheThread::run() {
      * up on the work ready condition, but one has already grabbed the
      * work).
      */
-    while (! mCache->mJobQueue.size()) {
+    while (! mJobQueue.size()) {
       /* Wait for work ready condition to come in. */
-      mCache->WaitForJobReady("no job in work queue yet", __FILE__, __LINE__); 
+      WaitForJobReady("no job in work queue yet", __FILE__, __LINE__); 
       if (mStop) {
         CACHEDEBUG("Thread %p terminating", QThread::currentThread()); 
         UnregisterThread(this); 
-        mCache->unlock("thread is dying", __FILE__, __LINE__); 
+        unlock("thread is dying", __FILE__, __LINE__); 
         return; 
       }
     }
     // take the job from head of the queue: 
-    job = mCache->mJobQueue.at(0); 
+    job = mJobQueue.at(0); 
     CACHEDEBUG("Worker moving job %d from job queue to pending cue", job->frameNumber); 
-    mCache->mJobQueue.pop_front(); 
-    mCache->PrintJobQueue(mCache->mJobQueue); 
+    mJobQueue.pop_front(); 
+    PrintJobQueue(mJobQueue); 
 
 	/* Add the job removed from the job queue to the pending queue,
 	 * so that the main thread can tell the job is in progress.
 	 */
-    mCache->mPendingQueue.push_back(job); 
-    mCache->PrintJobQueue(mCache->mPendingQueue); 
+    mPendingQueue.push_back(job); 
+    PrintJobQueue(mPendingQueue); 
 	/* We don't need the mutex (or the cancellation function) any more;
 	 * this call will both clear the cancellation function, and cause
 	 * it to be called to unlock the mutex, more or less simultaneously.
 	 */
-    mCache->unlock("found job and added to pending queue", __FILE__, __LINE__); 
+    unlock("found job and added to pending queue", __FILE__, __LINE__); 
 
 	/* Do the work.  Note that this function could cause warning and
 	 * error output, and could still return an empty ImagePtr.  Even if an
@@ -147,11 +204,11 @@ void CacheThread::run() {
 	 * modifying caches and queues.  We always will have to remove
 	 * the job from the PendingQueue.
 	 */
-    mCache->lock("finished job, updating queues", __FILE__, __LINE__); 
+    lock("finished job, updating queues", __FILE__, __LINE__); 
 
     CACHEDEBUG("RemoveJobFromPendingQueue frame %d", job->frameNumber); 
-	mCache->RemoveJobFromPendingQueue(job);
-    mCache->PrintJobQueue(mCache->mPendingQueue);
+	RemoveJobFromQueue(mPendingQueue, job);
+    PrintJobQueue(mPendingQueue);
 
 	/* First see if this request has been invalidated (because the
 	 * main thread changed the frame list while we were working).
@@ -163,7 +220,7 @@ void CacheThread::run() {
        * and go home.  We don't need to send an indicator to
        * anyone; the main thread doesn't care.
        */
-      mCache->unlock("useless job", __FILE__, __LINE__); 
+      unlock("useless job", __FILE__, __LINE__); 
       if (image) {
         image.reset();
       }
@@ -176,12 +233,12 @@ void CacheThread::run() {
        * the error queue (which the main thread will
        * check) and signal that the job is done.
        */
-      mCache->mErrorQueue.push_back(job); 
-      mCache->PrintJobQueue(mCache->mErrorQueue);
-      mCache->unlock("error in job", __FILE__, __LINE__); 
-      mCache->WakeAllJobDone("error in job",__FILE__, __LINE__); 
+      mErrorQueue.push_back(job); 
+      PrintJobQueue(mErrorQueue);
+      unlock("error in job", __FILE__, __LINE__); 
+      WakeAllJobDone("error in job",__FILE__, __LINE__); 
 	}
-	else if (!(imageSlot = mCache->GetCachedImageSlot(job->frameNumber))) {
+	else if (!(imageSlot = GetCachedImageSlot(job->frameNumber))) {
       CACHEDEBUG("No place to put job frame %d!", job->frameNumber); 
       /* We have an image, but no place to put it.  This
        * is an error as well, that the main thread has
@@ -189,11 +246,11 @@ void CacheThread::run() {
        * already been reported by here, so we don't
        * have to report another one.
        */
-      mCache->mErrorQueue.push_back(job); 
-      mCache->PrintJobQueue(mCache->mErrorQueue);
+      mErrorQueue.push_back(job); 
+      PrintJobQueue(mErrorQueue);
 
-      mCache->unlock("no place for job", __FILE__, __LINE__); 
-      mCache->WakeAllJobDone("no place for job",__FILE__, __LINE__);    
+      unlock("no place for job", __FILE__, __LINE__); 
+      WakeAllJobDone("no place for job",__FILE__, __LINE__);    
       image.reset();
 	}
 	else {
@@ -208,8 +265,8 @@ void CacheThread::run() {
       imageSlot->loaded = 1;
       imageSlot->requestNumber = job->requestNumber;
 
-      mCache->unlock("job success", __FILE__, __LINE__);
-      mCache->WakeAllJobDone("job success", __FILE__, __LINE__); 
+      unlock("job success", __FILE__, __LINE__);
+      WakeAllJobDone("job success", __FILE__, __LINE__); 
  
       /* Fairness among threads is greatly improved by yielding here.
        * Without this, threads can frequently starve for a while and
@@ -225,77 +282,6 @@ void CacheThread::run() {
   return; 
 }
 
-//==================================================================
-ImageCache::ImageCache(int numthreads, int numimages, ImageFormat &required): 
-  mNumReaderThreads(numthreads), mMaxCachedImages(numimages), 
-  mRequiredImageFormat(required), mRequestNumber(0), 
-  mValidRequestThreshold(0), 
-  mCachedImages(numimages), 
-  /*mHighestFrameNumber(0),*/ mPreloadFrames(0),  mCurrentPlayDirection(0),
-  mCurrentStartFrame(0),  mCurrentEndFrame(0) {
-  CACHEDEBUG("ImageCache constructor"); 
-  
-  register int i;
-  CACHEDEBUG("CreateImageCache(mNumReaderThreads = %d, mMaxCachedImages = %d)", mNumReaderThreads, mMaxCachedImages);
-  
-  for (i = 0; i < mMaxCachedImages; i++) {
-    mCachedImages[i].reset(new CachedImage()); 
-  }
-  if (mNumReaderThreads > 0) {
-    
-    /* Now create the threads.  If we fail to create a thread, we can still
-     * continue with fewer threads or with none (in the single-threaded case).
-     */
-    for (i = 0; i < mNumReaderThreads; i++) {
-      mThreads.push_back(CacheThreadPtr(new CacheThread(this))); 
-      mThreads[i]->start(); 
-    }
-  }
-  
-  return;
-}
-
-// ======================================================================
-ImageCache::~ImageCache() {
-  /* If we have reader threads, we have to clear the cache
-   * work queue and cancel all the reader threads.
-   */
-  CACHEDEBUG("DestroyImageCache");
-  if (mNumReaderThreads > 0) {
-	register int i;
-    
-	/* Clear the work queue so no more work is taken up */
-
-	ClearJobQueue();
-
-	/* Cancel all the threads, stopping all the work being done */
-    CACHEDEBUG("Canceling %d threads", mNumReaderThreads);
-    for (i = 0; i < mNumReaderThreads; i++) {
-      CACHEDEBUG("terminating thread %d", i);
-      // mThreads[i]->terminate(); 
-      mThreads[i]->stop();  // more gentle;  give up mutexes, etc. 
-    }
-    
-    for (i = 0; i < mNumReaderThreads; i++) {
-      mThreads[i]->wait();    
-	}
-    for (i = 0; i < mNumReaderThreads; i++) {
-      mThreads[i].reset(); 
-    }
-    mThreads.clear(); 
-    
-	/* Clear the remaining queues */
-    ClearQueue(mPendingQueue);
-	ClearQueue(mErrorQueue);
-
-  }
-    
-  /* Any images in the cache must be released */
-  ClearImages();
-
-  return; 
-}
-
 // ======================================================================
 /*
  * Allocate a cache slot.  If the cache is full, an existing frame will have
@@ -304,7 +290,7 @@ ImageCache::~ImageCache() {
  * insert into the cache.  We use this to determine which entry to discard
  * if the cache is full.
  */
-CachedImagePtr ImageCache::GetCachedImageSlot(uint32_t newFrameNumber)
+CachedImagePtr CacheThread::GetCachedImageSlot(uint32_t newFrameNumber)
 {
   CachedImagePtr imageSlot;
 #ifdef NEW_CACHE
@@ -342,7 +328,7 @@ CachedImagePtr ImageCache::GetCachedImageSlot(uint32_t newFrameNumber)
       }
     }
     ERROR("image cache is full, with all %d images locked",
-          mMaxCachedImages);
+          mCachedImages.size());
     return imageSlot;
   }
     
@@ -360,42 +346,133 @@ CachedImagePtr ImageCache::GetCachedImageSlot(uint32_t newFrameNumber)
 
   return imageSlot;
 }
+
+// ======================================================================
+/*
+ * Evalute the "distance" between two frame numbers and return a score.
+ * The higher the score, the farther apart the frames are in sequence.
+ * In cache replacement, we'll use the highest score to determine the victim.
+ */
+unsigned int CacheThread::Distance(unsigned int oldFrame, unsigned int newFrame)
+{
+  int totalFrames = mCache->mCurrentEndFrame - mCache->mCurrentStartFrame + 1; 
+  if (oldFrame > newFrame) {
+    /* wrap-around; use modular/ring/clock arithmetic */
+    unsigned int d1 = oldFrame - newFrame;
+    unsigned int d2 = newFrame + totalFrames - oldFrame;
+    return MIN2(d1, d2);
+  }
+  else {
+    return newFrame - oldFrame;
+  }
+}
+
+// ======================================================================
+/* For debugging */
+void CacheThread::Print(string description)
+{
+
+  if (!cacheDebug) return; 
+
+  register uint32_t  i=0, minframe = 1000*1000*1000, maxframe = 0;
+  QString msg; 
+  CACHEDEBUG("%s: Printing cache state.", description.c_str()); 
+  for (vector<CachedImagePtr>::iterator cachedImage = mCachedImages.begin(); 
+       cachedImage != mCachedImages.end();  cachedImage++, i++) {
+    msg = QString("%1:  Slot %2: frame:%3 lod:%4  req:%5  ")
+      .arg(description.c_str())
+      .arg( i)
+      .arg((*cachedImage)->frameNumber)
+      .arg((*cachedImage)->levelOfDetail)
+      .arg((*cachedImage)->requestNumber);
+    if ((*cachedImage)->image) {
+      msg += QString("roi:%1").arg((*cachedImage)->image->loadedRegion.toString()); 
+    }
+    if (minframe > (*cachedImage)->frameNumber) {
+      minframe = (*cachedImage)->frameNumber;
+    }
+    if (maxframe < (*cachedImage)->frameNumber) {
+      maxframe = (*cachedImage)->frameNumber;
+    }
+    CACHEDEBUG(msg); 
+  }
+  CACHEDEBUG("mHighest = %d, minframe = %d, maxframe = %d\n", mCache->mHighestFrameNumber, minframe, maxframe); 
+}
+//==================================================================
+ImageCache::ImageCache(int numthreads, int numimages, ImageFormat &required): 
+  mNumReaderThreads(numthreads), mMaxCachedImages(numimages), 
+  mRequiredImageFormat(required), mRequestNumber(0), 
+  mValidRequestThreshold(0), 
+  mHighestFrameNumber(0), mPreloadFrames(0),  mCurrentPlayDirection(0),
+  mCurrentStartFrame(0),  mCurrentEndFrame(0) {
+  CACHEDEBUG("ImageCache constructor"); 
+  
+  register int i;
+  CACHEDEBUG("CreateImageCache(mNumReaderThreads = %d, mMaxCachedImages = %d)", mNumReaderThreads, mMaxCachedImages);
+  
+  int threadImages; 
+  if (mNumReaderThreads > 0) {
+    
+    /* Now create the threads.  If we fail to create a thread, we can still
+     * continue with fewer threads or with none (in the single-threaded case).
+     */
+    for (i = 0; i < mNumReaderThreads; i++) {
+      if (numimages % numthreads > i) {
+        threadImages = numimages/numthreads + 1; 
+      } else {
+        threadImages = numimages/numthreads; 
+      }
+      mThreads.push_back(CacheThreadPtr(new CacheThread(this, threadImages))); 
+      mThreads[i]->start(); 
+    }
+  }
+  
+  return;
+}
+
+// ======================================================================
+ImageCache::~ImageCache() {
+  /* If we have reader threads, we have to clear the cache
+   * work queue and cancel all the reader threads.
+   */
+  CACHEDEBUG("DestroyImageCache");
+  if (mNumReaderThreads > 0) {
+	register int i;
+    
+	/* Clear the work queue so no more work is taken up */
+    ClearJobQueues(); 
+
+	/* Cancel all the threads, stopping all the work being done */
+    CACHEDEBUG("Canceling %d threads", mNumReaderThreads);
+    for (i = 0; i < mNumReaderThreads; i++) {
+      CACHEDEBUG("terminating thread %d", i);
+      // mThreads[i]->terminate(); 
+      mThreads[i]->stop();  // more gentle;  give up mutexes, etc. 
+    }
+    
+    for (i = 0; i < mNumReaderThreads; i++) {
+      mThreads[i]->wait();    
+	}
+    for (i = 0; i < mNumReaderThreads; i++) {
+      mThreads[i]->mPendingQueue.clear();
+      mThreads[i]->mErrorQueue.clear();
+      mThreads[i].reset(); 
+    }
+    mThreads.clear();     
+
+  }
+    
+  /* Any images in the cache must be released */
+  ClearImages();
+
+  return; 
+}
+
 //=============================================================
 void ImageCache::ClearQueue(deque<ImageCacheJobPtr> &queue) {
   queue.clear(); 
 }
 
-//=============================================================
-ImageCacheJobPtr ImageCache::
-FindJobInQueue(deque<ImageCacheJobPtr> &queue,  unsigned int frameNumber,
-               const Rectangle *region,  unsigned int levelOfDetail) {
-  deque<ImageCacheJobPtr>::iterator pos = queue.begin(), endpos = queue.end(); 
-  while (pos != endpos) {
-    if ((*pos)->frameNumber == frameNumber &&
-        (*pos)->levelOfDetail == levelOfDetail) {
-      if (region == NULL || RectContainsRect(&(*pos)->region, region)) {
-        return *pos;
-      } 
-    }
-    ++pos; 
-  }
-  return ImageCacheJobPtr();  
-}
-
-//=============================================================
-void ImageCache::
-RemoveJobFromQueue(deque<ImageCacheJobPtr> &queue, ImageCacheJobPtr job) {
-  deque<ImageCacheJobPtr>::iterator pos = queue.begin(), endpos = queue.end(); 
-  while (pos != endpos) {
-    if (*pos == job) {
-      queue.erase(pos); 
-      return; 
-    }
-    ++pos; 
-  }
-  ERROR("Attempted to remove nonexistent job from queue!"); 
-  return; 
-}
 //=============================================================
 
 /* This function clears out all images still residing in the image
@@ -407,26 +484,26 @@ void ImageCache::ClearImages(void)
 {
   CACHEDEBUG("ImageCache::ClearImages"); 
   /* Any images in the cache must be released */
-  mCachedImages.clear(); 
-  mCachedImages.resize(mMaxCachedImages); 
-  for (int32_t i = 0; i < mMaxCachedImages; i++) {
-    mCachedImages[i].reset(new CachedImage()); 
+  for (uint32_t i=0; i<mThreads.size(); i++) {
+    mThreads[i]->ResetImages(mMaxCachedImages); 
   }
 
+  return; 
 }
 
-
 //=============================================================
-void ImageCache::ClearJobQueue(void)
+void ImageCache::ClearJobQueues(void)
 {
   /* All pending work jobs must be cancelled */
-  lock("clearJobQueue", __FILE__, __LINE__); 
-  ClearQueue(mJobQueue); 
+  for (uint32_t i = 0; i < mThreads.size(); i++) {
+    mThreads[i]->lock("clearJobQueue", __FILE__, __LINE__); 
+    mThreads[i]->mJobQueue.clear();
+    mThreads[i]->unlock("JobQueue cleared", __FILE__, __LINE__); 
+  }
   /* All pending requests that have a request number below or equal
    * to the threshold will be discarded when complete.
    */
   mValidRequestThreshold = mRequestNumber;
-  unlock("JobQueue cleared", __FILE__, __LINE__); 
   return; 
 }
 
@@ -452,7 +529,7 @@ void ImageCache::ManageFrameList(FrameListPtr frameList)
    * in progress will not enter the image cache.
    */
   if (mNumReaderThreads > 0) {
-    ClearJobQueue();
+    ClearJobQueues();
   }
   gLastFrame = frameList->numActualFrames(); 
 
@@ -483,8 +560,11 @@ CachedImagePtr ImageCache::FindImage(uint32_t frame, uint32_t lod) {
   /* Search the cache to see whether an appropriate image already
    * exists within the cache.
    */
-  for (vector<CachedImagePtr>::iterator cachedImage = mCachedImages.begin(); 
-       cachedImage != mCachedImages.end();  cachedImage++) {
+  uint32_t threadnum = frame % mThreads.size(); 
+  
+  for (vector<CachedImagePtr>::iterator cachedImage = 
+         mThreads[threadnum]->mCachedImages.begin(); 
+       cachedImage != mThreads[threadnum]->mCachedImages.end();  cachedImage++) {
     if ((*cachedImage)->loaded &&
         (*cachedImage)->frameNumber == frame &&
         (*cachedImage)->levelOfDetail == lod) {
@@ -494,26 +574,6 @@ CachedImagePtr ImageCache::FindImage(uint32_t frame, uint32_t lod) {
   }
   
   return CachedImagePtr();
-}
-
-// ======================================================================
-/*
- * Evalute the "distance" between two frame numbers and return a score.
- * The higher the score, the farther apart the frames are in sequence.
- * In cache replacement, we'll use the highest score to determine the victim.
- */
-unsigned int ImageCache::Distance(unsigned int oldFrame, unsigned int newFrame)
-{
-  int totalFrames = mCurrentEndFrame - mCurrentStartFrame + 1; 
-  if (oldFrame > newFrame) {
-    /* wrap-around; use modular/ring/clock arithmetic */
-    unsigned int d1 = oldFrame - newFrame;
-    unsigned int d2 = newFrame + totalFrames - oldFrame;
-    return MIN2(d1, d2);
-  }
-  else {
-    return newFrame - oldFrame;
-  }
 }
 
 
@@ -556,7 +616,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
   //    int rv;
   Rectangle region = *newRegion;
   gCurrentFrame = frameNumber; 
-  
+  int threadnum = frameNumber % mThreads.size(); 
   if (!mFrameList) {
     WARNING("frame %d requested but cache has no frame list",
             frameNumber);
@@ -595,7 +655,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
    */
 
   if (mNumReaderThreads > 0) {
-    lock("checking for ready image", __FILE__, __LINE__);
+    mThreads[threadnum]->lock("checking for ready image", __FILE__, __LINE__);
   }
 
   /* This loop will continue until the code issues a "return" (after
@@ -624,7 +684,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
         
 		cachedImage->requestNumber = mRequestNumber;
 		if (mNumReaderThreads > 0) {
-          unlock("found interesting frame", __FILE__, __LINE__); 
+          mThreads[threadnum]->unlock("found interesting frame", __FILE__, __LINE__); 
 		}
         CACHEDEBUG("Returning found image %d", frameNumber); 
 		return cachedImage->image;
@@ -648,7 +708,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
        */
       CACHEDEBUG("Looking in pending queue for frame %d", frameNumber); 
       ImageCacheJobPtr job = 
-        FindJobInQueue(mPendingQueue, frameNumber, &region,levelOfDetail);
+        FindJobInQueue(mThreads[threadnum]->mPendingQueue, frameNumber, &region,levelOfDetail);
       
       if (job) {
 		/* We've got a job coming soon that will give us this image.
@@ -656,7 +716,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
 		 * kick us back to the top of the loop when we return, with
 		 * the imageCacheLock already re-acquired.
 		 */
-        WaitForJobDone("waiting for pending job", __FILE__, __LINE__); 
+        mThreads[threadnum]->WaitForJobDone("waiting for pending job", __FILE__, __LINE__); 
       }
       else {
 		/* Look for a matching job in the work queue, one that may
@@ -666,7 +726,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
 		 * desired region.
 		 */
         CACHEDEBUG("Looking in job queue for frame %d with other rectangle", frameNumber); 
-        job = FindJobInQueue(mJobQueue, frameNumber, NULL, levelOfDetail);
+        job = FindJobInQueue(mThreads[threadnum]->mJobQueue, frameNumber, NULL, levelOfDetail);
         if (job) {
           /* Add our region of interest to the job; if a request had
            * been made earlier for a different region of the same
@@ -680,11 +740,11 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
            * it was behind a few other preload jobs; it's more important
            * now because the main thread is waiting on it.
            */
-          RemoveJobFromQueue(mJobQueue, job); 
-          mJobQueue.push_front(job); 
+          RemoveJobFromQueue(mThreads[threadnum]->mJobQueue, job); 
+          mThreads[threadnum]->mJobQueue.push_front(job); 
           
           /* Now wait for an image to appear. */
-          WaitForJobDone("waiting for modified pending job", __FILE__, __LINE__); 
+          mThreads[threadnum]->WaitForJobDone("waiting for modified pending job", __FILE__, __LINE__); 
 		}
 		else {
           /* No job in the pending queue nor in the work queue.  Check
@@ -692,15 +752,15 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
            * but has failed.
            */
           CACHEDEBUG("No job for image %d in the pending queue nor in the work queue", frameNumber); 
-          job = FindJobInQueue(mErrorQueue, frameNumber,&region,levelOfDetail);
+          job = FindJobInQueue(mThreads[threadnum]->mErrorQueue, frameNumber,&region,levelOfDetail);
           if (job) {
 			/* The error, hopefully, has already been reported.  We
 			 * have to remove the job from the queue and return to
 			 * the caller with an error.
 			 */
-			RemoveJobFromQueue(mErrorQueue, job);
+			RemoveJobFromQueue(mThreads[threadnum]->mErrorQueue, job);
             
-            unlock("found error in job", __FILE__, __LINE__);
+            mThreads[threadnum]->unlock("found error in job", __FILE__, __LINE__);
 			return image;
           }
           else {
@@ -709,7 +769,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
 			 * image itself.
 			 */
             CACHEDEBUG("No job for image %d anywhere, main thread must do it or something, shrug", frameNumber); 
-            unlock("no job found", __FILE__, __LINE__); 
+            mThreads[threadnum]->unlock("no job found", __FILE__, __LINE__); 
             break;
           }
 		}
@@ -746,7 +806,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
    * a slot we can stick it in.
    */
   if (mNumReaderThreads > 0) {
-    lock("adding image to cache in main thread", __FILE__, __LINE__);
+    mThreads[threadnum]->lock("adding image to cached image slots in main thread", __FILE__, __LINE__);
   }
 
   /* Either update the current image slot or find a new one */
@@ -754,7 +814,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
     imageSlot = cachedImage;
   }
   else {
-    imageSlot = GetCachedImageSlot(frameNumber);
+    imageSlot = mThreads[threadnum]->GetCachedImageSlot(frameNumber);
   }
 
   if (!imageSlot) {
@@ -763,7 +823,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
 	 * and return empty image.
 	 */
 	if (mNumReaderThreads > 0) {
-      unlock("no place for image", __FILE__, __LINE__); 
+      mThreads[threadnum]->unlock("no place for image", __FILE__, __LINE__); 
 	}
 	return ImagePtr(); 
   }
@@ -778,7 +838,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
   imageSlot->loaded = 1;
   imageSlot->requestNumber = mRequestNumber;
   if (mNumReaderThreads > 0) {
-    unlock("image stored and locked successfully", __FILE__, __LINE__); 
+    mThreads[threadnum]->unlock("image stored and locked successfully", __FILE__, __LINE__); 
   }
     
   /* Steal Preload code right from Renderer */ 
@@ -813,7 +873,8 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
 {
   CACHEDEBUG("PreloadImage() frame %d", frameNumber); 
   CachedImagePtr cachedImage;
-
+  uint32_t threadnum = frameNumber % mThreads.size();
+  
   /* Keep track of highest frame number.  We need it for cache
    * replacement.
    */
@@ -834,13 +895,13 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
   /* If the image is already in cache, or if a job to load it already 
    * exists, don't bother adding a new job->
    */
-  lock("checking if image already exists", __FILE__, __LINE__);
+  mThreads[threadnum]->lock("checking if image already exists", __FILE__, __LINE__);
   cachedImage = FindImage(frameNumber, levelOfDetail);
   if (cachedImage) {
     CACHEDEBUG("Found match for frame number %d in cache", frameNumber); 
     if (RectContainsRect(&cachedImage->image->loadedRegion, region)) {
       /* Image is already in cache - no need to preload again */
-      unlock("image already in cache", __FILE__, __LINE__); 
+      mThreads[threadnum]->unlock("image already in cache", __FILE__, __LINE__); 
       return;
     } else {
       CACHEDEBUG(QString("Hmm, region didn't match.  cached region = %1, region = %2").arg(cachedImage->image->loadedRegion.toString()).arg(region->toString())); 
@@ -849,12 +910,12 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
   }
   
   /* Look for the job in the PendingQueue and JobQueue */
-  ImageCacheJobPtr job = FindJobInQueue(mPendingQueue, frameNumber, region, levelOfDetail);
+  ImageCacheJobPtr job = FindJobInQueue(mThreads[threadnum]->mPendingQueue, frameNumber, region, levelOfDetail);
   if (job == NULL) {
-    job = FindJobInQueue(mJobQueue, frameNumber, region, levelOfDetail);
+    job = FindJobInQueue(mThreads[threadnum]->mJobQueue, frameNumber, region, levelOfDetail);
   }
   if (job) {
-    unlock("job already in a queue", __FILE__, __LINE__); 
+    mThreads[threadnum]->unlock("job already in a queue", __FILE__, __LINE__); 
     CACHEDEBUG("The job exists already - no need to add a new one"); 
 	return;
   }
@@ -883,63 +944,20 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
   
   /* Add the job to the back of the work queue */
   //lock("adding new job to work queue", __FILE__, __LINE__);
-  mJobQueue.push_back(newJob); 
-  sort(mJobQueue.begin(), mJobQueue.end(), jobComparer);
+  mThreads[threadnum]->mJobQueue.push_back(newJob); 
+  sort(mThreads[threadnum]->mJobQueue.begin(), mThreads[threadnum]->mJobQueue.end(), jobComparer);
   
   CACHEDEBUG(QString("Added new job for frame %1 and region %2 to job queue").arg(frameNumber).arg(region->toString())); 
-  PrintJobQueue(mJobQueue); 
+  PrintJobQueue(mThreads[threadnum]->mJobQueue); 
 
-  unlock("new job added", __FILE__, __LINE__); 
-  Print("new job added"); 
+  mThreads[threadnum]->unlock("new job added", __FILE__, __LINE__); 
+  mThreads[threadnum]->Print("new job added"); 
   /* If there's a worker thread that's snoozing, this will
    * wake him up.
    */
-  WakeAllJobReady("new job added", __FILE__, __LINE__); 
+  mThreads[threadnum]->WakeAllJobReady("new job added", __FILE__, __LINE__); 
   return; 
 }
 
 
-// ======================================================================
-/* For debugging */
-void ImageCache::Print(string description)
-{
 
-  if (!cacheDebug) return; 
-
-  register int i=0, minframe = -1, maxframe = -1;
-  QString msg; 
-  CACHEDEBUG("%s: Printing cache state.", description.c_str()); 
-  for (vector<CachedImagePtr>::iterator cachedImage = mCachedImages.begin(); 
-       cachedImage != mCachedImages.end();  cachedImage++, i++) {
-    msg = QString("%1:  Slot %2: frame:%3 lod:%4  req:%5  ")
-      .arg(description.c_str())
-      .arg( i)
-      .arg((*cachedImage)->frameNumber)
-      .arg((*cachedImage)->levelOfDetail)
-      .arg((*cachedImage)->requestNumber);
-    if ((*cachedImage)->image) {
-      msg += QString("roi:%1").arg((*cachedImage)->image->loadedRegion.toString()); 
-    }
-    if (minframe == -1 || minframe > (*cachedImage)->frameNumber) {
-      minframe = (*cachedImage)->frameNumber;
-    }
-    if (maxframe == -1 || maxframe < (*cachedImage)->frameNumber) {
-      maxframe = (*cachedImage)->frameNumber;
-    }
-    CACHEDEBUG(msg); 
-  }
-  CACHEDEBUG("mHighest = %d, minframe = %d, maxframe = %d\n", mHighestFrameNumber, minframe, maxframe); 
-}
-
-/*!
-  You probably want to call the macro, PrintJobQueue(q)
-*/
-void ImageCache::__PrintJobQueue(QString name, deque<ImageCacheJobPtr>&q) {
-  deque<ImageCacheJobPtr>::iterator pos = q.begin(), endpos = q.end(); 
-  CACHEDEBUG(QString(" deque<ImageCacheJob *>%1 (length %2): ").arg(name).arg(q.size())); 
-  while (pos != endpos){
-    CACHEDEBUG((*pos)->toString()); 
-    ++pos; 
-  }
-  return; 
-}

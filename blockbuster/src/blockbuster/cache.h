@@ -73,9 +73,13 @@ struct CachedImage{
 class CacheThread: public QThread {
   Q_OBJECT
     public:
-  CacheThread(ImageCache *icache): 
-    mStop(false) {
+  CacheThread(ImageCache *icache, int threadImages): 
+    mStop(false), mCachedImages(threadImages) {
     mCache.reset(icache); 
+    for (uint32_t i = 0; i < mCachedImages.size(); i++) {
+      mCachedImages[i].reset(new CachedImage()); 
+    }
+  
     CACHEDEBUG("CacheThread constructor");     
     RegisterThread(this); 
   }
@@ -83,18 +87,88 @@ class CacheThread: public QThread {
     CACHEDEBUG("CacheThread destructor");     
   }
   
-
   void run(void); 
   void stop(void) { mStop = true; }
+  
+  void ResetImages(uint32_t numimages); 
+  
+  unsigned int Distance(unsigned int oldFrame, unsigned int newFrame);
+
+  // called by cachethread in Run() 
+  void WaitForJobReady(string reason, string file="unknown file", int line=0) {
+    CACHEDEBUG("%s: %d: worker waiting job ready (%s)", 
+               file.c_str(), line, reason.c_str()); 
+    jobReady.wait(&imageCacheLock, 100); 
+  }
+  
+  // Called by main thread in PreloadImage()
+  void WakeAllJobReady(string reason, string file="unknown file", int line=0) {
+    CACHEDEBUG("%s: %d: main thread signaling job ready (%s)", 
+               file.c_str(), line, reason.c_str()); 
+    jobReady.wakeAll(); 
+  }
+
+   // Called by main thread in GetImage()
+  void WaitForJobDone(string reason, string file="unknown file", int line=0) {
+    CACHEDEBUG("%s: %d: main thread waiting job done (%s)", 
+               file.c_str(), line, reason.c_str()); 
+    jobDone.wait(&imageCacheLock, 100); 
+    CACHEDEBUG("%s: %d: main thread Woke up (%s)", file.c_str(), line, reason.c_str()); 
+  }
+
+  // Called by cache thread to signal job completion.  
+  void WakeAllJobDone(string reason, string file="unknown file", int line=0) {
+    CACHEDEBUG("%s: %d: worker thread signaling job done (%s)", 
+               file.c_str(), line, reason.c_str()); 
+    jobDone.wakeAll(); 
+  }
+ 
+  /* 
+     Called by cache thread::Run(): 
+    mCache->lock("check for job in work queue", __FILE__, __LINE__);
+    mCache->unlock("found job and added to pending queue", __FILE__, __LINE__);
+    mCache->lock("finished job, updating queues", __FILE__, __LINE__); 
+      mCache->unlock("error in job", __FILE__, __LINE__); 
+      mCache->unlock("job success", __FILE__, __LINE__);
+
+      Called by main thread: 
+  lock("clearJobQueue", __FILE__, __LINE__); 
+  unlock("JobQueue cleared", __FILE__, __LINE__); 
+  main thread in GetImage():  
+    lock("checking for ready image", __FILE__, __LINE__);
+          unlock("found interesting frame", __FILE__, __LINE__); 
+    lock("adding image to cached image slots in main thread", __FILE__, __LINE__);
+    unlock("image stored and locked successfully", __FILE__, __LINE__); 
+  */
+
+  void  lock(string reason, string file="unknown file", int line=0) {
+    CACHEDEBUG("%s: %d: locking image cache (%s)", 
+               file.c_str(), line, reason.c_str()); 
+    imageCacheLock.lock(); 
+    /* CACHEDEBUG("%s: %d: locked image cache (%s)", 
+       file, line, reason); 
+    */
+  }
+  void unlock(string reason, string file="unknown file", int line=0) {
+    imageCacheLock.unlock(); 
+    CACHEDEBUG("%s: %d: unlocked image cache (%s)", 
+               file.c_str(), line, reason.c_str()); 
+  }
+
+  void Print(string where); 
+
+  CachedImagePtr GetCachedImageSlot(uint32_t newFrameNumber);
+
   ImageCachePtr mCache;
   bool mStop;
-
- 
+  
   QMutex imageCacheLock; 
   QWaitCondition jobReady, jobDone; 
-  deque<ImageCacheJobPtr> mJobQueue; // jobs ready for the workers to take
-  deque<ImageCacheJobPtr> mPendingQueue; // jobs being worked on by a worker
+  deque<ImageCacheJobPtr> mJobQueue; // jobs ready
+  deque<ImageCacheJobPtr> mPendingQueue; // jobs being worked on
   deque<ImageCacheJobPtr> mErrorQueue;  // FAILs
+  
+  vector<CachedImagePtr> mCachedImages; // successful results
 };
 
 
@@ -121,7 +195,6 @@ class ImageCache {
   ImageCache(int numthreads, int numimages, ImageFormat &required);
   ~ImageCache(); 
   
-  unsigned int Distance(unsigned int oldFrame, unsigned int newFrame);
 
   ImagePtr GetImage(uint32_t frameNumber,
                   const Rectangle *newRegion, uint32_t levelOfDetail);
@@ -141,60 +214,12 @@ class ImageCache {
                     const Rectangle *region, uint32_t levelOfDetail);
  
  protected:
-  CachedImagePtr GetCachedImageSlot(uint32_t newFrameNumber);
   
-  void RemoveJobFromPendingQueue(ImageCacheJobPtr job) {
-    RemoveJobFromQueue(mPendingQueue, job); 
-  }
-  
-  void RemoveJobFromQueue(deque<ImageCacheJobPtr> &queue, ImageCacheJobPtr job);
-  
-  ImageCacheJobPtr FindJobInQueue
-    (deque<ImageCacheJobPtr> &queue,  unsigned int frameNumber, 
-     const Rectangle *region, unsigned int levelOfDetail); 
   void ClearQueue(deque<ImageCacheJobPtr> &queue); 
   void ClearImages(void); 
-  void ClearJobQueue(void);
+  void ClearJobQueues(void);
   CachedImagePtr FindImage(uint32_t frame, uint32_t lod);
-  void Print(string where); 
-#define PrintJobQueue(q) __PrintJobQueue(#q,q)
-  void __PrintJobQueue(QString name, deque<ImageCacheJobPtr>&q); 
-  void  lock(string reason, string file="unknown file", int line=0) {
-    CACHEDEBUG("%s: %d: locking image cache (%s)", 
-               file.c_str(), line, reason.c_str()); 
-    imageCacheLock.lock(); 
-    /* CACHEDEBUG("%s: %d: locked image cache (%s)", 
-       file, line, reason); 
-    */
-  }
-  void unlock(string reason, string file="unknown file", int line=0) {
-    imageCacheLock.unlock(); 
-    CACHEDEBUG("%s: %d: unlocked image cache (%s)", 
-               file.c_str(), line, reason.c_str()); 
-  }
-  
-  void WaitForJobReady(string reason, string file="unknown file", int line=0) {
-    CACHEDEBUG("%s: %d: worker waiting job ready (%s)", 
-               file.c_str(), line, reason.c_str()); 
-    jobReady.wait(&imageCacheLock, 100); 
-  }
-  
-  void WaitForJobDone(string reason, string file="unknown file", int line=0) {
-    CACHEDEBUG("%s: %d: main thread waiting job done (%s)", 
-               file.c_str(), line, reason.c_str()); 
-    jobDone.wait(&imageCacheLock, 100); 
-    CACHEDEBUG("%s: %d: main thread Woke up (%s)", file.c_str(), line, reason.c_str()); 
-  }
-  void WakeAllJobReady(string reason, string file="unknown file", int line=0) {
-    CACHEDEBUG("%s: %d: main thread signaling job ready (%s)", 
-               file.c_str(), line, reason.c_str()); 
-    jobReady.wakeAll(); 
-  }
-  void WakeAllJobDone(string reason, string file="unknown file", int line=0) {
-    CACHEDEBUG("%s: %d: worker thread signaling job done (%s)", 
-               file.c_str(), line, reason.c_str()); 
-    jobDone.wakeAll(); 
-  }
+
   
   /* Configuration information */
   int mNumReaderThreads;
@@ -214,7 +239,6 @@ class ImageCache {
    * invalidated images from entering the image queue.
    */
   unsigned long mValidRequestThreshold;
-  vector<CachedImagePtr> mCachedImages;
   unsigned int mHighestFrameNumber;
   
   bool mSuppressStereo; // for playing stereo movies in mono -- do not preload odd frames.
@@ -231,13 +255,13 @@ class ImageCache {
    * unless numReaderThreads is greater than 0.
    */
   std::vector<CacheThreadPtr> mThreads;
-  
-  QMutex imageCacheLock; 
+    
+  /*  QMutex imageCacheLock; 
   QWaitCondition jobReady, jobDone; 
   deque<ImageCacheJobPtr> mJobQueue; // jobs ready for the workers to take
   deque<ImageCacheJobPtr> mPendingQueue; // jobs being worked on by a worker
   deque<ImageCacheJobPtr> mErrorQueue;  // FAILs
-  
+  */
 } ;
 
 
