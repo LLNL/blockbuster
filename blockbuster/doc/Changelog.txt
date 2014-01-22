@@ -2,6 +2,10 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
+VERSION 2.8.0o (git tag blockbuster-v2.8.0n) Fri Jan 17 18:01:36 PST 2014
+-- Fixed bug where blockbuster was not releasing file descriptors and dumped core when opening 29 movies in a row. 
+
+===============================================================================
 VERSION 2.8.0n (git tag blockbuster-v2.8.0n) Fri Jan 17 18:01:36 PST 2014
 -- switched to git 
 -- Improved argument handling in img2sm and smcat
