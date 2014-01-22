@@ -824,6 +824,10 @@ smBase::~smBase()
   for (int i=0; i<mResFileNames.size(); i++) {
     unlink (mResFileNames[i].c_str() ); 
   }
+  i=mNumThreads; 
+  while (i--) {
+    CLOSE(mThreadData[i].fd);
+  }
   return; 
 }
 
@@ -1819,6 +1823,48 @@ uint32_t smBase::getFrameBlock(int frame, void *data, int threadnum,  int destRo
   smdbprintf(5,"END smBase::getFrameBlock, frame %d, thread %d, bytes read = %d\n", frame, threadnum, bytesRead); 
   return bytesRead; 
 }
+
+/*!
+  Work proc for the reading thread -- just calls sm->readThread()
+*/
+void *readThreadFunction(void *arg) {
+  smdbprintf(5, "readThreadFunction\n"); 
+  ((smBase*) arg)-> readThread(); 
+  return NULL; 
+}
+
+/*!
+  Called by work proc for the reading thread -- keeps filling the buffers. 
+*/
+void smBase::readThread(void) {
+  if (mErrorState) return ; 
+  smdbprintf(2, "Starting readThread\n"); 
+  while (!mErrorState && !mReadThreadStopSignal) {
+    /* if (!fillBuffers(false)) {
+      usleep(100); 
+      }*/
+  }
+  return; 
+}
+
+/*!
+  Starts the writing thread 
+*/
+void smBase::startReadThread(void) {
+  mReadThreadRunning = true; 
+  mReadThreadStopSignal = false; 
+  pthread_create(&mReadThread, NULL, readThreadFunction, this); 
+  return; 
+}
+/*!
+  Stops the writing thread.  Does not return until thread is dead
+*/
+void smBase::stopReadThread(void) {
+  mReadThreadStopSignal = true; 
+  pthread_join(mReadThread, NULL); 
+  mReadThreadRunning = false; 
+  return; 
+}  
 
 /*!
   Work proc for the writing thread -- just calls sm->writeThread()

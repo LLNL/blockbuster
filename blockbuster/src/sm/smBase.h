@@ -498,6 +498,16 @@ struct FrameCompressionWork {
 }; 
 
 /*!
+  Helps organize read buffering
+*/ 
+struct InputBuffer {
+  int mLOD; 
+  int32_t mFirstFrame, mNumFrames, mBytesPerFrame; 
+  vector<int64_t> mRawOffsets; 
+  boost::shared_ptr<char> mRawBytes; 
+}; 
+
+/*!
   Helps organize buffering for I/O. 
 */ 
 struct OutputBuffer {
@@ -571,6 +581,10 @@ class smBase {
   
   /// set size of output buffers. 
   void setBufferSize(uint32_t frames);
+
+  void readThread(void); 
+  void startReadThread(void); 
+  void stopReadThread(void); 
 
   // get the decompressed image 
   uint32_t getFrame (int frame, void *out, int threadnum, int res=0); // for threads
@@ -812,6 +826,9 @@ class smBase {
 
   pthread_t mWriteThread; 
   bool mWriteThreadRunning, mWriteThreadStopSignal; 
+
+  pthread_t mReadThread; 
+  bool mReadThreadRunning, mReadThreadStopSignal; 
 
   // directory of movie types
   static u_int ntypes;

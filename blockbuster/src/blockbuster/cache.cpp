@@ -279,6 +279,9 @@ ImageCache::~ImageCache() {
     for (i = 0; i < mNumReaderThreads; i++) {
       mThreads[i]->wait();    
 	}
+    for (i = 0; i < mNumReaderThreads; i++) {
+      mThreads[i].reset(); 
+    }
     mThreads.clear(); 
     
 	/* Clear the remaining queues */

@@ -9,8 +9,7 @@
 typedef boost::shared_ptr<struct MovieBuffer> MovieBufferPtr; 
 struct MovieBuffer {
   int mLOD; 
-  int mFirstFrame; 
-  int mNumFrames; 
+  int32_t mFirstFrame, mNumFrames, mBytesPerFrame; 
   vector<int64_t> mRawOffsets; 
   boost::shared_ptr<char> mRawBytes; 
   boost::shared_ptr<char> mDecompressedFrames; 
@@ -31,15 +30,11 @@ class FrameCache {
   ~FrameCache(); 
   
   ImagePtr GetImage(uint32_t frameNumber,
-                  const Rectangle *newRegion, uint32_t levelOfDetail);
-
-  // This also seems bad.  We should pass a list of files to the cache and let it manage how to make images out of them.  
-  void ManageFrameList(FrameListPtr frameList);
+                    const Rectangle *newRegion, uint32_t levelOfDetail);
   
-    return; 
-  }
 
-
+  int32_t mBytesPerFrame; 
+  int64_t mTotalBytes;   
   
 }; 
 

@@ -78,7 +78,9 @@ class CacheThread: public QThread {
     CACHEDEBUG("CacheThread constructor");     
     RegisterThread(this); 
   }
-  ~CacheThread(){}
+  ~CacheThread(){
+    CACHEDEBUG("CacheThread destructor");     
+  }
   
 
   void run(void); 
