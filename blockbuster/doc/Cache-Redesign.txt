@@ -29,7 +29,20 @@ GetImage() is in cache.cpp:686
 Image *ImageCache::GetImage(uint32_t frameNumber,
                             const Rectangle *newRegion, uint32_t levelOfDetail)
 
-Instead of this, we should just tell the cache when the play direction and speed changes.  Let the cache manage the rest.  The cache can tell the main loop how many frames it has buffered and the movie loop can throttle the speed as needed.  
 
-First step:  move all preload junk from everywhere into ImageCache->GetImage().  Also take care of releasing frames from the cache in ImageCache.  Otherwise act exactly the same.  
+As a first step, let's change all input to round-robin instead of dogpile.  This is going to pay off in the long run as almost all mutexes will go away.  Each thread will have their own cached images and their own job queue.  
 
+Instead of this, we are going to just change all the readData() calls in getFrame() and getTiledFrame() in smBase.C to read from a buffer read in a separate thread.  This requires leasst code changes.  
+
+Step 1:  read buffer has to know what to read, where to put it, and how to signal the data is ready. 
+
+Here's how it works: 
+The cache has multiple buffers.  Cache limit is 500MB.  Each buffer has a 50MB capacity. The actual contents will be less than 50MB as only whole frames are buffered.  Nonetheless, 10 buffers of 50MB each will be created.  Note that due to decompression, a 500MB cache means up to 2 GB of movie data including the decompressed frames.  
+  
+We open up a 1GB movie.  A reader thread is started immediately.  If nothing else happens, it happily continues buffering until adding all buffers contain all their intended raw frame data.  
+movie.cpp asks to render frame 0. The buffer is told that the current frame is 0, which changes nothing. 
+GetImage() is called, which calls smBase::readTiledFrame() eventually.  Success.
+
+movie.cpp asks to render frame 1.  When the buffer learns the current frame is 1, it checks its buffer targets and 
+
+Renderer then 
