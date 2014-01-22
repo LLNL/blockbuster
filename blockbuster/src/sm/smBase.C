@@ -826,7 +826,7 @@ smBase::~smBase()
   }
   i=mNumThreads; 
   while (i--) {
-    CLOSE(mThreadData[i].fd);
+    CLOSE(mThreadData[i].fd); // read descriptors -- this will go away.  
   }
   return; 
 }
@@ -1368,7 +1368,9 @@ uint32_t smBase::readTiledFrame(u_int f, int *dim, int* pos, int res, int thread
     u_char *ioBuf = &(mThreadData[threadnum].io_buf[0]);
     int headerSize =  numTiles * sizeof(uint32_t);
     // read the tile sizes from frame header
+
     int r=readData(fd, ioBuf, headerSize);
+
     smdbprintf(5, "Read header, %lu bytes from offset %lu in file\n", 
                headerSize, frameOffset); 
     if (r !=  headerSize) { // hmm -- assume we read it all, I guess... iffy?  
@@ -1824,6 +1826,13 @@ uint32_t smBase::getFrameBlock(int frame, void *data, int threadnum,  int destRo
   return bytesRead; 
 }
 
+/*
+  Read chunks into input buffer and mark as ready for decompression
+*/ 
+bool smBase::fillBuffers(void) {
+  return false; 
+}
+
 /*!
   Work proc for the reading thread -- just calls sm->readThread()
 */
@@ -1840,9 +1849,9 @@ void smBase::readThread(void) {
   if (mErrorState) return ; 
   smdbprintf(2, "Starting readThread\n"); 
   while (!mErrorState && !mReadThreadStopSignal) {
-    /* if (!fillBuffers(false)) {
+    if (!fillBuffers()) {
       usleep(100); 
-      }*/
+    }
   }
   return; 
 }

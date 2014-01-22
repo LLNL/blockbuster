@@ -558,9 +558,9 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
   gCurrentFrame = frameNumber; 
   
   if (!mFrameList) {
-    WARNING("frame %d requested from an empty cache",
+    WARNING("frame %d requested but cache has no frame list",
             frameNumber);
-    return ImagePtr();
+    return image;
   }
   if (frameNumber > mFrameList->numActualFrames()) {
     WARNING("image %d requested from a cache managing %d images",

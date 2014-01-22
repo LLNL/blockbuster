@@ -582,6 +582,7 @@ class smBase {
   /// set size of output buffers. 
   void setBufferSize(uint32_t frames);
 
+  bool fillBuffers(void); 
   void readThread(void); 
   void startReadThread(void); 
   void stopReadThread(void); 
@@ -827,6 +828,8 @@ class smBase {
   pthread_t mWriteThread; 
   bool mWriteThreadRunning, mWriteThreadStopSignal; 
 
+  // Information about reading requests, etc.  
+  int32_t mRenderFrame;  // this determines read and decompression priorities 
   pthread_t mReadThread; 
   bool mReadThreadRunning, mReadThreadStopSignal; 
 

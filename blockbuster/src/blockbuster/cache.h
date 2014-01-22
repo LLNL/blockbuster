@@ -74,7 +74,8 @@ class CacheThread: public QThread {
   Q_OBJECT
     public:
   CacheThread(ImageCache *icache): 
-    mCache(icache), mStop(false) {
+    mStop(false) {
+    mCache.reset(icache); 
     CACHEDEBUG("CacheThread constructor");     
     RegisterThread(this); 
   }
@@ -85,8 +86,15 @@ class CacheThread: public QThread {
 
   void run(void); 
   void stop(void) { mStop = true; }
-  ImageCache *mCache;
-  bool mStop; 
+  ImageCachePtr mCache;
+  bool mStop;
+
+ 
+  QMutex imageCacheLock; 
+  QWaitCondition jobReady, jobDone; 
+  deque<ImageCacheJobPtr> mJobQueue; // jobs ready for the workers to take
+  deque<ImageCacheJobPtr> mPendingQueue; // jobs being worked on by a worker
+  deque<ImageCacheJobPtr> mErrorQueue;  // FAILs
 };
 
 
@@ -223,11 +231,13 @@ class ImageCache {
    * unless numReaderThreads is greater than 0.
    */
   std::vector<CacheThreadPtr> mThreads;
+  
   QMutex imageCacheLock; 
   QWaitCondition jobReady, jobDone; 
   deque<ImageCacheJobPtr> mJobQueue; // jobs ready for the workers to take
   deque<ImageCacheJobPtr> mPendingQueue; // jobs being worked on by a worker
   deque<ImageCacheJobPtr> mErrorQueue;  // FAILs
+  
 } ;
 
 
