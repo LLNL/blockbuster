@@ -35,7 +35,7 @@ struct ImageCacheJob {
   ImageCacheJob(uint32_t frame, const Rectangle *reg, 
                 uint32_t  lod, uint32_t reqnum, FrameInfoPtr fInfo): 
     frameInfo(fInfo), frameNumber(frame), region(*reg),  
-    levelOfDetail(lod), requestNumber(reqnum) { 
+    levelOfDetail(lod), requestNumber(reqnum){ 
     return; 
   }
     
@@ -97,8 +97,9 @@ class CacheThread: public QThread {
   // called by cachethread in Run() 
   void WaitForJobReady(string reason, string file="unknown file", int line=0) {
     CACHEDEBUG("%s: %d: worker waiting job ready (%s)", 
-               file.c_str(), line, reason.c_str()); 
-    jobReady.wait(&imageCacheLock, 100); 
+               file.c_str(), line, reason.c_str());
+    //usleep(1000); 
+    jobReady.wait(&imageCacheLock, 20); 
   }
   
   // Called by main thread in PreloadImage()
@@ -112,7 +113,8 @@ class CacheThread: public QThread {
   void WaitForJobDone(string reason, string file="unknown file", int line=0) {
     CACHEDEBUG("%s: %d: main thread waiting job done (%s)", 
                file.c_str(), line, reason.c_str()); 
-    jobDone.wait(&imageCacheLock, 100); 
+    //usleep(1000); 
+    jobDone.wait(&imageCacheLock, 20); 
     CACHEDEBUG("%s: %d: main thread Woke up (%s)", file.c_str(), line, reason.c_str()); 
   }
 

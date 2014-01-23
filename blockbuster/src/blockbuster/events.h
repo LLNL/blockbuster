@@ -29,6 +29,7 @@
     MOVIE_NOSCREENSAVER, /* Stop screensaver with fake mouse clicks */
     MOVIE_SET_STEREO, 
     MOVIE_DISABLE_DIALOGS, /* do not display alerts in GUI -- for scripting and testing  */  
+    MOVIE_KEYBOARD_HELP, /* print the keyboard shortcuts */ 
 
     MOVIE_ZOOM_IN = 50,
     MOVIE_ZOOM_OUT,

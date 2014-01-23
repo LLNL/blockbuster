@@ -1063,15 +1063,6 @@ void SideCar::SendEvent(MovieEvent event) {
 void SideCar::InterestingKey(QKeyEvent *event){
   int modkey = event->modifiers(); 
   switch(event->key()) {
-  case Qt::Key_Right:  // forward by step/20/25%
-    if (modkey == Qt::SHIFT) {
-      SendEvent(MovieEvent(MOVIE_SKIP_FORWARD)); 
-    } else if (modkey == Qt::CTRL) {
-      SendEvent(MovieEvent(MOVIE_SECTION_FORWARD)); 
-    } else {
-      SendEvent(MovieEvent(MOVIE_STEP_FORWARD)); 
-    }
-    break; 
   case Qt::Key_Left : // back by step/20/25% 
     if (modkey == Qt::SHIFT) {
       SendEvent(MovieEvent(MOVIE_SKIP_BACKWARD)); 
@@ -1081,34 +1072,40 @@ void SideCar::InterestingKey(QKeyEvent *event){
       SendEvent(MovieEvent(MOVIE_STEP_BACKWARD)); 
     } 
     break; 
+  case Qt::Key_Right:  // forward by step/20/25%
+    if (modkey == Qt::SHIFT) {
+      SendEvent(MovieEvent(MOVIE_SKIP_FORWARD)); 
+    } else if (modkey == Qt::CTRL) {
+      SendEvent(MovieEvent(MOVIE_SECTION_FORWARD)); 
+    } else {
+      SendEvent(MovieEvent(MOVIE_STEP_FORWARD)); 
+    }
+    break; 
   case Qt::Key_Home: // go to start of movie
     SendEvent(MovieEvent(MOVIE_GOTO_START));
     break;
+
   case Qt::Key_End: // end of movie
     SendEvent(MovieEvent(MOVIE_GOTO_END));
     break;
-  case Qt::Key_Space: // play/stop
-    SendEvent(MovieEvent(MOVIE_PAUSE));
+
+  case Qt::Key_C : // center
+    SendEvent(MovieEvent(MOVIE_CENTER));
     break;
-  case Qt::Key_R : // reverse
-    SendEvent(MovieEvent(MOVIE_PLAY_BACKWARD));
-    break;
-  case Qt::Key_P : // reverse
-    SendEvent(MovieEvent(MOVIE_PLAY_FORWARD));
-    break;
+
   case Qt::Key_F : // zoom to fit window
     SendEvent(MovieEvent(MOVIE_ZOOM_FIT));
     break;
-  case Qt::Key_M : // toggle hiding/showing the cursor
-    SendEvent(MovieEvent(MOVIE_TOGGLE_CURSOR));
+
+  case Qt::Key_H : //show keyboard help
+  case Qt::Key_Question : 
+    SendEvent(MovieEvent(MOVIE_KEYBOARD_HELP));
     break;
-  case Qt::Key_Z : // zoom to fit window
-    if (modkey == Qt::SHIFT) {
-      SendEvent(MovieEvent(MOVIE_ZOOM_DOWN));
-    } else {
-      SendEvent(MovieEvent(MOVIE_ZOOM_UP));
-    } 
+
+  case Qt::Key_I : // hide/show controls
+    SendEvent(MovieEvent(MOVIE_TOGGLE_INTERFACE));
     break;
+
   case Qt::Key_L : // l/L == decrease/increase LOD
     if (modkey == Qt::SHIFT) {
       SendEvent(MovieEvent(MOVIE_INCREASE_LOD));
@@ -1116,9 +1113,48 @@ void SideCar::InterestingKey(QKeyEvent *event){
       SendEvent(MovieEvent(MOVIE_DECREASE_LOD));
     }
     break;
+
+  case Qt::Key_M : // toggle hiding/showing the cursor
+    SendEvent(MovieEvent(MOVIE_TOGGLE_CURSOR));
+    break;
+
+  case Qt::Key_P : // reverse
+    SendEvent(MovieEvent(MOVIE_PLAY_FORWARD));
+    break;
+
+  case Qt::Key_Escape: // exit
+  case Qt::Key_Q: // exit 
+    SendEvent(MovieEvent(MOVIE_QUIT));
+    break;
+
+  case Qt::Key_R : // reverse
+    SendEvent(MovieEvent(MOVIE_PLAY_BACKWARD));
+    break;
+
+  case Qt::Key_Z : // zoom to fit window
+    if (modkey == Qt::SHIFT) {
+      SendEvent(MovieEvent(MOVIE_ZOOM_DOWN));
+    } else {
+      SendEvent(MovieEvent(MOVIE_ZOOM_UP));
+    } 
+    break;
+
+  case Qt::Key_Space: // play/stop
+    SendEvent(MovieEvent(MOVIE_PAUSE));
+    break;
+
+  case Qt::Key_Plus: // play/stop
+    SendEvent(MovieEvent(MOVIE_INCREASE_RATE));
+    break;
+
+  case Qt::Key_Minus: // play/stop
+    SendEvent(MovieEvent(MOVIE_DECREASE_RATE));
+    break;
+
   case Qt::Key_1 : // zoom to 1.0
     SendEvent(MovieEvent(MOVIE_ZOOM_ONE));
     break;
+
   case Qt::Key_2 : // zoom to 2 or 1/2 (with shift)
     if (modkey == Qt::SHIFT) {
       SendEvent(MovieEvent(MOVIE_ZOOM_SET, 0.5f));
@@ -1126,6 +1162,7 @@ void SideCar::InterestingKey(QKeyEvent *event){
       SendEvent(MovieEvent(MOVIE_ZOOM_SET, 2.0f));
     }
     break;
+
   case Qt::Key_4 : // zoom to 4 or 1/4 (with shift)
     if (modkey == Qt::SHIFT) {
       SendEvent(MovieEvent(MOVIE_ZOOM_SET, 0.25f));
@@ -1133,18 +1170,9 @@ void SideCar::InterestingKey(QKeyEvent *event){
       SendEvent(MovieEvent(MOVIE_ZOOM_SET, 4.0f));
     }
     break;
-  case Qt::Key_I : // hide/show controls
-    SendEvent(MovieEvent(MOVIE_TOGGLE_INTERFACE));
-    break;
-  case Qt::Key_C : // center
-    SendEvent(MovieEvent(MOVIE_CENTER));
-    break;
-  case Qt::Key_Escape: // exit
-  case Qt::Key_Q: // exit 
-    SendEvent(MovieEvent(MOVIE_QUIT));
-    break;
+
   default:
-    throw QString("Intercepted Key called IMPROPERLY with value = %1 and mod = %1").arg((int)event->key()).arg((int)event->modifiers()); 
+    throw QString("Intercepted Key called IMPROPERLY with value = %1 and mod = %2").arg((int)event->key()).arg((int)event->modifiers()); 
     return; 
   }
   // qDebug("Intercepted Key called properly"); 

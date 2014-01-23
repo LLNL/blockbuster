@@ -26,21 +26,23 @@ class KeyPressIntercept: public QObject {
       if (keyval == Qt::Key_Right   // forward by step/20/25%
           || keyval == Qt::Key_Left  // back by step/20/25% 
           || keyval == Qt::Key_Home // go to start of movie
+          || (keyval == Qt::Key_Escape  && modval == Qt::ShiftModifier ) // exit
           || keyval == Qt::Key_End // end of movie
-          || keyval == Qt::Key_Space // play/stop
-          || keyval == Qt::Key_Z  // zoom
-          || keyval == Qt::Key_R  // reverse
-          || keyval == Qt::Key_P  // reverse
+          || keyval == Qt::Key_C  // center
           || keyval == Qt::Key_F  // zoom to fit window
           || keyval == Qt::Key_H  // toggle hiding/showing the cursor
+          || keyval == Qt::Key_I  // hide/show controls
+          || keyval == Qt::Key_Question  // hide/show controls
           || keyval == Qt::Key_L  // l/L == decrease/increase LOD
+          || keyval == Qt::Key_M  // l/L == decrease/increase LOD
+          || keyval == Qt::Key_P  // reverse
+          || (keyval == Qt::Key_Q  && modval == Qt::ShiftModifier ) // exit
+          || keyval == Qt::Key_R  // reverse
+          || keyval == Qt::Key_Z  // zoom
+          || keyval == Qt::Key_Space // play/stop
           || keyval == Qt::Key_1  // zoom to 1.0
           || keyval == Qt::Key_2  // zoom to 2 or 1/2 (with shift)
           || keyval == Qt::Key_4  // zoom to 4 or 1/4 (with shift)
-          || keyval == Qt::Key_I  // hide/show controls
-          || keyval == Qt::Key_C  // center
-          || (keyval == Qt::Key_Escape  && modval == Qt::ShiftModifier ) // exit
-          || (keyval == Qt::Key_Q  && modval == Qt::ShiftModifier ) // exit
           )  {
       //dbprintf(" Got interesting keystroke %d", keyval); 
       emit InterestingKey(static_cast<QKeyEvent *>(event)); 

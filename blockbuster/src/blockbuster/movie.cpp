@@ -546,6 +546,9 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
         zooming = 0;
         break;
         
+      case MOVIE_KEYBOARD_HELP:
+        PrintKeyboardControls();
+        break; 
       case MOVIE_CENTER:
         xOffset = yOffset = 0;
         panning = 0;

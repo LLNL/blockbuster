@@ -1061,6 +1061,25 @@ void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
           case 'c':
             movieEvent->mEventType = MOVIE_CENTER;
             return;
+          case 'f':
+            movieEvent->mEventType = MOVIE_ZOOM_FIT;
+            return;
+          case 'h':
+          case '?':
+            movieEvent->mEventType = MOVIE_KEYBOARD_HELP;
+            break;
+          case 'i':
+            movieEvent->mEventType = MOVIE_TOGGLE_INTERFACE;
+            return;
+          case 'l':
+            movieEvent->mEventType = MOVIE_INCREASE_LOD;
+            return;
+          case 'L':
+            movieEvent->mEventType = MOVIE_DECREASE_LOD;
+            return;
+          case 'm':
+            movieEvent->mEventType = MOVIE_TOGGLE_CURSOR; 
+            break; 
           case 'p':
             movieEvent->mEventType = MOVIE_PLAY_FORWARD;
             return;
@@ -1079,34 +1098,31 @@ void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
           case ' ':
             movieEvent->mEventType = MOVIE_PAUSE;
             return;
-          case 'f':
-            movieEvent->mEventType = MOVIE_ZOOM_FIT;
-            return;
-          case '1':
-            movieEvent->mEventType = MOVIE_ZOOM_ONE;
-            return;
           case '+':
             movieEvent->mEventType = MOVIE_INCREASE_RATE;
             return;
           case '-':
             movieEvent->mEventType = MOVIE_DECREASE_RATE;
             return;
-          case 'l':
-            movieEvent->mEventType = MOVIE_INCREASE_LOD;
+          case '1':
+            movieEvent->mEventType = MOVIE_ZOOM_ONE;
             return;
-          case 'L':
-            movieEvent->mEventType = MOVIE_DECREASE_LOD;
+          case '2':
+            movieEvent->mEventType = MOVIE_ZOOM_SET;
+            movieEvent->mRate = 2.0f; 
             return;
-          case 'i':
-            movieEvent->mEventType = MOVIE_TOGGLE_INTERFACE;
+          case '@': // shift-2 = '@' =  1/2
+            movieEvent->mEventType = MOVIE_ZOOM_SET;
+            movieEvent->mRate = 0.5f; 
             return;
-          case '?':
-          case 'h':
-            PrintKeyboardControls();
-            break;
-          case 'm':
-            ToggleCursor(); 
-            break; 
+          case '4':
+            movieEvent->mEventType = MOVIE_ZOOM_SET;
+            movieEvent->mRate = 4.0f; 
+            return;
+          case '$': // shift-4 = '$' = 1/4
+            movieEvent->mEventType = MOVIE_ZOOM_SET;
+            movieEvent->mRate = 0.25f; 
+            return;
           default:
             DEBUGMSG("unimplemented character '%c'", buffer[0]);
             break;
