@@ -78,77 +78,77 @@ static int GetNumProcessors(void)
 
 // =====================================================================
 void version(void) {
-  dbprintf(0, "Blockbuster version "BLOCKBUSTER_VERSION"  (c) Tungsten Graphics, Inc. with modifications by IMG group at Lawrence Livermore National Laboratory\n\n");
+  printf( "Blockbuster version "BLOCKBUSTER_VERSION"  (c) Tungsten Graphics, Inc. with modifications by IMG group at Lawrence Livermore National Laboratory\n\n");
   return; 
 }
 
 // =====================================================================
 void usage(void) {
   version(); 
-  dbprintf(0, "Usage: blockbuster [options] [-- -<renderer-specific options>] [file]\n");
-  dbprintf(0, "Play a movie from a file or series of files\n");
-  dbprintf(0, "'file' is an optional file name, or a prefix of a set of file names\n");
-  dbprintf(0, "\nOptions:\n");
-  dbprintf(0, "   Note: substrings are also matched, so -h is the same as -help, but beware of non-unique prefixes!\n");
-  dbprintf(0, "-cachedebug: turn on verbose cache debugging messages (also enabled if verbosity is > 5)\n"); 
-  dbprintf(0, "-cachesize <num> specifies cache limit in frames (you can leave this unset unless you are running out of memory)\n");
-  dbprintf(0, "-DecorationsDisable (or -no-decorations): same as -fullscreen\n");
-  dbprintf(0, "-display <display> specifies X display\n");
-  dbprintf(0, "-dmxstereo: short for -r dmx -stereo.\n");
-  dbprintf(0, "-font <fontname> specifies X font\n");
-  dbprintf(0, "-framerate (or -Framerate) <rate> sets the initial frame rate target for the movie [30.0 or movie-specified]\n");
-  dbprintf(0, "-fpsSampleFrequency (or -FSF) <rate> sets the number of times per second that FPS is calculated [2.0]\n");
-  dbprintf(0, "-fullscreen: turns off window decorations and goes to full-screen display\n"); 
-  dbprintf(0, "-geometry <geometrystring> specifies X window geometry\n");
-  dbprintf(0, "-help displays this help message\n");
-  dbprintf(0, "-keyhelp:  display list of keyboard controls\n");
-  dbprintf(0, "-lod num: specifies a starting level of detail for the given movie\n");
-  dbprintf(0, "-loops <loops> specifies how many times to loop (number or 'forever')\n");
-  dbprintf(0, "-messageLevel sets the message level, in order of chattiness:  quiet, syserr, error, warning, info, debug\n"); 
-  dbprintf(0, "-no-autores:  normally, you want blockbuster to decrease resolution when the zoom increases.  This flag suppresses this, for testing.\n");
-  dbprintf(0, "-no-controls (or -withoutControls) turns off the control window (if defined for the user interface)\n");
-  dbprintf(0, "-noscreensaver: use fake mouse clicks to defeat screensaver\n");
-  dbprintf(0, "-no-splash (or -S) suppresses display of splash screen\n");
-  dbprintf(0, "-no-stereo-switch suppresses automatic stereo or mono mode switches based on movie being stereo or mono\n");
-  dbprintf(0, "-play (or -Play) automatically starts the movie after loading\n");
-  dbprintf(0, "-playexit framenum: play one time until frame given, then exit.  Useful for testing.  If framenum == -1, play all the way to end.\n");
-  // dbprintf(0, "-preload <num> specifies how many frames to preload\n");
-  dbprintf(0, "-renderer <name> specifies the method used to render images\n");
-  dbprintf(0, "\tgl: Render using OpenGL glDrawPixels to an X11 window\n");
-  dbprintf(0, "\t    (supported in 'gtk', 'x11' user interfaces)\n");
-  dbprintf(0, "\tgltexture: Render using OpenGL texture mapping to an X11 window\n");
-  dbprintf(0, "\t    (supported in 'gtk', 'x11' user interfaces)\n");
-  dbprintf(0, "\tx11: Render using X11 rendering routines to an X11 window\n");
-  dbprintf(0, "\t    (supported in 'gtk', 'x11' user interfaces)\n");
-  dbprintf(0, "\tgl_stereo: Render using OpenGL glDrawPixels to an X11 window in stereo\n");
-  dbprintf(0, "\t    (supported in 'gtk', 'x11' user interfaces)\n");
-  dbprintf(0, "\tdmx: Render on back-end using DMX: Use -R to specify  backend renderer\n");
-  dbprintf(0, "\t    (supported in 'gtk', 'x11' user interfaces)\n");
+  printf("Usage: blockbuster [options] [-- -<renderer-specific options>] [file]\n");
+  printf("Play a movie from a file or series of files\n");
+  printf("'file' is an optional file name, or a prefix of a set of file names\n");
+  printf("\nOptions:\n");
+  printf("   Note: substrings are also matched, so -h is the same as -help, but beware of non-unique prefixes!\n");
+  printf("-cachedebug: turn on verbose cache debugging messages (also enabled if verbosity is > 5)\n"); 
+  printf("-cachesize <num> specifies cache limit in frames (you can leave this unset unless you are running out of memory)\n");
+  printf("-DecorationsDisable (or -no-decorations): same as -fullscreen\n");
+  printf("-display <display> specifies X display\n");
+  printf("-dmxstereo: short for -r dmx -stereo.\n");
+  printf("-font <fontname> specifies X font\n");
+  printf("-framerate (or -Framerate) <rate> sets the initial frame rate target for the movie [30.0 or movie-specified]\n");
+  printf("-fpsSampleFrequency (or -FSF) <rate> sets the number of times per second that FPS is calculated [2.0]\n");
+  printf("-fullscreen: turns off window decorations and goes to full-screen display\n"); 
+  printf("-geometry <geometrystring> specifies X window geometry\n");
+  printf("-help displays this help message\n");
+  printf("-keyhelp:  display list of keyboard controls\n");
+  printf("-lod num: specifies a starting level of detail for the given movie\n");
+  printf("-loops <loops> specifies how many times to loop (number or 'forever')\n");
+  printf("-messageLevel sets the message level, in order of chattiness:  quiet, syserr, error, warning, info, debug\n"); 
+  printf("-no-autores:  normally, you want blockbuster to decrease resolution when the zoom increases.  This flag suppresses this, for testing.\n");
+  printf("-no-controls (or -withoutControls) turns off the control window (if defined for the user interface)\n");
+  printf("-noscreensaver: use fake mouse clicks to defeat screensaver\n");
+  printf("-no-splash (or -S) suppresses display of splash screen\n");
+  printf("-no-stereo-switch suppresses automatic stereo or mono mode switches based on movie being stereo or mono\n");
+  printf("-play (or -Play) automatically starts the movie after loading\n");
+  printf("-playexit framenum: play one time until frame given, then exit.  Useful for testing.  If framenum == -1, play all the way to end.\n");
+  // printf("-preload <num> specifies how many frames to preload\n");
+  printf("-renderer <name> specifies the method used to render images\n");
+  printf("\tgl: Render using OpenGL glDrawPixels to an X11 window\n");
+  printf("\t    (supported in 'gtk', 'x11' user interfaces)\n");
+  printf("\tgltexture: Render using OpenGL texture mapping to an X11 window\n");
+  printf("\t    (supported in 'gtk', 'x11' user interfaces)\n");
+  printf("\tx11: Render using X11 rendering routines to an X11 window\n");
+  printf("\t    (supported in 'gtk', 'x11' user interfaces)\n");
+  printf("\tgl_stereo: Render using OpenGL glDrawPixels to an X11 window in stereo\n");
+  printf("\t    (supported in 'gtk', 'x11' user interfaces)\n");
+  printf("\tdmx: Render on back-end using DMX: Use -R to specify  backend renderer\n");
+  printf("\t    (supported in 'gtk', 'x11' user interfaces)\n");
   
-  dbprintf(0, "-stereo: short for -r gl_stereo, unless -dmx is given, in which case it is short for -R gl_stereo.\n");
-  dbprintf(0, "-script filename: run the given blockbuster script\n"); 
-  dbprintf(0, "-threads <num> specifies how many threads to use for reading from disk.\n");
-  dbprintf(0, "-timer: enable timer (makes things very verbose, you probably do not want this)\n"); 
-  dbprintf(0, "-verbose num: sets verbosity, with 0=quiet, 1=system, 2=error, 3=warning, 4=info, 5=debug.  Same behavior as -messageLevel but with numbers, basically.\n");
-  dbprintf(0, "-version prints the current blockbuster version\n");
-  dbprintf(0, "-zoom <zoom> sets the initial zoom ['auto' tracks window size,\n");
-  dbprintf(0, "                          0 is 'use default'] ['auto']\n");
+  printf("-stereo: short for -r gl_stereo, unless -dmx is given, in which case it is short for -R gl_stereo.\n");
+  printf("-script filename: run the given blockbuster script\n"); 
+  printf("-threads <num> specifies how many threads to use for reading from disk.\n");
+  printf("-timer: enable timer (makes things very verbose, you probably do not want this)\n"); 
+  printf("-verbose num: sets verbosity, with 0=quiet, 1=system, 2=error, 3=warning, 4=info, 5=debug.  Same behavior as -messageLevel but with numbers, basically.\n");
+  printf("-version prints the current blockbuster version\n");
+  printf("-zoom <zoom> sets the initial zoom ['auto' tracks window size,\n");
+  printf("                          0 is 'use default'] ['auto']\n");
   
-  dbprintf(0, "\nSLAVE OPTIONS\n"); 
-  dbprintf(0, "-backend-renderer <renderer> (or RendererOnBackend <renderer>) specifies the renderer for the backend slaves to use (e.g., gl)\n");
-  dbprintf(0, "-backend-path <renderer> specifies the path to the backend slaves (defaults to \"blockbuster\"\n");
-  dbprintf(0, "-mpi:  Instead of connecting to each backend node and running blockbuster, connect to one backend node and launch $BLOCKBUSTER_MPI_SCRIPT on that host with args given in the string $BLOCKBUSTER_MPI_SCRIPT_ARGS\n");  
-  dbprintf(0, "-mpiscript script argstring:  Same as -mpi, but instead of running $BLOCKBUSTER_MPI_SCRIPT, run \"script\" with args given in \"argstring\"\n"); 
-  dbprintf(0, "-ports <\"ports\"> specifies, in a quoted space-delimited list as a single argument, the port that each slave will use to communicate back to the master\n");
-  dbprintf(0, "-speedTest: DEBUG ONLY: (consider using with -play option) when playing the movie, let the slaves run as fast as they can and stop responding. Does not by itself begin playing the movie.\n");
-  dbprintf(0, "-slave: Run blockbuster as a backend slave\n");
+  printf("\nSLAVE OPTIONS\n"); 
+  printf("-backend-renderer <renderer> (or RendererOnBackend <renderer>) specifies the renderer for the backend slaves to use (e.g., gl)\n");
+  printf("-backend-path <renderer> specifies the path to the backend slaves (defaults to \"blockbuster\"\n");
+  printf("-mpi:  Instead of connecting to each backend node and running blockbuster, connect to one backend node and launch $BLOCKBUSTER_MPI_SCRIPT on that host with args given in the string $BLOCKBUSTER_MPI_SCRIPT_ARGS\n");  
+  printf("-mpiscript script argstring:  Same as -mpi, but instead of running $BLOCKBUSTER_MPI_SCRIPT, run \"script\" with args given in \"argstring\"\n"); 
+  printf("-ports <\"ports\"> specifies, in a quoted space-delimited list as a single argument, the port that each slave will use to communicate back to the master\n");
+  printf("-speedTest: DEBUG ONLY: (consider using with -play option) when playing the movie, let the slaves run as fast as they can and stop responding. Does not by itself begin playing the movie.\n");
+  printf("-slave: Run blockbuster as a backend slave\n");
   
-  dbprintf(0, "The following file formats are supported:\n");
-  dbprintf(0, "    PNG: Single-frame image in a PNG file\n");
-  dbprintf(0, "    PNM: Single-frame image in a PNM (PBM/PGM/PPM) file\n");
-  dbprintf(0, "    TIFF: Single-frame image in a TIFF file\n");
-  dbprintf(0, "    SM: Multiple frames in an SM (Streaming Movie) file\n");
-  dbprintf(0, "    SGI RGB: Single-frame image in an SGI RGB file\n");
+  printf("The following file formats are supported:\n");
+  printf("    PNG: Single-frame image in a PNG file\n");
+  printf("    PNM: Single-frame image in a PNM (PBM/PGM/PPM) file\n");
+  printf("    TIFF: Single-frame image in a TIFF file\n");
+  printf("    SM: Multiple frames in an SM (Streaming Movie) file\n");
+  printf("    SGI RGB: Single-frame image in an SGI RGB file\n");
 
   return ;
 } 
@@ -163,7 +163,7 @@ void usage(void) {
 */ 
 void checkarg(int argc, const char *argname) {
   if (argc < 2) {
-	dbprintf(0, "Error: option %s requires an argument.", argname); 
+	fprintf(stderr, "Error: option %s requires an argument.", argname); 
     exit(1); 
   }
   return;
@@ -388,7 +388,7 @@ static void ParseOptions(int &argc, char *argv[])
       continue;
     else if (CHECK_ATOI_ARG("-threads", argc, argv, opt->readerThreads)) 
       continue; 
-	//else if (SET_BOOL_ARG("-timer", argc, argv, gTimerOn, 0)) continue;
+	else if (SET_BOOL_ARG("-timer", argc, argv, gTimerOn, 0)) continue;
 	else if (CHECK_ATOI_ARG("-verbose", argc, argv,maxMessageLevel))  {
       opt->messageLevel = FindMessageLevel(maxMessageLevel);
       set_verbose(maxMessageLevel); 
