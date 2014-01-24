@@ -5,7 +5,7 @@
 // if youwant verbose cache messages, use these:
 void enableCacheDebug(bool onoff); 
 bool cacheDebug_enabled(void); 
-#define CACHEDEBUG(...) if (cacheDebug_enabled()) DEBUGMSG( __VA_ARGS__)
+#define CACHEDEBUG(...) if (cacheDebug_enabled()) { DEBUGMSG("(t=%f): ",timer::GetExactSeconds()); DEBUGMSG( __VA_ARGS__); }
 
 // #define CACHEDEBUG if (0) DEBUGMSG
 // else use this:
@@ -14,6 +14,7 @@ bool cacheDebug_enabled(void);
 
 #include <vector>
 #include "frames.h"
+#include "timer.h"
 #include "QThread"
 #include "QMutex"
 #include "QWaitCondition"
@@ -74,14 +75,13 @@ class CacheThread: public QThread {
   Q_OBJECT
     public:
   CacheThread(ImageCache *icache, int threadImages): 
-    mStop(false), mCachedImages(threadImages) {
-    mCache.reset(icache); 
+    mStop(false), mCache(icache), mCachedImages(threadImages) {
     for (uint32_t i = 0; i < mCachedImages.size(); i++) {
       mCachedImages[i].reset(new CachedImage()); 
     }
   
     CACHEDEBUG("CacheThread constructor");     
-    RegisterThread(this); 
+    mThreadNum = RegisterThread(this); 
   }
   ~CacheThread(){
     CACHEDEBUG("CacheThread destructor");     
@@ -99,7 +99,10 @@ class CacheThread: public QThread {
     CACHEDEBUG("%s: %d: worker waiting job ready (%s)", 
                file.c_str(), line, reason.c_str());
     //usleep(1000); 
-    jobReady.wait(&imageCacheLock, 20); 
+    double t1 = timer::GetExactSeconds(); 
+    jobReady.wait(&imageCacheLock, 2000); 
+    CACHEDEBUG("%s: %d: worker woken up from job ready after %g seconds", 
+               file.c_str(), line, timer::GetExactSeconds() - t1);
   }
   
   // Called by main thread in PreloadImage()
@@ -111,11 +114,12 @@ class CacheThread: public QThread {
 
    // Called by main thread in GetImage()
   void WaitForJobDone(string reason, string file="unknown file", int line=0) {
+    double t1 = timer::GetExactSeconds(); 
     CACHEDEBUG("%s: %d: main thread waiting job done (%s)", 
                file.c_str(), line, reason.c_str()); 
     //usleep(1000); 
-    jobDone.wait(&imageCacheLock, 20); 
-    CACHEDEBUG("%s: %d: main thread Woke up (%s)", file.c_str(), line, reason.c_str()); 
+    jobDone.wait(&imageCacheLock, 2000); 
+    CACHEDEBUG("%s: %d: main thread woken up after %g seconds", file.c_str(), line, timer::GetExactSeconds() - t1); 
   }
 
   // Called by cache thread to signal job completion.  
@@ -161,9 +165,10 @@ class CacheThread: public QThread {
 
   CachedImagePtr GetCachedImageSlot(uint32_t newFrameNumber);
 
-  ImageCachePtr mCache;
   bool mStop;
-  
+  int mThreadNum; 
+  ImageCache *mCache;
+
   QMutex imageCacheLock; 
   QWaitCondition jobReady, jobDone; 
   deque<ImageCacheJobPtr> mJobQueue; // jobs ready

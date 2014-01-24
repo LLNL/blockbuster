@@ -319,7 +319,7 @@ CachedImagePtr CacheThread::GetCachedImageSlot(uint32_t newFrameNumber)
   
   /* If we couldn't find an image slot, something's wrong. */
   if (!imageSlot) {
-    Print("Cannot find image slot!");
+    CACHEDEBUG("Cannot find image slot!\n");
     int i = 0; 
     for (vector<CachedImagePtr>::iterator cachedImage = mCachedImages.begin(); 
          cachedImage != mCachedImages.end();  cachedImage++, i++) {
@@ -334,7 +334,7 @@ CachedImagePtr CacheThread::GetCachedImageSlot(uint32_t newFrameNumber)
     
   CACHEDEBUG("Removing frame %u to make room for %u", 
              imageSlot->frameNumber, newFrameNumber);
-  Print("Removing frame");
+  //Print("Removing frame");
 
   /* Otherwise, if we found a slot that wasn't vacant, clear it out
    * before returning it.
@@ -606,7 +606,7 @@ CachedImagePtr ImageCache::FindImage(uint32_t frame, uint32_t lod) {
  * So it might pay off to play a game of "add two pixels to each edge." 
  */
 
-ImagePtr ImageCache::GetImage(uint32_t frameNumber,
+ImagePtr ImageCache::GetImage(uint32_t frameNumber, 
                               const Rectangle *newRegion, uint32_t levelOfDetail)
 {
 
@@ -634,6 +634,22 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
    * things so we can decide which of the cache entries is the oldest.
    */
   mRequestNumber++;
+  /* Steal Preload code right from Renderer */ 
+  uint32_t preloadmax = mCurrentEndFrame-mCurrentStartFrame, 
+    frame=frameNumber, preloaded=0;
+  if (preloadmax > mPreloadFrames) {
+    preloadmax = mPreloadFrames;
+  }
+    
+  while (preloaded < preloadmax) {
+    frame += mCurrentPlayDirection; 
+    if (frame > mCurrentEndFrame) frame = mCurrentStartFrame; 
+    if (frame < mCurrentStartFrame) frame = mCurrentEndFrame; 
+    DEBUGMSG("Preload frame %d (mCurrentStartFrame = %d,mCurrentEndFrame  = %d", frame, mCurrentStartFrame, mCurrentEndFrame); 
+    PreloadImage(frame, newRegion, levelOfDetail);
+    ++preloaded;
+  }
+  DEBUGMSG("Preloaded %d frames (max is %d)", preloaded, preloadmax); 
 
   /* Loop until we find the request.  There are three ways we can
    * find the request; it can either be:
@@ -841,20 +857,6 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
     mThreads[threadnum]->unlock("image stored and locked successfully", __FILE__, __LINE__); 
   }
     
-  /* Steal Preload code right from Renderer */ 
-  uint32_t preloadmax = mCurrentEndFrame-mCurrentStartFrame, 
-    frame=frameNumber, preloaded=0;
-  if (preloadmax > mPreloadFrames) {
-    preloadmax = mPreloadFrames;
-  }
-
-  while (preloaded++ < preloadmax) {
-    frame += mCurrentPlayDirection; 
-    if (frame > mCurrentEndFrame) frame = mCurrentEndFrame; 
-    if (frame < mCurrentStartFrame) frame = mCurrentStartFrame; 
-    DEBUGMSG("Preload frame %d", frame); 
-    PreloadImage(frame, newRegion, levelOfDetail);
-  }
     
   return image;
 }
@@ -951,7 +953,7 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
   PrintJobQueue(mThreads[threadnum]->mJobQueue); 
 
   mThreads[threadnum]->unlock("new job added", __FILE__, __LINE__); 
-  mThreads[threadnum]->Print("new job added"); 
+  //mThreads[threadnum]->Print("new job added"); 
   /* If there's a worker thread that's snoozing, this will
    * wake him up.
    */

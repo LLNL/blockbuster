@@ -530,8 +530,13 @@ struct OutputBuffer {
   }
   
   bool addFrame(FrameCompressionWork* frame){
-    int32_t slotnum = frame->mFrame - mFirstFrameNum;
-    if (full() || slotnum < 0 || slotnum >= mFrameBuffer.size()) {
+    if (frame->mFrame < mFirstFrameNum) {
+      smdbprintf(0, "Bad thing: addFrame called on frame %d, which is before first allowable frame number %d\n", frame->mFrame, mFirstFrameNum);
+      abort(); 
+    }
+      
+    uint32_t slotnum = frame->mFrame - mFirstFrameNum;
+    if (full() || slotnum >= mFrameBuffer.size()) {
       smdbprintf(2, "Warning: Attempted to place frame %d into slot %d failed!  (full == %d)\n", frame->mFrame, slotnum, int(full()));
       return false;
     }

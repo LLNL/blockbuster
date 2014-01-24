@@ -56,11 +56,11 @@ int GetThreadID(QThread *thread) {
 /*!
   Call this from any thread to add it to the index of QThreads.  
 */
-void RegisterThread(QThread *thread) {
+int RegisterThread(QThread *thread) {
   if (GetThreadID(thread) == -1) {
     gThreads.push_back(thread); 
   }
-  return; 
+  return gThreads.size()-1; 
 }
 
 /*!

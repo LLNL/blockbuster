@@ -1403,10 +1403,12 @@ void BlockbusterLaunchDialog::on_launchButton_clicked(){
     cmd +=  QString(" -r dmx ");
   }
   
-  cmd += fileNameComboBox->currentText();//movie name
 
   if (host != "localhost") {
+    cmd += QString("\\\"%1\\\"").arg(fileNameComboBox->currentText());//movie name
     cmd += "\""; 
+  } else {
+    cmd += (fileNameComboBox->currentText());//movie name
   }
   dbprintf(5, "Launching command %s\n", cmd.toStdString().c_str()); 
 
