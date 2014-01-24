@@ -627,7 +627,7 @@ void SideCar::askLaunchBlockbuster(QString iMovieName, bool fromMain) {
 
   mBlockbusterServer.close(); // in case it was listening, don't any more. 
 
-  if (iMovieName.contains("@")) {
+  if (fromMain && iMovieName.contains("@")) {
     dbprintf(5, "found @ symbol\n"); 
     QStringList tokens = iMovieName.split("@"); 
     if (tokens.size() != 2) {
@@ -1567,7 +1567,7 @@ void BlockbusterLaunchDialog::removeHostProfiles(void) {
 void BlockbusterLaunchDialog::sortAndSaveHostProfiles(void) {
   // first sort by output file and name:  
   sort(mHostProfiles.begin(), mHostProfiles.end(), CompareHostProfiles); 
-  
+  bool foundUserProfile = false; // if this is false at the end, we'll delete the user's host profile file.  
   QString profileFile =""; 
   FILE *fp = NULL; 
   dbprintf(5, "Examining profiles to save them.\n"); 
@@ -1577,6 +1577,9 @@ void BlockbusterLaunchDialog::sortAndSaveHostProfiles(void) {
     dbprintf(5, QString("Examining profile %1.\n").arg(profile->toQString())); 
     
     if ( !profile->mReadOnly) {
+      if (profile->mProfileFile == profile->mUserHostProfileFile) {
+        foundUserProfile = true; 
+      }
       if(!fp || (profile->mProfileFile != profileFile) ) {
         profileFile = profile->mProfileFile; 
         dbprintf(5, QString("Opening new profile file %1\n").arg(profileFile)); 
@@ -1589,6 +1592,9 @@ void BlockbusterLaunchDialog::sortAndSaveHostProfiles(void) {
       dbprintf(5, "Profile is read-only\n"); 
     }
     ++pos; 
+  }
+  if (!foundUserProfile) {
+    unlink(HostProfile::mUserHostProfileFile.toStdString().c_str()); 
   }
   if (fp) fclose(fp); 
   return; 
