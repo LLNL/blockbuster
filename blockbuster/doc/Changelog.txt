@@ -2,10 +2,13 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.0o (git tag blockbuster-v2.8.0o) Wed Jan 22 14:18:04 PST 2014
+VERSION 2.8.0o (git tag blockbuster-v2.8.0o) Thu Jan 23 18:43:09 PST 2014
 -- Fixed bug:  Blockbuster dumped core when opening 29 movies in a row. (was not releasing file descriptors)
 -- Fixed bug:  Typing "H" into sidecar when keyboard connected caused crash. 
 -- Fixed bug:  Some keyboard shortcuts between sidecar and blockbuster were inconsistent.   
+-- Fixed bug:  Large movies now play much more smoothly, correcting "herky jerky" bug.  
+-- Fixed bug:  Ignore '@' sign in movie cues, which are used in the command line to specify a movie on a remote host.  
+-- Fixed bug:  You are now able to delete the last user host profile in your list if you desire.  
 
 ===============================================================================
 VERSION 2.8.0n (git tag blockbuster-v2.8.0n) Fri Jan 17 18:01:36 PST 2014
