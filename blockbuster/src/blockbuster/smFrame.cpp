@@ -171,8 +171,8 @@ FrameListPtr smGetFrameList(const char *filename)
      */
     frameList->mTargetFPS = sm->getFPS();
     frameList->mStereo = stereo;
-    frameList->mWidth = sm->getWidth(i); 
-    frameList->mHeight = sm->getHeight(i); 
+    frameList->mWidth = sm->getWidth(0); 
+    frameList->mHeight = sm->getHeight(0); 
     frameList->mFormatName = "SM";
     frameList->mFormatDescription =
       "Multiple frames in a shared SM (Streaming Movie) file";
