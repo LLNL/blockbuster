@@ -33,7 +33,7 @@ class SidecarServer : public QObject {
   Q_OBJECT
     public:
   SidecarServer(QObject *parent = 0): 
-    QObject(parent), mSidecarSocket(NULL) {
+    QObject(parent), mRenderer(NULL), mSidecarSocket(NULL) {
     dbprintf(5, "SidecarServer\n"); 
     //mTcpServer.listen(QHostAddress::Any, 5959); 
     mTcpServer.listen(); 

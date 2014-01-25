@@ -257,9 +257,8 @@ static void ParseEnvironmentVars(void) {
 /* 
  * Parse argv[] options and set flags in <opt>.
  */
-static void ParseOptions(int &argc, char *argv[])
+static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
 {
-  ProgramOptions *opt = GetGlobalOptions(); 
   int numProcessors;
   /* defaults */
   opt->executable = gCoreApp->applicationFilePath(); 
@@ -464,7 +463,7 @@ static void ParseOptions(int &argc, char *argv[])
     } else {
       opt->rendererName = "gl_stereo"; 
     }
-  }
+  } 
   
   if (get_verbose() > 5) {
     opt->mCacheDebug = true; 
@@ -484,11 +483,7 @@ static void ParseOptions(int &argc, char *argv[])
 	opt->slaveMode = 1;
     QStringList hostTokens=opt->masterHost.split(":"); 
     opt->masterHost = hostTokens[0]; 
-    /*    if (opt->slavePorts != "") {      
-          QStringList ports = opt->slavePorts.split(" ", QString::SkipEmptyParts); 
-          opt->masterPort = ports[opt->mpiRank].toInt();     
-          } else {
-    */
+ 
     if (hostTokens.size() > 1) {
       opt->masterPort = hostTokens[1].toInt();
       if (hostTokens.size() == 3 && hostTokens[2] == "mpi") {
@@ -586,8 +581,6 @@ int main(int argc, char *argv[])
   int rv, retval = 0;
   char ** args = argv; 
   
-  gMainThread = QThread::currentThread(); 
-  RegisterThread(gMainThread); 
  
   version(); // announce our self
   /*! 
@@ -630,8 +623,11 @@ int main(int argc, char *argv[])
   gCoreApp = new QApplication(argc, args); 
 
   ParseEnvironmentVars(); 
-  ParseOptions(newargc, newargs);
+  ParseOptions(opt, newargc, newargs);
   printargs("After ParseOptions", newargs, newargc); 
+
+  gMainThread = QThread::currentThread(); 
+  RegisterThread(gMainThread, opt->readerThreads); 
 
   /* initialize the slave portion if we are a slave */
   if (opt->slaveMode != 0) {
@@ -656,144 +652,31 @@ int main(int argc, char *argv[])
     sprintf(buf, QString("DISPLAY=%1").arg(opt->displayName).toStdString().c_str()); 
     putenv(buf);
   }
- 
-
+  
+  
   INFO(QString("Using %1 renderer").arg(opt->rendererName));
-
+  
   // set up a connection to sidecar if that's what launched us
   if (opt->sidecarHostPort != "") {
     INFO(QString("Connecting to sidecar on %1\n").arg(opt->sidecarHostPort)); 
     gSidecarServer->connectToSidecar(opt->sidecarHostPort); 
     SuppressMessageDialogs(true); 
   }
-  /* Remaining newargs are movie filenames, load them (skip newargs[0]=progname) */
   
-  /* initialize the smlibrary with the number of threads */
-  //   smBase::init(opt->readerThreads); 
-
-
-  /*
-    Treat the remaining newargs as files. 
-    The way this SHOULD work is for the filenames to be given to the renderer instead of a frame list being generated outside and managed here.  
-  */ 
-  FrameListPtr allFrames;
-  
-  printargs("Before framelist", newargs, newargc); 
-  int count = 0; 
-  while (count < newargc && newargs[count]) count++;  
-  if (count && count-1) {
-    allFrames.reset(new FrameList(count-1, &newargs[1]));
-    if (allFrames->numActualFrames() == 0) {
-      allFrames.reset(); // now allFrames != true
-    }
-  }
-  if (opt->sidecarHostPort != "" && !allFrames) {
-    ERROR("%s is not a valid movie file - nothing to display", newargs[1]);
-    gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
-    exit(1);
-  } 
- 
-  /* If we still don't have any frames to display, and we need some
-   * (i.e. we're not a slave), give the user interface one last
-   * chance to supply us with some frames.
+  /* deal with a script arg
    */
   vector<MovieEvent> script; 
-  string scriptFirstMovie; 
-  if (opt->mScript != "") {
-    script = MovieEvent::ParseScript(opt->mScript.toStdString()); 
-    // look through the script for special events of note
-    for (vector<MovieEvent>::iterator event = script.begin(); event != script.end(); event++) {
-      if (event->mEventType == MOVIE_DISABLE_DIALOGS) {
-        SuppressMessageDialogs(true); 
-      }
-      if (scriptFirstMovie == "" && event->mEventType == MOVIE_OPEN_FILE) {
-        scriptFirstMovie = event->mString;
-      }
-    }
-  }
-  if (!opt->slaveMode && !allFrames) {
-    // see if we have a script that gives us a movie:
-    if (scriptFirstMovie != "") {
-       allFrames.reset(new FrameList(scriptFirstMovie));
-      if (allFrames->numActualFrames() == 0) {
-        allFrames.reset(); // now allFrames != true
-      }           
-    }
-    if (!allFrames) {
-      QString filename;
-      if (opt->sidecarHostPort == "") { 
-        /* Try to get a filename from the user interface */
-        //    char *filename = someObject->ChooseFile(opt);
-        filename = 
-          QFileDialog::getOpenFileName(NULL, "Choose a movie file", 
-                                       "Navigate to a movie file to play",
-                                       "Movie Files (*.sm)");
-      }
-      if (filename == "") {
-        WARNING("No frames found - nothing to display");
-        gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
-        exit(MOVIE_OK);
-      }
-      allFrames.reset(new FrameList); 
-      QStringList names(filename); 
-      if (!allFrames->LoadFrames(names) ||
-          !allFrames->numActualFrames()) {
-        gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
-        exit(1);
-      }
-    }
+  printargs("Before framelist", newargs, newargc); 
+  for (int count = 1; count < newargc && newargs[count];  count++) {
+    script.push_back(MovieEvent(MOVIE_OPEN_FILE, newargs[count])); 
   }
   
-
-  /* At this point, we should have a full list of frames.  If we don't,
-   * we obviously cannot play anything.
-   */
-  if (!opt->slaveMode && !allFrames) {
-    ERROR("No frames found - nothing to display");
-    gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
-    exit(1);
-  }
-
-  /* Here we have a master frame list. 
-   */
-  if (opt->slaveMode) {
-    /* The slave doesn't need frames - it will get the list from the master */
-    if (allFrames) {
-      DEBUGMSG("Deleting frame list..."); 
-      allFrames.reset(); 
-      DEBUGMSG("Frame List deleted"); 
-    } else {
-      DEBUGMSG("No frames to delete"); 
-    }
+ if (opt->slaveMode) {
     retval = theSlave->Loop();
     INFO("Done with slave loop.\n");
   }
-  else {
-    // We are not a DMX slave if we are here. 
-    if (!opt->stereoSwitchDisable) { 
-      // auto-switch stereo based on detected movie type     
-      if (opt->rendererName != "dmx") { 
-        // No DMX: switch frontend renderer as needed
-        if ((allFrames->mStereo && opt->rendererName != "gl_stereo")) {
-          opt->rendererName = "gl_stereo";
-        }
-        if (!allFrames->mStereo && opt->rendererName == "gl_stereo") {
-          opt->rendererName = "gl";
-        }
-      } else { // DMX case: switch backend renderer as needed
-        if ((allFrames->mStereo && opt->backendRendererName != "gl_stereo")) {
-          opt->backendRendererName = "gl_stereo";
-        }
-        if (!allFrames->mStereo && opt->backendRendererName == "gl_stereo") {
-          opt->backendRendererName = "gl";
-        }
-      }
-    } 
-    while (DisplayLoop(allFrames, opt, script)) {
-      script.clear(); 
-      continue; 
-    }
-  }
+
+  retval = !DisplayLoop(opt, script);
 
   /* If we read settings, write them back out.  Only one of the
    * two files we read should contain the changed settings creaed

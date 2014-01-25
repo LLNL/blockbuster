@@ -67,10 +67,10 @@ struct CacheState {
 class NewCacheThread: public QThread {
   Q_OBJECT
     public:
-  NewCacheThread(CacheStatePtr s): 
+  NewCacheThread(CacheStatePtr s, int threadnum): 
     mStop(false), mCacheState(s) {
     CACHEDEBUG("CacheThread constructor");     
-    RegisterThread(this); 
+    RegisterThread(this, threadnum); 
   }
   ~NewCacheThread(){
     return; 

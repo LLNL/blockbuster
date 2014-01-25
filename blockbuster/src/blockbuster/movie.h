@@ -3,7 +3,7 @@
 #include "frames.h"
 
 #define LOOP_FOREVER (-1)
-int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEvent> events);
+int DisplayLoop(/*FrameListPtr &allFrames,*/ ProgramOptions *options, vector<MovieEvent> script);
 
 
 #endif 

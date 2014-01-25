@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include "common.h"
 #include <QTime>
+#include <QMutex>
 #include <errmsg.h>
 //bool gDbprintf= false; 
 //static int gVerbose = 0; 
@@ -37,52 +38,74 @@ using namespace std;
 /*!
   Global index of QThreads, used to get a simple 0-based threadID for each thread.  
 */ 
-static vector<QThread *>gThreads; 
+QMutex registerProtector; 
+static vector<QThread *> gThreads; 
+static vector<int> gThreadIDs; 
 /*!
   Get the 0-based thread index for the given QThread. 
   Return -1 on failure.
 */
 int GetThreadID(QThread *thread) {
   int i = 0; 
+  int id = -1; 
   vector<QThread *>::iterator pos = gThreads.begin(), endpos = gThreads.end(); 
-  while (pos != endpos) {
-    if (thread == *pos) return i;
-    ++pos; 
-    ++i; 
+  while (pos != endpos && id == -1) {
+    if (thread == *pos) {
+      id = gThreadIDs[i];
+    } else {
+      ++pos; 
+      ++i; 
+    }
   }
-  return -1; 
+  return id; 
 }
 
 /*!
   Call this from any thread to add it to the index of QThreads.  
 */
-int RegisterThread(QThread *thread) {
+int RegisterThread(QThread *thread, int threadnum) {
+  registerProtector.lock(); 
+  if (threadnum == -1) {
+    threadnum = gThreadIDs.size(); 
+  }
   if (GetThreadID(thread) == -1) {
     gThreads.push_back(thread); 
+    gThreadIDs.push_back(threadnum); 
   }
-  return gThreads.size()-1; 
+  registerProtector.unlock(); 
+  return threadnum; 
 }
 
 /*!
   This must also be done to keep things sane
 */
 void UnregisterThread(QThread *thread) {
+  registerProtector.lock(); 
   vector<QThread *>::iterator pos = gThreads.begin(), endpos = gThreads.end(); 
-  while (pos != endpos) {
-    if (thread == *pos) {
-      gThreads.erase(pos); 
-      return; 
-    }
-    ++pos; 
+  vector<int>::iterator intpos = gThreadIDs.begin(); 
+  while (pos != endpos && thread != *pos) {
+    ++pos; ++intpos; 
   }
+  if (pos != endpos) {
+    gThreads.erase(pos); 
+    gThreadIDs.erase(intpos); 
+    if (gThreads.size() != gThreadIDs.size()) {
+      cerr << "gThreads.size() != gThreadIDs.size()" << endl; 
+      abort(); 
+    }
+  }
+  registerProtector.unlock(); 
   return ;
 }
 /*!
   Call this from any thread to get the current 0-based thread index.    
   Returns -1 if not found. 
 */
-uint16_t GetCurrentThreadID(void) { 
-  return GetThreadID(QThread::currentThread()); 
+uint16_t GetCurrentThreadID(void) {
+  registerProtector.lock(); 
+  uint16_t id = GetThreadID(QThread::currentThread()); 
+  registerProtector.unlock(); 
+  return id; 
 }
 
 void PrintKeyboardControls(void)

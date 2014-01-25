@@ -142,9 +142,12 @@ void CacheThread::run() {
   ImagePtr image;
   ImageCacheJobPtr job;
   CachedImagePtr imageSlot;
-  CACHEDEBUG("CacheThread::run() (thread = %p)", QThread::currentThread()); 
 
-  RegisterThread(this); // see common.cpp -- used to create a 0-based index that can be referenced anywhere. 
+  // RegisterThread(this); // see common.cpp -- used to create a 0-based index that can be referenced anywhere. 
+  CACHEDEBUG("CacheThread::run() (thread = %p, thread ID = %d, mThreadNum = %d)", QThread::currentThread(), GetCurrentThreadID(), mThreadNum); 
+  if (mThreadNum == 31) {
+    dbprintf(0, "here we are\n"); 
+  }
 
   /* Repeat forever, until the thread is cancelled by the main thread */
   while (1) {
@@ -422,7 +425,7 @@ ImageCache::ImageCache(int numthreads, int numimages, ImageFormat &required):
       } else {
         threadImages = numimages/numthreads; 
       }
-      mThreads.push_back(CacheThreadPtr(new CacheThread(this, threadImages))); 
+      mThreads.push_back(CacheThreadPtr(new CacheThread(this, threadImages, i))); 
       mThreads[i]->start(); 
     }
   }
@@ -640,8 +643,9 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
   if (preloadmax > mPreloadFrames) {
     preloadmax = mPreloadFrames;
   }
-    
+  //int playdir = mCurrentPlayDirection ? mCurrentPlayDirection: 1;
   while (preloaded < preloadmax) {
+    //frame += playdir; 
     frame += mCurrentPlayDirection; 
     if (frame > mCurrentEndFrame) frame = mCurrentStartFrame; 
     if (frame < mCurrentStartFrame) frame = mCurrentEndFrame; 

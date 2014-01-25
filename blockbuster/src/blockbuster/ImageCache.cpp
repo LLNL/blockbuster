@@ -47,7 +47,7 @@ NewImageCache::NewImageCache(int numthreads, int maximages,
   mCacheState->mFrameStatuses.reset(new FrameStatusVector(frameList->mFrames.size())); 
 
   for (uint32_t i = 0; i < mNumThreads; i++) {
-    mThreads.push_back(NewCacheThreadPtr(new NewCacheThread(mCacheState))); 
+    mThreads.push_back(NewCacheThreadPtr(new NewCacheThread(mCacheState, i))); 
     mThreads[i]->start(); 
   }
 

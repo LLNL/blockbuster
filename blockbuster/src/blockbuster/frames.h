@@ -125,8 +125,8 @@ struct FrameInfo {
 
   // ----------------------------------------------
   FrameInfo(string fname="", uint32_t w=0, uint32_t h=0, uint32_t d=0, 
-            uint32_t maxlod=0, uint32_t frameInFile=0){
-    init(fname,w,h,d,maxlod,frameInFile); 
+            uint32_t lod=0, uint32_t frameInFile=0){
+    init(fname,w,h,d,lod,frameInFile); 
     return; 
   }
   
@@ -136,7 +136,7 @@ struct FrameInfo {
   // ----------------------------------------------
   FrameInfo(const FrameInfo &other) :
     mWidth(other.mWidth), mHeight(other.mHeight),  
-    mDepth(other.mDepth), mMaxLOD(other.mMaxLOD), 
+    mDepth(other.mDepth), mLOD(other.mLOD), 
     mFrameNumberInFile(other.mFrameNumberInFile), 
     mFrameNumber(other.mFrameNumber), mFilename(other.mFilename) {
     return; 
@@ -144,11 +144,11 @@ struct FrameInfo {
 
   // ----------------------------------------------
   void init(string fname, uint32_t w, uint32_t h,    
-            uint32_t  d,  uint32_t maxlod, uint32_t frameinfile) {
+            uint32_t  d,  uint32_t lod, uint32_t frameinfile) {
     mWidth = w; 
     mHeight = h; 
     mDepth = d; 
-    mMaxLOD = maxlod; 
+    mLOD = lod; 
     mFrameNumberInFile = frameinfile; // always known at construction
     mFrameNumber = 0; // usually not known at construction time
     mFilename = fname; 
@@ -195,7 +195,7 @@ struct FrameInfo {
   /* Basic statistics */
   uint32_t mWidth, mHeight, mDepth;
   
-  uint32_t mMaxLOD; /* 0 if LOD not supported */
+  uint32_t mLOD; /* 0 if LOD not supported */
   
   /* If there is more than one frame in a single file, the format
    * driver can use this integer to distinguish them.
@@ -271,6 +271,7 @@ struct FrameList {
   void init(void) {
     mStereo = false; 
     mTargetFPS = 30.0;
+    mWidth = mHeight = mDepth = mLOD = 0; 
   }
 
   // ----------------------------------------------------
@@ -293,8 +294,8 @@ struct FrameList {
   uint32_t numActualFrames(void) const { return mFrames.size(); }
 
   // ----------------------------------------------------
-  void GetInfo(int &maxWidth, int &maxHeight, int &maxDepth,
-               int &maxLOD, float &targetFPS);
+  void GetInfo(int &width, int &height, int &depth,
+               int &LOD, float &FPS);
 
   // ----------------------------------------------------
   void append(FrameListPtr other) {
@@ -310,6 +311,14 @@ struct FrameList {
   void append(FrameInfoPtr frame) {
     mFrames.push_back(frame); 
     return; 
+  }
+  
+  // ----------------------------------------------------
+  /* This is dangerous.  See http://www.artima.com/cppsource/safebool2.html
+   * I don't care today, but YMMV.  Just don't do anything weird.  
+   */ 
+  operator bool() {
+    return mFrames.size() != 0; 
   }
   
   // ----------------------------------------------------

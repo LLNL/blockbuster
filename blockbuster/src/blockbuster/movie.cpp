@@ -119,13 +119,13 @@ void ClampStartEndFrames(FrameListPtr allFrames,
  * Main UI / image display loop
  * XXX this should get moved to a new file.
  */
-int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEvent> script)
+int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
 {
   int32_t previousFrame = -1, cueEndFrame = 0;
   uint totalFrameCount = 0, recentFrameCount = 0;
   FrameInfoPtr frameInfo;
-  Renderer * renderer;
-  int maxWidth, maxHeight, maxDepth;
+  Renderer * renderer = NULL;
+  int width, height, depth;
   int loopCount = options->loopCount; 
   int drawInterface = options->drawInterface;
   int skippedDelayCount = 0, usedDelayCount = 0;
@@ -139,7 +139,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
   double fps = 0.0;
   double nextSwapTime = 0.0;
   float targetFPS = 0.0;
-
+  FrameListPtr allFrames; 
   double noscreensaverStartTime = GetCurrentTime();
 
   bool pingpong = false; // play forward, then backward, then forward, etc
@@ -149,7 +149,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
   int32_t panning = 0, panStartX = 0, panStartY = 0, panDeltaX = 0, panDeltaY = 0;
   int zooming = 0, zoomStartY = 0, zoomDelta = 0;  // integer zoom for mouse
   /*int izoom = 0*/  // for mouse zoom
-  float currentZoom = 1.0, newZoom, startZoom, oldZoom; // actual zoom factor
+  float currentZoom = 1.0, newZoom = 1.0, startZoom, oldZoom; // actual zoom factor
   int lod = 0, maxLOD, baseLOD = 0, lodBias = options->LOD;
   long sleepAmt=1; // for incremental backoff during idle
   /* Region Of Interest of the image */
@@ -157,87 +157,40 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
   int destX, destY; // position on canvas to render the image
 
   
-  /* We'll need this for timing */
-  Hertz = sysconf(_SC_CLK_TCK);
-
-  /* Insert splash screen code here. 
-   */
-
-  allFrames->GetInfo(maxWidth, maxHeight, maxDepth, maxLOD, targetFPS);
-  if (options->frameRate != 0.0) targetFPS = options->frameRate; 
-  options->frameRate = targetFPS; 
-
-  if(options->decorations) {
-    if (options->geometry.width == DONT_CARE)
-      options->geometry.width = maxWidth;
-    if (options->geometry.height == DONT_CARE)
-      options->geometry.height = maxHeight;
-  }
-
-  renderer = Renderer::CreateRenderer(options, 0, gMainWindow);
-  if (!renderer) {
-    ERROR("Could not create a renderer");
-    return 1;
-  }
-
-  gSidecarServer->SetRenderer(renderer); 
-
   int32_t preloadFrames= options->preloadFrames,
     playDirection = 0, 
     startFrame= options->startFrame, 
     frameNumber = options->currentFrame, 
-    endFrame = options->endFrame; 
+    endFrame = options->endFrame, 
+    playExit = options->playExit; 
+
+  /* We'll need this for timing */
+  Hertz = sysconf(_SC_CLK_TCK);
+
   
-  /* Tell the Renderer about the frames it's going to render.
-     Generate a warning if the frames are out of whack */
-  renderer->SetFrameList(allFrames);
-  renderer->ReportFrameListChange(allFrames);
-  ClampStartEndFrames(allFrames, startFrame, endFrame, frameNumber, true); 
-  int playExit = options->playExit; 
-  if (playExit < 0) playExit = endFrame; 
-  
-  /* The Renderer may or may not have an interface to display
-   * (or to hide, if we chose to initially have the interface
-   * off)
-   */
-  //  renderer->ReportRateRangeChange(0.01, 1000);
-  renderer->ReportFrameChange(frameNumber);
-  renderer->ReportDetailRangeChange(-maxLOD, maxLOD);
-  renderer->ShowInterface(options->drawInterface);
-  renderer->ReportDetailChange(lodBias);
-  renderer->ReportLoopBehaviorChange(loopCount); 
-
-  /* Compute a starting zoom factor.  We won't do a full 
-   * Zoom to Fit, but we will do a Shrink to Fit (i.e.
-   * we'll allow the movie to shrink, but not to grow), so that
-   * the new movie fits in the Renderer initially.
-   */
-  newZoom = ComputeZoomToFit(renderer, maxWidth, maxHeight);
-  if (newZoom > 1.0) {
-    /* The renderer is larger - do a normal zoom at startup */
-    newZoom = 1.0;
-  }
-
-
   /* Start timing */
   startClicks = times(&startTime);
   recentStartTime = GetCurrentTime();
-
+  
   if ( options->play != 0 )
     playDirection = options->play;
-
-
+  
+  
   if ( options->zoom != 1.0 )
     newZoom =options->zoom;
+  
+  //if(options->decorations) {
+  // }
+  
 
-  vector<MovieEvent>  events; 
+  deque<MovieEvent>  events; 
+  // events.push_back(MovieEvent(MOVIE_LOOP_INITIALIZE));
   if (options->fullScreen) {
     DEBUGMSG("fullScreen from options\n"); 
     events.push_back(MovieEvent(MOVIE_FULLSCREEN)); 
     options->fullScreen=false; 
   }
 
-  renderer->ReportRateChange(options->frameRate);
 					
   time_t lastheartbeat = time(NULL); 
   bool fullScreen = false, zoomOne = false; 
@@ -250,11 +203,6 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
 
     /* Get an event from the renderer or network and process it.
      */   
-    /* every minute or so, tell any DMX slaves we are alive */ 
-    if (time(NULL) - lastheartbeat > 60) {
-      renderer->DMXSendHeartbeat(); 
-      lastheartbeat = time(NULL); 
-    }
  
     gCoreApp->processEvents(); 
     if (gMainWindow->GetEvent(newEvent)) {  
@@ -263,20 +211,28 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
     if (GetNetworkEvent(&newEvent)) { /* Qt events from e.g. Sidecar */
       events.push_back(newEvent); 
     } 
-    renderer->GetXEvent(0, &newEvent); 
-    if (playDirection && newEvent.mEventType == MOVIE_GOTO_FRAME && 
-        newEvent.mNumber == frameNumber+playDirection) {
-      newEvent.mEventType = MOVIE_NONE; 
-    }   
+    if (renderer) {
+      /* every minute or so, tell any DMX slaves we are alive */ 
+      if (time(NULL) - lastheartbeat > 60) {
+        renderer->DMXSendHeartbeat(); 
+        lastheartbeat = time(NULL); 
+      }
+      renderer->GetXEvent(0, &newEvent); 
+      if (playDirection && newEvent.mEventType == MOVIE_GOTO_FRAME && 
+          newEvent.mNumber == frameNumber+playDirection) {
+        newEvent.mEventType = MOVIE_NONE; 
+      }   
+    }
     events.push_back(newEvent); 
     
     // we now have at least one event
     while (events.size()) {
       bool swapBuffers = false; 
       MovieEvent event = events[0];
-      events.erase(events.begin()); 
+      events.pop_front(); 
 
       bool sendSnapshot = false; 
+             
       if (event.mEventType == MOVIE_NONE) {
         if (script.size()) {
           event = script[0]; 
@@ -288,6 +244,190 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
         DEBUGMSG("GOT EVENT ------- %s\n", event.Stringify().c_str()); 
       }
       switch(event.mEventType) {
+      case MOVIE_LOOP_INITIALIZE:
+        if (allFrames) {
+          allFrames->GetInfo(width, height, depth, maxLOD, targetFPS);
+        } else {
+          width = height = 500; 
+          maxLOD = 0;
+          depth = 1; 
+          targetFPS = 30.0;
+        }
+        if (options->geometry.width == DONT_CARE)
+          options->geometry.width = width;
+        if (options->geometry.height == DONT_CARE)
+          options->geometry.height = height;
+        if (options->frameRate != 0.0) targetFPS = options->frameRate; 
+        options->frameRate = targetFPS; 
+        
+        if (playExit < 0) playExit = endFrame; 
+        
+        /* Tell the Renderer about the frames it's going to render.
+           Generate a warning if the frames are out of whack */
+        renderer = Renderer::CreateRenderer(options, 0, gMainWindow);
+        if (!renderer) {
+          ERROR("Could not create a renderer");
+          return 1;
+        }
+        
+        gSidecarServer->SetRenderer(renderer); 
+        
+        if (allFrames) {
+          renderer->SetFrameList(allFrames);
+          renderer->ReportFrameListChange(allFrames);
+          ClampStartEndFrames(allFrames, startFrame, endFrame, frameNumber, true); 
+        }
+        /* The Renderer may or may not have an interface to display
+         * (or to hide, if we chose to initially have the interface
+         * off)
+         */
+        //  renderer->ReportRateRangeChange(0.01, 1000);
+        renderer->ReportRateChange(options->frameRate);
+        renderer->ReportFrameChange(frameNumber);
+        renderer->ReportDetailRangeChange(-maxLOD, maxLOD);
+        renderer->ShowInterface(options->drawInterface);
+        renderer->ReportDetailChange(lodBias);
+        renderer->ReportLoopBehaviorChange(loopCount); 
+        
+        /* Compute a starting zoom factor.  We won't do a full 
+         * Zoom to Fit, but we will do a Shrink to Fit (i.e.
+         * we'll allow the movie to shrink, but not to grow), so that
+         * the new movie fits in the Renderer initially.
+         */
+        newZoom = ComputeZoomToFit(renderer, width, height);
+        if (newZoom > 1.0) {
+          /* The renderer is larger - do a normal zoom at startup */
+          newZoom = 1.0;
+        }      
+                
+      case MOVIE_OPEN_FILE:   
+      case MOVIE_OPEN_FILE_NOCHANGE: 
+        {
+          DEBUGMSG("Got Open_File command"); 
+          QStringList filenames; 
+          filenames.append(event.mString.c_str());
+        
+          allFrames.reset(new FrameList); // this should delete our old FrameList
+          if (!allFrames->LoadFrames(filenames)) {	    
+            ERROR("Could not open movie file %s", event.mString.c_str()); 
+            gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
+            continue; 
+          }
+          if (!options->stereoSwitchDisable) { 
+            // auto-switch stereo based on detected movie type     
+            if (options->rendererName != "dmx") { 
+              // No DMX: switch frontend renderer as needed
+              if ((allFrames->mStereo && options->rendererName != "gl_stereo")) {
+                options->rendererName = "gl_stereo";
+              }
+              if (!allFrames->mStereo && options->rendererName == "gl_stereo") {
+                options->rendererName = "gl";
+              }            
+            } else { // DMX case: switch backend renderer as needed
+              if ((allFrames->mStereo && options->backendRendererName != "gl_stereo")) {
+                options->backendRendererName = "gl_stereo";
+              }
+              if (!allFrames->mStereo && options->backendRendererName == "gl_stereo") {
+                options->backendRendererName = "gl";
+              }
+            }
+            if (options->rendererName == "") {
+              options->rendererName = "gl";
+            }
+            if (allFrames->mStereo != (options->rendererName == "gl_stereo")) {
+              cerr << "toggle stereo automatically"<< endl;            
+            }
+          } 
+          allFrames->GetInfo(width, height, depth, maxLOD, targetFPS);
+          startFrame = 0; 
+          endFrame = allFrames->numStereoFrames()-1; 
+          frameNumber = event.mNumber;  
+        
+          if (!renderer) {
+            renderer = Renderer::CreateRenderer(options, 0, gMainWindow);
+            if (!renderer) {
+              ERROR("Could not create a renderer");
+              return 1;
+            }
+          
+            gSidecarServer->SetRenderer(renderer); 
+          } 
+          renderer->DestroyImageCache();        
+          renderer->SetFrameList(allFrames);
+          renderer->ReportFrameListChange(allFrames);
+          renderer->ReportRateChange(targetFPS); 
+
+        
+          if (event.mEventType != MOVIE_OPEN_FILE_NOCHANGE) {
+            /* Compute a Shrink to Fit zoom */
+            newZoom = ComputeZoomToFit(renderer, width, height);
+            if (newZoom > 1.0) {
+              newZoom = 1.0; /* don't need expanding initially */
+            }
+            /* Reset our various parameters regarding positions */
+            xOffset = yOffset = 0; 
+            panStartX = panStartY = 0; 
+            panDeltaX = panDeltaY = 0;
+            zoomStartY = 0; zoomDelta = 0;
+            if (options->LOD) {
+              lodBias = options->LOD;
+            } else {
+              lodBias = 0;
+            }
+            playDirection = 0;
+            panning = 0; 
+            zoomOne = fullScreen = false; 
+            events.push_front(MovieEvent(MOVIE_MOVE_RESIZE, 0,0,0,0)); 
+          } 
+          options->currentFrame = frameNumber; 
+          options->geometry.x = renderer->mXPos; 
+          options->geometry.y = renderer->mYPos; 
+          options->geometry.width = renderer->mWidth; 
+          options->geometry.height = renderer->mHeight; 
+          renderer->ReportFrameChange(frameNumber);
+          renderer->ReportDetailRangeChange(-maxLOD, maxLOD);
+          renderer->ReportZoomChange(newZoom);
+          swapBuffers = true; 
+          frameInfo =  renderer->GetFrameInfoPtr(0);
+          preloadFrames = MIN2(options->preloadFrames, static_cast<int32_t>(allFrames->numStereoFrames()));
+        }      
+        break;
+
+      case MOVIE_SET_STEREO:
+        {
+          QString rendererName = "gl", saved; 
+          if (event.mNumber) {// TURN ON STEREO
+            dbprintf(1, "TURN ON STEREO\n"); 
+            rendererName = "gl_stereo";
+          } else {
+            dbprintf(1, "TURN OFF STEREO\n"); 
+          }          
+          
+          if (options->rendererName == "dmx") {
+            saved = options->backendRendererName; 
+            options->backendRendererName = rendererName;
+          } else {
+            saved = options->rendererName;
+            options->rendererName = rendererName; 
+          } 
+          
+          if (saved != rendererName) {
+            dbprintf(1, "Changed Renderer type\n"); 
+            delete renderer; 
+            renderer = Renderer::CreateRenderer(options, 0, gMainWindow);
+            if (!renderer) {
+              ERROR("Could not create a renderer");
+              return 1;
+            }
+            
+            gSidecarServer->SetRenderer(renderer); 
+            renderer->SetFrameList(allFrames);
+            renderer->ReportFrameListChange(allFrames);
+            renderer->ReportRateChange(targetFPS); 
+          }
+        }
+        break; 
+
       case   MOVIE_DISABLE_DIALOGS:   
         SuppressMessageDialogs(true); 
         continue;
@@ -440,7 +580,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
         break; // END MOVIE_MOVE, MOVIE_RESIZE OR MOVIE_MOVE_RESIZE
         
       case MOVIE_EXPOSE:
-         break;
+        break;
 
       case MOVIE_NONE:
         break; 
@@ -512,7 +652,7 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
           newZoom = ComputeZoomToFit(renderer, frameInfo->mWidth,
                                      frameInfo->mHeight);
           DEBUGMSG("Zoom to Fit: %f", newZoom);
-        } else {
+        } else if (allFrames) {
           // Caution:  RDC: Zooming was not working right upon movie startup, so here I'm reusing some old code that was commented out -- maybe assumption that allFrames->frames[0] is not NULL is not valid?  
           //bb_assert (allFrames->frames[0] != NULL); 
           newZoom = ComputeZoomToFit(renderer,
@@ -664,96 +804,6 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
         }
         break;
        
-      case MOVIE_SET_STEREO:
-      MOVIE_SET_STEREO:
-        if (event.mNumber) {// TURN ON STEREO
-          dbprintf(1, "TURN ON STEREO\n"); 
-          if (options->rendererName == "dmx") {
-            options->backendRendererName = "gl_stereo";
-          } else {
-            options->rendererName = "gl_stereo"; 
-          }
-        } else { // TURN OFF STEREO
-          dbprintf(1, "TURN OFF STEREO\n"); 
-          if (options->rendererName == "dmx") {
-            options->backendRendererName = "gl";
-          } else {
-            options->rendererName = "gl"; 
-          }
-        }
-        options->currentFrame = frameNumber; 
-        options->geometry.x = renderer->mXPos; 
-        options->geometry.y = renderer->mYPos; 
-        options->geometry.width = renderer->mWidth; 
-        options->geometry.height = renderer->mHeight; 
-        //printf ("SET_STEREO: X,Y = %d, %d\n", renderer->mXPos, renderer->mYPos); 
-        // exit the DisplayLoop 
-        // next time DisplayLoop starts, it will create a new stereo renderer 
-        delete renderer; 
-        return 1; 
-      case MOVIE_OPEN_FILE:   
-      case MOVIE_OPEN_FILE_NOCHANGE: 
-        {
-          DEBUGMSG("Got Open_File command"); 
-          QStringList filenames; 
-          filenames.append(event.mString.c_str());
-
-          renderer->DestroyImageCache();
-
-          allFrames.reset(new FrameList); // this should delete our old FrameList
-          if (allFrames->LoadFrames(filenames)) {	    
-            allFrames->GetInfo(maxWidth, maxHeight, maxDepth, maxLOD, targetFPS);
-            renderer->SetFrameList(allFrames);
-            renderer->ReportFrameListChange(allFrames);
-            renderer->ReportRateChange(targetFPS); 
-	    
-            startFrame = 0; 
-            endFrame = allFrames->numStereoFrames()-1; 
-            frameNumber = event.mNumber;  
-            if (event.mEventType != MOVIE_OPEN_FILE_NOCHANGE) {
-              /* Compute a Shrink to Fit zoom */
-              newZoom = ComputeZoomToFit(renderer, maxWidth, maxHeight);
-              if (newZoom > 1.0) {
-                newZoom = 1.0; /* don't need expanding initially */
-              }
-              /* Reset our various parameters regarding positions */
-              xOffset = yOffset = 0; 
-              panStartX = panStartY = 0; 
-              panDeltaX = panDeltaY = 0;
-              zoomStartY = 0; zoomDelta = 0;
-              if (options->LOD) {
-                lodBias = options->LOD;
-              } else {
-                lodBias = 0;
-              }
-              playDirection = 0;
-              panning = 0; 
-              zoomOne = fullScreen = false; 
-	      
-            }
-            renderer->ReportFrameChange(frameNumber);
-            renderer->ReportDetailRangeChange(-maxLOD, maxLOD);
-            renderer->ReportZoomChange(newZoom);
-            swapBuffers = true; 
-          } else { 
-            ERROR("Could not open movie file %s", event.mString.c_str()); 
-            gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, "No frames found in movie - nothing to display"));
-            return 0; 
-          }
-          frameInfo =  renderer->GetFrameInfoPtr(0);
-          preloadFrames = MIN2(options->preloadFrames, static_cast<int32_t>(allFrames->numStereoFrames()));
-        }
-        if (!options->stereoSwitchDisable) {
-          if ((allFrames->mStereo && options->rendererName != "gl_stereo") ||
-              (!allFrames->mStereo && options->rendererName == "gl_stereo"))
-            {
-              cerr << "toggle stereo automatically"<< endl; 
-              event.mNumber = (!allFrames->mStereo); 
-              goto MOVIE_SET_STEREO;          
-            }
-        } 
-             
-        break;
       case MOVIE_SAVE_IMAGE:
         renderer->WriteImageToFile(frameNumber);
         break;
@@ -909,278 +959,269 @@ int DisplayLoop(FrameListPtr &allFrames, ProgramOptions *options, vector<MovieEv
       }
       //=====================================================================
       
-      /* frameInfo = allFrames->frames[frameNumber];  */
-      frameInfo =  renderer->GetFrameInfoPtr(frameNumber); /* wrapper for stereo support */
+      if (allFrames && renderer) {
+        /* frameInfo = allFrames->frames[frameNumber];  */
+        frameInfo =  renderer->GetFrameInfoPtr(frameNumber); /* wrapper for stereo support */
+        
+        if (currentZoom != newZoom) {
+          currentZoom = newZoom;
+          renderer->ReportZoomChange(currentZoom);
+        }      
       
-      if (currentZoom != newZoom) {
-        currentZoom = newZoom;
-        renderer->ReportZoomChange(currentZoom);
-      }      
-      
-      QString filename("none"); 
-      
-      if (allFrames && static_cast<int32_t>(allFrames->numStereoFrames()) > frameNumber) {
-        filename = allFrames->getFrame(frameNumber)->mFilename.c_str(); 
-      }
-      int loopmsg = 0, imageHeight=0, imageWidth = 0;
-      if (loopCount < 0) loopmsg = -1;
-      if (loopCount > 1) loopmsg = 1;
-      if (loopCount == 1 || loopCount == 0) loopmsg = 0; 
-      if (allFrames->numStereoFrames()) {
-        imageHeight = allFrames->getFrame(0)->mHeight; 
-        imageWidth = allFrames->getFrame(0)->mWidth;
-      }
-      
-      { 
-        MovieSnapshot newSnapshot(event.mEventType, filename, fps, targetFPS, currentZoom, lodBias, playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, loopmsg, pingpong, fullScreen, zoomOne, options->noscreensaver, renderer->mHeight, renderer->mWidth, renderer->mXPos, renderer->mYPos, imageHeight, imageWidth, -xOffset, yOffset); 
-        if (sendSnapshot || newSnapshot != oldSnapshot) {
-          
-          renderer->reportWindowMoved(renderer->mXPos, renderer->mYPos); 
-          renderer->reportWindowResize(renderer->mWidth, renderer->mHeight); 
-          renderer->reportMovieMoved(xOffset, yOffset); 
-          renderer->reportMovieFrameSize(imageWidth, imageHeight); 
-          renderer->reportMovieDisplayedSize
-            (static_cast<int>(newZoom*imageWidth), 
-             static_cast<int>(newZoom*imageHeight)); 
-          dbprintf(5, QString("Sending snapshot %1\n").arg(newSnapshot.humanReadableString())); 
-          gSidecarServer->SendEvent
-            (MovieEvent(MOVIE_SIDECAR_STATUS, newSnapshot.toString())); 
-          oldSnapshot = newSnapshot; 
-        }
-      }
-      /*
-       * Compute ROI: region of the image that's visible in the window 
-       */
-      {
-        const int imgWidth = frameInfo->mWidth;
-        const int imgHeight = frameInfo->mHeight;
-        const int winWidth = renderer->mWidth;
-        const int winHeight = renderer->mHeight;
-        int x, y;
-        int imgLeft, imgRight, imgBottom, imgTop;
+        QString filename("none"); 
         
-        /* (x,y) = image coordinate at center of window (renderer) */
-        x = (imgWidth / 2) + (xOffset + panDeltaX);
-        y = (imgHeight / 2) + (yOffset + panDeltaY);
-        
-        /* Compute image coordinates which correspond to the left,
-         * right, top and bottom edges of the window.
-         */
-        imgLeft = static_cast<int>(x - (winWidth / 2) / currentZoom);
-        imgRight = static_cast<int>(x + (winWidth / 2) / currentZoom);
-        imgTop = static_cast<int>(y - (winHeight / 2) / currentZoom);
-        imgBottom = static_cast<int>(y + (winHeight / 2) / currentZoom);
-        
-        /* Compute region of the image that's visible in the window and
-         * its position destX,destY relative to upper-left corner of window.
-         */
-        /* X axis */
-        qint32 region_x,region_y,region_width,region_height; 
-        region_width = imgRight - imgLeft;
-        region_x = imgLeft;
-        if (region_x < 0) { // left edge of the image is off screen
-          /* clip left */
-          region_x = 0;
-          region_width += region_x; // this is odd. 
+        if (static_cast<int32_t>(allFrames->numStereoFrames()) > frameNumber) {
+          filename = allFrames->getFrame(frameNumber)->mFilename.c_str(); 
         }
-        if (region_x + region_width > imgWidth) {
-          /* clip right */
-          region_width = imgWidth - region_x;
-        }
-        if (region_width < 0) {
-          /* check for null image */
-          region_x = region_width = 0;
+        int loopmsg = 0, imageHeight=0, imageWidth = 0;
+        if (loopCount < 0) loopmsg = -1;
+        if (loopCount > 1) loopmsg = 1;
+        if (loopCount == 1 || loopCount == 0) loopmsg = 0; 
+        if (allFrames->numStereoFrames()) {
+          imageHeight = allFrames->getFrame(0)->mHeight; 
+          imageWidth = allFrames->getFrame(0)->mWidth;
         }
         
-        // placement of image on renderer:  destX
-        destX = static_cast<int>(-imgLeft * currentZoom);
-        if (destX < 0) {
-          /* left clip */
-          destX = 0;
-        }
-        if (destX + region_width * currentZoom > winWidth) {
-          /* right clip */
-          region_width = static_cast<int>((winWidth - destX) / currentZoom);
-          if (region_width < 0)
-            region_width = 0;
-        }
-        
-        /* Y axis */
-        region_height = imgBottom - imgTop;
-        region_y = imgTop;
-        if (region_y < 0) {
-          /* clip top */
-          region_y = 0;
-          region_height += region_y; // huh?  it's 0! 
-        }
-        if (region_y + region_height > imgHeight) {
-          /* clip bottom */
-          region_height = imgHeight - region_y;
-        }
-        if (region_height < 0) {
-          /* check for null image */
-          region_y = region_height = 0;
-        }
-        // placement of image on renderer:  destY
-        destY = static_cast<int>(-imgTop * currentZoom);
-        if (destY < 0) {
-          /* top clip */
-          destY = 0;
-        }
-        if (destY + region_height * currentZoom > winHeight) {
-          /* bottom clip */
-          region_height = static_cast<int>((winHeight - destY) / currentZoom);
-          if (region_height < 0)
-            region_height = 0;
-        }
-        
-        if (!roi || region_y != roi->y || region_x != roi->x || 
-            region_height != roi->height || region_width != roi->width) {
-          roi.reset(new Rectangle(region_x,region_y,region_width,region_height)); 
+        { 
+          MovieSnapshot newSnapshot(event.mEventType, filename, fps, targetFPS, currentZoom, lodBias, playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, loopmsg, pingpong, fullScreen, zoomOne, options->noscreensaver, renderer->mHeight, renderer->mWidth, renderer->mXPos, renderer->mYPos, imageHeight, imageWidth, -xOffset, yOffset); 
+          if (sendSnapshot || newSnapshot != oldSnapshot) {
+            
+            renderer->reportWindowMoved(renderer->mXPos, renderer->mYPos); 
+            renderer->reportWindowResize(renderer->mWidth, renderer->mHeight); 
+            renderer->reportMovieMoved(xOffset, yOffset); 
+            renderer->reportMovieFrameSize(imageWidth, imageHeight); 
+            renderer->reportMovieDisplayedSize
+              (static_cast<int>(newZoom*imageWidth), 
+               static_cast<int>(newZoom*imageHeight)); 
+            dbprintf(5, QString("Sending snapshot %1\n").arg(newSnapshot.humanReadableString())); 
+            gSidecarServer->SendEvent
+              (MovieEvent(MOVIE_SIDECAR_STATUS, newSnapshot.toString())); 
+            oldSnapshot = newSnapshot; 
+          }
         }
         /*
-          printf("roi: %d, %d  %d x %d  dest: %d, %d\n",
-          roi.x, roi.y, roi.width, roi.height, destX, destY);
-        */
-      }
-      
-      if (lodBias < 0) {
-        lodBias = 0; 
-      }        
-      if ((uint32_t) lodBias > frameInfo->mMaxLOD) {
-        lodBias = maxLOD; 
-      }        
-      renderer->ReportDetailChange(lodBias);
-      
-      if (options->noAutoRes) {
-        baseLOD = 0; 
-      } else {
-        baseLOD = LODFromZoom(currentZoom);
-      }
-      lod = baseLOD > lodBias? baseLOD: lodBias;
-      if ((uint32_t)lod > frameInfo->mMaxLOD) {
-        lod = frameInfo->mMaxLOD;
-      }
-      /* Call the renderer to render the desired area of the frame.
-       * Most rendereres will refer to their own image caches to load
-       * the image and render it.  Some will just send the
-       * request "downstream".
-       *
-       * If we're paused or stopped, render the frame at maximum
-       * level of detail, regardless of what was requested during
-       * playback.  If we're playing forward or backward, then use
-       * the given level of detail.
-       */
-      
-      TIMER_PRINT("before render"); 
-      renderer->Render(frameNumber, previousFrame, 
-                       preloadFrames, playDirection, 
-                       startFrame, endFrame, roi, destX, destY, 
-                       currentZoom, lod);
-       
-      TIMER_PRINT("after render"); 
-     
-      /* Print info in upper-left corner */
-      /*!
-        RDC Note:  this is only done in x11 interface mode, which is going away.  But it might be useful to have a "draw letters on screen" option.  Note that it used OpenGL to do the actual lettering. 
-      */ 
-      /*     if (drawInterface && renderer->DrawString != NULL) {
-             char str[100];
-             int row = 0;
-             sprintf(str, "Frame %d of %d", frameNumber + 1, allFrames->numStereoFrames());
-             renderer->DrawString(row++, 0, str);
-             sprintf(str, "Frame Size: %d by %d pixels",
-             frameInfo->mWidth, frameInfo->mHeight);
-             renderer->DrawString(row++, 0, str);
-             sprintf(str, "Position: %d, %d",
-             -(xOffset + panDeltaX), yOffset + panDeltaY);
-             renderer->DrawString(row++, 0, str);
-             sprintf(str, "Zoom: %5.2f  LOD: %d (%d + %d)", currentZoom, lod, baseLOD, lodBias);
-             
-             renderer->DrawString(row++, 0, str);
-             sprintf(str, "FPS: %5.1f (target %.1f)", fps, targetFPS);
-             renderer->DrawString(row++, 0, str);
-             }
-      */
- 
-      if (playDirection) {
-        /* See if we need to introduce a pause to prevent exceeding
-         * the target frame rate.
+         * Compute ROI: region of the image that's visible in the window 
          */
-        double delay = nextSwapTime - GetCurrentTime();
-        if (delay > 0.0) {
-          usedDelayCount++;
-          delay *= 0.95;  /* an empirical constant */
-          usleep((unsigned long) (delay * 1000.0 * 1000.0));
+        {
+          const int imgWidth = frameInfo->mWidth;
+          const int imgHeight = frameInfo->mHeight;
+          const int winWidth = renderer->mWidth;
+          const int winHeight = renderer->mHeight;
+          int x, y;
+          int imgLeft, imgRight, imgBottom, imgTop;
+          
+          /* (x,y) = image coordinate at center of window (renderer) */
+          x = (imgWidth / 2) + (xOffset + panDeltaX);
+          y = (imgHeight / 2) + (yOffset + panDeltaY);
+          
+          /* Compute image coordinates which correspond to the left,
+           * right, top and bottom edges of the window.
+           */
+          imgLeft = static_cast<int>(x - (winWidth / 2) / currentZoom);
+          imgRight = static_cast<int>(x + (winWidth / 2) / currentZoom);
+          imgTop = static_cast<int>(y - (winHeight / 2) / currentZoom);
+          imgBottom = static_cast<int>(y + (winHeight / 2) / currentZoom);
+          
+          /* Compute region of the image that's visible in the window and
+           * its position destX,destY relative to upper-left corner of window.
+           */
+          /* X axis */
+          qint32 region_x,region_y,region_width,region_height; 
+          region_width = imgRight - imgLeft;
+          region_x = imgLeft;
+          if (region_x < 0) { // left edge of the image is off screen
+            /* clip left */
+            region_x = 0;
+            region_width += region_x; // this is odd. 
+          }
+          if (region_x + region_width > imgWidth) {
+            /* clip right */
+            region_width = imgWidth - region_x;
+          }
+          if (region_width < 0) {
+            /* check for null image */
+            region_x = region_width = 0;
+          }
+          
+          // placement of image on renderer:  destX
+          destX = static_cast<int>(-imgLeft * currentZoom);
+          if (destX < 0) {
+            /* left clip */
+            destX = 0;
+          }
+          if (destX + region_width * currentZoom > winWidth) {
+            /* right clip */
+            region_width = static_cast<int>((winWidth - destX) / currentZoom);
+            if (region_width < 0)
+              region_width = 0;
+          }
+          
+          /* Y axis */
+          region_height = imgBottom - imgTop;
+          region_y = imgTop;
+          if (region_y < 0) {
+            /* clip top */
+            region_y = 0;
+            region_height += region_y; // huh?  it's 0! 
+          }
+          if (region_y + region_height > imgHeight) {
+            /* clip bottom */
+            region_height = imgHeight - region_y;
+          }
+          if (region_height < 0) {
+            /* check for null image */
+            region_y = region_height = 0;
+          }
+          // placement of image on renderer:  destY
+          destY = static_cast<int>(-imgTop * currentZoom);
+          if (destY < 0) {
+            /* top clip */
+            destY = 0;
+          }
+          if (destY + region_height * currentZoom > winHeight) {
+            /* bottom clip */
+            region_height = static_cast<int>((winHeight - destY) / currentZoom);
+            if (region_height < 0)
+              region_height = 0;
+          }
+          
+          if (!roi || region_y != roi->y || region_x != roi->x || 
+              region_height != roi->height || region_width != roi->width) {
+            roi.reset(new Rectangle(region_x,region_y,region_width,region_height)); 
+          }
+          /*
+            printf("roi: %d, %d  %d x %d  dest: %d, %d\n",
+            roi.x, roi.y, roi.width, roi.height, destX, destY);
+          */
+        }
+        
+        if (lodBias < 0) {
+          lodBias = 0; 
+        }        
+        if ((uint32_t) lodBias > frameInfo->mLOD) {
+          lodBias = maxLOD; 
+        }        
+        renderer->ReportDetailChange(lodBias);
+        
+        if (options->noAutoRes) {
+          baseLOD = 0; 
+        } else {
+          baseLOD = LODFromZoom(currentZoom);
+        }
+        lod = baseLOD > lodBias? baseLOD: lodBias;
+        if ((uint32_t)lod > frameInfo->mLOD) {
+          lod = frameInfo->mLOD;
+        }
+        /* Call the renderer to render the desired area of the frame.
+         * Most rendereres will refer to their own image caches to load
+         * the image and render it.  Some will just send the
+         * request "downstream".
+         *
+         * If we're paused or stopped, render the frame at maximum
+         * level of detail, regardless of what was requested during
+         * playback.  If we're playing forward or backward, then use
+         * the given level of detail.
+         */
+        
+        TIMER_PRINT("before render"); 
+        renderer->Render(frameNumber, previousFrame, 
+                         preloadFrames, playDirection, 
+                         startFrame, endFrame, roi, destX, destY, 
+                         currentZoom, lod);
+        
+        TIMER_PRINT("after render"); 
+        
+        /* Print info in upper-left corner */
+        /*!
+          RDC Note:  this is only done in x11 interface mode, which is going away.  But it might be useful to have a "draw letters on screen" option.  Note that it used OpenGL to do the actual lettering. 
+        */ 
+        /*     if (drawInterface && renderer->DrawString != NULL) {
+               char str[100];
+               int row = 0;
+               sprintf(str, "Frame %d of %d", frameNumber + 1, allFrames->numStereoFrames());
+               renderer->DrawString(row++, 0, str);
+               sprintf(str, "Frame Size: %d by %d pixels",
+               frameInfo->mWidth, frameInfo->mHeight);
+               renderer->DrawString(row++, 0, str);
+               sprintf(str, "Position: %d, %d",
+               -(xOffset + panDeltaX), yOffset + panDeltaY);
+               renderer->DrawString(row++, 0, str);
+               sprintf(str, "Zoom: %5.2f  LOD: %d (%d + %d)", currentZoom, lod, baseLOD, lodBias);
+             
+               renderer->DrawString(row++, 0, str);
+               sprintf(str, "FPS: %5.1f (target %.1f)", fps, targetFPS);
+               renderer->DrawString(row++, 0, str);
+               }
+        */
+ 
+        if (playDirection) {
+          /* See if we need to introduce a pause to prevent exceeding
+           * the target frame rate.
+           */
+          double delay = nextSwapTime - GetCurrentTime();
+          if (delay > 0.0) {
+            usedDelayCount++;
+            delay *= 0.95;  /* an empirical constant */
+            usleep((unsigned long) (delay * 1000.0 * 1000.0));
+          }
+          else {
+            skippedDelayCount++;
+          }
+          /* Compute next targetted swap time */
+          nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
+        }
+        dbprintf(5, "Swap buffers\n"); 
+        renderer->mPreloadFrames = preloadFrames; 
+        renderer->mPlayDirection = playDirection;
+        renderer->mStartFrame = startFrame; 
+        renderer->mEndFrame = endFrame; 
+        renderer->SwapBuffers();
+        if (playDirection && options->speedTest) {
+          cerr << "requesting speedTest of slaves" << endl; 
+          renderer->DMXSpeedTest(); 
+          playDirection = 0; 
+        }
+    
+        if (frameNumber != previousFrame) {
+          renderer->ReportFrameChange(frameNumber);
+        }
+        previousFrame = frameNumber; 
+        oldZoom = currentZoom; 
+        oldXOffset = xOffset;
+        oldYOffset = yOffset;
+
+        TIMER_PRINT("after swap"); 
+        /* Advance to the next frame */
+        if (playDirection) {
+          /* Compute next frame number (+/- 1) */
+          frameNumber = frameNumber + playDirection; // let this wrap around, do not fix
+          /* Update timing info */
+          totalFrameCount++;
+          recentFrameCount++;
+        
+          endClicks = times(&endTime);
+        
+          recentEndTime = GetCurrentTime();
+          elapsedTime = recentEndTime - recentStartTime;
+          if (elapsedTime >= 1.0/(options->fpsSampleFrequency)) {
+            fps = (double) recentFrameCount / elapsedTime;
+            SuppressMessageDialogs(true); 
+            WARNING("Frame Rate on frame %d: %g fps", frameNumber, fps);
+            SuppressMessageDialogs(false); 
+            /* reset timing info so we compute FPS over last 2 seconds */
+            recentStartTime = GetCurrentTime();
+            recentFrameCount = 0;
+          }
         }
         else {
-          skippedDelayCount++;
-        }
-        /* Compute next targetted swap time */
-        nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
-      }
-      dbprintf(5, "Swap buffers\n"); 
-      renderer->mPreloadFrames = preloadFrames; 
-      renderer->mPlayDirection = playDirection;
-      renderer->mStartFrame = startFrame; 
-      renderer->mEndFrame = endFrame; 
-      renderer->SwapBuffers();
-      if (playDirection && options->speedTest) {
-        cerr << "requesting speedTest of slaves" << endl; 
-        renderer->DMXSpeedTest(); 
-        playDirection = 0; 
-      }
-      /* Give the renderer a chance to preload upcoming images
-       * while the display thread is displaying an image.
-       * (It's too late to preload the current image; that one
-       * will either have to be in the cache, or we'll load it
-       * directly.)
-       * THIS IS ICKY.  But it is going away when I rewrite the cache.  
-       */
-      /* renderer->Preload(frameNumber, preloadFrames, playDirection, 
-         startFrame, endFrame, &roi, lod); 
-      */
-      
-      if (frameNumber != previousFrame) {
-        renderer->ReportFrameChange(frameNumber);
-      }
-      previousFrame = frameNumber; 
-      oldZoom = currentZoom; 
-      oldXOffset = xOffset;
-      oldYOffset = yOffset;
-
-      TIMER_PRINT("after swap"); 
-      /* Advance to the next frame */
-      if (playDirection) {
-        /* Compute next frame number (+/- 1) */
-        frameNumber = frameNumber + playDirection; // let this wrap around, do not fix
-        /* Update timing info */
-        totalFrameCount++;
-        recentFrameCount++;
-        
-        endClicks = times(&endTime);
-        
-        recentEndTime = GetCurrentTime();
-        elapsedTime = recentEndTime - recentStartTime;
-        if (elapsedTime >= 1.0/(options->fpsSampleFrequency)) {
-          fps = (double) recentFrameCount / elapsedTime;
-          SuppressMessageDialogs(true); 
-          WARNING("Frame Rate on frame %d: %g fps", frameNumber, fps);
-          SuppressMessageDialogs(false); 
-          /* reset timing info so we compute FPS over last 2 seconds */
-          recentStartTime = GetCurrentTime();
           recentFrameCount = 0;
+          fps = 0.0;
+        }
+        renderer->reportActualFPS(fps); 
+        if ( (playExit && frameNumber >= playExit)) { 
+          events.push_back(MovieEvent(MOVIE_QUIT)); 
         }
       }
-      else {
-        recentFrameCount = 0;
-        fps = 0.0;
-      }
-      renderer->reportActualFPS(fps); 
-      if ( (playExit && frameNumber >= playExit)) { 
-        events.push_back(MovieEvent(MOVIE_QUIT)); 
-      }
-      
     }
   }
   /* Finish our timing information */

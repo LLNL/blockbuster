@@ -18,6 +18,7 @@
   /* Event codes */
   typedef enum {
     MOVIE_NONE = 0, /* 0 */
+    MOVIE_LOOP_INITIALIZE, 
     MOVIE_EXPOSE, // no value
     MOVIE_RESIZE,  // height and width
     MOVIE_FULLSCREEN, // no value
@@ -43,7 +44,7 @@
     MOVIE_SET_LOD,
 
     MOVIE_OPEN_FILE = 100, 
-    MOVIE_OPEN_FILE_NOCHANGE, 
+    MOVIE_OPEN_FILE_NOCHANGE, // what is this for? 
     MOVIE_PLAY_FORWARD,
     MOVIE_PLAY_BACKWARD, 
     MOVIE_SET_LOOP,

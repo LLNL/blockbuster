@@ -336,7 +336,7 @@ void FrameList::GetInfo(int &maxWidth, int &maxHeight, int &maxDepth,
     maxWidth = MAX2((uint32_t)maxWidth, frameInfoPtr->mWidth);
     maxHeight = MAX2((uint32_t)maxHeight, frameInfoPtr->mHeight);
     maxDepth = MAX2((uint32_t)maxDepth, frameInfoPtr->mDepth);
-    maxLOD = MAX2((uint32_t)maxLOD, frameInfoPtr->mMaxLOD);
+    maxLOD = MAX2((uint32_t)maxLOD, frameInfoPtr->mLOD);
   }
   
   targetFPS = mTargetFPS;

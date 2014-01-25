@@ -36,7 +36,9 @@ struct ImageCacheJob {
   ImageCacheJob(uint32_t frame, const Rectangle *reg, 
                 uint32_t  lod, uint32_t reqnum, FrameInfoPtr fInfo): 
     frameInfo(fInfo), frameNumber(frame), region(*reg),  
-    levelOfDetail(lod), requestNumber(reqnum){ 
+    levelOfDetail(lod), requestNumber(reqnum){
+    fInfo->mFrameNumber = frame; 
+    fInfo->mLOD = lod; 
     return; 
   }
     
@@ -74,14 +76,14 @@ struct CachedImage{
 class CacheThread: public QThread {
   Q_OBJECT
     public:
-  CacheThread(ImageCache *icache, int threadImages): 
-    mStop(false), mCache(icache), mCachedImages(threadImages) {
+  CacheThread(ImageCache *icache, int threadImages, int threadnum): 
+    mStop(false), mThreadNum(threadnum), mCache(icache), mCachedImages(threadImages) {
     for (uint32_t i = 0; i < mCachedImages.size(); i++) {
       mCachedImages[i].reset(new CachedImage()); 
     }
   
     CACHEDEBUG("CacheThread constructor");     
-    mThreadNum = RegisterThread(this); 
+    RegisterThread(this, threadnum); 
   }
   ~CacheThread(){
     CACHEDEBUG("CacheThread destructor");     
