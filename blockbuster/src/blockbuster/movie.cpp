@@ -539,7 +539,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           if (event.mWidth == 0) {
             /* if there are frames, use the frame width for the window width 
                else use the current width */ 
-            if(frameInfo) {
+            if(!renderer->mWidth && frameInfo) {
               event.mWidth = frameInfo->mWidth;
             } else {
               event.mWidth = renderer->mWidth;
@@ -552,7 +552,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           if (event.mHeight == 0)  {
             /* if there are frames, use the frame height for the window height 
                else use the current height */ 
-            if(frameInfo) {
+            if(!renderer->mHeight && frameInfo) {
               event.mHeight = frameInfo->mHeight;
             } else {
               event.mHeight = renderer->mHeight;
