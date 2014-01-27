@@ -145,9 +145,6 @@ void CacheThread::run() {
 
   // RegisterThread(this); // see common.cpp -- used to create a 0-based index that can be referenced anywhere. 
   CACHEDEBUG("CacheThread::run() (thread = %p, thread ID = %d, mThreadNum = %d)", QThread::currentThread(), GetCurrentThreadID(), mThreadNum); 
-  if (mThreadNum == 31) {
-    dbprintf(0, "here we are\n"); 
-  }
 
   /* Repeat forever, until the thread is cancelled by the main thread */
   while (1) {
