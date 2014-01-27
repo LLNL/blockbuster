@@ -2,6 +2,12 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
+VERSION 2.8.0p (git tag blockbuster-v2.8.0p) Mon Jan 27 10:49:02 PST 2014
+-- Starting without a movie is no longer a blockbuster emergency.  No window opens in this case.  
+-- Fixed crashing bug where thread IDs were exceeding cache slots.  
+-- Refactored code to improve file loading procedure.  (Internal change)
+
+===============================================================================
 VERSION 2.8.0o (git tag blockbuster-v2.8.0o) Thu Jan 23 18:43:09 PST 2014
 -- Fixed bug:  Blockbuster dumped core when opening 29 movies in a row. (was not releasing file descriptors)
 -- Fixed bug:  Typing "H" into sidecar when keyboard connected caused crash. 
