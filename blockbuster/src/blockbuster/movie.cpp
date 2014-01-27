@@ -184,12 +184,6 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
   
 
   deque<MovieEvent>  events; 
-  // events.push_back(MovieEvent(MOVIE_LOOP_INITIALIZE));
-  if (options->fullScreen) {
-    DEBUGMSG("fullScreen from options\n"); 
-    events.push_back(MovieEvent(MOVIE_FULLSCREEN)); 
-    options->fullScreen=false; 
-  }
 
 					
   time_t lastheartbeat = time(NULL); 
@@ -238,6 +232,12 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           event = script[0]; 
           script.erase(script.begin()); 
           //dbprintf(5, "Pushed back event %s\n", event.Stringify().c_str());
+        }
+        // events.push_back(MovieEvent(MOVIE_LOOP_INITIALIZE));
+        if (options->fullScreen) {
+          DEBUGMSG("fullScreen from options\n"); 
+          events.push_back(MovieEvent(MOVIE_FULLSCREEN)); 
+          options->fullScreen=false; 
         }
       }
       if (event.mEventType != MOVIE_NONE) {
