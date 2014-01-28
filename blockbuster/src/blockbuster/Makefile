@@ -29,10 +29,10 @@ include ../config/config
 LDFLAGS += -lboost_regex -lreadline -ltermcap 
 ifeq ($(shell uname),Darwin)
 	blockbuster = blockbuster.app
-	X11_LIBS += -lXext -lXtst
+	X11_LIBS += -lXext -lXtst -lXinerama
 	GPROF_HELPER=
 else
-	X11_LIBS +=  -lXtst
+	X11_LIBS +=  -lXtst -lXinerama
 	blockbuster = blockbuster 
 	GPROF_HELPER=$(INSTALL_DIR)/lib/gprof-helper.so
 endif

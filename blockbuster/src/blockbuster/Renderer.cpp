@@ -11,6 +11,7 @@
 #include "settings.h"
 
 #include <X11/extensions/XTest.h>
+#include <X11/extensions/Xinerama.h>
 
 #include "Renderer.h"
 #include "glRenderer.h"
@@ -479,7 +480,6 @@ void Renderer::reportMovieCueComplete(void){
 // ==============================================================
 // END  stuff from Canvas 
 // ========================================================================
-
 // ========================================================================
 // BEGIN stuff from XWindow (all public): 
 // ==============================================================
@@ -495,6 +495,7 @@ void Renderer::FinishXWindowInit(void) {
   /* Get the screen and do some sanity checks */
   mScreenNumber = DefaultScreen(mDisplay);
   screen = ScreenOfDisplay(mDisplay, mScreenNumber);
+  //screen = ScreenOfDisplay(mDisplay, 0);
   
   /* if geometry is don't care and decorations flag is off -- then set window to max screen extents */
   mScreenWidth = WidthOfScreen(screen);
@@ -516,7 +517,6 @@ void Renderer::FinishXWindowInit(void) {
     else
       height =  mScreenHeight; 
   }
-  
   
   
   /* if we've turned off the window border (decoration) with the -D flag then set rquired margins to zero
@@ -562,6 +562,7 @@ void Renderer::FinishXWindowInit(void) {
     y = 0;
  
 
+
   XSetWindowAttributes windowAttrs;
   unsigned long windowAttrsMask;
   XSizeHints sizeHints;
@@ -595,16 +596,15 @@ void Renderer::FinishXWindowInit(void) {
 
   DEBUGMSG("created window 0x%x", mWindow);
   
-  /* Pass some information along to the window manager to keep it happy */
-  sizeHints.flags = USSize;
-  sizeHints.width = width;
-  sizeHints.height = height;
+  /* Pass some information along to the window manager to size the window */
+  sizeHints.flags = PSize;
+  sizeHints.base_width = width;
+  sizeHints.base_height = height;
   if (geometry->x != DONT_CARE && geometry->y != DONT_CARE) {
     sizeHints.x = geometry->x;
     sizeHints.y = geometry->y;
     sizeHints.flags |= USPosition;
   }
-  
   
   XSetNormalHints(mDisplay, mWindow, &sizeHints);
   
@@ -615,44 +615,15 @@ void Renderer::FinishXWindowInit(void) {
                          None, (char **)NULL, 0, &sizeHints);
   
   
-  if (!decorations) remove_mwm_border();
+  set_mwm_border(decorations);
   
-  // Make sure the window manager does not resize to allow for menu bar
-  Atom wm_state = XInternAtom(mDisplay, "_NET_WM_STATE", False);
-  Atom fullscreen = XInternAtom(mDisplay, "_NET_WM_STATE_FULLSCREEN", False);
-  
-  XEvent xev;
-  memset(&xev, 0, sizeof(xev));
-  xev.type = ClientMessage;
-  xev.xclient.window = mWindow;
-  xev.xclient.message_type = wm_state;
-  xev.xclient.format = 32;
-  xev.xclient.data.l[0] = 1;
-  xev.xclient.data.l[1] = fullscreen;
-  xev.xclient.data.l[2] = 0;
-  XSendEvent (mDisplay, DefaultRootWindow(mDisplay), False,
-                    SubstructureRedirectMask | SubstructureNotifyMask, &xev);
-
-  // Make sure that the resize takes place over all monitors when using Xinerama
-  Atom fullmons = XInternAtom(mDisplay, "_NET_WM_FULLSCREEN_MONITORS", False);
-  //XEvent xev;
-  memset(&xev, 0, sizeof(xev));
-  xev.type = ClientMessage;
-  xev.xclient.window = mWindow;
-  xev.xclient.message_type = fullmons;
-  xev.xclient.format = 32;
-  xev.xclient.data.l[0] = 0; /* your topmost monitor number */
-  xev.xclient.data.l[1] = 4; /* bottommost */
-  xev.xclient.data.l[2] = 0; /* leftmost */
-  xev.xclient.data.l[3] = 7; /* rightmost */
-  xev.xclient.data.l[4] = 0; /* source indication */
-
-  XSendEvent (mDisplay, DefaultRootWindow(mDisplay), False,
-              SubstructureRedirectMask | SubstructureNotifyMask, &xev);
-  XFlush(mDisplay);
-
   /* Bring it up; then wait for it to actually get here. */
   XMapWindow(mDisplay, mWindow);
+
+  // If we are doing fullscreen, we have to dance with the window manager.
+  if (height == mScreenHeight && width == mScreenWidth ) { //  && ! mOptions->decorations) {
+    SetFullScreen(true); 
+  }
   XSync(mDisplay, 0);
 
   /*
@@ -701,34 +672,71 @@ void Renderer::FinishXWindowInit(void) {
   return; 
 }// END CONSTRUCTOR for XWindow
 
-/* SetCanvasAttributes(Window window) {
-   Window junkwin; 
-   XWindowAttributes win_attributes; 
-   XGetWindowAttributes(mDisplay, mWindow, &win_attributes); 
-   XTranslateCoordinates (mDisplay, mWindow, win_attributes.root, 
-   -win_attributes.border_width,
-   -win_attributes.border_width,
-   &x, &y, &junkwin); 
 
-   printf("New X,Y, border width is %d, %d, %d\n", x,y, win_attributes.border_width); 
-   // Prepare our Canvas structure that we can return to the caller 
-   mWidth = width;
-   mHeight = height;
-   mXPos = x; 
-   mYPos = y; 
-   mDepth = mVisInfo->depth;
+// ==============================================================
+
+void Renderer::SetFullScreen(bool fullscreen) {
+// Make sure the window manager does not resize to allow for menu bar
+  set_mwm_border(fullscreen);
+  Atom wm_state = XInternAtom(mDisplay, "_NET_WM_STATE", False);
+  Atom fsAtom = XInternAtom(mDisplay, "_NET_WM_STATE_FULLSCREEN", False);
   
- 
+  XEvent xev;
+  memset(&xev, 0, sizeof(xev));
+  xev.type = ClientMessage;
+  xev.xclient.window = mWindow;
+  xev.xclient.message_type = wm_state;
+  xev.xclient.format = 32;
+  xev.xclient.data.l[0] = 1;
+  xev.xclient.data.l[1] = fsAtom;
+  xev.xclient.data.l[2] = 0;
+  XSendEvent (mDisplay, DefaultRootWindow(mDisplay), False,
+              SubstructureRedirectMask | SubstructureNotifyMask, &xev);
   
-   return ;
-   } 
-*/
- 
+  // Make sure the resize takes place over all monitors when using Xinerama
+  
+  // We have to get our window layout if multiple monitors are in use.  
+  int dummy1, dummy2;
+  int heads=0;
+  if (XineramaQueryExtension(mDisplay, &dummy1, &dummy2)) {
+    if (XineramaIsActive(mDisplay)) { 
+      dbprintf(1, "Display: %dx%d\n", mScreenWidth, mScreenHeight); 
+      XineramaScreenInfo *p=  XineramaQueryScreens(mDisplay, &heads);
+      // useful-looking code; keep around for reference:  
+      if (heads>0) {
+        for (int x=0; x<heads; ++x) {
+          dbprintf(1, "Head %d of %d heads: %dx%d at %d,%d\n", 
+                   x+1, heads, p[x].width, p[x].height, 
+                   p[x].x_org, p[x].y_org);
+        }
+      } else cout << "XineramaQueryScreens says there aren't any" << endl;
+      XFree(p);         
+    }// else cout << "Xinerama not active" << endl;
+  }// else cout << "No Xinerama extension" << endl;
+  Atom fullmons = XInternAtom(mDisplay, "_NET_WM_FULLSCREEN_MONITORS", False);
+  memset(&xev, 0, sizeof(xev));
+  xev.type = ClientMessage;
+  xev.xclient.window = mWindow;
+  xev.xclient.message_type = fullmons;
+  xev.xclient.format = 32;
+  xev.xclient.data.l[0] = 0; // your topmost monitor number 
+  xev.xclient.data.l[1] = heads-1; // bottommost -- assuming rectangular layout
+  xev.xclient.data.l[2] = 0; // leftmost 
+  xev.xclient.data.l[3] = heads-1; // rightmost -- assuming rectangular layout
+  xev.xclient.data.l[4] = 0; // source indication 
+  
+  XSendEvent (mDisplay, DefaultRootWindow(mDisplay), False,
+              SubstructureRedirectMask | SubstructureNotifyMask, &xev);
+  XFlush(mDisplay);
+  // end fullscreen stuff
+  return;  
+}
+  
 // ==============================================================
 /*
  * Helper to remove window decorations
  */
-void Renderer::remove_mwm_border(void )
+void Renderer::set_mwm_border(bool onoff )
 {
 #define PROP_MOTIF_WM_HINTS_ELEMENTS    5
 #define MWM_HINTS_FUNCTIONS     (1L << 0)
@@ -750,7 +758,7 @@ void Renderer::remove_mwm_border(void )
   
   /* setup the property */
   motif_hints.flags = MWM_HINTS_DECORATIONS;
-  motif_hints.decorations = 0;
+  motif_hints.decorations = onoff?1:0;
   
   /* get the atom for the property */
   prop = XInternAtom(mDisplay, "_MOTIF_WM_HINTS", True );

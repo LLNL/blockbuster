@@ -173,13 +173,14 @@ class Renderer {
   virtual XVisualInfo *ChooseVisual(void){
     return  pureC_x11ChooseVisual(mDisplay,  mScreenNumber);
   }
-    
-  void FinishXWindowInit(void); 
 
   virtual void DrawString(int row, int column, const char *str)=0;  
   virtual void SwapBuffers(void)=0;
   
-  void remove_mwm_border(void);
+  void FinishXWindowInit(void); 
+  void SetFullScreen(bool fullscreen) ;
+  void set_mwm_border(bool onoff);
+
   void ShowCursor(bool show);
   void ToggleCursor(void);
   void SetTitle (QString); 

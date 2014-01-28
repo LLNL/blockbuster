@@ -342,7 +342,27 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           startFrame = 0; 
           endFrame = allFrames->numStereoFrames()-1; 
           frameNumber = event.mNumber;  
-        
+          options->currentFrame = frameNumber;         
+           
+          /* Reset our various parameters regarding positions */
+          xOffset = yOffset = 0; 
+          panStartX = panStartY = 0; 
+          panDeltaX = panDeltaY = 0;
+          zoomStartY = 0; zoomDelta = 0;
+          playDirection = 0;
+          panning = 0; 
+          zoomOne = fullScreen = false; 
+          
+          if (event.mEventType == MOVIE_OPEN_FILE_NOCHANGE) {
+            options->geometry.x = renderer->mXPos; 
+            options->geometry.y = renderer->mYPos; 
+            options->geometry.width = renderer->mWidth; 
+            options->geometry.height = renderer->mHeight; 
+          } else {
+            options->geometry.width = width; 
+            options->geometry.height = height; 
+          }
+
           if (!renderer) {
             renderer = Renderer::CreateRenderer(options, 0, gMainWindow);
             if (!renderer) {
@@ -352,38 +372,23 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           
             gSidecarServer->SetRenderer(renderer); 
           } 
-          renderer->DestroyImageCache();        
-          renderer->SetFrameList(allFrames);
-          renderer->ReportFrameListChange(allFrames);
-          renderer->ReportRateChange(targetFPS); 
-
-        
           if (event.mEventType != MOVIE_OPEN_FILE_NOCHANGE) {
             /* Compute a Shrink to Fit zoom */
             newZoom = ComputeZoomToFit(renderer, width, height);
             if (newZoom > 1.0) {
               newZoom = 1.0; /* don't need expanding initially */
             }
-            /* Reset our various parameters regarding positions */
-            xOffset = yOffset = 0; 
-            panStartX = panStartY = 0; 
-            panDeltaX = panDeltaY = 0;
-            zoomStartY = 0; zoomDelta = 0;
             if (options->LOD) {
               lodBias = options->LOD;
             } else {
               lodBias = 0;
             }
-            playDirection = 0;
-            panning = 0; 
-            zoomOne = fullScreen = false; 
-            events.push_front(MovieEvent(MOVIE_MOVE_RESIZE, 0,0,0,0)); 
+            //events.push_front(MovieEvent(MOVIE_MOVE_RESIZE, 0,0,0,0)); 
           } 
-          options->currentFrame = frameNumber; 
-          options->geometry.x = renderer->mXPos; 
-          options->geometry.y = renderer->mYPos; 
-          options->geometry.width = renderer->mWidth; 
-          options->geometry.height = renderer->mHeight; 
+          renderer->DestroyImageCache();        
+          renderer->SetFrameList(allFrames);
+          renderer->ReportFrameListChange(allFrames);
+          renderer->ReportRateChange(targetFPS); 
           renderer->ReportFrameChange(frameNumber);
           renderer->ReportDetailRangeChange(-maxLOD, maxLOD);
           renderer->ReportZoomChange(newZoom);
@@ -503,17 +508,19 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           //DEBUGMSG("No zooming done"); 
         }
         fullScreen = true; 
+        renderer->SetFullScreen(true); 
+        break; 
         // fall through to MOVIE_MOVE_RESIZE: 
-        event.mEventType = MOVIE_MOVE_RESIZE;
+        /*        event.mEventType = MOVIE_MOVE_RESIZE;
         event.mWidth = renderer->mScreenWidth; 
         event.mHeight = renderer->mScreenHeight; 
         event.mX = 0; 
         event.mY = 0; 
-        goto MOVIE_MOVE_RESIZE; 
+        goto MOVIE_MOVE_RESIZE; */ 
       case MOVIE_MOVE:
       case MOVIE_RESIZE:
       case MOVIE_MOVE_RESIZE:
-      MOVIE_MOVE_RESIZE:
+        // MOVIE_MOVE_RESIZE:
         if (0) // (event.mEventType == MOVIE_RESIZE || event.mEventType == MOVIE_MOVE_RESIZE) 
           {
             zoomOne = fullScreen = false; 
