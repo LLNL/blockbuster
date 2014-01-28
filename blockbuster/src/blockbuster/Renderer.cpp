@@ -617,9 +617,44 @@ void Renderer::FinishXWindowInit(void) {
   
   if (!decorations) remove_mwm_border();
   
+  // Make sure the window manager does not resize to allow for menu bar
+  Atom wm_state = XInternAtom(mDisplay, "_NET_WM_STATE", False);
+  Atom fullscreen = XInternAtom(mDisplay, "_NET_WM_STATE_FULLSCREEN", False);
+  
+  XEvent xev;
+  memset(&xev, 0, sizeof(xev));
+  xev.type = ClientMessage;
+  xev.xclient.window = mWindow;
+  xev.xclient.message_type = wm_state;
+  xev.xclient.format = 32;
+  xev.xclient.data.l[0] = 1;
+  xev.xclient.data.l[1] = fullscreen;
+  xev.xclient.data.l[2] = 0;
+  XSendEvent (mDisplay, DefaultRootWindow(mDisplay), False,
+                    SubstructureRedirectMask | SubstructureNotifyMask, &xev);
+
+  // Make sure that the resize takes place over all monitors when using Xinerama
+  Atom fullmons = XInternAtom(mDisplay, "_NET_WM_FULLSCREEN_MONITORS", False);
+  //XEvent xev;
+  memset(&xev, 0, sizeof(xev));
+  xev.type = ClientMessage;
+  xev.xclient.window = mWindow;
+  xev.xclient.message_type = fullmons;
+  xev.xclient.format = 32;
+  xev.xclient.data.l[0] = 0; /* your topmost monitor number */
+  xev.xclient.data.l[1] = 4; /* bottommost */
+  xev.xclient.data.l[2] = 0; /* leftmost */
+  xev.xclient.data.l[3] = 7; /* rightmost */
+  xev.xclient.data.l[4] = 0; /* source indication */
+
+  XSendEvent (mDisplay, DefaultRootWindow(mDisplay), False,
+              SubstructureRedirectMask | SubstructureNotifyMask, &xev);
+  XFlush(mDisplay);
+
   /* Bring it up; then wait for it to actually get here. */
   XMapWindow(mDisplay, mWindow);
   XSync(mDisplay, 0);
+
   /*
     XIfEvent(mDisplay, &event, WaitForWindowOpen, (XPointer) sWindowInfo);
   */
