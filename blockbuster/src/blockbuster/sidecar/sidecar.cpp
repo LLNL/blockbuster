@@ -624,8 +624,8 @@ void SideCar::askLaunchBlockbuster(const MovieCue* iCue, QString moviename) {
   mBlockbusterServer.close(); // in case it was listening, don't any more. 
 
   if (iCue) {
-    moviename = iCue->mMovieName;
-    //moviename= "CUELAUNCH"; 
+    //moviename = iCue->mMovieName;
+    moviename= "CUELAUNCH"; 
   } else {
     moviename = "NO_MOVIE"; 
   }
@@ -1185,7 +1185,7 @@ void SideCar::InterestingKey(QKeyEvent *event){
 }
 
 //======================================================================
-BlockbusterLaunchDialog::BlockbusterLaunchDialog(SideCar *sidecar, QString host, QString port, QString file, connectionState state, QString rshCmd, long bbVerbose): 
+BlockbusterLaunchDialog::BlockbusterLaunchDialog(SideCar *sidecar, QString host, QString port, QString filename, connectionState state, QString rshCmd, long bbVerbose): 
   mSidecar(sidecar), mState(state), mBlockbusterPort(port.toInt()), mCurrentProfile(NULL) {
 
   setupUi(this); 
@@ -1193,7 +1193,7 @@ BlockbusterLaunchDialog::BlockbusterLaunchDialog(SideCar *sidecar, QString host,
   hostNameField->setText(host); 
   hostPortField->setText(port); 
   verboseField->setText(QString("%1").arg(bbVerbose)); 
-  initMovieComboBox(file); 
+  initMovieComboBox(filename); 
   readAndSortHostProfiles(); 
   connect(hostProfilesComboBox,  SIGNAL(editTextChanged (const QString &)),
           this, SLOT(hostProfileModified(const QString&)));
@@ -1223,6 +1223,15 @@ BlockbusterLaunchDialog::BlockbusterLaunchDialog(SideCar *sidecar, QString host,
           this, SLOT(hostProfileModified()));
   connect(mpiFrameSyncCheckBox, SIGNAL(clicked()),
           this, SLOT(hostProfileModified()));
+
+  bool showcontrols = (filename != "CUELAUNCH"); 
+  playCheckBox->setEnabled(showcontrols); 
+  fullScreenCheckBox->setEnabled(showcontrols); 
+  showControlsCheckBox->setEnabled(showcontrols); 
+  useDMXCheckBox->setEnabled(showcontrols); 
+  fileNameComboBox->setEnabled(showcontrols); 
+  deleteMoviePushButton->setEnabled(showcontrols); 
+  browseButton->setEnabled(showcontrols); 
   return; 
 }
 
