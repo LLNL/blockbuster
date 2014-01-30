@@ -494,8 +494,8 @@ void Renderer::FinishXWindowInit(void) {
   int required_x_margin, required_y_margin;
   /* Get the screen and do some sanity checks */
   mScreenNumber = DefaultScreen(mDisplay);
-  screen = ScreenOfDisplay(mDisplay, mScreenNumber);
-  //screen = ScreenOfDisplay(mDisplay, 0);
+  // screen = ScreenOfDisplay(mDisplay, mScreenNumber);
+  screen = ScreenOfDisplay(mDisplay, 0);
   
   /* if geometry is don't care and decorations flag is off -- then set window to max screen extents */
   mScreenWidth = WidthOfScreen(screen);
@@ -597,9 +597,14 @@ void Renderer::FinishXWindowInit(void) {
   DEBUGMSG("created window 0x%x", mWindow);
   
   /* Pass some information along to the window manager to size the window */
-  sizeHints.flags = PSize;
-  sizeHints.base_width = width;
-  sizeHints.base_height = height;
+  // POISON:  Setting PMinSize flag sets a hard minimum.  User cannot resize window below this.  But if I don't set it, then the window does not show up larger than a single monitor unless it's fullscreen.  
+  sizeHints.flags = USSize  | PMinSize;
+  sizeHints.width = sizeHints.base_width = width; 
+  sizeHints.height = sizeHints.base_height = height; 
+  sizeHints.min_width = width;
+  sizeHints.min_height = height;
+  // sizeHints.max_width = mScreenWidth;
+  // sizeHints.max_height = mScreenHeight;
   if (geometry->x != DONT_CARE && geometry->y != DONT_CARE) {
     sizeHints.x = geometry->x;
     sizeHints.y = geometry->y;
@@ -625,8 +630,7 @@ void Renderer::FinishXWindowInit(void) {
     SetFullScreen(true); 
   }
   XSync(mDisplay, 0);
-
-  /*
+/*
     XIfEvent(mDisplay, &event, WaitForWindowOpen, (XPointer) sWindowInfo);
   */
   
@@ -660,8 +664,17 @@ void Renderer::FinishXWindowInit(void) {
       -win_attributes.border_width,
       &x, &y, &junkwin); */
 
+  
+  
   printf("New X,Y, border width is %d, %d, %d\n", x,y, win_attributes.border_width); 
   XGetWindowAttributes(mDisplay, mParentWindow, &win_attributes); 
+
+  /* sizeHints.min_width = 100;
+  sizeHints.min_height = 100;
+  XSetStandardProperties(mDisplay, mWindow, 
+                         suggestedName.toAscii(), suggestedName.toAscii(), 
+                         None, (char **)NULL, 0, &sizeHints);*/
+  XResizeWindow(mDisplay, mWindow, width, height); 
   printf("ParentWindow: X,Y =  %d, %d\n", win_attributes.x, win_attributes.y);
   //SetCanvasAttributes(mWindow); 
   mWidth = width;
@@ -856,7 +869,8 @@ void Renderer::Resize(int newWidth, int newHeight, int cameFromX){
   values.width = newWidth;
   values.height = newHeight;
   mask = CWWidth | CWHeight;
-  XConfigureWindow(mDisplay, mWindow, mask, &values);
+  XResizeWindow(mDisplay, mWindow, newWidth, newHeight); 
+  //  XConfigureWindow(mDisplay, mWindow, mask, &values);
   /* Force sync, in case we get no events (dmx) */
   XSync(mDisplay, 0);
   

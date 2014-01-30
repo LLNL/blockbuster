@@ -555,12 +555,8 @@ void SideCar::on_captureKeystrokesCheckBox_clicked() {
 //===============================================================
 void SideCar::on_launchBlockbusterButton_clicked() {
   if (launchBlockbusterButton->text() == "Launch Blockbuster") {
-    QString moviename("NO_MOVIE"); 
     const MovieCue *theCue =  mCueManager->getCurrentCue();    
-    if (theCue) {
-      moviename = theCue->mMovieName;
-    }
-    askLaunchBlockbuster(moviename); // this is independent of any cue 
+    askLaunchBlockbuster(theCue); 
   } else {
     dbprintf(5, "Sending QUIT signal to blockbuster\n"); 
     SendEvent(MovieEvent (MOVIE_QUIT)); 
@@ -623,26 +619,31 @@ QProcess *SideCar::createNewBlockbusterProcess(void) {
 
 //===============================================================
 /* give user opportunity to launch blockbuster, with or without a cue */
-void SideCar::askLaunchBlockbuster(QString iMovieName, bool fromMain) {
+void SideCar::askLaunchBlockbuster(const MovieCue* iCue, QString moviename) {
 
   mBlockbusterServer.close(); // in case it was listening, don't any more. 
 
-  if (fromMain && iMovieName.contains("@")) {
-    dbprintf(5, "found @ symbol\n"); 
-    QStringList tokens = iMovieName.split("@"); 
-    if (tokens.size() != 2) {
-      QMessageBox::warning(this,  "Error",
-                           QString("Could not parse movie name %1").arg(iMovieName));
-      return; 
-    }  
-    iMovieName = tokens[0];
-    HostField->setText(tokens[1]); 
+  if (iCue) {
+    moviename = iCue->mMovieName;
+    //moviename= "CUELAUNCH"; 
   } else {
-    dbprintf(5, "no @ symbol found\n"); 
+    moviename = "NO_MOVIE"; 
   }
 
+  
+  if (!iCue && moviename.contains("@")) {
+    dbprintf(5, "found @ symbol\n"); 
+    QStringList tokens = moviename.split("@"); 
+    if (tokens.size() != 2) {
+      QMessageBox::warning(this,  "Error",
+                           QString("Could not parse movie name %1").arg(moviename));
+      return; 
+    }  
+    moviename = tokens[0];
+    HostField->setText(tokens[1]); 
+  } 
     
-  BlockbusterLaunchDialog dialog(this, HostField->text(), PortField->text(), iMovieName, mState, mPrefs->GetValue("rsh").c_str(), gPrefs.GetLongValue("verbose"));
+  BlockbusterLaunchDialog dialog(this, HostField->text(), PortField->text(), moviename, mState, mPrefs->GetValue("rsh").c_str(), gPrefs.GetLongValue("verbose"));
   // restore the last used profile or the default if first launch
   dialog.trySetProfile(gPrefs.GetValue("SIDECAR_DEFAULT_PROFILE").c_str()); 
   
@@ -664,7 +665,10 @@ void SideCar::askLaunchBlockbuster(QString iMovieName, bool fromMain) {
     dialog.playCheckBox->setChecked(true); 
   }
 
-  if (!fromMain) {
+  if (iCue) {
+    dialog.fullScreenCheckBox->setChecked(iCue->mFullScreen); 
+  }
+  if (iCue) {
     dialog.exec(); 
     if (mState == BB_WAIT_CONNECTION) {
       PortField->setText(dialog.getPort()); 
@@ -700,7 +704,7 @@ void SideCar::askLaunchBlockbuster(QString iMovieName, bool fromMain) {
 void SideCar::executeCue(MovieCue* iCue) {
   if (!mBlockbusterSocket ||
       mBlockbusterSocket->state() != QAbstractSocket::ConnectedState) {
-    askLaunchBlockbuster(iCue->mMovieName);
+    askLaunchBlockbuster(iCue);
     if (mState != BB_CONNECTED) {
       mCueManager->setCueRunning(false); 
       return; // user canceled or connect failed
@@ -1403,12 +1407,13 @@ void BlockbusterLaunchDialog::on_launchButton_clicked(){
     cmd +=  QString(" -r dmx ");
   }
   
-
-  if (host != "localhost") {
-    cmd += QString("\\\"%1\\\"").arg(fileNameComboBox->currentText());//movie name
-    cmd += "\""; 
-  } else {
-    cmd += (fileNameComboBox->currentText());//movie name
+  if (fileNameComboBox->currentText() != "CUELAUNCH") {
+    if (host != "localhost") {
+      cmd += QString("\\\"%1\\\"").arg(fileNameComboBox->currentText());//movie name
+      cmd += "\""; 
+    } else {
+      cmd += (fileNameComboBox->currentText());//movie name
+    }
   }
   dbprintf(5, "Launching command %s\n", cmd.toStdString().c_str()); 
 

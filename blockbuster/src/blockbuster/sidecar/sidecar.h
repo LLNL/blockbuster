@@ -88,7 +88,7 @@ class SideCar: public QMainWindow, public Ui::SideCarWindow {
   void ReadCueFile(std::string filename); 
 
   QProcess *createNewBlockbusterProcess(void);
-  void askLaunchBlockbuster(QString iMovieName, bool fromMain=false); 
+  void askLaunchBlockbuster(const MovieCue *cue, QString moviename = ""); 
   int listenForBlockbuster() {
     mBlockbusterServer.listen(QHostAddress::Any); 
     return mBlockbusterServer.serverPort(); 

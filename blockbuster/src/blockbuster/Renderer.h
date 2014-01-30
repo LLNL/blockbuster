@@ -213,6 +213,7 @@ class Renderer {
  protected:   
   //  " good to have around to reduce arguments" (??)
   ProgramOptions *mOptions; 
+
   ImageCachePtr mCache; // if not using DMX
   NewImageCachePtr mNewCache; 
 
