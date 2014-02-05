@@ -108,6 +108,7 @@ void usage(void) {
   printf("-no-autores:  normally, you want blockbuster to decrease resolution when the zoom increases.  This flag suppresses this, for testing.\n");
   printf("-no-controls (or -withoutControls) turns off the control window (if defined for the user interface)\n");
   printf("-noscreensaver: use fake mouse clicks to defeat screensaver\n");
+  printf("-no-small-windows: disallow resizing of window less than movie size.  Workaround for window manager bug on powerwall.n"); 
   printf("-no-splash (or -S) suppresses display of splash screen\n");
   printf("-no-stereo-switch suppresses automatic stereo or mono mode switches based on movie being stereo or mono\n");
   printf("-play (or -Play) automatically starts the movie after loading\n");
@@ -356,6 +357,9 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
     }
 	else if (SET_BOOL_ARG("-withoutControls", argc, argv, opt->drawInterface, 0) || 
              SET_BOOL_ARG("-no-controls", argc, argv, opt->drawInterface, 0)) continue;
+	else if (SET_BOOL_ARG("-no-small-windows", argc, argv,  opt->noSmallWindows, 1)) {
+      continue; 
+    }
 	else if (SET_BOOL_ARG("-no-splash", argc, argv,  opt->splashScreen, 0) || 
              SET_BOOL_ARG("-SplashDisable",  argc, argv, opt->splashScreen, 0)) 
       continue; 
@@ -661,6 +665,7 @@ int main(int argc, char *argv[])
     INFO(QString("Connecting to sidecar on %1\n").arg(opt->sidecarHostPort)); 
     gSidecarServer->connectToSidecar(opt->sidecarHostPort); 
     SuppressMessageDialogs(true); 
+    
   }
   
   /* deal with a script arg

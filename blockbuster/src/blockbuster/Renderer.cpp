@@ -597,21 +597,21 @@ void Renderer::FinishXWindowInit(void) {
   DEBUGMSG("created window 0x%x", mWindow);
   
   /* Pass some information along to the window manager to size the window */
-  // POISON:  Setting PMinSize flag sets a hard minimum.  User cannot resize window below this.  But if I don't set it, then the window does not show up larger than a single monitor unless it's fullscreen.  
-  sizeHints.flags = USSize  | PMinSize;
+  sizeHints.flags = USSize ;
   sizeHints.width = sizeHints.base_width = width; 
   sizeHints.height = sizeHints.base_height = height; 
-  sizeHints.min_width = width;
-  sizeHints.min_height = height;
-  // sizeHints.max_width = mScreenWidth;
-  // sizeHints.max_height = mScreenHeight;
+  if (mOptions->noSmallWindows) {
+    // WARNING:  Setting PMinSize flag sets a hard minimum.  User cannot resize window below this.  But if I don't set it, then the window does not show up larger than a single monitor unless it's fullscreen. 
+    sizeHints.flags |= PMinSize;
+    sizeHints.min_width = width;
+    sizeHints.min_height = height;
+  }
+
   if (geometry->x != DONT_CARE && geometry->y != DONT_CARE) {
     sizeHints.x = geometry->x;
     sizeHints.y = geometry->y;
     sizeHints.flags |= USPosition;
   }
-  
-  XSetNormalHints(mDisplay, mWindow, &sizeHints);
   
   
   SetTitle(suggestedName); 
@@ -669,12 +669,6 @@ void Renderer::FinishXWindowInit(void) {
   printf("New X,Y, border width is %d, %d, %d\n", x,y, win_attributes.border_width); 
   XGetWindowAttributes(mDisplay, mParentWindow, &win_attributes); 
 
-  /* sizeHints.min_width = 100;
-  sizeHints.min_height = 100;
-  XSetStandardProperties(mDisplay, mWindow, 
-                         suggestedName.toAscii(), suggestedName.toAscii(), 
-                         None, (char **)NULL, 0, &sizeHints);*/
-  XResizeWindow(mDisplay, mWindow, width, height); 
   printf("ParentWindow: X,Y =  %d, %d\n", win_attributes.x, win_attributes.y);
   //SetCanvasAttributes(mWindow); 
   mWidth = width;
@@ -684,7 +678,6 @@ void Renderer::FinishXWindowInit(void) {
   mDepth = mVisInfo->depth;
   return; 
 }// END CONSTRUCTOR for XWindow
-
 
 // ==============================================================
 
@@ -853,6 +846,8 @@ void Renderer::Resize(int newWidth, int newHeight, int cameFromX){
     mWidth = newWidth; 
     return; 
   }
+
+
   XWindowChanges values;
   unsigned int mask;
   
@@ -869,13 +864,13 @@ void Renderer::Resize(int newWidth, int newHeight, int cameFromX){
   values.width = newWidth;
   values.height = newHeight;
   mask = CWWidth | CWHeight;
-  XResizeWindow(mDisplay, mWindow, newWidth, newHeight); 
-  //  XConfigureWindow(mDisplay, mWindow, mask, &values);
-  /* Force sync, in case we get no events (dmx) */
-  XSync(mDisplay, 0);
   
   mWidth = newWidth;
   mHeight = newHeight;
+
+
+  XResizeWindow(mDisplay, mWindow, newWidth, newHeight); 
+  XSync(mDisplay, 0);
   
   return; 
 }

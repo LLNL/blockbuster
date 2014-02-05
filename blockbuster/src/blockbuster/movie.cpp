@@ -367,7 +367,6 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
               ERROR("Could not create a renderer");
               return 1;
             }
-          
             gSidecarServer->SetRenderer(renderer); 
           } 
           if (event.mEventType != MOVIE_OPEN_FILE_NOCHANGE) {

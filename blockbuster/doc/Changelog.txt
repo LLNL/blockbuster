@@ -2,11 +2,14 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.0p (git tag blockbuster-v2.8.0p) Mon Jan 27 12:00:58 PST 2014
+VERSION 2.8.0p (git tag blockbuster-v2.8.0p) Thu Jan 30 14:09:11 PST 2014
 -- Starting without a movie is no longer a blockbuster emergency.  No window opens in this case.  
 -- Fixed crashing bug where thread IDs were exceeding cache slots.  
 -- Refactored code to improve file loading procedure.  (Internal change)
--- Fix resizing regression bug when launching new movies
+-- Fix resizing regression bug when launching new movies  
+-- When launching from a cue with "fullscreen" checked, do not preload blockbuster with a movie but do this with the cue itself.  
+-- Improved launch dialog layout.
+-- Added "-no-small-windows" option to blockbuster and "No small windows" checkbox in sidecar launch dialog to workaround window manager resizing bug on powerwall when launching with movies bigger than one monitor can hold.  
 
 ===============================================================================
 VERSION 2.8.0o (git tag blockbuster-v2.8.0o) Thu Jan 23 18:43:09 PST 2014

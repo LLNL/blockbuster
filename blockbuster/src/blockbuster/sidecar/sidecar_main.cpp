@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
     if ((gPrefs.TryGetValue("movie", moviename) ||
          gPrefs.TryGetValue("play", moviename) ) 
         && moviename != "(nil)") {  
-      sidecar.askLaunchBlockbuster(NULL, moviename.c_str()); 
+      sidecar.askLaunchBlockbuster(NULL, moviename.c_str(), true); 
     }
   }
   int retval = app.exec();

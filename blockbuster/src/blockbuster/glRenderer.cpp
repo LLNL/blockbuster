@@ -74,7 +74,7 @@ void glRenderer::FinishRendererInit(void) {
   
   glXUseXFont(id, first, last - first + 1, fontBase + first);
   glListBase(fontBase);
-  
+
   /* Specify our required format.  For OpenGL, always assume we're
    * getting 24-bit RGB pixels.
    */
