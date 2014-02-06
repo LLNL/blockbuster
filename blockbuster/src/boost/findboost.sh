@@ -11,7 +11,7 @@ if [ "$NOBOOSTLINK" != "YES" ]; then
                         if [ "$dir" != "$INSTALL_DIR" ]; then
                             rm -rf $INSTALL_DIR/include/boost $INSTALL_DIR/lib/libboost_*
                             ln -s $dir/include/boost $INSTALL_DIR/include/boost 
-                            for lib in $dir/lib/libboost_{atomic,date_time,regex,system,thread}*; do 
+                            for lib in $dir/lib/libboost_{atomic,date_time,filesystem,regex,system,thread}*; do 
                                 ln -s $lib $INSTALL_DIR/lib/
                             done
                         fi

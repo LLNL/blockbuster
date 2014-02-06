@@ -42,6 +42,7 @@
 #include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <boost/filesystem.hpp> 
 
 using namespace std; 
 
@@ -64,11 +65,25 @@ void usage(void) {
   cerr << "" << endl;
 }
 
+string GetSidecarDir(string myname) {
+  if (!myname.size()) {
+    myname="sidecar";
+  }
+  if (myname[0] != '/') {
+    long pathsize =  pathconf(".", _PC_PATH_MAX);
+    vector<char> pathbuf(pathsize, 0); 
+    myname = string(getcwd(&pathbuf[0], pathsize-1)) + "/" +  myname; 
+  }
+  boost::filesystem::path p(myname);
+  boost::filesystem::path dir = p.parent_path();
+  return dir.string(); 
+}
+
 void ParseOptions(int &argc, char *argv[]) {
 
   gPrefs.SetValue("rsh", "rsh"); 
   gPrefs.SetValue("verbose", 0); 
-
+  gPrefs.SetValue("sidecarDir", GetSidecarDir(argv[0])); 
   gPrefs.ReadFromFile(false); 
 
   gPrefs.DeleteValue("verbose"); // do not inherit this from previous
@@ -99,7 +114,6 @@ int main(int argc, char *argv[]) {
   mkdir(prefsdir.toStdString().c_str(), 0777); 
   gPrefs.SetValue("prefsdir", prefsdir.toStdString()); 
   gPrefs.SetFile((prefsdir + "/prefs.cnf").toStdString()); 
-
   SideCar sidecar(&app, &gPrefs);
   //QStyle *myStyle = new QCleanlooksStyle();
   QStyle *myStyle = new QPlastiqueStyle();

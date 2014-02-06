@@ -86,7 +86,7 @@ UI_HEADERS = ui_MovieCueWidget.h ui_BlockbusterControl.h ui_InfoWindow.h ui_side
 
 Makefile.qt.include: sidecar.pro $(SOURCES) $(HEADERS)
 	$(QMAKE) 
-	../sedfiles.sh "s:INSTALLDIR_PLACEHOLDER:$(INSTALL_DIR):" Makefile.qt.include
+	../sedfiles.sh -e "s:INSTALLDIR_PLACEHOLDER:$(INSTALL_DIR):" Makefile.qt.include
 	makedepend -fMakefile.qt.include -I../../config -I../../sm -I../../common -Y. -I../../config -Y. $(SOURCES) 
 
 

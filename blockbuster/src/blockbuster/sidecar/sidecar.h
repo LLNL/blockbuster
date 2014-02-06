@@ -86,6 +86,10 @@ class SideCar: public QMainWindow, public Ui::SideCarWindow {
   //prefs:
   void doStressTests(void) {mDoStressTests = true; }
   void ReadCueFile(std::string filename); 
+  QString getDefaultBlockbusterPath(void) {
+    return (mPrefs->GetValue("sidecarDir") + "/blockbuster").c_str(); 
+  }
+
 
   QProcess *createNewBlockbusterProcess(void);
   void askLaunchBlockbuster(const MovieCue *cue, QString moviename = "", bool executeWithoutAsking=false); 
@@ -229,22 +233,14 @@ class SideCar: public QMainWindow, public Ui::SideCarWindow {
 //=======================================================
 struct HostProfile {
   
+  // =============================================================
   HostProfile() {
-    init("profile", mUserHostProfileFile); 
+    init(); 
     return; 
   }
  
-  HostProfile(const QString &name, QString filename) {
-    QStringList tokens = QString("%1 localhost 5959 1 /usr/bin/rsh setDisplay=true :0 blockbuster").arg(name).split(QRegExp("\\s+"), QString::SkipEmptyParts);
-    init(tokens, filename, false); 
-    return; 
-  }
-
-  HostProfile(const QStringList &tokens, QString filename, bool readOnly) {
-    init (tokens, filename, readOnly); 
-    return; 
-  } 
-  
+ 
+  // =============================================================
   // make an exact duplicate of "in"
   HostProfile(const HostProfile *in) {
     if (in) {
@@ -252,127 +248,48 @@ struct HostProfile {
     }
     return;     
   }
+
+  // =============================================================
   // make a copy of "in" that is not readOnly and has name "name"
-  HostProfile(const QString &name, const HostProfile *in){
-    QStringList tokens = in->toProfileString().split(QRegExp("\\s+")); 
-    tokens[0] = name; 
-    init(tokens, in->mProfileFile, false); 
-    mProfileFile = HostProfile::mUserHostProfileFile ;
+  HostProfile(QString name, const HostProfile *in){
+    init(); 
+    *this = *in; 
+    mName = name; 
+    mProfileFile = mUserHostProfileFile ;
     return;     
   }
 
+  
+  // =============================================================
   QString displayName(void) const {
     if (mReadOnly) return mName+" (readonly)"; 
     return mName; 
   }
-  QString name(void) const { 
-    return mName; 
-  }
 
-  HostProfile& operator =(const HostProfile& other){
-    QStringList tokens = other.toProfileString().split(QRegExp("\\s+")); 
-    init(tokens, other.mProfileFile, other.mReadOnly); 
-    return *this; 
-  }
 
-  bool operator <(const HostProfile& other) const {
-    bool retval = false; 
-    // sort by provenance, then by profile name; makes saving easier
-    if (other.mReadOnly != this->mReadOnly) {
-      retval = this->mReadOnly; 
-    } else if (other.mProfileFile != this->mProfileFile ) {      
-      retval = (this->mProfileFile < other.mProfileFile); 
-      dbprintf(5, QString("%1 != %2, retval = %3").arg(other.mProfileFile).arg(this->mProfileFile ).arg(retval)); 
-      return retval; 
-    } else {
-      retval = (this->mName < other.mName); 
-      dbprintf(5, QString("other.mName=%1,  this->mName=%2, retval = %3").arg(other.mName).arg(this->mName ).arg(retval)); 
-    }
-    return retval; 
-  }
+  // =============================================================
 
-  bool operator >(const HostProfile& other) const {
-    return (other < *this); 
-  }
-  
-  void init(const QString &name, QString filename) {
-    QStringList tokens = QString("%1 localhost 5959 1 /usr/bin/rsh setDisplay=true :0 blockbuster").arg(name).split(QRegExp("\\s+"), QString::SkipEmptyParts);
-    init(tokens, filename, false); 
-    return; 
-  }
+  HostProfile& operator =(const HostProfile& other);
 
-  void init(const QStringList &tokens, QString filename, bool readOnly) {
-    mProfileFile = filename; 
-    mReadOnly = readOnly; 
-    mAutoSidecarHost = true; 
-    mSidecarHost = QHostInfo::localHostName(); 
-    mPlay = mFullScreen = mShowControls = mUseDMX = mMpiFrameSync = false; 
-    if (tokens.size() != 15) {
-      dbprintf(1, QString("Warning:  HostProfile uses 15 tokens in initializer but I'm only seeing %1, so I'll be using default values for some items.\n").arg(tokens.size()));
-    }
-    if (tokens.size() > 0)  mName = tokens[0]; 
-    if (tokens.size() > 1)  mHostName = tokens[1];
-    if (tokens.size() > 2)  mPort = tokens[2];  
-    if (tokens.size() > 3)  mVerbosity = tokens[3]; 
-    if (tokens.size() > 4)  mRsh = tokens[4]; 
-    if (tokens.size() > 5)  mSetDisplay = (tokens[5] == "setDisplay=true"); 
-    if (tokens.size() > 6)  mDisplay = tokens[6]; 
-    if (tokens.size() > 7)  mBlockbusterPath = QString(tokens[7]).replace("%20", " "); 
-    if (tokens.size() > 8)  mAutoSidecarHost = (tokens[8] == "autoSidecarHost=true"); 
-    if (tokens.size() > 9)  mSidecarHost = tokens[9]; 
-    if (tokens.size() > 10)  mPlay = (tokens[10] == "play=true"); 
-    if (tokens.size() > 11)  mFullScreen = (tokens[11] == "fullScreen=true"); 
-    if (tokens.size() > 12)  mShowControls = (tokens[12] == "showControls=true"); 
-    if (tokens.size() > 13)  mUseDMX = (tokens[13] == "useDMX=true"); 
-    if (tokens.size() > 14)  mMpiFrameSync = (tokens[14] == "mpiFrameSync=true"); 
-    return; 
-  }
-  QString toQString(void) const {
-    return QString("<< HostProfile: mReadOnly=%1, mProfileFile=%2, mHostName=%3, mName=%4, mPort=%5, mVerbosity=%6, mRsh=%7, mSetDisplay=%8, mDisplay=%9, mBlockbusterPath=%10, mAutoSidecarHost=%11, mSidecarHost=%12, mPlay=%13, mFullScreen=%14, mShowControls=%15, mUseDMX=%16, mMpiFrameSync=%17>>")
-      .arg((int)mReadOnly)
-      .arg(mProfileFile)
-      .arg(mName)
-      .arg(mHostName)
-      .arg(mPort)
-      .arg(mVerbosity)
-      .arg(mRsh)
-      .arg(mSetDisplay?"true":"false")
-      .arg(mDisplay)
-      .arg(QString(mBlockbusterPath).replace(" ", "%20"))
-      .arg(mAutoSidecarHost?"true":"false")
-      .arg(mSidecarHost)
-      .arg(mPlay?"true":"false")
-      .arg(mFullScreen?"true":"false")
-      .arg(mShowControls?"true":"false")
-.arg(mUseDMX?"true":"false")
-      .arg(mMpiFrameSync?"true":"false"); 
-  }
-  QString toProfileString(void) const {  
-    return QString("%1 %2 %3 %4 %5 setDisplay=%6 %7 %8 autoSidecarHost=%9 %10 play=%11 fullScreen=%12 showControls=%13 useDMX=%14 mpiFrameSync=%15")
-      .arg(mName)
-      .arg(mHostName)
-      .arg(mPort)
-      .arg(mVerbosity)
-      .arg(mRsh)
-      .arg(mSetDisplay?"true":"false")
-      .arg(mDisplay)
-      .arg(QString(mBlockbusterPath).replace(" ", "%20"))
-      .arg(mAutoSidecarHost?"true":"false")
-      .arg(mSidecarHost)
-      .arg(mPlay?"true":"false")
-      .arg(mFullScreen?"true":"false")
-      .arg(mShowControls?"true":"false")
-      .arg(mUseDMX?"true":"false")
-      .arg(mMpiFrameSync?"true":"false"); 
-  }
+  bool operator <(const HostProfile& other) const;
+  bool operator >(const HostProfile& other) const;
+
+  void init(void);
+
+  bool setFromQString(QString profileString);
+
+  QString toQString(void) const;
+  //QString toProfileString(void) const;
 
   static QString mUserHostProfileFile; 
-   public: 
+
+  public: 
   QString mName;
   QString mHostName, mPort, mVerbosity, mRsh, mSidecarHost,  
     mDisplay, mBlockbusterPath, mProfileFile; 
-  bool mSetDisplay, mReadOnly, mAutoSidecarHost, 
-    mPlay, mFullScreen, mShowControls, mUseDMX, mMpiFrameSync; 
+  bool mSetDisplay,  mReadOnly, mAutoSidecarHost, 
+    mPlay, mFullScreen, mShowControls, mUseDMX, mMpiFrameSync, 
+    mNoSmallWindows, mAutoBlockbusterPath; 
 }; 
 
 
@@ -419,6 +336,7 @@ class BlockbusterLaunchDialog: public QDialog,
     //KillProcess(); 
     this->hide(); 
   }
+  bool ProfileNameExists(QString name);
   void createNewProfile(const HostProfile *inProfile);
   void on_deleteProfilePushButton_clicked(); 
   void on_saveProfilePushButton_clicked(); 
@@ -429,6 +347,7 @@ class BlockbusterLaunchDialog: public QDialog,
   void on_deleteMoviePushButton_clicked(); 
   void on_launchButton_clicked();
   void on_useDMXCheckBox_clicked();
+  void on_autoBlockbusterPathCheckBox_clicked();
   void on_autoSidecarHostCheckBox_clicked();
   void on_setDisplayCheckBox_clicked();
   void on_hostNameField_editingFinished(); 
@@ -440,14 +359,14 @@ class BlockbusterLaunchDialog: public QDialog,
     hostProfileModified(); 
   }
 
-  public:
+ public:
   void trySetProfile (QString name);  
   void saveHistory(QComboBox *box, QString filename);
   void saveAndRefreshHostProfiles(HostProfile *inProfile);
   void removeHostProfiles(void); 
   void sortAndSaveHostProfiles(void); 
   void readAndSortHostProfiles(void) ;
-  void readHostProfileFile(QString filename, bool isGlobal);
+  int readHostProfileFile(QString filename, bool isGlobal);
   void initMovieComboBox(QString initialItem);   
 
   SideCar *mSidecar; 

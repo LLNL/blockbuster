@@ -8,8 +8,10 @@ VERSION 2.8.0p (git tag blockbuster-v2.8.0p) Thu Jan 30 14:09:11 PST 2014
 -- Refactored code to improve file loading procedure.  (Internal change)
 -- Fix resizing regression bug when launching new movies  
 -- When launching from a cue with "fullscreen" checked, do not preload blockbuster with a movie but do this with the cue itself.  
--- Improved launch dialog layout.
+-- Improved launch dialog layout to improve readability and interaction.
 -- Added "-no-small-windows" option to blockbuster and "No small windows" checkbox in sidecar launch dialog to workaround window manager resizing bug on powerwall when launching with movies bigger than one monitor can hold.  
+-- Added "automatic" checkbox to blockbuster command to generate full path to blockbuster as default remote command.  This should make -dev sidecar run -dev blockbuster on our clusters when checked.  
+
 
 ===============================================================================
 VERSION 2.8.0o (git tag blockbuster-v2.8.0o) Thu Jan 23 18:43:09 PST 2014

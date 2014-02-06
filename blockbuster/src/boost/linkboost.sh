@@ -34,9 +34,8 @@ for prefix in $BOOST_DIR /usr/local/tools /usr/local/ /opt/local; do
     for infix in -nompi -mpi ""; do 
         for version in -1.54.0 -1.53.0 -1.49.0 ""; do 
             dir=$prefix/boost${infix}${version}
-            if ls $dir/lib/libboost_thread.a  $dir/lib/libboost_system.a  $dir/lib/libboost_regex.a $dir/lib/libboost_date_time.a $dir/include/boost/random.hpp>/dev/null 2>&1; then 
+            if ls $dir/lib/libboost_filesystem.a $dir/lib/libboost_thread.a  $dir/lib/libboost_system.a  $dir/lib/libboost_regex.a $dir/lib/libboost_date_time.a $dir/include/boost/random.hpp>/dev/null 2>&1; then 
                 set -xv
-                file=$(basename $thing)
                 if ! linkfile include/boost; then 
                     echo "could not install boost in $INSTALL_DIR/include"
                     exit 1

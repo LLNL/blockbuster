@@ -303,7 +303,7 @@ void SideCar::setBlockbusterSocket(QTcpSocket *newSocket) {
   return; 
 }
 
- //===============================================================
+//===============================================================
 void SideCar::setBlockbusterPort(QString port) {
   PortField->setText(port); 
   mPortString = port; 
@@ -324,7 +324,7 @@ void SideCar::connectToBlockbuster(){
   mHost = HostField->text();
   if (mPortString.toInt() == 00) {
     QMessageBox::warning(this,  "Error",
-			 "Port number must be a positive integer");
+                         "Port number must be a positive integer");
     return; 
   }
   setState(BB_WAIT_CONNECTION);     
@@ -428,16 +428,16 @@ void SideCar::socketError(QAbstractSocket::SocketError socketError){
   switch (socketError) {
   case QAbstractSocket::RemoteHostClosedError:
     QMessageBox::warning(this,  "Error",
-			 "The remote host closed the connection");
+                         "The remote host closed the connection");
     break;
   case QAbstractSocket::HostNotFoundError:
     QMessageBox::warning(this, "Error", 
-			 "The host was not found. Please check the "
-			 "host name and port settings.");
+                         "The host was not found. Please check the "
+                         "host name and port settings.");
     break;
   case QAbstractSocket::ConnectionRefusedError:
     QMessageBox::warning(this, "Error", 
-			 "The connection was refused by the server. ");
+                         "The connection was refused by the server. ");
     break;
   default:
     QMessageBox::critical
@@ -594,7 +594,7 @@ void SideCar::on_HostField_returnPressed() {
   if (HostField->text() == "" || PortField->text() == "") return; 
   if (mState == BB_CONNECTED) {
     QMessageBox::warning(this, "Error", 
-			 "Already connected to host.");
+                         "Already connected to host.");
     return ;
   }
   on_connectButton_clicked(); 
@@ -680,7 +680,7 @@ void SideCar::askLaunchBlockbuster(const MovieCue* iCue, QString moviename, bool
       // save the user's preference as default for next launch.  
       gPrefs.SetValue("SIDECAR_DEFAULT_PROFILE", dialog.mCurrentProfile->mName.toStdString()); 
     }
- } else {    
+  } else {    
     dialog.on_launchButton_clicked(); 
   }
   mLaunchDialog = &dialog; 
@@ -982,8 +982,8 @@ void SideCar::saveImageButton_clicked() {
   theTimer.start(); 
   while (mBlockbusterCWD == "") {
     if (theTimer.elapsed_time() > 5.0) {
-    QMessageBox::critical(this, "Sidecar Error:", "Blockbuster did not respond to the request for a working directory");
-    return; 
+      QMessageBox::critical(this, "Sidecar Error:", "Blockbuster did not respond to the request for a working directory");
+      return; 
     }
     gCoreApp->processEvents(); 
   }
@@ -1039,7 +1039,7 @@ void SideCar::loopCheckBox_stateChanged(int state) {
 //================================================================
 void SideCar::pingpongCheckBox_stateChanged(int state) {   
   if (state)  mRemoteControl->loopCheckBox->setChecked(false); 
-   SendEvent(MovieEvent (MOVIE_SET_PINGPONG, state)); 
+  SendEvent(MovieEvent (MOVIE_SET_PINGPONG, state)); 
 }
 
 //================================================================
@@ -1184,7 +1184,172 @@ void SideCar::InterestingKey(QKeyEvent *event){
   return; 
   
 }
+// =============================================================
+HostProfile& HostProfile::operator =(const HostProfile& other){
+  setFromQString(other.toQString()); 
+  return *this; 
+}
 
+// =============================================================
+bool HostProfile::operator <(const HostProfile& other) const {
+  bool retval = false; 
+  QString compareResult = ">="; 
+  QString key1 = this->mName, key2 = other.mName; 
+  // sort by provenance, then by profile name; makes saving easier
+  if (other.mProfileFile != this->mProfileFile ) { 
+    key1 = this->mProfileFile; 
+    key2 = other.mProfileFile; 
+  } 
+  retval = (key1 < key2); 
+  if (retval) compareResult = ">"; 
+  
+  dbprintf(5, QString("%1 %2 %3").arg(key1).arg(compareResult).arg(key2)); 
+  
+  return retval; 
+}
+
+// =============================================================
+bool HostProfile::operator >(const HostProfile& other) const {
+  return (other < *this); 
+}
+  
+// =============================================================
+void HostProfile::init(void) {
+  mName = "Blank profile"; 
+  mProfileFile = mUserHostProfileFile;
+  mSidecarHost = QHostInfo::localHostName(); 
+  mReadOnly = mPlay = mFullScreen = mShowControls = mUseDMX = mMpiFrameSync = false; 
+  mAutoSidecarHost = mAutoBlockbusterPath = mNoSmallWindows = true;   
+  // POISON:  antiquated style; deprecated 
+  /* initFromString(QString("%1 localhost 5959 1 /usr/bin/rsh setDisplay=true :0 blockbuster").arg(name), filename, readOnly); */ 
+  return; 
+}
+
+
+// =============================================================
+bool HostProfile::setFromQString(QString profileString) {
+  profileString = profileString.simplified();
+  QStringList tokens = profileString.split(QRegExp("\\s+"), QString::SkipEmptyParts); 
+
+  if (!tokens.size()) {
+    return true; 
+  }
+  else if (tokens.size() > 3 && tokens[0] == "<<" && tokens[1] == "HostProfile:"&& tokens[tokens.size()-1] == ">>")  {
+    for (uint16_t t = 2; t < tokens.size()-1; t++) {
+      QStringList items = tokens[t].split("=", QString::SkipEmptyParts); 
+      if (items.size() != 2) {
+        dbprintf(0, QString("Error: profile string token %1 is malformed\n").arg(tokens[t]));
+        dbprintf(5, QString("%1 items in token: ").arg(items.size())); 
+        for (uint16_t i = 0; i< items.size(); i++) {
+          dbprintf(5, QString("%1 ").arg(items[i])); 
+        }
+        return false; 
+      } 
+      // QString("<< HostProfile: mReadOnly=%1, mProfileFile=%2, mHostName=%3, mName=%4, mPort=%5, mVerbosity=%6, mRsh=%7, mSetDisplay=%8, mDisplay=%9, mBlockbusterPath=%10, mAutoSidecarHost=%11, mSidecarHost=%12, mPlay=%13, mFullScreen=%14, mShowControls=%15, mUseDMX=%16, mMpiFrameSync=%17, mNoSmallWindows=%18, mAutoBlockbusterPath=%19 >>")      
+      
+      QString key = items[0], value = items[1]; 
+      if (value.endsWith(",")) value.truncate(value.size()-1); 
+
+      if (key == "mReadOnly")  mReadOnly = (value != "0"); 
+      else if (key == "mProfileFile") mProfileFile=value;
+      else if (key == "mHostName") mHostName=value;
+      else if (key == "mName") mName=value;
+      else if (key == "mPort") mPort=value;
+      else if (key == "mVerbosity") mVerbosity=value;
+      else if (key == "mRsh") mRsh = value; 
+      else if (key == "mSetDisplay") mSetDisplay = (value != "false" && value != "0");
+      else if (key == "mDisplay") mDisplay = value; 
+      else if (key == "mBlockbusterPath") mBlockbusterPath = value; 
+      else if (key == "mAutoSidecarHost") mAutoSidecarHost  = (value != "false" && value != "0");
+      else if (key == "mSidecarHost") mSidecarHost = value; 
+      else if (key == "mPlay") mPlay = (value != "false" && value != "0");
+      else if (key == "mFullScreen") mFullScreen = (value != "false" && value != "0");
+      else if (key == "mShowControls") mShowControls = (value != "false" && value != "0");
+      else if (key == "mUseDMX") mUseDMX = (value != "false" && value != "0");
+      else if (key == "mMpiFrameSync") mMpiFrameSync = (value != "false" && value != "0");
+      else if (key == "mNoSmallWindows") mNoSmallWindows = (value != "false" && value != "0");
+      else if (key == "mAutoBlockbusterPath") mAutoBlockbusterPath = (value != "false" && value != "0"); 
+      else {
+        dbprintf(1, QString("Error: profile string token %1 contains unknown key %2\n").arg(tokens[t]).arg(key));
+        return false; 
+      } 
+    }
+  }
+  else  { // possible old-style profile
+    dbprintf(1, QString("WARNING:  Possible old-style profile string detected.  When writing this out, we'll use newer syntax.\n")); 
+    if (tokens.size() != 15) {
+      dbprintf(1, QString("Warning:  HostProfile uses 15 tokens in initializer but I'm only seeing %1, so I'll be using default values for some items.\n").arg(tokens.size()));
+    }
+    
+    if (tokens.size() > 0)  mName = tokens[0]; 
+    if (tokens.size() > 1)  mHostName = tokens[1];
+    if (tokens.size() > 2)  mPort = tokens[2];  
+    if (tokens.size() > 3)  mVerbosity = tokens[3]; 
+    if (tokens.size() > 4)  mRsh = tokens[4]; 
+    if (tokens.size() > 5)  mSetDisplay = (tokens[5] == "setDisplay=true"); 
+    if (tokens.size() > 6)  mDisplay = tokens[6]; 
+    if (tokens.size() > 7)  mBlockbusterPath = QString(tokens[7]).replace("%20", " "); 
+    if (tokens.size() > 8)  mAutoSidecarHost = (tokens[8] == "autoSidecarHost=true"); 
+    if (tokens.size() > 9)  mSidecarHost = tokens[9]; 
+    if (tokens.size() > 10)  mPlay = (tokens[10] == "play=true"); 
+    if (tokens.size() > 11)  mFullScreen = (tokens[11] == "fullScreen=true"); 
+    if (tokens.size() > 12)  mShowControls = (tokens[12] == "showControls=true"); 
+    if (tokens.size() > 13)  mUseDMX = (tokens[13] == "useDMX=true"); 
+    if (tokens.size() > 14)  mMpiFrameSync = (tokens[14] == "mpiFrameSync=true"); 
+  } // end old-style profile string
+
+  dbprintf(5, "Parse host profile entry without detecting any error\n"); 
+  
+  return true; 
+
+}
+
+// =============================================================
+QString HostProfile::toQString(void) const {
+  return QString("<< HostProfile: mName=%1, mHostName=%2, mReadOnly=%3, mProfileFile=%4, mPort=%5, mVerbosity=%6, mRsh=%7, mSetDisplay=%8, mDisplay=%9, mBlockbusterPath=%10, mAutoSidecarHost=%11, mSidecarHost=%12, mPlay=%13, mFullScreen=%14, mShowControls=%15, mUseDMX=%16, mMpiFrameSync=%17, mNoSmallWindows=%18, mAutoBlockbusterPath=%19 >>")
+    .arg(mName)
+    .arg(mHostName)
+    .arg((int)mReadOnly)
+    .arg(mProfileFile)
+    .arg(mPort)
+    .arg(mVerbosity)
+    .arg(mRsh)
+    .arg((int)mSetDisplay)
+    .arg(mDisplay)
+    .arg(QString(mBlockbusterPath).replace(" ", "%20"))
+    .arg(mAutoSidecarHost)
+    .arg(mSidecarHost)
+    .arg((int)mPlay)
+    .arg((int)mFullScreen)
+    .arg((int)mShowControls)
+    .arg((int)mUseDMX)
+    .arg((int)mMpiFrameSync)
+    .arg((int)mNoSmallWindows)
+    .arg((int)mAutoBlockbusterPath); 
+}
+
+
+/* old code, keep for reference if you find old host profiles: 
+QString HostProfile::toProfileString(void) const { 
+    return QString("%1 %2 %3 %4 %5 setDisplay=%6 %7 %8 autoSidecarHost=%9 %10 play=%11 fullScreen=%12 showControls=%13 useDMX=%14 mpiFrameSync=%15")
+    .arg(mName)
+    .arg(mHostName)
+    .arg(mPort)
+    .arg(mVerbosity)
+    .arg(mRsh)
+    .arg(mSetDisplay?"true":"false")
+    .arg(mDisplay)
+    .arg(QString(mBlockbusterPath).replace(" ", "%20"))
+    .arg(mAutoSidecarHost?"true":"false")
+    .arg(mSidecarHost)
+    .arg(mPlay?"true":"false")
+    .arg(mFullScreen?"true":"false")
+    .arg(mShowControls?"true":"false")
+    .arg(mUseDMX?"true":"false")
+    .arg(mMpiFrameSync?"true":"false"); 
+  
+}
+  */
 //======================================================================
 BlockbusterLaunchDialog::BlockbusterLaunchDialog(SideCar *sidecar, QString host, QString port, QString filename, connectionState state, QString rshCmd, long bbVerbose): 
   mSidecar(sidecar), mState(state), mBlockbusterPort(port.toInt()), mCurrentProfile(NULL) {
@@ -1212,7 +1377,7 @@ BlockbusterLaunchDialog::BlockbusterLaunchDialog(SideCar *sidecar, QString host,
           this, SLOT(hostProfileModified(const QString&)));
   connect(fileNameComboBox, SIGNAL(editTextChanged (const QString &)),
           this, SLOT(hostProfileModified(const QString&)));
-  connect(playCheckBox, SIGNAL(clicked()),
+   connect(playCheckBox, SIGNAL(clicked()),
           this, SLOT(hostProfileModified()));
   connect(fullScreenCheckBox, SIGNAL(clicked()),
           this, SLOT(hostProfileModified()));
@@ -1222,9 +1387,11 @@ BlockbusterLaunchDialog::BlockbusterLaunchDialog(SideCar *sidecar, QString host,
           this, SLOT(hostProfileModified()));
   connect(autoSidecarHostCheckBox, SIGNAL(clicked()),
           this, SLOT(hostProfileModified()));
+  connect(autoBlockbusterPathCheckBox, SIGNAL(clicked()),
+          this, SLOT(hostProfileModified()));
   connect(mpiFrameSyncCheckBox, SIGNAL(clicked()),
           this, SLOT(hostProfileModified()));
-
+  
   bool showcontrols = (filename != "CUELAUNCH"); 
   playCheckBox->setEnabled(showcontrols); 
   fullScreenCheckBox->setEnabled(showcontrols); 
@@ -1240,8 +1407,8 @@ BlockbusterLaunchDialog::BlockbusterLaunchDialog(SideCar *sidecar, QString host,
 void BlockbusterLaunchDialog::on_browseButton_clicked(){
   QString filename = QFileDialog::
     getOpenFileName(this, "Choose a movie file",
-		    "",
-		    "Movie Files (*.sm)");
+                    "",
+                    "Movie Files (*.sm)");
   if (filename == "") return; 
   int init = fileNameComboBox->findText(filename, Qt::MatchExactly); 
   if (init != -1) {
@@ -1287,30 +1454,43 @@ void BlockbusterLaunchDialog::on_deleteProfilePushButton_clicked(){
   
   return; 
 } 
+
+bool BlockbusterLaunchDialog::ProfileNameExists(QString name){
+  for (vector<HostProfile *>::iterator pos = mHostProfiles.begin();  pos != mHostProfiles.end(); pos++) {
+    if ((*pos)->mName == name) return true; 
+  }
+  return false; 
+}
+
 // ======================================================================
 void BlockbusterLaunchDialog::createNewProfile(const HostProfile *inProfile){
   HostProfile dummy; 
   if (!inProfile) inProfile = &dummy; 
   // let's find a unique name: 
-  QString suggestedName = inProfile->name(); 
+  QString suggestedName = inProfile->mName; 
   if (suggestedName == "") {
     dbprintf(0, "Warning: createNewProfile():  inProfile->mName is empty\n"); 
     suggestedName = "profile"; 
   } 
+  // make sure we don't suggest a duplicate name: 
   vector<HostProfile *>::iterator pos = mHostProfiles.begin(), endpos = mHostProfiles.end(); 
   while (pos != endpos) {
-    if ((*pos)->name() == suggestedName) {
-      suggestedName = QString("new_%1").arg(suggestedName); 
+    if ((*pos)->mName == suggestedName) {
+      suggestedName = QString("%1_copy").arg(suggestedName); 
       pos = mHostProfiles.begin(); 
     } else {
       ++pos; 
     }
   }
-  bool ok; 
-  QString name = QInputDialog::getText
-    (this, tr("New Dialog"), "What do you want to call the new profile?", 
-     QLineEdit::Normal, suggestedName, &ok); 
-
+  bool ok = true;
+  QString name = inProfile->mName; 
+  while (ok && (name == dummy.mName || ProfileNameExists(name))) {
+    name = QInputDialog::getText(this, tr("New Dialog"), "What do you want to call the new profile?",  QLineEdit::Normal, suggestedName, &ok); 
+    if (ok && ProfileNameExists(name)) {
+      QMessageBox::warning(this,  "Name already exists.",
+                           QString("Sorry! Profile name \"%1\" is already taken.").arg(name)); 
+    }
+  }
   if (!ok) 
     return; 
 
@@ -1469,6 +1649,17 @@ void BlockbusterLaunchDialog::on_autoSidecarHostCheckBox_clicked(){
 }
 
 //=======================================================================
+void BlockbusterLaunchDialog::on_autoBlockbusterPathCheckBox_clicked(){
+  blockbusterPathField->setEnabled(!autoBlockbusterPathCheckBox->isChecked()); 
+  if (autoBlockbusterPathCheckBox->isChecked()) {
+    blockbusterPathField->setText(mSidecar->getDefaultBlockbusterPath()); 
+  }
+  
+  hostProfileModified(); 
+  return; 
+}
+
+//=======================================================================
 void BlockbusterLaunchDialog::on_setDisplayCheckBox_clicked(){
   blockbusterDisplayField->setEnabled(setDisplayCheckBox->isChecked()); 
   hostProfileModified(); 
@@ -1579,17 +1770,17 @@ void BlockbusterLaunchDialog::saveAndRefreshHostProfiles(HostProfile *inProfile)
 
 //=======================================================================
 void BlockbusterLaunchDialog::removeHostProfiles(void) {
-   vector<HostProfile *>::iterator pos = mHostProfiles.begin(), endpos = mHostProfiles.end(); 
-   while (pos != endpos) {
-     delete (*pos); 
-     pos++; 
-   }
-   mHostProfiles.clear(); 
-   hostProfilesComboBox->blockSignals(true); 
-   hostProfilesComboBox->clear(); 
-   hostProfilesComboBox->blockSignals(false); 
-   mCurrentProfile = NULL; 
-   return ;
+  vector<HostProfile *>::iterator pos = mHostProfiles.begin(), endpos = mHostProfiles.end(); 
+  while (pos != endpos) {
+    delete (*pos); 
+    pos++; 
+  }
+  mHostProfiles.clear(); 
+  hostProfilesComboBox->blockSignals(true); 
+  hostProfilesComboBox->clear(); 
+  hostProfilesComboBox->blockSignals(false); 
+  mCurrentProfile = NULL; 
+  return ;
 }
 
 //=======================================================================
@@ -1615,8 +1806,8 @@ void BlockbusterLaunchDialog::sortAndSaveHostProfiles(void) {
         if (fp) fclose(fp); 
         fp = fopen(profileFile.toStdString().c_str(), "w");
       }
-      dbprintf(5, QString("Writing profile %1 (%2) to file %3\n").arg(profile->name()).arg(profile->toProfileString().toStdString().c_str()).arg(profileFile)); 
-      fprintf(fp, "%s\n", profile->toProfileString().toStdString().c_str()); 
+      dbprintf(5, QString("Writing profile %1 (%2) to file %3\n").arg(profile->mName).arg(profile->toQString().toStdString().c_str()).arg(profileFile)); 
+      fprintf(fp, "%s\n", profile->toQString().toStdString().c_str()); 
     } else {
       dbprintf(5, "Profile is read-only\n"); 
     }
@@ -1697,7 +1888,7 @@ void BlockbusterLaunchDialog::on_hostProfilesComboBox_currentIndexChanged
       } else if  (answer == QMessageBox::Yes) {
         on_saveProfilePushButton_clicked(); 
       } else {
-      dbprintf(1, "current profile being reverted to new profile\n"); 
+        dbprintf(1, "current profile being reverted to new profile\n"); 
       }
     }
   }
@@ -1710,12 +1901,12 @@ void BlockbusterLaunchDialog::on_hostProfilesComboBox_currentIndexChanged
 void BlockbusterLaunchDialog::readAndSortHostProfiles(void) {
   
   char *globalProfile = getenv("SIDECAR_GLOBAL_HOST_PROFILE"); 
-  
+  int numread = 0; 
   if (globalProfile) {
-    readHostProfileFile(globalProfile, true); 
+    numread += readHostProfileFile(globalProfile, true); 
   }
-  readHostProfileFile(HostProfile::mUserHostProfileFile, false); 
-
+  numread += readHostProfileFile(HostProfile::mUserHostProfileFile, false); 
+  dbprintf(5, QString("Read a total of %1 profiles").arg(numread)); 
   if (mHostProfiles.size() == 0) {
     mCurrentProfile = new HostProfile;
     mHostProfiles.push_back(mCurrentProfile); 
@@ -1739,15 +1930,16 @@ void BlockbusterLaunchDialog::readAndSortHostProfiles(void) {
 }
 
 //=======================================================================
-void BlockbusterLaunchDialog::readHostProfileFile(QString filename, bool readonly) {
+int BlockbusterLaunchDialog::readHostProfileFile(QString filename, bool readonly) {
   // HostProfile profile; 
+  int numread = 0; 
   QFile profileFile(filename); 
   if (!profileFile.open(QIODevice::ReadOnly)) {
     if (fileNameComboBox->count() == 0) {
       fileNameComboBox->addItem("/Type/movie/path/here"); 
     }
     dbprintf(5, QString("Could not load history from %1\n").arg(filename)); 
-    return; 
+    return numread; 
   }
   int num = fileNameComboBox->findText("/Type/movie/path/here");
   while (num != -1) {
@@ -1768,13 +1960,21 @@ void BlockbusterLaunchDialog::readHostProfileFile(QString filename, bool readonl
       dbprintf(5, "Comment of null first token, skipping line...\n"); 
       continue; 
     }
-    HostProfile *profile = new HostProfile(tokens, filename, readonly);
+    HostProfile *profile = new HostProfile();
+
+    profile->setFromQString(line); 
+    profile->mProfileFile = filename;
+    profile->mReadOnly = readonly;  
+
     mCurrentProfile = profile; 
-    dbprintf(5, QString("Adding item: %1\n").arg(profile->toQString())); 
+
+    dbprintf(5, QString("Adding item %1: %2\n").arg(numread).arg(profile->toQString())); 
     mHostProfiles.push_back(profile); 
+    numread++; 
   }
 
-  return; 
+  dbprintf(5, QString("Read %1 profile strings.  %2 profiles exist now\n").arg(numread).arg( mHostProfiles.size())); 
+  return numread; 
 }
 
 //=======================================================================
