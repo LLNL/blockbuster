@@ -3,6 +3,7 @@
 #include "errmsg.h"
 #include <fstream>
 #include <boost/format.hpp>
+#include <boost/scoped_array.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/lexical_cast.hpp>
@@ -169,9 +170,19 @@ CREATEFUNC(MovieEventType, StringToMovieEventType, string, STRING2EVENT,RETURNEV
 //==========================================================================
   vector<MovieEvent> MovieEvent::ParseScript(string filename) {
   vector<MovieEvent> script; 
+  if (filename[0] != '/') {
+    int psize = pathconf(".", _PC_PATH_MAX); 
+    boost::scoped_array<char> path(new char[psize]);   
+    char *cwd = getcwd(path.get(), psize-1);
+    if (!cwd) {
+      dbprintf(0, "Cannot get current working directory!\n"); 
+      return script; 
+    }
+    filename = string(cwd) + "/" + filename; 
+  }
   ifstream sfile(filename.c_str()); 
-  if (!sfile.is_open()) {
-    INFO(0, (string("ERROR: MovieEvent::ParseScript cannot open: ")+filename).c_str()); 
+  if (!sfile.is_open()) {    
+    INFO((string("ERROR: MovieEvent::ParseScript cannot open: ")+filename).c_str()); 
     return script; 
   }
   string line; 

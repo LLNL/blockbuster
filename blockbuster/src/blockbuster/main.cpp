@@ -668,20 +668,25 @@ int main(int argc, char *argv[])
     
   }
   
-  /* deal with a script arg
-   */
   vector<MovieEvent> script; 
-  printargs("Before framelist", newargs, newargc); 
+  if (opt->mScript != "") {
+    script = MovieEvent::ParseScript(opt->mScript.toStdString());
+    if (!script.size()) {
+      dbprintf(0, "Script %s was invalid\n", opt->mScript.toStdString().c_str()); 
+      return 1;
+    }
+  }
+  // Movie arguments are now placed at the head of any scripting commands. 
   for (int count = 1; count < newargc && newargs[count];  count++) {
-    script.push_back(MovieEvent(MOVIE_OPEN_FILE, newargs[count])); 
+    script.insert(script.begin(), MovieEvent(MOVIE_OPEN_FILE, newargs[count]));
   }
   
- if (opt->slaveMode) {
+  if (opt->slaveMode) {
     retval = theSlave->Loop();
     INFO("Done with slave loop.\n");
   }
-
-  retval = !DisplayLoop(opt, script);
+  
+  retval = DisplayLoop(opt, script);
 
   /* If we read settings, write them back out.  Only one of the
    * two files we read should contain the changed settings creaed
