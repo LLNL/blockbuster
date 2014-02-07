@@ -263,7 +263,8 @@ def RemoveBindirAndDateFromLine(line):
         line = newline
 
     # Remove the date line, as for tests this changes every time
-    r = re.search('.*("\D{3} \D{3} \d\d \d\d:\d\d:\d\d \d{4} \D\DT"$)', line)
+    # '\D' --> letters  '\d' --> digits
+    r = re.search('.*("\D{3}[ ]+\D{3}[ ]+\d+[ ]+\d\d:\d\d:\d\d[ ]+\d{4}[ ]+\D\DT"$)', line)
     if r:
         newline = line.replace(r.group(1), '"GENERIC-DATESTRING"')
         line = newline
@@ -306,7 +307,7 @@ def TagfileDiffs(test):
             stdline = RemoveBindirAndDateFromLine(stdlines[lineno])
             
             if tagline != stdline:
-                return "Mismatched fixed line between tagfile %s and standard %s at line %d:tagline: \"%s\"\nstdline: \"%s\""%(diff, standard, lineno, tagline, stdline)
+                return "Mismatched fixed line between tagfile %s and standard %s at line %d:\ntagline: \"%s\"\n -->  \"%s\"\nstdline: \"%s\"\n -->  \"%s\""%(diff, standard, lineno, taglines[lineno], tagline, stdlines[lineno], stdline)
     return "SUCCESS"
 
 # ================================================================
