@@ -55,7 +55,7 @@ BlockbusterInterface::BlockbusterInterface(QWidget *parent):
   setFocusPolicy(Qt::StrongFocus); 
   frameField->setValidator(&mFrameValidator); 
   frameSlider->setTracking(false); 
-  //startButton->setText(""); 
+  //startButton->setText("); 
   //(QIcon(":/images/start.png")); 
   backStepButton->setIcon(QIcon(":/images/backStep.png")); 
   //centerButton->setIcon(QIcon(":/images/center.png")); 
@@ -259,7 +259,7 @@ void BlockbusterInterface::reportMovieCueComplete(void){
 
 //=============================================================
 void BlockbusterInterface::on_quitButton_clicked() {
-  mEventQueue.push_back(MovieEvent(MOVIE_QUIT)); 
+  mEventQueue.push_back(MovieEvent("MOVIE_QUIT")); 
   return; 
 }
 
@@ -271,55 +271,55 @@ void BlockbusterInterface::on_openButton_clicked() {
                                    "Readable Files (*.sm *png *tiff *pnm *raw *sgi);;Any (*)");
   if (filename != "") {
     mPreviousDir = Dirname(filename.toStdString()).c_str(); 
-    mEventQueue.push_back(MovieEvent(MOVIE_OPEN_FILE, filename)); 
+    mEventQueue.push_back(MovieEvent("MOVIE_OPEN_FILE", filename)); 
   }
 }
 
 //======================================================   
 void BlockbusterInterface::on_stereoCheckBox_stateChanged(int state) {
-  mEventQueue.push_back(MovieEvent(MOVIE_SET_STEREO, state)); 
+  mEventQueue.push_back(MovieEvent("MOVIE_SET_STEREO", state)); 
   return; 
 }
 
 void BlockbusterInterface::on_centerButton_clicked() {
-  mEventQueue.push_back(MovieEvent(MOVIE_CENTER)); 
+  mEventQueue.push_back(MovieEvent("MOVIE_CENTER")); 
 }
 void BlockbusterInterface::on_fullSizeButton_clicked() {
-  mEventQueue.push_back(MovieEvent(MOVIE_ZOOM_ONE)); 
+  mEventQueue.push_back(MovieEvent("MOVIE_ZOOM_ONE")); 
 }
 void BlockbusterInterface::on_fitButton_clicked() {
-  mEventQueue.push_back(MovieEvent(MOVIE_ZOOM_FIT)); 
+  mEventQueue.push_back(MovieEvent("MOVIE_ZOOM_FIT")); 
 }
 void BlockbusterInterface::on_fillButton_clicked() {
-  mEventQueue.push_back(MovieEvent(MOVIE_FULLSCREEN)); 
+  mEventQueue.push_back(MovieEvent("MOVIE_FULLSCREEN")); 
 }
 void BlockbusterInterface::on_infoButton_clicked() {
   mInfoWindow->show(); 
 }
 void BlockbusterInterface::on_startButton_clicked() {
-  mEventQueue.push_back(MovieEvent(MOVIE_GOTO_START)); 
+  mEventQueue.push_back(MovieEvent("MOVIE_GOTO_START")); 
 }
 void BlockbusterInterface::on_backStepButton_clicked() {
-  mEventQueue.push_back(MovieEvent(MOVIE_STEP_BACKWARD)); 
+  mEventQueue.push_back(MovieEvent("MOVIE_STEP_BACKWARD")); 
 }
 void BlockbusterInterface::on_reverseButton_clicked() {
-  mEventQueue.push_back(MovieEvent(MOVIE_PLAY_BACKWARD)); 
+  mEventQueue.push_back(MovieEvent("MOVIE_PLAY_BACKWARD")); 
 }
 void BlockbusterInterface::on_stopButton_clicked() {
-  mEventQueue.push_back(MovieEvent(MOVIE_STOP)); 
+  mEventQueue.push_back(MovieEvent("MOVIE_STOP")); 
 }
 void BlockbusterInterface::on_playButton_clicked() {
-  mEventQueue.push_back(MovieEvent(MOVIE_PLAY_FORWARD)); 
+  mEventQueue.push_back(MovieEvent("MOVIE_PLAY_FORWARD")); 
 }
 void BlockbusterInterface::on_stepButton_clicked() {
-  mEventQueue.push_back(MovieEvent(MOVIE_STEP_FORWARD)); 
+  mEventQueue.push_back(MovieEvent("MOVIE_STEP_FORWARD")); 
 }
 void BlockbusterInterface::on_endButton_clicked() {
-  mEventQueue.push_back(MovieEvent(MOVIE_GOTO_END)); 
+  mEventQueue.push_back(MovieEvent("MOVIE_GOTO_END")); 
 }
 
 void BlockbusterInterface::on_saveImageButton_clicked() {
-  mEventQueue.push_back(MovieEvent(MOVIE_SAVE_FRAME));
+  mEventQueue.push_back(MovieEvent("MOVIE_SAVE_FRAME"));
   
   return; 
 }
@@ -352,20 +352,20 @@ void BlockbusterInterface::on_frameSlider_valueChanged(int value) {
   frameField->setText(QString("%1").arg(value)); 
   frameField->blockSignals(false); 
   */ 
-  mEventQueue.push_back(MovieEvent (MOVIE_GOTO_FRAME, value-1)); 
+  mEventQueue.push_back(MovieEvent ("MOVIE_GOTO_FRAME", value-1)); 
 }
 
 //======================================================   
 void BlockbusterInterface::on_frameField_returnPressed() {
   mEventQueue.push_back
-    (MovieEvent(MOVIE_GOTO_FRAME,frameField->text().toInt()));
+    (MovieEvent("MOVIE_GOTO_FRAME",frameField->text().toInt()));
   return; 
 }
 
 //======================================================   
 void BlockbusterInterface::on_zoomSpinBox_valueChanged(double value) {
   if (value != mZoom) {
-    mEventQueue.push_back(MovieEvent(MOVIE_ZOOM_SET, (float)value)); 
+    mEventQueue.push_back(MovieEvent("MOVIE_ZOOM_SET", (float)value)); 
   }
   return; 
 }
@@ -373,7 +373,7 @@ void BlockbusterInterface::on_zoomSpinBox_valueChanged(double value) {
 //======================================================   
 void BlockbusterInterface::on_lodSpinBox_valueChanged(int value) {
   if (value != mLOD) {
-    mEventQueue.push_back(MovieEvent(MOVIE_SET_LOD, value)); 
+    mEventQueue.push_back(MovieEvent("MOVIE_SET_LOD", value)); 
   }
   return; 
 }
@@ -381,7 +381,7 @@ void BlockbusterInterface::on_lodSpinBox_valueChanged(int value) {
 //======================================================   
 void BlockbusterInterface::on_fpsSpinBox_valueChanged(double value) {
   if (value != mFrameRate) {
-    mEventQueue.push_back(MovieEvent(MOVIE_SET_RATE, (float)value)); 
+    mEventQueue.push_back(MovieEvent("MOVIE_SET_RATE", (float)value)); 
   }
   return; 
 }
@@ -390,7 +390,7 @@ void BlockbusterInterface::on_fpsSpinBox_valueChanged(double value) {
 void BlockbusterInterface::on_foreverCheckBox_stateChanged(int state)  {
   if ((state != 0) == (mLoop == -1)) return; 
 
-  MovieEvent event(MOVIE_SET_LOOP, -1); 
+  MovieEvent event("MOVIE_SET_LOOP", -1); 
   if (!state) {
     event.mNumber = loopCheckBox->isChecked(); 
   }
@@ -404,7 +404,7 @@ void BlockbusterInterface::on_pingpongCheckBox_stateChanged(int state) {
     loopCheckBox->setChecked(false); 
   }
   if (state == mPingPong) return; 
-  mEventQueue.push_back(MovieEvent(MOVIE_SET_PINGPONG, state)); 
+  mEventQueue.push_back(MovieEvent("MOVIE_SET_PINGPONG", state)); 
   return; 
 }
 
@@ -421,6 +421,6 @@ void BlockbusterInterface::on_loopCheckBox_stateChanged(int state) {
     pingpongCheckBox->setChecked(false); 
   }
   if ( (state && mLoop) || (!state && !mLoop)) return; 
-  mEventQueue.push_back(MovieEvent(MOVIE_SET_LOOP, state)); 
+  mEventQueue.push_back(MovieEvent("MOVIE_SET_LOOP", state)); 
   return; 
 }

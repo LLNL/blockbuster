@@ -43,6 +43,7 @@ int get_verbose(void);
 #ifdef __cplusplus
 void real_dbprintf(int level, const char *fmt, ...);
 void real_dbprintf(int level, QString msg); 
+void real_dbprintf(int level, std::string msg); 
 //void real_dbprintf(QString msg); 
 // dbprintf stuff is in common.h, as it is used in sidecar
 /*!
@@ -108,6 +109,7 @@ theMessage.file=__FILE__,theMessage.function=__FUNCTION__,theMessage.line=__LINE
 
 #ifdef __cplusplus 
 
+void Message(std::string msg); 
 void Message(QString msg); 
 
 extern "C" {

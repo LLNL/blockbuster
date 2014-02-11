@@ -989,7 +989,7 @@ void Renderer::fakeMouseClick(void)
 
 /*
  * Get the next event from the given Canvas's X window, or
- * the idle event (MOVIE_NONE) if no event is present and
+ * the idle event ("MOVIE_NONE") if no event is present and
  * we aren't supposed to block waiting for input.
  */
 void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
@@ -998,7 +998,7 @@ void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
   XEvent event;
   Display *dpy = mDisplay;
   if (!block && !XPending(dpy)) {
-    movieEvent->mEventType = MOVIE_NONE;
+    movieEvent->mEventType = "MOVIE_NONE";
     return;
   }
   
@@ -1016,7 +1016,7 @@ void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
       else
         break;
     }
-    movieEvent->mEventType = MOVIE_EXPOSE;
+    movieEvent->mEventType = "MOVIE_EXPOSE";
     return;
   case ConfigureNotify:
     while (XPending(dpy)) {
@@ -1045,62 +1045,62 @@ void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
       resize = true; 
       mOldHeight = event.xconfigure.height;
       mOldWidth = event.xconfigure.width;
-      movieEvent->mEventType = MOVIE_RESIZE;
+      movieEvent->mEventType = "MOVIE_RESIZE";
     }
     
     if (mOldX != event.xconfigure.x || mOldY != event.xconfigure.y) {
       move = true; 
       mOldX = event.xconfigure.x;
       mOldY = event.xconfigure.y;
-      movieEvent->mEventType = MOVIE_MOVE;
+      movieEvent->mEventType = "MOVIE_MOVE";
     }
     
     
     /* do not process these events here, as they are spurious
-       if (resize && move)  movieEvent->mEventType = MOVIE_MOVE_RESIZE;
+       if (resize && move)  movieEvent->mEventType = "MOVIE_MOVE_RESIZE";
        else*/
-    if (resize)  movieEvent->mEventType = MOVIE_RESIZE;
-    else if (move)  movieEvent->mEventType = MOVIE_MOVE;
-    else movieEvent->mEventType = MOVIE_NONE;
+    if (resize)  movieEvent->mEventType = "MOVIE_RESIZE";
+    else if (move)  movieEvent->mEventType = "MOVIE_MOVE";
+    else movieEvent->mEventType = "MOVIE_NONE";
     
     return;
   case KeyPress:
     {
       int code = XLookupKeysym(&event.xkey, 0);
       if (code == XK_Left && event.xkey.state & ControlMask) {
-        movieEvent->mEventType = MOVIE_SECTION_BACKWARD;
+        movieEvent->mEventType = "MOVIE_SECTION_BACKWARD";
         return;
       }
       if (code == XK_Left && event.xkey.state & ShiftMask) {
-        movieEvent->mEventType = MOVIE_SKIP_BACKWARD;
+        movieEvent->mEventType = "MOVIE_SKIP_BACKWARD";
         return;
       }
       else if (code == XK_Left) {
-        movieEvent->mEventType = MOVIE_STEP_BACKWARD;
+        movieEvent->mEventType = "MOVIE_STEP_BACKWARD";
         return;
       }
       else if (code == XK_Right && event.xkey.state & ControlMask) {
-        movieEvent->mEventType = MOVIE_SECTION_FORWARD;
+        movieEvent->mEventType = "MOVIE_SECTION_FORWARD";
         return;
       }
       else if (code == XK_Right && event.xkey.state & ShiftMask) {
-        movieEvent->mEventType = MOVIE_SKIP_FORWARD;
+        movieEvent->mEventType = "MOVIE_SKIP_FORWARD";
         return;
       }
       else if (code == XK_Right) {
-        movieEvent->mEventType = MOVIE_STEP_FORWARD;
+        movieEvent->mEventType = "MOVIE_STEP_FORWARD";
         return;
       }
       else if (code == XK_Home) {
-        movieEvent->mEventType = MOVIE_GOTO_START;
+        movieEvent->mEventType = "MOVIE_GOTO_START";
         return;
       }
       else if (code == XK_Escape) {
-        movieEvent->mEventType = MOVIE_QUIT;
+        movieEvent->mEventType = "MOVIE_QUIT";
         return;
       }  
       else if (code == XK_End) {
-        movieEvent->mEventType = MOVIE_GOTO_END;
+        movieEvent->mEventType = "MOVIE_GOTO_END";
         return;
       }
       else {
@@ -1111,68 +1111,68 @@ void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
           switch (buffer[0]) {
           case 27:
           case 'c':
-            movieEvent->mEventType = MOVIE_CENTER;
+            movieEvent->mEventType = "MOVIE_CENTER";
             return;
           case 'f':
-            movieEvent->mEventType = MOVIE_ZOOM_FIT;
+            movieEvent->mEventType = "MOVIE_ZOOM_FIT";
             return;
           case 'h':
           case '?':
-            movieEvent->mEventType = MOVIE_KEYBOARD_HELP;
+            movieEvent->mEventType = "MOVIE_KEYBOARD_HELP";
             break;
           case 'i':
-            movieEvent->mEventType = MOVIE_TOGGLE_INTERFACE;
+            movieEvent->mEventType = "MOVIE_TOGGLE_INTERFACE";
             return;
           case 'l':
-            movieEvent->mEventType = MOVIE_INCREASE_LOD;
+            movieEvent->mEventType = "MOVIE_INCREASE_LOD";
             return;
           case 'L':
-            movieEvent->mEventType = MOVIE_DECREASE_LOD;
+            movieEvent->mEventType = "MOVIE_DECREASE_LOD";
             return;
           case 'm':
-            movieEvent->mEventType = MOVIE_TOGGLE_CURSOR; 
+            movieEvent->mEventType = "MOVIE_TOGGLE_CURSOR"; 
             break; 
           case 'p':
-            movieEvent->mEventType = MOVIE_PLAY_FORWARD;
+            movieEvent->mEventType = "MOVIE_PLAY_FORWARD";
             return;
           case 'q':
-            movieEvent->mEventType = MOVIE_QUIT;
+            movieEvent->mEventType = "MOVIE_QUIT";
             return;
           case 'r':
-            movieEvent->mEventType = MOVIE_PLAY_BACKWARD;
+            movieEvent->mEventType = "MOVIE_PLAY_BACKWARD";
             return;
           case 'z':
-            movieEvent->mEventType = MOVIE_ZOOM_UP;
+            movieEvent->mEventType = "MOVIE_ZOOM_UP";
             return;
           case 'Z':
-            movieEvent->mEventType = MOVIE_ZOOM_DOWN;
+            movieEvent->mEventType = "MOVIE_ZOOM_DOWN";
             return;
           case ' ':
-            movieEvent->mEventType = MOVIE_PAUSE;
+            movieEvent->mEventType = "MOVIE_PAUSE";
             return;
           case '+':
-            movieEvent->mEventType = MOVIE_INCREASE_RATE;
+            movieEvent->mEventType = "MOVIE_INCREASE_RATE";
             return;
           case '-':
-            movieEvent->mEventType = MOVIE_DECREASE_RATE;
+            movieEvent->mEventType = "MOVIE_DECREASE_RATE";
             return;
           case '1':
-            movieEvent->mEventType = MOVIE_ZOOM_ONE;
+            movieEvent->mEventType = "MOVIE_ZOOM_ONE";
             return;
           case '2':
-            movieEvent->mEventType = MOVIE_ZOOM_SET;
+            movieEvent->mEventType = "MOVIE_ZOOM_SET";
             movieEvent->mRate = 2.0f; 
             return;
           case '@': // shift-2 = '@' =  1/2
-            movieEvent->mEventType = MOVIE_ZOOM_SET;
+            movieEvent->mEventType = "MOVIE_ZOOM_SET";
             movieEvent->mRate = 0.5f; 
             return;
           case '4':
-            movieEvent->mEventType = MOVIE_ZOOM_SET;
+            movieEvent->mEventType = "MOVIE_ZOOM_SET";
             movieEvent->mRate = 4.0f; 
             return;
           case '$': // shift-4 = '$' = 1/4
-            movieEvent->mEventType = MOVIE_ZOOM_SET;
+            movieEvent->mEventType = "MOVIE_ZOOM_SET";
             movieEvent->mRate = 0.25f; 
             return;
           default:
@@ -1186,20 +1186,26 @@ void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
   case ButtonPress:
     movieEvent->mX = event.xbutton.x;
     movieEvent->mY = event.xbutton.y;
-    movieEvent->mEventType = 
-      event.xbutton.button == Button1 ? MOVIE_MOUSE_PRESS_1:
-      event.xbutton.button == Button2 ? MOVIE_MOUSE_PRESS_2:
-      event.xbutton.button == Button3 ? MOVIE_MOUSE_PRESS_3:
-      MOVIE_NONE;
+    if ( event.xbutton.button == Button1)
+      movieEvent->mEventType = "MOVIE_MOUSE_PRESS_1";
+    else if ( event.xbutton.button == Button2)
+      movieEvent->mEventType = "MOVIE_MOUSE_PRESS_2";
+    else if ( event.xbutton.button == Button3)
+      movieEvent->mEventType = "MOVIE_MOUSE_PRESS_3";
+    else 
+      movieEvent->mEventType =   "MOVIE_NONE";
     return;
   case ButtonRelease:
     movieEvent->mX = event.xbutton.x;
     movieEvent->mY = event.xbutton.y;
-    movieEvent->mEventType = 
-      event.xbutton.button == Button1 ? MOVIE_MOUSE_RELEASE_1:
-      event.xbutton.button == Button2 ? MOVIE_MOUSE_RELEASE_2:
-      event.xbutton.button == Button3 ? MOVIE_MOUSE_RELEASE_3:
-      MOVIE_NONE;
+    if ( event.xbutton.button == Button1)
+      movieEvent->mEventType = "MOVIE_MOUSE_RELEASE_1";
+    else if ( event.xbutton.button == Button2)
+      movieEvent->mEventType = "MOVIE_MOUSE_RELEASE_2";
+    else if ( event.xbutton.button == Button3)
+      movieEvent->mEventType = "MOVIE_MOUSE_RELEASE_3";
+    else 
+      movieEvent->mEventType =   "MOVIE_NONE";
     return;
   case MotionNotify:
     /* filter/skip extra motion events */
@@ -1215,13 +1221,13 @@ void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
       else
         break;
     }
-    movieEvent->mEventType = MOVIE_MOUSE_MOVE;
+    movieEvent->mEventType = "MOVIE_MOUSE_MOVE";
     return;
     
   default:
     DEBUGMSG("Got X event %d (%s)", event.type, EVENT_TYPE_STRING(event.type));
   }
-  movieEvent->mEventType = MOVIE_NONE;
+  movieEvent->mEventType = "MOVIE_NONE";
   return;
 }
 

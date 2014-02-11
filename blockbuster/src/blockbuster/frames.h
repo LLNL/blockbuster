@@ -6,6 +6,8 @@
 #include <vector>
 #include "boost/shared_ptr.hpp"
 #include "boost/atomic.hpp"
+#include "boost/format.hpp"
+
 #include <QStringList>
 using namespace std; 
 struct Canvas; 
@@ -163,8 +165,9 @@ struct FrameInfo {
 
   
   // ----------------------------------------------
-  QString toString(void) {
-    return QString("{ FrameInfo: frameNumber = %1 in file %2}").arg(mFrameNumberInFile).arg(mFilename.c_str()); 
+  operator std::string() const {
+    return str(boost::format("{ FrameInfo: frameNumber = %1% in file %2%}") 
+               % mFrameNumberInFile % mFilename); 
   }
 
   // ----------------------------------------------

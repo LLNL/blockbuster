@@ -276,10 +276,12 @@ struct HostProfile {
 
   void init(void);
 
-  bool setFromQString(QString profileString);
+  HostProfile& operator << (std::string profileString);
 
-  QString toQString(void) const;
-  //QString toProfileString(void) const;
+  operator QString() const;
+  operator std::string() const;
+
+  bool operator !() const { return mValid; }
 
   static QString mUserHostProfileFile; 
 
@@ -289,7 +291,8 @@ struct HostProfile {
     mDisplay, mBlockbusterPath, mProfileFile; 
   bool mSetDisplay,  mReadOnly, mAutoSidecarHost, 
     mPlay, mFullScreen, mShowControls, mUseDMX, mMpiFrameSync, 
-    mNoSmallWindows, mAutoBlockbusterPath; 
+    mNoSmallWindows, mAutoBlockbusterPath;
+  bool mValid; 
 }; 
 
 

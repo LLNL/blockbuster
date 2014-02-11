@@ -11,6 +11,7 @@ VERSION 2.8.0p (git tag blockbuster-v2.8.0p) Fri Feb  7 10:15:32 PST 2014
 -- Improved launch dialog layout to improve readability and interaction.
 -- Added "-no-small-windows" option to blockbuster and "No small windows" checkbox in sidecar launch dialog to workaround window manager resizing bug on powerwall when launching with movies bigger than one monitor can hold.  
 -- Added "automatic" checkbox to blockbuster command to generate full path to blockbuster as default remote command.  This should make -dev sidecar run -dev blockbuster on our clusters when checked.  
+-- Added tracefile output to blockbuster to allow precise forensics and event replays. 
 
 
 ===============================================================================

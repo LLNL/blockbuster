@@ -102,6 +102,7 @@ void usage(void) {
   printf("-geometry <geometrystring> specifies X window geometry\n");
   printf("-help displays this help message\n");
   printf("-keyhelp:  display list of keyboard controls\n");
+  printf("-log filename: Log all messages to the given file for debugging.\n");
   printf("-lod num: specifies a starting level of detail for the given movie\n");
   printf("-loops <loops> specifies how many times to loop (number or 'forever')\n");
   printf("-messageLevel sets the message level, in order of chattiness:  quiet, syserr, error, warning, info, debug\n"); 
@@ -130,6 +131,8 @@ void usage(void) {
   printf("-script filename: run the given blockbuster script\n"); 
   printf("-threads <num> specifies how many threads to use for reading from disk.\n");
   printf("-timer: enable timer (makes things very verbose, you probably do not want this)\n"); 
+  printf("-traceEvents: log every event seen by the event loop to a file named \"events.log\".  WARNING:  lots of events occur in a movie.  Logfile will tend to be large. \n"); 
+  printf("-traceEventsFile: Same as -traceEvents but specify the file to write to.\n"); 
   printf("-verbose num: sets verbosity, with 0=quiet, 1=system, 2=error, 3=warning, 4=info, 5=debug.  Same behavior as -messageLevel but with numbers, basically.\n");
   printf("-version prints the current blockbuster version\n");
   printf("-zoom <zoom> sets the initial zoom ['auto' tracks window size,\n");
@@ -279,7 +282,7 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
    * appropriate help messages.
    */
 
-  int help = 0, doStereo = 0; 
+  int dummy = 0; 
   while (argc > 1) {
     DEBUGMSG("Checking arg %s\n", argv[1]); 
 	QString zoomString; 
@@ -299,7 +302,7 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
 	else if (CHECK_STRING_ARG("-display", argc, argv, opt->displayName)) {
       continue;
     }
-	else if (SET_BOOL_ARG("-dmxstereo", argc, argv, doStereo, 1)) {
+	else if (SET_BOOL_ARG("-dmxstereo", argc, argv, opt->mDMXStereo, 1)) {
       opt->rendererName = "dmx"; 
       continue;
     }
@@ -319,14 +322,14 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
       if ((mask&XNegative) || (mask&YNegative))
         WARNING("Negative positions not yet supported.");
 	}
-	else if (SET_BOOL_ARG("-help", argc, argv, help, 1)) {
+	else if (SET_BOOL_ARG("-help", argc, argv, dummy, 1)) {
 	  usage(); 
 	  exit(MOVIE_HELP);	   	
 	}
 	else if (SET_BOOL_ARG("-noscreensaver", argc, argv, opt->noscreensaver, 1)) {
       continue;
 	}
-	else if (SET_BOOL_ARG("-keyhelp", argc, argv, help, 1)) {
+	else if (SET_BOOL_ARG("-keyhelp", argc, argv, dummy, 1)) {
       PrintKeyboardControls(); 
 	  exit(MOVIE_HELP);	   	
 	}
@@ -383,15 +386,25 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
       gSidecarServer->PromptForConnections(false); 
       continue;
     }
+	else if (CHECK_STRING_ARG("-script", argc, argv, opt->mScript)) 
+      continue;
 	else if (SET_BOOL_ARG("-speedTest", argc, argv,  opt->speedTest, 1)) {
       cerr << "speedTest detected, speedTest is " << opt->speedTest << endl; 
       continue;
     }
-	else if (CHECK_STRING_ARG("-script", argc, argv, opt->mScript)) 
-      continue;
     else if (CHECK_ATOI_ARG("-threads", argc, argv, opt->readerThreads)) 
       continue; 
-	else if (SET_BOOL_ARG("-timer", argc, argv, gTimerOn, 0)) continue;
+	else if (SET_BOOL_ARG("-timer", argc, argv, gTimerOn, 1)) continue;
+    else if (SET_BOOL_ARG("-traceEvents", argc, argv, opt->mTraceEvents, 1)) {
+      if (opt->mTraceEventsFilename == "") {
+        opt->mTraceEventsFilename = "events.log"; 
+      }
+      continue; 
+    }
+	else if (CHECK_STRING_ARG("-traceEventsFile", argc, argv, opt->mTraceEventsFilename))  {
+      opt->mTraceEvents = true; 
+      continue;
+    }
 	else if (CHECK_ATOI_ARG("-verbose", argc, argv,maxMessageLevel))  {
       opt->messageLevel = FindMessageLevel(maxMessageLevel);
       set_verbose(maxMessageLevel); 
@@ -402,7 +415,7 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
       enableLogging(true, opt->logFile); 
       continue;
     }
-	else if (SET_BOOL_ARG("-version", argc, argv, help, 1)) {
+	else if (SET_BOOL_ARG("-version", argc, argv, dummy, 1)) {
 	  version(); 
 	  exit (0); 
 	}
@@ -461,12 +474,10 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
 	else break; 
   }
   
-  if (doStereo) {
-    if (opt->rendererName == "dmx") {
-      opt->backendRendererName = "gl_stereo";
-    } else {
-      opt->rendererName = "gl_stereo"; 
-    }
+  // ==================== END ARGUMENT PARSING ======================
+
+  if (opt->mDMXStereo) {
+    opt->backendRendererName = "gl_stereo";
   } 
   
   if (get_verbose() > 5) {
@@ -515,12 +526,6 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
              .arg(opt->masterHost).arg(opt->masterPort));  
   }
   
-  if (opt->mMaxCachedImages < opt->preloadFrames+1 || 
-      (doStereo && opt->mMaxCachedImages < 2*opt->preloadFrames+1)) {
-    DEBUGMSG("Need to adjust the frame cache size to a larger value, from %d to %d", opt->mMaxCachedImages, opt->preloadFrames * 4); 
-    if (doStereo) opt->mMaxCachedImages = opt->preloadFrames * 4 + 1;
-    else opt->mMaxCachedImages = opt->preloadFrames * 2 + 1;
-  }
   DEBUGMSG("Preload is %d and cache size is %d\n", opt->preloadFrames, opt->mMaxCachedImages); 
 
   /* We've read all the command line options, so everything is set.
@@ -533,6 +538,9 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
     opt->loopCount = opt->loopCountName.toInt();
   }
     
+  if (opt->mTraceEvents) {
+    opt->mTraceEventsFile.open(opt->mTraceEventsFilename.toStdString().c_str());
+  } 
   return  ; 
 }
 
@@ -678,7 +686,7 @@ int main(int argc, char *argv[])
   }
   // Movie arguments are now placed at the head of any scripting commands. 
   for (int count = 1; count < newargc && newargs[count];  count++) {
-    script.insert(script.begin(), MovieEvent(MOVIE_OPEN_FILE, newargs[count]));
+    script.insert(script.begin(), MovieEvent("MOVIE_OPEN_FILE", newargs[count]));
   }
   
   if (opt->slaveMode) {

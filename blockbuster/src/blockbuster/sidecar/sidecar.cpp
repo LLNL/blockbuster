@@ -342,7 +342,7 @@ void SideCar::connectedToBlockbuster() {
     return; 
   }
   setState(BB_CONNECTED); 
-  SendEvent(MovieEvent(MOVIE_SIDECAR_STATUS));
+  SendEvent(MovieEvent("MOVIE_SIDECAR_STATUS"));
   raise(); // not an exception --  This is to raise the window to the front
   return; 
 }
@@ -366,51 +366,42 @@ void SideCar::checkBlockbusterData() {
     } catch (QString errmsg) {
       cerr << "Exception thrown in checkBlockbusterData from operator >>: \"" << errmsg.toStdString() << "\"" << endl;
     }
-    dbprintf(5, "checkBlockbusterData: Got event %d\n", event.mEventType); 
-    switch(event.mEventType) {
-    case MOVIE_SIDECAR_MESSAGE:
+    dbprintf(5, "checkBlockbusterData: Got event %s\n", event.mEventType.c_str()); 
+    if (event.mEventType == "MOVIE_SIDECAR_MESSAGE") {
       dbprintf(5, QString("Message received from blockbuster:  \"%1\"").arg(event.mString.c_str())); 
-      break; 
-    case MOVIE_PWD:
+    } 
+    else if (event.mEventType == "MOVIE_PWD") {
       dbprintf(5, QString("Blockbuster changed directories to %1\n").arg(event.mString.c_str())); 
       mBlockbusterCWD = event.mString.c_str(); 
-      break; 
-    case MOVIE_SIDECAR_STATUS:
-      { 
-        MovieSnapshot snapshot(QString(event.mString.c_str())); 
-        switch(snapshot.mSnapshotType) {
-        case MOVIE_SNAPSHOT:
-        case MOVIE_SNAPSHOT_ENDFRAME:
-        case MOVIE_SNAPSHOT_STARTFRAME:          
-        case MOVIE_SNAPSHOT_ALT_ENDFRAME:          
-          if (!mCueManager->getCurrentCue()) {
-            cerr<<"Error in snapshot request: no current cue selected"<<endl; 
-          } else {
-            mCueManager->SetCurrentCue(snapshot);    
-          }
-          break; 
-        default: 
-          mRemoteControl->updateFromSnapshot(snapshot); 
-          break;
+    } 
+    else if (event.mEventType == "MOVIE_SIDECAR_STATUS") {
+      MovieSnapshot snapshot(event.mString); 
+      if (snapshot.mSnapshotType == "MOVIE_SNAPSHOT" || 
+          snapshot.mSnapshotType == "MOVIE_SNAPSHOT_ENDFRAME" || 
+          snapshot.mSnapshotType == "MOVIE_SNAPSHOT_STARTFRAME" || 
+          snapshot.mSnapshotType == "MOVIE_SNAPSHOT_ALT_ENDFRAME") {
+        if (!mCueManager->getCurrentCue()) {
+          cerr<<"Error in snapshot request: no current cue selected"<<endl; 
+        } else {
+          mCueManager->SetCurrentCue(snapshot);    
         }
+      } 
+      else { 
+        mRemoteControl->updateFromSnapshot(snapshot); 
       }
-      break; 
-    case MOVIE_CUE_COMPLETE:
-      { 
-        mCueExecuting = false;
-      }
-      break; 
-    case MOVIE_STOP_ERROR:
-      { 
-        QMessageBox::critical(this, "Blockbuster error", 
-                              QString("Message from blockbuster:  %1.")
-                              .arg(event.mString.c_str())); 
-        break; 
-      }
-    default:
-      cerr << "Bad event: " << event.Stringify() << " in checkBlockbusterData()\n"<< endl; 
     }
-                              
+    else if (event.mEventType == "MOVIE_CUE_COMPLETE") {
+      mCueExecuting = false;
+    } 
+    else if (event.mEventType == "MOVIE_STOP_ERROR") {
+      QMessageBox::critical(this, "Blockbuster error", 
+                            QString("Message from blockbuster:  %1.")
+                            .arg(event.mString.c_str())); 
+    }
+    else {
+      cerr << "Bad event: " << string(event) << " in checkBlockbusterData()\n"<< endl; 
+    }
+    
   }
   return; 
 }
@@ -561,7 +552,7 @@ void SideCar::on_launchBlockbusterButton_clicked() {
     askLaunchBlockbuster(theCue, "GUILAUNCH"); 
   } else {
     dbprintf(5, "Sending QUIT signal to blockbuster\n"); 
-    SendEvent(MovieEvent (MOVIE_QUIT)); 
+    SendEvent(MovieEvent ("MOVIE_QUIT")); 
     setState(BB_DISCONNECTING); 
     gCoreApp->processEvents(); 
     disconnectFromBlockbuster(); 
@@ -778,24 +769,24 @@ void SideCar::on_actionSave_Cue_File_As_triggered() {
 
 //===============================================================
 void SideCar::takeSnapshot(){ 
-  SendEvent(MovieEvent (MOVIE_SNAPSHOT)); 
+  SendEvent(MovieEvent ("MOVIE_SNAPSHOT")); 
   return; 
 }
 //===============================================================
 void SideCar::movieSnapshotStartFrame(){ 
-  SendEvent(MovieEvent (MOVIE_SNAPSHOT_STARTFRAME)); 
+  SendEvent(MovieEvent ("MOVIE_SNAPSHOT_STARTFRAME")); 
   return; 
 }
 
 //===============================================================
 void SideCar::movieSnapshotEndFrame(){ 
-  SendEvent(MovieEvent (MOVIE_SNAPSHOT_ENDFRAME)); 
+  SendEvent(MovieEvent ("MOVIE_SNAPSHOT_ENDFRAME")); 
   return; 
 }
 
 //===============================================================
 void SideCar::movieSnapshotAltEndFrame(){
-  SendEvent(MovieEvent (MOVIE_SNAPSHOT_ALT_ENDFRAME)); 
+  SendEvent(MovieEvent ("MOVIE_SNAPSHOT_ALT_ENDFRAME")); 
   return; 
 }
 
@@ -814,44 +805,44 @@ void SideCar::on_showCuesButton_clicked(){
 
 //===============================================================
 void SideCar::on_actionToggle_Controls_triggered(){ 
-  SendEvent(MovieEvent (MOVIE_TOGGLE_INTERFACE)); 
+  SendEvent(MovieEvent ("MOVIE_TOGGLE_INTERFACE")); 
   return; 
 }
 
 //===============================================================
 void SideCar::on_actionPlay_triggered(){ 
-  SendEvent(MovieEvent (MOVIE_PLAY_FORWARD)); 
+  SendEvent(MovieEvent ("MOVIE_PLAY_FORWARD")); 
   return; 
 }
 
 //===============================================================
 void SideCar::on_actionStepAhead_triggered(){ 
-  SendEvent(MovieEvent (MOVIE_STEP_FORWARD)); 
+  SendEvent(MovieEvent ("MOVIE_STEP_FORWARD")); 
   return; 
 }
 
 //===============================================================
 void SideCar::on_actionStepBackward_triggered(){ 
-  SendEvent(MovieEvent (MOVIE_STEP_BACKWARD)); 
+  SendEvent(MovieEvent ("MOVIE_STEP_BACKWARD")); 
   return; 
 }
 
 
 //===============================================================
 void SideCar::on_actionStop_triggered(){  
-  SendEvent(MovieEvent (MOVIE_STOP));
+  SendEvent(MovieEvent ("MOVIE_STOP"));
   return; 
 }
 
 //===============================================================
 void SideCar::on_actionGo_To_Beginning_triggered(){  
-  SendEvent(MovieEvent (MOVIE_GOTO_START));
+  SendEvent(MovieEvent ("MOVIE_GOTO_START"));
   return; 
 }
 
 //===============================================================
 void SideCar::on_actionGo_To_End_triggered(){  
-  SendEvent(MovieEvent (MOVIE_GOTO_END)); 
+  SendEvent(MovieEvent ("MOVIE_GOTO_END")); 
   return; 
 }
 
@@ -862,7 +853,7 @@ void SideCar::on_actionGo_To_Frame_triggered() {
     getInteger(this, tr("Go To Frame"),
                tr("Frame Number:"), 0, 0, 2147483647, 1, &ok);
   if (ok) {
-    MovieEvent event(MOVIE_GOTO_FRAME); 
+    MovieEvent event("MOVIE_GOTO_FRAME"); 
     event.mNumber = frameNum-1;
     SendEvent(event); 
   }
@@ -878,7 +869,7 @@ void SideCar::openButton_clicked(){
                                    "",
                                    "Movie Files (*.sm)");
   if (filename != "") {
-    SendEvent(MovieEvent (MOVIE_OPEN_FILE, filename)); 
+    SendEvent(MovieEvent ("MOVIE_OPEN_FILE", filename)); 
   }
    
   return;
@@ -886,71 +877,71 @@ void SideCar::openButton_clicked(){
 
 //================================================================
 void SideCar::stereoCheckBox_stateChanged(int state){
-  SendEvent(MovieEvent(MOVIE_SET_STEREO, state)); 
+  SendEvent(MovieEvent("MOVIE_SET_STEREO", state)); 
   return; 
 }
 
 //================================================================
 void SideCar::quitButton_clicked(){   
-  SendEvent(MovieEvent (MOVIE_QUIT)); 
+  SendEvent(MovieEvent ("MOVIE_QUIT")); 
   return; 
 }
 
 
 //================================================================
 void SideCar::centerButton_clicked(){   
-  SendEvent(MovieEvent (MOVIE_CENTER)); 
+  SendEvent(MovieEvent ("MOVIE_CENTER")); 
 }
 
 //================================================================
 void SideCar::fullSizeButton_clicked(){   
-  SendEvent(MovieEvent (MOVIE_ZOOM_ONE)); 
+  SendEvent(MovieEvent ("MOVIE_ZOOM_ONE")); 
 }
 
 //================================================================
 void SideCar::fitButton_clicked(){   
-  SendEvent(MovieEvent (MOVIE_ZOOM_FIT)); 
+  SendEvent(MovieEvent ("MOVIE_ZOOM_FIT")); 
 }
 
 //================================================================
 void SideCar::fillButton_clicked(){   
-  SendEvent(MovieEvent (MOVIE_FULLSCREEN)); 
+  SendEvent(MovieEvent ("MOVIE_FULLSCREEN")); 
 }
 
 //================================================================
 void SideCar::startButton_clicked(){   
-  SendEvent(MovieEvent (MOVIE_GOTO_START)); 
+  SendEvent(MovieEvent ("MOVIE_GOTO_START")); 
 }
 
 //================================================================
 void SideCar::backStepButton_clicked(){   
-  SendEvent(MovieEvent (MOVIE_STEP_BACKWARD));
+  SendEvent(MovieEvent ("MOVIE_STEP_BACKWARD"));
 }
 
 //================================================================
 void SideCar::reverseButton_clicked(){   
-  SendEvent(MovieEvent (MOVIE_PLAY_BACKWARD)); 
+  SendEvent(MovieEvent ("MOVIE_PLAY_BACKWARD")); 
 }
 
 //================================================================
 void SideCar::stopButton_clicked(){   
-  SendEvent(MovieEvent (MOVIE_STOP)); 
+  SendEvent(MovieEvent ("MOVIE_STOP")); 
   mCueManager->stopLooping();  
 }
 
 //================================================================
 void SideCar::playButton_clicked(){   
-  SendEvent(MovieEvent (MOVIE_PLAY_FORWARD)); 
+  SendEvent(MovieEvent ("MOVIE_PLAY_FORWARD")); 
 }
 
 //================================================================
 void SideCar::stepButton_clicked(){   
-  SendEvent(MovieEvent (MOVIE_STEP_FORWARD)); 
+  SendEvent(MovieEvent ("MOVIE_STEP_FORWARD")); 
 }
 
 //================================================================
 void SideCar::endButton_clicked(){   
-  SendEvent(MovieEvent (MOVIE_GOTO_END)); 
+  SendEvent(MovieEvent ("MOVIE_GOTO_END")); 
 }
 
 
@@ -965,19 +956,19 @@ void SideCar::frameSlider_valueChanged(int value){
     mRemoteControl->frameSlider->setValue(mRemoteControl->mEndFrame+1); 
     return;
   }
-  SendEvent(MovieEvent (MOVIE_GOTO_FRAME, value-1)); 
+  SendEvent(MovieEvent ("MOVIE_GOTO_FRAME", value-1)); 
 }
 
 //================================================================
 void SideCar::frameField_returnPressed() {    
-  SendEvent(MovieEvent (MOVIE_GOTO_FRAME,
+  SendEvent(MovieEvent ("MOVIE_GOTO_FRAME",
                         mRemoteControl->frameField->text().toInt())); 
 }
 
 //================================================================
 void SideCar::saveImageButton_clicked() {   
   mBlockbusterCWD = ""; 
-  SendEvent(MovieEvent(MOVIE_PWD));
+  SendEvent(MovieEvent("MOVIE_PWD"));
   timer theTimer; 
   theTimer.start(); 
   while (mBlockbusterCWD == "") {
@@ -993,31 +984,31 @@ void SideCar::saveImageButton_clicked() {
                                        QLineEdit::Normal,
                                        mBlockbusterCWD, &ok);
   if (ok && !text.isEmpty()) {
-    SendEvent(MovieEvent (MOVIE_SAVE_FRAME, text)); 
+    SendEvent(MovieEvent ("MOVIE_SAVE_FRAME", text)); 
   }
 }
 
 //================================================================
 void SideCar::zoomSpinBox_valueChanged(double value){  
   mRemoteControl->zoomSpinBox->Lock(value); 
-  SendEvent(MovieEvent (MOVIE_ZOOM_SET, (float)value)); 
+  SendEvent(MovieEvent ("MOVIE_ZOOM_SET", (float)value)); 
 }
 
 //================================================================
 void SideCar::lodSpinBox_valueChanged(int value){   
   mRemoteControl->lodSpinBox->Lock(value); 
-  SendEvent(MovieEvent (MOVIE_SET_LOD, value)); 
+  SendEvent(MovieEvent ("MOVIE_SET_LOD", value)); 
 }
 
 //================================================================
 void SideCar::fpsSpinBox_valueChanged(double value){   
   mRemoteControl->fpsSpinBox->Lock(value); 
-  SendEvent(MovieEvent (MOVIE_SET_RATE, (float)value)); 
+  SendEvent(MovieEvent ("MOVIE_SET_RATE", (float)value)); 
 }
 
 //================================================================
 void SideCar::foreverCheckBox_stateChanged(int state) {
-  MovieEvent event(MOVIE_SET_LOOP, -1); 
+  MovieEvent event("MOVIE_SET_LOOP", -1); 
   if (!state) {
     event.mNumber = mRemoteControl->loopCheckBox->isChecked(); 
   }
@@ -1026,25 +1017,25 @@ void SideCar::foreverCheckBox_stateChanged(int state) {
 
 //================================================================
 void SideCar::noScreensaverCheckBox_stateChanged(int state) {
-  SendEvent(MovieEvent(MOVIE_NOSCREENSAVER, state)); 
+  SendEvent(MovieEvent("MOVIE_NOSCREENSAVER", state)); 
 }
 
 //================================================================
 void SideCar::loopCheckBox_stateChanged(int state) {   
   if (state) mRemoteControl->pingpongCheckBox->setChecked(false); 
-  SendEvent(MovieEvent(MOVIE_SET_LOOP, state)); 
+  SendEvent(MovieEvent("MOVIE_SET_LOOP", state)); 
   return; 
 }
 
 //================================================================
 void SideCar::pingpongCheckBox_stateChanged(int state) {   
   if (state)  mRemoteControl->loopCheckBox->setChecked(false); 
-  SendEvent(MovieEvent (MOVIE_SET_PINGPONG, state)); 
+  SendEvent(MovieEvent ("MOVIE_SET_PINGPONG", state)); 
 }
 
 //================================================================
 void SideCar::sendString() {  
-  SendEvent(MovieEvent(MOVIE_MESSAGE)); 
+  SendEvent(MovieEvent("MOVIE_MESSAGE")); 
   return; 
 };
 
@@ -1070,109 +1061,109 @@ void SideCar::InterestingKey(QKeyEvent *event){
   switch(event->key()) {
   case Qt::Key_Left : // back by step/20/25% 
     if (modkey == Qt::SHIFT) {
-      SendEvent(MovieEvent(MOVIE_SKIP_BACKWARD)); 
+      SendEvent(MovieEvent("MOVIE_SKIP_BACKWARD")); 
     } else if (modkey == Qt::CTRL) {
-      SendEvent(MovieEvent(MOVIE_SECTION_BACKWARD)); 
+      SendEvent(MovieEvent("MOVIE_SECTION_BACKWARD")); 
     } else {
-      SendEvent(MovieEvent(MOVIE_STEP_BACKWARD)); 
+      SendEvent(MovieEvent("MOVIE_STEP_BACKWARD")); 
     } 
     break; 
   case Qt::Key_Right:  // forward by step/20/25%
     if (modkey == Qt::SHIFT) {
-      SendEvent(MovieEvent(MOVIE_SKIP_FORWARD)); 
+      SendEvent(MovieEvent("MOVIE_SKIP_FORWARD")); 
     } else if (modkey == Qt::CTRL) {
-      SendEvent(MovieEvent(MOVIE_SECTION_FORWARD)); 
+      SendEvent(MovieEvent("MOVIE_SECTION_FORWARD")); 
     } else {
-      SendEvent(MovieEvent(MOVIE_STEP_FORWARD)); 
+      SendEvent(MovieEvent("MOVIE_STEP_FORWARD")); 
     }
     break; 
   case Qt::Key_Home: // go to start of movie
-    SendEvent(MovieEvent(MOVIE_GOTO_START));
+    SendEvent(MovieEvent("MOVIE_GOTO_START"));
     break;
 
   case Qt::Key_End: // end of movie
-    SendEvent(MovieEvent(MOVIE_GOTO_END));
+    SendEvent(MovieEvent("MOVIE_GOTO_END"));
     break;
 
   case Qt::Key_C : // center
-    SendEvent(MovieEvent(MOVIE_CENTER));
+    SendEvent(MovieEvent("MOVIE_CENTER"));
     break;
 
   case Qt::Key_F : // zoom to fit window
-    SendEvent(MovieEvent(MOVIE_ZOOM_FIT));
+    SendEvent(MovieEvent("MOVIE_ZOOM_FIT"));
     break;
 
   case Qt::Key_H : //show keyboard help
   case Qt::Key_Question : 
-    SendEvent(MovieEvent(MOVIE_KEYBOARD_HELP));
+    SendEvent(MovieEvent("MOVIE_KEYBOARD_HELP"));
     break;
 
   case Qt::Key_I : // hide/show controls
-    SendEvent(MovieEvent(MOVIE_TOGGLE_INTERFACE));
+    SendEvent(MovieEvent("MOVIE_TOGGLE_INTERFACE"));
     break;
 
   case Qt::Key_L : // l/L == decrease/increase LOD
     if (modkey == Qt::SHIFT) {
-      SendEvent(MovieEvent(MOVIE_INCREASE_LOD));
+      SendEvent(MovieEvent("MOVIE_INCREASE_LOD"));
     } else {
-      SendEvent(MovieEvent(MOVIE_DECREASE_LOD));
+      SendEvent(MovieEvent("MOVIE_DECREASE_LOD"));
     }
     break;
 
   case Qt::Key_M : // toggle hiding/showing the cursor
-    SendEvent(MovieEvent(MOVIE_TOGGLE_CURSOR));
+    SendEvent(MovieEvent("MOVIE_TOGGLE_CURSOR"));
     break;
 
   case Qt::Key_P : // reverse
-    SendEvent(MovieEvent(MOVIE_PLAY_FORWARD));
+    SendEvent(MovieEvent("MOVIE_PLAY_FORWARD"));
     break;
 
   case Qt::Key_Escape: // exit
   case Qt::Key_Q: // exit 
-    SendEvent(MovieEvent(MOVIE_QUIT));
+    SendEvent(MovieEvent("MOVIE_QUIT"));
     break;
 
   case Qt::Key_R : // reverse
-    SendEvent(MovieEvent(MOVIE_PLAY_BACKWARD));
+    SendEvent(MovieEvent("MOVIE_PLAY_BACKWARD"));
     break;
 
   case Qt::Key_Z : // zoom to fit window
     if (modkey == Qt::SHIFT) {
-      SendEvent(MovieEvent(MOVIE_ZOOM_DOWN));
+      SendEvent(MovieEvent("MOVIE_ZOOM_DOWN"));
     } else {
-      SendEvent(MovieEvent(MOVIE_ZOOM_UP));
+      SendEvent(MovieEvent("MOVIE_ZOOM_UP"));
     } 
     break;
 
   case Qt::Key_Space: // play/stop
-    SendEvent(MovieEvent(MOVIE_PAUSE));
+    SendEvent(MovieEvent("MOVIE_PAUSE"));
     break;
 
   case Qt::Key_Plus: // play/stop
-    SendEvent(MovieEvent(MOVIE_INCREASE_RATE));
+    SendEvent(MovieEvent("MOVIE_INCREASE_RATE"));
     break;
 
   case Qt::Key_Minus: // play/stop
-    SendEvent(MovieEvent(MOVIE_DECREASE_RATE));
+    SendEvent(MovieEvent("MOVIE_DECREASE_RATE"));
     break;
 
   case Qt::Key_1 : // zoom to 1.0
-    SendEvent(MovieEvent(MOVIE_ZOOM_ONE));
+    SendEvent(MovieEvent("MOVIE_ZOOM_ONE"));
     break;
 
   case Qt::Key_2 : // zoom to 2 or 1/2 (with shift)
     if (modkey == Qt::SHIFT) {
-      SendEvent(MovieEvent(MOVIE_ZOOM_SET, 0.5f));
+      SendEvent(MovieEvent("MOVIE_ZOOM_SET", 0.5f));
     } else {
-      SendEvent(MovieEvent(MOVIE_ZOOM_SET, 2.0f));
+      SendEvent(MovieEvent("MOVIE_ZOOM_SET", 2.0f));
     }
     break;
 
   case Qt::Key_4 : // zoom to 4 or 1/4 (with shift)
     if (modkey == Qt::SHIFT) {
-      SendEvent(MovieEvent(MOVIE_ZOOM_SET, 0.25f));
+      SendEvent(MovieEvent("MOVIE_ZOOM_SET", 0.25f));
     } else {
-      SendEvent(MovieEvent(MOVIE_ZOOM_SET, 4.0f));
+      SendEvent(MovieEvent("MOVIE_ZOOM_SET", 4.0f));
     }
     break;
 
@@ -1186,7 +1177,7 @@ void SideCar::InterestingKey(QKeyEvent *event){
 }
 // =============================================================
 HostProfile& HostProfile::operator =(const HostProfile& other){
-  setFromQString(other.toQString()); 
+  *this << string(other); 
   return *this; 
 }
 
@@ -1227,12 +1218,12 @@ void HostProfile::init(void) {
 
 
 // =============================================================
-bool HostProfile::setFromQString(QString profileString) {
-  profileString = profileString.simplified();
+HostProfile& HostProfile::operator << (string s)  {
+  QString profileString = QString(s.c_str()).simplified();
   QStringList tokens = profileString.split(QRegExp("\\s+"), QString::SkipEmptyParts); 
-
+  mValid = false; 
   if (!tokens.size()) {
-    return true; 
+    return *this; 
   }
   else if (tokens.size() > 3 && tokens[0] == "<<" && tokens[1] == "HostProfile:"&& tokens[tokens.size()-1] == ">>")  {
     for (uint16_t t = 2; t < tokens.size()-1; t++) {
@@ -1243,9 +1234,9 @@ bool HostProfile::setFromQString(QString profileString) {
         for (uint16_t i = 0; i< items.size(); i++) {
           dbprintf(5, QString("%1 ").arg(items[i])); 
         }
-        return false; 
+        return *this; 
       } 
-      // QString("<< HostProfile: mReadOnly=%1, mProfileFile=%2, mHostName=%3, mName=%4, mPort=%5, mVerbosity=%6, mRsh=%7, mSetDisplay=%8, mDisplay=%9, mBlockbusterPath=%10, mAutoSidecarHost=%11, mSidecarHost=%12, mPlay=%13, mFullScreen=%14, mShowControls=%15, mUseDMX=%16, mMpiFrameSync=%17, mNoSmallWindows=%18, mAutoBlockbusterPath=%19 >>")      
+      //  OLD FORMAT:  QString("<< HostProfile: mReadOnly=%1, mProfileFile=%2, mHostName=%3, mName=%4, mPort=%5, mVerbosity=%6, mRsh=%7, mSetDisplay=%8, mDisplay=%9, mBlockbusterPath=%10, mAutoSidecarHost=%11, mSidecarHost=%12, mPlay=%13, mFullScreen=%14, mShowControls=%15, mUseDMX=%16, mMpiFrameSync=%17, mNoSmallWindows=%18, mAutoBlockbusterPath=%19 >>")      
       
       QString key = items[0], value = items[1]; 
       if (value.endsWith(",")) value.truncate(value.size()-1); 
@@ -1259,7 +1250,7 @@ bool HostProfile::setFromQString(QString profileString) {
       else if (key == "mRsh") mRsh = value; 
       else if (key == "mSetDisplay") mSetDisplay = (value != "false" && value != "0");
       else if (key == "mDisplay") mDisplay = value; 
-      else if (key == "mBlockbusterPath") mBlockbusterPath = value; 
+      else if (key == "mBlockbusterPath") mBlockbusterPath = value.replace("%20", " "); 
       else if (key == "mAutoSidecarHost") mAutoSidecarHost  = (value != "false" && value != "0");
       else if (key == "mSidecarHost") mSidecarHost = value; 
       else if (key == "mPlay") mPlay = (value != "false" && value != "0");
@@ -1271,7 +1262,7 @@ bool HostProfile::setFromQString(QString profileString) {
       else if (key == "mAutoBlockbusterPath") mAutoBlockbusterPath = (value != "false" && value != "0"); 
       else {
         dbprintf(1, QString("Error: profile string token %1 contains unknown key %2\n").arg(tokens[t]).arg(key));
-        return false; 
+        return *this; 
       } 
     }
   }
@@ -1299,13 +1290,18 @@ bool HostProfile::setFromQString(QString profileString) {
   } // end old-style profile string
 
   dbprintf(5, "Parse host profile entry without detecting any error\n"); 
-  
-  return true; 
+  mValid = true;   
+  return *this; 
 
 }
 
 // =============================================================
-QString HostProfile::toQString(void) const {
+HostProfile::operator string() const {
+  return QString(*this).toStdString(); 
+}
+
+// =============================================================
+HostProfile::operator QString() const {
   return QString("<< HostProfile: mName=%1, mHostName=%2, mReadOnly=%3, mProfileFile=%4, mPort=%5, mVerbosity=%6, mRsh=%7, mSetDisplay=%8, mDisplay=%9, mBlockbusterPath=%10, mAutoSidecarHost=%11, mSidecarHost=%12, mPlay=%13, mFullScreen=%14, mShowControls=%15, mUseDMX=%16, mMpiFrameSync=%17, mNoSmallWindows=%18, mAutoBlockbusterPath=%19 >>")
     .arg(mName)
     .arg(mHostName)
@@ -1329,27 +1325,6 @@ QString HostProfile::toQString(void) const {
 }
 
 
-/* old code, keep for reference if you find old host profiles: 
-QString HostProfile::toProfileString(void) const { 
-    return QString("%1 %2 %3 %4 %5 setDisplay=%6 %7 %8 autoSidecarHost=%9 %10 play=%11 fullScreen=%12 showControls=%13 useDMX=%14 mpiFrameSync=%15")
-    .arg(mName)
-    .arg(mHostName)
-    .arg(mPort)
-    .arg(mVerbosity)
-    .arg(mRsh)
-    .arg(mSetDisplay?"true":"false")
-    .arg(mDisplay)
-    .arg(QString(mBlockbusterPath).replace(" ", "%20"))
-    .arg(mAutoSidecarHost?"true":"false")
-    .arg(mSidecarHost)
-    .arg(mPlay?"true":"false")
-    .arg(mFullScreen?"true":"false")
-    .arg(mShowControls?"true":"false")
-    .arg(mUseDMX?"true":"false")
-    .arg(mMpiFrameSync?"true":"false"); 
-  
-}
-  */
 //======================================================================
 BlockbusterLaunchDialog::BlockbusterLaunchDialog(SideCar *sidecar, QString host, QString port, QString filename, connectionState state, QString rshCmd, long bbVerbose): 
   mSidecar(sidecar), mState(state), mBlockbusterPort(port.toInt()), mCurrentProfile(NULL) {
@@ -1377,7 +1352,7 @@ BlockbusterLaunchDialog::BlockbusterLaunchDialog(SideCar *sidecar, QString host,
           this, SLOT(hostProfileModified(const QString&)));
   connect(fileNameComboBox, SIGNAL(editTextChanged (const QString &)),
           this, SLOT(hostProfileModified(const QString&)));
-   connect(playCheckBox, SIGNAL(clicked()),
+  connect(playCheckBox, SIGNAL(clicked()),
           this, SLOT(hostProfileModified()));
   connect(fullScreenCheckBox, SIGNAL(clicked()),
           this, SLOT(hostProfileModified()));
@@ -1494,9 +1469,9 @@ void BlockbusterLaunchDialog::createNewProfile(const HostProfile *inProfile){
   if (!ok) 
     return; 
 
-  dbprintf(5, "Creating new profile from %s\n", inProfile->toQString().toStdString().c_str());
+  dbprintf(5, "Creating new profile from %s\n", string(*inProfile).c_str());
   mCurrentProfile = new HostProfile(name.replace(QRegExp("\\s+"), "_"), inProfile);
-  dbprintf(5, "New profile is %s\n", mCurrentProfile->toQString().toStdString().c_str());
+  dbprintf(5, "New profile is %s\n", string(*mCurrentProfile).c_str());
   mHostProfiles.push_back(mCurrentProfile); 
   saveAndRefreshHostProfiles(mCurrentProfile); 
   return; 
@@ -1523,6 +1498,7 @@ void BlockbusterLaunchDialog::on_saveProfilePushButton_clicked(){
   mCurrentProfile->mShowControls = showControlsCheckBox->isChecked(); 
   mCurrentProfile->mUseDMX = useDMXCheckBox->isChecked(); 
   mCurrentProfile->mMpiFrameSync = mpiFrameSyncCheckBox->isChecked(); 
+  mCurrentProfile->mAutoBlockbusterPath = autoBlockbusterPathCheckBox->isChecked(); 
   sortAndSaveHostProfiles(); 
   hostProfileModified(); 
   return; 
@@ -1679,21 +1655,27 @@ void BlockbusterLaunchDialog::on_hostNameField_editingFinished( ) {
 
 //=======================================================================
 bool BlockbusterLaunchDialog::hostProfileModified(void){
+  bool autoChecked = autoBlockbusterPathCheckBox->isChecked() ; 
   bool dirty = 
     (hostNameField->text() != mCurrentProfile->mHostName ||
      hostPortField->text() != mCurrentProfile->mPort ||
      verboseField->text() != mCurrentProfile->mVerbosity ||
      rshCommandField->text() != mCurrentProfile->mRsh ||
      blockbusterDisplayField->text() != mCurrentProfile->mDisplay ||
-     blockbusterPathField->text()  != mCurrentProfile->mBlockbusterPath ||
      setDisplayCheckBox->isChecked() != mCurrentProfile->mSetDisplay ||
+
      autoSidecarHostCheckBox->isChecked() != mCurrentProfile->mAutoSidecarHost ||
      (!autoSidecarHostCheckBox->isChecked() && sidecarHostNameField->text() != mCurrentProfile->mSidecarHost) ||
+
      mCurrentProfile->mPlay != playCheckBox->isChecked() ||
      mCurrentProfile->mFullScreen != fullScreenCheckBox->isChecked() ||
      mCurrentProfile->mShowControls != showControlsCheckBox->isChecked()  ||
      mCurrentProfile->mUseDMX != useDMXCheckBox->isChecked()  ||
-     mCurrentProfile->mMpiFrameSync != mpiFrameSyncCheckBox->isChecked() ); 
+
+     autoBlockbusterPathCheckBox->isChecked() != mCurrentProfile->mAutoBlockbusterPath ||
+     (!autoBlockbusterPathCheckBox->isChecked() && blockbusterPathField->text()  != mCurrentProfile->mBlockbusterPath) ||
+
+mCurrentProfile->mMpiFrameSync != mpiFrameSyncCheckBox->isChecked() ); 
   saveProfilePushButton->setEnabled(dirty && !mCurrentProfile->mReadOnly); 
   return dirty; 
 }
@@ -1744,7 +1726,7 @@ void BlockbusterLaunchDialog::saveHistory(QComboBox *box, QString filename){
 void BlockbusterLaunchDialog::saveAndRefreshHostProfiles(HostProfile *inProfile) {
   
   HostProfile profCopy(inProfile);
-  dbprintf(5, QString("saveAndRefreshHostProfiles(%1), profCopy=%2\n").arg(inProfile->toQString()).arg(profCopy.toQString())); 
+  dbprintf(5, str(boost::format ("saveAndRefreshHostProfiles(%1%), profCopy=%2%\n")% string(*inProfile) % string(profCopy))); 
   sortAndSaveHostProfiles(); // sorts and saves to files
   removeHostProfiles(); 
   readAndSortHostProfiles(); // rereads them in order
@@ -1761,9 +1743,9 @@ void BlockbusterLaunchDialog::saveAndRefreshHostProfiles(HostProfile *inProfile)
     if (profnum) 
       profnum--; 
   } else {
-    dbprintf(5, QString("Found pos >= profCopy: pos=%1, profCopy=%2\n").arg((*pos)->toQString()).arg(profCopy.toQString())); 
+    dbprintf(5, str(boost::format("Found pos >= profCopy: pos=%1%, profCopy=%2%\n") % string(**pos) % string(profCopy))); 
   }
-  dbprintf(5,  QString("hostProfilesComboBox->setCurrentIndex(%1)").arg(profnum)); 
+  dbprintf(5,  str(boost::format("hostProfilesComboBox->setCurrentIndex(%1%)")%(profnum))); 
   hostProfilesComboBox->setCurrentIndex(profnum); 
   return; 
 }
@@ -1794,7 +1776,7 @@ void BlockbusterLaunchDialog::sortAndSaveHostProfiles(void) {
   vector<HostProfile *>::iterator pos = mHostProfiles.begin(), endpos = mHostProfiles.end(); 
   while (pos != endpos) {
     HostProfile *profile = *pos; // for readability
-    dbprintf(5, QString("Examining profile %1.\n").arg(profile->toQString())); 
+    dbprintf(5, QString("Examining profile %1.\n").arg(QString(*profile))); 
     
     if ( !profile->mReadOnly) {
       if (profile->mProfileFile == profile->mUserHostProfileFile) {
@@ -1806,8 +1788,8 @@ void BlockbusterLaunchDialog::sortAndSaveHostProfiles(void) {
         if (fp) fclose(fp); 
         fp = fopen(profileFile.toStdString().c_str(), "w");
       }
-      dbprintf(5, QString("Writing profile %1 (%2) to file %3\n").arg(profile->mName).arg(profile->toQString().toStdString().c_str()).arg(profileFile)); 
-      fprintf(fp, "%s\n", profile->toQString().toStdString().c_str()); 
+      dbprintf(5, QString("Writing profile %1 (%2) to file %3\n").arg(profile->mName).arg(QString(*profile)).arg(profileFile)); 
+      fprintf(fp, "%s\n", string(*profile).c_str()); 
     } else {
       dbprintf(5, "Profile is read-only\n"); 
     }
@@ -1841,7 +1823,7 @@ void BlockbusterLaunchDialog::setupGuiAndCurrentProfile(int index){
   setDisplayCheckBox->setChecked(mCurrentProfile->mSetDisplay); 
   blockbusterDisplayField->setText(mCurrentProfile->mDisplay); 
   blockbusterDisplayField->setEnabled(setDisplayCheckBox->isChecked());
-  blockbusterPathField->setText(mCurrentProfile->mBlockbusterPath); 
+
   autoSidecarHostCheckBox->setChecked(mCurrentProfile->mAutoSidecarHost); 
   if (mCurrentProfile->mAutoSidecarHost || mCurrentProfile->mSidecarHost == ""){
     sidecarHostNameField->setText(QHostInfo::localHostName()); 
@@ -1849,11 +1831,21 @@ void BlockbusterLaunchDialog::setupGuiAndCurrentProfile(int index){
     sidecarHostNameField->setText(mCurrentProfile->mSidecarHost);     
   }    
   sidecarHostNameField->setEnabled(!autoSidecarHostCheckBox->isChecked()); 
+
   playCheckBox->setChecked(mCurrentProfile->mPlay); 
   fullScreenCheckBox->setChecked(mCurrentProfile->mFullScreen); 
   showControlsCheckBox->setChecked(mCurrentProfile->mShowControls); 
   useDMXCheckBox->setChecked(mCurrentProfile->mUseDMX); 
   mpiFrameSyncCheckBox->setChecked(mCurrentProfile->mMpiFrameSync); 
+
+  autoBlockbusterPathCheckBox->setChecked(mCurrentProfile->mAutoBlockbusterPath); 
+  if (mCurrentProfile->mAutoBlockbusterPath || mCurrentProfile->mBlockbusterPath == ""){
+    blockbusterPathField->setText(mSidecar->getDefaultBlockbusterPath()); 
+  } else {
+    blockbusterPathField->setText(mCurrentProfile->mBlockbusterPath); 
+  }    
+  blockbusterPathField->setEnabled(!autoBlockbusterPathCheckBox->isChecked());
+ 
   hostProfileModified(); 
   return;
 }
@@ -1962,13 +1954,13 @@ int BlockbusterLaunchDialog::readHostProfileFile(QString filename, bool readonly
     }
     HostProfile *profile = new HostProfile();
 
-    profile->setFromQString(line); 
+    *profile << line.toStdString(); 
     profile->mProfileFile = filename;
     profile->mReadOnly = readonly;  
 
     mCurrentProfile = profile; 
 
-    dbprintf(5, QString("Adding item %1: %2\n").arg(numread).arg(profile->toQString())); 
+    dbprintf(5, QString("Adding item %1: %2\n").arg(numread).arg(QString(*profile))); 
     mHostProfiles.push_back(profile); 
     numread++; 
   }

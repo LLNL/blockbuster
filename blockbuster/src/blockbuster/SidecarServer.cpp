@@ -28,7 +28,7 @@ int EventQueue ::GetEvent(MovieEvent *event) {
     mEventQueue.pop_back(); 
     mMutex.unlock(); 
     
-    DEBUGMSG("Got new event in eventqueue: %s\n", event->Stringify().c_str()); 
+    DEBUGMSG("Got new event in eventqueue: %s\n", string(*event).c_str()); 
     return 1; 
   }
   return 0; 
@@ -74,8 +74,8 @@ void SidecarServer ::NewConnection(){
 
 //============================================================
 void SidecarServer::incomingSidecarData() {
-  MovieEvent event; 
   dbprintf(5, "incomingSidecarData\n"); 
+  MovieEvent event; 
   while (mSidecarSocket->canReadLine()) {
     try {
       (*mSidecarSocket) >> event; 
@@ -87,7 +87,7 @@ void SidecarServer::incomingSidecarData() {
       } else {
         mLastReceivedCommandID = event.mID; 
         mPendingEvents.AddEvent(event); 
-        dbprintf(5, "Added sidecar event to pending events: %s\n", event.ToString().c_str()); 
+        dbprintf(5, "Added sidecar event to pending events: %s\n", string(event).c_str()); 
       }
     }
     catch (QString msg) {
@@ -125,7 +125,7 @@ void SidecarServer::AddEvent(MovieEvent &event){
 /* return 0 if an event was NOT gotten, 1 if it WAS */
 int SidecarServer::GetNetworkEvent(MovieEvent *event){
   if (mRenderer) mRenderer->DMXCheckNetwork();
-  event->mEventType = MOVIE_NONE;
+  event->mEventType = "MOVIE_NONE";
   int result = mPendingEvents.GetEvent(event); 
   return result; 
 }

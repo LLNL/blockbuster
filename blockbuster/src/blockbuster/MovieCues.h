@@ -207,7 +207,7 @@ QTcpSocket &operator >> (QTcpSocket &iStream,  MovieCue &iCue);
 
    °  It would be nice to not see what BB does as it executes.  Is there a way to suppress rendering while executing some events?  Yes, but this will have to be done carefully so you don't get stuck in a "black screen" mode if say a client gets a segfault in the middle of sending a Movie Cue, or a file is corrupt, or something. 
 
-   °  Remember that MovieEvents already know how to write themselves to a QDataStream -- how convenient!  :-)  Thus the implementation of a MovieQueue is best done as literally a set of MovieEvents, bracketed by MOVIE_CUE_HEADER and MOVIE_CUE_FOOTER events that contain a string describing the cue.  
+   °  Remember that MovieEvents already know how to write themselves to a QDataStream -- how convenient!  :-)  Thus the implementation of a MovieQueue is best done as literally a set of MovieEvents, bracketed by "MOVIE_CUE_HEADER" and "MOVIE_CUE_FOOTER" events that contain a string describing the cue.  
 
    °  Example movie cues: 
    launch movie X and start playing at frame 23 and stop at frame 90 

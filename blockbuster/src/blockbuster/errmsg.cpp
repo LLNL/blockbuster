@@ -83,12 +83,17 @@ int get_verbose(void) {
                               (theMessage.line))
 
 //===============================================
-void real_dbprintf(int level, QString msg) { 
+void real_dbprintf(int level, QString msg) {
+  real_dbprintf(level, msg.toStdString()); 
+}
+
+//===============================================
+void real_dbprintf(int level, string msg) { 
   if (gVerbose < level) return; 
   std::string preamble = DBPRINTF_PREAMBLE; 
-  cerr << preamble << msg.toStdString() << endl;
+  cerr << preamble << msg << endl;
   if (gLogFile.is_open()) {
-    gLogFile << preamble << msg.toStdString() << endl;
+    gLogFile << preamble << msg << endl;
   }
   return ;
 }
@@ -197,9 +202,14 @@ void NullMessage(const char *format,...)
   return;
 }
   
-void Message(QString msg) {
-  Message(msg.toStdString().c_str()); 
+void Message (std::string msg) {
+  Message(msg.c_str()); 
 }
+
+void Message(QString msg) {
+  Message(msg.toStdString()); 
+}
+
 /* some pure C code calls this, so have to make it accessible */
 #ifdef __cplusplus 
 extern "C" {
@@ -254,7 +264,7 @@ void Message(const char *format,...)
     }
     cerr << errmsg.toStdString() << endl;     
     errmsg.replace("\n", "  --- [ newline ] --- "); 
-    //gSidecarServer->SendEvent(MovieEvent(MOVIE_SIDECAR_MESSAGE, errmsg)); 
+    //gSidecarServer->SendEvent(MovieEvent("MOVIE_SIDECAR_MESSAGE", errmsg)); 
     
     if (theMessage.level == M_SYSERROR) {
       perror("blockbuster");

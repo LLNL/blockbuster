@@ -130,7 +130,7 @@ bool Slave::GetDisplayName(void) {
       (*mMasterStream) >> message; 
     
       //if (GetNextMessage(message)) {
-      QStringList messageList = message.split(" "); 
+      QStringList messageList = message.split(QRegExp("\\s+"), QString::SkipEmptyParts); 
       token = messageList[0]; 
       DEBUGMSG((QString("Slave got message: \"") + message + "\"")); 
       if (token != "DISPLAY") {
@@ -326,7 +326,7 @@ int Slave::Loop(void)
           break; 
         }
         
-		QStringList messageList = message.split(" "); 
+		QStringList messageList = message.split(QRegExp("\\s+"), QString::SkipEmptyParts); 
         token = messageList[0]; 
 		QString dbgmsg = QString("Slave got message: \"") + message + "\""; 
         DEBUGMSG(dbgmsg); 

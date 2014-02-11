@@ -20,6 +20,7 @@ bool cacheDebug_enabled(void);
 #include "QWaitCondition"
 #include "errmsg.h"
 #include <deque>
+#include "boost/format.hpp"
 using namespace std; 
 
 
@@ -43,8 +44,8 @@ struct ImageCacheJob {
   }
     
   ~ImageCacheJob() {}
-  QString toString(void) {
-    return QString("{ ImageCacheJob: frameNumber = %1, region = %2, LOD = %3, request = %4, frameInfo = %5 }").arg(frameNumber).arg(region.toString()).arg(levelOfDetail).arg(requestNumber).arg(frameInfo->toString());
+  operator string(void) {
+    return str(boost::format("{ ImageCacheJob: frameNumber = %1%, region = %2%, LOD = %3%, request = %4%, frameInfo = %5% }") % (frameNumber) % string(region) % (levelOfDetail) % (requestNumber) % string(*frameInfo));
   }
 
   FrameInfoPtr frameInfo; 

@@ -14,7 +14,7 @@
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT
  * SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
- * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+ * OTHERWISE, ARISING  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
@@ -116,7 +116,7 @@ void __PrintJobQueue(QString name, deque<ImageCacheJobPtr>&q) {
   deque<ImageCacheJobPtr>::iterator pos = q.begin(), endpos = q.end(); 
   CACHEDEBUG(QString(" deque<ImageCacheJob *>%1 (length %2): ").arg(name).arg(q.size())); 
   while (pos != endpos){
-    CACHEDEBUG((*pos)->toString()); 
+    CACHEDEBUG(string(**pos)); 
     ++pos; 
   }
   return; 
@@ -379,15 +379,17 @@ void CacheThread::Print(string description)
   CACHEDEBUG("%s: Printing cache state.", description.c_str()); 
   for (vector<CachedImagePtr>::iterator cachedImage = mCachedImages.begin(); 
        cachedImage != mCachedImages.end();  cachedImage++, i++) {
-    msg = QString("%1:  Slot %2: frame:%3 lod:%4  req:%5  ")
+    string roimsg; 
+    if ((*cachedImage)->image) {
+      roimsg = string("roi:")+string((*cachedImage)->image->loadedRegion);
+    }
+    msg = QString("%1:  Slot %2: frame:%3 lod:%4  req:%5 %6 ")
       .arg(description.c_str())
       .arg( i)
       .arg((*cachedImage)->frameNumber)
       .arg((*cachedImage)->levelOfDetail)
-      .arg((*cachedImage)->requestNumber);
-    if ((*cachedImage)->image) {
-      msg += QString("roi:%1").arg((*cachedImage)->image->loadedRegion.toString()); 
-    }
+      .arg((*cachedImage)->requestNumber)
+      .arg(roimsg.c_str());
     if (minframe > (*cachedImage)->frameNumber) {
       minframe = (*cachedImage)->frameNumber;
     }
@@ -640,10 +642,9 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
   if (preloadmax > mPreloadFrames) {
     preloadmax = mPreloadFrames;
   }
-  //int playdir = mCurrentPlayDirection ? mCurrentPlayDirection: 1;
+  int playdir = mCurrentPlayDirection ? mCurrentPlayDirection: 1;
   while (preloaded < preloadmax) {
-    //frame += playdir; 
-    frame += mCurrentPlayDirection; 
+    frame += playdir; 
     if (frame > mCurrentEndFrame) frame = mCurrentStartFrame; 
     if (frame < mCurrentStartFrame) frame = mCurrentEndFrame; 
     DEBUGMSG("Preload frame %d (mCurrentStartFrame = %d,mCurrentEndFrame  = %d", frame, mCurrentStartFrame, mCurrentEndFrame); 
@@ -907,7 +908,7 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
       mThreads[threadnum]->unlock("image already in cache", __FILE__, __LINE__); 
       return;
     } else {
-      CACHEDEBUG(QString("Hmm, region didn't match.  cached region = %1, region = %2").arg(cachedImage->image->loadedRegion.toString()).arg(region->toString())); 
+      CACHEDEBUG(str(boost::format("Hmm, region didn't match.  cached region = %1%, region = %2%") % string(cachedImage->image->loadedRegion) % string(*region))); 
     }
     
   }
@@ -920,7 +921,7 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
   if (job) {
     mThreads[threadnum]->unlock("job already in a queue", __FILE__, __LINE__); 
     CACHEDEBUG("The job exists already - no need to add a new one"); 
-	return;
+    return;
   }
   CACHEDEBUG ("Frame %d: not in cache or in any queue, creating new job", frameNumber); 
   /* If we get this far, there is no such image in the cache, and no such
@@ -950,7 +951,7 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
   mThreads[threadnum]->mJobQueue.push_back(newJob); 
   sort(mThreads[threadnum]->mJobQueue.begin(), mThreads[threadnum]->mJobQueue.end(), jobComparer);
   
-  CACHEDEBUG(QString("Added new job for frame %1 and region %2 to job queue").arg(frameNumber).arg(region->toString())); 
+  CACHEDEBUG(QString("Added new job for frame %1 and region %2 to job queue").arg(frameNumber).arg(QString(*region))); 
   PrintJobQueue(mThreads[threadnum]->mJobQueue); 
 
   mThreads[threadnum]->unlock("new job added", __FILE__, __LINE__); 

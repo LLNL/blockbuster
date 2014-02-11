@@ -42,74 +42,75 @@ MovieCue::MovieCue(MovieCue *other, QListWidget *parent): QListWidgetItem(other-
 
 //======================================================================
 void MovieCue::ReadScript(const MovieScript &iScript) {
-  std::vector<MovieEvent>::const_iterator pos = iScript.begin(), end = iScript.end(); while (pos != end) {
-    switch (pos->mEventType) {
-    case MOVIE_CUE_BEGIN:
+  for (std::vector<MovieEvent>::const_iterator pos = iScript.begin(); pos != iScript.end(); pos++) {
+    if (pos->mEventType == "MOVIE_CUE_BEGIN") {
       setText(QString(pos->mString.c_str())); 
-      break; 
-    case MOVIE_OPEN_FILE_NOCHANGE:
+    }
+    else if (pos->mEventType == "MOVIE_OPEN_FILE_NOCHANGE") {
       mLoadMovie = true; 
       mMovieName = pos->mString.c_str(); 
       mCurrentFrame = pos->mNumber; 
-      break; 
-    case MOVIE_CUE_PLAY_ON_LOAD: 
+    }
+    else if (pos->mEventType == "MOVIE_CUE_PLAY_ON_LOAD") { 
       mPlayMovie = pos->mHeight; 
-      break; 
-    case MOVIE_SET_PINGPONG: 
+    }
+    else if (pos->mEventType == "MOVIE_SET_PINGPONG") { 
       mPingPong = pos->mHeight; 
-      break; 
-    case MOVIE_SET_LOOP: 
+    }
+    else if (pos->mEventType == "MOVIE_SET_LOOP") { 
       mLoopFrames = pos->mHeight; 
-      break; 
-    case MOVIE_SHOW_INTERFACE:
+    }
+    else if (pos->mEventType == "MOVIE_SHOW_INTERFACE") {
 	  mShowControls = true;
-	  break;
-    case MOVIE_HIDE_INTERFACE:
-	  mShowControls = false;
-	  break;
-    case MOVIE_CUE_PLAY_BACKWARD: 
+    }
+    else if (pos->mEventType == "MOVIE_HIDE_INTERFACE") {
+      mShowControls = false;
+    }
+    else if (pos->mEventType == "MOVIE_CUE_PLAY_BACKWARD") { 
       mPlayBackward = pos->mHeight; 
-      break; 
-    case MOVIE_GOTO_FRAME:
+    }
+    else if (pos->mEventType == "MOVIE_GOTO_FRAME") {
       mCurrentFrame = pos->mNumber; 
-      break; 
-    case MOVIE_START_END_FRAMES: 
+    }
+    else if (pos->mEventType == "MOVIE_START_END_FRAMES") { 
       mStartFrame = pos->mWidth; 
       mEndFrame = pos->mHeight; 
-      break; 
-   case MOVIE_ZOOM_SET:
+    }
+    else if (pos->mEventType == "MOVIE_ZOOM_SET") {
       mZoom = pos->mRate;
-      break; 
-    case MOVIE_SET_RATE: 
-	  mFrameRate = pos->mRate; 
-	  break; 
-    case MOVIE_FULLSCREEN:
+    }
+    else if (pos->mEventType == "MOVIE_SET_RATE") { 
+      mFrameRate = pos->mRate; 
+    }
+    else if (pos->mEventType == "MOVIE_FULLSCREEN") {
       mFullScreen = true;
       mWindowXPos = 0;
       mWindowYPos = 0; 
       mWindowWidth = 0; 
       mWindowHeight = 0; 
-    case MOVIE_ZOOM_ONE: 
+    }
+    else if (pos->mEventType == "MOVIE_ZOOM_ONE") { 
       mZoomOne = true; 
-      mWindowXPos = 0;
-      mWindowYPos = 0; 
-    case MOVIE_MOVE_RESIZE: 
-      mFullScreen = false;
+      //mWindowXPos = 0;
+      //mWindowYPos = 0; 
+    }
+    else if (pos->mEventType == "MOVIE_MOVE_RESIZE") { 
+      //mFullScreen = false;
       mWindowXPos = pos->mX; 
       mWindowYPos = pos->mY; 
       mWindowWidth = pos->mWidth; 
       mWindowHeight = pos->mHeight; 
-      break; 
-    case MOVIE_IMAGE_MOVE: 
+    }  
+    else if (pos->mEventType == "MOVIE_IMAGE_MOVE") { 
       mImageXPos = pos->mX; 
       mImageYPos = pos->mY; 
-      break; 
-    case MOVIE_SET_LOD:
+    }
+    else if (pos->mEventType == "MOVIE_SET_LOD") {
       mLOD = pos->mX; 
-      break; 
-    default:
+    }
+    else {
       cerr << "Warning:  unknown event in Cue script: " << pos->mEventType << endl; 
-      break; 
+      
     }
     ++pos; 
   }
@@ -120,48 +121,48 @@ void MovieCue::ReadScript(const MovieScript &iScript) {
 void MovieCue::GenerateScript(MovieScript &oScript) const{
   oScript.clear();   
   /* store events pertaining to the user interface */
-  oScript.push_back(MovieEvent(MOVIE_CUE_BEGIN, text(), mEndFrame)); 
+  oScript.push_back(MovieEvent("MOVIE_CUE_BEGIN", text(), mEndFrame)); 
   if (mShowControls) {
-    oScript.push_back(MovieEvent(MOVIE_SHOW_INTERFACE));
+    oScript.push_back(MovieEvent("MOVIE_SHOW_INTERFACE"));
   } else {
-    oScript.push_back(MovieEvent(MOVIE_HIDE_INTERFACE));
+    oScript.push_back(MovieEvent("MOVIE_HIDE_INTERFACE"));
   } 
 	
-  oScript.push_back(MovieEvent(MOVIE_SET_LOOP, mLoopFrames));
-  oScript.push_back(MovieEvent(MOVIE_SET_PINGPONG, mPingPong));
-  oScript.push_back(MovieEvent(MOVIE_CUE_PLAY_BACKWARD, mPlayBackward)); 
-  oScript.push_back(MovieEvent(MOVIE_CUE_PLAY_ON_LOAD, mPlayMovie));
+  oScript.push_back(MovieEvent("MOVIE_SET_LOOP", mLoopFrames));
+  oScript.push_back(MovieEvent("MOVIE_SET_PINGPONG", mPingPong));
+  oScript.push_back(MovieEvent("MOVIE_CUE_PLAY_BACKWARD", mPlayBackward)); 
+  oScript.push_back(MovieEvent("MOVIE_CUE_PLAY_ON_LOAD", mPlayMovie));
   /* now store the events that actually make BlockBuster do things */
   if (mLoadMovie && mMovieName != "") {    
-    oScript.push_back(MovieEvent(MOVIE_OPEN_FILE_NOCHANGE, mMovieName, mCurrentFrame));
+    oScript.push_back(MovieEvent("MOVIE_OPEN_FILE_NOCHANGE", mMovieName, mCurrentFrame));
   }  else {
-    oScript.push_back(MovieEvent(MOVIE_GOTO_FRAME,mCurrentFrame-1));
+    oScript.push_back(MovieEvent("MOVIE_GOTO_FRAME",mCurrentFrame-1));
   }
-   oScript.push_back(MovieEvent(MOVIE_START_END_FRAMES, mStartFrame, mEndFrame, 0,0)); 
- if (mFullScreen) {
-    oScript.push_back(MovieEvent(MOVIE_FULLSCREEN)); 
+  oScript.push_back(MovieEvent("MOVIE_START_END_FRAMES", mStartFrame, mEndFrame, 0,0)); 
+  if (mFullScreen) {
+    oScript.push_back(MovieEvent("MOVIE_FULLSCREEN")); 
   } else if (mZoomOne) {
-    oScript.push_back(MovieEvent(MOVIE_ZOOM_ONE)); 
+    oScript.push_back(MovieEvent("MOVIE_ZOOM_ONE")); 
   } else   {
-    oScript.push_back(MovieEvent(MOVIE_MOVE_RESIZE, mWindowWidth, mWindowHeight, mWindowXPos, mWindowYPos)); 
+    oScript.push_back(MovieEvent("MOVIE_MOVE_RESIZE", mWindowWidth, mWindowHeight, mWindowXPos, mWindowYPos)); 
   }
  
   if (!mFullScreen && !mZoomOne) {
-    oScript.push_back(MovieEvent(MOVIE_ZOOM_SET, mZoom)); 
+    oScript.push_back(MovieEvent("MOVIE_ZOOM_SET", mZoom)); 
   }
-  oScript.push_back(MovieEvent(MOVIE_SET_RATE, mFrameRate)); 
-  oScript.push_back(MovieEvent(MOVIE_SET_LOD, mLOD)); 
-  oScript.push_back(MovieEvent(MOVIE_IMAGE_MOVE, 0,0, mImageXPos, mImageYPos));
+  oScript.push_back(MovieEvent("MOVIE_SET_RATE", mFrameRate)); 
+  oScript.push_back(MovieEvent("MOVIE_SET_LOD", mLOD)); 
+  oScript.push_back(MovieEvent("MOVIE_IMAGE_MOVE", 0,0, mImageXPos, mImageYPos));
   if (mPlayMovie) {
     if (mPlayBackward){
-      oScript.push_back(MovieEvent(MOVIE_PLAY_BACKWARD));
+      oScript.push_back(MovieEvent("MOVIE_PLAY_BACKWARD"));
     }
     else{
-      oScript.push_back(MovieEvent(MOVIE_PLAY_FORWARD));
+      oScript.push_back(MovieEvent("MOVIE_PLAY_FORWARD"));
     }
   }
   /* end of record marker */
-  oScript.push_back(MovieEvent(MOVIE_CUE_END)); 
+  oScript.push_back(MovieEvent("MOVIE_CUE_END")); 
   return; 
 }
 
@@ -176,7 +177,7 @@ MovieCueManager::MovieCueManager(QWidget *parent ) :
           this, SLOT(userDoubleClickedItem(QListWidgetItem*))); 
   connect(currentFrameField, SIGNAL(editingFinished()), 
           this, SLOT(Validate())); 
- return; 
+  return; 
 }
 
 
@@ -344,7 +345,7 @@ void MovieCueManager::on_moveToTopButton_clicked(){
 
   if (!row) {
     QMessageBox::warning(this,  "Error",
-			 "Attempted to move the top item up in the list");
+                         "Attempted to move the top item up in the list");
     return; 
   }
 
@@ -360,7 +361,7 @@ void MovieCueManager::on_moveUpButton_clicked(){
   int row = movieCueList->currentRow();
   if (!row) {
     QMessageBox::warning(this,  "Error",
-			 "Attempted to move the top item up in the list");
+                         "Attempted to move the top item up in the list");
     return; 
   }
 
@@ -377,7 +378,7 @@ void MovieCueManager::on_moveDownButton_clicked(){
   int row = movieCueList->currentRow(), numrows = movieCueList->count(); ;
   if (row == numrows-1) {
     QMessageBox::warning(this,  "Error",
-			 "Attempted to move the bottom item down in the list");
+                         "Attempted to move the bottom item down in the list");
     return; 
   }
 
@@ -393,7 +394,7 @@ void MovieCueManager::on_moveToBottomButton_clicked(){
   int row = movieCueList->currentRow(), numrows = movieCueList->count(); ;
   if (row == numrows-1) {
     QMessageBox::warning(this,  "Error",
-			 "Attempted to move the bottom item down in the list");
+                         "Attempted to move the bottom item down in the list");
     return; 
   }
 
@@ -460,7 +461,7 @@ void MovieCueManager::EnableDisableFields(bool enable) {
   windowXPosField->setEnabled(enable && !fullscreen); 
   windowYPosField->setEnabled(enable && !fullscreen); 
 
-  zoomField->setEnabled(enable && !fullscreen); 
+  zoomField->setEnabled(enable); 
   return; 
 }
 
@@ -525,12 +526,12 @@ void MovieCueManager::setCurrentCue(MovieCue *iCue) {
 //======================================================================
 void MovieCueManager::on_movieCueList_itemSelectionChanged() {
   if (cueChanged()) {
-   int discard =  QMessageBox::
+    int discard =  QMessageBox::
       question( this,
-		tr("Current Cue Changed"),
-		tr("You have edited the current movie cue."
-		   "Do you want to continue and lose your changes?"),
-		QMessageBox::No, QMessageBox::Yes);
+                tr("Current Cue Changed"),
+                tr("You have edited the current movie cue."
+                   "Do you want to continue and lose your changes?"),
+                QMessageBox::No, QMessageBox::Yes);
     printf("Dialog returned %d\n", discard); 
     if (discard == QMessageBox::No) {
       movieCueList->blockSignals(true); 
@@ -565,10 +566,10 @@ void MovieCueManager::on_newCueButton_clicked(){
   if (cueChanged()) {
     int discard =  QMessageBox::
       question( this,
-		tr("Current Cue Changed"),
-		tr("You have edited the current movie cue."
-		   "Do you want to continue and lose your changes?"),
-		QMessageBox::No, QMessageBox::Yes);
+                tr("Current Cue Changed"),
+                tr("You have edited the current movie cue."
+                   "Do you want to continue and lose your changes?"),
+                QMessageBox::No, QMessageBox::Yes);
     printf("Dialog returned %d\n", discard); 
     if (discard == QMessageBox::No) {
       return; 
@@ -723,7 +724,7 @@ void MovieCueManager::on_loopCuesButton_clicked() {
       ++i;
     }
   }
- // re-enable whatever buttons are appropriate for the selection:
+  // re-enable whatever buttons are appropriate for the selection:
   setCueRunning(false); 
   mStopLooping = true; 
   //mExecutingCue = NULL; 
@@ -757,8 +758,8 @@ void MovieCueManager::cueActivatedSlot(const QModelIndex & ) {
 void MovieCueManager::on_readCueFileButton_clicked(){
   QString filename = QFileDialog::
     getOpenFileName(this, "Choose a cue file to open",
-		    "",
-		    "Cue Files (*.cus *.cues *.cue)");
+                    "",
+                    "Cue Files (*.cus *.cues *.cue)");
   if (filename != "") {
     ReadCueFile(filename.toStdString()); 
   }
@@ -825,20 +826,20 @@ void MovieCueManager::ReadCueFile(std::string filename) {
   return; 
 }
 
- //======================================================================
+//======================================================================
 void MovieCueManager::SetCurrentCue(MovieSnapshot &snapshot) {
   if (!mCurrentCue) {
     return ;
   }
-  if (snapshot.mSnapshotType == MOVIE_SNAPSHOT_STARTFRAME) {
+  if (snapshot.mSnapshotType == "MOVIE_SNAPSHOT_STARTFRAME") {
     startFrameField->setText(QString("%1").arg(snapshot.mFrameNumber+1)); 
-  } else  if (snapshot.mSnapshotType == MOVIE_SNAPSHOT_ENDFRAME) {
+  } else  if (snapshot.mSnapshotType == "MOVIE_SNAPSHOT_ENDFRAME") {
     endFrameField->setText(QString("%1").arg(snapshot.mFrameNumber+1)); 
-  } else  if (snapshot.mSnapshotType == MOVIE_SNAPSHOT_ALT_ENDFRAME) {
+  } else  if (snapshot.mSnapshotType == "MOVIE_SNAPSHOT_ALT_ENDFRAME") {
     cerr << "setting endframefield to " << snapshot.mNumFrames << endl; 
     endFrameField->setText(QString("%1").arg(snapshot.mNumFrames)); 
   } else {
-    movieNameField->setText(snapshot.mFilename); 
+    movieNameField->setText(snapshot.mFilename.c_str()); 
     frameRateField->setText(QString("%1").arg(snapshot.mFrameRate)); 
     zoomField->setText(QString("%1").arg(snapshot.mZoom)); 
     backwardCheckBox->setChecked(snapshot.mPlayStep < 0); 
@@ -872,7 +873,7 @@ void MovieCueManager::on_saveCuesButton_clicked(){
   QFile theFile(mCueFileName); 
   if (!theFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QMessageBox::warning(this,  "Error",
-			 "The  cue file could not be opened for writing");    
+                         "The  cue file could not be opened for writing");    
     return;
   }
 
@@ -886,9 +887,9 @@ void MovieCueManager::on_saveCuesButton_clicked(){
       try {
         theFile << *theCue; 
       } catch (QString errmsg) {
-	QMessageBox::warning(this,  "Error in on_saveCuesButton_clicked",
-			     errmsg  );    
-	return;     
+        QMessageBox::warning(this,  "Error in on_saveCuesButton_clicked",
+                             errmsg  );    
+        return;     
       }
     }
     ++row; 
@@ -902,8 +903,8 @@ void MovieCueManager::on_saveCuesButton_clicked(){
 void MovieCueManager::on_saveCuesAsButton_clicked(){
   QString filename = QFileDialog::
     getSaveFileName(this, "Choose a cue file name",
-		    "cuefile.cues",
-		    "Cue Files (*.cus *.cues *.cue)");
+                    "cuefile.cues",
+                    "Cue Files (*.cus *.cues *.cue)");
 
   if (filename == "") return; 
   if (!(filename.endsWith(".cues") || filename.endsWith(".cus") || filename.endsWith(".cue"))) {
@@ -982,8 +983,8 @@ void MovieCueManager::on_loadCheckBox_clicked(){
 void MovieCueManager::on_browseButton_clicked(){
   QString filename = QFileDialog::
     getOpenFileName(this, "Choose a movie file",
-		    "",
-		    "Movie Files (*.sm)");
+                    "",
+                    "Movie Files (*.sm)");
   if (filename != "") {
     smBase *sm = smBase::openFile(filename.toStdString().c_str(), O_RDONLY, 1); 
     if (!sm) {
@@ -1140,7 +1141,7 @@ QTcpSocket  &operator >> (QTcpSocket &iSocket,  MovieCue &iCue){
   MovieEvent event; 
   iCue.isValid = false; 
   int eventnum = 0; 
-  while (event.mEventType != MOVIE_CUE_END && !iSocket.atEnd()) {
+  while (event.mEventType != "MOVIE_CUE_END" && !iSocket.atEnd()) {
     try {
       dbprintf(5, "Reading event %d\n", eventnum ); 
       iSocket >> event;   
@@ -1150,13 +1151,13 @@ QTcpSocket  &operator >> (QTcpSocket &iSocket,  MovieCue &iCue){
         iCue.mEOF = true;  // assume that we have hit EOF
         return iSocket; 
       } else {
-        errmsg = QString("Error receiving cue event ")+QString::number(MovieEvent::MovieEventTypeToUint32(event.mEventType))+": "+errmsg;
+        errmsg = QString("Error receiving cue event ")+event.mEventType.c_str()+": "+errmsg;
         throw(errmsg);
       }
     }
     ++eventnum;
   }
-  if (event.mEventType == MOVIE_CUE_END) iCue.isValid = true; 
+  if (event.mEventType == "MOVIE_CUE_END") iCue.isValid = true; 
   iCue.ReadScript(script); 
   return iSocket; 
 }
@@ -1211,7 +1212,7 @@ QFile  &operator >> (QFile &iFile,  MovieCue &iCue){
     line.chop(1); 
     // dbprintf(5, "Chopped to \"%s\"\n", line.toStdString().c_str()); 
   }
-  tokens = line.split(" ");              
+  tokens = line.split(QRegExp("\\s+"), QString::SkipEmptyParts);              
   pos = tokens.begin(); 
   // dbprintf(5, "first token \"%s\"\n", pos->toStdString().c_str()); 
   if (*pos != "BEGINCUE") {
@@ -1282,7 +1283,7 @@ QFile  &operator >> (QFile &iFile,  MovieCue &iCue){
         */ 
         if (nameend != -1) {
           line = line.mid(nameend+1, -1); 
-          tokens = line.split(" "); 
+          tokens = line.split(QRegExp("\\s+"), QString::SkipEmptyParts); 
           pos = tokens.begin();          
         } else {
           pos = tokens.end();
@@ -1345,7 +1346,7 @@ QFile  &operator >> (QFile &iFile,  MovieCue &iCue){
       line.chop(1); 
       // dbprintf(5, "Chopped to \"%s\"\n", line.toStdString().c_str()); 
     }
-    tokens = line.split(" ");                       
+    tokens = line.split(QRegExp("\\s+"), QString::SkipEmptyParts);                       
     pos = tokens.begin(); 
     
   } /* looping over lines */ 

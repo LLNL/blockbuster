@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include "boost/shared_ptr.hpp"
+#include "boost/format.hpp"
 
 //#include "blockbuster_qt.h"
 class BlockbusterInterface; 
@@ -81,8 +82,11 @@ struct Rectangle {
   Rectangle():x(0),y(0),width(0), height(0){}
   Rectangle(qint32 ix, qint32 iy, qint32 w, qint32 h):
     x(ix),y(iy),width(w),height(h) {}
-  QString toString(void) const {
-    return QString("Rectangle {%1, %2, %3, %4}").arg(x).arg(y).arg(width).arg(height); 
+  operator QString() const {
+    return QString(std::string(*this).c_str()); 
+  }
+  operator std::string() const {
+    return str(boost::format("Rectangle {%1%, %2%, %3%, %4%}") % (x) % (y) % (width) % (height)); 
   } 
   qint32 x, y;
   qint32 width, height;

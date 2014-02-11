@@ -259,7 +259,7 @@ ImagePtr FrameInfo::LoadAndConvertImage(ImageFormat *canvasFormat,
                                         const Rectangle *region, 
                                         int levelOfDetail)
 {
-  DEBUGMSG(QString("LoadAndConvertImage frame %1, region %2, frameInfo %3").arg( mFrameNumber).arg(region->toString()).arg((uint64_t)this)); 
+  DEBUGMSG(QString("LoadAndConvertImage frame %1, region %2, frameInfo %3").arg( mFrameNumber).arg(string(*region).c_str()).arg((uint64_t)this)); 
 
   int rv;
   static int conversionCount = 0;

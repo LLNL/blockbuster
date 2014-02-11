@@ -389,7 +389,7 @@ void dmxRenderer::SwapBuffers(void){
     if (usecs > 10*1000*1000) {
       cerr << "Something is wrong. Slave has not swapped buffers after 10 seconds." << endl;
       if (gSidecarServer) {
-        MovieEvent event(MOVIE_STOP_ERROR, "Something is wrong. Slave has not swapped buffers after 10 seconds.");
+        MovieEvent event("MOVIE_STOP_ERROR", "Something is wrong. Slave has not swapped buffers after 10 seconds.");
         gSidecarServer->AddEvent(event);
       }
       return; 
@@ -595,7 +595,7 @@ void dmxRenderer::SlaveError(DMXSlave *, QString host,
                              QString msg, bool abort) {
   ERROR(QString("Host %1: %2\n").arg(host).arg(msg)); 
   if (gSidecarServer->connected()) {   
-    gSidecarServer->SendEvent(MovieEvent(MOVIE_STOP_ERROR, QString("Slave on %1: %2").arg(host).arg(msg)));
+    gSidecarServer->SendEvent(MovieEvent("MOVIE_STOP_ERROR", QString("Slave on %1: %2").arg(host).arg(msg)));
   }
   if (abort) {
     ShutDownSlaves(); 
@@ -978,7 +978,7 @@ void DMXSlave::SlaveSocketDisconnected(){
 
 //=========================================================================
 void DMXSlave::SlaveSocketError(QAbstractSocket::SocketError ){
-  //  AddMessageToMovieQueue(MovieEvent(MOVIE_SLAVE_ERROR, mSlaveSocket->errorString())); 
+  //  AddMessageToMovieQueue(MovieEvent("MOVIE_SLAVE_ERROR", mSlaveSocket->errorString())); 
   DEBUGMSG("SlaveSocketError: host %s got error: \"%s\",state: %d", 
            mRemoteHostname.c_str(), 
            (const char *)mSlaveSocket->errorString().toAscii(), 
@@ -1020,7 +1020,7 @@ int DMXSlave::QueueNetworkEvents(void) {
     if (msg.startsWith("Slave awake")) {
       mSlaveAwake = true; 
     } else if (msg.startsWith("SwapBuffers complete")) {
-      QStringList tokens=msg.split(" "); 
+      QStringList tokens=msg.split(QRegExp("\\s+"), QString::SkipEmptyParts); 
       if (tokens.size() != 4) {
         ERROR("Bad SwapBuffers complete message"); 
         continue;

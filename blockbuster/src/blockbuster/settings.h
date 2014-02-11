@@ -4,7 +4,7 @@
 #include "common.h"
 #include <string>
 #include <vector>
-
+#include <fstream>
 class Renderer; 
 struct RendererSpecificGlue; 
 
@@ -44,14 +44,17 @@ struct ProgramOptions {
 #else
     messageLevelName("error"), 
 #endif
-    messageLevel(NULL),  mCacheDebug(false), mRenderer(NULL),
+    messageLevel(NULL),  mCacheDebug(false), 
+    mTraceEvents(false), mTraceEventsFilename("events.log"),
+    mRenderer(NULL),
     readerThreads(-1), loopCountName("1"),
     startFrame(0), currentFrame(0), endFrame(-1), loopCount(1), LOD(0),
     slaveLaunchMethod("rsh"), useMPI(0), 
-    play(0), playExit(0),  speedTest(0), frameRate(0.0), fpsSampleFrequency(2.0), 
+    play(0), playExit(0),  speedTest(0), frameRate(0.0), 
+    fpsSampleFrequency(2.0), 
     zoom(1.0), zoomFit(1), fullScreen(0), noSmallWindows(0), 
     slaveMode(0), masterPort(0), 
-    preloadFrames(40), mMaxCachedImages(100), noAutoRes(0), 
+    preloadFrames(40), mMaxCachedImages(100), mDMXStereo(0), noAutoRes(0), 
     drawInterface(1), splashScreen(0), noscreensaver(0), 
     gui(1), decorations(1), 
     suggestedTitle("blockbuster"), fontName(DEFAULT_X_FONT), 
@@ -67,6 +70,9 @@ struct ProgramOptions {
   QString messageLevelName;
   struct MessageLevel *messageLevel;
   int mCacheDebug; 
+  int mTraceEvents; 
+  QString mTraceEventsFilename; 
+  std::ofstream mTraceEventsFile;
   QString logFile;  
   QString mScript; 
   int rendererIndex;
@@ -98,6 +104,7 @@ struct ProgramOptions {
   int masterPort;
   int preloadFrames;
   int mMaxCachedImages;
+  int mDMXStereo; 
   int noAutoRes; 
   int drawInterface;
   int splashScreen;
