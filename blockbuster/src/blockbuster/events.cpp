@@ -8,12 +8,9 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/lexical_cast.hpp>
 using namespace std; 
-//==========================================================================
-
-
-
 
 //==========================================================================
+// This will parse either an Event file or a script.  
 vector<MovieEvent> MovieEvent::ParseScript(string filename) {
   vector<MovieEvent> script; 
   if (filename[0] != '/') {
@@ -49,10 +46,17 @@ vector<MovieEvent> MovieEvent::ParseScript(string filename) {
 //==========================================================================
 // Scripts are simple:  
 // EVENT CODE ( :  OPTIONAL VALUE )
+// or for event files, the output of string(event)
 bool MovieEvent::ParseScriptLine(string line) {
 
   init("MOVIE_NONE"); 
-
+  try {
+    (*this) << line; 
+    return true; 
+  } 
+  catch (...) {
+    0; 
+  }
   vector<string>tokens; 
   boost::split(tokens, line, boost::is_any_of(":"), boost::token_compress_on);
 

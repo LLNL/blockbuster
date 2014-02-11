@@ -127,6 +127,7 @@ void usage(void) {
   printf("\tdmx: Render on back-end using DMX: Use -R to specify  backend renderer\n");
   printf("\t    (supported in 'gtk', 'x11' user interfaces)\n");
   
+  printf("-replayEvents filename: replay all events from the given event log.\n"); 
   printf("-stereo: short for -r gl_stereo, unless -dmx is given, in which case it is short for -R gl_stereo.\n");
   printf("-script filename: run the given blockbuster script\n"); 
   printf("-threads <num> specifies how many threads to use for reading from disk.\n");
@@ -172,6 +173,7 @@ void checkarg(int argc, const char *argname) {
   }
   return;
 }
+
 
 // =====================================================================
 bool  CHECK_STRING_ARG(const char *flag, int &argc, char *argv[], QString &str)	{
@@ -382,6 +384,9 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
        }
     */ 
 	else if (CHECK_STRING_ARG("-renderer", argc, argv, opt->rendererName)) continue;
+	else if (CHECK_STRING_ARG("-replayEvents", argc, argv, opt->mReplayEventsFilename))  {
+      continue;
+    }
 	else if (CHECK_STRING_ARG("-sidecar", argc, argv, opt->sidecarHostPort)) {
       gSidecarServer->PromptForConnections(false); 
       continue;
@@ -682,6 +687,15 @@ int main(int argc, char *argv[])
     if (!script.size()) {
       dbprintf(0, "Script %s was invalid\n", opt->mScript.toStdString().c_str()); 
       return 1;
+    }
+  }
+  if (opt->mReplayEventsFilename != "") {
+    if (script.size()) {
+      dbprintf(0, "Warning:  overriding previously parsed script file because event file is given.\n"); 
+    }
+    script = MovieEvent::ParseScript(opt->mReplayEventsFilename.toStdString());
+    if (!script.size()) {
+      dbprintf(0, "Event file %s was invalid\n", opt->mScript.toStdString().c_str()); 
     }
   }
   // Movie arguments are now placed at the head of any scripting commands. 

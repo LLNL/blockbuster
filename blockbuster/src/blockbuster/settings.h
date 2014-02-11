@@ -44,7 +44,7 @@ struct ProgramOptions {
 #else
     messageLevelName("error"), 
 #endif
-    messageLevel(NULL),  mCacheDebug(false), 
+    messageLevel(NULL),  mCacheDebug(false),     
     mTraceEvents(false), mTraceEventsFilename("events.log"),
     mRenderer(NULL),
     readerThreads(-1), loopCountName("1"),
@@ -70,6 +70,7 @@ struct ProgramOptions {
   QString messageLevelName;
   struct MessageLevel *messageLevel;
   int mCacheDebug; 
+  QString mReplayEventsFilename;
   int mTraceEvents; 
   QString mTraceEventsFilename; 
   std::ofstream mTraceEventsFile;

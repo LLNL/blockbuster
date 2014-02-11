@@ -170,6 +170,7 @@ struct MovieEvent {
     //InitEventNames(); 
   }
     
+  static vector<MovieEvent> ParseEventFile(string filename); 
   static vector<MovieEvent> ParseScript(string filename); 
   bool  ParseScriptLine(string line); 
 
