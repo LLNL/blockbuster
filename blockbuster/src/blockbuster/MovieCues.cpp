@@ -147,7 +147,7 @@ void MovieCue::GenerateScript(MovieScript &oScript) const{
     oScript.push_back(MovieEvent("MOVIE_MOVE_RESIZE", mWindowWidth, mWindowHeight, mWindowXPos, mWindowYPos)); 
   }
  
-  if (!mFullScreen && !mZoomOne) {
+  if (!mZoomOne) {
     oScript.push_back(MovieEvent("MOVIE_ZOOM_SET", mZoom)); 
   }
   oScript.push_back(MovieEvent("MOVIE_SET_RATE", mFrameRate)); 
