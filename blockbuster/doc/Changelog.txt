@@ -2,7 +2,7 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.0p (git tag blockbuster-v2.8.0p) Mon Feb 10 17:36:24 PST 2014
+VERSION 2.8.0p (git tag blockbuster-v2.8.0p) Wed Feb 12 16:41:24 PST 2014
 -- Starting without a movie is no longer a blockbuster emergency.  No window opens in this case.  
 -- Fixed crashing bug where thread IDs were exceeding cache slots.  
 -- Refactored code to improve file loading procedure.  (Internal change)
@@ -12,6 +12,9 @@ VERSION 2.8.0p (git tag blockbuster-v2.8.0p) Mon Feb 10 17:36:24 PST 2014
 -- Added "-no-small-windows" option to blockbuster and "No small windows" checkbox in sidecar launch dialog to workaround window manager resizing bug on powerwall when launching with movies bigger than one monitor can hold.  
 -- Added "automatic" checkbox to blockbuster command to generate full path to blockbuster as default remote command.  This should make -dev sidecar run -dev blockbuster on our clusters when checked.  
 -- Added tracefile output to blockbuster to allow precise forensics and event replays.  Also using event names instead of numbers for the same reason. 
+-- Fixed bug causing zooms to be ignored if full screen was used and zoom was set to exactly 1.
+-- Attempt to be more graceful when launching the first full-screen movie from a sidecar cuefile.  
+  
 
 ===============================================================================
 VERSION 2.8.0o (git tag blockbuster-v2.8.0o) Thu Jan 23 18:43:09 PST 2014
