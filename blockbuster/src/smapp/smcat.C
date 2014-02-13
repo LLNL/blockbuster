@@ -443,7 +443,7 @@ int main(int argc,char **argv)
     sm = new smRLE(outputMovie.c_str(),iSize[0],iSize[1],count, tsizep,nRes, nThreads);
   } else if (compression.getValue() == "lzo" || compression.getValue() == "LZO") {
     sm = new smLZO(outputMovie.c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
-  } else if (compression.getValue() == "jpg" || compression.getValue() == "JPG") {
+  } else if (compression.getValue() == "jpeg" || compression.getValue() == "jpg" || compression.getValue() == "JPEG" || compression.getValue() == "JPG") {
     sm = new smJPG(outputMovie.c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
     ((smJPG *)sm)->setQuality(jqual.getValue());
   } else if (compression.getValue() == "lzma" || compression.getValue() == "LZMA") {

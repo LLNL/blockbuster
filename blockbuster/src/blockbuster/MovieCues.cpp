@@ -132,24 +132,24 @@ void MovieCue::GenerateScript(MovieScript &oScript) const{
   oScript.push_back(MovieEvent("MOVIE_SET_PINGPONG", mPingPong));
   oScript.push_back(MovieEvent("MOVIE_CUE_PLAY_BACKWARD", mPlayBackward)); 
   oScript.push_back(MovieEvent("MOVIE_CUE_PLAY_ON_LOAD", mPlayMovie));
-  /* now store the events that actually make BlockBuster do things */
-  if (mLoadMovie && mMovieName != "") {    
-    oScript.push_back(MovieEvent("MOVIE_OPEN_FILE_NOCHANGE", mMovieName, mCurrentFrame));
-  }  else {
-    oScript.push_back(MovieEvent("MOVIE_GOTO_FRAME",mCurrentFrame-1));
-  }
-  oScript.push_back(MovieEvent("MOVIE_START_END_FRAMES", mStartFrame, mEndFrame, 0,0)); 
   if (mFullScreen) {
     oScript.push_back(MovieEvent("MOVIE_FULLSCREEN")); 
-  } else if (mZoomOne) {
+  }  
+
+  if (mLoadMovie && mMovieName != "") {    
+    oScript.push_back(MovieEvent("MOVIE_OPEN_FILE_NOCHANGE", mMovieName, mCurrentFrame));
+  }  
+  oScript.push_back(MovieEvent("MOVIE_GOTO_FRAME",mCurrentFrame-1));  
+
+  oScript.push_back(MovieEvent("MOVIE_START_END_FRAMES", mStartFrame, mEndFrame, 0,0)); 
+
+  if (mZoomOne) {
     oScript.push_back(MovieEvent("MOVIE_ZOOM_ONE")); 
-  } else   {
+  } else  {
     oScript.push_back(MovieEvent("MOVIE_MOVE_RESIZE", mWindowWidth, mWindowHeight, mWindowXPos, mWindowYPos)); 
   }
+  oScript.push_back(MovieEvent("MOVIE_ZOOM_SET", mZoom)); 
  
-  if (!mZoomOne) {
-    oScript.push_back(MovieEvent("MOVIE_ZOOM_SET", mZoom)); 
-  }
   oScript.push_back(MovieEvent("MOVIE_SET_RATE", mFrameRate)); 
   oScript.push_back(MovieEvent("MOVIE_SET_LOD", mLOD)); 
   oScript.push_back(MovieEvent("MOVIE_IMAGE_MOVE", 0,0, mImageXPos, mImageYPos));

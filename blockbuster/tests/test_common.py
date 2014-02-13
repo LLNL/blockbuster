@@ -229,6 +229,8 @@ def MakeCompiledList(thing):
 # ================================================================
 def RunTestCommand(fullcmd, test, outfile):
     timeout = 15
+    if "timeout"  in test.keys(): 
+        timeout = int(test['timeout'])
     name = test['name']
     outfile.flush()
     

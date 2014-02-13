@@ -293,6 +293,56 @@ tests = [
      "failure_pattern": SMCAT_FAILURE,
      "success_pattern": SMCAT_SUCCESS
       },
+    # gz|GZ|jpeg|JPEG|jpg|JPG|lzma|LZMA|lzo|LZO|raw|RAW|rle|RLE
+    # ===============================================
+     {"name": "smcat-quicksand-jpeg",
+     "need_data": ["quicksand-11frames-gz.sm"], 
+     'cmd': "smcat",
+     "args": "-c jpeg quicksand-11frames-gz.sm quicksand-11frames-jpeg.sm", 
+     "output": "quicksand-11frames-jpeg.sm",
+     "failure_pattern": SMCAT_FAILURE,
+     "success_pattern": SMCAT_SUCCESS
+      },
+    
+    # ===============================================
+     {"name": "smcat-quicksand-lzma",
+     "need_data": ["quicksand-11frames-gz.sm"], 
+     'cmd': "smcat",
+     "args": "-c lzma quicksand-11frames-gz.sm quicksand-11frames-lzma.sm", 
+     "output": "quicksand-11frames-lzma.sm",
+     "failure_pattern": SMCAT_FAILURE,
+     "success_pattern": SMCAT_SUCCESS
+      },
+    
+    # ===============================================
+     {"name": "smcat-quicksand-lzo",
+     "need_data": ["quicksand-11frames-gz.sm"], 
+     'cmd': "smcat",
+     "args": "-c lzo quicksand-11frames-gz.sm quicksand-11frames-lzo.sm", 
+     "output": "quicksand-11frames-lzo.sm",
+     "failure_pattern": SMCAT_FAILURE,
+     "success_pattern": SMCAT_SUCCESS
+      },
+    
+    # ===============================================
+     {"name": "smcat-quicksand-raw",
+     "need_data": ["quicksand-11frames-gz.sm"], 
+     'cmd': "smcat",
+     "args": "-c RAW quicksand-11frames-gz.sm quicksand-11frames-raw.sm", 
+     "output": "quicksand-11frames-raw.sm",
+     "failure_pattern": SMCAT_FAILURE,
+     "success_pattern": SMCAT_SUCCESS
+      },
+    
+    # ===============================================
+     {"name": "smcat-quicksand-rle",
+     "need_data": ["quicksand-11frames-gz.sm"], 
+     'cmd': "smcat",
+     "args": "-c rle quicksand-11frames-gz.sm quicksand-11frames-rle.sm", 
+     "output": "quicksand-11frames-rle.sm",
+     "failure_pattern": SMCAT_FAILURE,
+     "success_pattern": SMCAT_SUCCESS
+      },
     
     # ===============================================       
      {"name": "smquery-multiple-files",
@@ -334,6 +384,16 @@ tests = [
      "failure_pattern": SMQUERY_FAILURE,
      "success_pattern": "\( *ASCII\) UCRL *: value = "
       },
+    # ===============================================
+    {"name":  "smtest-integrity-test",
+     "need_data":  None,
+     "cmd": "smtest",
+     "args":  "*.sm",
+     "timeout": 30, 
+     "output": None,
+     "failure_pattern": SMQUERY_FAILURE,
+     "success_pattern": None
+     }, 
     # ===============================================       
     {"name": "lorenz-tagfile",
      "need_data": ["lorenz.json.goldstandard"], 

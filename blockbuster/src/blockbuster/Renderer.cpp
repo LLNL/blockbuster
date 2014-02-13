@@ -486,9 +486,6 @@ void Renderer::reportMovieCueComplete(void){
 // ==============================================================
 void Renderer::FinishXWindowInit(void) {
   ECHO_FUNCTION(5); 
-  const Rectangle *geometry = &mOptions->geometry;
-  int decorations = mOptions->decorations;
-  QString suggestedName = mOptions->suggestedTitle;
   Screen *screen;
   int x, y, width, height;
   int required_x_margin, required_y_margin;
@@ -499,20 +496,20 @@ void Renderer::FinishXWindowInit(void) {
   
   /* if geometry is don't care and decorations flag is off -- then set window to max screen extents */
   mScreenWidth = WidthOfScreen(screen);
-  if (geometry->width != DONT_CARE) 
-    width = geometry->width;
+  if (mOptions->geometry.width != DONT_CARE) 
+    width = mOptions->geometry.width;
   else {
-    if(decorations) 
+    if(mOptions->decorations) 
       width = DEFAULT_WIDTH;
     else 
       width =  mScreenWidth;
   }
   
   mScreenHeight = HeightOfScreen(screen);
-  if (geometry->height != DONT_CARE) 
-    height = geometry->height;
+  if (mOptions->geometry.height != DONT_CARE) 
+    height = mOptions->geometry.height;
   else {
-    if(decorations)
+    if(mOptions->decorations)
       height = DEFAULT_HEIGHT;
     else
       height =  mScreenHeight; 
@@ -521,7 +518,7 @@ void Renderer::FinishXWindowInit(void) {
   
   /* if we've turned off the window border (decoration) with the -D flag then set rquired margins to zero
      otherwise set them to the constants defined in movie.h (SCREEN_X_MARGIN ... ) */
-  if (decorations) {
+  if (mOptions->decorations) {
     required_x_margin = SCREEN_X_MARGIN;
     required_y_margin = SCREEN_Y_MARGIN;
   }
@@ -530,34 +527,39 @@ void Renderer::FinishXWindowInit(void) {
     required_y_margin = 0;
   }
   
-  
-  if (width > WidthOfScreen(screen) - required_x_margin) {
-#if 0
-    WARNING("requested window width %d greater than screen width %d",
-            width, WidthOfScreen(screen));
-#endif
+  if (mOptions->fullScreen) {
     width = WidthOfScreen(screen) - required_x_margin;
-  }
-  if (height > HeightOfScreen(screen) - required_y_margin) {
-#if 0
-    WARNING("requested window height %d greater than screen height %d",
-            height, HeightOfScreen(screen));
-#endif
     height = HeightOfScreen(screen) - required_y_margin;
   }
+  else {
+    if (width > WidthOfScreen(screen) - required_x_margin) {
+#if 0
+      WARNING("requested window width %d greater than screen width %d",
+              width, WidthOfScreen(screen));
+#endif
+      width = WidthOfScreen(screen) - required_x_margin;
+    }
+    if (height > HeightOfScreen(screen) - required_y_margin) {
+#if 0
+      WARNING("requested window height %d greater than screen height %d",
+              height, HeightOfScreen(screen));
+#endif
+      height = HeightOfScreen(screen) - required_y_margin;
+    }
+  }
   
   
-  if (geometry->x == CENTER)
+  if (mOptions->geometry.x == CENTER)
     x = (WidthOfScreen(screen) - width) / 2;
-  else if (geometry->x != DONT_CARE)
-    x = geometry->x;
+  else if (mOptions->geometry.x != DONT_CARE)
+    x = mOptions->geometry.x;
   else
     x = 0;
   
-  if (geometry->y == CENTER)
+  if (mOptions->geometry.y == CENTER)
     y = (HeightOfScreen(screen) - height) / 2;
-  else if (geometry->y != DONT_CARE)
-    y = geometry->y;
+  else if (mOptions->geometry.y != DONT_CARE)
+    y = mOptions->geometry.y;
   else
     y = 0;
  
@@ -607,29 +609,30 @@ void Renderer::FinishXWindowInit(void) {
     sizeHints.min_height = height;
   }
 
-  if (geometry->x != DONT_CARE && geometry->y != DONT_CARE) {
-    sizeHints.x = geometry->x;
-    sizeHints.y = geometry->y;
+  if (mOptions->geometry.x != DONT_CARE && mOptions->geometry.y != DONT_CARE) {
+    sizeHints.x = mOptions->geometry.x;
+    sizeHints.y = mOptions->geometry.y;
     sizeHints.flags |= USPosition;
   }
   
   
-  SetTitle(suggestedName); 
+  SetTitle(mOptions->suggestedTitle); 
   XSetStandardProperties(mDisplay, mWindow, 
-                         suggestedName.toAscii(), suggestedName.toAscii(), 
+                         mOptions->suggestedTitle.toAscii(), mOptions->suggestedTitle.toAscii(), 
                          None, (char **)NULL, 0, &sizeHints);
   
   
-  set_mwm_border(decorations);
+  set_mwm_border(mOptions->decorations);
   
-  /* Bring it up; then wait for it to actually get here. */
-  XMapWindow(mDisplay, mWindow);
 
   // If we are doing fullscreen, we have to dance with the window manager.
   if (height == mScreenHeight && width == mScreenWidth ) { //  && ! mOptions->decorations) {
     SetFullScreen(true); 
   }
-  XSync(mDisplay, 0);
+  //  XSync(mDisplay, 0);
+  /* Bring it up; then wait for it to actually get here. */
+  XMapWindow(mDisplay, mWindow);
+
 /*
     XIfEvent(mDisplay, &event, WaitForWindowOpen, (XPointer) sWindowInfo);
   */
@@ -658,17 +661,10 @@ void Renderer::FinishXWindowInit(void) {
 
 
   XWindowAttributes win_attributes; 
-  XGetWindowAttributes(mDisplay, mWindow, &win_attributes); 
-  /*  XTranslateCoordinates (mDisplay, mWindow, win_attributes.root, 
-      -win_attributes.border_width,
-      -win_attributes.border_width,
-      &x, &y, &junkwin); */
-
-  
-  
+  XGetWindowAttributes(mDisplay, mWindow, &win_attributes);   
   printf("New X,Y, border width is %d, %d, %d\n", x,y, win_attributes.border_width); 
-  XGetWindowAttributes(mDisplay, mParentWindow, &win_attributes); 
 
+  XGetWindowAttributes(mDisplay, mParentWindow, &win_attributes); 
   printf("ParentWindow: X,Y =  %d, %d\n", win_attributes.x, win_attributes.y);
   //SetCanvasAttributes(mWindow); 
   mWidth = width;
