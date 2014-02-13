@@ -2,7 +2,7 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.0p (git tag blockbuster-v2.8.0p) Wed Feb 12 16:41:24 PST 2014
+VERSION 2.8.0p (git tag blockbuster-v2.8.0p) Wed Feb 12 17:05:25 PST 2014
 -- Starting without a movie is no longer a blockbuster emergency.  No window opens in this case.  
 -- Fixed crashing bug where thread IDs were exceeding cache slots.  
 -- Refactored code to improve file loading procedure.  (Internal change)
@@ -14,6 +14,7 @@ VERSION 2.8.0p (git tag blockbuster-v2.8.0p) Wed Feb 12 16:41:24 PST 2014
 -- Added tracefile output to blockbuster to allow precise forensics and event replays.  Also using event names instead of numbers for the same reason. 
 -- Fixed bug causing zooms to be ignored if full screen was used and zoom was set to exactly 1.
 -- Attempt to be more graceful when launching the first full-screen movie from a sidecar cuefile.  
+-- Fix bug in RLE reader causing huge slowdown due to debug statements. 
   
 
 ===============================================================================
