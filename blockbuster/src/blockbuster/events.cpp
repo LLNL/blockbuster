@@ -48,18 +48,19 @@ vector<MovieEvent> MovieEvent::ParseScript(string filename) {
 // EVENT CODE ( :  OPTIONAL VALUE )
 // or for event files, the output of string(event)
 bool MovieEvent::ParseScriptLine(string line) {
-
+  bool dummy = 0; 
   init("MOVIE_NONE"); 
   try {
     (*this) << line; 
     return true; 
   } 
   catch (...) {
-    0; 
+    dummy = 1; 
   }
+    
   vector<string>tokens; 
   boost::split(tokens, line, boost::is_any_of(":"), boost::token_compress_on);
-
+    
   for (vector<string>::iterator pos = tokens.begin(); pos != tokens.end(); pos++) {
     if (pos->size() != 0 && (*pos)[0] == '#') {
       tokens.erase(pos, tokens.end()); 
@@ -261,7 +262,7 @@ bool MovieSnapshot::operator == (const MovieSnapshot &other) const{
 */ 
 //==========================================================================
 MovieSnapshot::operator string() const {
-  string retval = str(boost::format("mSnapshotType=%1% mFilename=%2% mFrameRate=%3% mTargetFPS=%4% mZoom=%5% mLOD=%6% mPlayStep=%7% mStartFrame=%8% mEndFrame=%9% mNumFrames=%10% mFrameNumber=%11% mLoop=%12% mPingPong=%13% mFullScreen=%14% mZoomOne=%15% mNoScreensaver=%16% mScreenHeight=%17% mScreenWidth=%18% mScreenXpos=%19% mScreenYpos=%20% mImageHeight=%21% mImageWidth=%22% mImageXpos=%23% mImageYpos=%24%")
+  string retval = str(boost::format("mSnapshotType=%1% mFilename=%2% mFrameRate=%3% mTargetFPS=%4% mZoom=%5% mLOD=%6% mPlayStep=%7% mStartFrame=%8% mEndFrame=%9% mNumFrames=%10% mFrameNumber=%11% mLoop=%12% mPingPong=%13% mFullScreen=%14% mZoomToFill=%15% mNoScreensaver=%16% mScreenHeight=%17% mScreenWidth=%18% mScreenXpos=%19% mScreenYpos=%20% mImageHeight=%21% mImageWidth=%22% mImageXpos=%23% mImageYpos=%24%")
                       %(mSnapshotType)
                       %(mFilename)
                       %(mFrameRate)
@@ -276,7 +277,7 @@ MovieSnapshot::operator string() const {
                       %(mLoop)
                       %(mPingPong)
                       %(mFullScreen)
-                      %(mZoomOne)
+                      %(mZoomToFill)
                       %(mNoScreensaver)
                       %(mScreenHeight)
                       %(mScreenWidth)
@@ -316,7 +317,7 @@ MovieSnapshot &MovieSnapshot::operator <<(string s) {
       else if (key == "mLoop") mLoop = value.toInt(); 
       else if (key == "mPingPong") mPingPong = value.toInt(); 
       else if (key == "mFullScreen") mFullScreen = value.toInt();
-      else if (key == "mZoomOne") mZoomOne = value.toInt();
+      else if (key == "mZoomToFill") mZoomToFill = value.toInt();
       else if (key == "mNoScreensaver") mNoScreensaver = value.toInt();
       else if (key == "mScreenHeight") mScreenHeight = value.toInt();
       else if (key == "mScreenWidth") mScreenWidth = value.toInt();

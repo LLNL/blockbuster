@@ -205,6 +205,7 @@ class Renderer {
   long mOldWidth, mOldHeight, mOldX, mOldY; 
   bool mXSync; 
 
+  bool mFullScreen; 
   // ==============================================================
   // END  stuff from XWindow 
   // ==============================================================

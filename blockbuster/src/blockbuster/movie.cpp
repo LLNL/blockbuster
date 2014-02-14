@@ -184,9 +184,13 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
   
 
   deque<MovieEvent>  events; 
+
+  if (options->fullScreen) {
+    DEBUGMSG("fullScreen from options\n"); 
+    events.push_back(MovieEvent("MOVIE_FULLSCREEN")); 
+  }
 					
   time_t lastheartbeat = time(NULL); 
-  bool zoomOne = false; 
   MovieSnapshot oldSnapshot; 
 
   while(! done) {
@@ -233,16 +237,23 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           event = script[0]; 
           script.erase(script.begin()); 
         }
-        if (options->fullScreen) {
-          DEBUGMSG("fullScreen from options\n"); 
-          events.push_back(MovieEvent("MOVIE_FULLSCREEN")); 
-          options->fullScreen=false; 
-        }
       }
       if (event.mEventType != "MOVIE_NONE") {        
         DEBUGMSG("GOT EVENT ------- %s\n", string(event).c_str()); 
         if (options->mTraceEvents) {
-          options->mTraceEventsFile << string(event) << endl; 
+          if (!options->mTraceEventsFile.is_open() ) {
+            if (options->mTraceEventsFilename == "") {
+              options->mTraceEventsFilename = "events.log"; 
+            }
+            options->mTraceEventsFile.open(options->mTraceEventsFilename.toStdString().c_str()); 
+          }
+          if (!options->mTraceEventsFile.is_open() ) {
+            dbprintf(0, "WARNMNG: Could not open tracefule %s for writing.\n", options->mTraceEventsFilename.toStdString().c_str());
+            options->mTraceEvents = false; 
+          } else {
+            options->mTraceEventsFile << string(event) << endl; 
+            options->mTraceEventsFile.flush(); 
+          }        
         }
         if (event.mEventType == "MOVIE_TRACE_EVENTS") {
           if (options->mTraceEventsFile.is_open() ) {
@@ -299,7 +310,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           endFrame = allFrames->numStereoFrames()-1; 
           frameNumber = event.mNumber;  
           options->currentFrame = frameNumber;         
-           
+          
           /* Reset our various parameters regarding positions */
           xOffset = yOffset = 0; 
           panStartX = panStartY = 0; 
@@ -307,21 +318,17 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           zoomStartY = 0; zoomDelta = 0;
           playDirection = 0;
           panning = 0; 
-          zoomOne = false; 
           
-          if (options->fullScreen) {
-            options->geometry.width = options->geometry.height = 0;
-          }
-          else if (renderer && event.mEventType == "MOVIE_OPEN_FILE_NOCHANGE"){
-            options->geometry.x = renderer->mXPos; 
-            options->geometry.y = renderer->mYPos; 
-            options->geometry.width = renderer->mWidth; 
-            options->geometry.height = renderer->mHeight; 
-          } else {
-            options->geometry.width = width; 
-            options->geometry.height = height; 
-          }
+          options->geometry.width = width; 
+          options->geometry.height = height; 
 
+          if (options->decorations) {
+            options->decorations = !options->fullScreen; 
+          }
+          if (renderer && options->fullScreen != renderer->mFullScreen) {
+            delete renderer; 
+            renderer = NULL; 
+          }
           if (!renderer) {
             renderer = Renderer::CreateRenderer(options, 0, gMainWindow);
             if (!renderer) {
@@ -330,12 +337,14 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             }
             gSidecarServer->SetRenderer(renderer); 
           } 
-          if (event.mEventType != "MOVIE_OPEN_FILE_NOCHANGE") {
+          if (options->zoomToFill || event.mEventType != "MOVIE_OPEN_FILE_NOCHANGE") {
             /* Compute a Shrink to Fit zoom */
             newZoom = ComputeZoomToFit(renderer, width, height);
             if (newZoom > 1.0) {
               newZoom = 1.0; /* don't need expanding initially */
             }
+          }
+          if (event.mEventType != "MOVIE_OPEN_FILE_NOCHANGE") {
             if (options->LOD) {
               lodBias = options->LOD;
             } else {
@@ -393,10 +402,10 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           continue;
         }
         else if (event.mEventType == "MOVIE_SIDECAR_STATUS" ||
-            event.mEventType == "MOVIE_SNAPSHOT" ||   
-            event.mEventType == "MOVIE_SNAPSHOT_STARTFRAME" ||   
-            event.mEventType == "MOVIE_SNAPSHOT_ENDFRAME" ||   
-            event.mEventType == "MOVIE_SNAPSHOT_ALT_ENDFRAME") {   
+                 event.mEventType == "MOVIE_SNAPSHOT" ||   
+                 event.mEventType == "MOVIE_SNAPSHOT_STARTFRAME" ||   
+                 event.mEventType == "MOVIE_SNAPSHOT_ENDFRAME" ||   
+                 event.mEventType == "MOVIE_SNAPSHOT_ALT_ENDFRAME") {   
           sendSnapshot = true; 
         }
         else if (event.mEventType == "MOVIE_SIDECAR_BACKCHANNEL") {       
@@ -428,10 +437,10 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           options->startFrame = event.mWidth;
           options->endFrame = event.mHeight; 
           // apply the start and end frames to the current movie
+          // clamp frame values, generate a warning if they are funky
+          ClampStartEndFrames(allFrames, options->startFrame, options->endFrame, frameNumber, true); 
           startFrame = options->startFrame;
           endFrame = options->endFrame;
-          // clamp frame values, generate a warning if they are funky
-          ClampStartEndFrames(allFrames, startFrame, endFrame, frameNumber, true); 
           if (renderer) renderer->ReportFrameChange(frameNumber); 
           DEBUGMSG("START_END_FRAMES: start %d end %d current %d\n", startFrame, endFrame, frameNumber); 
         }
@@ -451,12 +460,19 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           yOffset = event.mY; 
         }
         else if (event.mEventType == "MOVIE_FULLSCREEN") {
-          if(renderer && options->zoomFit) {
-            newZoom = ComputeZoomToFit(renderer, renderer->mWidth,
-                                       renderer->mHeight);
-            renderer->SetFullScreen(true); 
-          } 
-          options->fullScreen = true; 
+          if(event.mNumber) {
+            if (renderer && options->zoomToFill) {
+              newZoom = ComputeZoomToFit(renderer, renderer->mWidth,
+                                         renderer->mHeight);
+              renderer->Move(0,0, 0);            
+            } 
+          } else {
+            options->decorations = true; 
+          }
+          if (renderer) {
+            renderer->SetFullScreen(event.mNumber); 
+          }
+          options->fullScreen = event.mNumber; 
         }
         else if (event.mEventType == "MOVIE_MOVE" ||
                  event.mEventType == "MOVIE_RESIZE" ||
@@ -513,9 +529,8 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
               /* Set these in case there is no Resize function */
               renderer->mWidth = event.mWidth;
               renderer->mHeight = event.mHeight;
-              // If we have zoomFit set, resize the frame to fit in the newly resized
-              // window.
-              if (options->zoomFit/* && !event.mNumber*/) {
+  
+              if (options->zoomToFill/* && !event.mNumber*/) {
                 goto MOVIE_ZOOM_FIT;
               }
             }
@@ -601,7 +616,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         
         else if (event.mEventType == "MOVIE_ZOOM_FIT") { 
         MOVIE_ZOOM_FIT: 
-          if(frameInfo) {
+          if(frameInfo && renderer) {
             newZoom = ComputeZoomToFit(renderer, frameInfo->mWidth,
                                        frameInfo->mHeight);
             DEBUGMSG("Zoom to Fit: %f", newZoom);
@@ -613,35 +628,29 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
                                        allFrames->getFrame(0)->mHeight);
           }
           xOffset = yOffset = 0;
-          options->zoomFit = true; 
+          options->zoomToFill = true; 
         }
         else if (event.mEventType == "MOVIE_ZOOM_ONE") {
-          options->zoomFit = false; 
-          zoomOne = true; 
+          options->zoomToFill = false; 
           newZoom = 1.0;
           zooming = 0;       
         }
         else if (event.mEventType == "MOVIE_ZOOM_SET") {
           newZoom = event.mRate;
-          if (newZoom == 0.0) {
-            if (options->zoomFit) {
-              newZoom = ComputeZoomToFit(renderer,
-                                         allFrames->getFrame(0)->mWidth,
-                                         allFrames->getFrame(0)->mHeight);
-            } else {
-              newZoom = 1.0; 
-            }
+          if (newZoom <= 0.0) {
+            options->zoomToFill = true; 
+            newZoom = ComputeZoomToFit(renderer,
+                                       allFrames->getFrame(0)->mWidth,
+                                       allFrames->getFrame(0)->mHeight);  
           }
-          //zooming = 0;
-          options->zoomFit = false; 
         }
         else if (event.mEventType == "MOVIE_ZOOM_UP") {
-          options->zoomFit = false; 
+          options->zoomToFill = false; 
           newZoom = 1.2*currentZoom;
           zooming = 0;
         }
         else if (event.mEventType == "MOVIE_ZOOM_DOWN") {
-          options->zoomFit = false; 
+          options->zoomToFill = false; 
           newZoom = 0.8*currentZoom;
           if (newZoom < 0.05) newZoom = 0.05; 
           zooming = 0;
@@ -942,7 +951,8 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         }
         
         { 
-          MovieSnapshot newSnapshot(event.mEventType, filename, fps, targetFPS, currentZoom, lodBias, playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, loopmsg, pingpong, options->fullScreen, zoomOne, options->noscreensaver, renderer->mHeight, renderer->mWidth, renderer->mXPos, renderer->mYPos, imageHeight, imageWidth, -xOffset, yOffset); 
+          MovieSnapshot newSnapshot(event.mEventType, filename, fps, targetFPS, currentZoom, lodBias, playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, loopmsg, pingpong, options->fullScreen, options->zoomToFill, options->noscreensaver, renderer->mHeight, renderer->mWidth, renderer->mXPos, renderer->mYPos, imageHeight, imageWidth, -xOffset, yOffset); 
+
           if (sendSnapshot || newSnapshot != oldSnapshot) {
             
             if (renderer) {

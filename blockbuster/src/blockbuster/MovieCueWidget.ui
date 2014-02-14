@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>483</width>
+    <width>515</width>
     <height>613</height>
    </rect>
   </property>
@@ -216,104 +216,132 @@
         </spacer>
        </item>
        <item>
-        <widget class="QPushButton" name="moveToTopButton">
-         <property name="enabled">
-          <bool>false</bool>
+        <layout class="QHBoxLayout" name="horizontalLayout_23">
+         <property name="topMargin">
+          <number>0</number>
          </property>
-         <property name="minimumSize">
-          <size>
-           <width>30</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>60</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="toolTip">
-          <string>Move the selected cue to the top of the list</string>
-         </property>
-         <property name="text">
-          <string>To Top</string>
-         </property>
-        </widget>
+         <item>
+          <widget class="QPushButton" name="moveUpButton">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>30</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>60</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Move the selected cue up one place in the list</string>
+           </property>
+           <property name="text">
+            <string>Up</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
-        <widget class="QPushButton" name="moveUpButton">
-         <property name="enabled">
-          <bool>false</bool>
+        <layout class="QHBoxLayout" name="horizontalLayout_22">
+         <property name="topMargin">
+          <number>0</number>
          </property>
-         <property name="minimumSize">
-          <size>
-           <width>30</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>60</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="toolTip">
-          <string>Move the selected cue up one place in the list</string>
-         </property>
-         <property name="text">
-          <string>Up</string>
-         </property>
-        </widget>
+         <item>
+          <widget class="QPushButton" name="moveToTopButton">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>30</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>60</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Move the selected cue to the top of the list</string>
+           </property>
+           <property name="text">
+            <string>To Top</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
-        <widget class="QPushButton" name="moveDownButton">
-         <property name="enabled">
-          <bool>false</bool>
+        <layout class="QHBoxLayout" name="horizontalLayout_24">
+         <property name="topMargin">
+          <number>0</number>
          </property>
-         <property name="minimumSize">
-          <size>
-           <width>30</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>60</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="toolTip">
-          <string>Move the selected cue up one place in the list</string>
-         </property>
-         <property name="text">
-          <string>Down</string>
-         </property>
-        </widget>
+         <item>
+          <widget class="QPushButton" name="moveDownButton">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>30</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>60</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Move the selected cue up one place in the list</string>
+           </property>
+           <property name="text">
+            <string>Down</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
-        <widget class="QPushButton" name="moveToBottomButton">
-         <property name="enabled">
-          <bool>false</bool>
+        <layout class="QHBoxLayout" name="horizontalLayout_25">
+         <property name="topMargin">
+          <number>0</number>
          </property>
-         <property name="minimumSize">
-          <size>
-           <width>30</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>60</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="toolTip">
-          <string>Move the selected cue to the bottom of the list</string>
-         </property>
-         <property name="text">
-          <string>To Bottom</string>
-         </property>
-        </widget>
+         <item>
+          <widget class="QPushButton" name="moveToBottomButton">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>85</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>60</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Move the selected cue to the bottom of the list</string>
+           </property>
+           <property name="text">
+            <string>To Bottom</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <spacer name="verticalSpacer_3">
@@ -380,7 +408,7 @@
          </property>
          <property name="minimumSize">
           <size>
-           <width>100</width>
+           <width>80</width>
            <height>0</height>
           </size>
          </property>
@@ -396,6 +424,12 @@
         <widget class="QLineEdit" name="cueNameField">
          <property name="enabled">
           <bool>false</bool>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>250</width>
+           <height>0</height>
+          </size>
          </property>
          <property name="maximumSize">
           <size>
@@ -473,6 +507,12 @@
        <property name="enabled">
         <bool>false</bool>
        </property>
+       <property name="minimumSize">
+        <size>
+         <width>75</width>
+         <height>0</height>
+        </size>
+       </property>
        <property name="maximumSize">
         <size>
          <width>50</width>
@@ -498,19 +538,6 @@
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
         <item>
-         <widget class="QCheckBox" name="playCheckBox">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="toolTip">
-           <string>Play the movie after loading it.  </string>
-          </property>
-          <property name="text">
-           <string>Play Movie</string>
-          </property>
-         </widget>
-        </item>
-        <item>
          <widget class="QCheckBox" name="showControlsCheckBox">
           <property name="enabled">
            <bool>false</bool>
@@ -520,6 +547,19 @@
           </property>
           <property name="text">
            <string>Show  Controls</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="playCheckBox">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="toolTip">
+           <string>Play the movie after loading it.  </string>
+          </property>
+          <property name="text">
+           <string>Play Movie</string>
           </property>
          </widget>
         </item>
@@ -579,6 +619,32 @@
          </widget>
         </item>
         <item>
+         <widget class="QCheckBox" name="zoomToFillCheckBox">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>60</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Zoom to Fill</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="zoomOneCheckBox">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>size to 100%</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QCheckBox" name="fullScreenCheckBox">
           <property name="enabled">
            <bool>false</bool>
@@ -594,16 +660,6 @@
           </property>
          </widget>
         </item>
-        <item>
-         <widget class="QCheckBox" name="zoomOneCheckBox">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="text">
-           <string>size to 100%</string>
-          </property>
-         </widget>
-        </item>
        </layout>
       </widget>
      </item>
@@ -615,6 +671,19 @@
        <layout class="QVBoxLayout" name="verticalLayout_6">
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_5">
+          <item>
+           <spacer name="horizontalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
           <item>
            <widget class="QLabel" name="windowWidthLabel">
             <property name="enabled">
@@ -628,7 +697,7 @@
             </property>
             <property name="minimumSize">
              <size>
-              <width>80</width>
+              <width>100</width>
               <height>0</height>
              </size>
             </property>
@@ -647,6 +716,12 @@
            <widget class="QLineEdit" name="windowWidthField">
             <property name="enabled">
              <bool>false</bool>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>40</width>
+              <height>0</height>
+             </size>
             </property>
             <property name="maximumSize">
              <size>
@@ -667,6 +742,19 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_7">
           <item>
+           <spacer name="horizontalSpacer_4">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
            <widget class="QLabel" name="windowHeightLabel">
             <property name="enabled">
              <bool>false</bool>
@@ -679,7 +767,7 @@
             </property>
             <property name="minimumSize">
              <size>
-              <width>80</width>
+              <width>100</width>
               <height>0</height>
              </size>
             </property>
@@ -699,6 +787,12 @@
             <property name="enabled">
              <bool>false</bool>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>40</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="maximumSize">
              <size>
               <width>40</width>
@@ -715,6 +809,19 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_8">
           <item>
+           <spacer name="horizontalSpacer_5">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
            <widget class="QLabel" name="windowXPosLabel">
             <property name="enabled">
              <bool>false</bool>
@@ -727,7 +834,7 @@
             </property>
             <property name="minimumSize">
              <size>
-              <width>80</width>
+              <width>100</width>
               <height>0</height>
              </size>
             </property>
@@ -747,6 +854,12 @@
             <property name="enabled">
              <bool>false</bool>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>40</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="maximumSize">
              <size>
               <width>40</width>
@@ -763,6 +876,19 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_10">
           <item>
+           <spacer name="horizontalSpacer_6">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
            <widget class="QLabel" name="windowYPosLabel">
             <property name="enabled">
              <bool>false</bool>
@@ -775,7 +901,7 @@
             </property>
             <property name="minimumSize">
              <size>
-              <width>80</width>
+              <width>100</width>
               <height>0</height>
              </size>
             </property>
@@ -795,6 +921,12 @@
             <property name="enabled">
              <bool>false</bool>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>40</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="maximumSize">
              <size>
               <width>40</width>
@@ -810,6 +942,19 @@
         </item>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_13">
+          <item>
+           <spacer name="horizontalSpacer_7">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
           <item>
            <widget class="QLabel" name="imageXPosLabel">
             <property name="enabled">
@@ -843,6 +988,12 @@
             <property name="enabled">
              <bool>false</bool>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>40</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="maximumSize">
              <size>
               <width>40</width>
@@ -858,6 +1009,19 @@
         </item>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_14">
+          <item>
+           <spacer name="horizontalSpacer_8">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
           <item>
            <widget class="QLabel" name="imageYPosLabel">
             <property name="enabled">
@@ -891,6 +1055,12 @@
             <property name="enabled">
              <bool>false</bool>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>40</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="maximumSize">
              <size>
               <width>40</width>
@@ -907,6 +1077,19 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_15">
           <item>
+           <spacer name="horizontalSpacer_9">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
            <widget class="QLabel" name="zoomLabel">
             <property name="enabled">
              <bool>false</bool>
@@ -919,7 +1102,7 @@
             </property>
             <property name="minimumSize">
              <size>
-              <width>80</width>
+              <width>0</width>
               <height>0</height>
              </size>
             </property>
@@ -960,6 +1143,19 @@
         </item>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_21">
+          <item>
+           <spacer name="horizontalSpacer_10">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
           <item>
            <widget class="QLabel" name="LODLabel">
             <property name="enabled">
@@ -1018,6 +1214,19 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
+           <spacer name="horizontalSpacer_11">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
            <widget class="QLabel" name="frameRateLabel">
             <property name="enabled">
              <bool>false</bool>
@@ -1069,6 +1278,19 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
+           <spacer name="horizontalSpacer_12">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
            <widget class="QLabel" name="currentFrameLabel">
             <property name="enabled">
              <bool>false</bool>
@@ -1081,7 +1303,7 @@
             </property>
             <property name="minimumSize">
              <size>
-              <width>80</width>
+              <width>110</width>
               <height>0</height>
              </size>
             </property>
@@ -1097,6 +1319,12 @@
            <widget class="QLineEdit" name="currentFrameField">
             <property name="enabled">
              <bool>false</bool>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>40</width>
+              <height>0</height>
+             </size>
             </property>
             <property name="maximumSize">
              <size>
@@ -1115,6 +1343,19 @@
          <layout class="QVBoxLayout" name="verticalLayout_9">
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <item>
+             <spacer name="horizontalSpacer_13">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
             <item>
              <widget class="QLabel" name="startFrameLabel">
               <property name="enabled">
@@ -1177,6 +1418,12 @@
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
+              <property name="minimumSize">
+               <size>
+                <width>70</width>
+                <height>0</height>
+               </size>
+              </property>
               <property name="maximumSize">
                <size>
                 <width>50</width>
@@ -1195,6 +1442,12 @@
              <widget class="QPushButton" name="resetStartButton">
               <property name="enabled">
                <bool>false</bool>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>60</width>
+                <height>0</height>
+               </size>
               </property>
               <property name="maximumSize">
                <size>
@@ -1218,6 +1471,19 @@
          <layout class="QVBoxLayout" name="verticalLayout_8">
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_9">
+            <item>
+             <spacer name="horizontalSpacer_14">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
             <item>
              <widget class="QLabel" name="endFrameLabel">
               <property name="enabled">
@@ -1277,6 +1543,12 @@
               <property name="enabled">
                <bool>false</bool>
               </property>
+              <property name="minimumSize">
+               <size>
+                <width>70</width>
+                <height>0</height>
+               </size>
+              </property>
               <property name="maximumSize">
                <size>
                 <width>50</width>
@@ -1295,6 +1567,12 @@
              <widget class="QPushButton" name="resetEndButton">
               <property name="enabled">
                <bool>false</bool>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>60</width>
+                <height>0</height>
+               </size>
               </property>
               <property name="maximumSize">
                <size>

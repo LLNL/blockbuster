@@ -638,7 +638,6 @@ void SideCar::askLaunchBlockbuster(const MovieCue* iCue, QString moviename, bool
   BlockbusterLaunchDialog dialog(this, HostField->text(), PortField->text(), moviename, mState, mPrefs->GetValue("rsh").c_str(), gPrefs.GetLongValue("verbose"));
   // restore the last used profile or the default if first launch
   dialog.trySetProfile(gPrefs.GetValue("SIDECAR_DEFAULT_PROFILE").c_str()); 
-  
 
   setBlockbusterPort(PortField->text()); 
   connect(&mBlockbusterServer, SIGNAL(newConnection()), &dialog, SLOT(blockbusterConnected())); 
@@ -1367,14 +1366,6 @@ BlockbusterLaunchDialog::BlockbusterLaunchDialog(SideCar *sidecar, QString host,
   connect(mpiFrameSyncCheckBox, SIGNAL(clicked()),
           this, SLOT(hostProfileModified()));
   
-  bool showcontrols = (filename != "CUELAUNCH"); 
-  playCheckBox->setEnabled(showcontrols); 
-  fullScreenCheckBox->setEnabled(showcontrols); 
-  showControlsCheckBox->setEnabled(showcontrols); 
-  useDMXCheckBox->setEnabled(showcontrols); 
-  fileNameComboBox->setEnabled(showcontrols); 
-  deleteMoviePushButton->setEnabled(showcontrols); 
-  browseButton->setEnabled(showcontrols); 
   return; 
 }
 
@@ -1655,7 +1646,6 @@ void BlockbusterLaunchDialog::on_hostNameField_editingFinished( ) {
 
 //=======================================================================
 bool BlockbusterLaunchDialog::hostProfileModified(void){
-  bool autoChecked = autoBlockbusterPathCheckBox->isChecked() ; 
   bool dirty = 
     (hostNameField->text() != mCurrentProfile->mHostName ||
      hostPortField->text() != mCurrentProfile->mPort ||
@@ -1665,20 +1655,27 @@ bool BlockbusterLaunchDialog::hostProfileModified(void){
      setDisplayCheckBox->isChecked() != mCurrentProfile->mSetDisplay ||
 
      autoSidecarHostCheckBox->isChecked() != mCurrentProfile->mAutoSidecarHost ||
-     (!autoSidecarHostCheckBox->isChecked() && sidecarHostNameField->text() != mCurrentProfile->mSidecarHost) ||
-
-     mCurrentProfile->mPlay != playCheckBox->isChecked() ||
-     mCurrentProfile->mFullScreen != fullScreenCheckBox->isChecked() ||
-     mCurrentProfile->mShowControls != showControlsCheckBox->isChecked()  ||
-     mCurrentProfile->mUseDMX != useDMXCheckBox->isChecked()  ||
+     (!autoSidecarHostCheckBox->isChecked() && 
+      sidecarHostNameField->text() != mCurrentProfile->mSidecarHost) ||
 
      autoBlockbusterPathCheckBox->isChecked() != mCurrentProfile->mAutoBlockbusterPath ||
-     (!autoBlockbusterPathCheckBox->isChecked() && blockbusterPathField->text()  != mCurrentProfile->mBlockbusterPath) ||
+     (!autoBlockbusterPathCheckBox->isChecked() && 
+      blockbusterPathField->text()  != mCurrentProfile->mBlockbusterPath)); 
 
-mCurrentProfile->mMpiFrameSync != mpiFrameSyncCheckBox->isChecked() ); 
+  if (fileNameComboBox->currentText() != "CUELAUNCH") {
+    dirty |=
+      (mCurrentProfile->mPlay != playCheckBox->isChecked() ||
+       mCurrentProfile->mFullScreen != fullScreenCheckBox->isChecked() ||
+       mCurrentProfile->mShowControls != showControlsCheckBox->isChecked()  ||
+       mCurrentProfile->mUseDMX != useDMXCheckBox->isChecked() ||
+      mCurrentProfile->mMpiFrameSync != mpiFrameSyncCheckBox->isChecked() ); 
+  }
+
   saveProfilePushButton->setEnabled(dirty && !mCurrentProfile->mReadOnly); 
   return dirty; 
 }
+
+
 
 //=======================================================================
 void BlockbusterLaunchDialog::trySetProfile (QString name) {
@@ -1832,12 +1829,21 @@ void BlockbusterLaunchDialog::setupGuiAndCurrentProfile(int index){
   }    
   sidecarHostNameField->setEnabled(!autoSidecarHostCheckBox->isChecked()); 
 
-  playCheckBox->setChecked(mCurrentProfile->mPlay); 
-  fullScreenCheckBox->setChecked(mCurrentProfile->mFullScreen); 
-  showControlsCheckBox->setChecked(mCurrentProfile->mShowControls); 
-  useDMXCheckBox->setChecked(mCurrentProfile->mUseDMX); 
-  mpiFrameSyncCheckBox->setChecked(mCurrentProfile->mMpiFrameSync); 
-
+  if (fileNameComboBox->currentText() == "CUELAUNCH") {
+    playCheckBox->setEnabled(false); 
+    fullScreenCheckBox->setEnabled(false); 
+    showControlsCheckBox->setEnabled(false); 
+    useDMXCheckBox->setEnabled(false); 
+    fileNameComboBox->setEnabled(false); 
+    deleteMoviePushButton->setEnabled(false); 
+    browseButton->setEnabled(false); 
+  } else {
+    playCheckBox->setChecked(mCurrentProfile->mPlay); 
+    fullScreenCheckBox->setChecked(mCurrentProfile->mFullScreen); 
+    showControlsCheckBox->setChecked(mCurrentProfile->mShowControls); 
+    useDMXCheckBox->setChecked(mCurrentProfile->mUseDMX); 
+    mpiFrameSyncCheckBox->setChecked(mCurrentProfile->mMpiFrameSync); 
+  }
   autoBlockbusterPathCheckBox->setChecked(mCurrentProfile->mAutoBlockbusterPath); 
   if (mCurrentProfile->mAutoBlockbusterPath || mCurrentProfile->mBlockbusterPath == ""){
     blockbusterPathField->setText(mSidecar->getDefaultBlockbusterPath()); 

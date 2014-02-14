@@ -295,10 +295,15 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
 	else if (SET_BOOL_ARG("-cachedebug", argc, argv, opt->mCacheDebug, 1)) {
       continue; 
     }
-	else if (SET_BOOL_ARG("-no-decorations", argc, argv, opt->decorations, 0) || 
-             SET_BOOL_ARG("-DecorationsDisable", argc, argv, opt->decorations, 0) || 
-             SET_BOOL_ARG("-fullscreen", argc, argv, opt->fullScreen, 1)) {
-      opt->zoomFit=1;
+	else if (SET_BOOL_ARG("-no-decorations", argc, argv, opt->decorations, 0)) {
+      continue; 
+    }
+    else if (SET_BOOL_ARG("-DecorationsDisable",argc,argv, opt->decorations,0)) {
+      continue; 
+    }
+    else if (SET_BOOL_ARG("-fullscreen", argc, argv, opt->fullScreen, 1)) {
+      opt->zoomToFill=1;
+      opt->decorations = 0; 
 	  continue;
 	} 
 	else if (CHECK_STRING_ARG("-display", argc, argv, opt->displayName)) {
@@ -426,14 +431,14 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
 	}
 
 	else if (CHECK_STRING_ARG("-zoom", argc, argv, zoomString)) {
-	  if (zoomString != "auto" && zoomString != "0") {		
-		opt->zoom = zoomString.toFloat();
-		opt->zoomFit = 0;
-	  }	else {
-		opt->zoomFit = 1;
+	  if (zoomString == "auto" || zoomString == "0" || zoomString == "fit" || zoomString == "fill") {
+		opt->zoomToFill = 1;
 	  }
-	}
-
+      else {		
+		opt->zoom = zoomString.toFloat();
+		opt->zoomToFill = 0;
+	  }	
+    }
     //=====================================================
 
 	else if (CHECK_STRING_ARG("-slave", argc, argv, opt->masterHost)) {
@@ -544,6 +549,7 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
   }
     
   if (opt->mTraceEvents) {
+    dbprintf(1, "Tracing events to log file %s\n", opt->mTraceEventsFilename.toStdString().c_str());
     opt->mTraceEventsFile.open(opt->mTraceEventsFilename.toStdString().c_str());
   } 
   return  ; 

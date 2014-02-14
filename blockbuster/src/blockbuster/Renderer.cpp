@@ -73,7 +73,7 @@ Renderer::Renderer(ProgramOptions *opt, qint32 parentWindowID,
   mParentWindow(parentWindowID),
   mFontInfo(NULL), mFontHeight(0),  mShowCursor(true), 
   mOldWidth(-1), mOldHeight(-1), mOldX(-1), mOldY(-1), mXSync(false), 
-  mName(name), mOptions(opt)
+  mName(name), mFullScreen(opt->fullScreen), mOptions(opt)
 { 
 
   // --------------------------------------
@@ -486,13 +486,12 @@ void Renderer::reportMovieCueComplete(void){
 // ==============================================================
 void Renderer::FinishXWindowInit(void) {
   ECHO_FUNCTION(5); 
-  Screen *screen;
-  int x, y, width, height;
+  int x=0, y=0, width, height;
   int required_x_margin, required_y_margin;
   /* Get the screen and do some sanity checks */
-  mScreenNumber = DefaultScreen(mDisplay);
-  // screen = ScreenOfDisplay(mDisplay, mScreenNumber);
-  screen = ScreenOfDisplay(mDisplay, 0);
+  Screen *screen= ScreenOfDisplay(mDisplay, 0);
+  // mScreenNumber = DefaultScreen(mDisplay);
+  // Screen *screen = ScreenOfDisplay(mDisplay, mScreenNumber);
   
   /* if geometry is don't care and decorations flag is off -- then set window to max screen extents */
   mScreenWidth = WidthOfScreen(screen);
@@ -514,7 +513,7 @@ void Renderer::FinishXWindowInit(void) {
     else
       height =  mScreenHeight; 
   }
-  
+ 
   
   /* if we've turned off the window border (decoration) with the -D flag then set rquired margins to zero
      otherwise set them to the constants defined in movie.h (SCREEN_X_MARGIN ... ) */
@@ -609,37 +608,34 @@ void Renderer::FinishXWindowInit(void) {
     sizeHints.min_height = height;
   }
 
-  if (mOptions->geometry.x != DONT_CARE && mOptions->geometry.y != DONT_CARE) {
+  if (mOptions->geometry.x == DONT_CARE) {
+    sizeHints.x = 0; 
+  } else {
     sizeHints.x = mOptions->geometry.x;
-    sizeHints.y = mOptions->geometry.y;
-    sizeHints.flags |= USPosition;
   }
-  
+  if (mOptions->geometry.y == DONT_CARE) {
+    sizeHints.y = 0; 
+  } else {
+    sizeHints.y = mOptions->geometry.y;
+  }
+  sizeHints.flags |= USPosition;
+    
   
   SetTitle(mOptions->suggestedTitle); 
   XSetStandardProperties(mDisplay, mWindow, 
                          mOptions->suggestedTitle.toAscii(), mOptions->suggestedTitle.toAscii(), 
                          None, (char **)NULL, 0, &sizeHints);
   
-  
-  set_mwm_border(mOptions->decorations);
-  
 
   // If we are doing fullscreen, we have to dance with the window manager.
-  if (height == mScreenHeight && width == mScreenWidth ) { //  && ! mOptions->decorations) {
-    SetFullScreen(true); 
-  }
-  //  XSync(mDisplay, 0);
-  /* Bring it up; then wait for it to actually get here. */
-  XMapWindow(mDisplay, mWindow);
-
-/*
-    XIfEvent(mDisplay, &event, WaitForWindowOpen, (XPointer) sWindowInfo);
-  */
+  SetFullScreen(mOptions->fullScreen); 
   
-  /* The font.  All renderers that attach to this user interface will use
-   * this font for rendering status information directly into the rendering
-   * window.
+  set_mwm_border(mOptions->decorations);
+
+  /* Bring it up;  */
+  XMapWindow(mDisplay, mWindow);
+  
+  /* Font for rendering status information into the rendering window.
    */
   mFontInfo = XLoadQueryFont(mDisplay, 
                              mOptions->fontName.toAscii());
@@ -679,17 +675,26 @@ void Renderer::FinishXWindowInit(void) {
 
 void Renderer::SetFullScreen(bool fullscreen) {
 // Make sure the window manager does not resize to allow for menu bar
-  set_mwm_border(fullscreen);
+  set_mwm_border(!fullscreen  && mOptions->decorations);
+
   Atom wm_state = XInternAtom(mDisplay, "_NET_WM_STATE", False);
   Atom fsAtom = XInternAtom(mDisplay, "_NET_WM_STATE_FULLSCREEN", False);
   
+  if (fullscreen) {
+    Screen *screen= ScreenOfDisplay(mDisplay, 0);
+    mScreenWidth = WidthOfScreen(screen);
+    mScreenHeight = HeightOfScreen(screen);
+    XResizeWindow(mDisplay, mWindow, mScreenWidth, mScreenHeight); 
+    XSync(mDisplay, 0);
+  }
+
   XEvent xev;
   memset(&xev, 0, sizeof(xev));
   xev.type = ClientMessage;
   xev.xclient.window = mWindow;
   xev.xclient.message_type = wm_state;
   xev.xclient.format = 32;
-  xev.xclient.data.l[0] = 1;
+  xev.xclient.data.l[0] = fullscreen?1:0;
   xev.xclient.data.l[1] = fsAtom;
   xev.xclient.data.l[2] = 0;
   XSendEvent (mDisplay, DefaultRootWindow(mDisplay), False,

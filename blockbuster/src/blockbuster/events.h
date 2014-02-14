@@ -200,10 +200,10 @@ const QIODevice &operator >>( QIODevice &iStream,  MovieEvent &event);
 struct MovieSnapshot {
   MovieSnapshot() :
     mSnapshotType("MOVIE_NONE"), mFrameRate(0), mTargetFPS(30.0), 
-    mZoom(0.0), mLOD(0), 
+    mZoom(0.0), mZoomToFill(false), mLOD(0), 
     mPlayStep(0), mStartFrame(1), mEndFrame(1),  mNumFrames(0), 
     mFrameNumber(1),  mLoop(0),  mPingPong(false), 
-    mFullScreen(false), mZoomOne(false), mNoScreensaver(false), 
+    mFullScreen(false), mNoScreensaver(false), 
     mScreenHeight(0), mScreenWidth(0), mScreenXpos(0), mScreenYpos(0), 
     mImageHeight(0), mImageWidth(0), mImageXpos(0),  mImageYpos(0){ return; }
     
@@ -212,7 +212,8 @@ struct MovieSnapshot {
                 float zoom, uint32_t lod, 
                 int32_t playStep,  int32_t startFrame, int32_t endFrame, 
                 int32_t numFrames, int32_t frameNumber,  
-                int32_t loop,  bool pingpong, bool fullScreen, bool zoomOne, 
+                int32_t loop,  bool pingpong, bool fullScreen, 
+                bool zoomToFill, 
                 int32_t noScreensaver, 
                 int32_t screenHeight, int32_t screenWidth, 
                 int32_t screenXpos, int32_t screenYpos, 
@@ -220,11 +221,12 @@ struct MovieSnapshot {
                 int32_t imageXpos, int32_t imageYpos):
     mSnapshotType(snapshotType), 
     mFilename(filename), mFrameRate(frameRate), mTargetFPS(targetFPS), 
-    mZoom(zoom), mLOD(lod), mPlayStep(playStep), 
+    mZoom(zoom), mZoomToFill(zoomToFill), 
+    mLOD(lod), mPlayStep(playStep), 
     mStartFrame(startFrame), mEndFrame(endFrame),  
     mNumFrames(numFrames), mFrameNumber(frameNumber), 
     mLoop(loop), mPingPong(pingpong), 
-    mFullScreen(fullScreen), mZoomOne(zoomOne), mNoScreensaver(noScreensaver),
+    mFullScreen(fullScreen), mNoScreensaver(noScreensaver),
     mScreenHeight(screenHeight), mScreenWidth(screenWidth), 
     mScreenXpos(screenXpos), mScreenYpos(screenYpos), 
     mImageHeight(imageHeight),  mImageWidth(imageWidth),
@@ -247,7 +249,7 @@ struct MovieSnapshot {
   string mSnapshotType; //e.g., "MOVIE_SNAPSHOT_ENDFRAME", etc.
   string mFilename; 
   float mFrameRate, mTargetFPS, mZoom;
-  int32_t mLOD, mPlayStep, mStartFrame, mEndFrame, mNumFrames, mFrameNumber, mLoop, mPingPong, mFullScreen, mZoomOne, mNoScreensaver, mScreenHeight, mScreenWidth, mScreenXpos, mScreenYpos, mImageHeight, mImageWidth, mImageXpos, mImageYpos; 
+  int32_t mZoomToFill, mLOD, mPlayStep, mStartFrame, mEndFrame, mNumFrames, mFrameNumber, mLoop, mPingPong, mFullScreen, mNoScreensaver, mScreenHeight, mScreenWidth, mScreenXpos, mScreenYpos, mImageHeight, mImageWidth, mImageXpos, mImageYpos; 
 };
 
 #endif
