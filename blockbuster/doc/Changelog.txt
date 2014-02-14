@@ -2,7 +2,11 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.0p (git tag blockbuster-v2.8.0p) Wed Feb 12 17:47:57 PST 2014
+VERSION 2.8.0q (git tag blockbuster-v2.8.0p) Wed Feb 12 17:47:57 PST 2014
+
+
+===============================================================================
+VERSION 2.8.0p (git tag blockbuster-v2.8.0p) Fri Feb 14 09:23:07 PST 2014
 -- Starting without a movie is no longer a blockbuster emergency.  No window opens in this case.  
 -- Fixed crashing bug where thread IDs were exceeding cache slots.  
 -- Refactored code to improve file loading procedure.  (Internal change)
