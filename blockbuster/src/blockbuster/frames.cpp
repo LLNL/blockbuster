@@ -49,7 +49,7 @@ static QString matchName;
 
 //====================================================================
 /* Note:  __APPLE__ assumes gcc on OS X*/
-#if defined(irix) || defined(aix) || defined(__APPLE__)
+#if defined(irix) || defined(aix) 
 static int matchStartOfName(struct dirent *entry)
 #else
   static int matchStartOfName(const struct dirent *entry)

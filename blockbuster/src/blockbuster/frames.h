@@ -10,7 +10,6 @@
 
 #include <QStringList>
 using namespace std; 
-struct Canvas; 
 
 typedef boost::shared_ptr<struct FrameInfo> FrameInfoPtr; 
 typedef boost::shared_ptr<struct TextureObject> TextureObjectPtr;
@@ -78,7 +77,7 @@ typedef boost::shared_ptr<struct Image> ImagePtr;
 // ------------------------------------------------
 struct Image {
   Image(): width(0), height(0), levelOfDetail(0), 
-           frameNumber(0), mTypeName("UNKNOWN"), imageData(NULL) {
+           frameNumber(0), mTypeName("UNKNOWN") {
     return; 
   }
    

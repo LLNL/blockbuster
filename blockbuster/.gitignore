@@ -4,7 +4,12 @@
 *.la
 *.tmp
 *.core
+.DS_Store
+*.app
 ../*/
+src/boost/boost_1_54_0
+src/libtiff/tiff-4.0.3/
+src/blockbuster/sidecar/common.h
 .#*
 \#*
 src/config/debug

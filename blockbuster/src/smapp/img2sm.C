@@ -556,10 +556,10 @@ bool FindFirstFile(vector<string> &inputfiles, string &leftTemplate, string &rig
         string leftfile = str(boost::format(leftfilet)%filenum); 
         string rightfilet = boost::replace_all_copy(nameTemplate, "<LR>", rightstrings[i]); 
         string rightfile = str(boost::format(rightfilet)%filenum); 
-        if (fp = fopen(leftfile.c_str(), "r")) {
+        if ((fp = fopen(leftfile.c_str(), "r")) != NULL) {
           smdbprintf(3, "FindFirstFile(): Found first left frame %s.\n", leftfile.c_str()); 
           fclose(fp); 
-          if (fp = fopen(rightfile.c_str(), "r")) {
+          if ((fp = fopen(rightfile.c_str(), "r")) != NULL) {
             fclose(fp); 
             smdbprintf(3, "FindFirstFile(): Found first right frame %s.\n", rightfile.c_str()); 
             inputfiles.push_back(leftfile);
@@ -949,7 +949,7 @@ int main(int argc,char **argv) {
       imageType = 0;
       suffix = "PNG"; 
       TIFFClose(tiff);
-    } else if (libi = sgiOpen((char*)filename.c_str(),SGI_READ,0,0,0,0,0)) {
+    } else if ((libi = sgiOpen((char*)filename.c_str(),SGI_READ,0,0,0,0,0)) != NULL) {
       smdbprintf(1,"SGI input format detected\n");
       imageType = 1;
       sgiClose(libi);

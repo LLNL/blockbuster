@@ -101,7 +101,7 @@ FrameListPtr smGetFrameList(const char *filename)
   FrameListPtr frameList; 
   
   ProgramOptions *options = GetGlobalOptions(); 
-  boost::shared_ptr<smBase> sm(smBase::openFile(filename, O_RDONLY | O_RSYNC, options->readerThreads+1)); 
+  boost::shared_ptr<smBase> sm(smBase::openFile(filename, O_RDONLY , options->readerThreads+1)); 
   //sm = smBase::openFile(filename, options->readerThreads+1);
   if (!sm) {
 	DEBUGMSG("SM cannot open the file '%s'", filename);

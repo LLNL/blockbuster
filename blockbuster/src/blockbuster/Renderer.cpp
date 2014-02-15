@@ -73,7 +73,7 @@ Renderer::Renderer(ProgramOptions *opt, qint32 parentWindowID,
   mParentWindow(parentWindowID),
   mFontInfo(NULL), mFontHeight(0),  mShowCursor(true), 
   mOldWidth(-1), mOldHeight(-1), mOldX(-1), mOldY(-1), mXSync(false), 
-  mName(name), mFullScreen(opt->fullScreen), mOptions(opt)
+  mFullScreen(opt->fullScreen), mName(name), mOptions(opt)
 { 
 
   // --------------------------------------

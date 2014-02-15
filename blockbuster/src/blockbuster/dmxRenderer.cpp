@@ -524,7 +524,7 @@ void dmxRenderer::LaunchSlave(QString hostname) {
   }
   else if (mOptions->slaveLaunchMethod == "manual") {
 	/* give instructions for manual start-up */
-	printf(QString("Here is the command to start blockbuster on host 1:  'blockbuster -s %2:%3 -r %4 -d $DMX_DISPLAY' \n").arg( hostname).arg( localHostname).arg(mPort).arg( mOptions->backendRendererName).toAscii());
+    dbprintf(0, QString("Here is the command to start blockbuster on host 1:  'blockbuster -s %2:%3 -r %4 -d $DMX_DISPLAY' \n").arg( hostname).arg( localHostname).arg(mPort).arg( mOptions->backendRendererName));
   }
   return ;
 }

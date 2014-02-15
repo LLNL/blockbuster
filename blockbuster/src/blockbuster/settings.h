@@ -8,7 +8,7 @@
 class Renderer; 
 struct RendererSpecificGlue; 
 
-class ProgramOptions *GetGlobalOptions(void); 
+struct ProgramOptions *GetGlobalOptions(void); 
 
 void ConsumeArg(int &argc, char *argv[], int position); 
 

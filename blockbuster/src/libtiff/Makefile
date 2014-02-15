@@ -23,10 +23,13 @@
 #
 #   Author: Rich Cook
 #
-#	Makefile for libtiff 3.9.1
+#	Makefile for libtiff 4.0.3
 #
 #	$Id: Makefile,v 1.2 2009/01/07 19:22:19 wealthychef Exp $
 #
+
+TIFF_VERSION=4.0.3
+
 include ../config/config
 
 INSTALL_DIR ?= $(shell pwd)
@@ -38,18 +41,18 @@ all: install
 
 install: $(INSTALL_DIR)/lib/libtiff.a
 
-$(INSTALL_DIR)/lib/libtiff.a: tiff-3.9.1/libtiff/.libs/libtiff.a
+$(INSTALL_DIR)/lib/libtiff.a: tiff-$(TIFF_VERSION)/libtiff/.libs/libtiff.a
 	cp $< $@
 
-tiff-3.9.1/libtiff/.libs/libtiff.a:
-	rm -rf tiff-3.9.1
-	tar -xvzf tiff-3.9.1.tar.gz
-	cd tiff-3.9.1 && CC="$(CC)" CFLAGS="$$(echo $(CFLAGS) |sed s/O2/O3/g) -O3" \
+tiff-$(TIFF_VERSION)/libtiff/.libs/libtiff.a:
+	rm -rf tiff-$(TIFF_VERSION)
+	tar -xvzf tiff-$(TIFF_VERSION).tar.gz
+	cd tiff-$(TIFF_VERSION) && CC="$(CC)" CFLAGS="$$(echo $(CFLAGS) |sed s/O2/O3/g) -O3" \
 	 CXXFLAGS="$${CFLAGS}" LDFLAGS="$${LDFLAGS} -L/usr/lib64" \
-	./configure --prefix=$(INSTALL_DIR) --enable-rpath; \
+	./configure --prefix=$(INSTALL_DIR) --enable-rpath --disable-jbig  ; \
 		$(MAKE) -j 20 install
 
 
 clean:
-	rm -rf tiff-3.9.1 $(INSTALL_DIR)/lib/libtiff* $(INSTALL_DIR)/include/tiff*.h
+	rm -rf tiff-$(TIFF_VERSION) $(INSTALL_DIR)/lib/libtiff* $(INSTALL_DIR)/include/tiff*.h
 

@@ -7,12 +7,6 @@
 #include <deque>
 #include "events.h"
 
-class Canvas; 
-
-
-void qt_Resize(Canvas * canvas, int newWidth, int newHeight, int cameFromX);
-void qt_Move(Canvas* canvas, int newX, int newY, int cameFromX);
-
 //=================================================================
 // BLOCKBUSTERINFOWINDOW class
 //=================================================================
