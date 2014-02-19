@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -x
+set -xv
 function errexit() {
     echo $1
     exit 1
@@ -14,9 +14,9 @@ make noboostlink
 if [ $(uname) == Linux ]; then 
     for buildarg in dmx nodmx; do 
         if [ $buildarg == never ]; then # we do not do DMX any more
-            export INSTALL_NAME=linux-dmx-v$version-$(uname -r)
+            export INSTALL_NAME=linux-dmx-v$version-$(uname -r | sed -e 's/\([0-9\.]*\).*/\1/')
         else
-            export INSTALL_NAME=linux-basic-nodmx-v$version-$(uname -r)
+            export INSTALL_NAME=linux-basic-nodmx-v$version-$(uname -r | sed -e 's/\([0-9\.]*\).*/\1/')
         fi
         export INSTALL_DIR=$tmpdir/$INSTALL_NAME
         mkdir -p $INSTALL_DIR
