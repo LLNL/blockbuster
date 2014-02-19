@@ -288,7 +288,7 @@ void BlockbusterInterface::on_fullSizeButton_clicked() {
   mEventQueue.push_back(MovieEvent("MOVIE_ZOOM_ONE")); 
 }
 void BlockbusterInterface::on_fitButton_clicked() {
-  mEventQueue.push_back(MovieEvent("MOVIE_ZOOM_FIT")); 
+  mEventQueue.push_back(MovieEvent("MOVIE_ZOOM_FILL")); 
 }
 void BlockbusterInterface::on_fillButton_clicked() {
   mEventQueue.push_back(MovieEvent("MOVIE_FULLSCREEN")); 

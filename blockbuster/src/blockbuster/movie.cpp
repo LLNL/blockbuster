@@ -59,7 +59,7 @@ int LODFromZoom(float zoom)
 }
 
 // ====================================================================
-static float ComputeZoomToFit(Renderer *renderer, int width, int height)
+static float ComputeZoomToFill(Renderer *renderer, int width, int height)
 {
   float xZoom, yZoom, zoom;
 
@@ -339,7 +339,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           } 
           if (options->zoomToFill || event.mEventType != "MOVIE_OPEN_FILE_NOCHANGE") {
             /* Compute a Shrink to Fit zoom */
-            newZoom = ComputeZoomToFit(renderer, width, height);
+            newZoom = ComputeZoomToFill(renderer, width, height);
             if (newZoom > 1.0) {
               newZoom = 1.0; /* don't need expanding initially */
             }
@@ -462,7 +462,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         else if (event.mEventType == "MOVIE_FULLSCREEN") {
           if(event.mNumber) {
             if (renderer && options->zoomToFill) {
-              newZoom = ComputeZoomToFit(renderer, renderer->mWidth,
+              newZoom = ComputeZoomToFill(renderer, renderer->mWidth,
                                          renderer->mHeight);
               renderer->Move(0,0, 0);            
             } 
@@ -531,7 +531,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
               renderer->mHeight = event.mHeight;
   
               if (options->zoomToFill/* && !event.mNumber*/) {
-                goto MOVIE_ZOOM_FIT;
+                goto MOVIE_ZOOM_FILL;
               }
             }
           }
@@ -614,16 +614,16 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           }
         }
         
-        else if (event.mEventType == "MOVIE_ZOOM_FIT") { 
-        MOVIE_ZOOM_FIT: 
+        else if (event.mEventType == "MOVIE_ZOOM_FILL") { 
+        MOVIE_ZOOM_FILL: 
           if(frameInfo && renderer) {
-            newZoom = ComputeZoomToFit(renderer, frameInfo->mWidth,
+            newZoom = ComputeZoomToFill(renderer, frameInfo->mWidth,
                                        frameInfo->mHeight);
             DEBUGMSG("Zoom to Fit: %f", newZoom);
           } else if (allFrames) {
             // Caution:  RDC: Zooming was not working right upon movie startup, so here I'm reusing some old code that was commented out -- maybe assumption that allFrames->frames[0] is not NULL is not valid?  
             //bb_assert (allFrames->frames[0] != NULL); 
-            newZoom = ComputeZoomToFit(renderer,
+            newZoom = ComputeZoomToFill(renderer,
                                        allFrames->getFrame(0)->mWidth,
                                        allFrames->getFrame(0)->mHeight);
           }
@@ -639,7 +639,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           newZoom = event.mRate;
           if (newZoom <= 0.0) {
             options->zoomToFill = true; 
-            newZoom = ComputeZoomToFit(renderer,
+            newZoom = ComputeZoomToFill(renderer,
                                        allFrames->getFrame(0)->mWidth,
                                        allFrames->getFrame(0)->mHeight);  
           }

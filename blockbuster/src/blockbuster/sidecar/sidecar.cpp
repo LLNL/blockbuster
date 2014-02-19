@@ -899,7 +899,7 @@ void SideCar::fullSizeButton_clicked(){
 
 //================================================================
 void SideCar::fitButton_clicked(){   
-  SendEvent(MovieEvent ("MOVIE_ZOOM_FIT")); 
+  SendEvent(MovieEvent ("MOVIE_ZOOM_FILL")); 
 }
 
 //================================================================
@@ -1089,7 +1089,7 @@ void SideCar::InterestingKey(QKeyEvent *event){
     break;
 
   case Qt::Key_F : // zoom to fit window
-    SendEvent(MovieEvent("MOVIE_ZOOM_FIT"));
+    SendEvent(MovieEvent("MOVIE_ZOOM_FILL"));
     break;
 
   case Qt::Key_H : //show keyboard help

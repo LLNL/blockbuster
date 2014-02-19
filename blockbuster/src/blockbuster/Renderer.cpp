@@ -1115,7 +1115,7 @@ void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
             movieEvent->mEventType = "MOVIE_CENTER";
             return;
           case 'f':
-            movieEvent->mEventType = "MOVIE_ZOOM_FIT";
+            movieEvent->mEventType = "MOVIE_ZOOM_FILL";
             return;
           case 'h':
           case '?':

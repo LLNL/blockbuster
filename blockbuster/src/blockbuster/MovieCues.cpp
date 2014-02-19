@@ -162,7 +162,7 @@ void MovieCue::GenerateScript(MovieScript &oScript) const{
     oScript.push_back(MovieEvent("MOVIE_ZOOM_ONE")); 
   } 
   else if (mZoomToFill) {
-    oScript.push_back(MovieEvent("MOVIE_ZOOM_TO_FILL")); 
+    oScript.push_back(MovieEvent("MOVIE_ZOOM_FILL")); 
   } 
   else {
     oScript.push_back(MovieEvent("MOVIE_ZOOM_SET", mZoom)); 
@@ -1075,7 +1075,7 @@ void MovieCueManager::on_zoomOneCheckBox_clicked(){
 
 //=======================================================================
 void MovieCueManager::on_zoomToFillCheckBox_clicked(){
-  if (mCurrentCue)  mZoomOneChanged = mCurrentCue->mZoomOne ^ zoomOneCheckBox->isChecked(); 
+  if (mCurrentCue)  mZoomToFillChanged = mCurrentCue->mZoomToFill ^ zoomToFillCheckBox->isChecked(); 
 
   if (zoomToFillCheckBox->isChecked()) {
     zoomOneCheckBox->setChecked(false); 
