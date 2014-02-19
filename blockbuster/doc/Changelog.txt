@@ -3,7 +3,7 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 
 ===============================================================================
 VERSION 2.8.0q (git tag blockbuster-v2.8.0p) Wed Feb 12 17:47:57 PST 2014
-
+-- Fixed a bug in movie fullscreen behavior when "fill" box was checked.
 
 ===============================================================================
 VERSION 2.8.0p (git tag blockbuster-v2.8.0p) Fri Feb 14 09:23:07 PST 2014

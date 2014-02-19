@@ -453,8 +453,8 @@ void MovieCueManager::EnableDisableFields(bool enable) {
   windowHeightLabel->setEnabled(enable); 
   windowWidthLabel->setEnabled(enable); 
   fullScreenCheckBox->setEnabled(enable);
-  zoomOneCheckBox->setEnabled(enable && !zoomToFillCheckBox->isChecked());
-  zoomToFillCheckBox->setEnabled(enable && !zoomOneCheckBox->isChecked());
+  zoomOneCheckBox->setEnabled(enable);
+  zoomToFillCheckBox->setEnabled(enable);
   zoomLabel->setEnabled(enable); 
   zoomField->setEnabled(enable &&  !zoomToFillCheckBox->isChecked() && !zoomOneCheckBox->isChecked()); 
   
