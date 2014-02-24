@@ -220,6 +220,18 @@ tests = [
     },
     
     # ===============================================
+    # Make sure that -playexit works
+    { "name": "blockbuster-playexit",
+      "need_data": ["quicksand-wildcard-11frames-lzma.sm"],
+      "cmd": "blockbuster",
+      "args": "-playexit 9 -v 5 quicksand-wildcard-11frames-lzma.sm",
+      "output": None,
+      "failure_pattern": BLOCKBUSTER_FAILURE,
+      "success_pattern": "window 10: 473312 size 43940",    
+      "return": 0
+      },
+         
+    # ===============================================
     # Make sure that adding tags to a movie do not cause the movie to be unviewable
     { "name": "blockbuster-test-smtag-safety",
       "need_data": ["quicksand-wildcard-11frames-lzma.sm",
