@@ -2,6 +2,10 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
+VERSION 2.8.1a (git tag blockbuster-v2.8.1a) Mon Feb 24 10:11:58 PST 2014
+-- This is just a rebranding of 2.8.0p, no changes.  
+
+===============================================================================
 VERSION 2.8.0p (git tag blockbuster-v2.8.0p) Tue Feb 18 18:00:43 PST 2014
 -- Fixed a bug in movie fullscreen behavior when "fill" box was checked.
 -- Starting without a movie is no longer a blockbuster emergency.  No window opens in this case.  
