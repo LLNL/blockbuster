@@ -319,6 +319,11 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           playDirection = 0;
           panning = 0; 
           
+          if ( options->play != 0 ) {
+            playDirection = options->play;
+            options->play = 0;
+          }
+
           options->geometry.width = width; 
           options->geometry.height = height; 
 
@@ -1190,8 +1195,10 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           fps = 0.0;
         }
         if (renderer) renderer->reportActualFPS(fps); 
-        if ( (playExit && frameNumber >= playExit)) { 
+        if ( (playExit > 0 && frameNumber >= playExit) ||
+             (playExit == -1 && frameNumber > endFrame-1)) { 
           events.push_back(MovieEvent("MOVIE_QUIT")); 
+          playExit = 0; 
         }
       }
     }
