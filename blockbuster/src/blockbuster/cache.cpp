@@ -427,8 +427,10 @@ ImageCache::ImageCache(int numthreads, int numimages, ImageFormat &required):
       mThreads.push_back(CacheThreadPtr(new CacheThread(this, threadImages, i))); 
       mThreads[i]->start(); 
     }
-  }
-  
+  } 
+  else {
+    // push back a place to cache images but DO NOT START THE THREAD
+    mThreads.push_back(CacheThreadPtr(new CacheThread(this, threadImages, 0))); }
   return;
 }
 
@@ -559,22 +561,24 @@ void ImageCache::ManageFrameList(FrameListPtr frameList)
   
 CachedImagePtr ImageCache::FindImage(uint32_t frame, uint32_t lod) {
   CACHEDEBUG("FindImage frame %d", frame); 
-  /* Search the cache to see whether an appropriate image already
+  /* Search the caches to see whether an appropriate image already
    * exists within the cache.
    */
-  uint32_t threadnum = frame % mThreads.size(); 
-  
-  for (vector<CachedImagePtr>::iterator cachedImage = 
-         mThreads[threadnum]->mCachedImages.begin(); 
-       cachedImage != mThreads[threadnum]->mCachedImages.end();  cachedImage++) {
-    if ((*cachedImage)->loaded &&
-        (*cachedImage)->frameNumber == frame &&
-        (*cachedImage)->levelOfDetail == lod) {
-      CACHEDEBUG("Found frame number %d", frame); 
-      return *cachedImage;
+  if (mThreads.size()) {
+    uint32_t threadnum = frame % mThreads.size(); 
+    
+    for (vector<CachedImagePtr>::iterator cachedImage = 
+           mThreads[threadnum]->mCachedImages.begin(); 
+         cachedImage != mThreads[threadnum]->mCachedImages.end();  cachedImage++) {
+      if ((*cachedImage)->loaded &&
+          (*cachedImage)->frameNumber == frame &&
+          (*cachedImage)->levelOfDetail == lod) {
+        CACHEDEBUG("Found frame number %d", frame); 
+        return *cachedImage;
+      }
     }
   }
-  
+
   return CachedImagePtr();
 }
 
@@ -618,7 +622,11 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
   //    int rv;
   Rectangle region = *newRegion;
   gCurrentFrame = frameNumber; 
-  int threadnum = frameNumber % mThreads.size(); 
+  int threadnum = 0; 
+  if (mThreads.size() > 0)  {
+    threadnum = frameNumber % mThreads.size(); 
+  }
+
   if (!mFrameList) {
     WARNING("frame %d requested but cache has no frame list",
             frameNumber);
@@ -823,42 +831,42 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
   /* We have an image; we'll add it to the cache ourselves.  Find
    * a slot we can stick it in.
    */
-  if (mNumReaderThreads > 0) {
-    mThreads[threadnum]->lock("adding image to cached image slots in main thread", __FILE__, __LINE__);
-  }
-
-  /* Either update the current image slot or find a new one */
-  if (cachedImage) {
-    imageSlot = cachedImage;
-  }
-  else {
-    imageSlot = mThreads[threadnum]->GetCachedImageSlot(frameNumber);
-  }
-
-  if (!imageSlot) {
-	/* We have an image, but no place to put it!
-	 * The error has been reported; destroy the image
-	 * and return empty image.
-	 */
-	if (mNumReaderThreads > 0) {
-      mThreads[threadnum]->unlock("no place for image", __FILE__, __LINE__); 
-	}
-	return ImagePtr(); 
-  }
-
-  /* if there's an image in this slot, free it! */
-  imageSlot->image.reset(); 
-
-  /* Otherwise, we're happy.  Store the image away. */
-  imageSlot->frameNumber = frameNumber;
-  imageSlot->levelOfDetail = levelOfDetail;
-  imageSlot->image = image;
-  imageSlot->loaded = 1;
-  imageSlot->requestNumber = mRequestNumber;
-  if (mNumReaderThreads > 0) {
-    mThreads[threadnum]->unlock("image stored and locked successfully", __FILE__, __LINE__); 
-  }
+  if (mMaxCachedImages > 0 ) {
+    if (mNumReaderThreads > 0) {
+      mThreads[threadnum]->lock("adding image to cached image slots in main thread", __FILE__, __LINE__);
+    }
+    /* Either update the current image slot or find a new one */
+    if (cachedImage) {
+      imageSlot = cachedImage;
+    }
+    else {
+      imageSlot = mThreads[threadnum]->GetCachedImageSlot(frameNumber);
+    }
     
+    if (!imageSlot) {
+      /* We have an image, but no place to put it!
+       * The error has been reported; destroy the image
+       * and return empty image.
+       */
+      if (mNumReaderThreads > 0) {
+        mThreads[threadnum]->unlock("no place for image", __FILE__, __LINE__); 
+      }
+      return ImagePtr(); 
+    }
+    
+    /* if there's an image in this slot, free it! */
+    imageSlot->image.reset(); 
+    
+    /* Otherwise, we're happy.  Store the image away. */
+    imageSlot->frameNumber = frameNumber;
+    imageSlot->levelOfDetail = levelOfDetail;
+    imageSlot->image = image;
+    imageSlot->loaded = 1;
+    imageSlot->requestNumber = mRequestNumber;
+    if (mNumReaderThreads > 0) {
+      mThreads[threadnum]->unlock("image stored and locked successfully", __FILE__, __LINE__); 
+    }
+  }
     
   return image;
 }
@@ -877,7 +885,10 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
 {
   CACHEDEBUG("PreloadImage() frame %d", frameNumber); 
   CachedImagePtr cachedImage;
-  uint32_t threadnum = frameNumber % mThreads.size();
+  uint32_t threadnum = 0; 
+  if (mThreads.size() > 0) {
+    threadnum = frameNumber % mThreads.size();
+  }
   
   /* Keep track of highest frame number.  We need it for cache
    * replacement.

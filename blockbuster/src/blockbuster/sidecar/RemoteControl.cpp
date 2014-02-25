@@ -24,7 +24,8 @@ void RemoteControl::updateFromSnapshot(MovieSnapshot &snapshot){
   BLOCK_APPLY(mInfoWindow->imageSizeLabel, setText(QString("%1, %2").arg((int32_t)snapshot.mImageHeight).arg((int32_t)snapshot.mImageWidth))); 
   BLOCK_APPLY(mInfoWindow->displaySizeLabel, setText(QString("%1, %2").arg((int32_t)(snapshot.mZoom*snapshot.mImageHeight)).arg((int32_t)(snapshot.mZoom*snapshot.mImageWidth)))); 
   BLOCK_APPLY(mInfoWindow->imageXYLabel, setText(QString("%1, %2").arg(snapshot.mImageXpos).arg(snapshot.mImageYpos))); 
-  
+
+  BLOCK_APPLY(stereoCheckBox, setChecked(snapshot.mStereo)); 
   BLOCK_APPLY(fpsLabel, setText(QString("%1").arg(snapshot.mFrameRate))); 
   
   LOCK_BLOCK_APPLY(zoomSpinBox, snapshot.mZoom,  setValue(snapshot.mZoom)); 

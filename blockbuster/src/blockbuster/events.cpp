@@ -227,48 +227,17 @@ bool MovieSnapshot::operator == (const MovieSnapshot &other) const{
   return (string(*this) == string(other) ); 
 }
 
-//==========================================================================
-/* QString MovieSnapshot::humanReadableString(void) const {
-   QString retval = QString("Snapshot:  mSnapshotType=%1 mFilename=%2 mFrameRate=%3 mTargetFPS=%4 mZoom=%5 mLOD=%6 mPlayStep=%7 mStartFrame=%8 mEndFrame=%9 mNumFrames=%10 mFrameNumber=%11 mLoop=%12 mPingPong=%13 mFullScreen=%14 mZoomOne=%15 mNoScreensaver=%16 mScreenHeight=%17 mScreenWidth=%18 mScreenXpos=%19 mScreenYpos=%20 mImageHeight=%21 mImageWidth=%22 mImageXpos=%23 mImageYpos=%24")
-   .arg(mSnapshotType)
-   .arg(mFilename)
-   .arg(mFrameRate)
-   .arg(mTargetFPS)
-   .arg(mZoom)
-   .arg(mLOD)
-   .arg(mPlayStep)
-   .arg(mStartFrame)
-   .arg(mEndFrame)
-   .arg(mNumFrames)
-   .arg(mFrameNumber)
-   .arg(mLoop)
-   .arg(mPingPong)
-   .arg(mFullScreen)
-   .arg(mZoomOne)
-   .arg(mNoScreensaver)
-   .arg(mScreenHeight)
-   .arg(mScreenWidth)
-   .arg(mScreenXpos)
-   .arg(mScreenYpos)
-   .arg(mImageHeight)
-   .arg(mImageWidth)
-   .arg(mImageXpos)
-   .arg(mImageYpos);
 
-   //dbprintf("Snapshot::toString(): \"%s\"\n", (const char*)retval.toAscii());
-   return retval; 
-  
-   }
-*/ 
 //==========================================================================
 MovieSnapshot::operator string() const {
-  string retval = str(boost::format("mSnapshotType=%1% mFilename=%2% mFrameRate=%3% mTargetFPS=%4% mZoom=%5% mLOD=%6% mPlayStep=%7% mStartFrame=%8% mEndFrame=%9% mNumFrames=%10% mFrameNumber=%11% mLoop=%12% mPingPong=%13% mFullScreen=%14% mZoomToFill=%15% mNoScreensaver=%16% mScreenHeight=%17% mScreenWidth=%18% mScreenXpos=%19% mScreenYpos=%20% mImageHeight=%21% mImageWidth=%22% mImageXpos=%23% mImageYpos=%24%")
+  string retval = str(boost::format("mSnapshotType=%s mFilename=%s mFrameRate=%0.6f mTargetFPS=%0.6f mZoom=%0.6f mLOD=%d mStereo=%d mPlayStep=%d mStartFrame=%d mEndFrame=%d mNumFrames=%d mFrameNumber=%d mLoop=%d mPingPong=%d mFullScreen=%d mZoomToFill=%d mNoScreensaver=%d mScreenHeight=%d mScreenWidth=%d mScreenXpos=%d mScreenYpos=%d mImageHeight=%d mImageWidth=%d mImageXpos=%d mImageYpos=%d")
                       %(mSnapshotType)
                       %(mFilename)
                       %(mFrameRate)
                       %(mTargetFPS)
                       %(mZoom)
                       %(mLOD)
+                      %(mStereo)
                       %(mPlayStep)
                       %(mStartFrame)
                       %(mEndFrame)
@@ -309,6 +278,7 @@ MovieSnapshot &MovieSnapshot::operator <<(string s) {
       else if (key == "mTargetFPS") mTargetFPS = value.toFloat();
       else if (key == "mZoom") mZoom = value.toFloat();
       else if (key == "mLOD") mLOD = value.toInt();
+      else if (key == "mStereo") mStereo = value.toInt();
       else if (key == "mPlayStep") mPlayStep = value.toInt();
       else if (key == "mStartFrame") mStartFrame = value.toInt();
       else if (key == "mEndFrame") mEndFrame = value.toInt();

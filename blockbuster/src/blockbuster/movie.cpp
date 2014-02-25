@@ -185,10 +185,10 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
 
   deque<MovieEvent>  events; 
 
-  if (options->fullScreen) {
+  /*  if (options->fullScreen) {
     DEBUGMSG("fullScreen from options\n"); 
     events.push_back(MovieEvent("MOVIE_FULLSCREEN")); 
-  }
+    }*/
 					
   time_t lastheartbeat = time(NULL); 
   MovieSnapshot oldSnapshot; 
@@ -281,16 +281,17 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             continue; 
           }
           if (!options->stereoSwitchDisable) { 
-            // auto-switch stereo based on detected movie type     
+            dbprintf(5, "auto-switch stereo based on detected movie type...\n"); 
             if (options->rendererName != "dmx") { 
-              // No DMX: switch frontend renderer as needed
+              dbprintf(5, "No DMX: switch frontend renderer as needed.\n"); 
               if ((allFrames->mStereo && options->rendererName != "gl_stereo")) {
                 options->rendererName = "gl_stereo";
               }
               if (!allFrames->mStereo && options->rendererName == "gl_stereo") {
                 options->rendererName = "gl";
               }            
-            } else { // DMX case: switch backend renderer as needed
+            } else { 
+              dbprintf(5, "DMX case: switch backend renderer as needed.\n"); 
               if ((allFrames->mStereo && options->backendRendererName != "gl_stereo")) {
                 options->backendRendererName = "gl_stereo";
               }
@@ -301,10 +302,8 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             if (options->rendererName == "") {
               options->rendererName = "gl";
             }
-            if (allFrames->mStereo != (options->rendererName == "gl_stereo")) {
-              cerr << "toggle stereo automatically"<< endl;            
-            }
           } 
+          dbprintf(5, "Renderer name: %s\n", options->rendererName.toStdString().c_str()); 
           allFrames->GetInfo(width, height, depth, maxLOD, targetFPS);
           startFrame = 0; 
           endFrame = allFrames->numStereoFrames()-1; 
@@ -330,9 +329,17 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           if (options->decorations) {
             options->decorations = !options->fullScreen; 
           }
-          if (renderer && options->fullScreen != renderer->mFullScreen) {
-            delete renderer; 
-            renderer = NULL; 
+          if (renderer) {
+            if (allFrames->mStereo != (renderer->mName == "gl_stereo")) {
+              DEBUGMSG("toggle stereo automatically\n");           
+              delete renderer; 
+              renderer = NULL; 
+            }
+            else if (renderer && options->fullScreen != renderer->mFullScreen) {
+              DEBUGMSG("toggle to or from fullscreen mode\n");           
+              delete renderer; 
+              renderer = NULL; 
+            }
           }
           if (!renderer) {
             renderer = Renderer::CreateRenderer(options, 0, gMainWindow);
@@ -956,7 +963,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         }
         
         { 
-          MovieSnapshot newSnapshot(event.mEventType, filename, fps, targetFPS, currentZoom, lodBias, playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, loopmsg, pingpong, options->fullScreen, options->zoomToFill, options->noscreensaver, renderer->mHeight, renderer->mWidth, renderer->mXPos, renderer->mYPos, imageHeight, imageWidth, -xOffset, yOffset); 
+          MovieSnapshot newSnapshot(event.mEventType, filename, fps, targetFPS, currentZoom, lodBias, renderer->mName == "gl_stereo", playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, loopmsg, pingpong, options->fullScreen, options->zoomToFill, options->noscreensaver, renderer->mHeight, renderer->mWidth, renderer->mXPos, renderer->mYPos, imageHeight, imageWidth, -xOffset, yOffset); 
 
           if (sendSnapshot || newSnapshot != oldSnapshot) {
             

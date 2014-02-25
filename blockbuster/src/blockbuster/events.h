@@ -200,7 +200,7 @@ const QIODevice &operator >>( QIODevice &iStream,  MovieEvent &event);
 struct MovieSnapshot {
   MovieSnapshot() :
     mSnapshotType("MOVIE_NONE"), mFrameRate(0), mTargetFPS(30.0), 
-    mZoom(0.0), mZoomToFill(false), mLOD(0), 
+    mZoom(0.0), mZoomToFill(false), mLOD(0), mStereo(false), 
     mPlayStep(0), mStartFrame(1), mEndFrame(1),  mNumFrames(0), 
     mFrameNumber(1),  mLoop(0),  mPingPong(false), 
     mFullScreen(false), mNoScreensaver(false), 
@@ -209,7 +209,7 @@ struct MovieSnapshot {
     
   MovieSnapshot(string snapshotType, 
                 string filename, float frameRate, float targetFPS, 
-                float zoom, uint32_t lod, 
+                float zoom, uint32_t lod, bool stereo, 
                 int32_t playStep,  int32_t startFrame, int32_t endFrame, 
                 int32_t numFrames, int32_t frameNumber,  
                 int32_t loop,  bool pingpong, bool fullScreen, 
@@ -222,7 +222,7 @@ struct MovieSnapshot {
     mSnapshotType(snapshotType), 
     mFilename(filename), mFrameRate(frameRate), mTargetFPS(targetFPS), 
     mZoom(zoom), mZoomToFill(zoomToFill), 
-    mLOD(lod), mPlayStep(playStep), 
+    mLOD(lod), mStereo(stereo), mPlayStep(playStep), 
     mStartFrame(startFrame), mEndFrame(endFrame),  
     mNumFrames(numFrames), mFrameNumber(frameNumber), 
     mLoop(loop), mPingPong(pingpong), 
@@ -249,7 +249,7 @@ struct MovieSnapshot {
   string mSnapshotType; //e.g., "MOVIE_SNAPSHOT_ENDFRAME", etc.
   string mFilename; 
   float mFrameRate, mTargetFPS, mZoom;
-  int32_t mZoomToFill, mLOD, mPlayStep, mStartFrame, mEndFrame, mNumFrames, mFrameNumber, mLoop, mPingPong, mFullScreen, mNoScreensaver, mScreenHeight, mScreenWidth, mScreenXpos, mScreenYpos, mImageHeight, mImageWidth, mImageXpos, mImageYpos; 
+  int32_t mZoomToFill, mLOD, mStereo, mPlayStep, mStartFrame, mEndFrame, mNumFrames, mFrameNumber, mLoop, mPingPong, mFullScreen, mNoScreensaver, mScreenHeight, mScreenWidth, mScreenXpos, mScreenYpos, mImageHeight, mImageWidth, mImageXpos, mImageYpos; 
 };
 
 #endif

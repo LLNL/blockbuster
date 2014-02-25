@@ -132,31 +132,10 @@ class CacheThread: public QThread {
     jobDone.wakeAll(); 
   }
  
-  /* 
-     Called by cache thread::Run(): 
-    mCache->lock("check for job in work queue", __FILE__, __LINE__);
-    mCache->unlock("found job and added to pending queue", __FILE__, __LINE__);
-    mCache->lock("finished job, updating queues", __FILE__, __LINE__); 
-      mCache->unlock("error in job", __FILE__, __LINE__); 
-      mCache->unlock("job success", __FILE__, __LINE__);
-
-      Called by main thread: 
-  lock("clearJobQueue", __FILE__, __LINE__); 
-  unlock("JobQueue cleared", __FILE__, __LINE__); 
-  main thread in GetImage():  
-    lock("checking for ready image", __FILE__, __LINE__);
-          unlock("found interesting frame", __FILE__, __LINE__); 
-    lock("adding image to cached image slots in main thread", __FILE__, __LINE__);
-    unlock("image stored and locked successfully", __FILE__, __LINE__); 
-  */
-
-  void  lock(string reason, string file="unknown file", int line=0) {
+   void  lock(string reason, string file="unknown file", int line=0) {
     CACHEDEBUG("%s: %d: locking image cache (%s)", 
                file.c_str(), line, reason.c_str()); 
     imageCacheLock.lock(); 
-    /* CACHEDEBUG("%s: %d: locked image cache (%s)", 
-       file, line, reason); 
-    */
   }
   void unlock(string reason, string file="unknown file", int line=0) {
     imageCacheLock.unlock(); 
@@ -266,12 +245,6 @@ class ImageCache {
    */
   std::vector<CacheThreadPtr> mThreads;
     
-  /*  QMutex imageCacheLock; 
-  QWaitCondition jobReady, jobDone; 
-  deque<ImageCacheJobPtr> mJobQueue; // jobs ready for the workers to take
-  deque<ImageCacheJobPtr> mPendingQueue; // jobs being worked on by a worker
-  deque<ImageCacheJobPtr> mErrorQueue;  // FAILs
-  */
 } ;
 
 

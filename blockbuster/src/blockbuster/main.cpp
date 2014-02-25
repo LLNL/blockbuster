@@ -114,7 +114,7 @@ void usage(void) {
   printf("-no-stereo-switch suppresses automatic stereo or mono mode switches based on movie being stereo or mono\n");
   printf("-play (or -Play) automatically starts the movie after loading\n");
   printf("-playexit framenum: play one time until frame given, then exit.  Useful for testing.  If framenum == -1, play all the way to end.\n");
-  // printf("-preload <num> specifies how many frames to preload\n");
+  printf("-preload <num> specifies how many frames to preload\n");
   printf("-renderer <name> specifies the method used to render images\n");
   printf("\tgl: Render using OpenGL glDrawPixels to an X11 window\n");
   printf("\t    (supported in 'gtk', 'x11' user interfaces)\n");
@@ -384,10 +384,10 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
       opt->play = 1; 
       continue;
     }
-    /* 	else if (CHECK_ATOI_ARG("-preload", argc, argv,  opt->preloadFrames)) {
-       continue;
-       }
-    */ 
+    else if (CHECK_ATOI_ARG("-preload", argc, argv,  opt->preloadFrames)) {
+      continue;
+    }
+     
 	else if (CHECK_STRING_ARG("-renderer", argc, argv, opt->rendererName)) continue;
 	else if (CHECK_STRING_ARG("-replayEvents", argc, argv, opt->mReplayEventsFilename))  {
       continue;
@@ -499,8 +499,15 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
   if (opt->readerThreads == -1) {
     if (numProcessors > 1) {
       opt->readerThreads = max(numProcessors-2,1);
-    }
+    } 
     dbprintf(1, "User did not specify thread count; using %d\n", opt->readerThreads); 
+  }
+  if (opt->readerThreads < 0) {
+    dbprintf(0, "Error: number of threads cannot be %d\n", opt->readerThreads);
+    exit(1); 
+  }
+  if (opt->readerThreads == 0) {
+    dbprintf(0, "Warning: threads disabled.\n", opt->readerThreads);
   }
   DEBUGMSG("Using %d threads", opt->readerThreads); 
 
@@ -531,11 +538,35 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
       ERROR("The default master port is no longer used for security reasons"); 
       exit(2);
     }
-    // }
     DEBUGMSG(QString("SlaveHost: %1 Port: %2\n")
              .arg(opt->masterHost).arg(opt->masterPort));  
   }
   
+
+  if (opt->mMaxCachedImages == 0) {
+    dbprintf(0, "Warning:  image cache size set to 0 by user.  No preloading or caching will be done and no threading will be done.\n"); 
+    opt->preloadFrames = 0;
+    opt->readerThreads = 0; 
+  }
+  else if (opt->mMaxCachedImages < 0){
+    dbprintf(0, "Error: image cache size cannot be %d\n", opt->mMaxCachedImages);
+    exit(1); 
+  }  
+  
+    if (opt->preloadFrames == 0) {
+      dbprintf(0, "Warning: preloadFrames set to 0 by user.  No preloading will be done.\n"); 
+    }
+    else if (opt->preloadFrames < 0){
+      dbprintf(0, "Error: preloadFrames cannot be %d\n", opt->preloadFrames);
+      exit(1); 
+    }
+  
+  if ( opt->preloadFrames && opt->preloadFrames >= opt->mMaxCachedImages) {
+    dbprintf(0, "Error: preloadFrames %d must be less than cache size %d.\n", 
+             opt->preloadFrames, opt->mMaxCachedImages);
+    exit (1); 
+  }
+   
   DEBUGMSG("Preload is %d and cache size is %d\n", opt->preloadFrames, opt->mMaxCachedImages); 
 
   /* We've read all the command line options, so everything is set.

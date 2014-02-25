@@ -2,6 +2,11 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
+VERSION 2.8.1c (git tag blockbuster-v2.8.1b) Mon Feb 24 18:07:17 PST 2014
+-- BUGFIX: Properly handle switching between stereo and non-stereo sidecar cues.
+-- BUGFIX: Appropriately set "stereo" checkbox in sidecar GUI when a movie is loaded.  
+
+===============================================================================
 VERSION 2.8.1b (git tag blockbuster-v2.8.1b) Mon Feb 24 18:07:17 PST 2014
 -- BUGFIX -play and -playexit arguments did not do anything 
 -- Allow -threads 0, -cachesize 0 and/or -preload 0 if the user wishes. 
