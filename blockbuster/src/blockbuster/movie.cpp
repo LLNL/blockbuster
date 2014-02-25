@@ -142,6 +142,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
   FrameListPtr allFrames; 
   double noscreensaverStartTime = GetCurrentTime();
 
+
   bool pingpong = false; // play forward, then backward, then forward, etc
   bool cuePlaying = false;  // when true, status will not change. 
   /* UI / events */

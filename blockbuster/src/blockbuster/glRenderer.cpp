@@ -34,11 +34,6 @@
 #include "timer.h"
 
 
-glRenderer::glRenderer(ProgramOptions *opt, Window parentWindow,
-                       BlockbusterInterface *gui, QString name):
-  Renderer(opt, parentWindow, gui, name) {
-  return; 
-}
 
 void glRenderer::FinishRendererInit(void) {
   // from glFinishInitialization: 
@@ -83,12 +78,6 @@ void glRenderer::FinishRendererInit(void) {
   mRequiredImageFormat.byteOrder = MSB_FIRST;
   mRequiredImageFormat.bytesPerPixel = 3;
   
-  return; 
-}
-
-//=============================================================
-glRenderer::~glRenderer() {
-  glXDestroyContext(mDisplay, context);
   return; 
 }
 
@@ -496,9 +485,7 @@ XVisualInfo *glStereoRenderer::ChooseVisual(void)
 // glTextureRenderer
 // ==========================================================
 
-glTextureRenderer::glTextureRenderer(ProgramOptions *opt, Window parentWindowID, 
-                                     BlockbusterInterface *gui, QString name):
-  glRenderer(opt, parentWindowID, gui, name) {
+void glTextureRenderer::BeginRendererInit(void){
 
   printf("using texture rendering\n"); 
   glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureWidth);

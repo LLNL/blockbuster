@@ -11,12 +11,28 @@
 //======================================================================
 class x11Renderer: public Renderer {
  public:
-  x11Renderer(ProgramOptions *opt, Window parentWindow, 
-              BlockbusterInterface *gui, QString name="x11");
+  x11Renderer( ProgramOptions *opt): 
+    Renderer(opt),
+    mSwapAction(XdbeBackground) {
+    mName = "x11";
+    return; 
+  }
+    
+    virtual ~x11Renderer() {
+      XFreeGC(mDisplay, mGC);
+      
+      return; 
+    }
+
+  
+  // ======================================================================
+    virtual void BeginRendererInit(void) {
+      return; 
+    }
+
+  // ======================================================================
   virtual void FinishRendererInit(void);
 
-  virtual ~x11Renderer() ;
-  
   int ComputeShift(unsigned long mask);
   virtual XVisualInfo *ChooseVisual(void) {
     return NULL; // does not apply to X11

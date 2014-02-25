@@ -26,28 +26,37 @@
 class Renderer {
  public:
   // ======================================================================
-  static Renderer *CreateRenderer(ProgramOptions *options, 
-                                  qint32 parentWindowID, 
+  static Renderer *CreateRenderer(ProgramOptions *opt, qint32 parentWindowID, 
                                   BlockbusterInterface *gui=NULL);
   // ======================================================================
 
   
   // ======================================================================
-  Renderer(ProgramOptions *opt, qint32 parentWindowID, 
-           BlockbusterInterface *gui, QString name="virtual");
-  
+  Renderer(ProgramOptions *opt);
+    
   // ======================================================================
   virtual ~Renderer() {
     Close(); 
     return; 
   } 
+
+  // ======================================================================
+  void InitWindow(qint32 parentWindowID, 
+                  BlockbusterInterface *gui);
+
+  // ======================================================================
+  void BeginXWindowInit(void);
   
   // ======================================================================
-  void FinishInit(void);
-  
+  virtual void BeginRendererInit(void) = 0; 
+
   // ======================================================================
   virtual void FinishRendererInit(void) =0; 
   
+  void FinishXWindowInit(void); 
+  void SetFullScreen(bool fullscreen) ;
+  void set_mwm_border(bool onoff);
+
   // ======================================================================
   // the following depend on whether DMX is being used: 
   virtual void DestroyImageCache(void)
@@ -177,10 +186,6 @@ class Renderer {
   virtual void DrawString(int row, int column, const char *str)=0;  
   virtual void SwapBuffers(void)=0;
   
-  void FinishXWindowInit(void); 
-  void SetFullScreen(bool fullscreen) ;
-  void set_mwm_border(bool onoff);
-
   void ShowCursor(bool show);
   void ToggleCursor(void);
   void SetTitle (QString); 
@@ -205,15 +210,18 @@ class Renderer {
   long mOldWidth, mOldHeight, mOldX, mOldY; 
   bool mXSync; 
 
-  bool mFullScreen; 
   // ==============================================================
   // END  stuff from XWindow 
   // ==============================================================
   QString mName; 
 
- protected:   
   //  " good to have around to reduce arguments" (??)
   ProgramOptions *mOptions; 
+  Rectangle mGeometry;
+  bool mUseDecorations, mFullScreen, mNoSmallWindows;
+  string mWindowTitle, mFontName; 
+  string mDiwplayName; 
+  uint32_t mReaderThreads, mNumCachedImages; 
 
   ImageCachePtr mCache; // if not using DMX
   NewImageCachePtr mNewCache; 

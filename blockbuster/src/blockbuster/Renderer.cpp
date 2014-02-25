@@ -26,8 +26,7 @@
 #define SCREEN_Y_MARGIN 40
 
 // ======================================================================
-Renderer * Renderer::CreateRenderer(ProgramOptions *opt,
-                                    qint32 parentWindowID, 
+Renderer * Renderer::CreateRenderer(ProgramOptions *opt, qint32 parentWindowID, 
                                     BlockbusterInterface *gui){
   QString name = opt->rendererName; 
   Renderer *renderer = NULL; 
@@ -35,53 +34,74 @@ Renderer * Renderer::CreateRenderer(ProgramOptions *opt,
   INFO("CreateRenderer creating renderer of type \"%s\"\n", name.toStdString().c_str()); 
 
   if (name == "gl" || name == "") 
-    renderer = new glRenderer(opt, parentWindowID, gui); 
+    renderer = new glRenderer(opt); 
   if (name == "gl_stereo") 
-    renderer = new glStereoRenderer(opt, parentWindowID, gui); 
+    renderer = new glStereoRenderer(opt); 
   if (name == "gltexture") 
-    renderer = new glTextureRenderer(opt, parentWindowID, gui); 
+    renderer = new glTextureRenderer(opt); 
 #ifdef USE_DMX
   if (name == "dmx") 
-    renderer = new dmxRenderer(opt, parentWindowID, gui); 
+    renderer = new dmxRenderer(opt); 
 #endif  
   if (name == "x11") 
-    renderer = new x11Renderer(opt, parentWindowID, gui); 
+    renderer = new x11Renderer(opt); 
 
   if (!renderer) {
-    ERROR(QString("Badness:  cannot create renderer \"%1\"\n").
-          arg(opt->rendererName)); 
+    ERROR(QString("Badness:  cannot create renderer \"%1\" -- unknown name.\n").
+          arg(name)); 
     exit(1); 
   }
 
   /* all renderers need to have this called polymorphically */  
-  renderer->FinishInit(); 
+  renderer->InitWindow(parentWindowID, gui); 
   return renderer;
   
 }
 
 // ======================================================================
-Renderer::Renderer(ProgramOptions *opt, qint32 parentWindowID, 
-                   BlockbusterInterface *gui, QString name):
+Renderer::Renderer(ProgramOptions *opt):
   // from Canvas: 
   mHeight(0), mWidth(0), mScreenHeight(0), mScreenWidth(0), 
   mXPos(0), mYPos(0), mDepth(0), 
   mThreads(opt->readerThreads),
   mCacheSize(opt->mMaxCachedImages), 
-  mBlockbusterInterface(gui), 
   // from XWindow: 
   mVisInfo(NULL), mScreenNumber(0), mWindow(0), mIsSubWindow(0), 
-  mParentWindow(parentWindowID),
   mFontInfo(NULL), mFontHeight(0),  mShowCursor(true), 
-  mOldWidth(-1), mOldHeight(-1), mOldX(-1), mOldY(-1), mXSync(false), 
-  mFullScreen(opt->fullScreen), mName(name), mOptions(opt)
+  mOldWidth(-1), mOldHeight(-1), mOldX(-1), mOldY(-1), 
+  mXSync(false), mOptions(opt), 
+  mFullScreen(opt->fullScreen)
 { 
+  
+  return; 
+} 
 
+// ======================================================================
+void Renderer::InitWindow(qint32 parentWindowID, 
+                          BlockbusterInterface *gui) {
+  mBlockbusterInterface = gui; 
+  mParentWindow = parentWindowID;
+
+  BeginXWindowInit(); // previously Renderer base class constructor
+  BeginRendererInit(); // previously xxRenderer child class constructor
+  mVisInfo = ChooseVisual(); 
+  FinishXWindowInit(); 
+  FinishRendererInit(); 
+  mCache.reset(new ImageCache(mOptions->readerThreads,
+                              mOptions->mMaxCachedImages,
+                              mRequiredImageFormat));
+  return; 
+}
+
+// ======================================================================
+void Renderer::BeginXWindowInit(void) {
+  ECHO_FUNCTION(5); 
   // --------------------------------------
   // From XWindow:  
-  mDisplay = XOpenDisplay(opt->displayName.toStdString().c_str());
+  mDisplay = XOpenDisplay(mOptions->displayName.toStdString().c_str());
   if (!mDisplay) {
     QString err("cannot open display '%1'"); 
-    ERROR(err.arg(opt->displayName));
+    ERROR(err.arg(mOptions->displayName));
     return ;
   }
   
@@ -92,22 +112,315 @@ Renderer::Renderer(ProgramOptions *opt, qint32 parentWindowID,
   
   if (mParentWindow)
     mIsSubWindow = 1;
-
-  opt->mRenderer = this; // ugh -- this needs to be fixed! 
-  DEBUGMSG(QString("frameCacheSize is %1").arg(mCacheSize));    
+  
   return; 
-} 
-
-// ======================================================================
-void Renderer::FinishInit(void) {
-  ECHO_FUNCTION(5); 
-  mVisInfo = ChooseVisual(); 
-  FinishXWindowInit(); 
-  FinishRendererInit(); 
-  mCache.reset(new ImageCache(mOptions->readerThreads,
-                              mOptions->mMaxCachedImages, mRequiredImageFormat));
-  return;
 }
+
+
+// ==============================================================
+void Renderer::FinishXWindowInit(void) {
+  ECHO_FUNCTION(5); 
+  int x=0, y=0, width, height;
+  int required_x_margin, required_y_margin;
+  /* Get the screen and do some sanity checks */
+  Screen *screen= ScreenOfDisplay(mDisplay, 0);
+  // mScreenNumber = DefaultScreen(mDisplay);
+  // Screen *screen = ScreenOfDisplay(mDisplay, mScreenNumber);
+  
+  /* if geometry is don't care and decorations flag is off -- then set window to max screen extents */
+  mScreenWidth = WidthOfScreen(screen);
+  if (mOptions->geometry.width != DONT_CARE) 
+    width = mOptions->geometry.width;
+  else {
+    if(mOptions->decorations) 
+      width = DEFAULT_WIDTH;
+    else 
+      width =  mScreenWidth;
+  }
+  
+  mScreenHeight = HeightOfScreen(screen);
+  if (mOptions->geometry.height != DONT_CARE) 
+    height = mOptions->geometry.height;
+  else {
+    if(mOptions->decorations)
+      height = DEFAULT_HEIGHT;
+    else
+      height =  mScreenHeight; 
+  }
+ 
+  
+  /* if we've turned off the window border (decoration) with the -D flag then set rquired margins to zero
+     otherwise set them to the constants defined in movie.h (SCREEN_X_MARGIN ... ) */
+  if (mOptions->decorations) {
+    required_x_margin = SCREEN_X_MARGIN;
+    required_y_margin = SCREEN_Y_MARGIN;
+  }
+  else {
+    required_x_margin = 0;
+    required_y_margin = 0;
+  }
+  
+  if (mOptions->fullScreen) {
+    width = WidthOfScreen(screen) - required_x_margin;
+    height = HeightOfScreen(screen) - required_y_margin;
+  }
+  else {
+    if (width > WidthOfScreen(screen) - required_x_margin) {
+#if 0
+      WARNING("requested window width %d greater than screen width %d",
+              width, WidthOfScreen(screen));
+#endif
+      width = WidthOfScreen(screen) - required_x_margin;
+    }
+    if (height > HeightOfScreen(screen) - required_y_margin) {
+#if 0
+      WARNING("requested window height %d greater than screen height %d",
+              height, HeightOfScreen(screen));
+#endif
+      height = HeightOfScreen(screen) - required_y_margin;
+    }
+  }
+  
+  
+  if (mOptions->geometry.x == CENTER)
+    x = (WidthOfScreen(screen) - width) / 2;
+  else if (mOptions->geometry.x != DONT_CARE)
+    x = mOptions->geometry.x;
+  else
+    x = 0;
+  
+  if (mOptions->geometry.y == CENTER)
+    y = (HeightOfScreen(screen) - height) / 2;
+  else if (mOptions->geometry.y != DONT_CARE)
+    y = mOptions->geometry.y;
+  else
+    y = 0;
+ 
+
+
+  XSetWindowAttributes windowAttrs;
+  unsigned long windowAttrsMask;
+  XSizeHints sizeHints;
+  const int winBorder = 0;
+  //mVisInfo = this->ChooseVisual( ); // virtual function 
+  if (mVisInfo == NULL) {
+    XCloseDisplay(mDisplay);
+    ERROR("Could not get mVisInfo in XWindow constructor.\n"); 
+  }
+
+  /* Set up desired window attributes */
+  mColormap = XCreateColormap(mDisplay, RootWindow(mDisplay, mScreenNumber),
+                              mVisInfo->visual, AllocNone);
+  windowAttrsMask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
+  windowAttrs.background_pixel = 0x0;
+  windowAttrs.border_pixel = 0x0;
+  windowAttrs.colormap = mColormap;
+  windowAttrs.event_mask = StructureNotifyMask | ExposureMask;
+  
+  if (!mParentWindow) {
+    windowAttrs.event_mask |= (KeyPressMask | ButtonPressMask |
+                               ButtonReleaseMask | ButtonMotionMask);
+    mParentWindow = RootWindow(mDisplay, mScreenNumber);
+  }
+  printf ("XCreateWindow: X,Y = %d, %d\n", x, y); 
+  mWindow = XCreateWindow(mDisplay, mParentWindow,
+                          x, y, width, height,
+                          winBorder, mVisInfo->depth, InputOutput,
+                          mVisInfo->visual, windowAttrsMask, &windowAttrs);
+  
+
+  DEBUGMSG("created window 0x%x", mWindow);
+  
+  /* Pass some information along to the window manager to size the window */
+  sizeHints.flags = USSize ;
+  sizeHints.width = sizeHints.base_width = width; 
+  sizeHints.height = sizeHints.base_height = height; 
+  if (mOptions->noSmallWindows) {
+    // WARNING:  Setting PMinSize flag sets a hard minimum.  User cannot resize window below this.  But if I don't set it, then the window does not show up larger than a single monitor unless it's fullscreen. 
+    sizeHints.flags |= PMinSize;
+    sizeHints.min_width = width;
+    sizeHints.min_height = height;
+  }
+
+  if (mOptions->geometry.x == DONT_CARE) {
+    sizeHints.x = 0; 
+  } else {
+    sizeHints.x = mOptions->geometry.x;
+  }
+  if (mOptions->geometry.y == DONT_CARE) {
+    sizeHints.y = 0; 
+  } else {
+    sizeHints.y = mOptions->geometry.y;
+  }
+  sizeHints.flags |= USPosition;
+    
+  
+  SetTitle(mOptions->suggestedTitle); 
+  XSetStandardProperties(mDisplay, mWindow, 
+                         mOptions->suggestedTitle.toAscii(), mOptions->suggestedTitle.toAscii(), 
+                         None, (char **)NULL, 0, &sizeHints);
+  
+
+  // If we are doing fullscreen, we have to dance with the window manager.
+  SetFullScreen(mOptions->fullScreen); 
+  
+  set_mwm_border(mOptions->decorations);
+
+  /* Bring it up;  */
+  XMapWindow(mDisplay, mWindow);
+  
+  /* Font for rendering status information into the rendering window.
+   */
+  mFontInfo = XLoadQueryFont(mDisplay, 
+                             mOptions->fontName.toAscii());
+  if (!mFontInfo) {
+    QString warning("Couldn't load font %s, trying %s");
+    WARNING(warning.arg(mOptions->fontName).arg(DEFAULT_X_FONT));
+    
+    mFontInfo = XLoadQueryFont(mDisplay,
+                               DEFAULT_X_FONT);
+    if (!mFontInfo) {
+      ERROR("Couldn't load DEFAULT FONT %s", DEFAULT_X_FONT);
+      XFree(mVisInfo);
+      XFreeColormap(mDisplay, mColormap);
+      XCloseDisplay(mDisplay);
+      return ;
+    }
+  }
+  mFontHeight = mFontInfo->ascent + mFontInfo->descent;
+
+
+  XWindowAttributes win_attributes; 
+  XGetWindowAttributes(mDisplay, mWindow, &win_attributes);   
+  printf("New X,Y, border width is %d, %d, %d\n", x,y, win_attributes.border_width); 
+
+  XGetWindowAttributes(mDisplay, mParentWindow, &win_attributes); 
+  printf("ParentWindow: X,Y =  %d, %d\n", win_attributes.x, win_attributes.y);
+  //SetCanvasAttributes(mWindow); 
+  mWidth = width;
+  mHeight = height;
+  mXPos = x; 
+  mYPos = y; 
+  mDepth = mVisInfo->depth;
+  return; 
+}// END CONSTRUCTOR for XWindow
+
+// ==============================================================
+
+void Renderer::SetFullScreen(bool fullscreen) {
+// Make sure the window manager does not resize to allow for menu bar
+  set_mwm_border(!fullscreen  && mOptions->decorations);
+
+  Atom wm_state = XInternAtom(mDisplay, "_NET_WM_STATE", False);
+  Atom fsAtom = XInternAtom(mDisplay, "_NET_WM_STATE_FULLSCREEN", False);
+  
+  if (fullscreen) {
+    Screen *screen= ScreenOfDisplay(mDisplay, 0);
+    mScreenWidth = WidthOfScreen(screen);
+    mScreenHeight = HeightOfScreen(screen);
+    XResizeWindow(mDisplay, mWindow, mScreenWidth, mScreenHeight); 
+    XSync(mDisplay, 0);
+  }
+
+  XEvent xev;
+  memset(&xev, 0, sizeof(xev));
+  xev.type = ClientMessage;
+  xev.xclient.window = mWindow;
+  xev.xclient.message_type = wm_state;
+  xev.xclient.format = 32;
+  xev.xclient.data.l[0] = fullscreen?1:0;
+  xev.xclient.data.l[1] = fsAtom;
+  xev.xclient.data.l[2] = 0;
+  XSendEvent (mDisplay, DefaultRootWindow(mDisplay), False,
+              SubstructureRedirectMask | SubstructureNotifyMask, &xev);
+  
+  // Make sure the resize takes place over all monitors when using Xinerama
+  
+  // We have to get our window layout if multiple monitors are in use.  
+  int dummy1, dummy2;
+  int heads=0;
+  if (XineramaQueryExtension(mDisplay, &dummy1, &dummy2)) {
+    if (XineramaIsActive(mDisplay)) { 
+      dbprintf(1, "Display: %dx%d\n", mScreenWidth, mScreenHeight); 
+      XineramaScreenInfo *p=  XineramaQueryScreens(mDisplay, &heads);
+      // useful-looking code; keep around for reference:  
+      if (heads>0) {
+        for (int x=0; x<heads; ++x) {
+          dbprintf(1, "Head %d of %d heads: %dx%d at %d,%d\n", 
+                   x+1, heads, p[x].width, p[x].height, 
+                   p[x].x_org, p[x].y_org);
+        }
+      } else cout << "XineramaQueryScreens says there aren't any" << endl;
+      XFree(p);         
+    }// else cout << "Xinerama not active" << endl;
+  }// else cout << "No Xinerama extension" << endl;
+  Atom fullmons = XInternAtom(mDisplay, "_NET_WM_FULLSCREEN_MONITORS", False);
+  memset(&xev, 0, sizeof(xev));
+  xev.type = ClientMessage;
+  xev.xclient.window = mWindow;
+  xev.xclient.message_type = fullmons;
+  xev.xclient.format = 32;
+  xev.xclient.data.l[0] = 0; // your topmost monitor number 
+  xev.xclient.data.l[1] = heads-1; // bottommost -- assuming rectangular layout
+  xev.xclient.data.l[2] = 0; // leftmost 
+  xev.xclient.data.l[3] = heads-1; // rightmost -- assuming rectangular layout
+  xev.xclient.data.l[4] = 0; // source indication 
+  
+  XSendEvent (mDisplay, DefaultRootWindow(mDisplay), False,
+              SubstructureRedirectMask | SubstructureNotifyMask, &xev);
+  XFlush(mDisplay);
+  // end fullscreen stuff
+  return;  
+}
+  
+// ==============================================================
+/*
+ * Helper to remove window decorations
+ */
+void Renderer::set_mwm_border(bool onoff )
+{
+#define PROP_MOTIF_WM_HINTS_ELEMENTS    5
+#define MWM_HINTS_FUNCTIONS     (1L << 0)
+#define MWM_HINTS_DECORATIONS   (1L << 1)
+#define MWM_HINTS_INPUT_MODE    (1L << 2)
+#define MWM_HINTS_STATUS        (1L << 3)
+  
+  typedef struct
+  {
+    unsigned long    flags;
+    unsigned long    functions;
+    unsigned long    decorations;
+    long             inputMode;
+    unsigned long    status;
+  } PropMotifWmHints;
+  
+  PropMotifWmHints motif_hints;
+  Atom prop, proptype;
+  
+  /* setup the property */
+  motif_hints.flags = MWM_HINTS_DECORATIONS;
+  motif_hints.decorations = onoff?1:0;
+  
+  /* get the atom for the property */
+  prop = XInternAtom(mDisplay, "_MOTIF_WM_HINTS", True );
+  if (!prop) {
+    /* something went wrong! */
+    return;
+  }
+  
+  /* not sure this is correct, seems to work, XA_WM_HINTS didn't work */
+  proptype = prop;
+  
+  XChangeProperty( mDisplay, mWindow,  /* mDisplay, mWindow */
+                   prop, proptype,   /* property, type */
+                   32,               /* format: 32-bit datums */
+                   PropModeReplace,  /* mode */
+                   (unsigned char *) &motif_hints, /* data */
+                   PROP_MOTIF_WM_HINTS_ELEMENTS    /* nelements */
+                   );
+  return; 
+}
+
 
 // ======================================================================
 void Renderer::SetFrameList(FrameListPtr frameList) {
@@ -475,316 +788,6 @@ void Renderer::reportMovieCueComplete(void){
     mBlockbusterInterface->reportMovieCueComplete(); 
   }
   return ;
-}
-
-// ==============================================================
-// END  stuff from Canvas 
-// ========================================================================
-// ========================================================================
-// BEGIN stuff from XWindow (all public): 
-// ==============================================================
-// ==============================================================
-void Renderer::FinishXWindowInit(void) {
-  ECHO_FUNCTION(5); 
-  int x=0, y=0, width, height;
-  int required_x_margin, required_y_margin;
-  /* Get the screen and do some sanity checks */
-  Screen *screen= ScreenOfDisplay(mDisplay, 0);
-  // mScreenNumber = DefaultScreen(mDisplay);
-  // Screen *screen = ScreenOfDisplay(mDisplay, mScreenNumber);
-  
-  /* if geometry is don't care and decorations flag is off -- then set window to max screen extents */
-  mScreenWidth = WidthOfScreen(screen);
-  if (mOptions->geometry.width != DONT_CARE) 
-    width = mOptions->geometry.width;
-  else {
-    if(mOptions->decorations) 
-      width = DEFAULT_WIDTH;
-    else 
-      width =  mScreenWidth;
-  }
-  
-  mScreenHeight = HeightOfScreen(screen);
-  if (mOptions->geometry.height != DONT_CARE) 
-    height = mOptions->geometry.height;
-  else {
-    if(mOptions->decorations)
-      height = DEFAULT_HEIGHT;
-    else
-      height =  mScreenHeight; 
-  }
- 
-  
-  /* if we've turned off the window border (decoration) with the -D flag then set rquired margins to zero
-     otherwise set them to the constants defined in movie.h (SCREEN_X_MARGIN ... ) */
-  if (mOptions->decorations) {
-    required_x_margin = SCREEN_X_MARGIN;
-    required_y_margin = SCREEN_Y_MARGIN;
-  }
-  else {
-    required_x_margin = 0;
-    required_y_margin = 0;
-  }
-  
-  if (mOptions->fullScreen) {
-    width = WidthOfScreen(screen) - required_x_margin;
-    height = HeightOfScreen(screen) - required_y_margin;
-  }
-  else {
-    if (width > WidthOfScreen(screen) - required_x_margin) {
-#if 0
-      WARNING("requested window width %d greater than screen width %d",
-              width, WidthOfScreen(screen));
-#endif
-      width = WidthOfScreen(screen) - required_x_margin;
-    }
-    if (height > HeightOfScreen(screen) - required_y_margin) {
-#if 0
-      WARNING("requested window height %d greater than screen height %d",
-              height, HeightOfScreen(screen));
-#endif
-      height = HeightOfScreen(screen) - required_y_margin;
-    }
-  }
-  
-  
-  if (mOptions->geometry.x == CENTER)
-    x = (WidthOfScreen(screen) - width) / 2;
-  else if (mOptions->geometry.x != DONT_CARE)
-    x = mOptions->geometry.x;
-  else
-    x = 0;
-  
-  if (mOptions->geometry.y == CENTER)
-    y = (HeightOfScreen(screen) - height) / 2;
-  else if (mOptions->geometry.y != DONT_CARE)
-    y = mOptions->geometry.y;
-  else
-    y = 0;
- 
-
-
-  XSetWindowAttributes windowAttrs;
-  unsigned long windowAttrsMask;
-  XSizeHints sizeHints;
-  const int winBorder = 0;
-  //mVisInfo = this->ChooseVisual( ); // virtual function 
-  if (mVisInfo == NULL) {
-    XCloseDisplay(mDisplay);
-    ERROR("Could not get mVisInfo in XWindow constructor.\n"); 
-  }
-
-  /* Set up desired window attributes */
-  mColormap = XCreateColormap(mDisplay, RootWindow(mDisplay, mScreenNumber),
-                              mVisInfo->visual, AllocNone);
-  windowAttrsMask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
-  windowAttrs.background_pixel = 0x0;
-  windowAttrs.border_pixel = 0x0;
-  windowAttrs.colormap = mColormap;
-  windowAttrs.event_mask = StructureNotifyMask | ExposureMask;
-  
-  if (!mParentWindow) {
-    windowAttrs.event_mask |= (KeyPressMask | ButtonPressMask |
-                               ButtonReleaseMask | ButtonMotionMask);
-    mParentWindow = RootWindow(mDisplay, mScreenNumber);
-  }
-  printf ("XCreateWindow: X,Y = %d, %d\n", x, y); 
-  mWindow = XCreateWindow(mDisplay, mParentWindow,
-                          x, y, width, height,
-                          winBorder, mVisInfo->depth, InputOutput,
-                          mVisInfo->visual, windowAttrsMask, &windowAttrs);
-  
-
-  DEBUGMSG("created window 0x%x", mWindow);
-  
-  /* Pass some information along to the window manager to size the window */
-  sizeHints.flags = USSize ;
-  sizeHints.width = sizeHints.base_width = width; 
-  sizeHints.height = sizeHints.base_height = height; 
-  if (mOptions->noSmallWindows) {
-    // WARNING:  Setting PMinSize flag sets a hard minimum.  User cannot resize window below this.  But if I don't set it, then the window does not show up larger than a single monitor unless it's fullscreen. 
-    sizeHints.flags |= PMinSize;
-    sizeHints.min_width = width;
-    sizeHints.min_height = height;
-  }
-
-  if (mOptions->geometry.x == DONT_CARE) {
-    sizeHints.x = 0; 
-  } else {
-    sizeHints.x = mOptions->geometry.x;
-  }
-  if (mOptions->geometry.y == DONT_CARE) {
-    sizeHints.y = 0; 
-  } else {
-    sizeHints.y = mOptions->geometry.y;
-  }
-  sizeHints.flags |= USPosition;
-    
-  
-  SetTitle(mOptions->suggestedTitle); 
-  XSetStandardProperties(mDisplay, mWindow, 
-                         mOptions->suggestedTitle.toAscii(), mOptions->suggestedTitle.toAscii(), 
-                         None, (char **)NULL, 0, &sizeHints);
-  
-
-  // If we are doing fullscreen, we have to dance with the window manager.
-  SetFullScreen(mOptions->fullScreen); 
-  
-  set_mwm_border(mOptions->decorations);
-
-  /* Bring it up;  */
-  XMapWindow(mDisplay, mWindow);
-  
-  /* Font for rendering status information into the rendering window.
-   */
-  mFontInfo = XLoadQueryFont(mDisplay, 
-                             mOptions->fontName.toAscii());
-  if (!mFontInfo) {
-    QString warning("Couldn't load font %s, trying %s");
-    WARNING(warning.arg(mOptions->fontName).arg(DEFAULT_X_FONT));
-    
-    mFontInfo = XLoadQueryFont(mDisplay,
-                               DEFAULT_X_FONT);
-    if (!mFontInfo) {
-      ERROR("Couldn't load DEFAULT FONT %s", DEFAULT_X_FONT);
-      XFree(mVisInfo);
-      XFreeColormap(mDisplay, mColormap);
-      XCloseDisplay(mDisplay);
-      return ;
-    }
-  }
-  mFontHeight = mFontInfo->ascent + mFontInfo->descent;
-
-
-  XWindowAttributes win_attributes; 
-  XGetWindowAttributes(mDisplay, mWindow, &win_attributes);   
-  printf("New X,Y, border width is %d, %d, %d\n", x,y, win_attributes.border_width); 
-
-  XGetWindowAttributes(mDisplay, mParentWindow, &win_attributes); 
-  printf("ParentWindow: X,Y =  %d, %d\n", win_attributes.x, win_attributes.y);
-  //SetCanvasAttributes(mWindow); 
-  mWidth = width;
-  mHeight = height;
-  mXPos = x; 
-  mYPos = y; 
-  mDepth = mVisInfo->depth;
-  return; 
-}// END CONSTRUCTOR for XWindow
-
-// ==============================================================
-
-void Renderer::SetFullScreen(bool fullscreen) {
-// Make sure the window manager does not resize to allow for menu bar
-  set_mwm_border(!fullscreen  && mOptions->decorations);
-
-  Atom wm_state = XInternAtom(mDisplay, "_NET_WM_STATE", False);
-  Atom fsAtom = XInternAtom(mDisplay, "_NET_WM_STATE_FULLSCREEN", False);
-  
-  if (fullscreen) {
-    Screen *screen= ScreenOfDisplay(mDisplay, 0);
-    mScreenWidth = WidthOfScreen(screen);
-    mScreenHeight = HeightOfScreen(screen);
-    XResizeWindow(mDisplay, mWindow, mScreenWidth, mScreenHeight); 
-    XSync(mDisplay, 0);
-  }
-
-  XEvent xev;
-  memset(&xev, 0, sizeof(xev));
-  xev.type = ClientMessage;
-  xev.xclient.window = mWindow;
-  xev.xclient.message_type = wm_state;
-  xev.xclient.format = 32;
-  xev.xclient.data.l[0] = fullscreen?1:0;
-  xev.xclient.data.l[1] = fsAtom;
-  xev.xclient.data.l[2] = 0;
-  XSendEvent (mDisplay, DefaultRootWindow(mDisplay), False,
-              SubstructureRedirectMask | SubstructureNotifyMask, &xev);
-  
-  // Make sure the resize takes place over all monitors when using Xinerama
-  
-  // We have to get our window layout if multiple monitors are in use.  
-  int dummy1, dummy2;
-  int heads=0;
-  if (XineramaQueryExtension(mDisplay, &dummy1, &dummy2)) {
-    if (XineramaIsActive(mDisplay)) { 
-      dbprintf(1, "Display: %dx%d\n", mScreenWidth, mScreenHeight); 
-      XineramaScreenInfo *p=  XineramaQueryScreens(mDisplay, &heads);
-      // useful-looking code; keep around for reference:  
-      if (heads>0) {
-        for (int x=0; x<heads; ++x) {
-          dbprintf(1, "Head %d of %d heads: %dx%d at %d,%d\n", 
-                   x+1, heads, p[x].width, p[x].height, 
-                   p[x].x_org, p[x].y_org);
-        }
-      } else cout << "XineramaQueryScreens says there aren't any" << endl;
-      XFree(p);         
-    }// else cout << "Xinerama not active" << endl;
-  }// else cout << "No Xinerama extension" << endl;
-  Atom fullmons = XInternAtom(mDisplay, "_NET_WM_FULLSCREEN_MONITORS", False);
-  memset(&xev, 0, sizeof(xev));
-  xev.type = ClientMessage;
-  xev.xclient.window = mWindow;
-  xev.xclient.message_type = fullmons;
-  xev.xclient.format = 32;
-  xev.xclient.data.l[0] = 0; // your topmost monitor number 
-  xev.xclient.data.l[1] = heads-1; // bottommost -- assuming rectangular layout
-  xev.xclient.data.l[2] = 0; // leftmost 
-  xev.xclient.data.l[3] = heads-1; // rightmost -- assuming rectangular layout
-  xev.xclient.data.l[4] = 0; // source indication 
-  
-  XSendEvent (mDisplay, DefaultRootWindow(mDisplay), False,
-              SubstructureRedirectMask | SubstructureNotifyMask, &xev);
-  XFlush(mDisplay);
-  // end fullscreen stuff
-  return;  
-}
-  
-// ==============================================================
-/*
- * Helper to remove window decorations
- */
-void Renderer::set_mwm_border(bool onoff )
-{
-#define PROP_MOTIF_WM_HINTS_ELEMENTS    5
-#define MWM_HINTS_FUNCTIONS     (1L << 0)
-#define MWM_HINTS_DECORATIONS   (1L << 1)
-#define MWM_HINTS_INPUT_MODE    (1L << 2)
-#define MWM_HINTS_STATUS        (1L << 3)
-  
-  typedef struct
-  {
-    unsigned long    flags;
-    unsigned long    functions;
-    unsigned long    decorations;
-    long             inputMode;
-    unsigned long    status;
-  } PropMotifWmHints;
-  
-  PropMotifWmHints motif_hints;
-  Atom prop, proptype;
-  
-  /* setup the property */
-  motif_hints.flags = MWM_HINTS_DECORATIONS;
-  motif_hints.decorations = onoff?1:0;
-  
-  /* get the atom for the property */
-  prop = XInternAtom(mDisplay, "_MOTIF_WM_HINTS", True );
-  if (!prop) {
-    /* something went wrong! */
-    return;
-  }
-  
-  /* not sure this is correct, seems to work, XA_WM_HINTS didn't work */
-  proptype = prop;
-  
-  XChangeProperty( mDisplay, mWindow,  /* mDisplay, mWindow */
-                   prop, proptype,   /* property, type */
-                   32,               /* format: 32-bit datums */
-                   PropModeReplace,  /* mode */
-                   (unsigned char *) &motif_hints, /* data */
-                   PROP_MOTIF_WM_HINTS_ELEMENTS    /* nelements */
-                   );
-  return; 
 }
 
 

@@ -29,17 +29,6 @@
 //  =============================================================
 //  dmxRenderer -- launch and connect remote slaves at startup, manage them
 //  =============================================================
-dmxRenderer::dmxRenderer(ProgramOptions *opt, Window parentWindow, 
-                         BlockbusterInterface *gui, QString name):
-  QObject(NULL), 
-  Renderer(opt, parentWindow, gui, name),
-  mAllowIdleSlaves(true), 
-  mNumActiveSlaves(0), mSlavesReady(false),
-  mHaveDMX(0) {
-  this->FinishInit(); 
-
-  return; 
-} 
 
 void dmxRenderer::FinishRendererInit(void) {
   connect(&mSlaveServer, SIGNAL(newConnection()), this, SLOT(SlaveConnected()));  
@@ -121,13 +110,6 @@ void dmxRenderer::FinishRendererInit(void) {
   
   UpdateBackendRenderers();
   
-}
-
-//  =============================================================
-dmxRenderer::~dmxRenderer() {
-  ECHO_FUNCTION(5);
-  ShutDownSlaves();
-  return;
 }
 
 //============================================

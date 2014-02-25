@@ -178,11 +178,31 @@ typedef DMXWindowAttributes DMXWindowInfo;
 class dmxRenderer: public QObject, public Renderer {
   Q_OBJECT
     public:
-  dmxRenderer(ProgramOptions *opt, Window parentWindow, 
-              BlockbusterInterface *gui, QString name = "dmx");
+  dmxRenderer(ProgramOptions *opt):
+    QObject(NULL), 
+    Renderer(opt),
+    mAllowIdleSlaves(true), 
+    mNumActiveSlaves(0), 
+    mSlavesReady(false),
+    mHaveDMX(0) {
+    mName ="dmx";
+    return; 
+  }   
   
+  //  =============================================================
+  virtual ~dmxRenderer() {
+    ECHO_FUNCTION(5);
+    ShutDownSlaves();
+    return;
+  }
+
+  // ======================================================================
+  virtual void BeginRendererInit(void) {
+    return; 
+  }
+
+  // ======================================================================
   virtual void FinishRendererInit(void);
-  virtual ~dmxRenderer(); 
 
   // DMX SPECIFIC STUFF from Canvas: 
   /* thump-thump */

@@ -13,11 +13,6 @@
 #include <X11/Xutil.h>
 #include <X11/extensions/Xdbe.h>
 
-x11Renderer::x11Renderer(ProgramOptions *opt, Window parentWindow, 
-              BlockbusterInterface *gui, QString name):
-  Renderer(opt, parentWindow, gui, name), mSwapAction(XdbeBackground) {
-  return; 
-}
 
 void x11Renderer::FinishRendererInit(void) {
   ECHO_FUNCTION(5);
@@ -68,13 +63,6 @@ void x11Renderer::FinishRendererInit(void) {
   mRequiredImageFormat.rowOrder = TOP_TO_BOTTOM;
   
     return; 
-}
-
-//====================================================================
-x11Renderer::~x11Renderer() {
-  XFreeGC(mDisplay, mGC);
-  
-  return; 
 }
 
 

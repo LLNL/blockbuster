@@ -10,11 +10,26 @@
 /* Base GL rendering class for all other GL renderers */ 
 class glRenderer: public Renderer {
  public:
-  glRenderer(ProgramOptions *opt,  Window parentWindow,
-             BlockbusterInterface *gui, QString name="gl");
+  glRenderer(ProgramOptions *opt):
+    Renderer(opt) {
+    mName = "gl";   
+    return; 
+  }
+    
+    //======================================================================
+    virtual ~glRenderer() {
+      glXDestroyContext(mDisplay, context);
+      return; 
+    }
 
+
+  // ======================================================================
+    virtual void BeginRendererInit(void) {
+      return; 
+    }
+
+  // ======================================================================
   virtual void FinishRendererInit(void);
-  virtual ~glRenderer() ;
 
   virtual XVisualInfo *ChooseVisual(void);  
   virtual void DrawString(int row, int column, const char *str);
@@ -37,12 +52,14 @@ class glRenderer: public Renderer {
 // ==================================================================
 class glStereoRenderer: public glRenderer {
  public:
-  glStereoRenderer(ProgramOptions *opt,  Window parentWindow,
-                   BlockbusterInterface *gui, QString name="gl_stereo"):
-  glRenderer(opt, parentWindow, gui, name)    {
+  glStereoRenderer(ProgramOptions *opt):
+    glRenderer(opt) {
+    mName = "gl_stereo";  
     return; 
   }
   virtual ~glStereoRenderer() {}
+
+
   virtual XVisualInfo *ChooseVisual(void);
   void RenderActual(int frameNumber,  RectanglePtr imageRegion,
               int destX, int destY, float zoom, int lod);
@@ -69,9 +86,16 @@ struct TextureObject {
 
 class glTextureRenderer: public glRenderer {
  public:
-  glTextureRenderer(ProgramOptions *opt,  Window parentWindow,
-                    BlockbusterInterface *gui, QString name="gltexture"); 
+  glTextureRenderer(ProgramOptions *opt):
+    glRenderer(opt) {
+    mName ="gltexture"; 
+    return; 
+  }
+
   virtual ~glTextureRenderer() {}
+
+  // ======================================================================
+  virtual void BeginRendererInit(void); 
 
   int32_t MinPowerOf2(int x); 
   void RenderActual(int frameNumber, RectanglePtr imageRegion,

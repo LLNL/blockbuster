@@ -46,7 +46,7 @@ struct ProgramOptions {
 #endif
     messageLevel(NULL),  mCacheDebug(false),     
     mTraceEvents(false), mTraceEventsFilename("events.log"),
-    mRenderer(NULL),
+    //mRenderer(NULL),
     readerThreads(-1), loopCountName("1"),
     startFrame(0), currentFrame(0), endFrame(-1), loopCount(1), LOD(0),
     slaveLaunchMethod("rsh"), useMPI(0), 
@@ -78,8 +78,7 @@ struct ProgramOptions {
   QString mScript; 
   int rendererIndex;
   QString rendererName;
-  RendererSpecificGlue *mRendererSpecificGlue; 
-  Renderer *mRenderer; 
+  //  Renderer *mRenderer; 
   QString backendRendererName;
   int readerThreads;
   QString loopCountName;
