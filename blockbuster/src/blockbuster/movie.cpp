@@ -137,7 +137,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
   double recentStartTime = GetCurrentTime(), 
     recentEndTime, elapsedTime, userTime, systemTime;
   double fps = 0.0;
-  double nextSwapTime = 0.0;
+  double nextSwapTime = 0.0, previousSwapTime = 0.0;
   float targetFPS = 0.0;
   FrameListPtr allFrames; 
   double noscreensaverStartTime = GetCurrentTime();
@@ -305,6 +305,15 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           } 
           dbprintf(5, "Renderer name: %s\n", options->rendererName.toStdString().c_str()); 
           allFrames->GetInfo(width, height, depth, maxLOD, targetFPS);
+          if (options->frameRate != 0.0) {
+            targetFPS = options->frameRate; 
+            options->frameRate = 0; 
+          }
+          /*  if (options->geometry.width != DONT_CARE) {
+              width = options->geometry.width; 
+              height = options->geometry.height; 
+              }
+          */ 
           startFrame = 0; 
           endFrame = allFrames->numStereoFrames()-1; 
           frameNumber = event.mNumber;  
@@ -325,7 +334,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
 
           options->geometry.width = width; 
           options->geometry.height = height; 
-
+        
           if (options->decorations) {
             options->decorations = !options->fullScreen; 
           }
@@ -372,6 +381,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           renderer->ReportDetailRangeChange(-maxLOD, maxLOD);
           renderer->ReportZoomChange(newZoom);
           swapBuffers = true; 
+          previousSwapTime = 0.0; 
           frameInfo =  renderer->GetFrameInfoPtr(0);
           preloadFrames = MIN2(options->preloadFrames, static_cast<int32_t>(allFrames->numStereoFrames()));
         }  // END event.mEventType == "MOVIE_OPEN_FILE") || event.mEventType == "MOVIE_OPEN_FILE_NOCHANGE" 
@@ -725,7 +735,6 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           targetFPS += 1.0;
           if (renderer) renderer->ReportRateChange(targetFPS);
         
-          nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
         }
         else if (event.mEventType == "MOVIE_DECREASE_RATE") {
           targetFPS -= 1.0;
@@ -737,17 +746,10 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             targetFPS = 0.2; 
             if (renderer) renderer->ReportRateChange(targetFPS);
           }
-          nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
         }
         else if (event.mEventType == "MOVIE_SET_RATE") {
           /* User changed the frame rate slider */
           targetFPS = MAX2(event.mRate, 0.2);
-          /* if (targetFPS > 0.0)
-             nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
-             else
-             nextSwapTime = 0.0;
-          */
-          nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
           if (renderer) renderer->ReportRateChange(targetFPS);
         }
         else if (event.mEventType == "MOVIE_INCREASE_LOD") {
@@ -1143,10 +1145,10 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
            * the target frame rate.
            */
           double delay = nextSwapTime - GetCurrentTime();
-          if (delay > 0.0) {
+          if (delay - previousSwapTime > 0.0) {
             usedDelayCount++;
-            delay *= 0.95;  /* an empirical constant */
-            usleep((unsigned long) (delay * 1000.0 * 1000.0));
+            //delay *= 0.95;  /* an empirical constant */
+            usleep((unsigned long) ((delay - previousSwapTime) * 1000.0 * 1000.0));
           }
           else {
             skippedDelayCount++;
@@ -1154,12 +1156,15 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           /* Compute next targetted swap time */
           nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
         }
-        dbprintf(5, "Swap buffers\n"); 
+        TIMER_PRINT("Swap buffers\n"); 
         renderer->mPreloadFrames = preloadFrames; 
         renderer->mPlayDirection = playDirection;
         renderer->mStartFrame = startFrame; 
         renderer->mEndFrame = endFrame; 
+        double beforeSwap = GetCurrentTime(); 
         renderer->SwapBuffers();
+        previousSwapTime = GetCurrentTime() - beforeSwap; 
+
         if (playDirection && options->speedTest) {
           cerr << "requesting speedTest of slaves" << endl; 
           renderer->DMXSpeedTest(); 

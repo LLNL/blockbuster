@@ -92,7 +92,7 @@ void usage(void) {
   printf("   Note: substrings are also matched, so -h is the same as -help, but beware of non-unique prefixes!\n");
   printf("-cachedebug: turn on verbose cache debugging messages (also enabled if verbosity is > 5)\n"); 
   printf("-cachesize <num> specifies cache limit in frames (you can leave this unset unless you are running out of memory)\n");
-  printf("-DecorationsDisable (or -no-decorations): same as -fullscreen\n");
+  printf("-DecorationsDisable (or -no-decorations): do not use window manager decorations such as titlebar etc.\n");
   printf("-display <display> specifies X display\n");
   printf("-dmxstereo: short for -r dmx -stereo.\n");
   printf("-font <fontname> specifies X font\n");
@@ -672,13 +672,14 @@ int main(int argc, char *argv[])
 
   /* Grab any options that apply to the whole program */
   char **newargs = DuplicateArgs(argc, args); 
-  int newargc = argc; 
-  // Get Qt rockin'.  This creates the basic Qt object.  
-  gCoreApp = new QApplication(argc, args); 
-
+  int newargc = argc;
+ 
   ParseEnvironmentVars(); 
   ParseOptions(opt, newargc, newargs);
   printargs("After ParseOptions", newargs, newargc); 
+
+  // Get Qt rockin'.  This creates the basic Qt object.  
+  gCoreApp = new QApplication(newargc, newargs); 
 
   gMainThread = QThread::currentThread(); 
   RegisterThread(gMainThread, opt->readerThreads); 
