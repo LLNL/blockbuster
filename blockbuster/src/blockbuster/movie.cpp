@@ -125,7 +125,6 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
   uint totalFrameCount = 0, recentFrameCount = 0;
   FrameInfoPtr frameInfo;
   Renderer * renderer = NULL;
-  int width, height, depth;
   int loopCount = options->loopCount; 
   int drawInterface = options->drawInterface;
   int skippedDelayCount = 0, usedDelayCount = 0;
@@ -158,12 +157,11 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
   int destX, destY; // position on canvas to render the image
 
   
-  int32_t preloadFrames= options->preloadFrames,
-    playDirection = 0, 
+  int32_t playDirection = 0, 
     startFrame= options->startFrame, 
     frameNumber = options->currentFrame, 
-    endFrame = options->endFrame, 
-    playExit = options->playExit; 
+    endFrame = options->endFrame,
+    preloadFrames = options->preloadFrames; 
 
   /* We'll need this for timing */
   Hertz = sysconf(_SC_CLK_TCK);
@@ -180,16 +178,9 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
   if ( options->zoom != 1.0 )
     newZoom =options->zoom;
   
-  //if(options->decorations) {
-  // }
-  
-
+ 
   deque<MovieEvent>  events; 
 
-  /*  if (options->fullScreen) {
-    DEBUGMSG("fullScreen from options\n"); 
-    events.push_back(MovieEvent("MOVIE_FULLSCREEN")); 
-    }*/
 					
   time_t lastheartbeat = time(NULL); 
   MovieSnapshot oldSnapshot; 
@@ -206,6 +197,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
     if (gMainWindow->GetEvent(newEvent)) {  
       events.push_back(newEvent); 
     }
+    if (renderer) renderer->DMXCheckNetwork();
     if (GetNetworkEvent(&newEvent)) { /* Qt events from e.g. Sidecar */
       events.push_back(newEvent); 
     } 
@@ -305,6 +297,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             }
           } 
           dbprintf(5, "Renderer name: %s\n", options->rendererName.toStdString().c_str()); 
+          int width, height, depth; 
           allFrames->GetInfo(width, height, depth, maxLOD, targetFPS);
           if (options->frameRate != 0.0) {
             targetFPS = options->frameRate; 
@@ -357,7 +350,6 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
               ERROR("Could not create a renderer");
               return 1;
             }
-            gSidecarServer->SetRenderer(renderer); 
           } 
           if (options->zoomToFill || event.mEventType != "MOVIE_OPEN_FILE_NOCHANGE") {
             /* Compute a Shrink to Fit zoom */
@@ -414,8 +406,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
               return 1;
             }
             
-            gSidecarServer->SetRenderer(renderer); 
-            renderer->SetFrameList(allFrames);
+             renderer->SetFrameList(allFrames);
             renderer->ReportFrameListChange(allFrames);
             renderer->ReportRateChange(targetFPS); 
           }        
@@ -1208,10 +1199,9 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           fps = 0.0;
         }
         if (renderer) renderer->reportActualFPS(fps); 
-        if ( (playExit > 0 && frameNumber >= playExit) ||
-             (playExit == -1 && frameNumber > endFrame-1)) { 
+        if ( (options->playExit > 0 && frameNumber >= options->playExit) ||
+             (options->playExit == -1 && frameNumber > endFrame-1)) { 
           events.push_back(MovieEvent("MOVIE_QUIT")); 
-          playExit = 0; 
         }
       }
     }

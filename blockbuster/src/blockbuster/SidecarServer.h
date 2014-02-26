@@ -33,7 +33,7 @@ class SidecarServer : public QObject {
   Q_OBJECT
     public:
   SidecarServer(QObject *parent = 0): 
-    QObject(parent), mRenderer(NULL), mSidecarSocket(NULL) {
+    QObject(parent), mSidecarSocket(NULL) {
     dbprintf(5, "SidecarServer\n"); 
     //mTcpServer.listen(QHostAddress::Any, 5959); 
     mTcpServer.listen(); 
@@ -59,8 +59,6 @@ class SidecarServer : public QObject {
     }
   }
 
-  void SetRenderer(Renderer * r){mRenderer = r; }
-
   EventQueue mPendingEvents; 
 
 
@@ -72,7 +70,6 @@ class SidecarServer : public QObject {
   void sidecarDisconnected();
  protected: 
   QTcpServer mTcpServer;
-  Renderer *mRenderer; 
   static bool mPromptForConnections; 
   QTcpSocket *mSidecarSocket;
   uint32_t mLastReceivedCommandID, mLastSentCommandID; 

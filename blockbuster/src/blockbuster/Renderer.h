@@ -32,13 +32,19 @@ class Renderer {
 
   
   // ======================================================================
-  Renderer(ProgramOptions *opt);
+  Renderer(ProgramOptions *opt):mOptions(opt) { 
+    Init(); 
+    return; 
+  } 
     
   // ======================================================================
   virtual ~Renderer() {
     Close(); 
     return; 
   } 
+
+  // ======================================================================
+  void Init(void); 
 
   // ======================================================================
   void InitWindow(qint32 parentWindowID, 

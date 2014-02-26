@@ -59,22 +59,22 @@ Renderer * Renderer::CreateRenderer(ProgramOptions *opt, qint32 parentWindowID,
 }
 
 // ======================================================================
-Renderer::Renderer(ProgramOptions *opt):
-  // from Canvas: 
-  mHeight(0), mWidth(0), mScreenHeight(0), mScreenWidth(0), 
-  mXPos(0), mYPos(0), mDepth(0), 
-  mThreads(opt->readerThreads),
-  mCacheSize(opt->mMaxCachedImages), 
+void Renderer::Init(void) {
+    // from Canvas: 
+  mHeight = mWidth = mScreenHeight = mScreenWidth = 0; 
+  mXPos = mYPos = mDepth = 0; 
+  mThreads = mOptions->readerThreads; 
+  mCacheSize = mOptions->mMaxCachedImages; 
+
   // from XWindow: 
-  mVisInfo(NULL), mScreenNumber(0), mWindow(0), mIsSubWindow(0), 
-  mFontInfo(NULL), mFontHeight(0),  mShowCursor(true), 
-  mOldWidth(-1), mOldHeight(-1), mOldX(-1), mOldY(-1), 
-  mXSync(false), mOptions(opt), 
-  mFullScreen(opt->fullScreen)
-{ 
-  
-  return; 
-} 
+  mVisInfo = NULL; 
+  mFontInfo = NULL; 
+  mScreenNumber = mWindow = mIsSubWindow =  mFontHeight = 0; 
+  mShowCursor = true;  
+  mOldWidth = mOldHeight = mOldX = mOldY = -1; 
+  mXSync = false; 
+  mFullScreen = mOptions->fullScreen; 
+}
 
 // ======================================================================
 void Renderer::InitWindow(qint32 parentWindowID, 
