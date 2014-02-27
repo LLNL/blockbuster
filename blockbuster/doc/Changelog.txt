@@ -2,7 +2,7 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.1e (git tag blockbuster-v2.8.1c) Tue Feb 25 10:57:45 PST 2014
+VERSION 2.8.1e (git tag blockbuster-v2.8.1e) Wed Feb 26 17:34:47 PST 2014
 -- BUGFIX:  Snapshots are working again.  
 -- BUGFIX:  Fix "zoom to fill" behavior in blockbuster and in snapshots.  
 
