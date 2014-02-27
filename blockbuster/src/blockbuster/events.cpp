@@ -272,7 +272,7 @@ MovieSnapshot &MovieSnapshot::operator <<(string s) {
         throw QString("operator <<(): MovieSnapshot \"%1\" has malformed key=value pair \"%2\"").arg(theString).arg(*pos);
       }
       QString key = items[0], value=items[1]; 
-      if (key == "mSnapshotType") mSnapshotType = value.toInt();
+      if (key == "mSnapshotType") mSnapshotType = value.toStdString();
       else if (key == "mFilename") mFilename = value.toStdString();
       else if (key == "mFrameRate") mFrameRate = value.toFloat();
       else if (key == "mTargetFPS") mTargetFPS = value.toFloat();
