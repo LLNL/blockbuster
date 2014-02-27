@@ -628,7 +628,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           }
         }
         
-        else if (event.mEventType == "MOVIE_ZOOM_FILL") { 
+        else if (event.mEventType == "MOVIE_ZOOM_TO_FILL") { 
         MOVIE_ZOOM_FILL: 
           if(frameInfo && renderer) {
             newZoom = ComputeZoomToFill(renderer, frameInfo->mWidth,
@@ -820,7 +820,9 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           }
         
         } // END event.mEventType == "MOVIE_SAVE_FRAME"
-        
+        else {
+          cerr << "Warning: unknown event: " << event.mEventType << endl; 
+        }
       }
 
       //===============================================================
