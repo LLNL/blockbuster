@@ -659,12 +659,14 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           }
         }
         else if (event.mEventType == "MOVIE_ZOOM_UP") {
+        ZOOM_UP:
           options->zoomToFill = false; 
           newZoom = 1.2*currentZoom;
           zooming = 0;
         }
         else if (event.mEventType == "MOVIE_ZOOM_DOWN") {
-          options->zoomToFill = false; 
+         ZOOM_DOWN:
+         options->zoomToFill = false; 
           newZoom = 0.8*currentZoom;
           if (newZoom < 0.05) newZoom = 0.05; 
           zooming = 0;
@@ -712,6 +714,12 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           newZoom = startZoom*(1+(float)zoomDelta/(renderer->mHeight));
           zoomDelta = 0;
           zooming = 0;
+        }
+        else if (event.mEventType == "MOVIE_MOUSE_PRESS_4") {
+          goto ZOOM_UP; 
+        }
+        else if (event.mEventType == "MOVIE_MOUSE_PRESS_5") {
+          goto ZOOM_DOWN; 
         }
         else if (event.mEventType == "MOVIE_MOUSE_MOVE") {
           if (panning) {

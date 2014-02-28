@@ -1190,12 +1190,16 @@ void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
   case ButtonPress:
     movieEvent->mX = event.xbutton.x;
     movieEvent->mY = event.xbutton.y;
-    if ( event.xbutton.button == Button1)
+    if ( event.xbutton.button == Button1) // left mouse button
       movieEvent->mEventType = "MOVIE_MOUSE_PRESS_1";
-    else if ( event.xbutton.button == Button2)
+    else if ( event.xbutton.button == Button2) // middle mouse button click
       movieEvent->mEventType = "MOVIE_MOUSE_PRESS_2";
-    else if ( event.xbutton.button == Button3)
+    else if ( event.xbutton.button == Button3) // right mouse button
       movieEvent->mEventType = "MOVIE_MOUSE_PRESS_3";
+    else if ( event.xbutton.button == Button4) // scroll wheel up
+      movieEvent->mEventType = "MOVIE_MOUSE_PRESS_4";
+    else if ( event.xbutton.button == Button5) // scroll wheel down
+      movieEvent->mEventType = "MOVIE_MOUSE_PRESS_5";
     else 
       movieEvent->mEventType =   "MOVIE_NONE";
     return;

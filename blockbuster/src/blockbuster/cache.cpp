@@ -412,7 +412,7 @@ ImageCache::ImageCache(int numthreads, int numimages, ImageFormat &required):
   register int i;
   CACHEDEBUG("CreateImageCache(mNumReaderThreads = %d, mMaxCachedImages = %d)", mNumReaderThreads, mMaxCachedImages);
   
-  int threadImages; 
+  int threadImages = 0; 
   if (mNumReaderThreads > 0) {
     
     /* Now create the threads.  If we fail to create a thread, we can still
@@ -655,11 +655,10 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
     frame += playdir; 
     if (frame > mCurrentEndFrame) frame = mCurrentStartFrame; 
     if (frame < mCurrentStartFrame) frame = mCurrentEndFrame; 
-    DEBUGMSG("Preload frame %d (mCurrentStartFrame = %d,mCurrentEndFrame  = %d", frame, mCurrentStartFrame, mCurrentEndFrame); 
     PreloadImage(frame, newRegion, levelOfDetail);
     ++preloaded;
   }
-  DEBUGMSG("Preloaded %d frames (max is %d)", preloaded, preloadmax); 
+  DEBUGMSG("Preloaded %d frames from %d to %d stepping by %d (max is %d)", preloaded, frameNumber, frame-playdir, playdir, preloadmax); 
 
   /* Loop until we find the request.  There are three ways we can
    * find the request; it can either be:
