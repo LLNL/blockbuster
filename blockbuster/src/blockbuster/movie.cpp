@@ -474,7 +474,12 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           yOffset = event.mY; 
         }
         else if (event.mEventType == "MOVIE_FULLSCREEN") {
-          if(event.mNumber) {
+          if (event.mNumber == 2) {
+            options->fullScreen = !options->fullScreen; 
+          } else {
+            options->fullScreen = event.mNumber; 
+          }
+          if(options->fullScreen) { 
             if (renderer && options->zoomToFill) {
               newZoom = ComputeZoomToFill(renderer, renderer->mWidth,
                                          renderer->mHeight);
@@ -484,9 +489,8 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             options->decorations = true; 
           }
           if (renderer) {
-            renderer->SetFullScreen(event.mNumber); 
+            renderer->SetFullScreen(options->fullScreen); 
           }
-          options->fullScreen = event.mNumber; 
         }
         else if (event.mEventType == "MOVIE_MOVE" ||
                  event.mEventType == "MOVIE_RESIZE" ||
@@ -545,7 +549,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
               renderer->mHeight = event.mHeight;
   
               if (options->zoomToFill/* && !event.mNumber*/) {
-                goto MOVIE_ZOOM_FILL;
+                goto MOVIE_ZOOM_TO_FIT;
               }
             }
           }
@@ -628,8 +632,8 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           }
         }
         
-        else if (event.mEventType == "MOVIE_ZOOM_TO_FILL") { 
-        MOVIE_ZOOM_FILL: 
+        else if (event.mEventType == "MOVIE_ZOOM_TO_FIT") { 
+        MOVIE_ZOOM_TO_FIT: 
           if(frameInfo && renderer) {
             newZoom = ComputeZoomToFill(renderer, frameInfo->mWidth,
                                        frameInfo->mHeight);
@@ -659,13 +663,11 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           }
         }
         else if (event.mEventType == "MOVIE_ZOOM_UP") {
-        ZOOM_UP:
           options->zoomToFill = false; 
           newZoom = 1.2*currentZoom;
           zooming = 0;
         }
         else if (event.mEventType == "MOVIE_ZOOM_DOWN") {
-         ZOOM_DOWN:
          options->zoomToFill = false; 
           newZoom = 0.8*currentZoom;
           if (newZoom < 0.05) newZoom = 0.05; 
@@ -714,12 +716,6 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           newZoom = startZoom*(1+(float)zoomDelta/(renderer->mHeight));
           zoomDelta = 0;
           zooming = 0;
-        }
-        else if (event.mEventType == "MOVIE_MOUSE_PRESS_4") {
-          goto ZOOM_UP; 
-        }
-        else if (event.mEventType == "MOVIE_MOUSE_PRESS_5") {
-          goto ZOOM_DOWN; 
         }
         else if (event.mEventType == "MOVIE_MOUSE_MOVE") {
           if (panning) {

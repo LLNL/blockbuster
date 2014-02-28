@@ -1,7 +1,6 @@
 #ifndef BB_EVENTS_H
 #define BB_EVENTS_H
 
-
 #include <stdint.h>
 #include <iostream>
 #include "common.h"
@@ -37,7 +36,7 @@
 
    "MOVIE_ZOOM_IN") = 50;
    "MOVIE_ZOOM_OUT"
-   "MOVIE_ZOOM_FILL" 
+   "MOVIE_ZOOM_TO_FIT" 
    "MOVIE_ZOOM_ONE"
    "MOVIE_ZOOM_SET"
    "MOVIE_ZOOM_UP"  55 

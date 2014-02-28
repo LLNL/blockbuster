@@ -69,8 +69,8 @@ NewImageCache::~NewImageCache() {
 }
 
 // ====================================================================
-ImagePtr NewImageCache::GetImage(uint32_t frameNumber, int playDirection, 
-                                 RectanglePtr newRegion, uint32_t levelOfDetail) {
+ImagePtr NewImageCache::GetImage(uint32_t , int , 
+                                 RectanglePtr , uint32_t ) {
   ImagePtr image; 
   // make sure the cache threads know this is important:
   

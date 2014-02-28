@@ -110,32 +110,32 @@ uint16_t GetCurrentThreadID(void) {
 
 void PrintKeyboardControls(void)
 {
-  dbprintf(0, "\n=====================================================\n");
-  dbprintf(0, "BLOCKBUSTER KEYBOARD CONTROLS\n");
-  dbprintf(0, "Panning - press the left mouse button and drag the mouse to pan over the image.\n"); 
-  dbprintf(0, "Zooming - press the middle mouse button and drag forward/backward to zoom in/out of the image.\n"); 
-  dbprintf(0, "\n"); 
-  dbprintf(0, "The following keyboard commands are recognized:\n"); 
-  dbprintf(0, "\n"); 
-  dbprintf(0, "Right/Left arrow - advance/backup by one frame.\n"); 
-  dbprintf(0, "Shift + Right/Left arrow - advance/backup by 20 frames.\n"); 
-  dbprintf(0, "Control + Right/Left arrow - advance/backup by 1/4 of movie length.\n"); 
-  dbprintf(0, "Home - jump to the first frame, center the image and set zoom to one\n"); 
-  dbprintf(0, "End - jump to the last frame in the movie\n"); 
-  dbprintf(0, "Spacebar - play/pause\n"); 
-  dbprintf(0, "c -   center the image in the window\n"); 
-  dbprintf(0, "f -   zoom image to fit the window (minify only)\n"); 
-  dbprintf(0, "m -   hide/unhide the mouse cursor over the movie window\n"); 
-  dbprintf(0, "l/L - increase/decrease the current level of detail displayed\n"); 
-  dbprintf(0, "q --  quit\n"); 
-  dbprintf(0, "r -   play in reverse\n"); 
-  dbprintf(0, "z/Z - zoom in or out\n"); 
-  dbprintf(0, "1 -  (the number 1) set zoom to 1.0\n"); 
-  dbprintf(0, "+/- - increase or decrease the frame rate\n"); 
-  dbprintf(0, "i - display the GUI panel (interface) if it was hidden\n"); 
-  dbprintf(0, "? or h -- print this menu\n"); 
-  dbprintf(0, "Esc - exit Blockbuster\n"); 
-  dbprintf(0, "=====================================================\n");
+  printf("\n=====================================================\n");
+  printf("BLOCKBUSTER KEYBOARD CONTROLS\n");
+  printf("Panning - press the left mouse button and drag the mouse to pan over the image.\n"); 
+  printf("Zooming - press the middle mouse button and drag forward/backward to zoom in/out of the image.\n"); 
+  printf("\n"); 
+  printf("The following keyboard commands are recognized:\n"); 
+  printf("\n"); 
+  printf("Right/Left arrow - advance/backup by one frame.\n"); 
+  printf("Shift + Right/Left arrow - advance/backup by 20 frames.\n"); 
+  printf("Control + Right/Left arrow - advance/backup by 1/4 of movie length.\n"); 
+  printf("Home - jump to the first frame, center the image and set zoom to one\n"); 
+  printf("End - jump to the last frame in the movie\n"); 
+  printf("Spacebar - play/pause\n"); 
+  printf("c -   center the image in the window\n"); 
+  printf("f -   zoom image to fit the window (minify only)\n"); 
+  printf("m -   hide/unhide the mouse cursor over the movie window\n"); 
+  printf("l/L - increase/decrease the current level of detail displayed\n"); 
+  printf("q --  quit\n"); 
+  printf("r -   play in reverse\n"); 
+  printf("z/Z - zoom in or out\n"); 
+  printf("1 -  (the number 1) set zoom to 1.0\n"); 
+  printf("+/- - increase or decrease the frame rate\n"); 
+  printf("i - display the GUI panel (interface) if it was hidden\n"); 
+  printf("? or h -- print this menu\n"); 
+  printf("Esc - exit Blockbuster\n"); 
+  printf("=====================================================\n");
 
   return;
 }

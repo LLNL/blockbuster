@@ -223,12 +223,17 @@ void Renderer::FinishXWindowInit(void) {
     mParentWindow = RootWindow(mDisplay, mScreenNumber);
   }
   printf ("XCreateWindow: X,Y = %d, %d\n", x, y); 
+  windowAttrs.override_redirect = True; // does not seem to do anything. :-(
+
   mWindow = XCreateWindow(mDisplay, mParentWindow,
                           x, y, width, height,
                           winBorder, mVisInfo->depth, InputOutput,
                           mVisInfo->visual, windowAttrsMask, &windowAttrs);
   
-
+  XWindowAttributes win_attributes;                                   
+  XGetWindowAttributes(mDisplay, mWindow, &win_attributes);           
+  printf("%s: override_redirect is %d\n", where,  (int)win_attributes.override_redirect); 
+ 
   DEBUGMSG("created window 0x%x", mWindow);
   
   /* Pass some information along to the window manager to size the window */
@@ -260,7 +265,6 @@ void Renderer::FinishXWindowInit(void) {
                          mOptions->suggestedTitle.toAscii(), mOptions->suggestedTitle.toAscii(), 
                          None, (char **)NULL, 0, &sizeHints);
   
-
   // If we are doing fullscreen, we have to dance with the window manager.
   SetFullScreen(mOptions->fullScreen); 
   
@@ -310,7 +314,6 @@ void Renderer::FinishXWindowInit(void) {
 void Renderer::SetFullScreen(bool fullscreen) {
 // Make sure the window manager does not resize to allow for menu bar
   set_mwm_border(!fullscreen  && mOptions->decorations);
-
   Atom wm_state = XInternAtom(mDisplay, "_NET_WM_STATE", False);
   Atom fsAtom = XInternAtom(mDisplay, "_NET_WM_STATE_FULLSCREEN", False);
   
@@ -369,6 +372,7 @@ void Renderer::SetFullScreen(bool fullscreen) {
   XSendEvent (mDisplay, DefaultRootWindow(mDisplay), False,
               SubstructureRedirectMask | SubstructureNotifyMask, &xev);
   XFlush(mDisplay);
+  
   // end fullscreen stuff
   return;  
 }
@@ -1118,7 +1122,7 @@ void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
             movieEvent->mEventType = "MOVIE_CENTER";
             return;
           case 'f':
-            movieEvent->mEventType = "MOVIE_ZOOM_FILL";
+            movieEvent->mEventType = "MOVIE_ZOOM_TO_FIT";
             return;
           case 'h':
           case '?':
@@ -1197,9 +1201,9 @@ void Renderer::GetXEvent(int block, MovieEvent *movieEvent)
     else if ( event.xbutton.button == Button3) // right mouse button
       movieEvent->mEventType = "MOVIE_MOUSE_PRESS_3";
     else if ( event.xbutton.button == Button4) // scroll wheel up
-      movieEvent->mEventType = "MOVIE_MOUSE_PRESS_4";
+      movieEvent->mEventType = "MOVIE_ZOOM_UP";
     else if ( event.xbutton.button == Button5) // scroll wheel down
-      movieEvent->mEventType = "MOVIE_MOUSE_PRESS_5";
+      movieEvent->mEventType = "MOVIE_ZOOM_DOWN";
     else 
       movieEvent->mEventType =   "MOVIE_NONE";
     return;

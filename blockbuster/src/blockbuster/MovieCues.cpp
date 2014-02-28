@@ -93,7 +93,7 @@ void MovieCue::ReadScript(const MovieScript &iScript) {
     else if (pos->mEventType == "MOVIE_ZOOM_ONE") { 
       mZoomOne = true; 
     }
-    else if (pos->mEventType == "MOVIE_ZOOM_TO_FILL") { 
+    else if (pos->mEventType == "MOVIE_ZOOM_TO_FIT") { 
       mZoomToFill = true; 
     }
     else if (pos->mEventType == "MOVIE_MOVE_RESIZE") { 
@@ -162,7 +162,7 @@ void MovieCue::GenerateScript(MovieScript &oScript) const{
     oScript.push_back(MovieEvent("MOVIE_ZOOM_ONE")); 
   } 
   else if (mZoomToFill) {
-    oScript.push_back(MovieEvent("MOVIE_ZOOM_TO_FILL")); 
+    oScript.push_back(MovieEvent("MOVIE_ZOOM_TO_FIT")); 
   } 
   else {
     oScript.push_back(MovieEvent("MOVIE_ZOOM_SET", mZoom)); 
