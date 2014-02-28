@@ -1209,11 +1209,15 @@ void smBase::readHeader(void)
     mMetaData[lodname] = SM_MetaData(lodname, lodstring); 
   }
 
-#if SM_VERBOSE
+  long sum = 0; 
   for (w=0; w<mNumFrames; w++) {
-    smdbprintf(5,"smBase::readHeader(): window %d: %d size %ld\n", w, (int)mFrameOffsets[w],mFrameLengths[w]);
-  }
+#if SM_VERBOSE
+    smdbprintf(5,"smBase::readHeader(): window %ld: offset %ld size %ld\n", w, (int)mFrameOffsets[w],mFrameLengths[w]);
 #endif
+    sum += mFrameLengths[w]; 
+  }
+  smdbprintf(5, "smBase::readHeader(): For level of detail 0, there is a total of %d frames, %ld bytes, so average of %0.3f MB/frame\n", w, sum, (float)sum / w);
+
   smdbprintf(4,"smBase::readHeader(): maximum frame size is %ld\n", maxFrameSize);
   if (maxFrameSize < 0) {
     smdbprintf(0,"smBase::readHeader(): Error! maximum frame size is %ld\n", maxFrameSize);
@@ -1776,7 +1780,7 @@ uint32_t smBase::getFrameBlock(int frame, void *data, int threadnum,  int destRo
       if(tileInfo.overlaps && (tileInfo.skipCorruptFlag == 0)) {
          
         u_char *tdata = (u_char *)(ioBuf + tileInfo.readBufferOffset);
-        smdbprintf(5,"decompBlock, tile %d\n", tile); 
+        smdbprintf(6,"smBase::getFrameBlock(frame %d, thread %d): decompBlock, tile %d\n", tile); 
         decompBlock(tdata,tbuf,tileInfo.compressedSize,tilesize);
         // 
         u_char *to = (u_char*)(out + (tileInfo.blockOffsetY * destRowStride) + (tileInfo.blockOffsetX * 3));
@@ -1785,7 +1789,7 @@ uint32_t smBase::getFrameBlock(int frame, void *data, int threadnum,  int destRo
         uint32_t newBytes = 3*maxX*maxY, maxAllowed = (_dim[0]*_dim[1]*3);
         uint32_t newTotal = newBytes + copied; 
          
-        smdbprintf(5, "thread %d, Frame %d, tile %d, copying %d rows %d pixels per row, %d new bytes, %d copied so far, new total will be %d, max allowed is %d x %d x 3 = %d\n", 
+        smdbprintf(6, "smBase::getFrameBlock(frame %d, thread %d): tile %d, copying %d rows %d pixels per row, %d new bytes, %d copied so far, new total will be %d, max allowed is %d x %d x 3 = %d\n", 
                    threadnum, frame, tile, maxY, maxX, newBytes, 
                    copied, newTotal,  
                    _dim[0], _dim[1], maxAllowed ); 
@@ -1820,6 +1824,7 @@ uint32_t smBase::getFrameBlock(int frame, void *data, int threadnum,  int destRo
       } 
        
     }
+    smdbprintf(6, "smBase::getFrameBlock(frame %d, thread %d): end process across overlapping tiles\n"); 
   } /* end process across overlapping tiles */
    
   smdbprintf(5,"END smBase::getFrameBlock, frame %d, thread %d, bytes read = %d\n", frame, threadnum, bytesRead); 

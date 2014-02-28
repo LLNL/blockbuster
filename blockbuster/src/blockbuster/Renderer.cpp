@@ -968,8 +968,6 @@ void Renderer::fakeMouseClick(void)
 
   XFlush(mDisplay);
   
-  //usleep(100*000); // ? Why is this included? 
-  
   event.type = ButtonRelease;
   event.xbutton.state = 0x100;
   

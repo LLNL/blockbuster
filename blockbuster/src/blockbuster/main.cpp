@@ -697,8 +697,9 @@ int main(int argc, char *argv[])
     
     /* set up network communications */ 
     gSidecarServer = new SidecarServer;     
-    
-    gMainWindow->show(); 
+    if (opt->drawInterface){
+      gMainWindow->show(); 
+    }
   }
 
   /* put the DISPLAY into the environment for Qt */

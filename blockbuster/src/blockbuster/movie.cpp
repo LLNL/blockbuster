@@ -866,12 +866,10 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
       }
       
       if (event.mEventType == "MOVIE_NONE" && !playDirection) {
-        // We have no useful work that we are doing, sleep a bit.
+        dbprintf(5, "We have no useful work that we are doing, sleep a bit to prevent hogging CPU for no reason.  Sleeping %ld usec\n", sleepAmt); 
         usleep(sleepAmt); 
         if (sleepAmt < 100*1000)
           sleepAmt *= 2; // sleep more next time
-        // dbprintf(0, "sleeping %ld\n", sleepAmt);       
-        //dbprintf(5, " start back up at outer loop\n"); 
         continue;
       }
       else if (event.mEventType == "MOVIE_QUIT") {
