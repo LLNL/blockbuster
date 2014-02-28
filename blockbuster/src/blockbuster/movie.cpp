@@ -338,11 +338,12 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
               delete renderer; 
               renderer = NULL; 
             }
-            else if (renderer && options->fullScreen != renderer->mFullScreen) {
+            /* else if (renderer && options->fullScreen != renderer->mFullScreen) {
               DEBUGMSG("toggle to or from fullscreen mode\n");           
               delete renderer; 
               renderer = NULL; 
             }
+            */
           }
           if (!renderer) {
             renderer = Renderer::CreateRenderer(options, 0, gMainWindow);
@@ -377,7 +378,10 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           previousSwapTime = 0.0; 
           frameInfo =  renderer->GetFrameInfoPtr(0);
           preloadFrames = MIN2(options->preloadFrames, static_cast<int32_t>(allFrames->numStereoFrames()));
-        }  // END event.mEventType == "MOVIE_OPEN_FILE") || event.mEventType == "MOVIE_OPEN_FILE_NOCHANGE" 
+          if (renderer && options->fullScreen != renderer->mFullScreen) {
+            renderer->SetFullScreen(options->fullScreen);
+          }
+       }  // END event.mEventType == "MOVIE_OPEN_FILE") || event.mEventType == "MOVIE_OPEN_FILE_NOCHANGE" 
     
         else if (event.mEventType == "MOVIE_SET_STEREO") {
         
@@ -484,12 +488,13 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
               newZoom = ComputeZoomToFill(renderer, renderer->mWidth,
                                          renderer->mHeight);
               renderer->Move(0,0, 0);            
-            } 
+           } 
           } else {
             options->decorations = true; 
           }
           if (renderer) {
             renderer->SetFullScreen(options->fullScreen); 
+            swapBuffers = true; 
           }
         }
         else if (event.mEventType == "MOVIE_MOVE" ||

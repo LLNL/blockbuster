@@ -103,7 +103,7 @@ void usage(void) {
   printf("-help displays this help message\n");
   printf("-keyhelp:  display list of keyboard controls\n");
   printf("-log filename: Log all messages to the given file for debugging.\n");
-  printf("-lod num: specifies a starting level of detail for the given movie\n");
+  printf("-lod num: specifies a starting level of detail for the given movie\n");  
   printf("-loops <loops> specifies how many times to loop (number or 'forever')\n");
   printf("-messageLevel sets the message level, in order of chattiness:  quiet, syserr, error, warning, info, debug\n"); 
   printf("-no-autores:  normally, you want blockbuster to decrease resolution when the zoom increases.  This flag suppresses this, for testing.\n");

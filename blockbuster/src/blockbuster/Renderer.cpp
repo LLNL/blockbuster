@@ -232,7 +232,7 @@ void Renderer::FinishXWindowInit(void) {
   
   XWindowAttributes win_attributes;                                   
   XGetWindowAttributes(mDisplay, mWindow, &win_attributes);           
-  printf("%s: override_redirect is %d\n", where,  (int)win_attributes.override_redirect); 
+  dbprintf(5, "After XCreateWindow: override_redirect is %d\n",  (int)win_attributes.override_redirect); 
  
   DEBUGMSG("created window 0x%x", mWindow);
   
@@ -294,12 +294,11 @@ void Renderer::FinishXWindowInit(void) {
   mFontHeight = mFontInfo->ascent + mFontInfo->descent;
 
 
-  XWindowAttributes win_attributes; 
   XGetWindowAttributes(mDisplay, mWindow, &win_attributes);   
-  printf("New X,Y, border width is %d, %d, %d\n", x,y, win_attributes.border_width); 
+  dbprintf(3, "New X,Y, border width is %d, %d, %d\n", x,y, win_attributes.border_width); 
 
   XGetWindowAttributes(mDisplay, mParentWindow, &win_attributes); 
-  printf("ParentWindow: X,Y =  %d, %d\n", win_attributes.x, win_attributes.y);
+  dbprintf(3, "ParentWindow: X,Y =  %d, %d\n", win_attributes.x, win_attributes.y);
   //SetCanvasAttributes(mWindow); 
   mWidth = width;
   mHeight = height;
