@@ -2,11 +2,11 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.1f (git tag blockbuster-v2.8.1e) Wed Feb 26 17:34:47 PST 2014
+VERSION 2.8.1f (git tag blockbuster-v2.8.1f) Wed Feb 26 17:34:47 PST 2014
 -- Add support for scroll wheel zooming
 -- "Fill" means "toggle to/from full screen" and "Fit" means "zoom image to fit window"
 -- Fixed the -w option
-
+-- When launching blockbuster with -loops, correctly set the GUI checkboxes
 
 ===============================================================================
 VERSION 2.8.1e (git tag blockbuster-v2.8.1e) Wed Feb 26 17:34:47 PST 2014

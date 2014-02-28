@@ -125,7 +125,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
   uint totalFrameCount = 0, recentFrameCount = 0;
   FrameInfoPtr frameInfo;
   Renderer * renderer = NULL;
-  int loopCount = options->loopCount; 
+  int loopCount = 0; 
   int drawInterface = options->drawInterface;
   int skippedDelayCount = 0, usedDelayCount = 0;
   int done =0;
@@ -177,8 +177,8 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
   
   if ( options->zoom != 1.0 )
     newZoom =options->zoom;
-  
- 
+
+
   deque<MovieEvent>  events; 
 
 					
@@ -262,7 +262,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           }
         }
         else if (event.mEventType == "MOVIE_OPEN_FILE" ||
-            event.mEventType == "MOVIE_OPEN_FILE_NOCHANGE") {         
+                 event.mEventType == "MOVIE_OPEN_FILE_NOCHANGE") {         
           DEBUGMSG("Got Open_File command"); 
           QStringList filenames; 
           filenames.append(event.mString.c_str());
@@ -325,7 +325,8 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             playDirection = options->play;
             options->play = 0;
           }
-
+          
+ 
           options->geometry.width = width; 
           options->geometry.height = height; 
         
@@ -367,6 +368,10 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             }
             //events.push_front(MovieEvent("MOVIE_MOVE_RESIZE", 0,0,0,0)); 
           } 
+          renderer->ReportLoopBehaviorChange(options->loopCount); 
+          loopCount = options->loopCount + 1; 
+          options->loopCount = 0; 
+
           renderer->DestroyImageCache();        
           renderer->SetFrameList(allFrames);
           renderer->ReportFrameListChange(allFrames);
@@ -576,11 +581,11 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           loopCount = event.mNumber;    
           if (loopCount == 1) loopCount = 2; // this loops once. 
           else if (loopCount == 0) loopCount = 1; // this plays once, no loop
-          options->loopCount = loopCount; 
+          options->loopCount = 0; 
           if (loopCount) {
             pingpong = false;
           }
-          if (renderer) renderer->ReportLoopBehaviorChange(loopCount); 
+          if (renderer) renderer->ReportLoopBehaviorChange(event.mNumber); 
         }
         else if (event.mEventType == "MOVIE_PLAY_FORWARD") { 
           playDirection = 1; loopCount = options->loopCount; 

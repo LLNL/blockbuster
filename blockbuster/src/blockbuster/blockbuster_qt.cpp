@@ -34,6 +34,7 @@
 #include "QMessageBox"
 #include "pathutil.h"
 #include "blockbuster_qt.h"
+#include "movie.h"
 #include "errmsg.h"
 #include <X11/Xlib.h>
 #include <X11/cursorfont.h>
@@ -193,8 +194,8 @@ void BlockbusterInterface::setZoom(double zoom){
 void BlockbusterInterface::setLoopBehavior (int behavior){
   // avoid spurious signals: 
   mLoop = behavior; 
-  foreverCheckBox->setChecked (behavior == -1);   
-  loopCheckBox->setChecked(behavior != 0 && behavior != 1); 
+  foreverCheckBox->setChecked (behavior == LOOP_FOREVER);   
+  loopCheckBox->setChecked(behavior != 0); 
   return; 
 }
 

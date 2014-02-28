@@ -741,7 +741,7 @@ int main(int argc, char *argv[])
   for (int count = 1; count < newargc && newargs[count];  count++) {
     script.insert(script.begin(), MovieEvent("MOVIE_OPEN_FILE", newargs[count]));
   }
-  
+    
   if (opt->slaveMode) {
     retval = theSlave->Loop();
     INFO("Done with slave loop.\n");
