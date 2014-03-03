@@ -577,7 +577,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="loopOnceCheckBox">
+         <widget class="QCheckBox" name="repeatOnceCheckBox">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -585,7 +585,7 @@
            <string>Play the movie twice.  </string>
           </property>
           <property name="text">
-           <string>Loop  Once</string>
+           <string>Repeat Once</string>
           </property>
           <property name="tristate">
            <bool>false</bool>
@@ -593,7 +593,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="loopForeverCheckBox">
+         <widget class="QCheckBox" name="repeatForeverCheckBox">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -601,7 +601,7 @@
            <string>If enabled, the movie will repeat in a loop forever</string>
           </property>
           <property name="text">
-           <string>Loop Forever</string>
+           <string>Repeat Forever</string>
           </property>
          </widget>
         </item>

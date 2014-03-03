@@ -148,7 +148,7 @@ class Renderer {
   void ReportDetailRangeChange(int min, int max);
   void ReportDetailChange(int levelOfDetail);
   void ReportRateRangeChange(float minimumRate, float maximumRate);
-  void ReportLoopBehaviorChange(int behavior);
+  void ReportRepeatBehaviorChange(int behavior);
   void ReportPingPongBehaviorChange(int behavior);
   void ReportRateChange(float rate);
   void ReportZoomChange(float zoom);

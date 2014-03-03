@@ -2,7 +2,7 @@
 #define BLOCKBUSTER_MOVIE_H 1
 #include "frames.h"
 
-#define LOOP_FOREVER (-1)
+#define REPEAT_FOREVER (-1)
 int DisplayLoop(/*FrameListPtr &allFrames,*/ struct ProgramOptions *options, vector<struct MovieEvent> script);
 
 

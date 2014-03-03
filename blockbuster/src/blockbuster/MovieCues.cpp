@@ -24,7 +24,7 @@ MovieCue::MovieCue(MovieCue *other, QListWidget *parent): QListWidgetItem(other-
   mCurrentFrame = other->mCurrentFrame; 
   mStartFrame = other ->mStartFrame; 
   mEndFrame = other->mEndFrame;
-  mLoopFrames = other->mLoopFrames;
+  mRepeatFrames = other->mRepeatFrames;
   mWindowWidth = other->mWindowWidth;
   mWindowHeight = other->mWindowHeight;
   mWindowXPos = other->mWindowXPos;
@@ -58,8 +58,8 @@ void MovieCue::ReadScript(const MovieScript &iScript) {
     else if (pos->mEventType == "MOVIE_SET_PINGPONG") { 
       mPingPong = pos->mHeight; 
     }
-    else if (pos->mEventType == "MOVIE_SET_LOOP") { 
-      mLoopFrames = pos->mHeight; 
+    else if (pos->mEventType == "MOVIE_SET_REPEAT") { 
+      mRepeatFrames = pos->mHeight; 
     }
     else if (pos->mEventType == "MOVIE_SHOW_INTERFACE") {
 	  mShowControls = true;
@@ -130,7 +130,7 @@ void MovieCue::GenerateScript(MovieScript &oScript) const{
     oScript.push_back(MovieEvent("MOVIE_HIDE_INTERFACE"));
   } 
 	
-  oScript.push_back(MovieEvent("MOVIE_SET_LOOP", mLoopFrames));
+  oScript.push_back(MovieEvent("MOVIE_SET_REPEAT", mRepeatFrames));
   oScript.push_back(MovieEvent("MOVIE_SET_PINGPONG", mPingPong));
   if (mPlayMovie) {
     oScript.push_back(MovieEvent("MOVIE_CUE_PLAY_ON_LOAD", mPlayBackward?-1:1));
@@ -433,8 +433,8 @@ void MovieCueManager::EnableDisableFields(bool enable) {
   movieNameField->setEnabled(enable && loadCheckBox->isChecked()); 
   loadCheckBox->setEnabled(enable); 
   playCheckBox->setEnabled(enable); 
-  loopOnceCheckBox->setEnabled(enable); 
-  loopForeverCheckBox->setEnabled(enable); 
+  repeatOnceCheckBox->setEnabled(enable); 
+  repeatForeverCheckBox->setEnabled(enable); 
   pingpongCheckBox->setEnabled(enable); 
   backwardCheckBox->setEnabled(enable); 
   showControlsCheckBox->setEnabled(enable); 
@@ -513,8 +513,8 @@ void MovieCueManager::setupMovieCueEditor(MovieCue *iCue) {
   browseButton->setEnabled(loadCheckBox->isChecked());
   playCheckBox->setChecked(tmp->mPlayMovie);
   pingpongCheckBox->setChecked(tmp->mPingPong);
-  loopOnceCheckBox->setChecked(tmp->mLoopFrames == 1);
-  loopForeverCheckBox->setChecked(tmp->mLoopFrames == -1);
+  repeatOnceCheckBox->setChecked(tmp->mRepeatFrames == 1);
+  repeatForeverCheckBox->setChecked(tmp->mRepeatFrames == -1);
   backwardCheckBox->setChecked(tmp->mPlayBackward);
   showControlsCheckBox->setChecked(tmp->mShowControls);
   applyChangesButton->setEnabled(false); 
@@ -673,12 +673,12 @@ void MovieCueManager::on_applyChangesButton_clicked(){
 
   mCurrentCue->mLoadMovie = (loadCheckBox->isChecked());
   mCurrentCue->mPlayMovie = (playCheckBox->isChecked());
-  if  (loopOnceCheckBox->isChecked()) {
-    mCurrentCue->mLoopFrames = 1;
-  } else if  (loopForeverCheckBox->isChecked()) {
-    mCurrentCue->mLoopFrames = -1;
+  if  (repeatOnceCheckBox->isChecked()) {
+    mCurrentCue->mRepeatFrames = 1;
+  } else if  (repeatForeverCheckBox->isChecked()) {
+    mCurrentCue->mRepeatFrames = -1;
   } else {
-    mCurrentCue->mLoopFrames = 0;
+    mCurrentCue->mRepeatFrames = 0;
   }
   mCurrentCue->mPingPong = (pingpongCheckBox->isChecked());
   mCurrentCue->mPlayBackward = (backwardCheckBox->isChecked());
@@ -871,8 +871,8 @@ void MovieCueManager::SetCurrentCue(MovieSnapshot &snapshot) {
     startFrameField->setText(QString("%1").arg(snapshot.mFrameNumber+1)); //use the current frame number, not blockbuster's looping start frame -- Scott says this is the right thing to do
     currentFrameField->setText(QString("%1").arg(snapshot.mFrameNumber+1));
     endFrameField->setText(QString("%1").arg(snapshot.mEndFrame+1));    
-    loopOnceCheckBox->setChecked(snapshot.mLoop == 1); 
-    loopForeverCheckBox->setChecked(snapshot.mLoop == -1); 
+    repeatOnceCheckBox->setChecked(snapshot.mRepeat == 1); 
+    repeatForeverCheckBox->setChecked(snapshot.mRepeat == -1); 
     pingpongCheckBox->setChecked(snapshot.mPingPong); 
     windowWidthField->setText(QString("%1").arg(snapshot.mScreenWidth)); 
     windowHeightField->setText(QString("%1").arg(snapshot.mScreenHeight)); 
@@ -947,10 +947,10 @@ void MovieCueManager::on_playCheckBox_clicked(){
 } 
 
 //======================================================================
-void MovieCueManager::on_loopOnceCheckBox_clicked(){
-  mLoopOnceChanged = (mCurrentCue && ((mCurrentCue->mLoopFrames == 1) ^ loopOnceCheckBox->isChecked()));
-  if (loopOnceCheckBox->isChecked()) {
-    loopForeverCheckBox->setChecked(false); 
+void MovieCueManager::on_repeatOnceCheckBox_clicked(){
+  mRepeatOnceChanged = (mCurrentCue && ((mCurrentCue->mRepeatFrames == 1) ^ repeatOnceCheckBox->isChecked()));
+  if (repeatOnceCheckBox->isChecked()) {
+    repeatForeverCheckBox->setChecked(false); 
     pingpongCheckBox->setChecked(false); 
   }
   applyChangesButton->setEnabled(cueChanged()); 
@@ -958,10 +958,10 @@ void MovieCueManager::on_loopOnceCheckBox_clicked(){
 } 
 
 //======================================================================
-void MovieCueManager::on_loopForeverCheckBox_clicked(){
-  mLoopForeverChanged = (mCurrentCue && ((mCurrentCue->mLoopFrames == -1) ^ loopForeverCheckBox->isChecked()));
-  if (loopForeverCheckBox->isChecked()) {
-    loopOnceCheckBox->setChecked(false); 
+void MovieCueManager::on_repeatForeverCheckBox_clicked(){
+  mRepeatForeverChanged = (mCurrentCue && ((mCurrentCue->mRepeatFrames == -1) ^ repeatForeverCheckBox->isChecked()));
+  if (repeatForeverCheckBox->isChecked()) {
+    repeatOnceCheckBox->setChecked(false); 
     pingpongCheckBox->setChecked(false); 
   }
   applyChangesButton->setEnabled(cueChanged()); 
@@ -972,8 +972,8 @@ void MovieCueManager::on_loopForeverCheckBox_clicked(){
 void MovieCueManager::on_pingpongCheckBox_clicked(){
   if (mCurrentCue)  mPingPongChanged = mCurrentCue->mPingPong ^ pingpongCheckBox->checkState();
   if (pingpongCheckBox->isChecked()) {
-    loopForeverCheckBox->setChecked(false); 
-    loopOnceCheckBox->setChecked(false); 
+    repeatForeverCheckBox->setChecked(false); 
+    repeatOnceCheckBox->setChecked(false); 
   }
   applyChangesButton->setEnabled(cueChanged()); 
   
@@ -1209,7 +1209,7 @@ QFile &operator << (QFile &iFile, const MovieCue &iCue){
   }
   iFile.write(QString("Play=%1 Loop=%2 Backward=%3 Controls=%4 CurrentFrame=%5 StartFrame=%6 EndFrame=%7 WindowWidth=%8 WindowHeight=%9 WindowX=%10 WindowY=%11 FullScreen=%12 ImageX=%13 ImageY=%14 LOD=%15 Rate=%16 Zoom=%17 ZoomOne=%18 ZoomToFill=%19 PingPong=%20 ENDCUE\n")
               .arg(iCue.mPlayMovie)
-              .arg(iCue.mLoopFrames)
+              .arg(iCue.mRepeatFrames)
               .arg(iCue.mPlayBackward)
               .arg(iCue.mShowControls)
               .arg(iCue.mCurrentFrame)
@@ -1329,7 +1329,7 @@ QFile  &operator >> (QFile &iFile,  MovieCue &iCue){
         }
         continue; // do not increment pos        
       } else if (tokenpair[0] == "Loop") {
-        iCue.mLoopFrames = (tokenpair[1].toInt()); 
+        iCue.mRepeatFrames = (tokenpair[1].toInt()); 
       } else if (tokenpair[0] == "PingPong") {
         iCue.mPingPong = (tokenpair[1].toInt()); 
       } else if (tokenpair[0] == "Play") {

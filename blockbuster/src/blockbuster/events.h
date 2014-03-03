@@ -49,7 +49,7 @@
    "MOVIE_OPEN_FILE_NOCHANGE" // what is this for? 
    "MOVIE_PLAY_FORWARD"
    "MOVIE_PLAY_BACKWARD" 
-   "MOVIE_SET_LOOP"
+   "MOVIE_SET_REPEAT"
    "MOVIE_SET_PINGPONG" 105  
    "MOVIE_CONTINUE"
    "MOVIE_PAUSE" 
@@ -201,7 +201,7 @@ struct MovieSnapshot {
     mSnapshotType("MOVIE_NONE"), mFrameRate(0), mTargetFPS(30.0), 
     mZoom(0.0), mZoomToFill(false), mLOD(0), mStereo(false), 
     mPlayStep(0), mStartFrame(1), mEndFrame(1),  mNumFrames(0), 
-    mFrameNumber(1),  mLoop(0),  mPingPong(false), 
+    mFrameNumber(1),  mRepeat(0),  mPingPong(false), 
     mFullScreen(false), mNoScreensaver(false), 
     mScreenHeight(0), mScreenWidth(0), mScreenXpos(0), mScreenYpos(0), 
     mImageHeight(0), mImageWidth(0), mImageXpos(0),  mImageYpos(0){ return; }
@@ -211,7 +211,7 @@ struct MovieSnapshot {
                 float zoom, uint32_t lod, bool stereo, 
                 int32_t playStep,  int32_t startFrame, int32_t endFrame, 
                 int32_t numFrames, int32_t frameNumber,  
-                int32_t loop,  bool pingpong, bool fullScreen, 
+                int32_t repeat,  bool pingpong, bool fullScreen, 
                 bool zoomToFill, 
                 int32_t noScreensaver, 
                 int32_t screenHeight, int32_t screenWidth, 
@@ -224,7 +224,7 @@ struct MovieSnapshot {
     mLOD(lod), mStereo(stereo), mPlayStep(playStep), 
     mStartFrame(startFrame), mEndFrame(endFrame),  
     mNumFrames(numFrames), mFrameNumber(frameNumber), 
-    mLoop(loop), mPingPong(pingpong), 
+    mRepeat(repeat), mPingPong(pingpong), 
     mFullScreen(fullScreen), mNoScreensaver(noScreensaver),
     mScreenHeight(screenHeight), mScreenWidth(screenWidth), 
     mScreenXpos(screenXpos), mScreenYpos(screenYpos), 
@@ -248,7 +248,7 @@ struct MovieSnapshot {
   string mSnapshotType; //e.g., "MOVIE_SNAPSHOT_ENDFRAME", etc.
   string mFilename; 
   float mFrameRate, mTargetFPS, mZoom;
-  int32_t mZoomToFill, mLOD, mStereo, mPlayStep, mStartFrame, mEndFrame, mNumFrames, mFrameNumber, mLoop, mPingPong, mFullScreen, mNoScreensaver, mScreenHeight, mScreenWidth, mScreenXpos, mScreenYpos, mImageHeight, mImageWidth, mImageXpos, mImageYpos; 
+  int32_t mZoomToFill, mLOD, mStereo, mPlayStep, mStartFrame, mEndFrame, mNumFrames, mFrameNumber, mRepeat, mPingPong, mFullScreen, mNoScreensaver, mScreenHeight, mScreenWidth, mScreenXpos, mScreenYpos, mImageHeight, mImageWidth, mImageXpos, mImageYpos; 
 };
 
 #endif

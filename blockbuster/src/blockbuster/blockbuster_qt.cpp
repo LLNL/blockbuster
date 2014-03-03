@@ -191,11 +191,11 @@ void BlockbusterInterface::setZoom(double zoom){
 }
 
 //=============================================================
-void BlockbusterInterface::setLoopBehavior (int behavior){
+void BlockbusterInterface::setRepeatBehavior (int behavior){
   // avoid spurious signals: 
-  mLoop = behavior; 
-  foreverCheckBox->setChecked (behavior == LOOP_FOREVER);   
-  loopCheckBox->setChecked(behavior != 0); 
+  mRepeat = behavior; 
+  foreverCheckBox->setChecked (behavior == REPEAT_FOREVER);   
+  repeatCheckBox->setChecked(behavior != 0); 
   return; 
 }
 
@@ -389,11 +389,11 @@ void BlockbusterInterface::on_fpsSpinBox_valueChanged(double value) {
 
 //======================================================   
 void BlockbusterInterface::on_foreverCheckBox_stateChanged(int state)  {
-  if ((state != 0) == (mLoop == -1)) return; 
+  if ((state != 0) == (mRepeat == -1)) return; 
 
-  MovieEvent event("MOVIE_SET_LOOP", -1); 
+  MovieEvent event("MOVIE_SET_REPEAT", -1); 
   if (!state) {
-    event.mNumber = loopCheckBox->isChecked(); 
+    event.mNumber = repeatCheckBox->isChecked(); 
   }
   mEventQueue.push_back(event); 
   return; 
@@ -401,8 +401,8 @@ void BlockbusterInterface::on_foreverCheckBox_stateChanged(int state)  {
 
 //======================================================   
 void BlockbusterInterface::on_pingpongCheckBox_stateChanged(int state) {
-  if (state && loopCheckBox->isChecked()) {
-    loopCheckBox->setChecked(false); 
+  if (state && repeatCheckBox->isChecked()) {
+    repeatCheckBox->setChecked(false); 
   }
   if (state == mPingPong) return; 
   mEventQueue.push_back(MovieEvent("MOVIE_SET_PINGPONG", state)); 
@@ -416,12 +416,12 @@ void BlockbusterInterface::on_scrubCheckBox_stateChanged(int state) {
 }
 
 //======================================================   
-void BlockbusterInterface::on_loopCheckBox_stateChanged(int state) {
+void BlockbusterInterface::on_repeatCheckBox_stateChanged(int state) {
   foreverCheckBox->setEnabled(state); 
   if (state && pingpongCheckBox->isChecked()){
     pingpongCheckBox->setChecked(false); 
   }
-  if ( (state && mLoop) || (!state && !mLoop)) return; 
-  mEventQueue.push_back(MovieEvent("MOVIE_SET_LOOP", state)); 
+  if ( (state && mRepeat) || (!state && !mRepeat)) return; 
+  mEventQueue.push_back(MovieEvent("MOVIE_SET_REPEAT", state)); 
   return; 
 }

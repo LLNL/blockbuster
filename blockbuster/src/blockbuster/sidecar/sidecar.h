@@ -171,7 +171,7 @@ class SideCar: public QMainWindow, public Ui::SideCarWindow {
   void fpsSpinBox_valueChanged(double);   
   void foreverCheckBox_stateChanged(int) ;   
   void noScreensaverCheckBox_stateChanged(int) ;   
-  void loopCheckBox_stateChanged(int);  
+  void repeatCheckBox_stateChanged(int);  
   void pingpongCheckBox_stateChanged(int);  
  
   void sendString(); 

@@ -148,8 +148,8 @@ SideCar::SideCar(QApplication *app, Preferences *prefs, QWidget *parent)
           this, SLOT(foreverCheckBox_stateChanged(int))); 
   connect(mRemoteControl->noScreensaverCheckBox, SIGNAL(stateChanged(int)), 
           this, SLOT(noScreensaverCheckBox_stateChanged(int))); 
-  connect(mRemoteControl->loopCheckBox, SIGNAL(stateChanged(int)), 
-          this, SLOT(loopCheckBox_stateChanged(int))); 
+  connect(mRemoteControl->repeatCheckBox, SIGNAL(stateChanged(int)), 
+          this, SLOT(repeatCheckBox_stateChanged(int))); 
   connect(mRemoteControl->pingpongCheckBox, SIGNAL(stateChanged(int)), 
           this, SLOT(pingpongCheckBox_stateChanged(int))); 
 
@@ -1007,9 +1007,9 @@ void SideCar::fpsSpinBox_valueChanged(double value){
 
 //================================================================
 void SideCar::foreverCheckBox_stateChanged(int state) {
-  MovieEvent event("MOVIE_SET_LOOP", -1); 
+  MovieEvent event("MOVIE_SET_REPEAT", -1); 
   if (!state) {
-    event.mNumber = mRemoteControl->loopCheckBox->isChecked(); 
+    event.mNumber = mRemoteControl->repeatCheckBox->isChecked(); 
   }
   SendEvent(event); 
 }
@@ -1020,15 +1020,15 @@ void SideCar::noScreensaverCheckBox_stateChanged(int state) {
 }
 
 //================================================================
-void SideCar::loopCheckBox_stateChanged(int state) {   
+void SideCar::repeatCheckBox_stateChanged(int state) {   
   if (state) mRemoteControl->pingpongCheckBox->setChecked(false); 
-  SendEvent(MovieEvent("MOVIE_SET_LOOP", state)); 
+  SendEvent(MovieEvent("MOVIE_SET_REPEAT", state)); 
   return; 
 }
 
 //================================================================
 void SideCar::pingpongCheckBox_stateChanged(int state) {   
-  if (state)  mRemoteControl->loopCheckBox->setChecked(false); 
+  if (state)  mRemoteControl->repeatCheckBox->setChecked(false); 
   SendEvent(MovieEvent ("MOVIE_SET_PINGPONG", state)); 
 }
 

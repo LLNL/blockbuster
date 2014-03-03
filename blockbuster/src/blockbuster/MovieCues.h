@@ -93,8 +93,8 @@ class MovieCueManager: public QWidget, Ui::MovieCueWidget {
   void on_applyChangesButton_clicked(); // save the current cue into its slot in mCueQueue (does not save to disk) 
 
   void on_playCheckBox_clicked(); 
-  void on_loopOnceCheckBox_clicked(); 
-  void on_loopForeverCheckBox_clicked(); 
+  void on_repeatOnceCheckBox_clicked(); 
+  void on_repeatForeverCheckBox_clicked(); 
   void on_pingpongCheckBox_clicked(); 
   void on_backwardCheckBox_clicked(); 
   void on_showControlsCheckBox_clicked(); 
@@ -137,7 +137,7 @@ class MovieCueManager: public QWidget, Ui::MovieCueWidget {
   void cueFileDirty(bool dirty);
   void SetCueUnchanged(void) {
     mCueNameChanged = mMovieNameChanged = mLoadMovieChanged = 
-	  mPlayChanged = mLoopOnceChanged = mLoopForeverChanged = mPingPongChanged = 
+	  mPlayChanged = mRepeatOnceChanged = mRepeatForeverChanged = mPingPongChanged = 
       mBackwardChanged = mShowChanged = mFullScreenChanged =       
       mCurrentChanged = mStartChanged = mEndChanged = 
       mWindowWidthChanged = mWindowHeightChanged = mWindowXChanged = mWindowYChanged = 
@@ -146,14 +146,14 @@ class MovieCueManager: public QWidget, Ui::MovieCueWidget {
     return; 
   }
   bool cueChanged() {
-    return mCueNameChanged || mMovieNameChanged || mLoadMovieChanged || mPlayChanged || mLoopOnceChanged || mLoopForeverChanged || mPingPongChanged || mBackwardChanged || mShowChanged || mFullScreenChanged || mCurrentChanged || mStartChanged || mEndChanged || mWindowWidthChanged || mWindowHeightChanged || mWindowXChanged || mWindowYChanged || mImageXChanged || mImageYChanged || mLODChanged || mFrameRateChanged || mZoomChanged || mZoomOneChanged || mZoomToFillChanged; 
+    return mCueNameChanged || mMovieNameChanged || mLoadMovieChanged || mPlayChanged || mRepeatOnceChanged || mRepeatForeverChanged || mPingPongChanged || mBackwardChanged || mShowChanged || mFullScreenChanged || mCurrentChanged || mStartChanged || mEndChanged || mWindowWidthChanged || mWindowHeightChanged || mWindowXChanged || mWindowYChanged || mImageXChanged || mImageYChanged || mLODChanged || mFrameRateChanged || mZoomChanged || mZoomOneChanged || mZoomToFillChanged; 
   }
   
   void EnableDisableFields(bool enable); 
   void setupMovieCueEditor(MovieCue *); 
   void setCurrentCue(MovieCue *); 
   
-  bool mCueNameChanged, mMovieNameChanged, mLoadMovieChanged, mPlayChanged, mLoopOnceChanged, mLoopForeverChanged, mPingPongChanged, mBackwardChanged, mShowChanged, mFullScreenChanged, mCurrentChanged, mStartChanged, mEndChanged, mEndChangedmEndChanged, mWindowWidthChanged, mWindowHeightChanged, mWindowXChanged, mWindowYChanged,  mImageXChanged, mImageYChanged, mLODChanged, mFrameRateChanged, mZoomChanged, mZoomOneChanged, mZoomToFillChanged; 
+  bool mCueNameChanged, mMovieNameChanged, mLoadMovieChanged, mPlayChanged, mRepeatOnceChanged, mRepeatForeverChanged, mPingPongChanged, mBackwardChanged, mShowChanged, mFullScreenChanged, mCurrentChanged, mStartChanged, mEndChanged, mEndChangedmEndChanged, mWindowWidthChanged, mWindowHeightChanged, mWindowXChanged, mWindowYChanged,  mImageXChanged, mImageYChanged, mLODChanged, mFrameRateChanged, mZoomChanged, mZoomOneChanged, mZoomToFillChanged; 
   bool mCueFileDirty; // cue file needs saving 
   //std::vector<MovieCue> mCueQueue; // I've always wanted to say that
   QString  mCueFileName; 
@@ -173,11 +173,11 @@ class MovieCue: public QListWidgetItem {
   MovieCue(QString cueName="My Movie Cue", QListWidget *parent = NULL): 
     QListWidgetItem(cueName, parent), mMovieName("movie.sm"), mLoadMovie(false), 
     mPlayMovie(false), mPlayBackward(false), mShowControls(false), mFullScreen(true), mPingPong(false), 
-    mCurrentFrame(0), mStartFrame(0), mEndFrame(-1), mLoopFrames(0), mWindowWidth(0), mWindowHeight(0), mWindowXPos(0), mWindowYPos(0), mImageXPos(0), mImageYPos(0), mLOD(0), mFrameRate(100.0), mZoom(1.0), mZoomOne(false), mZoomToFill(false), isValid(true), mEOF(false)  {     return; }
+    mCurrentFrame(0), mStartFrame(0), mEndFrame(-1), mRepeatFrames(0), mWindowWidth(0), mWindowHeight(0), mWindowXPos(0), mWindowYPos(0), mImageXPos(0), mImageYPos(0), mLOD(0), mFrameRate(100.0), mZoom(1.0), mZoomOne(false), mZoomToFill(false), isValid(true), mEOF(false)  {     return; }
   QString mMovieName; 
   bool mLoadMovie, mPlayMovie, mPlayBackward, mShowControls, mFullScreen, mPingPong; 
   int32_t mCurrentFrame, mStartFrame, mEndFrame, // if backwards, then endframe is the actual start frame, of course
-    mLoopFrames, // could be 0 (play once, don't repeat), 1 (repeat once) or -1 (loop forever)
+    mRepeatFrames, // could be 0 (play once, don't repeat), 1 (repeat once) or -1 (loop forever)
     mWindowWidth, mWindowHeight, // window size
     mWindowXPos, mWindowYPos, //window position
     mImageXPos, mImageYPos, mLOD; // position of movie image in window

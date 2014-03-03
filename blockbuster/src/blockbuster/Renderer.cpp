@@ -688,9 +688,9 @@ void Renderer::ReportRateRangeChange(float min, float max) {
 }
 
 //============================================================
-void Renderer::ReportLoopBehaviorChange(int behavior) {
+void Renderer::ReportRepeatBehaviorChange(int behavior) {
   if (mBlockbusterInterface) {
-    mBlockbusterInterface->setLoopBehavior(behavior); 
+    mBlockbusterInterface->setRepeatBehavior(behavior); 
   }
   return; 
 }

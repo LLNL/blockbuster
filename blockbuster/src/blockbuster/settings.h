@@ -47,8 +47,8 @@ struct ProgramOptions {
     messageLevel(NULL),  mCacheDebug(false),     
     mTraceEvents(false), mTraceEventsFilename("events.log"),
     //mRenderer(NULL),
-    readerThreads(-1), loopCountName("0"),
-    startFrame(0), currentFrame(0), endFrame(-1), loopCount(0), LOD(0),
+    readerThreads(-1), repeatCountName("0"),
+    startFrame(0), currentFrame(0), endFrame(-1), repeatCount(0), LOD(0),
     slaveLaunchMethod("rsh"), useMPI(0), 
     play(0), playExit(0),  speedTest(0), frameRate(0.0), 
     fpsSampleFrequency(2.0), 
@@ -81,9 +81,9 @@ struct ProgramOptions {
   //  Renderer *mRenderer; 
   QString backendRendererName;
   int readerThreads;
-  QString loopCountName;
+  QString repeatCountName;
   int32_t startFrame, currentFrame, endFrame; 
-  int loopCount;
+  int repeatCount;
   int LOD; 
   QString slaveLaunchMethod; 
   int useMPI; 

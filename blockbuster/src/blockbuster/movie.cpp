@@ -125,7 +125,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
   uint totalFrameCount = 0, recentFrameCount = 0;
   FrameInfoPtr frameInfo;
   Renderer * renderer = NULL;
-  int loopCount = 0; 
+  int repeatCount = 0; 
   int drawInterface = options->drawInterface;
   int skippedDelayCount = 0, usedDelayCount = 0;
   int done =0;
@@ -368,9 +368,9 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             }
             //events.push_front(MovieEvent("MOVIE_MOVE_RESIZE", 0,0,0,0)); 
           } 
-          renderer->ReportLoopBehaviorChange(options->loopCount); 
-          loopCount = options->loopCount + 1; 
-          options->loopCount = 0; 
+          renderer->ReportRepeatBehaviorChange(options->repeatCount); 
+          repeatCount = options->repeatCount + 1; 
+          options->repeatCount = 0; 
 
           renderer->DestroyImageCache();        
           renderer->SetFrameList(allFrames);
@@ -577,21 +577,21 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           pingpong = event.mNumber;
           if (renderer) renderer->ReportPingPongBehaviorChange(event.mNumber); 
         }
-        else if (event.mEventType == "MOVIE_SET_LOOP") {
-          loopCount = event.mNumber;    
-          if (loopCount == 1) loopCount = 2; // this loops once. 
-          else if (loopCount == 0) loopCount = 1; // this plays once, no loop
-          options->loopCount = 0; 
-          if (loopCount) {
+        else if (event.mEventType == "MOVIE_SET_REPEAT") {
+          repeatCount = event.mNumber;    
+          if (repeatCount == 1) repeatCount = 2; // this repeats once. 
+          else if (repeatCount == 0) repeatCount = 1; // this plays once, no repeat
+          options->repeatCount = 0; 
+          if (repeatCount) {
             pingpong = false;
           }
-          if (renderer) renderer->ReportLoopBehaviorChange(event.mNumber); 
+          if (renderer) renderer->ReportRepeatBehaviorChange(event.mNumber); 
         }
         else if (event.mEventType == "MOVIE_PLAY_FORWARD") { 
-          playDirection = 1; loopCount = options->loopCount; 
+          playDirection = 1; repeatCount = options->repeatCount; 
         }
         else if (event.mEventType == "MOVIE_PLAY_BACKWARD") { 
-          playDirection = -1; loopCount = options->loopCount; 
+          playDirection = -1; repeatCount = options->repeatCount; 
         }
         else if (event.mEventType == "MOVIE_STOP") { 
           DEBUGMSG("Got stop event"); 
@@ -862,8 +862,8 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
       /*! check if we have reached the end of a cue */
       if (cuePlaying && 
           (!playDirection  || 
-           (!loopCount && playDirection > 0 && cueEndFrame != -1 && frameNumber > cueEndFrame) || 
-           (!loopCount && playDirection < 0 && cueEndFrame != -1 && frameNumber < cueEndFrame)) ) {
+           (!repeatCount && playDirection > 0 && cueEndFrame != -1 && frameNumber > cueEndFrame) || 
+           (!repeatCount && playDirection < 0 && cueEndFrame != -1 && frameNumber < cueEndFrame)) ) {
         dbprintf(2, QString("Ending cue with playDirection=%1, cueEnd=%2, frameNumber=%3\n").arg(playDirection).arg(cueEndFrame).arg(frameNumber)); 
         cuePlaying = false; 
         if (renderer) renderer->reportMovieCueComplete();
@@ -908,11 +908,11 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             frameNumber = endFrame; 
           } 
           else {
-            if (loopCount>0) {
-              loopCount --; 
-              if (renderer) renderer->ReportLoopBehaviorChange(loopCount);               
+            if (repeatCount>0) {
+              repeatCount --; 
+              if (renderer) renderer->ReportRepeatBehaviorChange(repeatCount);               
             }
-            if (loopCount) {
+            if (repeatCount) {
               frameNumber = startFrame; 
             } else {
               frameNumber = endFrame; 
@@ -930,11 +930,11 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             frameNumber = startFrame; 
           } 
           else {
-            if (loopCount > 0) {
-              loopCount --; 
-              if (renderer) renderer->ReportLoopBehaviorChange(loopCount); 
+            if (repeatCount > 0) {
+              repeatCount --; 
+              if (renderer) renderer->ReportRepeatBehaviorChange(repeatCount); 
             }
-            if (loopCount) {
+            if (repeatCount) {
               frameNumber = endFrame; 
             } else { // time to stop, just stick at the end and don't render
               frameNumber = startFrame; 
@@ -961,17 +961,17 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         if (static_cast<int32_t>(allFrames->numStereoFrames()) > frameNumber) {
           filename = allFrames->getFrame(frameNumber)->mFilename; 
         }
-        int loopmsg = 0, imageHeight=0, imageWidth = 0;
-        if (loopCount < 0) loopmsg = -1;
-        if (loopCount > 1) loopmsg = 1;
-        if (loopCount == 1 || loopCount == 0) loopmsg = 0; 
+        int repeatMsg = 0, imageHeight=0, imageWidth = 0;
+        if (repeatCount < 0) repeatMsg = -1;
+        if (repeatCount > 1) repeatMsg = 1;
+        if (repeatCount == 1 || repeatCount == 0) repeatMsg = 0; 
         if (allFrames->numStereoFrames()) {
           imageHeight = allFrames->getFrame(0)->mHeight; 
           imageWidth = allFrames->getFrame(0)->mWidth;
         }
         
         { 
-          MovieSnapshot newSnapshot(event.mEventType, filename, fps, targetFPS, currentZoom, lodBias, renderer->mName == "gl_stereo", playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, loopmsg, pingpong, options->fullScreen, options->zoomToFill, options->noscreensaver, renderer->mHeight, renderer->mWidth, renderer->mXPos, renderer->mYPos, imageHeight, imageWidth, -xOffset, yOffset); 
+          MovieSnapshot newSnapshot(event.mEventType, filename, fps, targetFPS, currentZoom, lodBias, renderer->mName == "gl_stereo", playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, repeatMsg, pingpong, options->fullScreen, options->zoomToFill, options->noscreensaver, renderer->mHeight, renderer->mWidth, renderer->mXPos, renderer->mYPos, imageHeight, imageWidth, -xOffset, yOffset); 
 
           if (sendSnapshot || newSnapshot != oldSnapshot) {
             
@@ -1185,7 +1185,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         oldXOffset = xOffset;
         oldYOffset = yOffset;
 
-        TIMER_PRINT("after swap"); 
+        dbprintf(4, "after swap (swap time was %0.5f ms)", previousSwapTime*1000.0); 
         /* Advance to the next frame */
         if (playDirection) {
           /* Compute next frame number (+/- 1) */

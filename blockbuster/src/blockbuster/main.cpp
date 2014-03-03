@@ -104,7 +104,7 @@ void usage(void) {
   printf("-keyhelp:  display list of keyboard controls\n");
   printf("-log filename: Log all messages to the given file for debugging.\n");
   printf("-lod num: specifies a starting level of detail for the given movie\n");  
-  printf("-loops <loops> specifies how many times to loop (number or 'forever')\n");
+  printf("-loop <n> See -repeat below.\n");
   printf("-messageLevel sets the message level, in order of chattiness:  quiet, syserr, error, warning, info, debug\n"); 
   printf("-no-autores:  normally, you want blockbuster to decrease resolution when the zoom increases.  This flag suppresses this, for testing.\n");
   printf("-no-controls (or -withoutControls) turns off the control window (if defined for the user interface)\n");
@@ -127,6 +127,7 @@ void usage(void) {
   printf("\tdmx: Render on back-end using DMX: Use -R to specify  backend renderer\n");
   printf("\t    (supported in 'gtk', 'x11' user interfaces)\n");
   
+  printf("-repeat <n> specifies how many times to repeat (number or 'forever').  So a value of 1 means the movie will play twice and then stop.\n");
   printf("-replayEvents filename: replay all events from the given event log.\n"); 
   printf("-stereo: short for -r gl_stereo, unless -dmx is given, in which case it is short for -R gl_stereo.\n");
   printf("-script filename: run the given blockbuster script\n"); 
@@ -347,7 +348,7 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
       }
       continue;
     }
-	else if (CHECK_STRING_ARG("-loops", argc, argv,  opt->loopCountName)) continue;
+	else if (CHECK_STRING_ARG("-repeat", argc, argv,  opt->repeatCountName)) continue;
 	else if (CHECK_STRING_ARG("-messageLevel", argc, argv, opt->messageLevelName))  {
       if ((opt->messageLevel = FindMessageLevel(opt->messageLevelName)) == NULL) {
         QString errmsg("no such message level '%1'.  Use -h for help."); 
@@ -572,11 +573,11 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
   /* We've read all the command line options, so everything is set.
    * Pull out some of the information we'll need later.
    */
-  if (opt->loopCountName == "forever") {
-    opt->loopCount = LOOP_FOREVER;
+  if (opt->repeatCountName == "forever") {
+    opt->repeatCount = REPEAT_FOREVER;
   }
   else {
-    opt->loopCount = opt->loopCountName.toInt();
+    opt->repeatCount = opt->repeatCountName.toInt();
   }
     
   if (opt->mTraceEvents) {

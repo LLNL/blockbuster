@@ -40,9 +40,9 @@ void RemoteControl::updateFromSnapshot(MovieSnapshot &snapshot){
 
   LOCK_BLOCK_APPLY(fpsSpinBox, snapshot.mTargetFPS, setValue( snapshot.mTargetFPS)); 
 
-  BLOCK_APPLY(loopCheckBox, setChecked(snapshot.mLoop)); 
-  BLOCK_APPLY(foreverCheckBox, setEnabled(snapshot.mLoop)); 
-  BLOCK_APPLY(foreverCheckBox, setChecked(snapshot.mLoop == -1)); 
+  BLOCK_APPLY(repeatCheckBox, setChecked(snapshot.mRepeat)); 
+  BLOCK_APPLY(foreverCheckBox, setEnabled(snapshot.mRepeat)); 
+  BLOCK_APPLY(foreverCheckBox, setChecked(snapshot.mRepeat == -1)); 
   BLOCK_APPLY(noScreensaverCheckBox, setChecked(snapshot.mNoScreensaver)); 
   BLOCK_APPLY(pingpongCheckBox, setChecked(snapshot.mPingPong)); 
   dbprintf(5, QString("Updated control window from %1\n").arg(string(snapshot).c_str())); 

@@ -36,7 +36,7 @@ class BlockbusterInterface: public QWidget, public Ui::BlockbusterControl  {
   void setFrameRate(double rate); 
   void setFrameRateRange(double min, double max); 
   void setZoom(double zoom); 
-  void setLoopBehavior (int behavior); 
+  void setRepeatBehavior (int behavior); 
   void setPingPongBehavior (int behavior); 
 
   void reportWindowMoved(int xpos, int ypos); 
@@ -70,7 +70,7 @@ class BlockbusterInterface: public QWidget, public Ui::BlockbusterControl  {
   void hideButtonClicked(); // special case, see constructor 
  
   void on_scrubCheckBox_stateChanged(int state);
-  void on_loopCheckBox_stateChanged(int state);
+  void on_repeatCheckBox_stateChanged(int state);
 
   void on_frameSlider_valueChanged(int);   
   void on_frameField_returnPressed();   
@@ -87,7 +87,7 @@ class BlockbusterInterface: public QWidget, public Ui::BlockbusterControl  {
   int mStartFrame, mEndFrame, mFrameNumber; 
   int mLOD; 
   double mFrameRate, mZoom; 
-  int mPingPong, mLoop; 
+  int mPingPong, mRepeat; 
   QString mPreviousDir; 
 
 }; 

@@ -230,7 +230,7 @@ bool MovieSnapshot::operator == (const MovieSnapshot &other) const{
 
 //==========================================================================
 MovieSnapshot::operator string() const {
-  string retval = str(boost::format("mSnapshotType=%s mFilename=%s mFrameRate=%0.6f mTargetFPS=%0.6f mZoom=%0.6f mLOD=%d mStereo=%d mPlayStep=%d mStartFrame=%d mEndFrame=%d mNumFrames=%d mFrameNumber=%d mLoop=%d mPingPong=%d mFullScreen=%d mZoomToFill=%d mNoScreensaver=%d mScreenHeight=%d mScreenWidth=%d mScreenXpos=%d mScreenYpos=%d mImageHeight=%d mImageWidth=%d mImageXpos=%d mImageYpos=%d")
+  string retval = str(boost::format("mSnapshotType=%s mFilename=%s mFrameRate=%0.6f mTargetFPS=%0.6f mZoom=%0.6f mLOD=%d mStereo=%d mPlayStep=%d mStartFrame=%d mEndFrame=%d mNumFrames=%d mFrameNumber=%d mRepeat=%d mPingPong=%d mFullScreen=%d mZoomToFill=%d mNoScreensaver=%d mScreenHeight=%d mScreenWidth=%d mScreenXpos=%d mScreenYpos=%d mImageHeight=%d mImageWidth=%d mImageXpos=%d mImageYpos=%d")
                       %(mSnapshotType)
                       %(mFilename)
                       %(mFrameRate)
@@ -243,7 +243,7 @@ MovieSnapshot::operator string() const {
                       %(mEndFrame)
                       %(mNumFrames)
                       %(mFrameNumber)
-                      %(mLoop)
+                      %(mRepeat)
                       %(mPingPong)
                       %(mFullScreen)
                       %(mZoomToFill)
@@ -284,7 +284,7 @@ MovieSnapshot &MovieSnapshot::operator <<(string s) {
       else if (key == "mEndFrame") mEndFrame = value.toInt();
       else if (key == "mNumFrames") mNumFrames = value.toInt();
       else if (key == "mFrameNumber") mFrameNumber = value.toInt();
-      else if (key == "mLoop") mLoop = value.toInt(); 
+      else if (key == "mRepeat") mRepeat = value.toInt(); 
       else if (key == "mPingPong") mPingPong = value.toInt(); 
       else if (key == "mFullScreen") mFullScreen = value.toInt();
       else if (key == "mZoomToFill") mZoomToFill = value.toInt();
