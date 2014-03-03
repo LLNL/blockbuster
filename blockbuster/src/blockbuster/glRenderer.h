@@ -73,11 +73,15 @@ class glStereoRenderer: public glRenderer {
 typedef boost::shared_ptr<struct TextureObject> TextureObjectPtr;
 
 struct TextureObject {
-    GLuint texture;
-    GLuint width, height; /* level zero */
-    Rectangle valid[MAX_IMAGE_LEVELS];
-    GLboolean anyLoaded;   /* is any part of this texture valid/loaded? */
-    GLuint age;
+  TextureObject(): 
+    texture(0), width(0), height(0), anyLoaded(false) {
+    return ; 
+  }
+  GLuint texture;
+  GLuint width, height; /* level zero */
+  Rectangle valid[MAX_IMAGE_LEVELS];
+  GLboolean anyLoaded;   /* is any part of this texture valid/loaded? */
+  //GLuint age;
   FrameInfoPtr frameInfo;  /* back pointer */
 } ;
 

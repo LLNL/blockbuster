@@ -77,6 +77,27 @@ void glRenderer::FinishRendererInit(void) {
   mRequiredImageFormat.rowOrder = ROW_ORDER_DONT_CARE;
   mRequiredImageFormat.byteOrder = MSB_FIRST;
   mRequiredImageFormat.bytesPerPixel = 3;
+
+
+  glDisable(GL_ALPHA_TEST);
+  glDisable(GL_BLEND);
+  glDisable(GL_DEPTH_TEST);
+  glDisable(GL_DITHER);
+  glDisable(GL_FOG);
+  glDisable(GL_LIGHTING);
+  glDisable(GL_LOGIC_OP);
+  glDisable(GL_STENCIL_TEST);
+  glDisable(GL_TEXTURE_1D);
+  glDisable(GL_TEXTURE_2D);
+  glPixelTransferi(GL_MAP_COLOR, GL_FALSE);
+  glPixelTransferi(GL_RED_SCALE, 1);
+  glPixelTransferi(GL_RED_BIAS, 0);
+  glPixelTransferi(GL_GREEN_SCALE, 1);
+  glPixelTransferi(GL_GREEN_BIAS, 0);
+  glPixelTransferi(GL_BLUE_SCALE, 1);
+  glPixelTransferi(GL_BLUE_BIAS, 0);
+  glPixelTransferi(GL_ALPHA_SCALE, 1);
+  glPixelTransferi(GL_ALPHA_BIAS, 0);
   
   return; 
 }
@@ -249,12 +270,13 @@ void glRenderer::RenderActual(int frameNumber,
       region.width*region.height > (int32_t)(image->width*image->height)) {
     RENDERDEBUG("Abort before glDrawPixels due to programming error.  Sanity check failed."); 
     abort(); 
-  } else {    
-    glDrawPixels(region.width, region.height,
-                 GL_RGB, GL_UNSIGNED_BYTE,
-                 image->Data());
-    RENDERDEBUG("Done with glDrawPixels"); 
-  }
+  } 
+
+  glDrawPixels(region.width, region.height,
+               GL_RGB, GL_UNSIGNED_BYTE,
+               image->Data());
+  RENDERDEBUG("Done with glDrawPixels"); 
+  
 
   // move the raster position back to 0,0
   glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
@@ -506,7 +528,12 @@ void glTextureRenderer::BeginRendererInit(void){
   INFO("Max Texture Size: %d x %d",
        maxTextureWidth,
        maxTextureHeight);
-  
+  for (uint32_t i = 0; i< 100; i++) {
+    TextureObjectPtr p(new TextureObject); 
+    glGenTextures( 1, &p->texture );
+    p->anyLoaded = false;
+    mTextures.push_back(p); 
+  }
   texIntFormat = GL_RGB;
   texFormat = GL_RGB;
     
@@ -548,35 +575,37 @@ void glTextureRenderer::UpdateProjectionAndViewport(int newWidth, int newHeight)
 
 TextureObjectPtr glTextureRenderer::GetTextureObject(int frameNumber)
 {
-  cerr << "Warning:  DEAD CODE EXECUTING? " << endl; 
-  static GLuint clock = 1;
+  // cerr << "Warning:  DEAD CODE EXECUTING? " << endl; 
+  //static GLuint clock = 1;
   TextureObjectPtr texObj = 
     mFrameList->getFrame(frameNumber)->mTextureObject;
   
   if (!texObj) {
-	/* find a free texture object */
-	GLuint oldestAge = ~0;
-	int oldestPos = -1;
-	/* find LRU texture object */
+    
+    /* 	//GLuint oldestAge = ~0;
+	// int oldestPos = -1;
+	find LRU texture object 
 	for (uint32_t i = 0; i < mTextures.size(); i++) {
-      if (mTextures[i]->age < oldestAge) {
-		oldestAge = mTextures[i]->age;
-		oldestPos = i;
-      }
+    if (mTextures[i]->age < oldestAge) {
+    oldestAge = mTextures[i]->age;
+    oldestPos = i;
+    }
 	}
     
 	bb_assert(oldestPos >= 0);
 	bb_assert(oldestAge != ~(uint32_t)0);
-    
 	texObj = mTextures[oldestPos];
+    */     
     
+    texObj = mTextures[frameNumber % mTextures.size()];
 	/* unlink FrameInfo pointer */
-    texObj->frameInfo->mTextureObject.reset();
+    if (texObj->frameInfo && texObj->frameInfo->mTextureObject)
+      texObj->frameInfo->mTextureObject.reset();
     
 	/* update/init texObj fields */
-	texObj->age = clock++;	/* XXX handle clock wrap-around! */
+    //	texObj->age = clock++;	/* XXX handle clock wrap-around! */
 	texObj->frameInfo = mFrameList->getFrame(frameNumber);
-	for (uint32_t i = 0; i < MAX_IMAGE_LEVELS; i++)
+    for (uint32_t i = 0; i < MAX_IMAGE_LEVELS; i++)
       texObj->valid[i].width = texObj->valid[i].height = -1;
 	texObj->anyLoaded = GL_FALSE;
 	mFrameList->getFrame(frameNumber)->mTextureObject = texObj;
@@ -594,12 +623,10 @@ void glTextureRenderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
   int localFrameNumber;
   Rectangle region;
   
-#if 0
-  printf("gltexture::Render %d, %d  %d x %d  at %d, %d  zoom=%f  lod=%d\n",
-         imageRegion->x, imageRegion->y,
-         imageRegion->width, imageRegion->height,
-         destX, destY, zoom, lod);
-#endif
+  RENDERDEBUG("glTextureRenderer::RenderActual begin, frame %d: %d, %d  %d x %d  at %d, %d  zoom=%f  lod=%d",
+              frameNumber, imageRegion->x, imageRegion->y,
+              imageRegion->width, imageRegion->height,
+              destX, destY, zoom, lod);
   
   if (glXMakeCurrent(mDisplay, mWindow, context) == False) {
     WARNING("couldn't make graphics context current before rendering");
@@ -928,5 +955,7 @@ void glTextureRenderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
   
   
   glDisable(GL_TEXTURE_2D);
+  RENDERDEBUG("glTextureRenderer::RenderActual end"); 
+ 
 }
 
