@@ -638,7 +638,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
 	return image;
   }
 
-  CACHEDEBUG("ImageCache::GetImage frame %d\n",frameNumber); 
+  DEBUGMSG("ImageCache::GetImage frame %d",frameNumber); 
   
   /* This counts as an additional cache request; we keep track of such
    * things so we can decide which of the cache entries is the oldest.
@@ -711,15 +711,15 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
 		if (mNumReaderThreads > 0) {
           mThreads[threadnum]->unlock("found interesting frame", __FILE__, __LINE__); 
 		}
-        CACHEDEBUG("Returning found image %d", frameNumber); 
+        DEBUGMSG("Returning found image %d", frameNumber); 
 		return cachedImage->image;
       }
       else {
-        CACHEDEBUG("Frame %d does not fully match, so augment rectangle", frameNumber); 
+        DEBUGMSG("Frame %d does not fully match, so augment rectangle", frameNumber); 
         region = RectUnionRect(&cachedImage->image->loadedRegion, &region);
       }
 	}
-    CACHEDEBUG("Frame %d not found, look for it in queues", frameNumber); 
+    DEBUGMSG("Frame %d not found, look for it in queues", frameNumber); 
 	/* It's not in cache already, darn.  We need to check to see if a 
 	 * job for this frame is already in one of the work queues or the
 	 * error queue.  This, of course, can only happen in the multi-
@@ -731,7 +731,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
        * Look for a pending job (one that is being worked on) that
        * matches our requirements.
        */
-      CACHEDEBUG("Looking in pending queue for frame %d", frameNumber); 
+      DEBUGMSG("Looking in pending queue for frame %d", frameNumber); 
       ImageCacheJobPtr job = 
         FindJobInQueue(mThreads[threadnum]->mPendingQueue, frameNumber, &region,levelOfDetail);
       
@@ -750,7 +750,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
 		 * to modify the job request, if necessary, to include the
 		 * desired region.
 		 */
-        CACHEDEBUG("Looking in job queue for frame %d with other rectangle", frameNumber); 
+        DEBUGMSG("Looking in job queue for frame %d with other rectangle", frameNumber); 
         job = FindJobInQueue(mThreads[threadnum]->mJobQueue, frameNumber, NULL, levelOfDetail);
         if (job) {
           /* Add our region of interest to the job; if a request had
@@ -776,7 +776,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
            * the error queue to make sure the job hasn't been attempted
            * but has failed.
            */
-          CACHEDEBUG("No job for image %d in the pending queue nor in the work queue", frameNumber); 
+          DEBUGMSG("No job for image %d in the pending queue nor in the work queue", frameNumber); 
           job = FindJobInQueue(mThreads[threadnum]->mErrorQueue, frameNumber,&region,levelOfDetail);
           if (job) {
 			/* The error, hopefully, has already been reported.  We
@@ -793,7 +793,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
 			 * variable loop so the main thread can load the
 			 * image itself.
 			 */
-            CACHEDEBUG("No job for image %d anywhere, main thread must do it or something, shrug", frameNumber); 
+            DEBUGMSG("No job for image %d anywhere, main thread must do it or something, shrug", frameNumber); 
             mThreads[threadnum]->unlock("no job found", __FILE__, __LINE__); 
             break;
           }
@@ -813,7 +813,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
      * basic error checks.  (We don't do these above in order to speed
      * the critical performance case.)
      */
-  CACHEDEBUG("Have to load image %d in main thread", frameNumber); 
+  DEBUGMSG("Have to load image %d in main thread", frameNumber); 
    
   /* The requested image is valid enough.  If we're single-threaded, load the 
    * image ourselves; if we're multi-threaded, add work to the work queue and 
@@ -866,7 +866,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
       mThreads[threadnum]->unlock("image stored and locked successfully", __FILE__, __LINE__); 
     }
   }
-    
+  DEBUGMSG("Done with GetImage()"); 
   return image;
 }
 

@@ -113,6 +113,8 @@ void glRenderer::DrawString(int row, int column, const char *str)
   glPopAttrib();
   return; 
 }
+
+#define RENDERDEBUG theMessage.level=4,MESSAGEBASE  
 //=============================================================
 void glRenderer::RenderActual(int frameNumber, 
                               RectanglePtr imageRegion,
@@ -121,7 +123,7 @@ void glRenderer::RenderActual(int frameNumber,
   int localFrameNumber;
   Rectangle region = *imageRegion;
   int saveSkip;
-  DEBUGMSG("gl_Render begin, frame %d, %d x %d  at %d, %d  zoom=%f  lod=%d", 
+  RENDERDEBUG("glRenderer::RenderActual begin, frame %d, %d x %d  at %d, %d  zoom=%f  lod=%d", 
            frameNumber,
            imageRegion->width, imageRegion->height,
            imageRegion->x, imageRegion->y, zoom, lod);
@@ -174,9 +176,9 @@ void glRenderer::RenderActual(int frameNumber,
   zoom *= (float) lodScale;
 
 
-  TIMER_PRINT("Pull the image from our cache "); 
+  RENDERDEBUG("Pull the image from our cache "); 
   ImagePtr image =  GetImage(localFrameNumber, &region, lod);
-  TIMER_PRINT("Got image"); 
+  RENDERDEBUG("Got image"); 
   if (!image) {
     /* error has already been reported */
     return;
@@ -191,6 +193,7 @@ void glRenderer::RenderActual(int frameNumber,
   /*bb_assert(region.y + region.height <= image->height);*/
 
   glViewport(0, 0, mWidth, mHeight);
+  RENDERDEBUG("done with glViewport"); 
 
 
   /* only clear the window if we have to */
@@ -201,7 +204,7 @@ void glRenderer::RenderActual(int frameNumber,
     glClear(GL_COLOR_BUFFER_BIT);
   }
 
-  DEBUGMSG(QString("Frame %1 row order is %2\n").arg(frameNumber).arg(image->imageFormat.rowOrder)); 
+  RENDERDEBUG(QString("Done with glClearColor and glClear.  Frame %1 row order is %2").arg(frameNumber).arg(image->imageFormat.rowOrder)); 
   
   if (image->imageFormat.rowOrder == BOTTOM_TO_TOP) {
     /*
@@ -224,8 +227,7 @@ void glRenderer::RenderActual(int frameNumber,
     destY = mHeight - destY - 1;
     glPixelZoom(zoom, -zoom);
   }
-  TIMER_PRINT("before draw"); 
-  DEBUGMSG("Region %d %d %d %d : LodScale %d : Zoom %f\n",region.x,region.y,region.width,region.height,lodScale,zoom);
+  RENDERDEBUG("Done with glPixelZoom. Region %d %d %d %d : LodScale %d : Zoom %f",region.x,region.y,region.width,region.height,lodScale,zoom);
   
   //glRasterPos2i(destX, destY); 
   // use glBitMap to set raster position
@@ -235,35 +237,36 @@ void glRenderer::RenderActual(int frameNumber,
   glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 
                 mRequiredImageFormat.scanlineByteMultiple);
-  DEBUGMSG("glPixelStorei(GL_UNPACK_ROW_LENGTH, %d)\n", image->width);
-  DEBUGMSG("glPixelStorei(GL_UNPACK_SKIP_ROWS,  %d)\n", saveSkip);
-  DEBUGMSG("glPixelStorei(GL_UNPACK_SKIP_PIXELS,  %d)\n",  region.x);
-  DEBUGMSG("glPixelStorei(GL_UNPACK_ALIGNMENT,  %d)\n", mRequiredImageFormat.scanlineByteMultiple);
+  RENDERDEBUG("glPixelStorei(GL_UNPACK_ROW_LENGTH, %d)", image->width);
+  RENDERDEBUG("glPixelStorei(GL_UNPACK_SKIP_ROWS,  %d)", saveSkip);
+  RENDERDEBUG("glPixelStorei(GL_UNPACK_SKIP_PIXELS,  %d)",  region.x);
+  RENDERDEBUG("glPixelStorei(GL_UNPACK_ALIGNMENT,  %d)", mRequiredImageFormat.scanlineByteMultiple);
 
-  DEBUGMSG("Buffer for frame %d is %dw x %dh, region is %dw x %dh, destX = %d, destY = %d\n", frameNumber, image->width, image->height, region.width, region.height, destX, destY); 
+  RENDERDEBUG("Buffer for frame %d is %dw x %dh, region is %dw x %dh, destX = %d, destY = %d", frameNumber, image->width, image->height, region.width, region.height, destX, destY); 
 
   if (region.width > (int32_t)image->width || region.height > (int32_t)image->height ||
       region.width < 0 || region.height < 0 ||
       region.width*region.height > (int32_t)(image->width*image->height)) {
-    DEBUGMSG("Abort before glDrawPixels due to programming error.  Sanity check failed.\n"); 
+    RENDERDEBUG("Abort before glDrawPixels due to programming error.  Sanity check failed."); 
     abort(); 
   } else {    
     glDrawPixels(region.width, region.height,
                  GL_RGB, GL_UNSIGNED_BYTE,
                  image->Data());
-    DEBUGMSG("Done with glDrawPixels\n"); 
+    RENDERDEBUG("Done with glDrawPixels"); 
   }
 
   // move the raster position back to 0,0
   glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
+  RENDERDEBUG("Done with glBitmap"); 
   //  glRasterPos2i(0,0); 
   
 #ifdef RENDER_TIMING
   t2 = GetExactSecondsDouble(); 
   timeSamples.push_back(t2-t1); 
-  DEBUGMSG("glRenderer::Render end (took %f secs (%f-%f))\n", t2-t1, t2, t1); 
+  RENDERDEBUG("glRenderer::Render end (took %f secs (%f-%f))", t2-t1, t2, t1); 
 #endif
-  TIMER_PRINT("glRenderer::Render end \n"); 
+  RENDERDEBUG("glRenderer::RenderActual end"); 
 }
 
 //***********************************************************************

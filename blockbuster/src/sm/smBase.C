@@ -1433,7 +1433,7 @@ uint32_t smBase::readTiledFrame(u_int f, int *dim, int* pos, int res, int thread
           stopByte = tileInfo->fileOffset + tileInfo->compressedSize;
           stopTile = tileNum +1; 
         }
-        smdbprintf(5, "after tile %d, stopByte=%lu\n", stopByte); 
+        smdbprintf(6, "after tile %d, stopByte=%lu\n", stopByte); 
       }
     }
    
@@ -1780,7 +1780,7 @@ uint32_t smBase::getFrameBlock(int frame, void *data, int threadnum,  int destRo
       if(tileInfo.overlaps && (tileInfo.skipCorruptFlag == 0)) {
          
         u_char *tdata = (u_char *)(ioBuf + tileInfo.readBufferOffset);
-        smdbprintf(6,"smBase::getFrameBlock(frame %d, thread %d): decompBlock, tile %d\n", tile); 
+        smdbprintf(6,"smBase::getFrameBlock(thread %d, frame %d, tile %d): decompBlock, tile %d\n", threadnum, frame, tile); 
         decompBlock(tdata,tbuf,tileInfo.compressedSize,tilesize);
         // 
         u_char *to = (u_char*)(out + (tileInfo.blockOffsetY * destRowStride) + (tileInfo.blockOffsetX * 3));
@@ -1789,7 +1789,7 @@ uint32_t smBase::getFrameBlock(int frame, void *data, int threadnum,  int destRo
         uint32_t newBytes = 3*maxX*maxY, maxAllowed = (_dim[0]*_dim[1]*3);
         uint32_t newTotal = newBytes + copied; 
          
-        smdbprintf(6, "smBase::getFrameBlock(frame %d, thread %d): tile %d, copying %d rows %d pixels per row, %d new bytes, %d copied so far, new total will be %d, max allowed is %d x %d x 3 = %d\n", 
+        smdbprintf(6, "smBase::getFrameBlock(thread %d, frame %d): tile %d, copying %d rows %d pixels per row, %d new bytes, %d copied so far, new total will be %d, max allowed is %d x %d x 3 = %d\n", 
                    threadnum, frame, tile, maxY, maxX, newBytes, 
                    copied, newTotal,  
                    _dim[0], _dim[1], maxAllowed ); 
