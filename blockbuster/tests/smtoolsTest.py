@@ -116,7 +116,7 @@ tests = [
                  "quicksand-11frames-gz-frame-0.png"],
       "failure_pattern": BLOCKBUSTER_FAILURE,
       "success_pattern": ["bad magic .* at pos 654665",
-                          "window 10: 594098 size 60591"],    
+                          "window 10: offset 594098 size 60591"],    
       "frame diffs": [["quicksand-11frames-gz-frame-10.png", -1],
                       ["quicksand-11frames-gz-frame-0.png", -1]],
       "return": 0
@@ -227,7 +227,7 @@ tests = [
       "args": "-playexit 9 -v 5 quicksand-wildcard-11frames-lzma.sm",
       "output": None,
       "failure_pattern": BLOCKBUSTER_FAILURE,
-      "success_pattern": "window 10: 473312 size 43940",    
+      "success_pattern": "window 10: offset 473312 size 43940",    
       "return": 0
       },
          
@@ -241,7 +241,7 @@ tests = [
       "output": ["quicksand-wildcard-11frames-lzma-frame-10.png",
                  "quicksand-wildcard-11frames-lzma-frame-0.png"],
       "failure_pattern": BLOCKBUSTER_FAILURE,
-      "success_pattern": "window 10: 473312 size 43940",    
+      "success_pattern": "window 10: offset 473312 size 43940",    
       "frame diffs": [["quicksand-wildcard-11frames-lzma-frame-10.png", -1],
                       ["quicksand-wildcard-11frames-lzma-frame-0.png", -1]],
       "return": 0
