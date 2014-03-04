@@ -1,0 +1,46 @@
+2014-03-03 10 AM
+OK, I see our bottleneck.  (Using /usr/dvstmp/Movies/2014-02-28-rcook-experiments/exp2/findlag.py)
+I observed the following during a typical Kerman run.  Times are milliseconds. 
+
+Total frames: 762
+Average frame time: 23.96
+Average render time: 15.58
+Average interframe time: 8.38
+
+The "render time" is probably not easy to reduce -- I will look at the data layout and do some googling and nvidia queries to see if an extra memcopy is happening here that can be avoided.  If so, then this is the lowest hanging fruit both in terms of labor and potential speedup.  
+
+The "interfame time" is almost entirely glXSwapBuffers().  Not much can be done there I fear.  
+
+So this tells me where to look if we need or want a speedup.  It also tells me that we are unlikely to ever max out our hardware due to inherent limits to rendering performance.  
+
+-- Rich 
+
+
+
+
+ SMDEBUG [smBase.C:getFrameBlock(), line 1791, time=2.321]: thread 1, Frame 1, tile 0, copying 256 rows 256 pixels per row, 196608 new bytes, 0 copied so far, new total will be 196608, max allowed is 2867 x 2048 x 3 = 17614848
+SMDEBUG [smBase.C:getFrameBlock(), line 1791, time=2.7521791thread 1, Frame 1, tile 95, copying 256 rows 51 pixels per row, 39168 new bytes, 17575680 copied so far, new total will be 17614848, max allowed is 2867 x 2048 x 3 = 17614848
+
+So a tiled frame takes about 0.43 secs to copy the decompressed frame into the image buffer!  
+
+
+At 43 frames per second, assuming 0.828 MB/frame, the observed value for this movie, we are pulling 158MB/s I/O.  That does not seem fast enough.  At any rate, since GZ and RAW have the same play rate, that seems conclusive that we are not maxing out I/O. 
+
+We are not maxing the CPUs.  
+We are not maxing I/O as the time to play GZ is the same as the time to play RAW for Kerman.  
+
+Per http://www.tested.com/tech/457440-theoretical-vs-actual-bandwidth-pci-express-and-thunderbolt/
+
+After overhead, the maximum per-lane data rate of PCIe 1.0 is eighty percent of 2.5GT/s*. That gives us two gigabits per second, or 250MB/s (remember, eight bits to a byte). The PCIe interface is bidirectional, so that's 250MB/s in each direction, per lane. PCIe 2.0 doubles the per-lane throughput to 5GT/s, which gives us 500MB/s of actual data transfer per lane.
+
+I recall from yesterday's conversation that we are using PCIe 2.0 x16 lanes.  So our theoretical max is about 8GB/s.  Good number to keep in mind.  
+
+At 42 FPS and 3 bytes per pixel, we are pushing maybe 
+42 * 3 * 8*100*1000  = 992 MB/s over out PCIe bus, possibly a slight bit more due to byte alignments and such.  Even if you assume quad-buffering, I am not seeing how we are maxing out PCIe.  Certainly Olaf's tests should not have been.  
+
+So we are not maxing out CPU, not maxing out PCIe, and surely not maxing out the video card.  I'd like to know more about the card layout, but it would be asynine for nvidia to sell a Quadroplex solution that cannot drive the monitors attached to it.  
+
+The only thing we haven't ruled out is maxing out I/O from disk, just requires a simple answer from you guys about that, but it seems unlikely to be the culprit.  
+
+Still curious and cannot answer Adam's question yet, which is basically "what is limiting frame rates?".  
+

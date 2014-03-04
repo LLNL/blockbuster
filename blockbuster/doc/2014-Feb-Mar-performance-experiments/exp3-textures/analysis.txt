@@ -1,0 +1,1969 @@
+warning: bad 'end time' line at frame 177: "BLOCKBUSTER (rzthriller9): DEBUG: (t=1393886775.555395):  [cache.h:WakeAllJobDone() line 131, thread 5, time=6775.555]BLOCKBUSTER (rzthriller9): DEBUG: glTextureRenderer::RenderActual end [cache.h:unlock() line 143, thread 30, time=6775.555]
+"
+warning: bad 'end time' line at frame 178: " SMDEBUG [smBase.C:getFrameBlock(), line BLOCKBUSTER (rzthriller9): INFO: glTextureRenderer::RenderActual end [glRenderer.cpp:RenderActual() line 936, thread 30, time=6775.583]
+"
+warning: bad 'end time' line at frame 475: " SMDEBUG [smBase.C:getFrameBlock(), line 1830BLOCKBUSTER (rzthriller9): INFO: glTextureRenderer::RenderActual end [glRenderer.cpp:RenderActual() line 936, thread 30, time=6784.684]
+"
+warning: bad 'end time' line at frame 506: "BLOCKBUSTER (rzthriller9): DEBUG: (t=1393886785.502967):  [cache.h:unlock() line 143, thread 3, time=6785.503]BLOCKBUSTER (rzthriller9): INFO: glTextureRenderer::RenderActual end [cache.h:unlock() line 143, thread 30, time=6785.503]
+"
+warning: bad 'end time' line at frame 512: "BLOCKBUSTER (rzthriller9): DEBUG: (t=1393886785.658545):  [cache.h:WakeAllJobDone() line 131, thread 9, time=6785.659]BLOCKBUSTER (rzthriller9): DEBUG: glTextureRenderer::RenderActual end [cache.h:unlock() line 143, thread 30, time=6785.659]
+"
+warning: bad 'end time' line at frame 515: " SMDEBUG [smBase.C:getFrameBlock(), line BLOCKBUSTER (rzthriller9): INFO: glTextureRenderer::RenderActual end [glRenderer.cpp:RenderActual() line 936, thread 30, time=6785.738]1830, time=18.376]: 
+"
+warning: bad 'end time' line at frame 517: "BLOCKBUSTER (rzthriller9): INFO: glTextureRenderer::RenderActual end [cache.h:lock() line 137, thread 30, time=6785.791]BLOCKBUSTER (rzthriller9): DEBUG: (t=1393886785.791241):  [cache.h:WaitForJobReady() line 103, thread 14, time=6785.791]
+"
+warning: bad 'end time' line at frame 531: " SMDEBUG [smBase.C:getFrameBlock(), line BLOCKBUSTER (rzthriller9): INFO: glTextureRenderer::RenderActual end [glRenderer.cpp:RenderActual() line 936, thread 30, time=6786.187]
+"
+warning: bad 'end time' line at frame 651: "BLOCKBUSTER (rzthriller9): DEBUG: cache.cpp: 167: worker waiting job ready (no job in work queue yet) [cache.h:WaitForJobReady() line 103, thread 29, time=6789.768]BLOCKBUSTER (rzthriller9): DEBUG: glTextureRenderer::RenderActual end [cache.h:WaitForJobReady() line 103, thread 30, time=6789.768]
+"
+warning: bad 'end time' line at frame 704: "BLOCKBUSTER (rzthriller9): INFO: glTextureRenderer::RenderActual end [cache.h:lock() line 137, thread 30, time=6791.408]BLOCKBUSTER (rzthriller9): DEBUG: cache.cpp: 207: locking image cache (finished job, updating queues) [cache.h:lock() line 137, thread 22, time=6791.408]
+"
+Total frames: 823
+Average frame time: 30.5698663426
+Average render time: 29.2588092345
+Average interframe time: 1.31105710814
+loop: 0
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 211.0000000002401, 'start': 6769.692, 'end': 6769.903, 'total frame time': 211.0000000002401, 'interframe time': 0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 103.00000000006548, 'start': 6769.905, 'end': 6770.008, 'total frame time': 104.99999999956344, 'interframe time': 1.999999999497959}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6770.009, 'end': 6770.041, 'total frame time': 33.00000000035652, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 31.9999999992433, 'start': 6770.042, 'end': 6770.074, 'total frame time': 32.99999999944703, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6770.075, 'end': 6770.107, 'total frame time': 33.00000000035652, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 31.9999999992433, 'start': 6770.109, 'end': 6770.141, 'total frame time': 33.999999999650754, 'interframe time': 2.0000000004074536}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.99999999985448, 'start': 6770.142, 'end': 6770.177, 'total frame time': 36.00000000005821, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6770.178, 'end': 6770.215, 'total frame time': 38.00000000046566, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 31.9999999992433, 'start': 6770.216, 'end': 6770.248, 'total frame time': 32.99999999944703, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.00000000035652, 'start': 6770.249, 'end': 6770.282, 'total frame time': 34.00000000056025, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 36.00000000005821, 'start': 6770.283, 'end': 6770.319, 'total frame time': 37.000000000261934, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6770.32, 'end': 6770.352, 'total frame time': 32.99999999944703, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.00000000035652, 'start': 6770.353, 'end': 6770.386, 'total frame time': 34.00000000056025, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6770.387, 'end': 6770.424, 'total frame time': 37.99999999955617, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 31.9999999992433, 'start': 6770.426, 'end': 6770.458, 'total frame time': 33.999999999650754, 'interframe time': 2.0000000004074536}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6770.459, 'end': 6770.49, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 36.00000000005821, 'start': 6770.491, 'end': 6770.527, 'total frame time': 37.000000000261934, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 36.00000000005821, 'start': 6770.528, 'end': 6770.564, 'total frame time': 37.000000000261934, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 36.00000000005821, 'start': 6770.565, 'end': 6770.601, 'total frame time': 36.99999999935244, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6770.602, 'end': 6770.639, 'total frame time': 38.00000000046566, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 31.9999999992433, 'start': 6770.64, 'end': 6770.672, 'total frame time': 32.99999999944703, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6770.673, 'end': 6770.705, 'total frame time': 33.00000000035652, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6770.706, 'end': 6770.738, 'total frame time': 33.00000000035652, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 31.000000000858563, 'start': 6770.739, 'end': 6770.77, 'total frame time': 32.000000000152795, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 39.99999999996362, 'start': 6770.771, 'end': 6770.811, 'total frame time': 40.99999999925785, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6770.812, 'end': 6770.844, 'total frame time': 33.00000000035652, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6770.845, 'end': 6770.876, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6770.877, 'end': 6770.911, 'total frame time': 34.99999999985448, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6770.912, 'end': 6770.944, 'total frame time': 33.00000000035652, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.000000000654836, 'start': 6770.945, 'end': 6770.975, 'total frame time': 30.99999999994907, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6770.976, 'end': 6771.008, 'total frame time': 32.99999999944703, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.99999999985448, 'start': 6771.008, 'end': 6771.043, 'total frame time': 34.99999999985448, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.00000000035652, 'start': 6771.044, 'end': 6771.077, 'total frame time': 34.00000000056025, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 29.99999999974534, 'start': 6771.078, 'end': 6771.108, 'total frame time': 30.99999999994907, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6771.109, 'end': 6771.14, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6771.141, 'end': 6771.172, 'total frame time': 31.9999999992433, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6771.173, 'end': 6771.21, 'total frame time': 38.00000000046566, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.99999999985448, 'start': 6771.211, 'end': 6771.246, 'total frame time': 36.00000000005821, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6771.247, 'end': 6771.278, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.99999999944703, 'start': 6771.279, 'end': 6771.312, 'total frame time': 33.999999999650754, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6771.313, 'end': 6771.347, 'total frame time': 34.99999999985448, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6771.348, 'end': 6771.379, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6771.38, 'end': 6771.411, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.99999999985448, 'start': 6771.412, 'end': 6771.447, 'total frame time': 36.00000000005821, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6771.448, 'end': 6771.479, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 31.000000000858563, 'start': 6771.48, 'end': 6771.511, 'total frame time': 32.000000000152795, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.00000000056025, 'start': 6771.512, 'end': 6771.546, 'total frame time': 34.99999999985448, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 35.000000000763976, 'start': 6771.547, 'end': 6771.582, 'total frame time': 36.00000000005821, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 35.000000000763976, 'start': 6771.583, 'end': 6771.618, 'total frame time': 36.00000000005821, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 35.000000000763976, 'start': 6771.619, 'end': 6771.654, 'total frame time': 36.00000000005821, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6771.655, 'end': 6771.686, 'total frame time': 31.9999999992433, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6771.687, 'end': 6771.718, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6771.719, 'end': 6771.75, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 29.99999999974534, 'start': 6771.751, 'end': 6771.781, 'total frame time': 30.99999999994907, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 29.99999999974534, 'start': 6771.782, 'end': 6771.812, 'total frame time': 30.99999999994907, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6771.813, 'end': 6771.844, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6771.845, 'end': 6771.876, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6771.877, 'end': 6771.908, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6771.908, 'end': 6771.939, 'total frame time': 30.99999999994907, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.000000000654836, 'start': 6771.94, 'end': 6771.97, 'total frame time': 30.99999999994907, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6771.971, 'end': 6772.003, 'total frame time': 32.99999999944703, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.99999999985448, 'start': 6772.004, 'end': 6772.039, 'total frame time': 36.00000000005821, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6772.04, 'end': 6772.072, 'total frame time': 33.00000000035652, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6772.073, 'end': 6772.104, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.00000000035652, 'start': 6772.106, 'end': 6772.139, 'total frame time': 34.99999999985448, 'interframe time': 1.999999999497959}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6772.139, 'end': 6772.171, 'total frame time': 32.000000000152795, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 35.000000000763976, 'start': 6772.172, 'end': 6772.207, 'total frame time': 36.00000000005821, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 35.000000000763976, 'start': 6772.208, 'end': 6772.243, 'total frame time': 36.00000000005821, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6772.244, 'end': 6772.276, 'total frame time': 32.99999999944703, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6772.277, 'end': 6772.309, 'total frame time': 33.00000000035652, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6772.31, 'end': 6772.344, 'total frame time': 34.99999999985448, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6772.345, 'end': 6772.376, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 31.9999999992433, 'start': 6772.377, 'end': 6772.409, 'total frame time': 32.99999999944703, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 35.000000000763976, 'start': 6772.409, 'end': 6772.444, 'total frame time': 35.000000000763976, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6772.445, 'end': 6772.477, 'total frame time': 32.99999999944703, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6772.478, 'end': 6772.509, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.99999999985448, 'start': 6772.51, 'end': 6772.545, 'total frame time': 36.00000000005821, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6772.546, 'end': 6772.58, 'total frame time': 34.99999999985448, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 36.00000000005821, 'start': 6772.581, 'end': 6772.617, 'total frame time': 37.000000000261934, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.99999999985448, 'start': 6772.618, 'end': 6772.653, 'total frame time': 36.00000000005821, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 31.9999999992433, 'start': 6772.654, 'end': 6772.686, 'total frame time': 32.99999999944703, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6772.687, 'end': 6772.718, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6772.719, 'end': 6772.75, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 29.99999999974534, 'start': 6772.751, 'end': 6772.781, 'total frame time': 30.99999999994907, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6772.782, 'end': 6772.814, 'total frame time': 33.00000000035652, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6772.815, 'end': 6772.846, 'total frame time': 31.9999999992433, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.000000000654836, 'start': 6772.847, 'end': 6772.877, 'total frame time': 31.000000000858563, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6772.878, 'end': 6772.909, 'total frame time': 31.9999999992433, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6772.91, 'end': 6772.941, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 29.99999999974534, 'start': 6772.942, 'end': 6772.972, 'total frame time': 30.99999999994907, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6772.973, 'end': 6773.005, 'total frame time': 33.00000000035652, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 43.99999999986903, 'start': 6773.006, 'end': 6773.05, 'total frame time': 45.00000000007276, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 31.9999999992433, 'start': 6773.051, 'end': 6773.083, 'total frame time': 32.99999999944703, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6773.084, 'end': 6773.115, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6773.116, 'end': 6773.148, 'total frame time': 33.00000000035652, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6773.148, 'end': 6773.179, 'total frame time': 30.99999999994907, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 36.00000000005821, 'start': 6773.18, 'end': 6773.216, 'total frame time': 37.000000000261934, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.00000000056025, 'start': 6773.217, 'end': 6773.251, 'total frame time': 34.99999999985448, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6773.253, 'end': 6773.285, 'total frame time': 33.999999999650754, 'interframe time': 1.999999999497959}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6773.286, 'end': 6773.317, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6773.318, 'end': 6773.349, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.999999999337888, 'start': 6773.35, 'end': 6773.378, 'total frame time': 28.999999999541615, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6773.379, 'end': 6773.406, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6773.407, 'end': 6773.438, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6773.439, 'end': 6773.466, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6773.467, 'end': 6773.495, 'total frame time': 28.999999999541615, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6773.496, 'end': 6773.524, 'total frame time': 29.00000000045111, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6773.525, 'end': 6773.556, 'total frame time': 31.9999999992433, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6773.557, 'end': 6773.589, 'total frame time': 33.00000000035652, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.999999999541615, 'start': 6773.59, 'end': 6773.619, 'total frame time': 29.99999999974534, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6773.62, 'end': 6773.647, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6773.648, 'end': 6773.676, 'total frame time': 29.00000000045111, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6773.677, 'end': 6773.704, 'total frame time': 27.999999999337888, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6773.705, 'end': 6773.731, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6773.732, 'end': 6773.759, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6773.76, 'end': 6773.787, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6773.788, 'end': 6773.814, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6773.815, 'end': 6773.842, 'total frame time': 27.999999999337888, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6773.843, 'end': 6773.87, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6773.871, 'end': 6773.897, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6773.898, 'end': 6773.925, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.999999999337888, 'start': 6773.926, 'end': 6773.954, 'total frame time': 28.999999999541615, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6773.955, 'end': 6773.983, 'total frame time': 29.00000000045111, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6773.983, 'end': 6774.011, 'total frame time': 28.000000000247383, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6774.012, 'end': 6774.039, 'total frame time': 27.999999999337888, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6774.04, 'end': 6774.067, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.999999999337888, 'start': 6774.068, 'end': 6774.096, 'total frame time': 28.999999999541615, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.000000000654836, 'start': 6774.097, 'end': 6774.127, 'total frame time': 31.000000000858563, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6774.129, 'end': 6774.156, 'total frame time': 28.999999999541615, 'interframe time': 1.999999999497959}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6774.157, 'end': 6774.184, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.999999999541615, 'start': 6774.185, 'end': 6774.214, 'total frame time': 29.99999999974534, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6774.215, 'end': 6774.242, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.999999999337888, 'start': 6774.243, 'end': 6774.271, 'total frame time': 28.999999999541615, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 29.00000000045111, 'start': 6774.272, 'end': 6774.301, 'total frame time': 30.000000000654836, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6774.302, 'end': 6774.33, 'total frame time': 28.999999999541615, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6774.331, 'end': 6774.357, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.999999999541615, 'start': 6774.358, 'end': 6774.387, 'total frame time': 29.99999999974534, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 29.99999999974534, 'start': 6774.389, 'end': 6774.419, 'total frame time': 32.000000000152795, 'interframe time': 2.0000000004074536}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6774.42, 'end': 6774.451, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 29.99999999974534, 'start': 6774.452, 'end': 6774.482, 'total frame time': 30.99999999994907, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6774.483, 'end': 6774.51, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.99999999913416, 'start': 6774.511, 'end': 6774.538, 'total frame time': 27.999999999337888, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6774.539, 'end': 6774.565, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6774.566, 'end': 6774.592, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6774.593, 'end': 6774.62, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6774.621, 'end': 6774.647, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6774.648, 'end': 6774.675, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6774.676, 'end': 6774.703, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6774.704, 'end': 6774.731, 'total frame time': 27.999999999337888, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6774.732, 'end': 6774.758, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6774.759, 'end': 6774.786, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.999999999337888, 'start': 6774.787, 'end': 6774.815, 'total frame time': 28.999999999541615, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6774.816, 'end': 6774.844, 'total frame time': 29.00000000045111, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6774.845, 'end': 6774.872, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6774.873, 'end': 6774.899, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6774.9, 'end': 6774.927, 'total frame time': 27.999999999337888, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6774.928, 'end': 6774.955, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6774.956, 'end': 6774.983, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6774.985, 'end': 6775.012, 'total frame time': 28.999999999541615, 'interframe time': 1.999999999497959}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6775.013, 'end': 6775.04, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6775.041, 'end': 6775.069, 'total frame time': 29.00000000045111, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6775.07, 'end': 6775.097, 'total frame time': 27.999999999337888, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6775.098, 'end': 6775.125, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6775.126, 'end': 6775.154, 'total frame time': 29.00000000045111, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6775.156, 'end': 6775.183, 'total frame time': 28.999999999541615, 'interframe time': 1.999999999497959}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6775.184, 'end': 6775.211, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.99999999913416, 'start': 6775.212, 'end': 6775.239, 'total frame time': 27.999999999337888, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6775.24, 'end': 6775.271, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6775.272, 'end': 6775.303, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 29.99999999974534, 'start': 6775.304, 'end': 6775.334, 'total frame time': 30.99999999994907, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6775.335, 'end': 6775.362, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6775.363, 'end': 6775.39, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6775.391, 'end': 6775.418, 'total frame time': 27.999999999337888, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6775.419, 'end': 6775.445, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6775.446, 'end': 6775.472, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6775.473, 'end': 6775.499, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6775.5, 'end': 6775.528, 'total frame time': 29.00000000045111, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High interframe time! ********************************
+High total frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6775.584, 'end': 6775.61, 'total frame time': 81.9999999994252, 'interframe time': 55.99999999958527}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6775.611, 'end': 6775.639, 'total frame time': 29.00000000045111, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6775.64, 'end': 6775.667, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6775.668, 'end': 6775.696, 'total frame time': 28.999999999541615, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6775.697, 'end': 6775.724, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.999999999337888, 'start': 6775.725, 'end': 6775.753, 'total frame time': 28.999999999541615, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6775.753, 'end': 6775.78, 'total frame time': 27.000000000043656, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6775.781, 'end': 6775.808, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6775.809, 'end': 6775.836, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.999999999337888, 'start': 6775.837, 'end': 6775.865, 'total frame time': 28.999999999541615, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6775.866, 'end': 6775.893, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6775.894, 'end': 6775.92, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6775.921, 'end': 6775.947, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6775.948, 'end': 6775.974, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6775.975, 'end': 6776.001, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6776.002, 'end': 6776.028, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6776.028, 'end': 6776.053, 'total frame time': 24.999999999636202, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6776.054, 'end': 6776.08, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6776.08, 'end': 6776.107, 'total frame time': 27.000000000043656, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6776.107, 'end': 6776.132, 'total frame time': 24.999999999636202, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6776.133, 'end': 6776.159, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6776.16, 'end': 6776.185, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.00000000035652, 'start': 6776.186, 'end': 6776.219, 'total frame time': 33.999999999650754, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 36.99999999935244, 'start': 6776.22, 'end': 6776.257, 'total frame time': 37.99999999955617, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6776.257, 'end': 6776.284, 'total frame time': 27.000000000043656, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6776.285, 'end': 6776.311, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6776.312, 'end': 6776.339, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6776.34, 'end': 6776.367, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6776.368, 'end': 6776.402, 'total frame time': 34.99999999985448, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6776.403, 'end': 6776.441, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6776.442, 'end': 6776.479, 'total frame time': 38.00000000046566, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.00000000046566, 'start': 6776.48, 'end': 6776.518, 'total frame time': 38.99999999975989, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6776.519, 'end': 6776.557, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 41.00000000016735, 'start': 6776.558, 'end': 6776.599, 'total frame time': 42.000000000371074, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6776.6, 'end': 6776.626, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6776.627, 'end': 6776.653, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6776.654, 'end': 6776.688, 'total frame time': 34.99999999985448, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 39.99999999996362, 'start': 6776.689, 'end': 6776.729, 'total frame time': 41.00000000016735, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.00000000046566, 'start': 6776.73, 'end': 6776.768, 'total frame time': 38.99999999975989, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6776.769, 'end': 6776.807, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 36.99999999935244, 'start': 6776.809, 'end': 6776.846, 'total frame time': 38.99999999975989, 'interframe time': 2.0000000004074536}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 79.99999999992724, 'start': 6776.847, 'end': 6776.927, 'total frame time': 81.00000000013097, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6776.928, 'end': 6776.954, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6776.955, 'end': 6776.981, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6776.982, 'end': 6777.007, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6777.008, 'end': 6777.034, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6777.034, 'end': 6777.06, 'total frame time': 26.000000000749424, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6777.061, 'end': 6777.086, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 26.99999999913416, 'start': 6777.087, 'end': 6777.114, 'total frame time': 27.999999999337888, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.00000000034197, 'start': 6777.115, 'end': 6777.139, 'total frame time': 25.000000000545697, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6777.14, 'end': 6777.166, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6777.167, 'end': 6777.193, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6777.194, 'end': 6777.228, 'total frame time': 34.99999999985448, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6777.229, 'end': 6777.263, 'total frame time': 34.99999999985448, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6777.264, 'end': 6777.291, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6777.292, 'end': 6777.319, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.99999999913416, 'start': 6777.319, 'end': 6777.346, 'total frame time': 26.99999999913416, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6777.347, 'end': 6777.374, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6777.375, 'end': 6777.402, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6777.403, 'end': 6777.429, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.999999999541615, 'start': 6777.43, 'end': 6777.459, 'total frame time': 29.99999999974534, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6777.46, 'end': 6777.485, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6777.486, 'end': 6777.512, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6777.513, 'end': 6777.539, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6777.54, 'end': 6777.565, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6777.566, 'end': 6777.591, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6777.592, 'end': 6777.619, 'total frame time': 27.999999999337888, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6777.62, 'end': 6777.646, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6777.647, 'end': 6777.673, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6777.674, 'end': 6777.7, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6777.701, 'end': 6777.727, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6777.728, 'end': 6777.755, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6777.756, 'end': 6777.782, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6777.783, 'end': 6777.809, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6777.81, 'end': 6777.835, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6777.836, 'end': 6777.862, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6777.862, 'end': 6777.888, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6777.889, 'end': 6777.915, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6777.916, 'end': 6777.941, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6777.942, 'end': 6777.968, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6777.968, 'end': 6777.994, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.00000000035652, 'start': 6777.995, 'end': 6778.028, 'total frame time': 34.00000000056025, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.00000000046566, 'start': 6778.03, 'end': 6778.068, 'total frame time': 39.99999999996362, 'interframe time': 1.999999999497959}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.99999999985448, 'start': 6778.069, 'end': 6778.104, 'total frame time': 36.00000000005821, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6778.104, 'end': 6778.131, 'total frame time': 27.000000000043656, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6778.132, 'end': 6778.158, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6778.159, 'end': 6778.186, 'total frame time': 27.999999999337888, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6778.187, 'end': 6778.214, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6778.215, 'end': 6778.241, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6778.242, 'end': 6778.269, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 36.00000000005821, 'start': 6778.269, 'end': 6778.305, 'total frame time': 36.00000000005821, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 39.00000000066939, 'start': 6778.306, 'end': 6778.345, 'total frame time': 39.99999999996362, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.00000000046566, 'start': 6778.346, 'end': 6778.384, 'total frame time': 38.99999999975989, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 29.99999999974534, 'start': 6778.385, 'end': 6778.415, 'total frame time': 30.99999999994907, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6778.416, 'end': 6778.442, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6778.442, 'end': 6778.469, 'total frame time': 27.000000000043656, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.99999999985448, 'start': 6778.469, 'end': 6778.504, 'total frame time': 34.99999999985448, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.99999999975989, 'start': 6778.505, 'end': 6778.544, 'total frame time': 39.99999999996362, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.99999999975989, 'start': 6778.545, 'end': 6778.584, 'total frame time': 39.99999999996362, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 42.000000000371074, 'start': 6778.585, 'end': 6778.627, 'total frame time': 43.0000000005748, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.00000000046566, 'start': 6778.628, 'end': 6778.666, 'total frame time': 38.99999999975989, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6778.667, 'end': 6778.705, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.999999999541615, 'start': 6778.706, 'end': 6778.735, 'total frame time': 29.99999999974534, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 29.00000000045111, 'start': 6778.736, 'end': 6778.765, 'total frame time': 30.000000000654836, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6778.766, 'end': 6778.792, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6778.793, 'end': 6778.819, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6778.82, 'end': 6778.846, 'total frame time': 26.99999999913416, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6778.847, 'end': 6778.872, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6778.873, 'end': 6778.901, 'total frame time': 28.999999999541615, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6778.902, 'end': 6778.927, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6778.928, 'end': 6778.954, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6778.955, 'end': 6778.981, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6778.982, 'end': 6779.008, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6779.009, 'end': 6779.035, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6779.036, 'end': 6779.063, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.999999999541615, 'start': 6779.064, 'end': 6779.093, 'total frame time': 29.99999999974534, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6779.094, 'end': 6779.12, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6779.121, 'end': 6779.147, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6779.148, 'end': 6779.174, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6779.175, 'end': 6779.202, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6779.203, 'end': 6779.229, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6779.23, 'end': 6779.256, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6779.257, 'end': 6779.283, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6779.283, 'end': 6779.309, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6779.31, 'end': 6779.335, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6779.336, 'end': 6779.362, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6779.363, 'end': 6779.389, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6779.39, 'end': 6779.417, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6779.417, 'end': 6779.443, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6779.444, 'end': 6779.47, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6779.471, 'end': 6779.497, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6779.498, 'end': 6779.525, 'total frame time': 27.999999999337888, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 35.000000000763976, 'start': 6779.525, 'end': 6779.56, 'total frame time': 35.000000000763976, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 39.00000000066939, 'start': 6779.561, 'end': 6779.6, 'total frame time': 39.99999999996362, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 29.00000000045111, 'start': 6779.601, 'end': 6779.63, 'total frame time': 29.99999999974534, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6779.631, 'end': 6779.657, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6779.658, 'end': 6779.684, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6779.685, 'end': 6779.71, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6779.711, 'end': 6779.745, 'total frame time': 34.99999999985448, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 39.99999999996362, 'start': 6779.746, 'end': 6779.786, 'total frame time': 41.00000000016735, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6779.787, 'end': 6779.825, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6779.826, 'end': 6779.852, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6779.853, 'end': 6779.879, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6779.88, 'end': 6779.914, 'total frame time': 34.99999999985448, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.99999999975989, 'start': 6779.916, 'end': 6779.955, 'total frame time': 41.00000000016735, 'interframe time': 2.0000000004074536}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.99999999975989, 'start': 6779.956, 'end': 6779.995, 'total frame time': 39.99999999996362, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6779.996, 'end': 6780.024, 'total frame time': 29.00000000045111, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6780.025, 'end': 6780.051, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6780.052, 'end': 6780.078, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6780.079, 'end': 6780.105, 'total frame time': 26.99999999913416, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.99999999985448, 'start': 6780.106, 'end': 6780.141, 'total frame time': 36.00000000005821, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.00000000046566, 'start': 6780.142, 'end': 6780.18, 'total frame time': 39.00000000066939, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6780.181, 'end': 6780.218, 'total frame time': 37.99999999955617, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6780.219, 'end': 6780.246, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6780.247, 'end': 6780.273, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6780.273, 'end': 6780.3, 'total frame time': 27.000000000043656, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.99999999985448, 'start': 6780.3, 'end': 6780.335, 'total frame time': 34.99999999985448, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.99999999975989, 'start': 6780.336, 'end': 6780.375, 'total frame time': 39.99999999996362, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.99999999975989, 'start': 6780.376, 'end': 6780.415, 'total frame time': 39.99999999996362, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6780.416, 'end': 6780.443, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6780.444, 'end': 6780.469, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6780.47, 'end': 6780.497, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6780.498, 'end': 6780.524, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6780.525, 'end': 6780.551, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6780.552, 'end': 6780.578, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.99999999985448, 'start': 6780.579, 'end': 6780.614, 'total frame time': 35.99999999914871, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6780.615, 'end': 6780.641, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6780.642, 'end': 6780.667, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.00000000056025, 'start': 6780.668, 'end': 6780.702, 'total frame time': 34.99999999985448, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6780.703, 'end': 6780.741, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6780.742, 'end': 6780.78, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6780.781, 'end': 6780.808, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6780.809, 'end': 6780.835, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6780.835, 'end': 6780.869, 'total frame time': 33.999999999650754, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.99999999975989, 'start': 6780.871, 'end': 6780.91, 'total frame time': 41.00000000016735, 'interframe time': 2.0000000004074536}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6780.911, 'end': 6780.949, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6780.951, 'end': 6780.978, 'total frame time': 29.00000000045111, 'interframe time': 2.0000000004074536}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6780.979, 'end': 6781.005, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6781.006, 'end': 6781.033, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6781.033, 'end': 6781.059, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.99999999985448, 'start': 6781.06, 'end': 6781.095, 'total frame time': 36.00000000005821, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6781.097, 'end': 6781.125, 'total frame time': 29.99999999974534, 'interframe time': 1.999999999497959}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6781.126, 'end': 6781.151, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.00000000035652, 'start': 6781.152, 'end': 6781.185, 'total frame time': 34.00000000056025, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.00000000046566, 'start': 6781.186, 'end': 6781.224, 'total frame time': 38.99999999975989, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6781.225, 'end': 6781.252, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.99999999985448, 'start': 6781.253, 'end': 6781.288, 'total frame time': 35.99999999914871, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 39.00000000066939, 'start': 6781.289, 'end': 6781.328, 'total frame time': 40.000000000873115, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 39.00000000066939, 'start': 6781.329, 'end': 6781.368, 'total frame time': 39.99999999996362, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6781.369, 'end': 6781.397, 'total frame time': 28.999999999541615, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6781.398, 'end': 6781.425, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6781.425, 'end': 6781.452, 'total frame time': 27.000000000043656, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6781.453, 'end': 6781.479, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6781.48, 'end': 6781.507, 'total frame time': 27.999999999337888, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6781.507, 'end': 6781.533, 'total frame time': 26.000000000749424, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6781.534, 'end': 6781.561, 'total frame time': 27.999999999337888, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6781.561, 'end': 6781.587, 'total frame time': 26.000000000749424, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6781.588, 'end': 6781.613, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.00000000035652, 'start': 6781.614, 'end': 6781.647, 'total frame time': 33.999999999650754, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6781.648, 'end': 6781.686, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6781.688, 'end': 6781.726, 'total frame time': 39.99999999996362, 'interframe time': 2.0000000004074536}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 29.00000000045111, 'start': 6781.727, 'end': 6781.756, 'total frame time': 30.000000000654836, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6781.756, 'end': 6781.783, 'total frame time': 27.000000000043656, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.00000000056025, 'start': 6781.784, 'end': 6781.818, 'total frame time': 34.99999999985448, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 39.99999999996362, 'start': 6781.819, 'end': 6781.859, 'total frame time': 41.00000000016735, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.00000000046566, 'start': 6781.86, 'end': 6781.898, 'total frame time': 38.99999999975989, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6781.899, 'end': 6781.93, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6781.931, 'end': 6781.958, 'total frame time': 27.999999999337888, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6781.959, 'end': 6781.985, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6781.986, 'end': 6782.012, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 36.00000000005821, 'start': 6782.012, 'end': 6782.048, 'total frame time': 36.00000000005821, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.99999999975989, 'start': 6782.049, 'end': 6782.088, 'total frame time': 39.99999999996362, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 41.00000000016735, 'start': 6782.089, 'end': 6782.13, 'total frame time': 42.000000000371074, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.999999999337888, 'start': 6782.131, 'end': 6782.159, 'total frame time': 28.999999999541615, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6782.159, 'end': 6782.185, 'total frame time': 26.000000000749424, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6782.186, 'end': 6782.213, 'total frame time': 27.999999999337888, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6782.214, 'end': 6782.248, 'total frame time': 34.99999999985448, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 39.99999999996362, 'start': 6782.249, 'end': 6782.289, 'total frame time': 41.00000000016735, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6782.291, 'end': 6782.329, 'total frame time': 39.99999999996362, 'interframe time': 2.0000000004074536}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 29.99999999974534, 'start': 6782.33, 'end': 6782.36, 'total frame time': 30.99999999994907, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6782.361, 'end': 6782.387, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6782.388, 'end': 6782.415, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6782.416, 'end': 6782.442, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6782.443, 'end': 6782.469, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6782.469, 'end': 6782.496, 'total frame time': 27.000000000043656, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6782.496, 'end': 6782.523, 'total frame time': 27.000000000043656, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6782.523, 'end': 6782.55, 'total frame time': 27.000000000043656, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6782.55, 'end': 6782.576, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.99999999944703, 'start': 6782.577, 'end': 6782.61, 'total frame time': 33.999999999650754, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6782.611, 'end': 6782.648, 'total frame time': 38.00000000046566, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High interframe time! ********************************
+High total frame time! ********************************
+{'frame time': 48.99999999997817, 'start': 6782.659, 'end': 6782.708, 'total frame time': 59.99999999949068, 'interframe time': 10.99999999951251}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6782.709, 'end': 6782.736, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6782.737, 'end': 6782.762, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6782.763, 'end': 6782.797, 'total frame time': 34.99999999985448, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 39.00000000066939, 'start': 6782.798, 'end': 6782.837, 'total frame time': 40.000000000873115, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.00000000046566, 'start': 6782.838, 'end': 6782.876, 'total frame time': 38.99999999975989, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.99999999994907, 'start': 6782.877, 'end': 6782.908, 'total frame time': 32.000000000152795, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6782.909, 'end': 6782.935, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6782.936, 'end': 6782.961, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6782.962, 'end': 6782.988, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6782.988, 'end': 6783.022, 'total frame time': 33.999999999650754, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6783.023, 'end': 6783.061, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6783.063, 'end': 6783.1, 'total frame time': 39.00000000066939, 'interframe time': 2.0000000004074536}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.000000000654836, 'start': 6783.101, 'end': 6783.131, 'total frame time': 30.99999999994907, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6783.132, 'end': 6783.157, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6783.158, 'end': 6783.183, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.99999999944703, 'start': 6783.184, 'end': 6783.217, 'total frame time': 33.999999999650754, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.99999999975989, 'start': 6783.218, 'end': 6783.257, 'total frame time': 39.99999999996362, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.00000000046566, 'start': 6783.258, 'end': 6783.296, 'total frame time': 39.00000000066939, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6783.297, 'end': 6783.329, 'total frame time': 32.99999999944703, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.00000000035652, 'start': 6783.33, 'end': 6783.363, 'total frame time': 34.00000000056025, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6783.365, 'end': 6783.391, 'total frame time': 27.999999999337888, 'interframe time': 1.999999999497959}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6783.392, 'end': 6783.417, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6783.418, 'end': 6783.443, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6783.444, 'end': 6783.469, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6783.47, 'end': 6783.496, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6783.496, 'end': 6783.522, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 23.999999999432475, 'start': 6783.523, 'end': 6783.547, 'total frame time': 24.999999999636202, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6783.548, 'end': 6783.573, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6783.574, 'end': 6783.599, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6783.6, 'end': 6783.625, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6783.626, 'end': 6783.651, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6783.652, 'end': 6783.677, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6783.678, 'end': 6783.703, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.00000000056025, 'start': 6783.704, 'end': 6783.738, 'total frame time': 34.99999999985448, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.00000000046566, 'start': 6783.739, 'end': 6783.777, 'total frame time': 38.99999999975989, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6783.778, 'end': 6783.816, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.00000000035652, 'start': 6783.817, 'end': 6783.85, 'total frame time': 34.00000000056025, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6783.85, 'end': 6783.875, 'total frame time': 24.999999999636202, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6783.876, 'end': 6783.908, 'total frame time': 33.00000000035652, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.00000000046566, 'start': 6783.909, 'end': 6783.947, 'total frame time': 38.99999999975989, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6783.949, 'end': 6783.986, 'total frame time': 38.99999999975989, 'interframe time': 1.999999999497959}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6783.987, 'end': 6784.019, 'total frame time': 33.00000000035652, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 23.999999999432475, 'start': 6784.02, 'end': 6784.044, 'total frame time': 24.999999999636202, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6784.045, 'end': 6784.07, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6784.071, 'end': 6784.096, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6784.097, 'end': 6784.122, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6784.123, 'end': 6784.149, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.00000000035652, 'start': 6784.15, 'end': 6784.183, 'total frame time': 33.999999999650754, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6784.184, 'end': 6784.222, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6784.224, 'end': 6784.258, 'total frame time': 36.00000000005821, 'interframe time': 2.0000000004074536}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6784.259, 'end': 6784.285, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6784.286, 'end': 6784.312, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6784.313, 'end': 6784.338, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 29.00000000045111, 'start': 6784.339, 'end': 6784.368, 'total frame time': 30.000000000654836, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6784.369, 'end': 6784.394, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6784.395, 'end': 6784.42, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6784.421, 'end': 6784.446, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 23.999999999432475, 'start': 6784.447, 'end': 6784.471, 'total frame time': 24.999999999636202, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6784.472, 'end': 6784.497, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6784.498, 'end': 6784.523, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6784.524, 'end': 6784.55, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6784.551, 'end': 6784.578, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6784.579, 'end': 6784.604, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6784.605, 'end': 6784.631, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6784.632, 'end': 6784.657, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High interframe time! ********************************
+High total frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6784.685, 'end': 6784.71, 'total frame time': 52.999999999883585, 'interframe time': 28.000000000247383}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6784.711, 'end': 6784.736, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6784.737, 'end': 6784.762, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6784.763, 'end': 6784.789, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.00000000034197, 'start': 6784.79, 'end': 6784.814, 'total frame time': 25.000000000545697, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6784.815, 'end': 6784.84, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6784.841, 'end': 6784.866, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6784.867, 'end': 6784.892, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6784.892, 'end': 6784.92, 'total frame time': 28.000000000247383, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6784.921, 'end': 6784.946, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6784.947, 'end': 6784.973, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6784.974, 'end': 6784.999, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6785.0, 'end': 6785.026, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6785.026, 'end': 6785.052, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6785.053, 'end': 6785.078, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6785.079, 'end': 6785.105, 'total frame time': 26.99999999913416, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6785.106, 'end': 6785.131, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6785.132, 'end': 6785.157, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 27.999999999337888, 'start': 6785.158, 'end': 6785.186, 'total frame time': 28.999999999541615, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6785.187, 'end': 6785.212, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6785.213, 'end': 6785.238, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6785.239, 'end': 6785.264, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 23.999999999432475, 'start': 6785.265, 'end': 6785.289, 'total frame time': 24.999999999636202, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6785.29, 'end': 6785.316, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6785.317, 'end': 6785.345, 'total frame time': 29.00000000045111, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.00000000034197, 'start': 6785.346, 'end': 6785.37, 'total frame time': 24.999999999636202, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6785.371, 'end': 6785.396, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6785.397, 'end': 6785.423, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6785.424, 'end': 6785.449, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6785.45, 'end': 6785.476, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High interframe time! ********************************
+High total frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6785.504, 'end': 6785.529, 'total frame time': 53.00000000079308, 'interframe time': 28.000000000247383}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6785.53, 'end': 6785.555, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6785.556, 'end': 6785.581, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6785.582, 'end': 6785.607, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6785.608, 'end': 6785.633, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High interframe time! ********************************
+High total frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6785.659, 'end': 6785.684, 'total frame time': 51.000000000385626, 'interframe time': 25.99999999983993}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6785.685, 'end': 6785.711, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High interframe time! ********************************
+High total frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6785.739, 'end': 6785.765, 'total frame time': 54.00000000008731, 'interframe time': 27.999999999337888}
+High frame time! ********************************
+High interframe time! ********************************
+High total frame time! ********************************
+{'frame time': 32.99999999944703, 'start': 6785.792, 'end': 6785.825, 'total frame time': 59.99999999949068, 'interframe time': 27.000000000043656}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 36.99999999935244, 'start': 6785.827, 'end': 6785.864, 'total frame time': 38.99999999975989, 'interframe time': 2.0000000004074536}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.99999999985448, 'start': 6785.865, 'end': 6785.9, 'total frame time': 36.00000000005821, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6785.901, 'end': 6785.927, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6785.928, 'end': 6785.953, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6785.954, 'end': 6785.979, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6785.98, 'end': 6786.006, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6786.007, 'end': 6786.032, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 23.999999999432475, 'start': 6786.033, 'end': 6786.057, 'total frame time': 24.999999999636202, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6786.058, 'end': 6786.084, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.00000000034197, 'start': 6786.085, 'end': 6786.109, 'total frame time': 25.000000000545697, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6786.11, 'end': 6786.136, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6786.137, 'end': 6786.162, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High interframe time! ********************************
+High total frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6786.188, 'end': 6786.213, 'total frame time': 50.99999999947613, 'interframe time': 25.99999999983993}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6786.214, 'end': 6786.24, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6786.241, 'end': 6786.266, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6786.267, 'end': 6786.293, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6786.294, 'end': 6786.32, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6786.321, 'end': 6786.346, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6786.347, 'end': 6786.372, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6786.373, 'end': 6786.398, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6786.399, 'end': 6786.425, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6786.425, 'end': 6786.45, 'total frame time': 24.999999999636202, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6786.451, 'end': 6786.476, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6786.477, 'end': 6786.502, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6786.503, 'end': 6786.528, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6786.529, 'end': 6786.555, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6786.555, 'end': 6786.582, 'total frame time': 27.000000000043656, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6786.582, 'end': 6786.608, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6786.609, 'end': 6786.634, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6786.635, 'end': 6786.661, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6786.661, 'end': 6786.687, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6786.688, 'end': 6786.713, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6786.714, 'end': 6786.74, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6786.741, 'end': 6786.766, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6786.767, 'end': 6786.793, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6786.793, 'end': 6786.819, 'total frame time': 26.000000000749424, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6786.82, 'end': 6786.845, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6786.846, 'end': 6786.871, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6786.872, 'end': 6786.897, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6786.898, 'end': 6786.924, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6786.924, 'end': 6786.95, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6786.951, 'end': 6786.976, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6786.977, 'end': 6787.002, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6787.003, 'end': 6787.028, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6787.029, 'end': 6787.055, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6787.056, 'end': 6787.082, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6787.083, 'end': 6787.109, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6787.115, 'end': 6787.14, 'total frame time': 30.99999999994907, 'interframe time': 5.9999999994033715}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6787.141, 'end': 6787.167, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.00000000056025, 'start': 6787.168, 'end': 6787.202, 'total frame time': 34.99999999985448, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 36.99999999935244, 'start': 6787.203, 'end': 6787.24, 'total frame time': 37.99999999955617, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6787.242, 'end': 6787.28, 'total frame time': 39.99999999996362, 'interframe time': 2.0000000004074536}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6787.281, 'end': 6787.313, 'total frame time': 33.00000000035652, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6787.313, 'end': 6787.339, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6787.339, 'end': 6787.366, 'total frame time': 27.000000000043656, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6787.366, 'end': 6787.4, 'total frame time': 33.999999999650754, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.99999999975989, 'start': 6787.401, 'end': 6787.44, 'total frame time': 39.99999999996362, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.00000000046566, 'start': 6787.441, 'end': 6787.479, 'total frame time': 39.00000000066939, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 31.000000000858563, 'start': 6787.48, 'end': 6787.511, 'total frame time': 32.000000000152795, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6787.512, 'end': 6787.537, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6787.537, 'end': 6787.563, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6787.564, 'end': 6787.59, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6787.591, 'end': 6787.625, 'total frame time': 34.99999999985448, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6787.626, 'end': 6787.664, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.00000000046566, 'start': 6787.665, 'end': 6787.703, 'total frame time': 39.00000000066939, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6787.704, 'end': 6787.736, 'total frame time': 32.99999999944703, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6787.737, 'end': 6787.762, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.00000000034197, 'start': 6787.763, 'end': 6787.787, 'total frame time': 25.000000000545697, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6787.788, 'end': 6787.813, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6787.814, 'end': 6787.839, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.99999999944703, 'start': 6787.84, 'end': 6787.873, 'total frame time': 33.999999999650754, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6787.874, 'end': 6787.911, 'total frame time': 38.00000000046566, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6787.912, 'end': 6787.95, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.000000000152795, 'start': 6787.951, 'end': 6787.983, 'total frame time': 33.00000000035652, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6787.984, 'end': 6788.009, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6788.01, 'end': 6788.044, 'total frame time': 34.99999999985448, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6788.045, 'end': 6788.082, 'total frame time': 38.00000000046566, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6788.084, 'end': 6788.121, 'total frame time': 38.99999999975989, 'interframe time': 1.999999999497959}
+High frame time! ********************************
+{'frame time': 28.999999999541615, 'start': 6788.122, 'end': 6788.151, 'total frame time': 29.99999999974534, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6788.152, 'end': 6788.186, 'total frame time': 34.99999999985448, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6788.187, 'end': 6788.224, 'total frame time': 38.00000000046566, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 36.99999999935244, 'start': 6788.225, 'end': 6788.262, 'total frame time': 37.99999999955617, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6788.263, 'end': 6788.289, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6788.29, 'end': 6788.315, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6788.316, 'end': 6788.341, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6788.342, 'end': 6788.367, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6788.368, 'end': 6788.394, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.99999999913416, 'start': 6788.395, 'end': 6788.422, 'total frame time': 27.999999999337888, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6788.423, 'end': 6788.448, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6788.449, 'end': 6788.474, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6788.475, 'end': 6788.501, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6788.502, 'end': 6788.527, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6788.528, 'end': 6788.555, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6788.556, 'end': 6788.581, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6788.582, 'end': 6788.607, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6788.608, 'end': 6788.634, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6788.634, 'end': 6788.659, 'total frame time': 24.999999999636202, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6788.66, 'end': 6788.685, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6788.686, 'end': 6788.711, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6788.712, 'end': 6788.738, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6788.739, 'end': 6788.764, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6788.765, 'end': 6788.79, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6788.791, 'end': 6788.816, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.00000000035652, 'start': 6788.817, 'end': 6788.85, 'total frame time': 34.00000000056025, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.00000000046566, 'start': 6788.851, 'end': 6788.889, 'total frame time': 38.99999999975989, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6788.89, 'end': 6788.928, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6788.929, 'end': 6788.956, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6788.957, 'end': 6788.982, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6788.982, 'end': 6789.008, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.99999999985448, 'start': 6789.009, 'end': 6789.044, 'total frame time': 36.00000000005821, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6789.045, 'end': 6789.083, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6789.084, 'end': 6789.121, 'total frame time': 38.00000000046566, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.999999999541615, 'start': 6789.122, 'end': 6789.151, 'total frame time': 29.99999999974534, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6789.152, 'end': 6789.177, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6789.178, 'end': 6789.203, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.00000000035652, 'start': 6789.204, 'end': 6789.237, 'total frame time': 33.999999999650754, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.00000000046566, 'start': 6789.239, 'end': 6789.277, 'total frame time': 39.99999999996362, 'interframe time': 1.999999999497959}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6789.278, 'end': 6789.316, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.999999999541615, 'start': 6789.317, 'end': 6789.346, 'total frame time': 29.99999999974534, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6789.347, 'end': 6789.373, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6789.374, 'end': 6789.4, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6789.401, 'end': 6789.427, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6789.428, 'end': 6789.453, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.00000000035652, 'start': 6789.454, 'end': 6789.487, 'total frame time': 33.999999999650754, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.00000000046566, 'start': 6789.489, 'end': 6789.527, 'total frame time': 39.99999999996362, 'interframe time': 1.999999999497959}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6789.528, 'end': 6789.566, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.999999999541615, 'start': 6789.567, 'end': 6789.596, 'total frame time': 29.99999999974534, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.00000000035652, 'start': 6789.596, 'end': 6789.629, 'total frame time': 33.00000000035652, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6789.63, 'end': 6789.668, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6789.669, 'end': 6789.706, 'total frame time': 38.00000000046566, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6789.708, 'end': 6789.736, 'total frame time': 29.99999999974534, 'interframe time': 1.999999999497959}
+High frame time! ********************************
+High interframe time! ********************************
+High total frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6789.768, 'end': 6789.794, 'total frame time': 57.999999999992724, 'interframe time': 32.000000000152795}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6789.795, 'end': 6789.821, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6789.822, 'end': 6789.847, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6789.848, 'end': 6789.874, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6789.875, 'end': 6789.901, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6789.902, 'end': 6789.927, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6789.928, 'end': 6789.954, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6789.955, 'end': 6789.989, 'total frame time': 34.99999999985448, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.00000000046566, 'start': 6789.99, 'end': 6790.028, 'total frame time': 39.00000000066939, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 36.99999999935244, 'start': 6790.029, 'end': 6790.066, 'total frame time': 37.99999999955617, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6790.067, 'end': 6790.095, 'total frame time': 29.00000000045111, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6790.096, 'end': 6790.122, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6790.123, 'end': 6790.148, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6790.149, 'end': 6790.183, 'total frame time': 34.99999999985448, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.99999999975989, 'start': 6790.184, 'end': 6790.223, 'total frame time': 39.99999999996362, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6790.224, 'end': 6790.261, 'total frame time': 38.00000000046566, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 29.00000000045111, 'start': 6790.263, 'end': 6790.292, 'total frame time': 30.99999999994907, 'interframe time': 1.999999999497959}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6790.292, 'end': 6790.317, 'total frame time': 24.999999999636202, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6790.318, 'end': 6790.344, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6790.345, 'end': 6790.371, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6790.372, 'end': 6790.397, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6790.398, 'end': 6790.432, 'total frame time': 34.99999999985448, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6790.433, 'end': 6790.471, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6790.473, 'end': 6790.51, 'total frame time': 39.00000000066939, 'interframe time': 2.0000000004074536}
+High frame time! ********************************
+{'frame time': 28.999999999541615, 'start': 6790.511, 'end': 6790.54, 'total frame time': 29.99999999974534, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.00000000035652, 'start': 6790.54, 'end': 6790.573, 'total frame time': 33.00000000035652, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6790.574, 'end': 6790.611, 'total frame time': 37.99999999955617, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6790.613, 'end': 6790.651, 'total frame time': 39.99999999996362, 'interframe time': 2.0000000004074536}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6790.652, 'end': 6790.68, 'total frame time': 29.00000000045111, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6790.681, 'end': 6790.706, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6790.707, 'end': 6790.733, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6790.734, 'end': 6790.759, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6790.76, 'end': 6790.786, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6790.787, 'end': 6790.813, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6790.814, 'end': 6790.839, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6790.84, 'end': 6790.865, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6790.866, 'end': 6790.891, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 34.99999999985448, 'start': 6790.892, 'end': 6790.927, 'total frame time': 36.00000000005821, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.00000000046566, 'start': 6790.928, 'end': 6790.966, 'total frame time': 39.00000000066939, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6790.967, 'end': 6791.004, 'total frame time': 37.99999999955617, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6791.005, 'end': 6791.033, 'total frame time': 29.00000000045111, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6791.034, 'end': 6791.059, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6791.06, 'end': 6791.086, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 32.99999999944703, 'start': 6791.087, 'end': 6791.12, 'total frame time': 33.999999999650754, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 38.99999999975989, 'start': 6791.121, 'end': 6791.16, 'total frame time': 39.99999999996362, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.99999999955617, 'start': 6791.161, 'end': 6791.199, 'total frame time': 38.99999999975989, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 29.00000000045111, 'start': 6791.2, 'end': 6791.229, 'total frame time': 30.000000000654836, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6791.23, 'end': 6791.255, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6791.256, 'end': 6791.282, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6791.283, 'end': 6791.309, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6791.31, 'end': 6791.335, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.999999999650754, 'start': 6791.335, 'end': 6791.369, 'total frame time': 33.999999999650754, 'interframe time': 0.0}
+High frame time! ********************************
+High interframe time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6791.409, 'end': 6791.446, 'total frame time': 77.00000000022555, 'interframe time': 39.99999999996362}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 29.99999999974534, 'start': 6791.447, 'end': 6791.477, 'total frame time': 30.99999999994907, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 33.00000000035652, 'start': 6791.477, 'end': 6791.51, 'total frame time': 33.00000000035652, 'interframe time': 0.0}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 36.99999999935244, 'start': 6791.511, 'end': 6791.548, 'total frame time': 37.99999999955617, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 37.000000000261934, 'start': 6791.55, 'end': 6791.587, 'total frame time': 39.00000000066939, 'interframe time': 2.0000000004074536}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 30.000000000654836, 'start': 6791.588, 'end': 6791.618, 'total frame time': 30.99999999994907, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6791.619, 'end': 6791.644, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6791.645, 'end': 6791.67, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6791.671, 'end': 6791.697, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6791.697, 'end': 6791.723, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6791.724, 'end': 6791.75, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6791.751, 'end': 6791.777, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6791.777, 'end': 6791.803, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6791.804, 'end': 6791.829, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+High total frame time! ********************************
+{'frame time': 29.00000000045111, 'start': 6791.83, 'end': 6791.859, 'total frame time': 30.000000000654836, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6791.86, 'end': 6791.885, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6791.886, 'end': 6791.911, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6791.911, 'end': 6791.936, 'total frame time': 24.999999999636202, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6791.937, 'end': 6791.962, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6791.963, 'end': 6791.988, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6791.989, 'end': 6792.015, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6792.016, 'end': 6792.042, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6792.042, 'end': 6792.068, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6792.069, 'end': 6792.094, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6792.095, 'end': 6792.121, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6792.121, 'end': 6792.147, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6792.148, 'end': 6792.175, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6792.176, 'end': 6792.201, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6792.202, 'end': 6792.228, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6792.229, 'end': 6792.254, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6792.255, 'end': 6792.281, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6792.281, 'end': 6792.306, 'total frame time': 24.999999999636202, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6792.307, 'end': 6792.332, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6792.333, 'end': 6792.358, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6792.358, 'end': 6792.384, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6792.385, 'end': 6792.41, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6792.411, 'end': 6792.436, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6792.437, 'end': 6792.462, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6792.463, 'end': 6792.489, 'total frame time': 26.99999999913416, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6792.49, 'end': 6792.515, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6792.516, 'end': 6792.542, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6792.543, 'end': 6792.568, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6792.569, 'end': 6792.595, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6792.595, 'end': 6792.62, 'total frame time': 24.999999999636202, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6792.621, 'end': 6792.647, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 23.999999999432475, 'start': 6792.648, 'end': 6792.672, 'total frame time': 24.999999999636202, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6792.673, 'end': 6792.698, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6792.699, 'end': 6792.724, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6792.725, 'end': 6792.75, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6792.751, 'end': 6792.778, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.999999999337888, 'start': 6792.779, 'end': 6792.807, 'total frame time': 28.999999999541615, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6792.808, 'end': 6792.834, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6792.835, 'end': 6792.861, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6792.862, 'end': 6792.887, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6792.888, 'end': 6792.913, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6792.914, 'end': 6792.94, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6792.941, 'end': 6792.967, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6792.968, 'end': 6792.994, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6792.995, 'end': 6793.022, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6793.023, 'end': 6793.049, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6793.05, 'end': 6793.076, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6793.077, 'end': 6793.102, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6793.103, 'end': 6793.13, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6793.131, 'end': 6793.156, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6793.157, 'end': 6793.183, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6793.184, 'end': 6793.211, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.999999999337888, 'start': 6793.212, 'end': 6793.24, 'total frame time': 28.999999999541615, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6793.241, 'end': 6793.266, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6793.267, 'end': 6793.292, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6793.293, 'end': 6793.319, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6793.32, 'end': 6793.346, 'total frame time': 26.99999999913416, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6793.347, 'end': 6793.372, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6793.373, 'end': 6793.398, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6793.399, 'end': 6793.424, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6793.425, 'end': 6793.451, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6793.452, 'end': 6793.477, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6793.478, 'end': 6793.503, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6793.503, 'end': 6793.528, 'total frame time': 25.000000000545697, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6793.529, 'end': 6793.554, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6793.555, 'end': 6793.581, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 27.000000000043656, 'start': 6793.582, 'end': 6793.609, 'total frame time': 28.000000000247383, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6793.61, 'end': 6793.636, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6793.637, 'end': 6793.663, 'total frame time': 26.99999999913416, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6793.664, 'end': 6793.689, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6793.69, 'end': 6793.715, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6793.716, 'end': 6793.742, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 28.000000000247383, 'start': 6793.742, 'end': 6793.77, 'total frame time': 28.000000000247383, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6793.771, 'end': 6793.797, 'total frame time': 26.99999999913416, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6793.797, 'end': 6793.823, 'total frame time': 26.000000000749424, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6793.824, 'end': 6793.85, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6793.851, 'end': 6793.876, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6793.877, 'end': 6793.902, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6793.903, 'end': 6793.928, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6793.929, 'end': 6793.954, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6793.955, 'end': 6793.981, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6793.982, 'end': 6794.007, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6794.008, 'end': 6794.033, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 26.000000000749424, 'start': 6794.034, 'end': 6794.06, 'total frame time': 27.000000000043656, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6794.061, 'end': 6794.086, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6794.087, 'end': 6794.113, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6794.113, 'end': 6794.139, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6794.14, 'end': 6794.166, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6794.167, 'end': 6794.192, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6794.193, 'end': 6794.219, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6794.219, 'end': 6794.245, 'total frame time': 25.99999999983993, 'interframe time': 0.0}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6794.246, 'end': 6794.271, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6794.272, 'end': 6794.297, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6794.298, 'end': 6794.323, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6794.324, 'end': 6794.349, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6794.35, 'end': 6794.375, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6794.376, 'end': 6794.402, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6794.403, 'end': 6794.429, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6794.43, 'end': 6794.455, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6794.456, 'end': 6794.482, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6794.483, 'end': 6794.508, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6794.509, 'end': 6794.534, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6794.535, 'end': 6794.561, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6794.562, 'end': 6794.587, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6794.588, 'end': 6794.614, 'total frame time': 26.99999999913416, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6794.615, 'end': 6794.641, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6794.642, 'end': 6794.667, 'total frame time': 26.000000000749424, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.000000000545697, 'start': 6794.668, 'end': 6794.693, 'total frame time': 25.99999999983993, 'interframe time': 0.9999999992942321}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6794.694, 'end': 6794.719, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6794.72, 'end': 6794.745, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6794.746, 'end': 6794.772, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6794.773, 'end': 6794.798, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 25.99999999983993, 'start': 6794.799, 'end': 6794.825, 'total frame time': 27.000000000043656, 'interframe time': 1.0000000002037268}
+High frame time! ********************************
+{'frame time': 24.999999999636202, 'start': 6794.826, 'end': 6794.851, 'total frame time': 25.99999999983993, 'interframe time': 1.0000000002037268}
