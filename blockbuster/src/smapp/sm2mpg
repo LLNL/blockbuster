@@ -9,7 +9,9 @@ function usage() {
     echo "If fps is not given, the default is 30"
     echo "If the input movie is stereo, then only the left hand frames (odd frames) are used." 
     echo "OPTIONS:"
+    echo "-f/--fps n: set fps in movie to value n"
     echo "-s/--stereo: interpret the input movie as stereo." 
+    echo "-t/--tmpdir name: use the given directory for scratch instead of a random location in /tmp/$USER"    
 }
 
 function errexit() {    
@@ -20,44 +22,61 @@ function errexit() {
     exit 1
 }
 
-tmpdir=/tmp/$USER/sm2mpg.tmp.$RANDOM/
-mkdir -p $tmpdir || errexit "Cannot make tmp directory $tmpdir"
-if [ "$2" == "" ];  then
+stereo=false
+outfps=30
+
+done
+argnum=0
+while [ "$1" != "" ]; do 
+   if [ "${1:0:1}" != "-" ]; then 
+        if [ "$infile" == "" ]; then 
+            infile="$1"
+        elif [ "$outfile" == "" ]; then
+            outfile="$1"
+        else
+            echo "Error: too many arguments"
+            usage
+            exit 1
+        fi
+        shift 1;
+    else
+       case $1 in
+           "-f"|"--fps")    outfps="$2"; shift 2;;
+           "-s"|"--stereo") stereo=true; shift 1;;
+           "-t"|"--tmpdir") tmpdir="$2"; shift 2;;
+           *)               usage; errexit "Unknown option '$1'";;
+       esac
+   fi
+done
+    
+if [ "$outfile" == "" ]; then 
     usage
     errexit "Not enough args" 
-fi
-
-stereo=false
-if [ "$1" == "-s" ] || [ "$1" == "--stereo" ]; then 
-    shift 1
-    stereo=true
-fi
+fi    
 
 #
 #       nframes/Stereo
 #
-infile="$1"
-outfile="$2"
-outfps=${3:-30}
 
 # arg checking
-if [ ${1:0:1} != '/' ]; then 
+if [ "${infile:0:1}" != '/' ]; then 
     infile=$(pwd)/$infile
 fi
-infiledot=$(expr ${#infile} - 3)
-if [ "${infile:${infiledot}}" != '.sm' ]; then 
+if [ "${infile: -3}" != '.sm' ]; then 
     errexit "Please specify an input movie name ending with '.sm'"
 fi
 
-if [ ${2:0:2} != '/' ]; then 
+if [ "${outfile:0:1}" != '/' ]; then 
     outfile=$(pwd)/$outfile
 fi
-outfiledot=$(expr ${#outfile} - 4)
-if [ "${outfile:$outfiledot}" != '.mpg' ]; then 
+if [ "${outfile: -4}" != '.mpg' ]; then 
     errexit "Please specify an output movie name ending with '.mpg'"
 fi
 
 outframebase=_$(basename $outfile | sed 's/.sm//')
+
+tmpdir=${tmpdir:-/tmp/$USER/sm2mpg.tmp.$RANDOM/}
+mkdir -p $tmpdir || errexit "Cannot make tmp directory $tmpdir"
 
 tmp=$(sminfo $infile)
 if echo $tmp | grep Stereo >/dev/null 2>&1; then

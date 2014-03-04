@@ -8,6 +8,7 @@ function usage() {
     echo "If the input movie is stereo, then only the left hand frames (odd frames) are used." 
     echo "OPTIONS:"
     echo "-f/--fps: Set FPS (default is 30)" 
+    echo "-t/--tmpdir name: use the given directory for scratch instead of a random location in /tmp/$USER"    
 }
 
 function runecho(){
@@ -23,39 +24,47 @@ function errexit() {
 }
 
 fps=30
-argnum=1
-while [ "${#@}" -gt 0 ]; do
-    if [ ${0:0:1} != '-' ]; then 
-        break; 
-    fi
-    case $1 in
-        -f|--fps) fps=${2:-30};  shift 2;;
-        *)        errexit "Unknown option: $1";;
-    esac
+while [ "$1" != "" ]; do 
+   if [ "${1:0:1}" != "-" ]; then 
+        if [ "$infile" == "" ]; then 
+            infile="$1"
+        elif [ "$outfile" == "" ]; then
+            outfile="$1"
+        else
+            echo "Error: too many arguments"
+            usage
+            exit 1
+        fi
+        shift 1;
+    else
+       case $1 in
+           "-f"|"--fps")    fps=${2:-30};  shift 2;;
+           "-t"|"--tmpdir") tmpdir="$2"; shift 2;;
+           *)               usage; errexit "Unknown option: $1";;
+       esac
+   fi
 done
 
-tmpdir=/tmp/$USER/sm2qt.tmp.$RANDOM/
-mkdir -p $tmpdir || errexit "Cannot make tmp directory $tmpdir"
-if [ "$2" == "" ];  then
+if [ "$outfile" == "" ]; then 
     usage
     errexit "Not enough args" 
 fi
 
-infile="$1"
-if [ ${1:0:1} != '/' ]; then 
+tmpdir=${tmpdir:-/tmp/$USER/sm2qt.tmp.$RANDOM/}
+mkdir -p $tmpdir || errexit "Cannot make tmp directory $tmpdir"
+
+if [ "${infile:0:1}" != '/' ]; then 
     infile=$(pwd)/$infile
 fi
-infiledot=$(expr ${#outfile} - 3)
-if [ "${infile:$infiledot}" != '.sm' ]; then 
+
+if [ "${infile: -3}" != '.sm' ]; then 
     errexit "Please specify an input movie name ending with '.sm'"
 fi
 
-outfile="$2"
-if [ ${2:0:2} != '/' ]; then 
+if [ ${outfile:0:1} != '/' ]; then 
     outfile=$(pwd)/$outfile
 fi
-outfiledot=$(expr ${#outfile} - 4)
-if [ "${outfile:$outfiledot}" != '.mov' ]; then 
+if [ "${outfile: -4}" != '.mov' ]; then 
     errexit "Please specify an output movie name ending with '.mov'"
 fi
 
