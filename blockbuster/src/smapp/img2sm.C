@@ -700,7 +700,7 @@ int main(int argc,char **argv) {
     other
     =====================================================
   */
-  TCLAP::ValueArg<int> threads("t", "threads", "Number of threads to use",false, 4, "integer", cmd);
+  TCLAP::ValueArg<int> threads("t", "threads", "Number of threads to use (default: 8)",false, 8, "integer", cmd);
   TCLAP::ValueArg<int> verbosity("v", "verbosity", "Verbosity level",false, 0, "integer", cmd);
 
   // Note this is an UnlabeledMultiArg.  There must be at least two words given here, the last is the output name, all others are input files.

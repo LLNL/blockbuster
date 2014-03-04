@@ -157,7 +157,7 @@ int main(int argc,char **argv)
   TCLAP::SwitchArg stereo("S", "stereo", "output movie is stereo.", cmd, false);
   TCLAP::SwitchArg filter("", "filter", "Enable smoothing filter for image scaling", cmd, false);
   TCLAP::ValueArg<int> 
-    threads("t","threads","number of threads to use", false,1,"integer",cmd);
+    threads("t","threads","number of threads to use (default: 8)", false,8,"integer",cmd);
 
   vector<string> allowedcompression;
   allowedcompression.push_back("gz");

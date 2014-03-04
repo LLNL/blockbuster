@@ -3,11 +3,14 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 
 ===============================================================================
 VERSION 2.8.1f (git tag blockbuster-v2.8.1f) Wed Feb 26 17:34:47 PST 2014
--- Add support for scroll wheel zooming
--- "Fill" means "toggle to/from full screen" and "Fit" means "zoom image to fit window"
--- Fixed the -w option
--- When launching blockbuster with -loops, correctly set the GUI checkboxes
--- Change "loop" to "repeat" for clarity.
+-- FEATURE: Add support for scroll wheel zooming
+-- FEATURE: "Fill" means "toggle to/from full screen" and "Fit" means "zoom image to fit window"
+-- FEATURE: Change "loop" to "repeat" for clarity.
+-- FEATURE: Allow tmp directory to be chosen in sm2qt and sm2mpg
+-- FEATURE: img2sm and smcat now both use 8 threads by default
+-- BUGFIX: Fixed the -w option
+-- BUGFIX: When launching blockbuster with -loops, correctly set the GUI checkboxes
+-- BUGFIX: gltexture renderer works again.  
 
 ===============================================================================
 VERSION 2.8.1e (git tag blockbuster-v2.8.1e) Wed Feb 26 17:34:47 PST 2014

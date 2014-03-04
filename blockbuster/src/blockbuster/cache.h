@@ -5,7 +5,7 @@
 // if youwant verbose cache messages, use these:
 void enableCacheDebug(bool onoff); 
 bool cacheDebug_enabled(void); 
-#define CACHEDEBUG(...) if (cacheDebug_enabled()) { DEBUGMSG("(t=%f): ",timer::GetExactSeconds()); DEBUGMSG( __VA_ARGS__); }
+#define CACHEDEBUG(...) if (cacheDebug_enabled()) { DEBUGMSG( __VA_ARGS__); }
 
 // #define CACHEDEBUG if (0) DEBUGMSG
 // else use this:
