@@ -348,7 +348,10 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
       }
       continue;
     }
-	else if (CHECK_STRING_ARG("-repeat", argc, argv,  opt->repeatCountName)) continue;
+	else if (CHECK_STRING_ARG("-loops", argc, argv,  opt->repeatCountName)) {
+      printf("-loops has been removed; please use -repeat instead.\n"); 
+      exit(1); 
+    }
 	else if (CHECK_STRING_ARG("-messageLevel", argc, argv, opt->messageLevelName))  {
       if ((opt->messageLevel = FindMessageLevel(opt->messageLevelName)) == NULL) {
         QString errmsg("no such message level '%1'.  Use -h for help."); 
@@ -390,6 +393,7 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
     }
      
 	else if (CHECK_STRING_ARG("-renderer", argc, argv, opt->rendererName)) continue;
+	else if (CHECK_STRING_ARG("-repeat", argc, argv,  opt->repeatCountName)) continue;
 	else if (CHECK_STRING_ARG("-replayEvents", argc, argv, opt->mReplayEventsFilename))  {
       continue;
     }
@@ -671,16 +675,18 @@ int main(int argc, char *argv[])
     ReadSettingsFromFile(opt->settings, localSettingsFilename);
   }
 
+
   /* Grab any options that apply to the whole program */
   char **newargs = DuplicateArgs(argc, args); 
   int newargc = argc;
- 
+  int dummy =0; 
+  // Get Qt rockin'.  This creates the basic Qt object.  
+  gCoreApp = new QApplication(dummy, newargs); 
+
   ParseEnvironmentVars(); 
   ParseOptions(opt, newargc, newargs);
   printargs("After ParseOptions", newargs, newargc); 
 
-  // Get Qt rockin'.  This creates the basic Qt object.  
-  gCoreApp = new QApplication(newargc, newargs); 
 
   gMainThread = QThread::currentThread(); 
   RegisterThread(gMainThread, opt->readerThreads); 
