@@ -159,7 +159,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
   
   int32_t playDirection = 0, 
     startFrame= options->startFrame, 
-    frameNumber = options->currentFrame, 
+    frameNumber = options->currentFrame,    
     endFrame = options->endFrame,
     preloadFrames = options->preloadFrames; 
 
@@ -372,6 +372,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           repeatCount = options->repeatCount + 1; 
           options->repeatCount = 0; 
 
+          // renderer->ShowInterface(options->drawInterface);
           renderer->DestroyImageCache();        
           renderer->SetFrameList(allFrames);
           renderer->ReportFrameListChange(allFrames);
@@ -588,10 +589,10 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           if (renderer) renderer->ReportRepeatBehaviorChange(event.mNumber); 
         }
         else if (event.mEventType == "MOVIE_PLAY_FORWARD") { 
-          playDirection = 1; repeatCount = options->repeatCount; 
+          playDirection = 1; 
         }
         else if (event.mEventType == "MOVIE_PLAY_BACKWARD") { 
-          playDirection = -1; repeatCount = options->repeatCount; 
+          playDirection = -1; 
         }
         else if (event.mEventType == "MOVIE_STOP") { 
           DEBUGMSG("Got stop event"); 
@@ -856,7 +857,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
       }
       
       //TIMER_PRINT("end switch, frame %d", frameNumber); 
-      if (frameNumber != previousFrame) {
+      if (renderer && frameNumber != previousFrame) {
         DEBUGMSG("frameNumber changed  to %d after switch", frameNumber); 
       }
       /*! check if we have reached the end of a cue */
@@ -871,7 +872,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
       }
       
       if (event.mEventType == "MOVIE_NONE" && !playDirection) {
-        dbprintf(5, "We have no useful work that we are doing, sleep a bit to prevent hogging CPU for no reason.  Sleeping %ld usec\n", sleepAmt); 
+        //dbprintf(5, "We have no useful work that we are doing, sleep a bit to prevent hogging CPU for no reason.  Sleeping %ld usec\n", sleepAmt); 
         usleep(sleepAmt); 
         if (sleepAmt < 100*1000)
           sleepAmt *= 2; // sleep more next time

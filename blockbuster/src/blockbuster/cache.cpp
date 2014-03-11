@@ -719,7 +719,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
         region = RectUnionRect(&cachedImage->image->loadedRegion, &region);
       }
 	}
-    DEBUGMSG("Frame %d not found, look for it in queues", frameNumber); 
+    DEBUGMSG("Frame %d wasn't found, look for it in queues", frameNumber); 
 	/* It's not in cache already, darn.  We need to check to see if a 
 	 * job for this frame is already in one of the work queues or the
 	 * error queue.  This, of course, can only happen in the multi-

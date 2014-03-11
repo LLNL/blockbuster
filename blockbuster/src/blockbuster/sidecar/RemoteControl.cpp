@@ -40,8 +40,8 @@ void RemoteControl::updateFromSnapshot(MovieSnapshot &snapshot){
 
   LOCK_BLOCK_APPLY(fpsSpinBox, snapshot.mTargetFPS, setValue( snapshot.mTargetFPS)); 
 
-  BLOCK_APPLY(repeatCheckBox, setChecked(snapshot.mRepeat)); 
-  BLOCK_APPLY(foreverCheckBox, setEnabled(snapshot.mRepeat)); 
+  BLOCK_APPLY(repeatCheckBox, setChecked(snapshot.mRepeat != 0)); 
+  BLOCK_APPLY(foreverCheckBox, setEnabled(snapshot.mRepeat != 0)); 
   BLOCK_APPLY(foreverCheckBox, setChecked(snapshot.mRepeat == -1)); 
   BLOCK_APPLY(noScreensaverCheckBox, setChecked(snapshot.mNoScreensaver)); 
   BLOCK_APPLY(pingpongCheckBox, setChecked(snapshot.mPingPong)); 
