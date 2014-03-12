@@ -206,7 +206,7 @@ void CacheThread::run() {
 	 */
     lock("finished job, updating queues", __FILE__, __LINE__); 
 
-    CACHEDEBUG("RemoveJobFromPendingQueue frame %d", job->frameNumber); 
+    CACHEDEBUG("Remove Job From mPendingQueue frame %d", job->frameNumber); 
 	RemoveJobFromQueue(mPendingQueue, job);
     PrintJobQueue(mPendingQueue);
 
@@ -297,9 +297,9 @@ CachedImagePtr CacheThread::GetCachedImageSlot(uint32_t newFrameNumber)
   unsigned long maxDist = 0;
 #endif
   CACHEDEBUG("GetCachedImageSlot(%d)", newFrameNumber); 
-
+  uint32_t slotnum = 0, foundslot = -1, numslots = mCachedImages.size(); 
   for (vector<CachedImagePtr>::iterator cachedImage = mCachedImages.begin(); 
-       cachedImage != mCachedImages.end();  cachedImage++) {
+       cachedImage != mCachedImages.end();  cachedImage++, slotnum++) {
     /* Look for an empty slot, or a slot who's frame number is
      * furthest away from the one about to be loaded.
      */
@@ -314,26 +314,25 @@ CachedImagePtr CacheThread::GetCachedImageSlot(uint32_t newFrameNumber)
     if (dist > maxDist){
       maxDist = dist;
       imageSlot = *cachedImage; 
+      foundslot = slotnum; 
     }
   }
   
   /* If we couldn't find an image slot, something's wrong. */
   if (!imageSlot) {
-    CACHEDEBUG("Cannot find image slot!\n");
-    int i = 0; 
+    CACHEDEBUG("Something's wrong. Cannot find image slot!\n");
+    slotnum = 0; 
     for (vector<CachedImagePtr>::iterator cachedImage = mCachedImages.begin(); 
-         cachedImage != mCachedImages.end();  cachedImage++, i++) {
-      if ((int)(*cachedImage)->frameNumber%2) {
-        CACHEDEBUG("Found odd frame number in slot %d: %d\n", i, (*cachedImage)->frameNumber); 
-      }
+         cachedImage != mCachedImages.end();  cachedImage++, slotnum++) {
+      CACHEDEBUG("Slot %d of %d: frame %d\n", slotnum, numslots, (*cachedImage)->frameNumber);       
     }
     ERROR("image cache is full, with all %d images locked",
           mCachedImages.size());
     return imageSlot;
   }
     
-  CACHEDEBUG("Removing frame %u to make room for %u", 
-             imageSlot->frameNumber, newFrameNumber);
+  CACHEDEBUG("Removing frame %u in slot %u of %u to make room for %u", 
+             imageSlot->frameNumber, foundslot, numslots, newFrameNumber);
   //Print("Removing frame");
 
   /* Otherwise, if we found a slot that wasn't vacant, clear it out

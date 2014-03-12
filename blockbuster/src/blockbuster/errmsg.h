@@ -5,9 +5,11 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #define ECHO_FUNCTION(level) dbprintf(level, "BEGIN\n"); 
 #ifdef __cplusplus
 #include <QString>
+#include "QThread"
 
 extern int gTimerOn; 
 #define TIMER_PRINT(...) if (gTimerOn) DEBUGMSG(__VA_ARGS__)
@@ -28,7 +30,7 @@ struct MessageLevel {
 extern pthread_mutex_t debug_message_lock; 
 // #ifdef DEBUG
 // #warning turning on dbprintf statements
-#define dbprintf theMessage.file=__FILE__,theMessage.function=__FUNCTION__,theMessage.line=__LINE__,real_dbprintf
+#define dbprintf   setMessageRec(__FILE__,__FUNCTION__,__LINE__, 0), real_dbprintf
 /*
   Not necessary to suppress for normal builds -- very nominal performance hit.
    #else
@@ -78,35 +80,17 @@ void SuppressMessageDialogs(bool);
    * is a race condition here obviously...
    */
 
-struct MessageRec {
-  const char *file;
-  const char *function;
-  int     line;
-  int     level;
-} ;
-
-extern struct MessageRec theMessage;
-
-#ifdef linux
-#define MESSAGEBASE \
-theMessage.file=__FILE__,theMessage.function=__FUNCTION__,theMessage.line=__LINE__,Message
-#else
-#define MESSAGEBASE \
-   theMessage.file=__FILE__,theMessage.function="(unknown)",theMessage.line=__LINE__,Message
+#ifdef __cplusplus 
+void addMessageRec(QThread *thread, uint32_t threadnum);
+void removeMessageRec(QThread *thread);
 #endif
-
-#define SYSERROR                                \
-  theMessage.level=M_SYSERROR,MESSAGEBASE
-#define ERROR \
-   theMessage.level=M_ERROR,MESSAGEBASE
-#define WARNING \
-   theMessage.level=M_WARNING,MESSAGEBASE
-#define INFO \
-   theMessage.level=M_INFO,MESSAGEBASE
-  /* #ifdef DEBUG */
-#define DEBUGMSG \
-    theMessage.level=M_DEBUG,MESSAGEBASE           \
-
+#define DOMESSAGE(level)                                        \
+  setMessageRec(__FILE__,__FUNCTION__,__LINE__, level), Message
+#define SYSERROR   DOMESSAGE(M_SYSERROR)
+#define ERROR      DOMESSAGE(M_ERROR)
+#define WARNING    DOMESSAGE(M_WARNING)
+#define INFO       DOMESSAGE(M_INFO)
+#define DEBUGMSG   DOMESSAGE(M_DEBUG)
 #ifdef __cplusplus 
 
 void Message(std::string msg); 
@@ -114,7 +98,8 @@ void Message(QString msg);
 
 extern "C" {
 #endif
-   void Message(const char *format, ...);
+ void setMessageRec(const char* file, const char* func, uint32_t line, uint32_t level); 
+  void Message(const char *format, ...);
 #ifdef __cplusplus 
 }
 #endif

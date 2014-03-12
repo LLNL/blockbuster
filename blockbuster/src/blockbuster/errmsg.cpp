@@ -25,7 +25,55 @@ void enableTimer(bool onoff) {
 /* ---------------------------------------------*/ 
 /* for error reporting in dialogs, folks have been using a canvas, bleh*/ 
 int maxMessageLevel = M_WARNING;
-MessageRec theMessage;
+
+struct MessageRec {
+  MessageRec():thread(NULL), threadnum(0) {
+    return; 
+  }
+  MessageRec(QThread *t, uint32_t n):thread(t), threadnum(n) {
+    return; 
+  }
+  MessageRec(const MessageRec &r) {
+    *this = r; 
+  }
+
+  const MessageRec &operator = (const MessageRec &r) {
+    file = r.file; 
+    function = r.function; 
+    line = r.line; 
+    level = r.level; 
+    thread = r.thread;
+    threadnum = r.threadnum; 
+    return *this; 
+  }
+
+  string file;
+  string function;
+  int     line;
+  int     level;
+  QThread *thread; 
+  uint32_t threadnum; 
+} ;
+
+map<QThread *, MessageRec> gMessageRecs;
+
+void addMessageRec(QThread *thread, uint32_t threadnum){
+  MessageRec r(thread, threadnum); 
+  gMessageRecs[thread] = MessageRec(thread, threadnum);
+  return; 
+}
+
+void removeMessageRec(QThread *thread) {
+  gMessageRecs.erase(thread); 
+}
+
+void setMessageRec(const char* file, const char* func, uint32_t line, uint32_t level) {
+  gMessageRecs[QThread::currentThread()].file = file; 
+  gMessageRecs[QThread::currentThread()].function = func; 
+  gMessageRecs[QThread::currentThread()].line = line; 
+  gMessageRecs[QThread::currentThread()].level = level; 
+  return; 
+}
 
 pthread_mutex_t debug_message_lock = PTHREAD_MUTEX_INITIALIZER; 
 static bool gDoDialogs = true; 
@@ -76,11 +124,12 @@ int get_verbose(void) {
   return maxMessageLevel; 
 }
 
-#define DBPRINTF_PREAMBLE str(boost::format("<t=%1%> %2%:%3%, %4%():  ") % \
-                              (getExactSeconds().toStdString())% \
-                              string(theMessage.file)% \
-                              string(theMessage.function)% \
-                              (theMessage.line))
+#define DBPRINTF_PREAMBLE \
+  str(boost::format("<t=%1%> %2%:%3%, %4%():  ") %                      \
+      (getExactSeconds().toStdString())%                                \
+      (gMessageRecs[QThread::currentThread()].file)%                    \
+      string(gMessageRecs[QThread::currentThread()].function)%          \
+      (gMessageRecs[QThread::currentThread()].line))
 
 //===============================================
 void real_dbprintf(int level, QString msg) {
@@ -126,12 +175,15 @@ void SuppressMessageDialogs(bool yn) {
   Attempt to display a message in a dialog, unless there is no main window, e.g. we are a slave or just using X11
 */
 int DisplayDialog(const char *message) { 
-  if (!gDoDialogs) return 0; 
+  if (!gDoDialogs || !InMainThread() ) return 0; 
     char buffer[4096]; 
+    
     snprintf(buffer, 4096, "%s\n\n(%s:%s():%d)",
-             message, theMessage.file, 
-             theMessage.function, theMessage.line);
-    switch (theMessage.level) {
+             message, 
+             gMessageRecs[QThread::currentThread()].file.c_str(), 
+             gMessageRecs[QThread::currentThread()].function.c_str(), 
+             gMessageRecs[QThread::currentThread()].line);
+    switch (gMessageRecs[QThread::currentThread()].level) {
     case M_SYSERROR:
       QMessageBox::critical(NULL, "Blockbuster Error",
                             QString(buffer));
@@ -222,8 +274,8 @@ void Message(const char *format,...)
   //static ofstream *dbfile = new ofstream(dbfilename.c_str()); 
   va_list args;
   char buffer[BLOCKBUSTER_PATH_MAX];
-  
-  if (theMessage.level <= maxMessageLevel) {
+
+  if (gMessageRecs[QThread::currentThread()].level <= maxMessageLevel) {
 
     /* Collect the arguments into a single string */
     va_start(args, format);
@@ -237,7 +289,7 @@ void Message(const char *format,...)
     errmsg += localHostname.c_str(); 
     errmsg += "): ";
 
-    switch(theMessage.level) {
+    switch(gMessageRecs[QThread::currentThread()].level) {
     case M_SYSERROR:  errmsg += "SYSERROR: "; break;
     case M_ERROR: errmsg += "ERROR: "; break;
     case M_WARNING: errmsg += "WARNING: "; break;
@@ -256,8 +308,9 @@ void Message(const char *format,...)
 #endif 
 
       errmsg += QString(" [%1:%2() line %3, thread %4, time=%5]")
-        .arg(theMessage.file).arg( theMessage.function)
-        .arg(QString::number(theMessage.line))
+        .arg(gMessageRecs[QThread::currentThread()].file.c_str())
+        .arg( gMessageRecs[QThread::currentThread()].function.c_str())
+        .arg(QString::number(gMessageRecs[QThread::currentThread()].line))
         //.arg((long)QThread::currentThread())
         .arg(GetCurrentThreadID())
         .arg(timestring);       
@@ -266,13 +319,12 @@ void Message(const char *format,...)
     errmsg.replace("\n", "  --- [ newline ] --- "); 
     //gSidecarServer->SendEvent(MovieEvent("MOVIE_SIDECAR_MESSAGE", errmsg)); 
     
-    if (theMessage.level == M_SYSERROR) {
+    if (gMessageRecs[QThread::currentThread()].level == M_SYSERROR) {
       perror("blockbuster");
     }
-
-	if (gDoDialogs) {
-      DisplayDialog(buffer);
-    }
+    // this only does something if gDoDialogs is true and we're in the main thread. 
+	DisplayDialog(buffer);
+    
     
   }
 }

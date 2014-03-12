@@ -21,8 +21,9 @@ class BlockbusterInterface;
 */
 void PrintKeyboardControls(void); 
 
+bool InMainThread(void);
 uint16_t GetCurrentThreadID(void) ; 
-int RegisterThread(QThread *qthreadptr, int id); 
+int RegisterThread(QThread *qthreadptr, int id, bool isMain = false); 
 void UnregisterThread(QThread *qthreadptr); 
 
   /* Useful macros */

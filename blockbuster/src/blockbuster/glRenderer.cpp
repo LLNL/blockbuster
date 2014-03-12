@@ -135,7 +135,7 @@ void glRenderer::DrawString(int row, int column, const char *str)
   return; 
 }
 
-#define RENDERDEBUG theMessage.level=4,MESSAGEBASE  
+#define RENDERDEBUG WARNING
 //=============================================================
 void glRenderer::RenderActual(int frameNumber, 
                               RectanglePtr imageRegion,

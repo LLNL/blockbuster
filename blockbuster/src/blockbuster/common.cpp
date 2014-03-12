@@ -39,14 +39,17 @@ using namespace std;
   Global index of QThreads, used to get a simple 0-based threadID for each thread.  
 */ 
 QMutex registerProtector; 
-static vector<QThread *> gThreads; 
-static vector<int> gThreadIDs; 
+map<QThread *, int> gThreadIdMap; 
+int gMainThreadID = -1; 
+/*static vector<QThread *> gThreads; 
+  static vector<int> gThreadIDs; */
 /*!
   Get the 0-based thread index for the given QThread. 
   Return -1 on failure.
 */
 int GetThreadID(QThread *thread) {
-  int i = 0; 
+  return gThreadIdMap[thread]; 
+  /*  int i = 0; 
   int id = -1; 
   vector<QThread *>::iterator pos = gThreads.begin(), endpos = gThreads.end(); 
   while (pos != endpos && id == -1) {
@@ -57,21 +60,24 @@ int GetThreadID(QThread *thread) {
       ++i; 
     }
   }
-  return id; 
+  return id; */
+}
+
+/*!
+  Once threads are registered, we can tell if we're in the main thread
+*/
+bool InMainThread(void) {
+  return gThreadIdMap.empty() || gThreadIdMap[QThread::currentThread()] == gMainThreadID; 
 }
 
 /*!
   Call this from any thread to add it to the index of QThreads.  
 */
-int RegisterThread(QThread *thread, int threadnum) {
+int RegisterThread(QThread *thread, int threadnum, bool isMain) {
   registerProtector.lock(); 
-  if (threadnum == -1) {
-    threadnum = gThreadIDs.size(); 
-  }
-  if (GetThreadID(thread) == -1) {
-    gThreads.push_back(thread); 
-    gThreadIDs.push_back(threadnum); 
-  }
+  gThreadIdMap[thread] = threadnum; 
+  addMessageRec(thread, threadnum); 
+  if (isMain) gMainThreadID = threadnum; 
   registerProtector.unlock(); 
   return threadnum; 
 }
@@ -81,19 +87,8 @@ int RegisterThread(QThread *thread, int threadnum) {
 */
 void UnregisterThread(QThread *thread) {
   registerProtector.lock(); 
-  vector<QThread *>::iterator pos = gThreads.begin(), endpos = gThreads.end(); 
-  vector<int>::iterator intpos = gThreadIDs.begin(); 
-  while (pos != endpos && thread != *pos) {
-    ++pos; ++intpos; 
-  }
-  if (pos != endpos) {
-    gThreads.erase(pos); 
-    gThreadIDs.erase(intpos); 
-    if (gThreads.size() != gThreadIDs.size()) {
-      cerr << "gThreads.size() != gThreadIDs.size()" << endl; 
-      abort(); 
-    }
-  }
+  gThreadIdMap.erase(thread); 
+  removeMessageRec(thread); 
   registerProtector.unlock(); 
   return ;
 }

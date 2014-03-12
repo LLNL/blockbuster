@@ -58,7 +58,6 @@
 QApplication *gCoreApp=NULL; 
 BlockbusterInterface *gMainWindow = NULL; 
 
-QThread *gMainThread = NULL; 
 ProgramOptions gProgramOptions;
 
 // =====================================================================
@@ -687,9 +686,8 @@ int main(int argc, char *argv[])
   ParseOptions(opt, newargc, newargs);
   printargs("After ParseOptions", newargs, newargc); 
 
-
-  gMainThread = QThread::currentThread(); 
-  RegisterThread(gMainThread, opt->readerThreads); 
+  // register the main thread first
+  RegisterThread(QThread::currentThread(), opt->readerThreads, true); 
 
   /* initialize the slave portion if we are a slave */
   if (opt->slaveMode != 0) {
