@@ -297,7 +297,7 @@ CachedImagePtr CacheThread::GetCachedImageSlot(uint32_t newFrameNumber)
   unsigned long maxDist = 0;
 #endif
   CACHEDEBUG("GetCachedImageSlot(%d)", newFrameNumber); 
-  uint32_t slotnum = 0, foundslot = -1, numslots = mCachedImages.size(); 
+  volatile uint32_t slotnum = 0, foundslot = -1, numslots = mCachedImages.size(); 
   for (vector<CachedImagePtr>::iterator cachedImage = mCachedImages.begin(); 
        cachedImage != mCachedImages.end();  cachedImage++, slotnum++) {
     /* Look for an empty slot, or a slot who's frame number is
@@ -320,11 +320,12 @@ CachedImagePtr CacheThread::GetCachedImageSlot(uint32_t newFrameNumber)
   
   /* If we couldn't find an image slot, something's wrong. */
   if (!imageSlot) {
-    CACHEDEBUG("Something's wrong. Cannot find image slot!\n");
-    slotnum = 0; 
+    CACHEDEBUG("Something's wrong. Cannot find image slot!");
+    uint32_t slotnumber = 0; 
     for (vector<CachedImagePtr>::iterator cachedImage = mCachedImages.begin(); 
-         cachedImage != mCachedImages.end();  cachedImage++, slotnum++) {
-      CACHEDEBUG("Slot %d of %d: frame %d\n", slotnum, numslots, (*cachedImage)->frameNumber);       
+         cachedImage != mCachedImages.end();  cachedImage++, slotnumber++) {
+      CACHEDEBUG("Slot %d of %d", slotnumber, numslots);       
+      CACHEDEBUG("Slot %d of %d: frame %d", slotnumber, numslots, (*cachedImage)->frameNumber);       
     }
     ERROR("image cache is full, with all %d images locked",
           mCachedImages.size());

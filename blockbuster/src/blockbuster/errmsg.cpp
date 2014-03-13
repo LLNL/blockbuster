@@ -315,7 +315,8 @@ void Message(const char *format,...)
         .arg(GetCurrentThreadID())
         .arg(timestring);       
     }
-    cerr << errmsg.toStdString() << endl;     
+    cerr << errmsg.toStdString() << endl ;
+    cerr.flush(); 
     errmsg.replace("\n", "  --- [ newline ] --- "); 
     //gSidecarServer->SendEvent(MovieEvent("MOVIE_SIDECAR_MESSAGE", errmsg)); 
     
