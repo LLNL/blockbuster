@@ -1221,6 +1221,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
       }
     }
   }
+  if (renderer) delete renderer; 
   /* Finish our timing information */
   endClicks = times(&endTime);
   elapsedTime = (endClicks - startClicks) / (double) Hertz;
@@ -1239,7 +1240,6 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
   INFO("Skipped delay count: %d; used delay count: %d",
        skippedDelayCount, usedDelayCount);
 #endif
-  
   /* Done with the frames */
   return 0; 
 } // end DisplayLoop

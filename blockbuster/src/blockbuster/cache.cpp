@@ -324,8 +324,11 @@ CachedImagePtr CacheThread::GetCachedImageSlot(uint32_t newFrameNumber)
     uint32_t slotnumber = 0; 
     for (vector<CachedImagePtr>::iterator cachedImage = mCachedImages.begin(); 
          cachedImage != mCachedImages.end();  cachedImage++, slotnumber++) {
-      CACHEDEBUG("Slot %d of %d", slotnumber, numslots);       
-      CACHEDEBUG("Slot %d of %d: frame %d", slotnumber, numslots, (*cachedImage)->frameNumber);       
+      if (!*cachedImage) {
+        CACHEDEBUG("mCachedImages Slot %d of %d: no CachedImage", slotnumber, numslots);
+      } else {
+        CACHEDEBUG("mCachedImages Slot %d of %d: frame %d, region %s", slotnumber, numslots, (*cachedImage)->frameNumber, string((*cachedImage)->image->loadedRegion).c_str());       
+      }
     }
     ERROR("image cache is full, with all %d images locked",
           mCachedImages.size());

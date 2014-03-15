@@ -777,8 +777,6 @@ int main(int argc, char *argv[])
     WriteSettingsToFile(opt->settings, homeSettingsFilename,
                         settingsSources);
   }
-  DestroySettings(opt->settings);
-  opt->settings = NULL;
   INFO("Blockbuster is finished.\n"); 
   /* All done.  Go home. */
   return retval;
