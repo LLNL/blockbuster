@@ -293,55 +293,30 @@ void CacheThread::run() {
 CachedImagePtr CacheThread::GetCachedImageSlot(uint32_t newFrameNumber)
 {
   CachedImagePtr imageSlot;
-#ifdef NEW_CACHE
+  /*#ifdef NEW_CACHE
   unsigned long maxDist = 0;
 #endif
+  */ 
   CACHEDEBUG("GetCachedImageSlot(%d)", newFrameNumber); 
-  volatile uint32_t slotnum = 0, foundslot = -1, numslots = mCachedImages.size(); 
+  volatile uint32_t slotnum = 0, foundslot = -1, numslots = mCachedImages.size(), oldestRequest = 1000*1000*1000; 
   for (vector<CachedImagePtr>::iterator cachedImage = mCachedImages.begin(); 
        cachedImage != mCachedImages.end();  cachedImage++, slotnum++) {
-    /* Look for an empty slot, or a slot who's frame number is
-     * furthest away from the one about to be loaded.
+    /* Look for an empty slot, or a slot with the oldest request number. 
      */
-    unsigned long dist;
-    
-    if ((*cachedImage)->requestNumber == 0) {
+    if ((*cachedImage)->requestNumber == 0 || !*cachedImage) {
       imageSlot = *cachedImage;
+      foundslot = slotnum; 
       break;
     }
-    
-    dist = Distance((*cachedImage)->frameNumber, newFrameNumber);
-    if (dist > maxDist){
-      maxDist = dist;
+    if ((*cachedImage)->requestNumber < oldestRequest) {
       imageSlot = *cachedImage; 
+      oldestRequest = (*cachedImage)->requestNumber; 
       foundslot = slotnum; 
     }
   }
   
-  /* If we couldn't find an image slot, something's wrong. */
-  if (!imageSlot) {
-    CACHEDEBUG("Something's wrong. Cannot find image slot!");
-    uint32_t slotnumber = 0; 
-    for (vector<CachedImagePtr>::iterator cachedImage = mCachedImages.begin(); 
-         cachedImage != mCachedImages.end();  cachedImage++, slotnumber++) {
-      if (!*cachedImage) {
-        CACHEDEBUG("mCachedImages Slot %d of %d: no CachedImage", slotnumber, numslots);
-      } else {
-        CACHEDEBUG("mCachedImages Slot %d of %d: frame %d, region %s", slotnumber, numslots, (*cachedImage)->frameNumber, string((*cachedImage)->image->loadedRegion).c_str());       
-      }
-    }
-    ERROR("image cache is full, with all %d images locked",
-          mCachedImages.size());
-    return imageSlot;
-  }
-    
   CACHEDEBUG("Removing frame %u in slot %u of %u to make room for %u", 
              imageSlot->frameNumber, foundslot, numslots, newFrameNumber);
-  //Print("Removing frame");
-
-  /* Otherwise, if we found a slot that wasn't vacant, clear it out
-   * before returning it.
-   */
   if (imageSlot->loaded) {
     imageSlot->image.reset();
     imageSlot->loaded = 0;
@@ -356,20 +331,20 @@ CachedImagePtr CacheThread::GetCachedImageSlot(uint32_t newFrameNumber)
  * The higher the score, the farther apart the frames are in sequence.
  * In cache replacement, we'll use the highest score to determine the victim.
  */
-unsigned int CacheThread::Distance(unsigned int oldFrame, unsigned int newFrame)
-{
-  int totalFrames = mCache->mCurrentEndFrame - mCache->mCurrentStartFrame + 1; 
-  if (oldFrame > newFrame) {
-    /* wrap-around; use modular/ring/clock arithmetic */
-    unsigned int d1 = oldFrame - newFrame;
-    unsigned int d2 = newFrame + totalFrames - oldFrame;
-    return MIN2(d1, d2);
-  }
-  else {
-    return newFrame - oldFrame;
-  }
-}
-
+/* unsigned int CacheThread::Distance(unsigned int oldFrame, unsigned int newFrame)
+   {
+   int totalFrames = mCache->mCurrentEndFrame - mCache->mCurrentStartFrame + 1; 
+   if (oldFrame > newFrame) {
+   // wrap-around; use modular/ring/clock arithmetic 
+   unsigned int d1 = oldFrame - newFrame;
+   unsigned int d2 = newFrame + totalFrames - oldFrame;
+   return MIN2(d1, d2);
+   }
+   else {
+   return newFrame - oldFrame;
+   }
+   }
+*/
 // ======================================================================
 /* For debugging */
 void CacheThread::Print(string description)
@@ -646,7 +621,6 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
   /* This counts as an additional cache request; we keep track of such
    * things so we can decide which of the cache entries is the oldest.
    */
-  mRequestNumber++;
   /* Steal Preload code right from Renderer */ 
   uint32_t preloadmax = mCurrentEndFrame-mCurrentStartFrame, 
     frame=frameNumber, preloaded=0;
@@ -945,12 +919,12 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
                                  levelOfDetail, mRequestNumber, 
                                  mFrameList->getFrame(frameNumber)));
   
+  mRequestNumber++; // used to decide which image in a full cache to discard
   /* This counts as an additional cache request; the job will take
    * on the request number, so we can determine which entries are the
    * oldest.  When the image is taken from the queue, it will be given
    * a more recent request number.
    */
-  mRequestNumber++;
   
   /* We save the frameInfo information just in case the FrameList changes
    * while one of the reader threads is trying to read this frame.

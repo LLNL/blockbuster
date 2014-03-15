@@ -95,8 +95,6 @@ class CacheThread: public QThread {
   
   void ResetImages(uint32_t numimages); 
   
-  unsigned int Distance(unsigned int oldFrame, unsigned int newFrame);
-
   // called by cachethread in Run() 
   void WaitForJobReady(string reason, string file="unknown file", int line=0) {
     CACHEDEBUG("%s: %d: worker waiting job ready (%s)", 

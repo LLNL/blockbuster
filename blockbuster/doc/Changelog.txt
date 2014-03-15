@@ -12,6 +12,7 @@ VERSION 2.8.1f (git tag blockbuster-v2.8.1f) Wed Feb 26 17:34:47 PST 2014
 -- BUGFIX: When launching blockbuster with -loops, correctly set the GUI checkboxes
 -- BUGFIX: gltexture renderer works again.  
 -- BUGFIX: Make error messages threadsafe.
+-- BUGFIX: Fixed bug in cache causing "Cache is full" errors.  
 
 ===============================================================================
 VERSION 2.8.1e (git tag blockbuster-v2.8.1e) Wed Feb 26 17:34:47 PST 2014
