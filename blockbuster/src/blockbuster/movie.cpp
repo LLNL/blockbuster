@@ -334,7 +334,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             options->decorations = !options->fullScreen; 
           }
           if (renderer) {
-            if (allFrames->mStereo != (renderer->mName == "gl_stereo")) {
+            if ((allFrames->mStereo != 0) != (renderer->mName == "gl_stereo")) {
               DEBUGMSG("toggle stereo automatically\n");           
               delete renderer; 
               renderer = NULL; 
