@@ -135,7 +135,7 @@ void glRenderer::DrawString(int row, int column, const char *str)
   return; 
 }
 
-#define RENDERDEBUG WARNING
+#define RENDERDEBUG DEBUGMSG
 //=============================================================
 void glRenderer::RenderActual(int frameNumber, 
                               RectanglePtr imageRegion,
