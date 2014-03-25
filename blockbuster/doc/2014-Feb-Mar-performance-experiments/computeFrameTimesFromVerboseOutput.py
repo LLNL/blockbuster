@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import sys
 startTime = endTime = None
 previousEnd = None
 frame=0
@@ -11,7 +11,12 @@ totalinterframe = 0.0
 totaltime = 0.0
 frames = 0
 
-for line in open("output.txt", "r"):    
+
+if len(sys.argv) < 2:
+    print "Error:  need a logfile name"
+    sys.exit(1)
+    
+for line in open(sys.argv[1], "r"):    
     if "RenderActual begin" in line:
         tokens=line.split()
         try:
