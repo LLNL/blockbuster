@@ -184,14 +184,19 @@ class ImageCache {
   
 
   ImagePtr GetImage(uint32_t frameNumber,
-                  const Rectangle *newRegion, uint32_t levelOfDetail);
+                    const Rectangle *newRegion, uint32_t levelOfDetail, 
+                    bool preload);
   void ManageFrameList(FrameListPtr frameList);
-  
+  void HaveStereoRenderer(bool s) { mStereo = s; }
   // I do not like that these are called outside of the cache.  This is a huge design flaw.  The cache needs to manage how items are cached!  
 
   // PreloadImage is called from Renderer
   void PreloadHint(uint32_t preloadFrames, int playDirection, 
                    uint32_t startFrame, uint32_t endFrame){
+    
+    DEBUGMSG("ImageCache::PreloadHint(preloadFrames = %d, playDirection = %d, startFrame = %d endFrame = %d", 
+             preloadFrames, playDirection, 
+             startFrame, endFrame);
     mPreloadFrames = preloadFrames;
     mCurrentPlayDirection = playDirection; 
     mCurrentStartFrame = startFrame; 
@@ -228,9 +233,9 @@ class ImageCache {
   unsigned long mValidRequestThreshold;
   unsigned int mHighestFrameNumber;
   
-  bool mSuppressStereo; // for playing stereo movies in mono -- do not preload odd frames.
   /* New approach:  start managing preloads from the cache */ 
   uint32_t mPreloadFrames;
+  bool mStereo; // "stereo cache," i.e., caching for a stereo renderer
   int32_t mCurrentPlayDirection; 
   uint32_t mCurrentStartFrame; // the first frame the user wants played
   uint32_t mCurrentEndFrame;  // the last frame the user wants played
@@ -242,7 +247,7 @@ class ImageCache {
    * unless numReaderThreads is greater than 0.
    */
   std::vector<CacheThreadPtr> mThreads;
-    
+  
 } ;
 
 

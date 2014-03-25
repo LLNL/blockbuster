@@ -155,7 +155,6 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
   /* Region Of Interest of the image */
   RectanglePtr roi;
   int destX, destY; // position on canvas to render the image
-
   
   int32_t playDirection = 0, 
     startFrame= options->startFrame, 
@@ -380,6 +379,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           renderer->ReportFrameChange(frameNumber);
           renderer->ReportDetailRangeChange(-maxLOD, maxLOD);
           renderer->ReportZoomChange(newZoom);
+          renderer->ReportStereoChange(allFrames->mStereo);
           swapBuffers = true; 
           previousSwapTime = 0.0; 
           frameInfo =  renderer->GetFrameInfoPtr(0);
@@ -419,6 +419,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
              renderer->SetFrameList(allFrames);
             renderer->ReportFrameListChange(allFrames);
             renderer->ReportRateChange(targetFPS); 
+            renderer->ReportStereoChange(event.mNumber); 
           }        
         }
         else if (event.mEventType == "MOVIE_DISABLE_DIALOGS") {   

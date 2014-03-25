@@ -36,6 +36,7 @@ class BlockbusterInterface: public QWidget, public Ui::BlockbusterControl  {
   void setFrameRate(double rate); 
   void setFrameRateRange(double min, double max); 
   void setZoom(double zoom); 
+  void setStereo(bool stereo); 
   void setRepeatBehavior (int behavior); 
   void setPingPongBehavior (int behavior); 
 

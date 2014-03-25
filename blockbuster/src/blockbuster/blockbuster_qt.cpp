@@ -182,6 +182,14 @@ void BlockbusterInterface::setFrameRateRange(double min, double max) {
 }
 
 //=============================================================
+void BlockbusterInterface::setStereo(bool stereo){
+  stereoCheckBox->blockSignals(true); 
+  stereoCheckBox->setChecked(stereo); 
+  stereoCheckBox->blockSignals(false); 
+  return; 
+}
+
+//=============================================================
 void BlockbusterInterface::setZoom(double zoom){
   mZoom = zoom; 
   zoomSpinBox->blockSignals(true); 

@@ -32,7 +32,7 @@ class Renderer {
 
   
   // ======================================================================
-  Renderer(ProgramOptions *opt):mOptions(opt) { 
+  Renderer(ProgramOptions *opt):mStereo(false), mOptions(opt) { 
     Init(); 
     return; 
   } 
@@ -73,26 +73,32 @@ class Renderer {
   }
 
   // ======================================================================
- virtual ImagePtr GetImage(uint32_t frameNumber,
-                  const Rectangle *newRegion, uint32_t levelOfDetail){
-    return mCache->GetImage(frameNumber, newRegion, levelOfDetail); 
+  virtual ImagePtr GetImage(uint32_t frameNumber,
+                            const Rectangle *newRegion, 
+                            uint32_t levelOfDetail){
+    return mCache->GetImage(frameNumber, newRegion, levelOfDetail, false); 
   }
-
   
- // ======================================================================
+  
+  
+  // ======================================================================
   // The fundamental operation of the Renderer is to render.     
- void Render(int frameNumber, int /*previousFrame */, 
+  void Render(int frameNumber, int /*previousFrame */, 
               uint32_t preloadFrames, int playDirection, 
               uint32_t startFrame, uint32_t endFrame,
               RectanglePtr imageRegion,
               int destX, int destY, float zoom, int lod) {
-    mCache->PreloadHint(preloadFrames, playDirection, 
-                        startFrame, endFrame);
-
+    if (mFrameList->mStereo) {
+      mCache->PreloadHint(preloadFrames*2, playDirection, 
+                          startFrame*2, endFrame*2+1);
+    } else {
+      mCache->PreloadHint(preloadFrames, playDirection, 
+                          startFrame, endFrame);
+    }
     RenderActual(frameNumber, imageRegion, destX, destY, zoom, lod); 
-
+    
   }
-
+  
   // ======================================================================
   // This is the actual renderer, minus the cache decorations
   virtual void RenderActual(int frameNumber,
@@ -152,6 +158,7 @@ class Renderer {
   void ReportPingPongBehaviorChange(int behavior);
   void ReportRateChange(float rate);
   void ReportZoomChange(float zoom);
+  void ReportStereoChange(bool stereo); 
   void ShowInterface(int on);
   
   void reportWindowMoved(int xpos, int ypos); 
@@ -216,7 +223,7 @@ class Renderer {
   bool mShowCursor; 
   long mOldWidth, mOldHeight, mOldX, mOldY; 
   bool mXSync; 
-
+  bool mStereo; 
   // ==============================================================
   // END  stuff from XWindow 
   // ==============================================================

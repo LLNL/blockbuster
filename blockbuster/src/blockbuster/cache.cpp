@@ -383,8 +383,8 @@ ImageCache::ImageCache(int numthreads, int numimages, ImageFormat &required):
   mNumReaderThreads(numthreads), mMaxCachedImages(numimages), 
   mRequiredImageFormat(required), mRequestNumber(0), 
   mValidRequestThreshold(0), 
-  mHighestFrameNumber(0), mPreloadFrames(0),  mCurrentPlayDirection(0),
-  mCurrentStartFrame(0),  mCurrentEndFrame(0) {
+  mHighestFrameNumber(0), mPreloadFrames(0),  mStereo(false), 
+  mCurrentPlayDirection(0), mCurrentStartFrame(0),  mCurrentEndFrame(0) {
   CACHEDEBUG("ImageCache constructor"); 
   
   register int i;
@@ -591,8 +591,8 @@ CachedImagePtr ImageCache::FindImage(uint32_t frame, uint32_t lod) {
  */
 
 ImagePtr ImageCache::GetImage(uint32_t frameNumber, 
-                              const Rectangle *newRegion, uint32_t levelOfDetail)
-{
+                              const Rectangle *newRegion, 
+                              uint32_t levelOfDetail, bool preload)  {
 
   ImagePtr image;
   CachedImagePtr cachedImage;
@@ -618,24 +618,27 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
 
   DEBUGMSG("ImageCache::GetImage frame %d",frameNumber); 
   
-  /* This counts as an additional cache request; we keep track of such
-   * things so we can decide which of the cache entries is the oldest.
-   */
-  /* Steal Preload code right from Renderer */ 
-  uint32_t preloadmax = mCurrentEndFrame-mCurrentStartFrame, 
-    frame=frameNumber, preloaded=0;
-  if (preloadmax > mPreloadFrames) {
-    preloadmax = mPreloadFrames;
-  }
-  int playdir = mCurrentPlayDirection ? mCurrentPlayDirection: 1;
-  while (preloaded < preloadmax) {
-    frame += playdir; 
-    if (frame > mCurrentEndFrame) frame = mCurrentStartFrame; 
-    if (frame < mCurrentStartFrame) frame = mCurrentEndFrame; 
-    PreloadImage(frame, newRegion, levelOfDetail);
-    ++preloaded;
-  }
-  DEBUGMSG("Preloaded %d frames from %d to %d stepping by %d (max is %d)", preloaded, frameNumber, frame-playdir, playdir, preloadmax); 
+  if (preload) {
+    uint32_t preloadmax = mCurrentEndFrame-mCurrentStartFrame, 
+      frame=frameNumber, preloaded=0;
+    if (preloadmax > mPreloadFrames) {
+      preloadmax = mPreloadFrames;
+    }
+    int playdir = mCurrentPlayDirection ? mCurrentPlayDirection: 1;
+    bool skipOddFrames = (mFrameList->mStereo && !mStereo); 
+    while (preloaded < preloadmax) {
+      frame += playdir; 
+      if (frame > mCurrentEndFrame) frame = mCurrentStartFrame; 
+      if (frame < mCurrentStartFrame) frame = mCurrentEndFrame; 
+      if (frame % 2 && skipOddFrames) {
+        continue; 
+      }
+      PreloadImage(frame, newRegion, levelOfDetail);        
+      ++preloaded;     
+    }    
+
+    DEBUGMSG("Preloaded %d frames from %d to %d stepping by %d (max is %d)", preloaded, frameNumber, frame-playdir, playdir, preloadmax); 
+  } // end preloading
 
   /* Loop until we find the request.  There are three ways we can
    * find the request; it can either be:
@@ -667,6 +670,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
    * The loop is present to handle the case that a condition variable
    * might spuriously awake, before the correct image is present.
    */
+  
   while (1) {
 
 	/* Search the cache to see whether an appropriate image already

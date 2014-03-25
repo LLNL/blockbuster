@@ -197,8 +197,8 @@ void glRenderer::RenderActual(int frameNumber,
   zoom *= (float) lodScale;
 
 
-  RENDERDEBUG("Pull the image from our cache "); 
-  ImagePtr image =  GetImage(localFrameNumber, &region, lod);
+  RENDERDEBUG("glRenderer::RenderActual Pull the image from our cache "); 
+  ImagePtr image =  mCache->GetImage(localFrameNumber, &region, lod, true);
   RENDERDEBUG("Got image"); 
   if (!image) {
     /* error has already been reported */
@@ -310,11 +310,10 @@ void glStereoRenderer::RenderActual(int frameNumber,
   int saveDestX;
   int saveDestY;
   
-  DEBUGMSG("glStereoRenderer::Render(frame %d) region @ (%d, %d) size %d x %d render at %d, %d, with zoom=%f  lod=%d, stereo = %d", frameNumber, 
-           imageRegion->x, imageRegion->y,
+  RENDERDEBUG("glStereoRenderer::RenderActual begin, frame %d, %d x %d  at %d, %d  zoom=%f  lod=%d", 
+           frameNumber,
            imageRegion->width, imageRegion->height,
-           destX, destY, zoom, lod, 
-           (int)(mFrameList->mStereo));
+           imageRegion->x, imageRegion->y, zoom, lod);
   
   /*
    * Compute possibly reduced-resolution image region to display.
@@ -363,22 +362,36 @@ void glStereoRenderer::RenderActual(int frameNumber,
   zoom *= (float) lodScale;
 
   /* Pull the image from our cache */
-  ImagePtr image = GetImage(localFrameNumber, &region, lod);
+  RENDERDEBUG("glStereoRenderer::RenderActual Pull the image from our cache "); 
 
-  if (!image) {
+  ImagePtr leftimage = mCache->GetImage(localFrameNumber, &region, lod, true), 
+    rightimage;
+  RENDERDEBUG("Got image"); 
+
+  if (!leftimage) {
     /* error has already been reported */
     return;
   }
 
-  saveSkip =  image->height - (region.y + region.height);
+  if(mFrameList->mStereo) {
+    /* Pull the image from our cache */
+    RENDERDEBUG("Pull the right buffer image from our cache "); 
+    rightimage = mCache->GetImage(localFrameNumber, &region, lod, false);
+    RENDERDEBUG("Got right buffer image"); 
+    if (rightimage == NULL) {
+      /* error has already been reported */
+      return;
+    }
+  }
+  saveSkip =  leftimage->height - (region.y + region.height);
   saveDestX = destX;
   saveDestY = destY;
  
 
   bb_assert(region.x >= 0);
   bb_assert(region.y >= 0);
-  /*bb_assert(region.x + region.width <= image->width);*/
-  /*bb_assert(region.y + region.height <= image->height);*/
+  /*bb_assert(region.x + region.width <= leftimage->width);*/
+  /*bb_assert(region.y + region.height <= leftimage->height);*/
 
   glViewport(0, 0, mWidth, mHeight);
 
@@ -391,13 +404,13 @@ void glStereoRenderer::RenderActual(int frameNumber,
     glClear(GL_COLOR_BUFFER_BIT);
   }
 
-  if (image->imageFormat.rowOrder == BOTTOM_TO_TOP) {
+  if (leftimage->imageFormat.rowOrder == BOTTOM_TO_TOP) {
     /*
      * Do adjustments to flip Y axis.
      * Yes, this is tricky to understand.
      * And we're not going to help you. 
      */
-    destY = mHeight - static_cast<int32_t>((image->height * zoom + destY)) + static_cast<int32_t>(region.y * zoom);
+    destY = mHeight - static_cast<int32_t>((leftimage->height * zoom + destY)) + static_cast<int32_t>(region.y * zoom);
     if (destY < 0) {
       region.y = static_cast<int32_t>(-destY / zoom);
       destY = 0;
@@ -417,30 +430,26 @@ void glStereoRenderer::RenderActual(int frameNumber,
     glPixelZoom(zoom, -zoom);
   }
   glBitmap(0, 0, 0, 0, destX, destY, NULL);
-  glPixelStorei(GL_UNPACK_ROW_LENGTH, image->width);
+  glPixelStorei(GL_UNPACK_ROW_LENGTH, leftimage->width);
   glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
   glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 
                 mRequiredImageFormat.scanlineByteMultiple);
   glDrawPixels(region.width, region.height,
                GL_RGB, GL_UNSIGNED_BYTE,
-               image->Data());
+               leftimage->Data());
+  RENDERDEBUG("Done with left buffer glDrawPixels"); 
   
   /* Offset raster pos by (-destX, -destY) to put it back to (0,0) */
   glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
+  RENDERDEBUG("Done with left buffer glBitmap"); 
   
-   
+    
   if(mFrameList->mStereo) {
     glDrawBuffer(GL_BACK_RIGHT);
     localFrameNumber++;
     
-    /* Pull the image from our cache */
-    image = GetImage(localFrameNumber, &region, lod);
-    if (image == NULL) {
-      /* error has already been reported */
-      return;
-    }
-    
+   
     glViewport(0, 0, mWidth, mHeight);
     
     /* only clear the window if we have to */
@@ -452,33 +461,36 @@ void glStereoRenderer::RenderActual(int frameNumber,
     }
     
     
-    if (image->imageFormat.rowOrder == BOTTOM_TO_TOP) {
+    if (rightimage->imageFormat.rowOrder == BOTTOM_TO_TOP) {
       
       glPixelZoom(zoom, zoom);
       
     }
     else {
       
-      DEBUGMSG("Image order is %d\n", image->imageFormat.rowOrder); 
+      DEBUGMSG("Image order is %d\n", rightimage->imageFormat.rowOrder); 
       /* RasterPos is (0,0).  Offset it by (destX, destY) */
       glPixelZoom(zoom, -zoom);
     }
     
     glBitmap(0, 0, 0, 0, destX, destY, NULL);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, image->width);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, rightimage->width);
     glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
     glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 
                   mRequiredImageFormat.scanlineByteMultiple);
     glDrawPixels(region.width, region.height,
                  GL_RGB, GL_UNSIGNED_BYTE,
-                 image->Data());
+                 rightimage->Data());
+    RENDERDEBUG("Done with glDrawPixels for right buffer "); 
     
     /* Offset raster pos by (-destX, -destY) to put it back to (0,0) */
     glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
+    RENDERDEBUG("Done with glBitmap for right buffer"); 
     
   }
   
+  RENDERDEBUG("glStereoRenderer::RenderActual end"); 
   return; 
   
 }
@@ -653,7 +665,7 @@ void glTextureRenderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
   zoom *= (float) lodScale;
   
   /* Pull the image from our cache */
-  ImagePtr image = GetImage( localFrameNumber, &region, lod);
+  ImagePtr image = mCache->GetImage( localFrameNumber, &region, lod, true);
   if (!image) {
     /* error has already been reported */
     return;

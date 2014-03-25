@@ -65,7 +65,6 @@ void Renderer::Init(void) {
   mXPos = mYPos = mDepth = 0; 
   mThreads = mOptions->readerThreads; 
   mCacheSize = mOptions->mMaxCachedImages; 
-
   // from XWindow: 
   mVisInfo = NULL; 
   mFontInfo = NULL; 
@@ -90,6 +89,7 @@ void Renderer::InitWindow(qint32 parentWindowID,
   mCache.reset(new ImageCache(mOptions->readerThreads,
                               mOptions->mMaxCachedImages,
                               mRequiredImageFormat));
+  mCache->HaveStereoRenderer(mStereo); 
   return; 
 }
 
@@ -546,7 +546,7 @@ void Renderer::WriteImageToFile(int frameNumber)
   region.height = mFrameList->getFrame(localFrameNumber)->mHeight;
   region.width = mFrameList->getFrame(localFrameNumber)->mWidth;
 
-  image = GetImage(localFrameNumber, &region, 0);
+  image = mCache->GetImage(localFrameNumber, &region, 0, false);
 
   if (!image) {
 	WARNING("Cannot write image to file - image is NULL");
@@ -711,6 +711,13 @@ void Renderer::ReportRateChange(float rate) {
   return; 
 }
 
+//============================================================
+void Renderer::ReportStereoChange(bool stereo) {
+  if (mBlockbusterInterface) {
+    mBlockbusterInterface->setStereo(stereo); 
+  }
+  return; 
+}
 //============================================================
 void Renderer::ReportZoomChange(float zoom) {
   if (mBlockbusterInterface) {

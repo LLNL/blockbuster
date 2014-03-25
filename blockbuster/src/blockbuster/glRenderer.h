@@ -55,13 +55,15 @@ class glStereoRenderer: public glRenderer {
   glStereoRenderer(ProgramOptions *opt):
     glRenderer(opt) {
     mName = "gl_stereo";  
+    mStereo = true; 
     return; 
   }
   virtual ~glStereoRenderer() {}
 
 
   virtual XVisualInfo *ChooseVisual(void);
-  void RenderActual(int frameNumber,  RectanglePtr imageRegion,
+  // ======================================================================
+   void RenderActual(int frameNumber,  RectanglePtr imageRegion,
               int destX, int destY, float zoom, int lod);
 
 };
