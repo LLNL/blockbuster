@@ -362,7 +362,7 @@ void glStereoRenderer::RenderActual(int frameNumber,
   zoom *= (float) lodScale;
 
   /* Pull the image from our cache */
-  RENDERDEBUG("glStereoRenderer::RenderActual Pull the image from our cache "); 
+  RENDERDEBUG("glStereoRenderer::RenderActual Pull the left image from our cache "); 
 
   ImagePtr leftimage = mCache->GetImage(localFrameNumber, &region, lod, true), 
     rightimage;
@@ -375,7 +375,8 @@ void glStereoRenderer::RenderActual(int frameNumber,
 
   if(mFrameList->mStereo) {
     /* Pull the image from our cache */
-    RENDERDEBUG("Pull the right buffer image from our cache "); 
+    localFrameNumber++;
+    RENDERDEBUG("glStereoRenderer::RenderActual Pull the right buffer image from our cache "); 
     rightimage = mCache->GetImage(localFrameNumber, &region, lod, false);
     RENDERDEBUG("Got right buffer image"); 
     if (rightimage == NULL) {
@@ -447,7 +448,6 @@ void glStereoRenderer::RenderActual(int frameNumber,
     
   if(mFrameList->mStereo) {
     glDrawBuffer(GL_BACK_RIGHT);
-    localFrameNumber++;
     
    
     glViewport(0, 0, mWidth, mHeight);

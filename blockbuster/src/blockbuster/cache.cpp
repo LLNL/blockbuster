@@ -532,7 +532,7 @@ void ImageCache::ManageFrameList(FrameListPtr frameList)
 
 
 // ======================================================================
-/* This routine looks for an image already in the image cache, and returns
+/* This routine looks for an image already in the image cache, pending and job queues and returns a list of images not in any of them in the given range. 
  * the cached image slot itself, or an empty CachedImagePtr if not found.
  * Note: we don't care about the loaded image region at this point.
  */
@@ -682,12 +682,7 @@ ImagePtr ImageCache::GetImage(uint32_t frameNumber,
 	
 	if (cachedImage) {
       if (RectContainsRect(&cachedImage->image->loadedRegion, &region)) {
-		/* This image is appropriate.  Mark our interest in the frame
-		 * (so that it is not pulled out from under us while we're
-		 * still using it), and return it.
-		 */
-		bb_assert(cachedImage->image->imageFormat.rowOrder != ROW_ORDER_DONT_CARE);
-        
+		bb_assert(cachedImage->image->imageFormat.rowOrder != ROW_ORDER_DONT_CARE);        
 		cachedImage->requestNumber = mRequestNumber;
 		if (mNumReaderThreads > 0) {
           mThreads[threadnum]->unlock("found interesting frame", __FILE__, __LINE__); 
@@ -906,14 +901,17 @@ void ImageCache::PreloadImage(uint32_t frameNumber,
   
   /* Look for the job in the PendingQueue and JobQueue */
   ImageCacheJobPtr job = FindJobInQueue(mThreads[threadnum]->mPendingQueue, frameNumber, region, levelOfDetail);
-  if (job == NULL) {
-    job = FindJobInQueue(mThreads[threadnum]->mJobQueue, frameNumber, region, levelOfDetail);
-  }
   if (job) {
-    mThreads[threadnum]->unlock("job already in a queue", __FILE__, __LINE__); 
-    CACHEDEBUG("The job exists already - no need to add a new one"); 
-    return;
+    mThreads[threadnum]->unlock("job found in pending queue", __FILE__, __LINE__); 
+    return; 
+  }else {
+    job = FindJobInQueue(mThreads[threadnum]->mJobQueue, frameNumber, region, levelOfDetail);
+    if (job) {
+      mThreads[threadnum]->unlock("job found in job queue", __FILE__, __LINE__); 
+      return; 
+    }
   }
+
   CACHEDEBUG ("Frame %d: not in cache or in any queue, creating new job", frameNumber); 
   /* If we get this far, there is no such image in the cache, and no such
    * job in the queue, so add a new one.

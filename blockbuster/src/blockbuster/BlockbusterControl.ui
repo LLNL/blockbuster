@@ -279,6 +279,9 @@
       </item>
       <item>
        <widget class="QCheckBox" name="stereoCheckBox">
+        <property name="mouseTracking">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>stereo</string>
         </property>
@@ -586,6 +589,9 @@
           <height>16777215</height>
          </size>
         </property>
+        <property name="mouseTracking">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>1</string>
         </property>
@@ -680,6 +686,9 @@
      </item>
      <item>
       <widget class="QCheckBox" name="pingpongCheckBox">
+       <property name="mouseTracking">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>pingpong</string>
        </property>
@@ -687,6 +696,9 @@
      </item>
      <item>
       <widget class="QCheckBox" name="repeatCheckBox">
+       <property name="mouseTracking">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>Repeat</string>
        </property>
@@ -697,6 +709,9 @@
        <property name="enabled">
         <bool>false</bool>
        </property>
+       <property name="mouseTracking">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string> Forever</string>
        </property>
@@ -704,6 +719,9 @@
      </item>
      <item>
       <widget class="QCheckBox" name="noScreensaverCheckBox">
+       <property name="mouseTracking">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>No Screensaver</string>
        </property>

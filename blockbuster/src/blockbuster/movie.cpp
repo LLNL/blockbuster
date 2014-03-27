@@ -192,11 +192,15 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
     /* Get an event from the renderer or network and process it.
      */   
  
-    gCoreApp->processEvents(); 
+    DEBUGMSG("processEvents()"); 
+    gCoreApp->processEvents(QEventLoop::AllEvents, 3); 
+    DEBUGMSG("gMainWindow->GetEvent()"); 
     if (gMainWindow->GetEvent(newEvent)) {  
       events.push_back(newEvent); 
     }
+    DEBUGMSG("renderer->DMXCheckNetwork()"); 
     if (renderer) renderer->DMXCheckNetwork();
+    DEBUGMSG("GetNetworkEvent()"); 
     if (GetNetworkEvent(&newEvent)) { /* Qt events from e.g. Sidecar */
       events.push_back(newEvent); 
     } 
@@ -207,6 +211,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         renderer->DMXSendHeartbeat(); 
         lastheartbeat = time(NULL); 
       }
+      DEBUGMSG("renderer->GetXEvent()"); 
       renderer->GetXEvent(0, &newEvent); 
       if (playDirection && newEvent.mEventType == "MOVIE_GOTO_FRAME" && 
           newEvent.mNumber == frameNumber+playDirection) {
@@ -225,13 +230,14 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
       bool sendSnapshot = false; 
              
       if (event.mEventType == "MOVIE_NONE") {
+        DEBUGMSG("GOT EVENT ------- %s", string(event).c_str()); 
         if (script.size()) {
           event = script[0]; 
           script.erase(script.begin()); 
         }
       }
       if (event.mEventType != "MOVIE_NONE") {        
-        DEBUGMSG("GOT EVENT ------- %s\n", string(event).c_str()); 
+        DEBUGMSG("GOT EVENT ------- %s", string(event).c_str()); 
         if (options->mTraceEvents) {
           if (!options->mTraceEventsFile.is_open() ) {
             if (options->mTraceEventsFilename == "") {
@@ -273,9 +279,9 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             continue; 
           }
           if (!options->stereoSwitchDisable) { 
-            dbprintf(5, "auto-switch stereo based on detected movie type...\n"); 
+            DEBUGMSG("auto-switch stereo based on detected movie type..."); 
             if (options->rendererName != "dmx") { 
-              dbprintf(5, "No DMX: switch frontend renderer as needed.\n"); 
+              DEBUGMSG("No DMX: switch frontend renderer as needed."); 
               if ((allFrames->mStereo && options->rendererName != "gl_stereo")) {
                 options->rendererName = "gl_stereo";
               }
@@ -283,7 +289,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
                 options->rendererName = "gl";
               }            
             } else { 
-              dbprintf(5, "DMX case: switch backend renderer as needed.\n"); 
+              DEBUGMSG("DMX case: switch backend renderer as needed."); 
               if ((allFrames->mStereo && options->backendRendererName != "gl_stereo")) {
                 options->backendRendererName = "gl_stereo";
               }
@@ -295,7 +301,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
               options->rendererName = "gl";
             }
           } 
-          dbprintf(5, "Renderer name: %s\n", options->rendererName.toStdString().c_str()); 
+          DEBUGMSG("Renderer name: %s", options->rendererName.toStdString().c_str()); 
           int width, height, depth; 
           allFrames->GetInfo(width, height, depth, maxLOD, targetFPS);
           if (options->frameRate != 0.0) {
@@ -334,12 +340,12 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           }
           if (renderer) {
             if ((allFrames->mStereo != 0) != (renderer->mName == "gl_stereo")) {
-              DEBUGMSG("toggle stereo automatically\n");           
+              DEBUGMSG("toggle stereo automatically");           
               delete renderer; 
               renderer = NULL; 
             }
             /* else if (renderer && options->fullScreen != renderer->mFullScreen) {
-              DEBUGMSG("toggle to or from fullscreen mode\n");           
+              DEBUGMSG("toggle to or from fullscreen mode");           
               delete renderer; 
               renderer = NULL; 
             }
@@ -467,14 +473,14 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           startFrame = options->startFrame;
           endFrame = options->endFrame;
           if (renderer) renderer->ReportFrameChange(frameNumber); 
-          DEBUGMSG("START_END_FRAMES: start %d end %d current %d\n", startFrame, endFrame, frameNumber); 
+          DEBUGMSG("START_END_FRAMES: start %d end %d current %d", startFrame, endFrame, frameNumber); 
         }
         else if (event.mEventType == "MOVIE_LOG_TO_FILE") {
-          DEBUGMSG("MOVIE_LOG_TO_FILE event: %s\n", event.mString.c_str()); 
+          DEBUGMSG("MOVIE_LOG_TO_FILE event: %s", event.mString.c_str()); 
           enableLogging(true, event.mString.c_str());   
         }
         /* if (event.mEventType == "MOVIE_MESSAGE") {
-           DEBUGMSG("MOVIE_MESSAGE event: %s\n", event.mString.c_str()); 
+           DEBUGMSG("MOVIE_MESSAGE event: %s", event.mString.c_str()); 
            }
         */ 
         else if (event.mEventType == "MOVIE_QUIT") {
@@ -880,7 +886,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         continue;
       }
       else if (event.mEventType == "MOVIE_QUIT") {
-        dbprintf(5, "break from the outer loop too\n"); 
+        DEBUGMSG("break from the outer loop too"); 
         break;
       }
       else {
@@ -986,8 +992,8 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
                 (static_cast<int>(newZoom*imageWidth), 
                  static_cast<int>(newZoom*imageHeight)); 
             }
-            dbprintf(5, str(boost::format("Sending snapshot %1%\n") 
-                            % string(newSnapshot))); 
+            DEBUGMSG(str(boost::format("Sending snapshot %1%") 
+                         % string(newSnapshot))); 
             gSidecarServer->SendEvent
               (MovieEvent("MOVIE_SIDECAR_STATUS", string(newSnapshot).c_str())); 
             oldSnapshot = newSnapshot; 
@@ -1117,13 +1123,13 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
          * the given level of detail.
          */
         
-        TIMER_PRINT("before render"); 
+        DEBUGMSG("before render"); 
         renderer->Render(frameNumber, previousFrame, 
                          preloadFrames, playDirection, 
                          startFrame, endFrame, roi, destX, destY, 
                          currentZoom, lod);
         
-        TIMER_PRINT("after render"); 
+        DEBUGMSG("after render"); 
         
         /* Print info in upper-left corner */
         /*!
@@ -1164,7 +1170,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           /* Compute next targetted swap time */
           nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
         }
-        TIMER_PRINT("Swap buffers\n"); 
+        DEBUGMSG("Swap buffers"); 
         renderer->mPreloadFrames = preloadFrames; 
         renderer->mPlayDirection = playDirection;
         renderer->mStartFrame = startFrame; 
@@ -1187,7 +1193,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         oldXOffset = xOffset;
         oldYOffset = yOffset;
 
-        dbprintf(4, "after swap (swap time was %0.5f ms)", previousSwapTime*1000.0); 
+        DEBUGMSG("after swap (swap time was %0.5f ms)", previousSwapTime*1000.0); 
         /* Advance to the next frame */
         if (playDirection) {
           /* Compute next frame number (+/- 1) */

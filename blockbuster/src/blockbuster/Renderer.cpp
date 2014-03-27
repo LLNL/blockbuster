@@ -439,6 +439,7 @@ void Renderer::SetFrameList(FrameListPtr frameList) {
    * clear everything out of the cache that's already in there.
    */
   mCache->ManageFrameList(frameList); 
+  mCache->HaveStereoRenderer(mStereo); 
   mFrameList = frameList; 
 }
 
