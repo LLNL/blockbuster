@@ -443,63 +443,6 @@ void Renderer::SetFrameList(FrameListPtr frameList) {
   mFrameList = frameList; 
 }
 
-// ======================================================================
-void Renderer::Preload(uint32_t frameNumber,
-                       const Rectangle *imageRegion, uint32_t levelOfDetail) {
-  /* code stolen from cache.cpp CachePreload() 
-     This is the appropriate code for all but DMX renderers. 
-  */ 
-  Rectangle lodROI;
-  uint32_t localFrameNumber = 0;
-  
-  /* Adjust ROI for LOD! (very important) */
-  lodROI.x = imageRegion->x >> levelOfDetail;
-  lodROI.y = imageRegion->y >> levelOfDetail;
-  lodROI.width = imageRegion->width >> levelOfDetail;
-  lodROI.height = imageRegion->height >> levelOfDetail;
-  
-  
-  if(mFrameList->mStereo) {
-    localFrameNumber = frameNumber * 2;
-    mCache->PreloadImage( localFrameNumber++,
-                          &lodROI, levelOfDetail);
-    mCache->PreloadImage(localFrameNumber,
-                         &lodROI, levelOfDetail);
-  }
-  else {
-    localFrameNumber = frameNumber;
-    mCache->PreloadImage(localFrameNumber,
-                         &lodROI, levelOfDetail);
-  }   
-  return; 
-}
-
-//=====================================================================
-/* 
-   Preload a length of frames
-   startFrame -- 
-*/ 
-void Renderer::Preload(uint32_t frameNumber, uint32_t preloadFrames, 
-                       int playDirection, 
-                       uint32_t minFrame, uint32_t maxFrame,
-                       const Rectangle *imageRegion, 
-                       uint32_t levelOfDetail) {
-  
-  uint32_t preloadmax = maxFrame-minFrame, 
-    frame=frameNumber, preloaded=0;
-  if (preloadmax > preloadFrames) {
-    preloadmax = preloadFrames;
-  }
-  while (preloaded++ < preloadmax) {
-    frame += playDirection; 
-    if (frame > maxFrame) frame = minFrame; 
-    if (frame < minFrame) frame = maxFrame; 
-    DEBUGMSG("Preload frame %d", frame); 
-    this->Preload(frame, imageRegion, levelOfDetail);
-  }
-  return; 
-}
-
 
 //=========================================================================
 // BEGIN stuff from Canvas: 

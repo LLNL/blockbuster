@@ -108,16 +108,6 @@ class Renderer {
  // ======================================================================
   virtual void SetFrameList(FrameListPtr frameList) ;
   
- // ======================================================================
-  // from Canvas class 
-  virtual void Preload(uint32_t frameNumber,
-                       const Rectangle *imageRegion, uint32_t levelOfDetail);
-
- // ======================================================================
-  // this calls Preload.  It's not overloaded for DMX therefore. 
-  void Preload(uint32_t frameNumber, uint32_t preloadFrames, 
-               int playDirection, uint32_t minFrame, uint32_t maxFrame,
-               const Rectangle *imageRegion, uint32_t levelOfDetail);
   
   /* Describes best image format for the Renderer.  The various FileFormat
    * modules will be told to give us images in this format; if they
