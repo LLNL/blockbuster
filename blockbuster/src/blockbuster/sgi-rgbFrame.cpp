@@ -222,7 +222,7 @@ int SGIFrameInfo::LoadImage(ImagePtr image,
   if (image->imageFormat.scanlineByteMultiple == 0)
     image->imageFormat.scanlineByteMultiple = 1;
   
-  /*  int rowWidth = ROUND_TO_MULTIPLE(image->width * 
+  /*  int rowWidth = ROUND_UP_TO_MULTIPLE(image->width * 
                                    image->imageFormat.bytesPerPixel,
                                    image->imageFormat.scanlineByteMultiple);
   

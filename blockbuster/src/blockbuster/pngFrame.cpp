@@ -148,7 +148,7 @@ int PNGFrameInfo::LoadImage(ImagePtr mImage,
 	byteOrder = requiredImageFormat->byteOrder;
   }
 
-  scanlineBytes = ROUND_TO_MULTIPLE(
+  scanlineBytes = ROUND_UP_TO_MULTIPLE(
                                     bytesPerPixel * mWidth,
                                     byteMultiple
                                     );

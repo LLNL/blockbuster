@@ -34,7 +34,7 @@ void UnregisterThread(QThread *qthreadptr);
    * "m".  It's often used in pixmap calculations, as it seems pixmaps often
    * have scanlines rounded up to a given multiple.
    */
-#define ROUND_TO_MULTIPLE(x,m) ((m)*((int)((x) + (m) - 1)/(m)))
+#define ROUND_UP_TO_MULTIPLE(x,m) (m*((int)((x) + (m) - 1)/m))
 
 //extern nonsense *blah; 
 extern BlockbusterInterface *gMainWindow; 

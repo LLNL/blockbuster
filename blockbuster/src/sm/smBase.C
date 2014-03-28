@@ -1272,7 +1272,7 @@ uint32_t smBase::readData(int fd, u_char *buf, int bytes) {
     int r=READ(fd, buf, remaining);
     if (!r) {
       SetError(str(boost::format("smBase::readData() error: read=%d remaining=%d, unsuccessful read, giving up")%r% remaining)); 
-      return bytes-remaining; 
+      return 0; 
     }
     if (r < 0) {
       if ((errno != EINTR) && (errno != EAGAIN)) {
@@ -1280,7 +1280,7 @@ uint32_t smBase::readData(int fd, u_char *buf, int bytes) {
         /* char	s[80];
            sprintf(s,"xmovie I/O error : r=%d k=%d: ",r, remaining);
            perror(s);*/
-        return -1;
+        return 0;
       }
     } else {
       buf+=r;
@@ -1317,17 +1317,17 @@ uint32_t smBase::readFrame(u_int f, int threadnum)
   u_char *buf = &(mThreadData[threadnum].io_buf[0]); 
   mThreadData[threadnum].currentFrame = f; 
   
-  int r = readData(fd, buf, size); 
-  if (r == -1) {
+  int bytesRead = readData(fd, buf, size); 
+  if (bytesRead == 0) {
     char buf[2048]; 
     SetError(str(boost::format("Error in readCompressedFrame  for frame %d: %s")% f% strerror(errno))); 
-    return r; 
+    return bytesRead; 
   }
-  if (r != size) {
-    SetError(str(boost::format("Error in readCompressedFrame  for frame %d: read %d bytes but expected %lu")% f% r% size));
+  if (bytesRead != size) {
+    SetError(str(boost::format("Error in readCompressedFrame  for frame %d: read %d bytes but expected %lu")% f% bytesRead % size));
   }
-  smdbprintf(5, "Done with readCompressedFrame, read %lu bytes\n", r); 
-  return r; 
+  smdbprintf(5, "Done with readCompressedFrame, read %lu bytes\n", bytesRead); 
+  return bytesRead; 
 }
 
 //!  Reads a tiled frame.  Does not decompress the data. Stores in internal buffers for later decompression etc.  
@@ -1345,7 +1345,8 @@ uint32_t smBase::readTiledFrame(u_int f, int *dim, int* pos, int res, int thread
   
   if (mErrorState) return -1; 
 
-  uint32_t bytesRead = 0; 
+  int32_t bytesRead = 0; 
+
   u_int readBufferOffset=0;
   smdbprintf(5,"readTiledFrame version 2, frame %d, thread %d", f, threadnum); 
   
@@ -1358,7 +1359,7 @@ uint32_t smBase::readTiledFrame(u_int f, int *dim, int* pos, int res, int thread
   }
   if (res > mNumResolutions-1) {
     SetError(str(boost::format("Error: requested resolution %d does not exist in movie")% res));
-    return -1;
+    return 0;
   }
     
   int nx = getTileNx(res);
@@ -1373,15 +1374,15 @@ uint32_t smBase::readTiledFrame(u_int f, int *dim, int* pos, int res, int thread
     int headerSize =  numTiles * sizeof(uint32_t);
     // read the tile sizes from frame header
 
-    int r=readData(fd, ioBuf, headerSize);
+    int32_t numbytes = readData(fd, ioBuf, headerSize);
 
     smdbprintf(5, "Read header, %lu bytes from offset %lu in file\n", 
                headerSize, frameOffset); 
-    if (r !=  headerSize) { // hmm -- assume we read it all, I guess... iffy?  
+    if (numbytes !=  headerSize) { // hmm -- assume we read it all, I guess... iffy?  
       char	s[40];
-      sprintf(s,"smBase::readTiledFrame I/O error : r=%d k=%d ",r,headerSize);
+      sprintf(s,"smBase::readTiledFrame I/O error : r=%d k=%d ",bytesRead,headerSize);
       perror(s);
-      exit(1); // !!! shit!  whatevs. 
+      return 0; // !!! shit!  whatevs. 
     }
     //byteswap(ioBuf, headerSize, sizeof(uint32_t)); 
 
@@ -1436,7 +1437,7 @@ uint32_t smBase::readTiledFrame(u_int f, int *dim, int* pos, int res, int thread
         smdbprintf(6, "after tile %d, stopByte=%lu\n", stopByte); 
       }
     }
-   
+    
     if (!stopTile) {
       smdbprintf(1, "Skipping read because no tiles are unread.\n"); 
       return 0; 
@@ -1458,21 +1459,21 @@ uint32_t smBase::readTiledFrame(u_int f, int *dim, int* pos, int res, int thread
       mThreadData[threadnum].tile_buf.resize(bytesNeeded); 
     }
     u_char *tile_buf_ptr =  &mThreadData[threadnum].tile_buf[0];
-    r = readData(fd, tile_buf_ptr, bytesNeeded);
-    if (r != bytesNeeded ) {
-      smdbprintf(0,"smBase::readTiledFrame I/O error thread %d, frame %d, r=%d bytesNeeded=%d, frameOffset=%Ld, firstByte = %Ld : marking all current unread tiles as corrupt and moving returning.",threadnum,f, r, bytesNeeded, frameOffset, firstByte);
+    numbytes = readData(fd, tile_buf_ptr, bytesNeeded);
+    if (numbytes != bytesNeeded ) {
+      smdbprintf(0,"smBase::readTiledFrame I/O error thread %d, frame %d, numbytes=%Ld bytesNeeded=%Ld, frameOffset=%Ld, firstByte = %Ld : marking all current unread tiles as corrupt and  returning 0.\n",threadnum,f, numbytes, bytesNeeded, frameOffset, firstByte);
       for(tileNum = firstTile; tileNum < stopTile ;  tileNum++) {
         tileInfo = &(mThreadData[threadnum].tile_infos[tileNum]);
         if(tileInfo->overlaps && ! tileInfo->cached) {
           tileInfo->skipCorruptFlag = 1;
         }
       }    
-      if (r>0) {
-        bytesRead += r; 
+      if (numbytes>0) {
+        bytesRead += numbytes; 
       }
-      return bytesRead; 
+      return 0; 
     }
-    bytesRead += r; 
+    bytesRead += numbytes; 
     
     // now walk through the tile buffer and  place the tiles in the buffer:
     for(tileNum = firstTile;  tileNum < stopTile;  tileNum++) {
@@ -1731,6 +1732,10 @@ uint32_t smBase::getFrameBlock(int frame, void *data, int threadnum,  int destRo
   else {
     bytesRead = readFrame(frame, threadnum);
   }
+  if (bytesRead == 0) {
+    return 0; 
+  }
+
   ioBuf = &(mThreadData[threadnum].io_buf[0]); 
   size = mFrameLengths[frame];
   tbuf = (u_char *)&(mThreadData[threadnum].tile_buf[0]);

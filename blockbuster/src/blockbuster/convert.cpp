@@ -123,11 +123,11 @@ ImagePtr ConvertImageToFormat( ImagePtr image, ImageFormat *canvasFormat)
   const int srcBytesPerPixel = srcFormat->bytesPerPixel;
   const int destBytesPerPixel = destFormat->bytesPerPixel;
 
-  const int srcBytesPerScanline = ROUND_TO_MULTIPLE(
+  const int srcBytesPerScanline = ROUND_UP_TO_MULTIPLE(
                                                     srcBytesPerPixel * image->width,
                                                     srcFormat->scanlineByteMultiple
                                                     );
-  const int destBytesPerScanline = ROUND_TO_MULTIPLE(
+  const int destBytesPerScanline = ROUND_UP_TO_MULTIPLE(
                                                      destBytesPerPixel * image->width,
                                                      destFormat->scanlineByteMultiple
                                                      );
@@ -225,11 +225,11 @@ ImagePtr ScaleImage( ImagePtr image, int srcX, int srcY,
 {
   const ImageFormat *format = &image->imageFormat;
   register int x, y, i;
-  const int bytesPerScanline = ROUND_TO_MULTIPLE(
+  const int bytesPerScanline = ROUND_UP_TO_MULTIPLE(
                                                  format->bytesPerPixel * image->width,
                                                  format->scanlineByteMultiple
                                                  );
-  const int zoomedBytesPerScanline = ROUND_TO_MULTIPLE(
+  const int zoomedBytesPerScanline = ROUND_UP_TO_MULTIPLE(
                                                        format->bytesPerPixel * zoomedWidth,
                                                        format->scanlineByteMultiple
                                                        );

@@ -60,7 +60,7 @@ int TiffFrameInfo::RGBALoadImage(ImagePtr image,
   /* Calculate how much image data we need. */
   extraBytesPerPixel = requiredImageFormat->bytesPerPixel - 3;
   scanlineBytes = 
-    ROUND_TO_MULTIPLE(requiredImageFormat->bytesPerPixel * mWidth,
+    ROUND_UP_TO_MULTIPLE(requiredImageFormat->bytesPerPixel * mWidth,
                       requiredImageFormat->scanlineByteMultiple );
 
   extraBytesPerScanline = scanlineBytes - 
@@ -198,7 +198,7 @@ TiffFrameInfo::Color24LoadImage(ImagePtr image,
 
   /* Calculate how much image data we need. */
   extraBytesPerPixel = requiredImageFormat->bytesPerPixel - 3;
-  scanlineBytes = ROUND_TO_MULTIPLE(
+  scanlineBytes = ROUND_UP_TO_MULTIPLE(
                                     requiredImageFormat->bytesPerPixel * mWidth,
                                     requiredImageFormat->scanlineByteMultiple
                                     );

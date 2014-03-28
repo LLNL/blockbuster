@@ -89,11 +89,11 @@ ImagePtr x11Renderer::ScaleImage( ImagePtr image, int srcX, int srcY,
 {
   const ImageFormat *format = &image->imageFormat;
   register int x, y, i;
-  const int bytesPerScanline = ROUND_TO_MULTIPLE(
+  const int bytesPerScanline = ROUND_UP_TO_MULTIPLE(
                                                  format->bytesPerPixel * image->width,
                                                  format->scanlineByteMultiple
                                                  );
-  const int zoomedBytesPerScanline = ROUND_TO_MULTIPLE(
+  const int zoomedBytesPerScanline = ROUND_UP_TO_MULTIPLE(
                                                        format->bytesPerPixel * zoomedWidth,
                                                        format->scanlineByteMultiple
                                                        );
@@ -244,7 +244,7 @@ void x11Renderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
    * Create an XImage for the imageRegion.
    */
   /* Compute row stride and start address of sub-region */
-  stride = ROUND_TO_MULTIPLE(image->width
+  stride = ROUND_UP_TO_MULTIPLE(image->width
                              * image->imageFormat.bytesPerPixel, 4);
   if (zoom == 1.0) {
     start = (char*)image->Data() + region.y * stride

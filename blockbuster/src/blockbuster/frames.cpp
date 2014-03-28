@@ -159,11 +159,11 @@ ImagePtr FrameInfo::ConvertImageToFormat( ImagePtr image, ImageFormat *canvasFor
   const int srcBytesPerPixel = srcFormat->bytesPerPixel;
   const int destBytesPerPixel = destFormat->bytesPerPixel;
 
-  const int srcBytesPerScanline = ROUND_TO_MULTIPLE(
+  const int srcBytesPerScanline = ROUND_UP_TO_MULTIPLE(
                                                     srcBytesPerPixel * image->width,
                                                     srcFormat->scanlineByteMultiple
                                                     );
-  const int destBytesPerScanline = ROUND_TO_MULTIPLE(
+  const int destBytesPerScanline = ROUND_UP_TO_MULTIPLE(
                                                      destBytesPerPixel * image->width,
                                                      destFormat->scanlineByteMultiple
                                                      );

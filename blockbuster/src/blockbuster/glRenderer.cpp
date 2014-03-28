@@ -168,25 +168,25 @@ void glRenderer::RenderActual(int frameNumber,
   {
     int rr;
 
-    rr = ROUND_TO_MULTIPLE(imageRegion->x,lodScale);
+    rr = ROUND_UP_TO_MULTIPLE(imageRegion->x,lodScale);
     if(rr > imageRegion->x) {
       region.x = rr - lodScale;
     }
     region.x /= lodScale;
    
-    rr = ROUND_TO_MULTIPLE(imageRegion->y,lodScale);
+    rr = ROUND_UP_TO_MULTIPLE(imageRegion->y,lodScale);
     if(rr > imageRegion->y) {
       region.y = rr - lodScale;
     }
     region.y /= lodScale;
 
-    rr = ROUND_TO_MULTIPLE(imageRegion->width,lodScale);
+    rr = ROUND_UP_TO_MULTIPLE(imageRegion->width,lodScale);
     if(rr > imageRegion->width) {
       region.width = rr - lodScale;
     }
     region.width /= lodScale;
 
-    rr = ROUND_TO_MULTIPLE(imageRegion->height,lodScale);
+    rr = ROUND_UP_TO_MULTIPLE(imageRegion->height,lodScale);
     if(rr > imageRegion->height) {
       region.height = rr - lodScale;
     }
@@ -307,8 +307,6 @@ void glStereoRenderer::RenderActual(int frameNumber,
   int localFrameNumber;
   Rectangle region = *imageRegion;
   int saveSkip;
-  int saveDestX;
-  int saveDestY;
   
   RENDERDEBUG("glStereoRenderer::RenderActual begin, frame %d, %d x %d  at %d, %d  zoom=%f  lod=%d", 
            frameNumber,
@@ -334,25 +332,25 @@ void glStereoRenderer::RenderActual(int frameNumber,
   {
     int rr;
 
-    rr = ROUND_TO_MULTIPLE(imageRegion->x,lodScale);
+    rr = ROUND_UP_TO_MULTIPLE(imageRegion->x,lodScale);
     if(rr > imageRegion->x) {
       region.x = rr - lodScale;
     }
     region.x /= lodScale;
    
-    rr = ROUND_TO_MULTIPLE(imageRegion->y,lodScale);
+    rr = ROUND_UP_TO_MULTIPLE(imageRegion->y,lodScale);
     if(rr > imageRegion->y) {
       region.y = rr - lodScale;
     }
     region.y /= lodScale;
 
-    rr = ROUND_TO_MULTIPLE(imageRegion->width,lodScale);
+    rr = ROUND_UP_TO_MULTIPLE(imageRegion->width,lodScale);
     if(rr > imageRegion->width) {
       region.width = rr - lodScale;
     }
     region.width /= lodScale;
 
-    rr = ROUND_TO_MULTIPLE(imageRegion->height,lodScale);
+    rr = ROUND_UP_TO_MULTIPLE(imageRegion->height,lodScale);
     if(rr > imageRegion->height) {
       region.height = rr - lodScale;
     }
@@ -385,9 +383,6 @@ void glStereoRenderer::RenderActual(int frameNumber,
     }
   }
   saveSkip =  leftimage->height - (region.y + region.height);
-  saveDestX = destX;
-  saveDestY = destY;
- 
 
   bb_assert(region.x >= 0);
   bb_assert(region.y >= 0);
@@ -398,9 +393,14 @@ void glStereoRenderer::RenderActual(int frameNumber,
 
 
   /* only clear the window if we have to */
+  bool needClear = false; 
   if (destX > 0 || destY > 0 ||
       region.width * zoom < mWidth ||
       region.height * zoom < mHeight) {
+    needClear = true; 
+  }
+
+  if  (needClear) {
     glClearColor(0.0, 0.0, 0.0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
   }
@@ -452,10 +452,7 @@ void glStereoRenderer::RenderActual(int frameNumber,
    
     glViewport(0, 0, mWidth, mHeight);
     
-    /* only clear the window if we have to */
-    if (saveDestX > 0 || saveDestY > 0 ||
-        region.width * zoom < mWidth ||
-        region.height * zoom < mHeight) {
+    if (needClear) {
       glClearColor(0.0, 0.0, 0.0, 0);
       glClear(GL_COLOR_BUFFER_BIT);
     }
@@ -640,9 +637,9 @@ void glTextureRenderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
               imageRegion->width, imageRegion->height,
               destX, destY, zoom, lod);
   
-  if (glXMakeCurrent(mDisplay, mWindow, context) == False) {
+  /*   if (glXMakeCurrent(mDisplay, mWindow, context) == False) {
     WARNING("couldn't make graphics context current before rendering");
-  }
+    }*/ 
   
   UpdateProjectionAndViewport(mWidth, mHeight);
   glEnable(GL_TEXTURE_2D);

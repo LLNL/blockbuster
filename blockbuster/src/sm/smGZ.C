@@ -75,7 +75,7 @@ bool smGZ::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
 
    err = inflateInit(&stream);
    if (err != Z_OK) {
-     smdbprintf(0,"GZ decompression init error: %d\n",err);
+     smdbprintf(0,"GZ decompression init error: %d (%s)\n",err,stream.msg);
       return false;
    }
 
@@ -83,13 +83,13 @@ bool smGZ::decompBlock(u_char *cdata,u_char *image,int size,int *dim)
       err = inflate(&stream, Z_NO_FLUSH);
    }
    if (err != Z_STREAM_END) {
-     smdbprintf(0,"GZ decompression error: %d\n",err);
+     smdbprintf(0,"GZ decompression error: %d (%s)\n",err,stream.msg);
       return false;
    }
 
    err = inflateEnd(&stream);
    if (err != Z_OK) {
-      smdbprintf(0,"GZ decompression end error: %d\n",err);
+      smdbprintf(0,"GZ decompression end error: %d (%s)\n",err,stream.msg);
       return false;
    }
    smcerr << "decoded " << stream.total_out << " bytes" << endl; 
