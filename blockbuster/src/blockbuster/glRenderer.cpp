@@ -42,7 +42,6 @@ void glRenderer::FinishRendererInit(void) {
   unsigned int first = mFontInfo->min_char_or_byte2;
   unsigned int last = mFontInfo->max_char_or_byte2;
    
-  /* All GL rendering in X11 requires a glX context. */
   mContext = glXCreateContext(mDisplay, mVisualInfo,
                              NULL, GL_TRUE);
   if (!mContext) {
@@ -50,21 +49,7 @@ void glRenderer::FinishRendererInit(void) {
     return ;
   }
   
-  /* if (mStereoVisualInfo) {
-    mStereoContext = glXCreateContext(mDisplay, mStereoVisualInfo,
-                                      NULL, GL_TRUE);
-    if (!mStereoContext) {
-      cerr << "Warning:  could not create stereo context" << endl; 
-      mStereoVisualInfo = NULL; 
-      mHaveStereo = false; 
-      mDoStereo = false; 
-    }
-  }
-  if (mHaveStereo) {
-    rv = glXMakeCurrent(mDisplay, mWindow, mStereoContext);
-    } else { */
   rv = glXMakeCurrent(mDisplay, mWindow, mContext);
-  //   }
   if (rv == False) {
     ERROR("couldn't make graphics context current");
     glXDestroyContext(mDisplay, mContext);
@@ -84,15 +69,13 @@ void glRenderer::FinishRendererInit(void) {
   glXUseXFont(id, first, last - first + 1, fontBase + first);
   glListBase(fontBase);
 
-  /* Specify our required format.  For OpenGL, always assume we're
-   * getting 24-bit RGB pixels.
-   */
+  // Specify our required format. Assume we're getting 24-bit RGB pixels.  
   mRequiredImageFormat.scanlineByteMultiple = 1;
   mRequiredImageFormat.rowOrder = ROW_ORDER_DONT_CARE;
   mRequiredImageFormat.byteOrder = MSB_FIRST;
   mRequiredImageFormat.bytesPerPixel = 3;
 
-
+  // eliminate features that potentially could slow us down 
   glDisable(GL_ALPHA_TEST);
   glDisable(GL_BLEND);
   glDisable(GL_DEPTH_TEST);
