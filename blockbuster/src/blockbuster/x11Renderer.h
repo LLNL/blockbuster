@@ -34,8 +34,8 @@ class x11Renderer: public Renderer {
   virtual void FinishRendererInit(void);
 
   int ComputeShift(unsigned long mask);
-  virtual XVisualInfo *ChooseVisual(void) {
-    return NULL; // does not apply to X11
+  void ChooseVisual(void) {
+    return ; // does not apply to X11
   }
  
   ImagePtr ScaleImage(ImagePtr image, 

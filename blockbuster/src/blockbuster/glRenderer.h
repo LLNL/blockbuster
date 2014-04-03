@@ -18,55 +18,47 @@ class glRenderer: public Renderer {
     
     //======================================================================
     virtual ~glRenderer() {
-      glXDestroyContext(mDisplay, context);
+      glXDestroyContext(mDisplay, mContext);
       return; 
     }
 
-
-  // ======================================================================
-    virtual void BeginRendererInit(void) {
-      return; 
-    }
 
   // ======================================================================
   virtual void FinishRendererInit(void);
 
-  virtual XVisualInfo *ChooseVisual(void);  
+  // ======================================================================
+  virtual void DoStereo(bool tf);
+
+ // ======================================================================
+  //virtual void SetFrameList(FrameListPtr frameList) ;
+  
+  // ======================================================================
+  virtual void ChooseVisual(void);  
+
+  // ======================================================================
   virtual void DrawString(int row, int column, const char *str);
 
   virtual void RenderActual(int frameNumber,
                             RectanglePtr imageRegion,
-                            int destX, int destY, float zoom, int lod);  
+                            int destX, int destY, float zoom, int lod); 
+
+  void RenderStereo(int frameNumber,
+                    RectanglePtr imageRegion,
+                    int destX, int destY, float zoom, int lod); 
+
   virtual void SwapBuffers(void);
    
   bool mXSynchronize; // for debugging, presumably. 
 
   // from WindowInfo struct in xwindow.cpp  
-  GLXContext context;
+  GLboolean mHaveStereo; 
+  XVisualInfo *mStereoVisualInfo;
+  GLXContext mContext, mStereoContext;
   GLuint fontBase;
   vector<float> timeSamples; 
 } ;
 
-// ==================================================================
-// glStereoRenderer
-// ==================================================================
-class glStereoRenderer: public glRenderer {
- public:
-  glStereoRenderer(ProgramOptions *opt):
-    glRenderer(opt) {
-    mName = "gl_stereo";  
-    mStereo = true; 
-    return; 
-  }
-  virtual ~glStereoRenderer() {}
 
-
-  virtual XVisualInfo *ChooseVisual(void);
-  // ======================================================================
-   void RenderActual(int frameNumber,  RectanglePtr imageRegion,
-              int destX, int destY, float zoom, int lod);
-
-};
 
 // ==================================================================
 // glTextureRenderer

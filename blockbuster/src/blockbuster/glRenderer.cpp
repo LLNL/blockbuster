@@ -43,27 +43,41 @@ void glRenderer::FinishRendererInit(void) {
   unsigned int last = mFontInfo->max_char_or_byte2;
    
   /* All GL rendering in X11 requires a glX context. */
-  context = glXCreateContext(mDisplay, mVisInfo,
+  mContext = glXCreateContext(mDisplay, mVisualInfo,
                              NULL, GL_TRUE);
-  if (!context) {
+  if (!mContext) {
     ERROR("couldn't create GLX context");
     return ;
   }
   
-  rv = glXMakeCurrent(mDisplay, mWindow, context);
+  /* if (mStereoVisualInfo) {
+    mStereoContext = glXCreateContext(mDisplay, mStereoVisualInfo,
+                                      NULL, GL_TRUE);
+    if (!mStereoContext) {
+      cerr << "Warning:  could not create stereo context" << endl; 
+      mStereoVisualInfo = NULL; 
+      mHaveStereo = false; 
+      mDoStereo = false; 
+    }
+  }
+  if (mHaveStereo) {
+    rv = glXMakeCurrent(mDisplay, mWindow, mStereoContext);
+    } else { */
+  rv = glXMakeCurrent(mDisplay, mWindow, mContext);
+  //   }
   if (rv == False) {
     ERROR("couldn't make graphics context current");
-    glXDestroyContext(mDisplay, context);
+    glXDestroyContext(mDisplay, mContext);
     return ;
   }
   
-  DEBUGMSG("GL_RENDERER = %s", (char *) glGetString(GL_RENDERER));
+  dbprintf(2, "GL_RENDERER = %s\n", (char *) glGetString(GL_RENDERER));
   
   /* OpenGL display list font bitmaps */
   fontBase = glGenLists((GLuint) last + 1);
   if (!fontBase) {
     ERROR("Unable to allocate display lists for fonts");
-    glXDestroyContext(mDisplay, context);
+    glXDestroyContext(mDisplay, mContext);
     return ;
   }
   
@@ -102,25 +116,60 @@ void glRenderer::FinishRendererInit(void) {
   return; 
 }
 
+// ======================================================================
+void glRenderer::DoStereo(bool doStereo) {  
+  if (doStereo) {
+    if (!mHaveStereo) {
+      WARNING("Request to do stereo not supported by current graphics context."); 
+      doStereo = false;   
+    }
+    if (mFrameList && !mFrameList->mStereo) {
+      WARNING("Stereo cannot be enabled in a non-stereo movie"); 
+      doStereo = false; 
+    }
+  }
+  if (doStereo != mDoStereo) {
+    if (doStereo) {
+      dbprintf(1, "Enabling Stereo\n"); 
+    } else {
+      dbprintf(1, "Disabling Stereo\n"); 
+    }
+    mDoStereo = doStereo; 
+    ReportStereoChange(doStereo); 
+  }
+  return; 
+}  
+
 
 //=============================================================
-XVisualInfo *glRenderer::ChooseVisual(void)
+void glRenderer::ChooseVisual(void)
 {
-  DEBUGMSG("glChooseVisual (no stereo)"); 
+  DEBUGMSG("glChooseVisual"); 
   static int attributes[] = {
     GLX_USE_GL, GLX_RGBA, GLX_DOUBLEBUFFER,
     GLX_RED_SIZE, 1, GLX_GREEN_SIZE, 1, GLX_BLUE_SIZE, 1,
     None
+  }, stereoAttributes[] = {
+    GLX_USE_GL, GLX_RGBA, GLX_DOUBLEBUFFER, GLX_STEREO,
+    GLX_RED_SIZE, 1, GLX_GREEN_SIZE, 1, GLX_BLUE_SIZE, 1,
+    None
   };
-  XVisualInfo *visualInfo;
-  
-  visualInfo = glXChooseVisual(mDisplay, mScreenNumber, attributes);
-  if (visualInfo == NULL) {
-    ERROR("cannot find a GLX visual on %s to create new OpenGL window",
-          DisplayString(mDisplay));
-    return NULL;
+  // mVisualInfo = glXChooseVisual(mDisplay, mScreenNumber, attributes);
+  mHaveStereo = true; 
+  mVisualInfo = glXChooseVisual(mDisplay, mScreenNumber, stereoAttributes);
+  if (mVisualInfo == NULL) {
+    cerr << "Warning: could not create stereo visual on display" << endl; 
+    mDoStereo = false; 
+    mHaveStereo = false; 
+    mVisualInfo = glXChooseVisual(mDisplay, mScreenNumber, attributes);
+    if (!mVisualInfo) {
+      ERROR("cannot find a GLX visual on %s to create new OpenGL window",
+            DisplayString(mDisplay));
+      exit(1); 
+    }
   }
-  return visualInfo;
+  return; 
+
 }
 
 //=============================================================
@@ -137,6 +186,7 @@ void glRenderer::DrawString(int row, int column, const char *str)
 
 #define RENDERDEBUG DEBUGMSG
 //=============================================================
+
 void glRenderer::RenderActual(int frameNumber, 
                               RectanglePtr imageRegion,
                               int destX, int destY, float zoom, int lod){
@@ -154,8 +204,15 @@ void glRenderer::RenderActual(int frameNumber,
   /*
    * Compute possibly reduced-resolution image region to display.
    */
+  if (mDoStereo) {
+    glDrawBuffer(GL_BACK_LEFT);
+  } else {
+    // Draw to both left & right back buffers at same time
+    glDrawBuffer(GL_BACK); 
+  }
+    
   if (mFrameList->mStereo) {
-    localFrameNumber = frameNumber *2; /* we'll display left frame only */
+    localFrameNumber = frameNumber *2; 
   }
   else {
     localFrameNumber = frameNumber;
@@ -165,62 +222,72 @@ void glRenderer::RenderActual(int frameNumber,
   lodScale = 1 << lod;
 
  
-  {
-    int rr;
-
-    rr = ROUND_UP_TO_MULTIPLE(imageRegion->x,lodScale);
-    if(rr > imageRegion->x) {
-      region.x = rr - lodScale;
-    }
-    region.x /= lodScale;
-   
-    rr = ROUND_UP_TO_MULTIPLE(imageRegion->y,lodScale);
-    if(rr > imageRegion->y) {
-      region.y = rr - lodScale;
-    }
-    region.y /= lodScale;
-
-    rr = ROUND_UP_TO_MULTIPLE(imageRegion->width,lodScale);
-    if(rr > imageRegion->width) {
-      region.width = rr - lodScale;
-    }
-    region.width /= lodScale;
-
-    rr = ROUND_UP_TO_MULTIPLE(imageRegion->height,lodScale);
-    if(rr > imageRegion->height) {
-      region.height = rr - lodScale;
-    }
-
-    region.height /= lodScale;
+  int rr = ROUND_UP_TO_MULTIPLE(imageRegion->x,lodScale);
+  if(rr > imageRegion->x) {
+    region.x = rr - lodScale;
+  }
+  region.x /= lodScale;
+  
+  rr = ROUND_UP_TO_MULTIPLE(imageRegion->y,lodScale);
+  if(rr > imageRegion->y) {
+    region.y = rr - lodScale;
+  }
+  region.y /= lodScale;
+  
+  rr = ROUND_UP_TO_MULTIPLE(imageRegion->width,lodScale);
+  if(rr > imageRegion->width) {
+    region.width = rr - lodScale;
+  }
+  region.width /= lodScale;
+  
+  rr = ROUND_UP_TO_MULTIPLE(imageRegion->height,lodScale);
+  if(rr > imageRegion->height) {
+    region.height = rr - lodScale;
   }
   
+  region.height /= lodScale;
+
   zoom *= (float) lodScale;
 
 
   RENDERDEBUG("glRenderer::RenderActual Pull the image from our cache "); 
-  ImagePtr image =  mCache->GetImage(localFrameNumber, &region, lod, true);
-  RENDERDEBUG("Got image"); 
+  ImagePtr image =  mCache->GetImage(localFrameNumber, &region, lod, true), 
+    rightimage;
   if (!image) {
     /* error has already been reported */
     return;
   }
+  RENDERDEBUG("Got image"); 
+
+  if(mDoStereo) {
+    /* Pull the right hand image from our cache */
+    localFrameNumber++;
+    RENDERDEBUG("glStereoRenderer::RenderActual Pull the right buffer image from our cache "); 
+    rightimage = mCache->GetImage(localFrameNumber, &region, lod, false);
+    RENDERDEBUG("Got right buffer image"); 
+    if (rightimage == NULL) {
+      /* error has already been reported */
+      return;
+    }
+  } else {
+    rightimage = image; 
+  }
 
   saveSkip =  image->height - (region.y + region.height);
  
-
   bb_assert(region.x >= 0);
   bb_assert(region.y >= 0);
-  /*bb_assert(region.x + region.width <= image->width); */
-  /*bb_assert(region.y + region.height <= image->height);*/
 
   glViewport(0, 0, mWidth, mHeight);
   RENDERDEBUG("done with glViewport"); 
 
 
   /* only clear the window if we have to */
+  bool needClear = false; 
   if (destX > 0 || destY > 0 ||
       region.width * zoom < mWidth ||
       region.height * zoom < mHeight) {
+    needClear = true; 
     glClearColor(0.0, 0.0, 0.0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
   }
@@ -281,8 +348,50 @@ void glRenderer::RenderActual(int frameNumber,
   // move the raster position back to 0,0
   glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
   RENDERDEBUG("Done with glBitmap"); 
-  //  glRasterPos2i(0,0); 
-  
+
+  if (mDoStereo) {
+      glDrawBuffer(GL_BACK_RIGHT);
+            
+      glViewport(0, 0, mWidth, mHeight);
+      
+      if (mFrameList->mStereo && needClear) {
+        glClearColor(0.0, 0.0, 0.0, 0);
+        glClear(GL_COLOR_BUFFER_BIT);
+      }
+      
+      
+      if (rightimage->imageFormat.rowOrder == BOTTOM_TO_TOP) {
+        
+        glPixelZoom(zoom, zoom);
+        
+      }
+      else {
+        
+        DEBUGMSG("Image order is %d\n", rightimage->imageFormat.rowOrder); 
+        /* RasterPos is (0,0).  Offset it by (destX, destY) */
+        glPixelZoom(zoom, -zoom);
+      }
+      
+      glBitmap(0, 0, 0, 0, destX, destY, NULL);
+      glPixelStorei(GL_UNPACK_ROW_LENGTH, rightimage->width);
+      glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
+      glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
+      glPixelStorei(GL_UNPACK_ALIGNMENT, 
+                    mRequiredImageFormat.scanlineByteMultiple);
+      RENDERDEBUG("Rendering right image to right buffer "); 
+      glDrawPixels(region.width, region.height,
+                   GL_RGB, GL_UNSIGNED_BYTE,
+                   rightimage->Data());
+      RENDERDEBUG("Done with glDrawPixels for right buffer "); 
+      
+      /* Offset raster pos by (-destX, -destY) to put it back to (0,0) */
+      glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
+      RENDERDEBUG("Done with glBitmap for right buffer"); 
+      
+    }
+    else {
+      RENDERDEBUG("Not rendering to right buffer"); 
+    }
 #ifdef RENDER_TIMING
   t2 = GetExactSecondsDouble(); 
   timeSamples.push_back(t2-t1); 
@@ -295,223 +404,6 @@ void glRenderer::RenderActual(int frameNumber,
 void glRenderer::SwapBuffers(void) {
   glXSwapBuffers(mDisplay, mWindow);
   return; 
-}
-
-
-//***********************************************************************
-void glStereoRenderer::RenderActual(int frameNumber,
-                                    RectanglePtr imageRegion,
-                                    int destX, int destY, float zoom, int lod)
-{
-  int lodScale;
-  int localFrameNumber;
-  Rectangle region = *imageRegion;
-  int saveSkip;
-  
-  RENDERDEBUG("glStereoRenderer::RenderActual begin, frame %d, %d x %d  at %d, %d  zoom=%f  lod=%d", 
-           frameNumber,
-           imageRegion->width, imageRegion->height,
-           imageRegion->x, imageRegion->y, zoom, lod);
-  
-  /*
-   * Compute possibly reduced-resolution image region to display.
-   */
- 
-  if (mFrameList->mStereo) {
-    localFrameNumber = frameNumber *2; 
-    /* start with left frame*/
-    glDrawBuffer(GL_BACK_LEFT);
-  }
-  else {
-    localFrameNumber = frameNumber;
-  }
-
-  
-  lodScale = 1 << lod;
-
-  {
-    int rr;
-
-    rr = ROUND_UP_TO_MULTIPLE(imageRegion->x,lodScale);
-    if(rr > imageRegion->x) {
-      region.x = rr - lodScale;
-    }
-    region.x /= lodScale;
-   
-    rr = ROUND_UP_TO_MULTIPLE(imageRegion->y,lodScale);
-    if(rr > imageRegion->y) {
-      region.y = rr - lodScale;
-    }
-    region.y /= lodScale;
-
-    rr = ROUND_UP_TO_MULTIPLE(imageRegion->width,lodScale);
-    if(rr > imageRegion->width) {
-      region.width = rr - lodScale;
-    }
-    region.width /= lodScale;
-
-    rr = ROUND_UP_TO_MULTIPLE(imageRegion->height,lodScale);
-    if(rr > imageRegion->height) {
-      region.height = rr - lodScale;
-    }
-    region.height /= lodScale;
-  }
-  
-  zoom *= (float) lodScale;
-
-  /* Pull the image from our cache */
-  RENDERDEBUG("glStereoRenderer::RenderActual Pull the left image from our cache "); 
-
-  ImagePtr leftimage = mCache->GetImage(localFrameNumber, &region, lod, true), 
-    rightimage;
-  RENDERDEBUG("Got image"); 
-
-  if (!leftimage) {
-    /* error has already been reported */
-    return;
-  }
-
-  if(mFrameList->mStereo) {
-    /* Pull the image from our cache */
-    localFrameNumber++;
-    RENDERDEBUG("glStereoRenderer::RenderActual Pull the right buffer image from our cache "); 
-    rightimage = mCache->GetImage(localFrameNumber, &region, lod, false);
-    RENDERDEBUG("Got right buffer image"); 
-    if (rightimage == NULL) {
-      /* error has already been reported */
-      return;
-    }
-  }
-  saveSkip =  leftimage->height - (region.y + region.height);
-
-  bb_assert(region.x >= 0);
-  bb_assert(region.y >= 0);
-  /*bb_assert(region.x + region.width <= leftimage->width);*/
-  /*bb_assert(region.y + region.height <= leftimage->height);*/
-
-  glViewport(0, 0, mWidth, mHeight);
-
-
-  /* only clear the window if we have to */
-  bool needClear = false; 
-  if (destX > 0 || destY > 0 ||
-      region.width * zoom < mWidth ||
-      region.height * zoom < mHeight) {
-    needClear = true; 
-  }
-
-  if  (needClear) {
-    glClearColor(0.0, 0.0, 0.0, 0);
-    glClear(GL_COLOR_BUFFER_BIT);
-  }
-
-  if (leftimage->imageFormat.rowOrder == BOTTOM_TO_TOP) {
-    /*
-     * Do adjustments to flip Y axis.
-     * Yes, this is tricky to understand.
-     * And we're not going to help you. 
-     */
-    destY = mHeight - static_cast<int32_t>((leftimage->height * zoom + destY)) + static_cast<int32_t>(region.y * zoom);
-    if (destY < 0) {
-      region.y = static_cast<int32_t>(-destY / zoom);
-      destY = 0;
-    }
-    else {
-      region.y = 0;
-    }
-    /* RasterPos is (0,0).  Offset it by (destX, destY) */
-    
-    DEBUGMSG("BOTTOM_TO_TOP: glDrawPixels(%d, %d, GL_RGB, GL_UNSIGNED_BYTE, data)\n",  region.width, region.height); 
-    glPixelZoom(zoom, zoom);
-  }
-  else {
-    DEBUGMSG("TOP_TO_BOTTOM: glDrawPixels(%d, %d, GL_RGB, GL_UNSIGNED_BYTE, data)\n",   region.width, region.height); 
-    destY = mHeight - destY - 1;
-    /* RasterPos is (0,0).  Offset it by (destX, destY) */
-    glPixelZoom(zoom, -zoom);
-  }
-  glBitmap(0, 0, 0, 0, destX, destY, NULL);
-  glPixelStorei(GL_UNPACK_ROW_LENGTH, leftimage->width);
-  glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
-  glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 
-                mRequiredImageFormat.scanlineByteMultiple);
-  glDrawPixels(region.width, region.height,
-               GL_RGB, GL_UNSIGNED_BYTE,
-               leftimage->Data());
-  RENDERDEBUG("Done with left buffer glDrawPixels"); 
-  
-  /* Offset raster pos by (-destX, -destY) to put it back to (0,0) */
-  glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
-  RENDERDEBUG("Done with left buffer glBitmap"); 
-  
-    
-  if(mFrameList->mStereo) {
-    glDrawBuffer(GL_BACK_RIGHT);
-    
-   
-    glViewport(0, 0, mWidth, mHeight);
-    
-    if (needClear) {
-      glClearColor(0.0, 0.0, 0.0, 0);
-      glClear(GL_COLOR_BUFFER_BIT);
-    }
-    
-    
-    if (rightimage->imageFormat.rowOrder == BOTTOM_TO_TOP) {
-      
-      glPixelZoom(zoom, zoom);
-      
-    }
-    else {
-      
-      DEBUGMSG("Image order is %d\n", rightimage->imageFormat.rowOrder); 
-      /* RasterPos is (0,0).  Offset it by (destX, destY) */
-      glPixelZoom(zoom, -zoom);
-    }
-    
-    glBitmap(0, 0, 0, 0, destX, destY, NULL);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, rightimage->width);
-    glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
-    glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 
-                  mRequiredImageFormat.scanlineByteMultiple);
-    glDrawPixels(region.width, region.height,
-                 GL_RGB, GL_UNSIGNED_BYTE,
-                 rightimage->Data());
-    RENDERDEBUG("Done with glDrawPixels for right buffer "); 
-    
-    /* Offset raster pos by (-destX, -destY) to put it back to (0,0) */
-    glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
-    RENDERDEBUG("Done with glBitmap for right buffer"); 
-    
-  }
-  
-  RENDERDEBUG("glStereoRenderer::RenderActual end"); 
-  return; 
-  
-}
-//===========================================================
-// glStereoRenderer
-// ==========================================================
-XVisualInfo *glStereoRenderer::ChooseVisual(void)
-{
-  DEBUGMSG("glStereoChooseVisual"); 
-  static int attributes[] = {
-    GLX_USE_GL, GLX_RGBA, GLX_DOUBLEBUFFER, GLX_STEREO,
-    GLX_RED_SIZE, 1, GLX_GREEN_SIZE, 1, GLX_BLUE_SIZE, 1,
-    None
-  };
-  XVisualInfo *visualInfo;
-  
-  visualInfo = glXChooseVisual(mDisplay, mScreenNumber, attributes);
-  if (visualInfo == NULL) {
-    ERROR("cannot find a GLX stereo visual on %s to create new OpenGL window",
-          DisplayString(mDisplay));
-    return NULL;
-  }
-  
-  return visualInfo;
 }
 
 

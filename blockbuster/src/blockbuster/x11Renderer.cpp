@@ -39,10 +39,10 @@ void x11Renderer::FinishRendererInit(void) {
   /* Specify our required format.  Note that 24-bit X11 images require
    * *4* bytes per pixel, not 3.
    */
-  if (mVisInfo->depth > 16) {
+  if (mVisualInfo->depth > 16) {
     mRequiredImageFormat.bytesPerPixel = 4;
   }
-  else if (mVisInfo->depth > 8) {
+  else if (mVisualInfo->depth > 8) {
     mRequiredImageFormat.bytesPerPixel = 2;
   }
   else {
@@ -53,12 +53,12 @@ void x11Renderer::FinishRendererInit(void) {
   /* If the bytesPerPixel value is 3 or 4, we don't need these;
    * but we'll put them in anyway.
    */
-  mRequiredImageFormat.redShift = ComputeShift(mVisInfo->visual->red_mask) - 8;
-  mRequiredImageFormat.greenShift = ComputeShift(mVisInfo->visual->green_mask) - 8;
-  mRequiredImageFormat.blueShift = ComputeShift(mVisInfo->visual->blue_mask) - 8;
-  mRequiredImageFormat.redMask = mVisInfo->visual->red_mask;
-  mRequiredImageFormat.greenMask = mVisInfo->visual->green_mask;
-  mRequiredImageFormat.blueMask = mVisInfo->visual->blue_mask;
+  mRequiredImageFormat.redShift = ComputeShift(mVisualInfo->visual->red_mask) - 8;
+  mRequiredImageFormat.greenShift = ComputeShift(mVisualInfo->visual->green_mask) - 8;
+  mRequiredImageFormat.blueShift = ComputeShift(mVisualInfo->visual->blue_mask) - 8;
+  mRequiredImageFormat.redMask = mVisualInfo->visual->red_mask;
+  mRequiredImageFormat.greenMask = mVisualInfo->visual->green_mask;
+  mRequiredImageFormat.blueMask = mVisualInfo->visual->blue_mask;
   mRequiredImageFormat.byteOrder = ImageByteOrder(mDisplay);
   mRequiredImageFormat.rowOrder = TOP_TO_BOTTOM;
   
@@ -256,8 +256,8 @@ void x11Renderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
   }
   
   xImage = XCreateImage(mDisplay,
-                        mVisInfo->visual,
-                        mVisInfo->depth,
+                        mVisualInfo->visual,
+                        mVisualInfo->depth,
                         ZPixmap,
                         0, /* no offset to the image data */
                         start,

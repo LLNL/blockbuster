@@ -1,0 +1,59 @@
+glRenderers:  There are three flavors, gl, glTexture, and glStereo
+
+INITIALIZATION:
+
+-------------------------------------------
+BeginXWindowInit: 
+all:    mDisplay = XOpenDisplay(mOptions->displayName.toStdString().c_str());
+
+-------------------------------------------
+BeginRendererInit: 
+ gl, glStereo: NOOP
+ glTexture: set up texture stuff
+
+-------------------------------------------
+ChooseVisual();
+ default -- never used -- eliminate?:  pureC_x11ChooseVisual(mDisplay,  mScreenNumber) 
+ gl variants all call: 
+    visualInfo = glXChooseVisual(mDisplay, mScreenNumber, attributes);  
+ glTexture just adds a single attribute !
+ 
+ 
+-------------------------------------------
+FinishXWindowInit: (all the same)
+  mColormap = XCreateColormap(mDisplay, RootWindow(mDisplay, mScreenNumber),
+                              mVisInfo->visual, AllocNone);
+    mParentWindow = RootWindow(mDisplay, mScreenNumber);
+  mWindow = XCreateWindow(mDisplay, mParentWindow,
+                          x, y, width, height,
+                          winBorder, mVisInfo->depth, InputOutput,
+                          mVisInfo->visual, windowAttrsMask, &windowAttrs);
+  XSetStandardProperties(mDisplay, mWindow, 
+                         mOptions->suggestedTitle.toAscii(), mOptions->suggestedTitle.toAscii(), 
+                         None, (char **)NULL, 0, &sizeHints);
+  SetFullScreen(mOptions->fullScreen); 
+  set_mwm_border(mOptions->decorations);
+  XMapWindow(mDisplay, mWindow);
+  mFontInfo = XLoadQueryFont(mDisplay, 
+                             mOptions->fontName.toAscii());
+  mWidth = width;
+  mHeight = height;
+  mXPos = x; 
+  mYPos = y; 
+  mDepth = mVisInfo->depth;
+
+-------------------------------------------
+FinishRendererInit:  all glRenderers are the same, x11 is its own world
+  context = glXCreateContext(mDisplay, mVisInfo,
+                             NULL, GL_TRUE);
+  rv = glXMakeCurrent(mDisplay, mWindow, context);
+  glXUseXFont(id, first, last - first + 1, fontBase + first);
+  glListBase(fontBase);
+  glDisable(GL_ALPHA_TEST);
+  glDisable(GL_BLEND);
+etc etc.
+
+
+===================================================================
+
+

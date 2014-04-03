@@ -33,10 +33,9 @@ Renderer * Renderer::CreateRenderer(ProgramOptions *opt, qint32 parentWindowID,
 
   INFO("CreateRenderer creating renderer of type \"%s\"\n", name.toStdString().c_str()); 
 
-  if (name == "gl" || name == "") 
+  if (name == "gl" || name == "") {
     renderer = new glRenderer(opt); 
-  if (name == "gl_stereo") 
-    renderer = new glStereoRenderer(opt); 
+  }
   if (name == "gltexture") 
     renderer = new glTextureRenderer(opt); 
 #ifdef USE_DMX
@@ -60,13 +59,12 @@ Renderer * Renderer::CreateRenderer(ProgramOptions *opt, qint32 parentWindowID,
 
 // ======================================================================
 void Renderer::Init(void) {
-    // from Canvas: 
   mHeight = mWidth = mScreenHeight = mScreenWidth = 0; 
   mXPos = mYPos = mDepth = 0; 
   mThreads = mOptions->readerThreads; 
   mCacheSize = mOptions->mMaxCachedImages; 
-  // from XWindow: 
-  mVisInfo = NULL; 
+
+  mVisualInfo = NULL; 
   mFontInfo = NULL; 
   mScreenNumber = mWindow = mIsSubWindow =  mFontHeight = 0; 
   mShowCursor = true;  
@@ -83,13 +81,13 @@ void Renderer::InitWindow(qint32 parentWindowID,
 
   BeginXWindowInit(); // previously Renderer base class constructor
   BeginRendererInit(); // previously xxRenderer child class constructor
-  mVisInfo = ChooseVisual(); 
+  ChooseVisual(); 
   FinishXWindowInit(); 
   FinishRendererInit(); 
   mCache.reset(new ImageCache(mOptions->readerThreads,
                               mOptions->mMaxCachedImages,
                               mRequiredImageFormat));
-  mCache->HaveStereoRenderer(mStereo); 
+  mCache->HaveStereoRenderer(mDoStereo); 
   return; 
 }
 
@@ -202,15 +200,14 @@ void Renderer::FinishXWindowInit(void) {
   unsigned long windowAttrsMask;
   XSizeHints sizeHints;
   const int winBorder = 0;
-  //mVisInfo = this->ChooseVisual( ); // virtual function 
-  if (mVisInfo == NULL) {
+  if (mVisualInfo == NULL) {
     XCloseDisplay(mDisplay);
-    ERROR("Could not get mVisInfo in XWindow constructor.\n"); 
+    ERROR("Could not get mVisualInfo in XWindow constructor.\n"); 
   }
 
   /* Set up desired window attributes */
   mColormap = XCreateColormap(mDisplay, RootWindow(mDisplay, mScreenNumber),
-                              mVisInfo->visual, AllocNone);
+                              mVisualInfo->visual, AllocNone);
   windowAttrsMask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
   windowAttrs.background_pixel = 0x0;
   windowAttrs.border_pixel = 0x0;
@@ -227,8 +224,8 @@ void Renderer::FinishXWindowInit(void) {
 
   mWindow = XCreateWindow(mDisplay, mParentWindow,
                           x, y, width, height,
-                          winBorder, mVisInfo->depth, InputOutput,
-                          mVisInfo->visual, windowAttrsMask, &windowAttrs);
+                          winBorder, mVisualInfo->depth, InputOutput,
+                          mVisualInfo->visual, windowAttrsMask, &windowAttrs);
   
   XWindowAttributes win_attributes;                                   
   XGetWindowAttributes(mDisplay, mWindow, &win_attributes);           
@@ -285,7 +282,7 @@ void Renderer::FinishXWindowInit(void) {
                                DEFAULT_X_FONT);
     if (!mFontInfo) {
       ERROR("Couldn't load DEFAULT FONT %s", DEFAULT_X_FONT);
-      XFree(mVisInfo);
+      XFree(mVisualInfo);
       XFreeColormap(mDisplay, mColormap);
       XCloseDisplay(mDisplay);
       return ;
@@ -304,7 +301,7 @@ void Renderer::FinishXWindowInit(void) {
   mHeight = height;
   mXPos = x; 
   mYPos = y; 
-  mDepth = mVisInfo->depth;
+  mDepth = mVisualInfo->depth;
   return; 
 }// END CONSTRUCTOR for XWindow
 
@@ -427,6 +424,8 @@ void Renderer::set_mwm_border(bool onoff )
 
 // ======================================================================
 void Renderer::SetFrameList(FrameListPtr frameList) {
+  DoStereo(frameList->mStereo); 
+  
   if (!mCache) {
     mCache.reset(new ImageCache(mThreads, mCacheSize, mRequiredImageFormat));
   }
@@ -439,7 +438,7 @@ void Renderer::SetFrameList(FrameListPtr frameList) {
    * clear everything out of the cache that's already in there.
    */
   mCache->ManageFrameList(frameList); 
-  mCache->HaveStereoRenderer(mStereo); 
+  mCache->HaveStereoRenderer(mDoStereo); 
   mFrameList = frameList; 
 }
 
@@ -1204,7 +1203,7 @@ void Renderer::Close(void)
 
   XDestroyWindow(mDisplay, mWindow);
   XFreeFont(mDisplay, mFontInfo);
-  XFree(mVisInfo);
+  XFree(mVisualInfo);
   XFreeColormap(mDisplay, mColormap);
   XSync(mDisplay, 0);
   XCloseDisplay(mDisplay);

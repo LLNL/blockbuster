@@ -14,8 +14,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <GL/gl.h>
-#include <GL/glx.h>
 #include "pure_C.h"
 
 
@@ -32,7 +30,7 @@ class Renderer {
 
   
   // ======================================================================
-  Renderer(ProgramOptions *opt):mStereo(false), mOptions(opt) { 
+  Renderer(ProgramOptions *opt):mDoStereo(false), mOptions(opt) { 
     Init(); 
     return; 
   } 
@@ -55,11 +53,20 @@ class Renderer {
   void BeginXWindowInit(void);
   
   // ======================================================================
-  virtual void BeginRendererInit(void) = 0; 
+  virtual void BeginRendererInit(void) {
+      return; 
+    } 
 
   // ======================================================================
   virtual void FinishRendererInit(void) =0; 
   
+  // ======================================================================
+  virtual void DoStereo(bool s) {
+    ReportStereoChange(s); 
+    return; 
+  }
+
+
   void FinishXWindowInit(void); 
   void SetFullScreen(bool fullscreen) ;
   void set_mwm_border(bool onoff);
@@ -106,7 +113,7 @@ class Renderer {
                             int destX, int destY, float zoom, int lod) = 0; 
 
  // ======================================================================
-  virtual void SetFrameList(FrameListPtr frameList) ;
+  void SetFrameList(FrameListPtr frameList) ;
   
   
   /* Describes best image format for the Renderer.  The various FileFormat
@@ -169,7 +176,7 @@ class Renderer {
   int mDepth;
   int mThreads;
   int mCacheSize;
-  
+
   BlockbusterInterface *mBlockbusterInterface; 
   
   FrameListPtr mFrameList;
@@ -183,8 +190,9 @@ class Renderer {
   // ==============================================================
   // BEGIN stuff from XWindow (all public): 
   // ==============================================================
-  virtual XVisualInfo *ChooseVisual(void){
-    return  pureC_x11ChooseVisual(mDisplay,  mScreenNumber);
+  virtual void ChooseVisual(void){
+    mVisualInfo = pureC_x11ChooseVisual(mDisplay,  mScreenNumber);
+    return; 
   }
 
   virtual void DrawString(int row, int column, const char *str)=0;  
@@ -202,7 +210,7 @@ class Renderer {
 
   // from WindowInfo struct:  
   Display *mDisplay;
-  XVisualInfo *mVisInfo;
+  XVisualInfo *mVisualInfo;
   int mScreenNumber;
   Window mWindow;        /* the window we're really drawing into */
   int mIsSubWindow;          /* will be true if DMX slave */
@@ -213,7 +221,7 @@ class Renderer {
   bool mShowCursor; 
   long mOldWidth, mOldHeight, mOldX, mOldY; 
   bool mXSync; 
-  bool mStereo; 
+  bool mDoStereo; 
   // ==============================================================
   // END  stuff from XWindow 
   // ==============================================================

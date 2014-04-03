@@ -7,7 +7,6 @@ function usage() {
     echo "updates version.h "
     echo "greps Changelog to make sure there is an entry there.  Updates the Changelog entry. "
     echo " OPTIONS: " 
-    echo "-a/--auk:  include auk61 on the deployment" 
     echo "-c/--commit: Commit changes to all tracked directories and files before proceeding. Default: only commit version-related files."
     echo "-t/--temp: Just update Changelog and version.h as needed."
     echo "-f/--final: updates version.h and Changelog, creates a tarball in the current directory with proper naming scheme. " 
@@ -77,12 +76,9 @@ fi
 temp=false
 final=false
 commit=false
-aukbuild=false
 # must give either -temp or -final: 
 for arg in "$@"; do 
-    if [ "$arg" == --auk ]  ||  [ "$arg" == -a ] ; then
-        aukbuild=true
-    elif [ "$arg" == --commit ]  ||  [ "$arg" == -c ] ; then
+    if [ "$arg" == --commit ]  ||  [ "$arg" == -c ] ; then
         commit=true
     elif [ "$arg" == --temp ]  ||  [ "$arg" == -t ] ; then
         temp=true
@@ -247,10 +243,9 @@ rm -rf $tmpdir
 # =============================================================
 echo "Installing software..." 
 
-if $aukbuild; then 
-    scp $builddir/blockbuster-v${version}.tgz auk61:/viz/blockbuster/tarballs/
-    ssh auk61 "set -xv; mkdir -p /viz/blockbuster/${version} && pushd /viz/blockbuster/${version} &&  tar -xzf /viz/blockbuster/tarballs/blockbuster-v${version}.tgz && pushd blockbuster-v${version} && INSTALL_DIR=/viz/blockbuster/${version} make && rm /viz/blockbuster/latest && ln -s /viz/blockbuster/${version} latest" || errexit "build on auk failed"
-fi
+scp $builddir/blockbuster-v${version}.tgz auk61:/viz/blockbuster/tarballs/
+ssh auk61 "set -xv; mkdir -p /viz/blockbuster/${version} && pushd /viz/blockbuster/${version} &&  tar -xzf /viz/blockbuster/tarballs/blockbuster-v${version}.tgz && pushd blockbuster-v${version} && INSTALL_DIR=/viz/blockbuster/${version} make && rm -f /viz/blockbuster/test && ln -s /viz/blockbuster/${version} /viz/blockbuster/test" || errexit "build on auk failed"
+
 
 echo '#!/usr/bin/env bash
 . '"$HOME/.profile"'
@@ -297,7 +292,7 @@ popd
 echo "Done.  Tarball is $builddir/blockbuster-v${version}.tgz.  To use the new version, type \"use asciviz-test\""
 ln -s $builddir/blockbuster-v${version}.tgz $installdir/blockbuster-v${version}.tgz
 
-echo "Built and installed blockbuster-v${version} and made it the test version on LC and latest on auk" | mail -s "blockbuster-v${version} build complete" rcook@llnl.gov
+echo "Built and installed blockbuster-v${version} and made it the test version on LC and auk" | mail -s "blockbuster-v${version} build complete" rcook@llnl.gov
 
 exit 0
 

@@ -2,6 +2,12 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
+VERSION 2.8.1g (git tag blockbuster-v2.8.1f) Sat Mar 15 12:32:15 PDT 2014
+-- BUGFIX:  Fixed a bug in caching stereo movies, especially when playing with non-stereo renderers.
+-- BUGFIX:  Stereo checkbox in interface now correctly updates when a stereo movie is loaded.  
+-- FEATURE: Switching from stereo to non-stereo movies no longer destroys the window to get a new context.    
+
+===============================================================================
 VERSION 2.8.1f (git tag blockbuster-v2.8.1f) Sat Mar 15 12:32:15 PDT 2014
 -- FEATURE: Add support for scroll wheel zooming
 -- FEATURE: "Fill" means "toggle to/from full screen" and "Fit" means "zoom image to fit window"

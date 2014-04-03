@@ -191,16 +191,16 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
 
     /* Get an event from the renderer or network and process it.
      */   
- 
-    DEBUGMSG("processEvents()"); 
+#define DEBUG_EVENTS if (0) DEBUGMSG
+    DEBUG_EVENTS("processEvents()"); 
     gCoreApp->processEvents(QEventLoop::AllEvents, 3); 
-    DEBUGMSG("gMainWindow->GetEvent()"); 
+    DEBUG_EVENTS("gMainWindow->GetEvent()"); 
     if (gMainWindow->GetEvent(newEvent)) {  
       events.push_back(newEvent); 
     }
-    DEBUGMSG("renderer->DMXCheckNetwork()"); 
+    DEBUG_EVENTS("renderer->DMXCheckNetwork()"); 
     if (renderer) renderer->DMXCheckNetwork();
-    DEBUGMSG("GetNetworkEvent()"); 
+    DEBUG_EVENTS("GetNetworkEvent()"); 
     if (GetNetworkEvent(&newEvent)) { /* Qt events from e.g. Sidecar */
       events.push_back(newEvent); 
     } 
@@ -211,7 +211,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         renderer->DMXSendHeartbeat(); 
         lastheartbeat = time(NULL); 
       }
-      DEBUGMSG("renderer->GetXEvent()"); 
+      DEBUG_EVENTS("renderer->GetXEvent()"); 
       renderer->GetXEvent(0, &newEvent); 
       if (playDirection && newEvent.mEventType == "MOVIE_GOTO_FRAME" && 
           newEvent.mNumber == frameNumber+playDirection) {
@@ -230,7 +230,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
       bool sendSnapshot = false; 
              
       if (event.mEventType == "MOVIE_NONE") {
-        DEBUGMSG("GOT EVENT ------- %s", string(event).c_str()); 
+        //DEBUGMSG("GOT EVENT ------- %s", string(event).c_str()); 
         if (script.size()) {
           event = script[0]; 
           script.erase(script.begin()); 
@@ -281,25 +281,12 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           if (!options->stereoSwitchDisable) { 
             DEBUGMSG("auto-switch stereo based on detected movie type..."); 
             if (options->rendererName != "dmx") { 
-              DEBUGMSG("No DMX: switch frontend renderer as needed."); 
-              if ((allFrames->mStereo && options->rendererName != "gl_stereo")) {
-                options->rendererName = "gl_stereo";
-              }
-              if (!allFrames->mStereo && options->rendererName == "gl_stereo") {
-                options->rendererName = "gl";
-              }            
+              DEBUGMSG("No DMX: switch frontend renderer to gl."); 
+              options->rendererName = "gl";                        
             } else { 
-              DEBUGMSG("DMX case: switch backend renderer as needed."); 
-              if ((allFrames->mStereo && options->backendRendererName != "gl_stereo")) {
-                options->backendRendererName = "gl_stereo";
-              }
-              if (!allFrames->mStereo && options->backendRendererName == "gl_stereo") {
-                options->backendRendererName = "gl";
-              }
-            }
-            if (options->rendererName == "") {
-              options->rendererName = "gl";
-            }
+              DEBUGMSG("DMX case: switch backend renderer to gl."); 
+              options->backendRendererName = "gl";
+            }          
           } 
           DEBUGMSG("Renderer name: %s", options->rendererName.toStdString().c_str()); 
           int width, height, depth; 
@@ -308,11 +295,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             targetFPS = options->frameRate; 
             options->frameRate = 0; 
           }
-          /*  if (options->geometry.width != DONT_CARE) {
-              width = options->geometry.width; 
-              height = options->geometry.height; 
-              }
-          */ 
+          
           startFrame = 0; 
           endFrame = allFrames->numStereoFrames()-1; 
           frameNumber = event.mNumber;  
@@ -338,19 +321,12 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           if (options->decorations) {
             options->decorations = !options->fullScreen; 
           }
-          if (renderer) {
-            if ((allFrames->mStereo != 0) != (renderer->mName == "gl_stereo")) {
-              DEBUGMSG("toggle stereo automatically");           
-              delete renderer; 
-              renderer = NULL; 
-            }
-            /* else if (renderer && options->fullScreen != renderer->mFullScreen) {
-              DEBUGMSG("toggle to or from fullscreen mode");           
-              delete renderer; 
-              renderer = NULL; 
-            }
-            */
+          if (renderer && options->fullScreen != renderer->mFullScreen) {
+            DEBUGMSG("toggle to or from fullscreen mode");           
+            delete renderer; 
+            renderer = NULL; 
           }
+          
           if (!renderer) {
             renderer = Renderer::CreateRenderer(options, 0, gMainWindow);
             if (!renderer) {
@@ -385,6 +361,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           renderer->ReportFrameChange(frameNumber);
           renderer->ReportDetailRangeChange(-maxLOD, maxLOD);
           renderer->ReportZoomChange(newZoom);
+          renderer->DoStereo(allFrames->mStereo);
           renderer->ReportStereoChange(allFrames->mStereo);
           swapBuffers = true; 
           previousSwapTime = 0.0; 
@@ -396,37 +373,8 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
        }  // END event.mEventType == "MOVIE_OPEN_FILE") || event.mEventType == "MOVIE_OPEN_FILE_NOCHANGE" 
     
         else if (event.mEventType == "MOVIE_SET_STEREO") {
-        
-          QString rendererName = "gl", saved; 
-          if (event.mNumber) {// TURN ON STEREO
-            dbprintf(1, "TURN ON STEREO\n"); 
-            rendererName = "gl_stereo";
-          } else {
-            dbprintf(1, "TURN OFF STEREO\n"); 
-          }          
-          
-          if (options->rendererName == "dmx") {
-            saved = options->backendRendererName; 
-            options->backendRendererName = rendererName;
-          } else {
-            saved = options->rendererName;
-            options->rendererName = rendererName; 
-          } 
-          
-          if (saved != rendererName) {
-            dbprintf(1, "Changed Renderer type\n"); 
-            delete renderer; 
-            renderer = Renderer::CreateRenderer(options, 0, gMainWindow);
-            if (!renderer) {
-              ERROR("Could not create a renderer");
-              return 1;
-            }
-            
-             renderer->SetFrameList(allFrames);
-            renderer->ReportFrameListChange(allFrames);
-            renderer->ReportRateChange(targetFPS); 
-            renderer->ReportStereoChange(event.mNumber); 
-          }        
+          renderer->DoStereo(event.mNumber);
+          sendSnapshot = true; 
         }
         else if (event.mEventType == "MOVIE_DISABLE_DIALOGS") {   
           SuppressMessageDialogs(true); 
@@ -979,7 +927,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         }
         
         { 
-          MovieSnapshot newSnapshot(event.mEventType, filename, fps, targetFPS, currentZoom, lodBias, renderer->mName == "gl_stereo", playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, repeatMsg, pingpong, options->fullScreen, options->zoomToFill, options->noscreensaver, renderer->mHeight, renderer->mWidth, renderer->mXPos, renderer->mYPos, imageHeight, imageWidth, -xOffset, yOffset); 
+          MovieSnapshot newSnapshot(event.mEventType, filename, fps, targetFPS, currentZoom, lodBias, renderer->mDoStereo, playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, repeatMsg, pingpong, options->fullScreen, options->zoomToFill, options->noscreensaver, renderer->mHeight, renderer->mWidth, renderer->mXPos, renderer->mYPos, imageHeight, imageWidth, -xOffset, yOffset); 
 
           if (sendSnapshot || newSnapshot != oldSnapshot) {
             
