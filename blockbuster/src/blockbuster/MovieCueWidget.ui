@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>515</width>
+    <width>516</width>
     <height>613</height>
    </rect>
   </property>
@@ -640,7 +640,7 @@
            <bool>false</bool>
           </property>
           <property name="text">
-           <string>size to 100%</string>
+           <string>Size to 100%</string>
           </property>
          </widget>
         </item>
@@ -653,10 +653,23 @@
            <string>show movie in full-screen size</string>
           </property>
           <property name="text">
-           <string>full screen</string>
+           <string>Full screen</string>
           </property>
           <property name="checked">
            <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="noStereoCheckBox">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="toolTip">
+           <string>Run a stereo movie monoscopically</string>
+          </property>
+          <property name="text">
+           <string>No stereo</string>
           </property>
          </widget>
         </item>

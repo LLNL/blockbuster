@@ -168,6 +168,10 @@ void MovieCue::GenerateScript(MovieScript &oScript) const{
     oScript.push_back(MovieEvent("MOVIE_ZOOM_SET", mZoom)); 
   }
 
+  if (mNoStereo) {
+    oScript.push_back(MovieEvent("MOVIE_SET_STEREO", 0)); 
+  } 
+    
  
   oScript.push_back(MovieEvent("MOVIE_SET_RATE", mFrameRate)); 
   oScript.push_back(MovieEvent("MOVIE_SET_LOD", mLOD)); 
@@ -453,6 +457,7 @@ void MovieCueManager::EnableDisableFields(bool enable) {
   windowHeightLabel->setEnabled(enable); 
   windowWidthLabel->setEnabled(enable); 
   fullScreenCheckBox->setEnabled(enable);
+  noStereoCheckBox->setEnabled(enable);
   zoomOneCheckBox->setEnabled(enable);
   zoomToFillCheckBox->setEnabled(enable);
   zoomLabel->setEnabled(enable); 
@@ -519,6 +524,7 @@ void MovieCueManager::setupMovieCueEditor(MovieCue *iCue) {
   showControlsCheckBox->setChecked(tmp->mShowControls);
   applyChangesButton->setEnabled(false); 
   fullScreenCheckBox->setChecked(tmp->mFullScreen);
+  noStereoCheckBox->setChecked(tmp->mNoStereo);
   zoomOneCheckBox->setChecked(tmp->mZoomOne);
   zoomToFillCheckBox->setChecked(tmp->mZoomToFill);
  
@@ -666,6 +672,7 @@ void MovieCueManager::on_applyChangesButton_clicked(){
   mCurrentCue->mImageYPos = imageYPosField->text().toInt(); 
   mCurrentCue->mLOD = LODField->text().toInt(); 
   mCurrentCue->mFullScreen = fullScreenCheckBox->isChecked(); 
+  mCurrentCue->mNoStereo = noStereoCheckBox->isChecked(); 
   mCurrentCue->mFrameRate = frameRateField->text().toFloat(); 
   mCurrentCue->mZoom = zoomField->text().toFloat(); 
   mCurrentCue->mZoomOne = zoomOneCheckBox->isChecked(); 
@@ -862,7 +869,7 @@ void MovieCueManager::SetCurrentCue(MovieSnapshot &snapshot) {
     endFrameField->setText(QString("%1").arg(snapshot.mNumFrames)); 
   } else {
     movieNameField->setText(snapshot.mFilename.c_str()); 
-    frameRateField->setText(QString("%1").arg(snapshot.mFrameRate)); 
+    // frameRateField->setText(QString("%1").arg(snapshot.mFrameRate)); 
     backwardCheckBox->setChecked(snapshot.mPlayStep < 0); 
     fullScreenCheckBox->setChecked(snapshot.mFullScreen); 
     zoomField->setText(QString("%1").arg(snapshot.mZoom)); 
@@ -1054,7 +1061,15 @@ void MovieCueManager::on_endFrameField_textChanged(){
 } 
 //=======================================================================
 void MovieCueManager::on_fullScreenCheckBox_clicked(){
-  if (mCurrentCue)  mFullScreenChanged = mCurrentCue->mFullScreen ^ fullScreenCheckBox->isChecked(); 
+  if (mCurrentCue)  mFullScreenChanged = (mCurrentCue->mFullScreen != fullScreenCheckBox->isChecked()); 
+  EnableDisableFields(true); 
+  applyChangesButton->setEnabled(cueChanged()); 
+  return; 
+}
+
+//=======================================================================
+void MovieCueManager::on_noStereoCheckBox_clicked(){
+  if (mCurrentCue)  mNoStereoChanged = (mCurrentCue->mNoStereo != noStereoCheckBox->isChecked()); 
   EnableDisableFields(true); 
   applyChangesButton->setEnabled(cueChanged()); 
   return; 
@@ -1062,7 +1077,7 @@ void MovieCueManager::on_fullScreenCheckBox_clicked(){
 
 //=======================================================================
 void MovieCueManager::on_zoomOneCheckBox_clicked(){
-  if (mCurrentCue)  mZoomOneChanged = mCurrentCue->mZoomOne ^ zoomOneCheckBox->isChecked(); 
+  if (mCurrentCue)  mZoomOneChanged = (mCurrentCue->mZoomOne != zoomOneCheckBox->isChecked()); 
 
   if (zoomOneCheckBox->isChecked()) {
     zoomToFillCheckBox->setChecked(false); 
@@ -1075,7 +1090,7 @@ void MovieCueManager::on_zoomOneCheckBox_clicked(){
 
 //=======================================================================
 void MovieCueManager::on_zoomToFillCheckBox_clicked(){
-  if (mCurrentCue)  mZoomToFillChanged = mCurrentCue->mZoomToFill ^ zoomToFillCheckBox->isChecked(); 
+  if (mCurrentCue)  mZoomToFillChanged = (mCurrentCue->mZoomToFill != zoomToFillCheckBox->isChecked()); 
 
   if (zoomToFillCheckBox->isChecked()) {
     zoomOneCheckBox->setChecked(false); 
@@ -1086,19 +1101,19 @@ void MovieCueManager::on_zoomToFillCheckBox_clicked(){
 }
 //======================================================================
 void MovieCueManager::on_windowWidthField_textChanged(){
-  if (mCurrentCue)  mWindowWidthChanged = mCurrentCue->mWindowWidth != windowWidthField->text().toLong();
+  if (mCurrentCue)  mWindowWidthChanged = (mCurrentCue->mWindowWidth != windowWidthField->text().toLong());
   applyChangesButton->setEnabled(cueChanged()); 
   return; 
 } 
 //======================================================================
 void MovieCueManager::on_windowHeightField_textChanged(){  
-  if (mCurrentCue)  mWindowHeightChanged = mCurrentCue->mWindowHeight != windowHeightField->text().toLong();
+  if (mCurrentCue)  mWindowHeightChanged = (mCurrentCue->mWindowHeight != windowHeightField->text().toLong());
   applyChangesButton->setEnabled(cueChanged()); 
   return; 
 } 
 //======================================================================
 void MovieCueManager::on_windowXPosField_textChanged(){
-  if (mCurrentCue)  mWindowXChanged = mCurrentCue->mWindowXPos != windowXPosField->text().toLong();
+  if (mCurrentCue)  mWindowXChanged = (mCurrentCue->mWindowXPos != windowXPosField->text().toLong());
   applyChangesButton->setEnabled(cueChanged()); 
   return; 
 } 
@@ -1207,7 +1222,7 @@ QFile &operator << (QFile &iFile, const MovieCue &iCue){
     iFile.write(QString("LoadMovie=%1 ") 
                 .arg(iCue.mMovieName).toAscii());
   }
-  iFile.write(QString("Play=%1 Loop=%2 Backward=%3 Controls=%4 CurrentFrame=%5 StartFrame=%6 EndFrame=%7 WindowWidth=%8 WindowHeight=%9 WindowX=%10 WindowY=%11 FullScreen=%12 ImageX=%13 ImageY=%14 LOD=%15 Rate=%16 Zoom=%17 ZoomOne=%18 ZoomToFill=%19 PingPong=%20 ENDCUE\n")
+  iFile.write(QString("Play=%1 Loop=%2 Backward=%3 Controls=%4 CurrentFrame=%5 StartFrame=%6 EndFrame=%7 WindowWidth=%8 WindowHeight=%9 WindowX=%10 WindowY=%11 FullScreen=%12 ImageX=%13 ImageY=%14 LOD=%15 Rate=%16 Zoom=%17 ZoomOne=%18 ZoomToFill=%19 PingPong=%20 NoStereo=%21 ENDCUE\n")
               .arg(iCue.mPlayMovie)
               .arg(iCue.mRepeatFrames)
               .arg(iCue.mPlayBackward)
@@ -1228,6 +1243,7 @@ QFile &operator << (QFile &iFile, const MovieCue &iCue){
               .arg(iCue.mZoomOne)
               .arg(iCue.mZoomToFill)
               .arg(iCue.mPingPong)
+              .arg(iCue.mNoStereo)
               .toAscii());
   return iFile; 
   
@@ -1352,6 +1368,8 @@ QFile  &operator >> (QFile &iFile,  MovieCue &iCue){
         iCue.mWindowHeight = tokenpair[1].toInt();
       } else if (tokenpair[0] == "FullScreen") {
         iCue.mFullScreen = (tokenpair[1].toInt()); 
+      } else if (tokenpair[0] == "NoStereo") {
+        iCue.mNoStereo = (tokenpair[1].toInt()); 
       } else if (tokenpair[0] == "WindowX" || 
                  tokenpair[0] == "FrameX" ) {
         iCue.mWindowXPos = tokenpair[1].toInt();
