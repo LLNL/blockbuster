@@ -875,7 +875,7 @@ void MovieCueManager::SetCurrentCue(MovieSnapshot &snapshot) {
     zoomField->setText(QString("%1").arg(snapshot.mZoom)); 
     zoomOneCheckBox->setChecked(false); 
     zoomToFillCheckBox->setChecked(snapshot.mZoomToFill); 
-    startFrameField->setText(QString("%1").arg(snapshot.mFrameNumber+1)); //use the current frame number, not blockbuster's looping start frame -- Scott says this is the right thing to do
+    startFrameField->setText(QString("%1").arg(snapshot.mStartFrame+1)); 
     currentFrameField->setText(QString("%1").arg(snapshot.mFrameNumber+1));
     endFrameField->setText(QString("%1").arg(snapshot.mEndFrame+1));    
     repeatOnceCheckBox->setChecked(snapshot.mRepeat == 1); 
