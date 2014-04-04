@@ -110,14 +110,14 @@ SideCar::SideCar(QApplication *app, Preferences *prefs, QWidget *parent)
           this, SLOT(openButton_clicked())); 
   connect(mRemoteControl->stereoCheckBox, SIGNAL(stateChanged(int)), 
           this, SLOT(stereoCheckBox_stateChanged(int))); 
-  connect(mRemoteControl->centerButton, SIGNAL(clicked()), 
-          this, SLOT(centerButton_clicked())); 
+  connect(mRemoteControl->centerPushButton, SIGNAL(clicked()), 
+          this, SLOT(centerPushButton_clicked())); 
   connect(mRemoteControl->fullSizeButton, SIGNAL(clicked()), 
           this, SLOT(fullSizeButton_clicked())); 
-  connect(mRemoteControl->fitButton, SIGNAL(clicked()), 
-          this, SLOT(fitButton_clicked())); 
-  connect(mRemoteControl->fillButton, SIGNAL(clicked()), 
-          this, SLOT(fillButton_clicked())); 
+  connect(mRemoteControl->zoomToFitCheckBox, SIGNAL(clicked()), 
+          this, SLOT(zoomToFitCheckBox_clicked())); 
+  connect(mRemoteControl->fullScreenCheckBox, SIGNAL(clicked()), 
+          this, SLOT(fullScreenCheckBox_clicked())); 
   connect(mRemoteControl->startButton, SIGNAL(clicked()), 
           this, SLOT(startButton_clicked())); 
   connect(mRemoteControl->backStepButton, SIGNAL(clicked()), 
@@ -888,7 +888,7 @@ void SideCar::quitButton_clicked(){
 
 
 //================================================================
-void SideCar::centerButton_clicked(){   
+void SideCar::centerPushButton_clicked(){   
   SendEvent(MovieEvent ("MOVIE_CENTER")); 
 }
 
@@ -898,13 +898,13 @@ void SideCar::fullSizeButton_clicked(){
 }
 
 //================================================================
-void SideCar::fitButton_clicked(){   
-  SendEvent(MovieEvent ("MOVIE_ZOOM_FILL")); 
+void SideCar::zoomToFitCheckBox_clicked(){   
+  SendEvent(MovieEvent ("MOVIE_ZOOM_TO_FIT", mRemoteControl->zoomToFitCheckBox->isChecked())); 
 }
 
 //================================================================
-void SideCar::fillButton_clicked(){   
-  SendEvent(MovieEvent ("MOVIE_FULLSCREEN")); 
+void SideCar::fullScreenCheckBox_clicked(){   
+  SendEvent(MovieEvent ("MOVIE_FULLSCREEN", mRemoteControl->fullScreenCheckBox->isChecked())); 
 }
 
 //================================================================
@@ -1089,7 +1089,7 @@ void SideCar::InterestingKey(QKeyEvent *event){
     break;
 
   case Qt::Key_F : // zoom to fit window
-    SendEvent(MovieEvent("MOVIE_ZOOM_FILL"));
+    SendEvent(MovieEvent("MOVIE_ZOOM_TO_FIT"));
     break;
 
   case Qt::Key_H : //show keyboard help

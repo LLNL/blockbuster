@@ -73,10 +73,7 @@ BlockbusterInterface::BlockbusterInterface(QWidget *parent):
   
   int iconSize = 50; 
   backStepButton->setIconSize(QSize(iconSize, iconSize)); 
-  centerButton->setIconSize(QSize(iconSize, iconSize)); 
   endButton->setIconSize(QSize(iconSize, iconSize)); 
-  fitButton->setIconSize(QSize(iconSize, iconSize)); 
-  fullSizeButton->setIconSize(QSize(iconSize, iconSize)); 
   openButton->setIconSize(QSize(iconSize, iconSize)); 
   playButton->setIconSize(QSize(iconSize, iconSize)); 
   quitButton->setIconSize(QSize(iconSize, iconSize)); 
@@ -87,10 +84,7 @@ BlockbusterInterface::BlockbusterInterface(QWidget *parent):
   
   
   backStepButton->resize(QSize(iconSize, iconSize)); 
-  centerButton->resize(QSize(iconSize, iconSize)); 
   endButton->resize(QSize(iconSize, iconSize)); 
-  fitButton->resize(QSize(iconSize, iconSize)); 
-  fullSizeButton->resize(QSize(iconSize, iconSize)); 
   openButton->resize(QSize(iconSize, iconSize)); 
   playButton->resize(QSize(iconSize, iconSize)); 
   quitButton->resize(QSize(iconSize, iconSize)); 
@@ -199,6 +193,15 @@ void BlockbusterInterface::setZoom(double zoom){
 }
 
 //=============================================================
+void BlockbusterInterface::setZoomToFit(bool ztf){
+  mZoomToFit = ztf; 
+  zoomToFitCheckBox->blockSignals(true); 
+  zoomToFitCheckBox->setChecked(ztf);   
+  zoomToFitCheckBox->blockSignals(false); 
+  return; 
+}
+
+//=============================================================
 void BlockbusterInterface::setRepeatBehavior (int behavior){
   // avoid spurious signals: 
   mRepeat = behavior; 
@@ -290,17 +293,17 @@ void BlockbusterInterface::on_stereoCheckBox_stateChanged(int state) {
   return; 
 }
 
-void BlockbusterInterface::on_centerButton_clicked() {
-  mEventQueue.push_back(MovieEvent("MOVIE_CENTER")); 
+void BlockbusterInterface::on_centerPushButton_clicked() {
+  mEventQueue.push_back(MovieEvent("MOVIE_CENTER", centerPushButton->isChecked())); 
 }
 void BlockbusterInterface::on_fullSizeButton_clicked() {
   mEventQueue.push_back(MovieEvent("MOVIE_ZOOM_ONE")); 
 }
-void BlockbusterInterface::on_fitButton_clicked() {
-  mEventQueue.push_back(MovieEvent("MOVIE_ZOOM_TO_FIT")); 
+void BlockbusterInterface::on_zoomToFitCheckBox_clicked() {
+  mEventQueue.push_back(MovieEvent("MOVIE_ZOOM_TO_FIT", zoomToFitCheckBox->isChecked())); 
 }
-void BlockbusterInterface::on_fillButton_clicked() {
-  mEventQueue.push_back(MovieEvent("MOVIE_FULLSCREEN", 2)); 
+void BlockbusterInterface::on_fullScreenCheckBox_clicked() {
+  mEventQueue.push_back(MovieEvent("MOVIE_FULLSCREEN", fullScreenCheckBox->isChecked()));     
 }
 void BlockbusterInterface::on_infoButton_clicked() {
   mInfoWindow->show(); 
@@ -355,12 +358,6 @@ void BlockbusterInterface::on_frameSlider_valueChanged(int value) {
   }
   frameSlider->blockSignals(false); 
   setFrameNumber(value); 
-  /*  mFrameNumber = value; 
-  //DEBUGMSG("on_frameSlider_valueChanged %d", value); 
-  frameField->blockSignals(true); 
-  frameField->setText(QString("%1").arg(value)); 
-  frameField->blockSignals(false); 
-  */ 
   mEventQueue.push_back(MovieEvent ("MOVIE_GOTO_FRAME", value-1)); 
 }
 
@@ -374,7 +371,8 @@ void BlockbusterInterface::on_frameField_returnPressed() {
 //======================================================   
 void BlockbusterInterface::on_zoomSpinBox_valueChanged(double value) {
   if (value != mZoom) {
-    mEventQueue.push_back(MovieEvent("MOVIE_ZOOM_SET", (float)value)); 
+    mEventQueue.push_back(MovieEvent("MOVIE_ZOOM_SET", (float)value));     
+    zoomToFitCheckBox->setChecked(false); 
   }
   return; 
 }

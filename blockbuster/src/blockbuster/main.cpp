@@ -301,7 +301,7 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
       continue; 
     }
     else if (SET_BOOL_ARG("-fullscreen", argc, argv, opt->fullScreen, 1)) {
-      opt->zoomToFill=1;
+      opt->zoomToFit=1;
       opt->decorations = 0; 
 	  continue;
 	} 
@@ -435,11 +435,11 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
 
 	else if (CHECK_STRING_ARG("-zoom", argc, argv, zoomString)) {
 	  if (zoomString == "auto" || zoomString == "0" || zoomString == "fit" || zoomString == "fill") {
-		opt->zoomToFill = 1;
+		opt->zoomToFit = 1;
 	  }
       else {		
 		opt->zoom = zoomString.toFloat();
-		opt->zoomToFill = 0;
+		opt->zoomToFit = 0;
 	  }	
     }
     //=====================================================

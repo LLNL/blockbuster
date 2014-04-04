@@ -35,7 +35,7 @@ MovieCue::MovieCue(MovieCue *other, QListWidget *parent): QListWidgetItem(other-
   mFrameRate = other->mFrameRate;
   mZoom = other->mZoom;
   mZoomOne = other->mZoomOne; 
-  mZoomToFill = other->mZoomToFill; 
+  mZoomToFit = other->mZoomToFit; 
   isValid = other->isValid;
   mEOF = other->mEOF;
   return; 
@@ -81,11 +81,13 @@ void MovieCue::ReadScript(const MovieScript &iScript) {
       mFrameRate = pos->mRate; 
     }
     else if (pos->mEventType == "MOVIE_FULLSCREEN") {
-      mFullScreen = true;
-      mWindowXPos = 0;
-      mWindowYPos = 0; 
-      mWindowWidth = 0; 
-      mWindowHeight = 0; 
+      mFullScreen = pos->mNumber;
+      if (pos->mNumber) {
+        mWindowXPos = 0;
+        mWindowYPos = 0; 
+        mWindowWidth = 0; 
+        mWindowHeight = 0; 
+      }
     }
     else if (pos->mEventType == "MOVIE_ZOOM_SET") {
       mZoom = pos->mRate;
@@ -94,7 +96,7 @@ void MovieCue::ReadScript(const MovieScript &iScript) {
       mZoomOne = true; 
     }
     else if (pos->mEventType == "MOVIE_ZOOM_TO_FIT") { 
-      mZoomToFill = true; 
+      mZoomToFit = pos->mNumber; 
     }
     else if (pos->mEventType == "MOVIE_MOVE_RESIZE") { 
       //mFullScreen = false;
@@ -161,8 +163,8 @@ void MovieCue::GenerateScript(MovieScript &oScript) const{
   if (mZoomOne) {
     oScript.push_back(MovieEvent("MOVIE_ZOOM_ONE")); 
   } 
-  else if (mZoomToFill) {
-    oScript.push_back(MovieEvent("MOVIE_ZOOM_TO_FIT")); 
+  else if (mZoomToFit) {
+    oScript.push_back(MovieEvent("MOVIE_ZOOM_TO_FIT", mZoomToFit)); 
   } 
   else {
     oScript.push_back(MovieEvent("MOVIE_ZOOM_SET", mZoom)); 
@@ -459,9 +461,9 @@ void MovieCueManager::EnableDisableFields(bool enable) {
   fullScreenCheckBox->setEnabled(enable);
   noStereoCheckBox->setEnabled(enable);
   zoomOneCheckBox->setEnabled(enable);
-  zoomToFillCheckBox->setEnabled(enable);
+  zoomToFitCheckBox->setEnabled(enable);
   zoomLabel->setEnabled(enable); 
-  zoomField->setEnabled(enable &&  !zoomToFillCheckBox->isChecked() && !zoomOneCheckBox->isChecked()); 
+  zoomField->setEnabled(enable &&  !zoomToFitCheckBox->isChecked() && !zoomOneCheckBox->isChecked()); 
   
   windowXPosLabel->setEnabled(enable); 
   windowYPosLabel->setEnabled(enable); 
@@ -526,7 +528,7 @@ void MovieCueManager::setupMovieCueEditor(MovieCue *iCue) {
   fullScreenCheckBox->setChecked(tmp->mFullScreen);
   noStereoCheckBox->setChecked(tmp->mNoStereo);
   zoomOneCheckBox->setChecked(tmp->mZoomOne);
-  zoomToFillCheckBox->setChecked(tmp->mZoomToFill);
+  zoomToFitCheckBox->setChecked(tmp->mZoomToFit);
  
   EnableDisableFields(iCue != NULL);  // this goes last
 
@@ -676,7 +678,7 @@ void MovieCueManager::on_applyChangesButton_clicked(){
   mCurrentCue->mFrameRate = frameRateField->text().toFloat(); 
   mCurrentCue->mZoom = zoomField->text().toFloat(); 
   mCurrentCue->mZoomOne = zoomOneCheckBox->isChecked(); 
-  mCurrentCue->mZoomToFill = zoomToFillCheckBox->isChecked(); 
+  mCurrentCue->mZoomToFit = zoomToFitCheckBox->isChecked(); 
 
   mCurrentCue->mLoadMovie = (loadCheckBox->isChecked());
   mCurrentCue->mPlayMovie = (playCheckBox->isChecked());
@@ -874,7 +876,7 @@ void MovieCueManager::SetCurrentCue(MovieSnapshot &snapshot) {
     fullScreenCheckBox->setChecked(snapshot.mFullScreen); 
     zoomField->setText(QString("%1").arg(snapshot.mZoom)); 
     zoomOneCheckBox->setChecked(false); 
-    zoomToFillCheckBox->setChecked(snapshot.mZoomToFill); 
+    zoomToFitCheckBox->setChecked(snapshot.mZoomToFit); 
     startFrameField->setText(QString("%1").arg(snapshot.mStartFrame+1)); 
     currentFrameField->setText(QString("%1").arg(snapshot.mFrameNumber+1));
     endFrameField->setText(QString("%1").arg(snapshot.mEndFrame+1));    
@@ -888,6 +890,7 @@ void MovieCueManager::SetCurrentCue(MovieSnapshot &snapshot) {
     imageXPosField->setText(QString("%1").arg(snapshot.mImageXpos)); 
     imageYPosField->setText(QString("%1").arg(snapshot.mImageYpos)); 
     LODField->setText(QString("%1").arg(snapshot.mLOD)); 
+    EnableDisableFields(true); 
   }
   return; 
 }
@@ -1080,7 +1083,7 @@ void MovieCueManager::on_zoomOneCheckBox_clicked(){
   if (mCurrentCue)  mZoomOneChanged = (mCurrentCue->mZoomOne != zoomOneCheckBox->isChecked()); 
 
   if (zoomOneCheckBox->isChecked()) {
-    zoomToFillCheckBox->setChecked(false); 
+    zoomToFitCheckBox->setChecked(false); 
   }
     
   EnableDisableFields(true); 
@@ -1089,10 +1092,10 @@ void MovieCueManager::on_zoomOneCheckBox_clicked(){
 }
 
 //=======================================================================
-void MovieCueManager::on_zoomToFillCheckBox_clicked(){
-  if (mCurrentCue)  mZoomToFillChanged = (mCurrentCue->mZoomToFill != zoomToFillCheckBox->isChecked()); 
+void MovieCueManager::on_zoomToFitCheckBox_clicked(){
+  if (mCurrentCue)  mZoomToFitChanged = (mCurrentCue->mZoomToFit != zoomToFitCheckBox->isChecked()); 
 
-  if (zoomToFillCheckBox->isChecked()) {
+  if (zoomToFitCheckBox->isChecked()) {
     zoomOneCheckBox->setChecked(false); 
   }
   EnableDisableFields(true); 
@@ -1222,7 +1225,7 @@ QFile &operator << (QFile &iFile, const MovieCue &iCue){
     iFile.write(QString("LoadMovie=%1 ") 
                 .arg(iCue.mMovieName).toAscii());
   }
-  iFile.write(QString("Play=%1 Loop=%2 Backward=%3 Controls=%4 CurrentFrame=%5 StartFrame=%6 EndFrame=%7 WindowWidth=%8 WindowHeight=%9 WindowX=%10 WindowY=%11 FullScreen=%12 ImageX=%13 ImageY=%14 LOD=%15 Rate=%16 Zoom=%17 ZoomOne=%18 ZoomToFill=%19 PingPong=%20 NoStereo=%21 ENDCUE\n")
+  iFile.write(QString("Play=%1 Loop=%2 Backward=%3 Controls=%4 CurrentFrame=%5 StartFrame=%6 EndFrame=%7 WindowWidth=%8 WindowHeight=%9 WindowX=%10 WindowY=%11 FullScreen=%12 ImageX=%13 ImageY=%14 LOD=%15 Rate=%16 Zoom=%17 ZoomOne=%18 ZoomToFit=%19 PingPong=%20 NoStereo=%21 ENDCUE\n")
               .arg(iCue.mPlayMovie)
               .arg(iCue.mRepeatFrames)
               .arg(iCue.mPlayBackward)
@@ -1241,7 +1244,7 @@ QFile &operator << (QFile &iFile, const MovieCue &iCue){
               .arg(iCue.mFrameRate)
               .arg(iCue.mZoom)
               .arg(iCue.mZoomOne)
-              .arg(iCue.mZoomToFill)
+              .arg(iCue.mZoomToFit)
               .arg(iCue.mPingPong)
               .arg(iCue.mNoStereo)
               .toAscii());
@@ -1388,8 +1391,8 @@ QFile  &operator >> (QFile &iFile,  MovieCue &iCue){
         iCue.mZoom = tokenpair[1].toFloat();
       } else if (tokenpair[0] == "ZoomOne") {
         iCue.mZoomOne = (tokenpair[1].toInt()); 
-      } else if (tokenpair[0] == "ZoomToFill") {
-        iCue.mZoomToFill = (tokenpair[1].toInt()); 
+      } else if (tokenpair[0] == "ZoomToFit") {
+        iCue.mZoomToFit = (tokenpair[1].toInt()); 
       } else {
         throw QString("unexpected token: %1").arg(*pos); 
       }

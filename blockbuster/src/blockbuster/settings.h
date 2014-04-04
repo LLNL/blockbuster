@@ -52,7 +52,7 @@ struct ProgramOptions {
     slaveLaunchMethod("rsh"), useMPI(0), 
     play(0), playExit(0),  speedTest(0), frameRate(0.0), 
     fpsSampleFrequency(2.0), 
-    zoom(1.0), zoomToFill(1), fullScreen(0), noSmallWindows(0), 
+    zoom(0.0), zoomToFit(1), fullScreen(0), noSmallWindows(0), 
     slaveMode(0), masterPort(0), 
     preloadFrames(40), mMaxCachedImages(100), mDMXStereo(0), noAutoRes(0), 
     drawInterface(1), splashScreen(0), noscreensaver(0), 
@@ -98,7 +98,7 @@ struct ProgramOptions {
   float frameRate; 
   float fpsSampleFrequency; // time between fps calculations.
   float zoom;
-  int zoomToFill, fullScreen;
+  int zoomToFit, fullScreen;
   int noSmallWindows; // prevent windows being resized below full movie size -- this is used to work around Window manager bug that resizes to one monitor size when launched on powerwalls.  
   int slaveMode;
   int masterPort;

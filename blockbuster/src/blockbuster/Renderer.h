@@ -155,6 +155,7 @@ class Renderer {
   void ReportPingPongBehaviorChange(int behavior);
   void ReportRateChange(float rate);
   void ReportZoomChange(float zoom);
+  void ReportZoomToFitChange(bool ztf);
   void ReportStereoChange(bool stereo); 
   void ShowInterface(int on);
   

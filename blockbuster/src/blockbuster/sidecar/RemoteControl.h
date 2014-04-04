@@ -90,10 +90,7 @@ class RemoteControl: public QWidget, public Ui::BlockbusterControl {
     //startButton->setText(""); 
     //(QIcon(":/images/start.png")); 
     backStepButton->setIcon(QIcon(":/images/backStep.png")); 
-    //centerButton->setIcon(QIcon(":/images/center.png")); 
     endButton->setIcon(QIcon(":/images/end.png")); 
-    //fitButton->setIcon(QIcon(":/images/fit.png")); 
-    //fullSizeButton->setIcon(QIcon(":/images/fullSize.png")); 
     //openButton->setIcon(QIcon(":/images/open.png")); 
     playButton->setIcon(QIcon(":/images/play.png")); 
     //quitButton->setIcon(QIcon(":/images/quit.png")); 
@@ -104,10 +101,7 @@ class RemoteControl: public QWidget, public Ui::BlockbusterControl {
 
     int iconSize = 50; 
     backStepButton->setIconSize(QSize(iconSize, iconSize)); 
-    centerButton->setIconSize(QSize(iconSize, iconSize)); 
     endButton->setIconSize(QSize(iconSize, iconSize)); 
-    fitButton->setIconSize(QSize(iconSize, iconSize)); 
-    fullSizeButton->setIconSize(QSize(iconSize, iconSize)); 
     openButton->setIconSize(QSize(iconSize, iconSize)); 
     playButton->setIconSize(QSize(iconSize, iconSize)); 
     quitButton->setIconSize(QSize(iconSize, iconSize)); 
@@ -118,10 +112,7 @@ class RemoteControl: public QWidget, public Ui::BlockbusterControl {
 
     
     backStepButton->resize(QSize(iconSize, iconSize)); 
-    centerButton->resize(QSize(iconSize, iconSize)); 
     endButton->resize(QSize(iconSize, iconSize)); 
-    fitButton->resize(QSize(iconSize, iconSize)); 
-    fullSizeButton->resize(QSize(iconSize, iconSize)); 
     openButton->resize(QSize(iconSize, iconSize)); 
     playButton->resize(QSize(iconSize, iconSize)); 
     quitButton->resize(QSize(iconSize, iconSize)); 

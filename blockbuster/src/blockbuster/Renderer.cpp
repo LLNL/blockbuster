@@ -669,6 +669,15 @@ void Renderer::ReportZoomChange(float zoom) {
   return; 
 }
 
+//============================================================
+void Renderer::ReportZoomToFitChange(bool ztf) {
+  if (mBlockbusterInterface) {
+    mBlockbusterInterface->setZoomToFit(ztf); 
+  }
+  return; 
+}
+
+//============================================================
 void Renderer::ShowInterface(int on) {
   if (mBlockbusterInterface) {
     if (on) {

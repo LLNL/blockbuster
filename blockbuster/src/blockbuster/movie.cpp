@@ -58,26 +58,6 @@ int LODFromZoom(float zoom)
   return lod;
 }
 
-// ====================================================================
-static float ComputeZoomToFill(Renderer *renderer, int width, int height)
-{
-  float xZoom, yZoom, zoom;
-
-  xZoom = (float) renderer->mWidth / width;
-  yZoom = (float) renderer->mHeight / height;
-  zoom = xZoom < yZoom ? xZoom : yZoom;
-
-  /* The return value is the "integer zoom", a value which
-   * matches well how the user interface is handling zooming.
-   * It will be 0 for no zooming, >0 if the canvas is bigger
-   * than the image and so the image has to be expanded, or
-   * <0 if the canvas is smaller than the image and the
-   * image has to be shrunk.
-   */
-  /*RDC -- what is with all these 500's ?  */ 
-  // return (int) ((zoom - 1.0) * 500.0);
-  return zoom; 
-}
 
 
 // ====================================================================
@@ -334,13 +314,13 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
               return 1;
             }
           } 
-          if (options->zoomToFill || event.mEventType != "MOVIE_OPEN_FILE_NOCHANGE") {
-            /* Compute a Shrink to Fit zoom */
-            newZoom = ComputeZoomToFill(renderer, width, height);
-            if (newZoom > 1.0) {
-              newZoom = 1.0; /* don't need expanding initially */
-            }
-          }
+          if (options->zoom != 0) {
+            newZoom = options->zoom; 
+            options->zoomToFit = false; 
+            options->zoom = 0.0; 
+          } else {
+            options->zoomToFit = true;
+          }             
           if (event.mEventType != "MOVIE_OPEN_FILE_NOCHANGE") {
             if (options->LOD) {
               lodBias = options->LOD;
@@ -361,6 +341,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           renderer->ReportFrameChange(frameNumber);
           renderer->ReportDetailRangeChange(-maxLOD, maxLOD);
           renderer->ReportZoomChange(newZoom);
+          renderer->ReportZoomToFitChange(options->zoomToFit);
           renderer->DoStereo(allFrames->mStereo);
           renderer->ReportStereoChange(allFrames->mStereo);
           swapBuffers = true; 
@@ -444,16 +425,12 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           } else {
             options->fullScreen = event.mNumber; 
           }
-          if(options->fullScreen) { 
-            if (renderer && options->zoomToFill) {
-              newZoom = ComputeZoomToFill(renderer, renderer->mWidth,
-                                         renderer->mHeight);
-              renderer->Move(0,0, 0);            
-           } 
-          } else {
+          if(!options->fullScreen) { 
             options->decorations = true; 
-          }
-          if (renderer) {
+          } else {
+            options->decorations = false;
+          } 
+        if (renderer) {
             renderer->SetFullScreen(options->fullScreen); 
             swapBuffers = true; 
           }
@@ -513,12 +490,8 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
               /* Set these in case there is no Resize function */
               renderer->mWidth = event.mWidth;
               renderer->mHeight = event.mHeight;
-  
-              if (options->zoomToFill/* && !event.mNumber*/) {
-                goto MOVIE_ZOOM_TO_FIT;
-              }
             }
-          }
+         }
           // END RESIZE ===========================
           swapBuffers = true; 
         } // END "MOVIE_MOVE", "MOVIE_RESIZE" OR "MOVIE_MOVE_RESIZE"
@@ -599,42 +572,29 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         }
         
         else if (event.mEventType == "MOVIE_ZOOM_TO_FIT") { 
-        MOVIE_ZOOM_TO_FIT: 
-          if(frameInfo && renderer) {
-            newZoom = ComputeZoomToFill(renderer, frameInfo->mWidth,
-                                       frameInfo->mHeight);
-            DEBUGMSG("Zoom to Fit: %f", newZoom);
-          } else if (allFrames) {
-            // Caution:  RDC: Zooming was not working right upon movie startup, so here I'm reusing some old code that was commented out -- maybe assumption that allFrames->frames[0] is not NULL is not valid?  
-            //bb_assert (allFrames->frames[0] != NULL); 
-            newZoom = ComputeZoomToFill(renderer,
-                                       allFrames->getFrame(0)->mWidth,
-                                       allFrames->getFrame(0)->mHeight);
-          }
-          xOffset = yOffset = 0;
-          options->zoomToFill = true; 
+          dbprintf(2, "MOVIE_ZOOM_TO_FIT %d\n", event.mNumber); 
+          options->zoomToFit = event.mNumber;           
         }
         else if (event.mEventType == "MOVIE_ZOOM_ONE") {
-          options->zoomToFill = false; 
+          options->zoomToFit = false; 
           newZoom = 1.0;
           zooming = 0;       
         }
         else if (event.mEventType == "MOVIE_ZOOM_SET") {
-          newZoom = event.mRate;
           if (newZoom <= 0.0) {
-            options->zoomToFill = true; 
-            newZoom = ComputeZoomToFill(renderer,
-                                       allFrames->getFrame(0)->mWidth,
-                                       allFrames->getFrame(0)->mHeight);  
-          }
+            ERROR("Bad zoom: %0.3f", newZoom); 
+          } else {
+            newZoom = event.mRate;
+            options->zoomToFit = false; 
+          }           
         }
         else if (event.mEventType == "MOVIE_ZOOM_UP") {
-          options->zoomToFill = false; 
+          options->zoomToFit = false; 
           newZoom = 1.2*currentZoom;
           zooming = 0;
         }
         else if (event.mEventType == "MOVIE_ZOOM_DOWN") {
-         options->zoomToFill = false; 
+         options->zoomToFit = false; 
           newZoom = 0.8*currentZoom;
           if (newZoom < 0.05) newZoom = 0.05; 
           zooming = 0;
@@ -678,7 +638,6 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           zooming = 1;
         }
         else if (event.mEventType == "MOVIE_MOUSE_RELEASE_2") {
-          //newZoom += zoomDelta;
           newZoom = startZoom*(1+(float)zoomDelta/(renderer->mHeight));
           zoomDelta = 0;
           zooming = 0;
@@ -907,6 +866,21 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         /* frameInfo = allFrames->frames[frameNumber];  */
         frameInfo =  renderer->GetFrameInfoPtr(frameNumber); /* wrapper for stereo support */
         
+        if (renderer && options->zoomToFit && (frameInfo || allFrames)) {
+          float width = 0, height = 0;          
+          if (frameInfo) {
+            width = frameInfo->mWidth; 
+            height = frameInfo->mHeight; 
+          } else {
+            width = allFrames->getFrame(0)->mWidth;
+            height = allFrames->getFrame(0)->mHeight;
+          }
+          float xZoom = (float) renderer->mWidth / width;
+          float yZoom = (float) renderer->mHeight / height;
+          newZoom = xZoom < yZoom ? xZoom : yZoom;
+          DEBUGMSG("Zoom to Fit: %f", newZoom);
+          xOffset = yOffset = 0;
+        }
         if (currentZoom != newZoom) {
           currentZoom = newZoom;
           if (renderer) renderer->ReportZoomChange(currentZoom);
@@ -927,7 +901,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         }
         
         { 
-          MovieSnapshot newSnapshot(event.mEventType, filename, fps, targetFPS, currentZoom, lodBias, renderer->mDoStereo, playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, repeatMsg, pingpong, options->fullScreen, options->zoomToFill, options->noscreensaver, renderer->mHeight, renderer->mWidth, renderer->mXPos, renderer->mYPos, imageHeight, imageWidth, -xOffset, yOffset); 
+          MovieSnapshot newSnapshot(event.mEventType, filename, fps, targetFPS, currentZoom, lodBias, renderer->mDoStereo, playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, repeatMsg, pingpong, options->fullScreen, options->zoomToFit, options->noscreensaver, renderer->mHeight, renderer->mWidth, renderer->mXPos, renderer->mYPos, imageHeight, imageWidth, -xOffset, yOffset); 
 
           if (sendSnapshot || newSnapshot != oldSnapshot) {
             

@@ -28,6 +28,8 @@ void RemoteControl::updateFromSnapshot(MovieSnapshot &snapshot){
   BLOCK_APPLY(stereoCheckBox, setChecked(snapshot.mStereo)); 
   BLOCK_APPLY(fpsLabel, setText(QString("%1").arg(snapshot.mFrameRate))); 
   
+  BLOCK_APPLY(fullScreenCheckBox, setChecked(snapshot.mFullScreen)); 
+  BLOCK_APPLY(zoomToFitCheckBox, setChecked(snapshot.mZoomToFit)); 
   LOCK_BLOCK_APPLY(zoomSpinBox, snapshot.mZoom,  setValue(snapshot.mZoom)); 
   LOCK_BLOCK_APPLY(lodSpinBox, snapshot.mLOD, setValue(snapshot.mLOD)); 
 

@@ -36,6 +36,7 @@ class BlockbusterInterface: public QWidget, public Ui::BlockbusterControl  {
   void setFrameRate(double rate); 
   void setFrameRateRange(double min, double max); 
   void setZoom(double zoom); 
+  void setZoomToFit(bool ztf); 
   void setStereo(bool stereo); 
   void setRepeatBehavior (int behavior); 
   void setPingPongBehavior (int behavior); 
@@ -54,10 +55,10 @@ class BlockbusterInterface: public QWidget, public Ui::BlockbusterControl  {
   void on_quitButton_clicked();
   void on_openButton_clicked();
   void on_stereoCheckBox_stateChanged(int);  
-  void on_centerButton_clicked();
+  void on_centerPushButton_clicked();
   void on_fullSizeButton_clicked();
-  void on_fitButton_clicked();
-  void on_fillButton_clicked();
+  void on_zoomToFitCheckBox_clicked();
+  void on_fullScreenCheckBox_clicked();
   void on_infoButton_clicked();
   void on_startButton_clicked() ;
   void on_backStepButton_clicked();
@@ -88,7 +89,7 @@ class BlockbusterInterface: public QWidget, public Ui::BlockbusterControl  {
   int mStartFrame, mEndFrame, mFrameNumber; 
   int mLOD; 
   double mFrameRate, mZoom; 
-  int mPingPong, mRepeat; 
+  int mPingPong, mRepeat, mZoomToFit; 
   QString mPreviousDir; 
 
 }; 

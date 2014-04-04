@@ -151,10 +151,10 @@ class SideCar: public QMainWindow, public Ui::SideCarWindow {
   void quitButton_clicked();
   void openButton_clicked();   
   void stereoCheckBox_stateChanged(int);  
-  void centerButton_clicked();   
+  void centerPushButton_clicked();   
   void fullSizeButton_clicked();   
-  void fitButton_clicked();   
-  void fillButton_clicked();   
+  void zoomToFitCheckBox_clicked();   
+  void fullScreenCheckBox_clicked();   
   void startButton_clicked();   
   void backStepButton_clicked();   
   void reverseButton_clicked();   

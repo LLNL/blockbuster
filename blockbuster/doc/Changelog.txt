@@ -2,16 +2,20 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.2a (git tag blockbuster-v2.8.1f) Sat Mar 15 12:32:15 PDT 2014
+VERSION 2.8.5a (git tag blockbuster-v2.8.1f) Sat Mar 15 12:32:15 PDT 2014
 -- FEATURE: Switching from stereo to non-stereo movies no longer destroys the window to get a new context. (Ticket 131)
 -- FEATURE: Allow loading a stereo movie in non-stereo from a movie cue in sidecar.  (Ticket 149)
 -- FEATURE: Added "-traceEvents" flag to enable reproducing of blockbuster sessions for forensics and other purposes.  (Ticket 146)
+-- FEATURE: Changed Zoom To Fit and Full Screen buttons to checkboxes  as they are really states, not actions. 
+-- BUGFIX:  Fixed behavior of Zoom To Fit and Full Screen buttons in blockbuster and sidecar control interfaces.  (Ticket 121)
 -- BUGFIX:  Fixed a bug in caching stereo movies, especially when playing with non-stereo renderers.
 -- BUGFIX:  Stereo checkbox in interface now correctly updates when a stereo movie is loaded.  
 -- BUGFIX:  Taking snapshot no longer changes FPS in current cue. (Ticket 115)
 -- BUGFIX:  -help argument no longer fails if DISPLAY is not set (Ticket 93)
 -- BUGFIX:  Information window now fits its contents properly (Ticket 50)
 -- BUGFIX:  Taking snapshot no longer sets cue start frame to movie current frame.  (Ticket 124)
+-- BUGFIX:  Zoom To Fit now works in blockbuster.  
+-- BUGFIX:  Taking snapshot now should do the right thing with respect to zooming, full screen, and zoom to fit.  (Ticket 84)
 
 ===============================================================================
 VERSION 2.8.1f (git tag blockbuster-v2.8.1f) Sat Mar 15 12:32:15 PDT 2014
