@@ -267,7 +267,6 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
 {
   int numProcessors;
   /* defaults */
-  opt->executable = gCoreApp->applicationFilePath(); 
   string value = GetSetting(opt->settings, "splashScreen");
   if (atoi(value.c_str()) == 0) {
     opt->splashScreen = 0;
@@ -680,11 +679,15 @@ int main(int argc, char *argv[])
   int newargc = argc;
   int dummy =0; 
   // Get Qt rockin'.  This creates the basic Qt object.  
-  gCoreApp = new QApplication(dummy, newargs); 
 
   ParseEnvironmentVars(); 
   ParseOptions(opt, newargc, newargs);
   printargs("After ParseOptions", newargs, newargc); 
+
+  gCoreApp = new QApplication(dummy, newargs); 
+  if (opt->executable == "") {
+    opt->executable = gCoreApp->applicationFilePath(); 
+  }
 
   // register the main thread first
   RegisterThread(QThread::currentThread(), opt->readerThreads, true); 
