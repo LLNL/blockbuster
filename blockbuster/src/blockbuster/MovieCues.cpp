@@ -1391,7 +1391,7 @@ QFile  &operator >> (QFile &iFile,  MovieCue &iCue){
         iCue.mZoom = tokenpair[1].toFloat();
       } else if (tokenpair[0] == "ZoomOne") {
         iCue.mZoomOne = (tokenpair[1].toInt()); 
-      } else if (tokenpair[0] == "ZoomToFit") {
+      } else if (tokenpair[0] == "ZoomToFit" || tokenpair[0] == "ZoomToFill" ) {
         iCue.mZoomToFit = (tokenpair[1].toInt()); 
       } else {
         throw QString("unexpected token: %1").arg(*pos); 
