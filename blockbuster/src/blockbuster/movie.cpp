@@ -314,12 +314,14 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
               return 1;
             }
           } 
-          if (options->zoom != 0) {
+          if (!options->zoomToFit && options->zoom != 0) {
             newZoom = options->zoom; 
             options->zoomToFit = false; 
             options->zoom = 0.0; 
           } else {
             options->zoomToFit = true;
+            renderer->mWidth = width; 
+            renderer->mHeight = height; 
           }             
           if (event.mEventType != "MOVIE_OPEN_FILE_NOCHANGE") {
             if (options->LOD) {
@@ -485,6 +487,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
               event.mHeight = renderer->mScreenHeight; 
             }
             if (event.mWidth && event.mHeight) {
+              renderer->mWidth = renderer->mHeight = 0; 
               renderer->Resize(event.mWidth,
                                event.mHeight, event.mNumber);
               /* Set these in case there is no Resize function */
