@@ -320,8 +320,6 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             options->zoom = 0.0; 
           } else {
             options->zoomToFit = true;
-            renderer->mWidth = width; 
-            renderer->mHeight = height; 
           }             
           if (event.mEventType != "MOVIE_OPEN_FILE_NOCHANGE") {
             if (options->LOD) {
@@ -432,7 +430,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           } else {
             options->decorations = false;
           } 
-        if (renderer) {
+          if (renderer) {
             renderer->SetFullScreen(options->fullScreen); 
             swapBuffers = true; 
           }
@@ -932,6 +930,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           const int imgHeight = frameInfo->mHeight;
           const int winWidth = renderer->mWidth;
           const int winHeight = renderer->mHeight;
+          dbprintf(5, "imgWidth = %d, imgHeight = %d, winWidth = %d, winHeight = %d\n", imgWidth, imgHeight, winWidth, winHeight); 
           int x, y;
           int imgLeft, imgRight, imgBottom, imgTop;
           
@@ -946,6 +945,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           imgRight = static_cast<int>(x + (winWidth / 2) / currentZoom);
           imgTop = static_cast<int>(y - (winHeight / 2) / currentZoom);
           imgBottom = static_cast<int>(y + (winHeight / 2) / currentZoom);
+          dbprintf(5, "imgLeft = %d, imgRight = %d,imgTop  = %d, imgBottom = %d\n",imgLeft , imgRight, imgTop, imgBottom); 
           
           /* Compute region of the image that's visible in the window and
            * its position destX,destY relative to upper-left corner of window.

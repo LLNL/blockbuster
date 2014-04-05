@@ -841,23 +841,17 @@ void Renderer::Resize(int newWidth, int newHeight, int cameFromX){
   XGetWMNormalHints(mDisplay, mWindow, &sizeHints, &supplied_hints);
 
   if (supplied_hints | PMinSize) {
-    dbprintf(5, "PMinSize detected: Might need to set hints\n"); 
-    bool doHints = false; 
-    if (sizeHints.min_height > newHeight) {
-      dbprintf(5, "Setting min_height from %d to newHeight %d\n", sizeHints.min_height, newHeight); 
-      sizeHints.height = sizeHints.base_height = sizeHints.min_height = newHeight;
-      doHints = true; 
-    } 
-    if (sizeHints.min_width > newWidth) {
-      dbprintf(5, "Setting min_width from %d to newWidth %d\n", sizeHints.min_width, newWidth); 
-      sizeHints.width = sizeHints.base_width = sizeHints.min_width  = newWidth;
-      doHints = true; 
-    }
-    if (doHints) {
-      dbprintf(5, "Setting hints due to PMinSize\n"); 
-      sizeHints.flags = USSize | PMinSize;    
-      XSetWMNormalHints(mDisplay, mWindow, &sizeHints);
-    }
+    sizeHints.height = newHeight;
+    sizeHints.base_height = newHeight;
+    sizeHints.min_height = newHeight;
+
+    sizeHints.width = newWidth;
+    sizeHints.base_width = newWidth;
+    sizeHints.min_width = newWidth;
+
+    dbprintf(5, "Setting hints due to PMinSize\n"); 
+    sizeHints.flags = PMinSize;    
+    XSetWMNormalHints(mDisplay, mWindow, &sizeHints);    
   } else {
      dbprintf(5, "PMinSize NOT detected\n"); 
   }
