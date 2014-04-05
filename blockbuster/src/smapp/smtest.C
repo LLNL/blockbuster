@@ -42,7 +42,7 @@
 
 struct UserPrefs {
   UserPrefs(): nthreads(1), lod(-1), nloops(1), 
-               range(2,0), pos(2,0), dim(2, 0), step(2, 1),
+               range(2,-1), pos(2,0), dim(2, 0), step(2, 1),
                fltpos(2, 0), fltdim(2, 0), fltstep(2, 0), 
                dpos(2, 0), ddim(2, 0), dstep(2, 0), 
                haveRect(false), pan(false), sm(NULL) {
@@ -69,6 +69,7 @@ struct ThreadData {
   uint32_t threadNum;
   uint32_t numFramesRead, currentFrame; 
   uint64_t bytesRead; 
+  vector<int> range;
   bool done, err; 
   float min, max; 
 };
@@ -165,7 +166,7 @@ void *readThread(void *data)
                            sm->getHeight());
   int rowStride = 0;
   for(loopNum=0; loopNum<prefs->nloops; loopNum++) {    
-    for (f=prefs->range[0]; f<=prefs->range[1]; f++) {
+    for (f=threadData->range[0]; f<=threadData->range[1]; f++) {
       if ((f % prefs->nthreads) == mynum) {
         double t0;
         if (!prefs->haveRect) {
@@ -396,18 +397,21 @@ int main(int argc, char *argv[])
                  lod, prefs.sm->getNumResolutions()); 
       exit(6); 
     }
-    if (!prefs.range[0]) {
-      prefs.range[0] = 1; 
+    
+    vector<int> range = prefs.range; 
+    if (range[0] == -1) {
+      range[0] = 0; 
     } 
-    if (!prefs.range[1] || prefs.range[1] > prefs.sm->getNumFrames()) {
-      prefs.range[1] = prefs.sm->getNumFrames(); 
+    if (range[1] == -1 || range[1] > prefs.sm->getNumFrames()-1) {
+      range[1] = prefs.sm->getNumFrames()-1; 
     }    
+    
+    printf("Frame range: %d to %d\n", range[0], range[1]); 
     printf("threads: %d\n",prefs.nthreads);
     printf("frame size: %d,%d\n", prefs.sm->getWidth(), prefs.sm->getHeight());
     printf("rect: %d,%d @ %d,%d step %d,%d\n",
            prefs.dim[0],prefs.dim[1],prefs.pos[0],prefs.pos[1],
            prefs.step[0],prefs.step[1]);
-    printf("Frame range: %d to %d\n", prefs.range[0], prefs.range[1]); 
 
     for (lod; lod <= endLOD; lod++) {
       
@@ -422,22 +426,23 @@ int main(int argc, char *argv[])
       float windowFraction = 
         ((float)prefs.dim[0]/prefs.sm->getWidth()) *
         ((float)prefs.dim[1]/prefs.sm->getHeight());    
-      int totalFrames = (prefs.range[1] - prefs.range[0]+1) * prefs.nloops; 
+      int totalFrames = (range[1] - range[0]+1) * prefs.nloops; 
       float totalMegabytes = 0; 
       uint32_t cur_size = 0; 
-      for (f=prefs.range[0]; f<=prefs.range[1]; f++) {
+      for (f=range[0]; f<=range[1]; f++) {
         cur_size =      prefs.sm->getCompFrameSize(f, 0); 
         totalMegabytes += cur_size;
         smdbprintf(5, "size of frame %d is %d\n", f, cur_size); 
 
       }
       totalMegabytes /= (1000.0*1000.0); 
-      float mbPerFrameEst = totalMegabytes/(prefs.range[1]-prefs.range[0]+1)*windowFraction; 
+      float mbPerFrameEst = totalMegabytes/(range[1]-range[0]+1)*windowFraction; 
       totalMegabytes *= prefs.nloops; 
       smdbprintf(0, "Total size to read in %d frames, based on inputs: %f total MB, %f adjusted for given window fraction.  average MB/frame = %f\n", 
                  totalFrames, totalMegabytes, windowFraction*totalMegabytes, mbPerFrameEst); 
       vector<ThreadData> threadData(prefs.nthreads); 
       for(f=0; f<prefs.nthreads; f++) { 
+        threadData[f].range = range; 
         threadData[f].threadNum = f; 
         threadData[f].lod = lod; 
         threadData[f].userPrefs = prefs;
