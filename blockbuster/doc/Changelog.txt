@@ -16,6 +16,7 @@ VERSION 2.8.5a (git tag blockbuster-v2.8.1f) Sat Mar 15 12:32:15 PDT 2014
 -- BUGFIX:  Taking snapshot no longer sets cue start frame to movie current frame.  (Ticket 124)
 -- BUGFIX:  Zoom To Fit now works in blockbuster.  
 -- BUGFIX:  Taking snapshot now should do the right thing with respect to zooming, full screen, and zoom to fit.  (Ticket 84)
+-- BUGFIX:  Fixed bug in resizing from larger movie to smaller movie when "no small windows" feature is in effect.
 
 ===============================================================================
 VERSION 2.8.1f (git tag blockbuster-v2.8.1f) Sat Mar 15 12:32:15 PDT 2014
