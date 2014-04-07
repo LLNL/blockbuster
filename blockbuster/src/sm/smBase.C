@@ -1219,9 +1219,8 @@ void smBase::readHeader(void)
   smdbprintf(5, "smBase::readHeader(): For level of detail 0, there is a total of %d frames, %ld bytes, so average of %0.3f MB/frame\n", w, sum, (float)sum / w);
 
   smdbprintf(4,"smBase::readHeader(): maximum frame size is %ld\n", maxFrameSize);
-  if (maxFrameSize < 0) {
-    smdbprintf(0,"smBase::readHeader(): Error! maximum frame size is %ld\n", maxFrameSize);
-    exit(1); 
+  if (maxFrameSize > 1000*1000*1000) {
+    smdbprintf(0,"smBase::readHeader(): WARNING! maximum frame size is %ld.  This seems very suspicious.\n", maxFrameSize);
   }
      
   // bump up the size to the next multiple of the DIO requirements
