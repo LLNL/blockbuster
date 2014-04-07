@@ -10,8 +10,8 @@
 /* Base GL rendering class for all other GL renderers */ 
 class glRenderer: public Renderer {
  public:
-  glRenderer(ProgramOptions *opt):
-    Renderer(opt) {
+  glRenderer(ProgramOptions *options, qint32 parentWindowID, BlockbusterInterface *gui = NULL):
+    Renderer(options, parentWindowID, gui) {
     mName = "gl";   
     return; 
   }
@@ -84,8 +84,8 @@ struct TextureObject {
 
 class glTextureRenderer: public glRenderer {
  public:
-  glTextureRenderer(ProgramOptions *opt):
-    glRenderer(opt) {
+  glTextureRenderer(ProgramOptions *options, qint32 parentWindowID, BlockbusterInterface *gui = NULL):
+    glRenderer(options, parentWindowID, gui) {
     mName ="gltexture"; 
     return; 
   }

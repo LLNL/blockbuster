@@ -20,6 +20,7 @@ MovieCue::MovieCue(MovieCue *other, QListWidget *parent): QListWidgetItem(other-
   mPlayBackward = other->mPlayBackward; 
   mShowControls = other->mShowControls; 
   mFullScreen = other->mFullScreen;
+  mSizeToMovie = other->mSizeToMovie;
   mPingPong = other->mPingPong; 
   mCurrentFrame = other->mCurrentFrame; 
   mStartFrame = other ->mStartFrame; 
@@ -82,12 +83,17 @@ void MovieCue::ReadScript(const MovieScript &iScript) {
     }
     else if (pos->mEventType == "MOVIE_FULLSCREEN") {
       mFullScreen = pos->mNumber;
+      mSizeToMovie = !pos->mNumber; 
       if (pos->mNumber) {
         mWindowXPos = 0;
         mWindowYPos = 0; 
         mWindowWidth = 0; 
         mWindowHeight = 0; 
       }
+    }
+    else if (pos->mEventType == "MOVIE_SIZE_TO_MOVIE") { 
+      mSizeToMovie = pos->mNumber; 
+      mFullScreen = !pos->mNumber; 
     }
     else if (pos->mEventType == "MOVIE_ZOOM_SET") {
       mZoom = pos->mRate;
@@ -99,7 +105,6 @@ void MovieCue::ReadScript(const MovieScript &iScript) {
       mZoomToFit = pos->mNumber; 
     }
     else if (pos->mEventType == "MOVIE_MOVE_RESIZE") { 
-      //mFullScreen = false;
       mWindowXPos = pos->mX; 
       mWindowYPos = pos->mY; 
       mWindowWidth = pos->mWidth; 
@@ -137,17 +142,19 @@ void MovieCue::GenerateScript(MovieScript &oScript) const{
   if (mPlayMovie) {
     oScript.push_back(MovieEvent("MOVIE_CUE_PLAY_ON_LOAD", mPlayBackward?-1:1));
   }
-  oScript.push_back(MovieEvent("MOVIE_FULLSCREEN", mFullScreen)); 
-    
   if (mLoadMovie && mMovieName != "") {    
     oScript.push_back(MovieEvent("MOVIE_OPEN_FILE_NOCHANGE", mMovieName, mCurrentFrame));
   }  
+  oScript.push_back(MovieEvent("MOVIE_FULLSCREEN", mFullScreen)); 
+    
+  oScript.push_back(MovieEvent("MOVIE_SIZE_TO_MOVIE", mSizeToMovie)); 
+    
   oScript.push_back(MovieEvent("MOVIE_GOTO_FRAME",mCurrentFrame));  
 
   oScript.push_back(MovieEvent("MOVIE_START_END_FRAMES", mStartFrame, mEndFrame, 0,0)); 
 
   int xPos = mWindowXPos, yPos = mWindowYPos, width = mWindowWidth, height = mWindowHeight; 
-  if (!mFullScreen) {
+  if (!mFullScreen && !mSizeToMovie) {
     if (width != -1 || height != -1) {
       if (width == -1) width = 0; 
       if (height == -1) height = 0; 
@@ -459,6 +466,7 @@ void MovieCueManager::EnableDisableFields(bool enable) {
   windowHeightLabel->setEnabled(enable); 
   windowWidthLabel->setEnabled(enable); 
   fullScreenCheckBox->setEnabled(enable);
+  sizeToMovieCheckBox->setEnabled(enable);
   noStereoCheckBox->setEnabled(enable);
   zoomOneCheckBox->setEnabled(enable);
   zoomToFitCheckBox->setEnabled(enable);
@@ -481,13 +489,13 @@ void MovieCueManager::EnableDisableFields(bool enable) {
 
   movieCueLabel->setEnabled(enable); 
 
-  bool fullscreen = fullScreenCheckBox->isChecked();     
+  bool enableSize = enable && !sizeToMovieCheckBox->isChecked() && !fullScreenCheckBox->isChecked();     
   
-  windowWidthField->setEnabled(enable && !fullscreen); 
-  windowHeightField->setEnabled(enable && !fullscreen); 
+  windowWidthField->setEnabled(enableSize); 
+  windowHeightField->setEnabled(enableSize); 
   
-  windowXPosField->setEnabled(enable && !fullscreen); 
-  windowYPosField->setEnabled(enable && !fullscreen); 
+  windowXPosField->setEnabled(enableSize); 
+  windowYPosField->setEnabled(enableSize); 
 
   return; 
 }
@@ -526,6 +534,7 @@ void MovieCueManager::setupMovieCueEditor(MovieCue *iCue) {
   showControlsCheckBox->setChecked(tmp->mShowControls);
   applyChangesButton->setEnabled(false); 
   fullScreenCheckBox->setChecked(tmp->mFullScreen);
+  sizeToMovieCheckBox->setChecked(tmp->mSizeToMovie);
   noStereoCheckBox->setChecked(tmp->mNoStereo);
   zoomOneCheckBox->setChecked(tmp->mZoomOne);
   zoomToFitCheckBox->setChecked(tmp->mZoomToFit);
@@ -674,6 +683,7 @@ void MovieCueManager::on_applyChangesButton_clicked(){
   mCurrentCue->mImageYPos = imageYPosField->text().toInt(); 
   mCurrentCue->mLOD = LODField->text().toInt(); 
   mCurrentCue->mFullScreen = fullScreenCheckBox->isChecked(); 
+  mCurrentCue->mSizeToMovie = sizeToMovieCheckBox->isChecked(); 
   mCurrentCue->mNoStereo = noStereoCheckBox->isChecked(); 
   mCurrentCue->mFrameRate = frameRateField->text().toFloat(); 
   mCurrentCue->mZoom = zoomField->text().toFloat(); 
@@ -874,6 +884,7 @@ void MovieCueManager::SetCurrentCue(MovieSnapshot &snapshot) {
     // frameRateField->setText(QString("%1").arg(snapshot.mFrameRate)); 
     backwardCheckBox->setChecked(snapshot.mPlayStep < 0); 
     fullScreenCheckBox->setChecked(snapshot.mFullScreen); 
+    sizeToMovieCheckBox->setChecked(snapshot.mSizeToMovie); 
     zoomField->setText(QString("%1").arg(snapshot.mZoom)); 
     zoomOneCheckBox->setChecked(false); 
     zoomToFitCheckBox->setChecked(snapshot.mZoomToFit); 
@@ -1071,6 +1082,14 @@ void MovieCueManager::on_fullScreenCheckBox_clicked(){
 }
 
 //=======================================================================
+void MovieCueManager::on_sizeToMovieCheckBox_clicked(){
+  if (mCurrentCue)  mSizeToMovieChanged = (mCurrentCue->mSizeToMovie != sizeToMovieCheckBox->isChecked()); 
+  EnableDisableFields(true); 
+  applyChangesButton->setEnabled(cueChanged()); 
+  return; 
+}
+
+//=======================================================================
 void MovieCueManager::on_noStereoCheckBox_clicked(){
   if (mCurrentCue)  mNoStereoChanged = (mCurrentCue->mNoStereo != noStereoCheckBox->isChecked()); 
   EnableDisableFields(true); 
@@ -1225,29 +1244,29 @@ QFile &operator << (QFile &iFile, const MovieCue &iCue){
     iFile.write(QString("LoadMovie=%1 ") 
                 .arg(iCue.mMovieName).toAscii());
   }
-  iFile.write(QString("Play=%1 Loop=%2 Backward=%3 Controls=%4 CurrentFrame=%5 StartFrame=%6 EndFrame=%7 WindowWidth=%8 WindowHeight=%9 WindowX=%10 WindowY=%11 FullScreen=%12 ImageX=%13 ImageY=%14 LOD=%15 Rate=%16 Zoom=%17 ZoomOne=%18 ZoomToFit=%19 PingPong=%20 NoStereo=%21 ENDCUE\n")
-              .arg(iCue.mPlayMovie)
-              .arg(iCue.mRepeatFrames)
-              .arg(iCue.mPlayBackward)
-              .arg(iCue.mShowControls)
-              .arg(iCue.mCurrentFrame)
-              .arg(iCue.mStartFrame)
-              .arg(iCue.mEndFrame)
-              .arg(iCue.mWindowWidth)
-              .arg(iCue.mWindowHeight)
-              .arg(iCue.mWindowXPos)
-              .arg(iCue.mWindowYPos)
-              .arg(iCue.mFullScreen)
-              .arg(iCue.mImageXPos)
-              .arg(iCue.mImageYPos)
-              .arg(iCue.mLOD)
-              .arg(iCue.mFrameRate)
-              .arg(iCue.mZoom)
-              .arg(iCue.mZoomOne)
-              .arg(iCue.mZoomToFit)
-              .arg(iCue.mPingPong)
-              .arg(iCue.mNoStereo)
-              .toAscii());
+  iFile.write(str(boost::format("Play=%d Loop=%d Backward=%d Controls=%d CurrentFrame=%d StartFrame=%d EndFrame=%d WindowWidth=%d WindowHeight=%d WindowX=%d WindowY=%d FullScreen=%d SizeToMovie=%d ImageX=%d ImageY=%d LOD=%d Rate=%0.5f Zoom=%0.5f ZoomOne=%d ZoomToFit=%d PingPong=%d NoStereo=%d ENDCUE\n")
+                  %(iCue.mPlayMovie)
+                  %(iCue.mRepeatFrames)
+                  %(iCue.mPlayBackward)
+                  %(iCue.mShowControls)
+                  %(iCue.mCurrentFrame)
+                  %(iCue.mStartFrame)
+                  %(iCue.mEndFrame)
+                  %(iCue.mWindowWidth)
+                  %(iCue.mWindowHeight)
+                  %(iCue.mWindowXPos)
+                  %(iCue.mWindowYPos)
+                  %(iCue.mFullScreen)
+                  %(iCue.mSizeToMovie)
+                  %(iCue.mImageXPos)
+                  %(iCue.mImageYPos)
+                  %(iCue.mLOD)
+                  %(iCue.mFrameRate)
+                  %(iCue.mZoom)
+                  %(iCue.mZoomOne)
+                  %(iCue.mZoomToFit)
+                  %(iCue.mPingPong)
+                  %(iCue.mNoStereo)).c_str()); 
   return iFile; 
   
   
@@ -1371,6 +1390,8 @@ QFile  &operator >> (QFile &iFile,  MovieCue &iCue){
         iCue.mWindowHeight = tokenpair[1].toInt();
       } else if (tokenpair[0] == "FullScreen") {
         iCue.mFullScreen = (tokenpair[1].toInt()); 
+      } else if (tokenpair[0] == "SizeToMovie") {
+        iCue.mSizeToMovie = (tokenpair[1].toInt()); 
       } else if (tokenpair[0] == "NoStereo") {
         iCue.mNoStereo = (tokenpair[1].toInt()); 
       } else if (tokenpair[0] == "WindowX" || 

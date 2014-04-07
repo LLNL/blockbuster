@@ -25,81 +25,57 @@
 #define SCREEN_X_MARGIN 20
 #define SCREEN_Y_MARGIN 40
 
-// ======================================================================
-Renderer * Renderer::CreateRenderer(ProgramOptions *opt, qint32 parentWindowID, 
-                                    BlockbusterInterface *gui){
-  QString name = opt->rendererName; 
-  Renderer *renderer = NULL; 
 
-  INFO("CreateRenderer creating renderer of type \"%s\"\n", name.toStdString().c_str()); 
-
-  if (name == "gl" || name == "") {
-    renderer = new glRenderer(opt); 
-  }
-  if (name == "gltexture") 
-    renderer = new glTextureRenderer(opt); 
-#ifdef USE_DMX
-  if (name == "dmx") 
-    renderer = new dmxRenderer(opt); 
-#endif  
-  if (name == "x11") 
-    renderer = new x11Renderer(opt); 
-
-  if (!renderer) {
-    ERROR(QString("Badness:  cannot create renderer \"%1\" -- unknown name.\n").
-          arg(name)); 
-    exit(1); 
-  }
-
-  /* all renderers need to have this called polymorphically */  
-  renderer->InitWindow(parentWindowID, gui); 
-  return renderer;
-  
-}
 
 // ======================================================================
-void Renderer::Init(void) {
+void Renderer::Init(ProgramOptions *options) {
   mHeight = mWidth = mScreenHeight = mScreenWidth = 0; 
   mXPos = mYPos = mDepth = 0; 
-  mThreads = mOptions->readerThreads; 
-  mCacheSize = mOptions->mMaxCachedImages; 
-
+  //mThreads = mOptions->readerThreads; 
+  //mCacheSize = mOptions->mMaxCachedImages; 
+  mGeometry = options->geometry; 
+  mDecorations = options->decorations; 
+  mFullScreen = options->fullScreen;
+  mNoSmallWindows = options->noSmallWindows; 
+  mFontName = options->fontName.toStdString(); 
+  
   mVisualInfo = NULL; 
   mFontInfo = NULL; 
   mScreenNumber = mWindow = mIsSubWindow =  mFontHeight = 0; 
   mShowCursor = true;  
   mOldWidth = mOldHeight = mOldX = mOldY = -1; 
   mXSync = false; 
-  mFullScreen = mOptions->fullScreen; 
 }
 
 // ======================================================================
-void Renderer::InitWindow(qint32 parentWindowID, 
-                          BlockbusterInterface *gui) {
-  mBlockbusterInterface = gui; 
-  mParentWindow = parentWindowID;
-
-  BeginXWindowInit(); // previously Renderer base class constructor
+void Renderer::InitWindow(string displayName) {
+  
+  BeginXWindowInit(displayName); // previously Renderer base class constructor
   BeginRendererInit(); // previously xxRenderer child class constructor
   ChooseVisual(); 
   FinishXWindowInit(); 
   FinishRendererInit(); 
-  mCache.reset(new ImageCache(mOptions->readerThreads,
-                              mOptions->mMaxCachedImages,
+  return; 
+}
+
+// ======================================================================
+void Renderer::InitCache(int readerThreads, int maxCachedImages) {
+  mCache.reset(new ImageCache(readerThreads,
+                              maxCachedImages,
                               mRequiredImageFormat));
   mCache->HaveStereoRenderer(mDoStereo); 
   return; 
 }
 
 // ======================================================================
-void Renderer::BeginXWindowInit(void) {
+void Renderer::BeginXWindowInit(string displayName) {
   ECHO_FUNCTION(5); 
   // --------------------------------------
   // From XWindow:  
-  mDisplay = XOpenDisplay(mOptions->displayName.toStdString().c_str());
+  mDisplay = XOpenDisplay(displayName.c_str());
   if (!mDisplay) {
     QString err("cannot open display '%1'"); 
-    ERROR(err.arg(mOptions->displayName));
+    ERROR(err.arg(displayName.c_str()));
     return ;
   }
   
@@ -127,20 +103,20 @@ void Renderer::FinishXWindowInit(void) {
   
   /* if geometry is don't care and decorations flag is off -- then set window to max screen extents */
   mScreenWidth = WidthOfScreen(screen);
-  if (mOptions->geometry.width != DONT_CARE) 
-    width = mOptions->geometry.width;
+  if (mGeometry.width != DONT_CARE) 
+    width = mGeometry.width;
   else {
-    if(mOptions->decorations) 
+    if(mDecorations) 
       width = DEFAULT_WIDTH;
     else 
       width =  mScreenWidth;
   }
   
   mScreenHeight = HeightOfScreen(screen);
-  if (mOptions->geometry.height != DONT_CARE) 
-    height = mOptions->geometry.height;
+  if (mGeometry.height != DONT_CARE) 
+    height = mGeometry.height;
   else {
-    if(mOptions->decorations)
+    if(mDecorations)
       height = DEFAULT_HEIGHT;
     else
       height =  mScreenHeight; 
@@ -149,7 +125,7 @@ void Renderer::FinishXWindowInit(void) {
   
   /* if we've turned off the window border (decoration) with the -D flag then set rquired margins to zero
      otherwise set them to the constants defined in movie.h (SCREEN_X_MARGIN ... ) */
-  if (mOptions->decorations) {
+  if (mDecorations) {
     required_x_margin = SCREEN_X_MARGIN;
     required_y_margin = SCREEN_Y_MARGIN;
   }
@@ -158,39 +134,35 @@ void Renderer::FinishXWindowInit(void) {
     required_y_margin = 0;
   }
   
-  if (mOptions->fullScreen) {
+  if (mFullScreen) {
     width = WidthOfScreen(screen) - required_x_margin;
     height = HeightOfScreen(screen) - required_y_margin;
   }
   else {
     if (width > WidthOfScreen(screen) - required_x_margin) {
-#if 0
-      WARNING("requested window width %d greater than screen width %d",
-              width, WidthOfScreen(screen));
-#endif
+      DEBUGMSG("requested window width %d greater than screen width %d",
+               width, WidthOfScreen(screen));
       width = WidthOfScreen(screen) - required_x_margin;
     }
     if (height > HeightOfScreen(screen) - required_y_margin) {
-#if 0
-      WARNING("requested window height %d greater than screen height %d",
+      DEBUGMSG("requested window height %d greater than screen height %d",
               height, HeightOfScreen(screen));
-#endif
       height = HeightOfScreen(screen) - required_y_margin;
     }
   }
   
   
-  if (mOptions->geometry.x == CENTER)
+  if (mGeometry.x == CENTER)
     x = (WidthOfScreen(screen) - width) / 2;
-  else if (mOptions->geometry.x != DONT_CARE)
-    x = mOptions->geometry.x;
+  else if (mGeometry.x != DONT_CARE)
+    x = mGeometry.x;
   else
     x = 0;
   
-  if (mOptions->geometry.y == CENTER)
+  if (mGeometry.y == CENTER)
     y = (HeightOfScreen(screen) - height) / 2;
-  else if (mOptions->geometry.y != DONT_CARE)
-    y = mOptions->geometry.y;
+  else if (mGeometry.y != DONT_CARE)
+    y = mGeometry.y;
   else
     y = 0;
  
@@ -237,46 +209,40 @@ void Renderer::FinishXWindowInit(void) {
   sizeHints.flags = USSize ;
   sizeHints.width = sizeHints.base_width = width; 
   sizeHints.height = sizeHints.base_height = height; 
-  if (mOptions->noSmallWindows) {
+  if (mNoSmallWindows) {
     // WARNING:  Setting PMinSize flag sets a hard minimum.  User cannot resize window below this.  But if I don't set it, then the window does not show up larger than a single monitor unless it's fullscreen. 
     sizeHints.flags |= PMinSize;
     sizeHints.min_width = width;
     sizeHints.min_height = height;
   }
 
-  if (mOptions->geometry.x == DONT_CARE) {
+  if (mGeometry.x == DONT_CARE) {
     sizeHints.x = 0; 
   } else {
-    sizeHints.x = mOptions->geometry.x;
+    sizeHints.x = mGeometry.x;
   }
-  if (mOptions->geometry.y == DONT_CARE) {
+  if (mGeometry.y == DONT_CARE) {
     sizeHints.y = 0; 
   } else {
-    sizeHints.y = mOptions->geometry.y;
+    sizeHints.y = mGeometry.y;
   }
   sizeHints.flags |= USPosition;
     
-  
-  SetTitle(mOptions->suggestedTitle); 
+  SetTitle("Blockbuster"); 
   XSetStandardProperties(mDisplay, mWindow, 
-                         mOptions->suggestedTitle.toAscii(), mOptions->suggestedTitle.toAscii(), 
+                         "Blockbuster", "Blockbuster", 
                          None, (char **)NULL, 0, &sizeHints);
   
-  // If we are doing fullscreen, we have to dance with the window manager.
-  SetFullScreen(mOptions->fullScreen); 
   
-  set_mwm_border(mOptions->decorations);
-
   /* Bring it up;  */
   XMapWindow(mDisplay, mWindow);
+  XSync(mDisplay, 0);
   
   /* Font for rendering status information into the rendering window.
    */
-  mFontInfo = XLoadQueryFont(mDisplay, 
-                             mOptions->fontName.toAscii());
+  mFontInfo = XLoadQueryFont(mDisplay, mFontName.c_str());
   if (!mFontInfo) {
-    QString warning("Couldn't load font %s, trying %s");
-    WARNING(warning.arg(mOptions->fontName).arg(DEFAULT_X_FONT));
+    WARNING(QString ("Couldn't load font %s, trying %s").arg(mFontName.c_str()).arg(DEFAULT_X_FONT));
     
     mFontInfo = XLoadQueryFont(mDisplay,
                                DEFAULT_X_FONT);
@@ -289,7 +255,6 @@ void Renderer::FinishXWindowInit(void) {
     }
   }
   mFontHeight = mFontInfo->ascent + mFontInfo->descent;
-
 
   XGetWindowAttributes(mDisplay, mWindow, &win_attributes);   
   dbprintf(3, "New X,Y, border width is %d, %d, %d\n", x,y, win_attributes.border_width); 
@@ -309,7 +274,9 @@ void Renderer::FinishXWindowInit(void) {
 
 void Renderer::SetFullScreen(bool fullscreen) {
 // Make sure the window manager does not resize to allow for menu bar
-  set_mwm_border(!fullscreen  && mOptions->decorations);
+
+  mFullScreen = fullscreen; 
+  set_mwm_border(!fullscreen  && mDecorations);
   Atom wm_state = XInternAtom(mDisplay, "_NET_WM_STATE", False);
   Atom fsAtom = XInternAtom(mDisplay, "_NET_WM_STATE_FULLSCREEN", False);
   
@@ -332,6 +299,7 @@ void Renderer::SetFullScreen(bool fullscreen) {
   xev.xclient.data.l[2] = 0;
   XSendEvent (mDisplay, DefaultRootWindow(mDisplay), False,
               SubstructureRedirectMask | SubstructureNotifyMask, &xev);
+  XSync(mDisplay, 0);
   
   // Make sure the resize takes place over all monitors when using Xinerama
   
@@ -368,6 +336,7 @@ void Renderer::SetFullScreen(bool fullscreen) {
   XSendEvent (mDisplay, DefaultRootWindow(mDisplay), False,
               SubstructureRedirectMask | SubstructureNotifyMask, &xev);
   XFlush(mDisplay);
+  XSync(mDisplay, 0);
   
   // end fullscreen stuff
   return;  
@@ -418,16 +387,18 @@ void Renderer::set_mwm_border(bool onoff )
                    (unsigned char *) &motif_hints, /* data */
                    PROP_MOTIF_WM_HINTS_ELEMENTS    /* nelements */
                    );
+  XSync(mDisplay, 0);
   return; 
 }
 
 
 // ======================================================================
-void Renderer::SetFrameList(FrameListPtr frameList) {
+void Renderer::SetFrameList(FrameListPtr frameList, int readerThreads, 
+                              int maxCachedImages) {
   DoStereo(frameList->mStereo); 
   
   if (!mCache) {
-    mCache.reset(new ImageCache(mThreads, mCacheSize, mRequiredImageFormat));
+    mCache.reset(new ImageCache(readerThreads, maxCachedImages, mRequiredImageFormat));
   }
   if (!mCache) {
     ERROR("could not recreate image cache when changing frame list");

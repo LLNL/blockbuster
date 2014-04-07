@@ -50,6 +50,11 @@ class DMXSlave: public QObject {
 	
   void SetSlaveProcess(QProcess *proc) {mSlaveProcess = proc; }
 
+  void SendCacheInit(int readerThreads, int maxCachedImages) {
+    SendMessage(QString("CacheInit %1 %2").arg(readerThreads).arg(maxCachedImages)); 
+    return; 
+  }
+
   void SendFrameList(vector<string> &frameFiles) {
 	// this is the old code from UpdateBackendRendereres --
 	// need to implement
@@ -133,7 +138,7 @@ class DMXSlave: public QObject {
   int mPreloadFrames; 
   string mRemoteHostname; // remote host to launch the slave on 
   QHostInfo mRemoteHostInfo; // as extracted from socket
-  
+  string backendRendererName, slaveLaunchMethod, mpiScript, executable, messageLevel; 
   bool mHaveRenderer; 
 
   int32_t mCurrentFrame, mLastSwapID; 
@@ -178,14 +183,21 @@ typedef DMXWindowAttributes DMXWindowInfo;
 class dmxRenderer: public QObject, public Renderer {
   Q_OBJECT
     public:
-  dmxRenderer(ProgramOptions *opt):
+  dmxRenderer(ProgramOptions *options, qint32 parentWindowID, BlockbusterInterface *gui = NULL):
     QObject(NULL), 
-    Renderer(opt),
+    Renderer(options, parentWindowID, gui), 
     mAllowIdleSlaves(true), 
     mNumActiveSlaves(0), 
     mSlavesReady(false),
-    mHaveDMX(0) {
+    mHaveDMX(0), mPreloadFrames(0) {
     mName ="dmx";
+    mBackendRendererName = options->backendRendererName;
+    mSlaveLaunchMethod = options->slaveLaunchMethod;
+    mMpiScript =options-> mpiScript;
+    mMpiScriptArgs = options->mpiScriptArgs;
+    mExecutable = options->executable;
+    mMessageLevelName = options->messageLevel->name;
+    mPreloadFrames = options->preloadFrames;
     return; 
   }   
   
@@ -196,6 +208,18 @@ class dmxRenderer: public QObject, public Renderer {
     return;
   }
 
+  //  =============================================================
+  virtual void InitCache(int readerThreads, int maxCachedImages){
+    for (uint32_t i = 0; i < mDmxScreenInfos.size(); i++) {
+      if (mDmxWindowInfos[i].window) {
+        mActiveSlaves[mDmxWindowInfos[i].screen]->
+          SendCacheInit(readerThreads, maxCachedImages);        
+      }
+    }
+    return; 
+  }
+
+    
   // ======================================================================
   virtual void BeginRendererInit(void) {
     return; 
@@ -224,7 +248,8 @@ class dmxRenderer: public QObject, public Renderer {
 
   virtual void SwapBuffers(void);
  
-  void SetFrameList(FrameListPtr frameList);
+  virtual void SetFrameList(FrameListPtr frameList, int readerThreads, 
+                              int maxCachedImages );
   void Preload(uint32_t frameNumber,
                const Rectangle *imageRegion, uint32_t levelOfDetail);
 
@@ -262,7 +287,11 @@ class dmxRenderer: public QObject, public Renderer {
     }
     return ;
   }
+
+
+  void CreateBackendRenderers(void);
   void UpdateBackendRenderers(void);
+
   void GetBackendInfo(void);
 #ifdef FAKE_DMX
   void FakeBackendInfo(void);
@@ -282,15 +311,18 @@ class dmxRenderer: public QObject, public Renderer {
   uint32_t mNumActiveSlaves; 
   bool mSlavesReady; 
  
-  // FROM RENDERINFO: 
   int mHaveDMX;
+  QString  mBackendRendererName, mSlaveLaunchMethod , mMpiScript, 
+    mMpiScriptArgs, mExecutable, mMessageLevelName;
+    int mPreloadFrames;
+  // FROM RENDERINFO: 
   
   vector<DMXScreenInfo> mDmxScreenInfos;  /* [numScreens] */
   vector<QHostAddress > mDmxHostAddresses; // Qt goodness for convenience
   vector<DMXWindowInfo> mDmxWindowInfos;  /* up to numScreens */
   int mNumValidWindowInfos; 
   
-  vector<string> mFiles;
+  // vector<string> mFiles;
   // int mSentSwapBuffers[MAX_SCREENS]; /* is there an outstanding SwapBuffers? */
   
   

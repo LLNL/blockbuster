@@ -2,7 +2,6 @@
 #define BB_RENDERER_H
 
 #include "events.h"
-#include "Renderer.h"
 #include "common.h"
 #include "frames.h"
 #include "settings.h"
@@ -24,14 +23,14 @@
 class Renderer {
  public:
   // ======================================================================
-  static Renderer *CreateRenderer(ProgramOptions *opt, qint32 parentWindowID, 
-                                  BlockbusterInterface *gui=NULL);
+  /*static Renderer *CreateRenderer(ProgramOptions *opt, qint32 parentWindowID, 
+    BlockbusterInterface *gui=NULL);*/
   // ======================================================================
 
   
   // ======================================================================
-  Renderer(ProgramOptions *opt):mDoStereo(false), mOptions(opt) { 
-    Init(); 
+  Renderer(ProgramOptions *options, qint32 parentWindowID, BlockbusterInterface *gui = NULL): mBlockbusterInterface(gui), mParentWindow(parentWindowID), mDoStereo(false) { 
+    Init(options); 
     return; 
   } 
     
@@ -43,14 +42,16 @@ class Renderer {
 
   
   // ======================================================================
-  void Init(void); 
+  void Init(ProgramOptions *options); 
 
   // ======================================================================
-  void InitWindow(qint32 parentWindowID, 
-                  BlockbusterInterface *gui);
+  void InitWindow(string displayName);
 
   // ======================================================================
-  void BeginXWindowInit(void);
+  virtual void InitCache(int readerThreads, int maxCachedImages);
+
+  // ======================================================================
+  void BeginXWindowInit(string displayName);
   
   // ======================================================================
   virtual void BeginRendererInit(void) {
@@ -113,7 +114,8 @@ class Renderer {
                             int destX, int destY, float zoom, int lod) = 0; 
 
  // ======================================================================
-  void SetFrameList(FrameListPtr frameList) ;
+  virtual void SetFrameList(FrameListPtr frameList, int readerThreads, 
+                              int maxCachedImages) ;
   
   
   /* Describes best image format for the Renderer.  The various FileFormat
@@ -171,12 +173,12 @@ class Renderer {
  public:
   int mHeight;
   int mWidth;
-  int mScreenHeight, mScreenWidth; /* for when sidcar wants whole screen */ 
+  int mScreenHeight, mScreenWidth; 
   int mXPos; 
   int mYPos; 
   int mDepth;
-  int mThreads;
-  int mCacheSize;
+  //int mThreads;
+  //int mCacheSize;
 
   BlockbusterInterface *mBlockbusterInterface; 
   
@@ -228,12 +230,11 @@ class Renderer {
   // ==============================================================
   QString mName; 
 
-  //  " good to have around to reduce arguments" (??)
-  ProgramOptions *mOptions; 
+  // ProgramOptions *mOptions; 
   Rectangle mGeometry;
-  bool mUseDecorations, mFullScreen, mNoSmallWindows;
-  string mWindowTitle, mFontName; 
-  string mDiwplayName; 
+  bool mDecorations, mFullScreen, mNoSmallWindows;
+  string mFontName; 
+  string mDisplayName; 
   uint32_t mReaderThreads, mNumCachedImages; 
 
   ImageCachePtr mCache; // if not using DMX

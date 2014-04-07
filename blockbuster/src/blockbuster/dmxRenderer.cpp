@@ -39,12 +39,12 @@ void dmxRenderer::FinishRendererInit(void) {
   uint16_t i;
   ECHO_FUNCTION(5);
    
-  if(mOptions->backendRendererName == "") {
-    mOptions->backendRendererName = "gl"; 
+  if(mBackendRendererName == "") {
+    mBackendRendererName = "gl"; 
   } 
 
   QString msg = QString("Using renderer %1 for the backend\n")
-    .arg(mOptions->backendRendererName); 
+    .arg(mBackendRendererName); 
   cerr << msg.toStdString(); 
   INFO(msg);
   
@@ -81,7 +81,7 @@ void dmxRenderer::FinishRendererInit(void) {
   setNumDMXDisplays(mDmxScreenInfos.size());
   for (i = 0; i < mDmxScreenInfos.size(); i++) {
     
-    if (i==0 || mOptions->slaveLaunchMethod != "mpi") {
+    if (i==0 || mSlaveLaunchMethod != "mpi") {
       QString host(mDmxScreenInfos[i].displayName);
       /* remove :x.y suffix */
       if (host.contains(":")) {
@@ -108,7 +108,7 @@ void dmxRenderer::FinishRendererInit(void) {
     exit(10); 
   }
   
-  UpdateBackendRenderers();
+  CreateBackendRenderers();
   
 }
 
@@ -391,14 +391,13 @@ void dmxRenderer::SwapBuffers(void){
 
 
 //  =============================================================
-void dmxRenderer::SetFrameList(FrameListPtr frameList) {
+void dmxRenderer::SetFrameList(FrameListPtr frameList, int readerThreads, 
+                              int maxCachedImages) {
   ECHO_FUNCTION(5);
-  uint32_t framenum;
-  uint32_t i; 
-  QString previousName; 
+
+  InitCache(readerThreads, maxCachedImages); 
   
-  frameList = frameList;
-  
+
   /* concatenate filenames.  We want to send only unique filenames 
    * back down to the slaves (or they'd try to load lots of files);
    * we cheat a little here and just send a filename if it's not
@@ -414,18 +413,21 @@ void dmxRenderer::SetFrameList(FrameListPtr frameList) {
    * require a lot more complexity and no more utility, since there's
    * no way the main program can take advange of such a feature now.
    */
-  mFiles.clear(); 
+  uint32_t framenum;
+  uint32_t i; 
+  QString previousName; 
+  vector<string> files; 
   for (framenum = 0; framenum < frameList->numActualFrames(); framenum++) {
     if (previousName != frameList->getFrame(framenum)->mFilename.c_str()) {
-      mFiles.push_back(frameList->getFrame(framenum)->mFilename); 
+      files.push_back(frameList->getFrame(framenum)->mFilename); 
       previousName = frameList->getFrame(framenum)->mFilename.c_str();        
     }
   }
-  
   /* Tell back-end instances to load the files */
   for (i = 0; i < mDmxScreenInfos.size(); i++) {
     if (mDmxWindowInfos[i].window) {
-      mActiveSlaves[mDmxWindowInfos[i].screen]-> SendFrameList(mFiles);
+      mActiveSlaves[mDmxWindowInfos[i].screen]-> 
+        SendFrameList(files);
     }
   }
   return; 
@@ -457,28 +459,19 @@ void dmxRenderer::LaunchSlave(QString hostname) {
   
   
   //===============================================================
-  if (mOptions->slaveLaunchMethod == "mpi") {
+  if (mSlaveLaunchMethod == "mpi") {
     /* rsh to the backend node and run mpiScript with mpiScriptArg as args */ 
     QStringList args; 
     args << hostname  
-         << mOptions->mpiScript << mOptions->mpiScriptArgs
-         << mOptions->executable;
-    if  (mOptions->messageLevel && !strcmp(mOptions->messageLevel->name,"debug")) {
+         << mMpiScript << mMpiScriptArgs
+         << mExecutable;
+    if  (mMessageLevelName == "debug") {
       args << " -messageLevel debug";
-    } 
-    if (mOptions->readerThreads > 0) {
-      args << QString(" -threads %1 ").arg(mOptions->readerThreads);
-    } 
-    if (mOptions->mMaxCachedImages > 0) {
-      args << QString(" -cachesize %1 ").arg(mOptions->mMaxCachedImages);
-    } 
-    if (mOptions->preloadFrames > 0) {
-      args << QString(" -preload %1 ").arg(mOptions->preloadFrames);
     } 
       
     args  <<  " -slave " <<  QString("%1:%2:mpi").arg(localHostname).arg(mPort)              
       //<< "-u" <<  "x11"  // no reason to have GTK up and it screws up stereo
-          << "-r" << mOptions->backendRendererName ;
+          << "-r" << mBackendRendererName ;
     
     INFO(QString("Running command('%1 %2')\n")
          .arg(rshCommand).arg(args.join(" ")));
@@ -489,12 +482,12 @@ void dmxRenderer::LaunchSlave(QString hostname) {
     slaveProcess->start(rshCommand, args); 
     
   }  
-  else if (mOptions->slaveLaunchMethod == "rsh") {
+  else if (mSlaveLaunchMethod == "rsh") {
 	// Qt book p 289: 
 	QStringList args; 
-	args << hostname  << mOptions->executable
+	args << hostname  << mExecutable
          << "-u" <<  "x11" // no reason to have GTK up and it screws up stereo
-         << "-r" << mOptions->backendRendererName  
+         << "-r" << mBackendRendererName  
          << "-messageLevel debug -slave" 
          << QString("%1:%2").arg(localHostname).arg(mPort)
          << QString(" >~/.blockbuster/slave-%1.out 2>&1").arg(localHostname);
@@ -504,9 +497,9 @@ void dmxRenderer::LaunchSlave(QString hostname) {
 	slaveProcess->start(rshCommand, args);
 	
   }
-  else if (mOptions->slaveLaunchMethod == "manual") {
+  else if (mSlaveLaunchMethod == "manual") {
 	/* give instructions for manual start-up */
-    dbprintf(0, QString("Here is the command to start blockbuster on host 1:  'blockbuster -s %2:%3 -r %4 -d $DMX_DISPLAY' \n").arg( hostname).arg( localHostname).arg(mPort).arg( mOptions->backendRendererName));
+    dbprintf(0, QString("Here is the command to start blockbuster on host 1:  'blockbuster -s %2:%3 -r %4 -d $DMX_DISPLAY' \n").arg( hostname).arg( localHostname).arg(mPort).arg( mBackendRendererName));
   }
   return ;
 }
@@ -522,7 +515,7 @@ void dmxRenderer::SlaveConnected() {
   QHostAddress hostAddress = theSocket->peerAddress(); 
   QString newAddressString = hostAddress.toString(), 
     dmxAddressString; 
-  DMXSlave *theSlave =  new DMXSlave(newAddressString, theSocket, mOptions->preloadFrames);
+  DMXSlave *theSlave =  new DMXSlave(newAddressString, theSocket, mPreloadFrames);
   connect(theSlave, SIGNAL(Error(DMXSlave*, QString, QString, bool)), 
           this, SLOT(SlaveError(DMXSlave*, QString, QString, bool))); 
 
@@ -586,6 +579,36 @@ void dmxRenderer::SlaveError(DMXSlave *, QString host,
 }
 
 //===================================================================
+void  dmxRenderer::CreateBackendRenderers(void) {
+  if (!mNumValidWindowInfos) return; 
+  
+  int i = 0; 
+  for (; i < mNumValidWindowInfos; i++) {
+    const int scrn = mDmxWindowInfos[i].screen;
+	
+    if (!mHaveDMX) {
+      ERROR("UpdateBackendRenderers: no not have DMX!"); 
+      abort(); 
+    }
+    /*
+     * Check if we need to create any back-end windows / canvases
+     */
+    if (mDmxWindowInfos[i].window && !mActiveSlaves[scrn]->HaveRenderer()) {
+      mActiveSlaves[scrn]->
+        SendMessage(QString("CreateRenderer %1 %2 %3 %4 %5 %6 %7")
+                    .arg( mDmxScreenInfos[scrn].displayName)
+                    .arg((int) mDmxWindowInfos[i].window)
+                    .arg(mDmxWindowInfos[i].pos.width)
+                    .arg(mDmxWindowInfos[i].pos.height)
+                    .arg(0)
+                    .arg(0)
+                    .arg(0));
+    }
+  }
+  return;
+}
+
+//===================================================================
 /*
  * This function creates the back-end windows/canvases on the back-end hosts.
  *
@@ -601,11 +624,9 @@ void dmxRenderer::UpdateBackendRenderers(void)
     
   if (!mNumValidWindowInfos) return; 
 
-  int i;
-
-  for (i = 0; i < mNumValidWindowInfos; i++) {
-    const int scrn = mDmxWindowInfos[i].screen;
-	  
+  int i = 0; 
+  for (; i < mNumValidWindowInfos; i++) {
+    const int scrn = mDmxWindowInfos[i].screen;	  
     if (!mHaveDMX) {
       ERROR("UpdateBackendRenderers: no not have DMX!"); 
       abort(); 
@@ -620,19 +641,10 @@ void dmxRenderer::UpdateBackendRenderers(void)
                     .arg((int) mDmxWindowInfos[i].window)
                     .arg(mDmxWindowInfos[i].pos.width)
                     .arg(mDmxWindowInfos[i].pos.height)
-                    .arg(mDepth)
-                    .arg(mOptions->mMaxCachedImages)
-                    .arg(mOptions->readerThreads));
-
-      mActiveSlaves[scrn]->HaveRenderer(true);
-      if (mFiles.size()) {
-        /* send list of image files too */
-        if (mDmxWindowInfos[i].window) {
-          mActiveSlaves[scrn]->SendFrameList(mFiles);
-        }
-      }
+                    .arg(0)
+                    .arg(0)
+                    .arg(0));
     }
-	  
     /*
      * Compute new position/size parameters for the backend subwindow.
      * Send message to back-end processes to resize/move the canvases.
@@ -645,6 +657,7 @@ void dmxRenderer::UpdateBackendRenderers(void)
                            mDmxWindowInfos[i].vis.height);
     }
   }
+  return; 
 }
 
 /*
@@ -971,13 +984,6 @@ void DMXSlave::SlaveSocketError(QAbstractSocket::SocketError ){
   return; 
 }
 
-
-//=========================================================================
-/*void DMXSlave::SlaveSocketStateChanged(QAbstractSocket::SocketState state) {
-  DEBUGMSG("SlaveSocketStateChanged: host %s, state %d", mRemoteHostname.c_str(), (int)state); 
-  return; 
-  }
-*/ 
 
 //=========================================================================
 int DMXSlave::EventFromMessage(const QString &, MovieEvent &) {

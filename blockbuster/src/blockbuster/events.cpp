@@ -90,6 +90,7 @@ bool MovieEvent::ParseScriptLine(string line) {
   if (mEventType == "MOVIE_GOTO_FRAME" ||  
       mEventType == "MOVIE_ZOOM_TO_FIT" ||  
       mEventType == "MOVIE_FULLSCREEN" ||  
+      mEventType == "MOVIE_SIZE_TO_MOVIE" ||  
       mEventType == "MOVIE_SET_LOD" ||   
       mEventType == "MOVIE_RESIZE" || 
       mEventType == "MOVIE_MOVE" || 
@@ -232,7 +233,7 @@ bool MovieSnapshot::operator == (const MovieSnapshot &other) const{
 
 //==========================================================================
 MovieSnapshot::operator string() const {
-  string retval = str(boost::format("mSnapshotType=%s mFilename=%s mFrameRate=%0.6f mTargetFPS=%0.6f mZoom=%0.6f mLOD=%d mStereo=%d mPlayStep=%d mStartFrame=%d mEndFrame=%d mNumFrames=%d mFrameNumber=%d mRepeat=%d mPingPong=%d mFullScreen=%d mZoomToFit=%d mNoScreensaver=%d mScreenHeight=%d mScreenWidth=%d mScreenXpos=%d mScreenYpos=%d mImageHeight=%d mImageWidth=%d mImageXpos=%d mImageYpos=%d")
+  string retval = str(boost::format("mSnapshotType=%s mFilename=%s mFrameRate=%0.6f mTargetFPS=%0.6f mZoom=%0.6f mLOD=%d mStereo=%d mPlayStep=%d mStartFrame=%d mEndFrame=%d mNumFrames=%d mFrameNumber=%d mRepeat=%d mPingPong=%d mFullScreen=%d mSizeToMovie=%d mZoomToFit=%d mNoScreensaver=%d mScreenHeight=%d mScreenWidth=%d mScreenXpos=%d mScreenYpos=%d mImageHeight=%d mImageWidth=%d mImageXpos=%d mImageYpos=%d")
                       %(mSnapshotType)
                       %(mFilename)
                       %(mFrameRate)
@@ -248,6 +249,7 @@ MovieSnapshot::operator string() const {
                       %(mRepeat)
                       %(mPingPong)
                       %(mFullScreen)
+                      %(mSizeToMovie)
                       %(mZoomToFit)
                       %(mNoScreensaver)
                       %(mScreenHeight)
@@ -289,6 +291,7 @@ MovieSnapshot &MovieSnapshot::operator <<(string s) {
       else if (key == "mRepeat") mRepeat = value.toInt(); 
       else if (key == "mPingPong") mPingPong = value.toInt(); 
       else if (key == "mFullScreen") mFullScreen = value.toInt();
+      else if (key == "mSizeToMovie") mSizeToMovie = value.toInt();
       else if (key == "mZoomToFit") mZoomToFit = value.toInt();
       else if (key == "mNoScreensaver") mNoScreensaver = value.toInt();
       else if (key == "mScreenHeight") mScreenHeight = value.toInt();

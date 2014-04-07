@@ -37,6 +37,7 @@
 #include <time.h>
 #include "util.h"
 #include <fstream>
+#include "glRenderer.h"
 
 using namespace std; 
 
@@ -192,10 +193,11 @@ void Slave::SendError(QString msg) {
 }
 
 //=========================================================
-bool Slave::LoadFrames(const char *files)
+bool Slave::LoadFrames(const char *files )
 {
   
   DEBUGMSG("LoadFrames"); 
+  int readerThreads = -1, maxCachedImages = -1; 
   FrameListPtr frames;
   int numFiles = 0;
   char *start, *lastChar;
@@ -203,7 +205,7 @@ bool Slave::LoadFrames(const char *files)
   QStringList fileList; 
   start = strdup(files);
   lastChar = start + strlen(start);
-
+  
   while (1) {
     char *end = strchr(start, ' ');
     if (!end)
@@ -245,7 +247,7 @@ bool Slave::LoadFrames(const char *files)
     }
   }
   if (frames) {
-    mRenderer->SetFrameList(frames);
+    mRenderer->SetFrameList(frames, readerThreads, maxCachedImages);
   }
   resetFPS(); 
   return true;
@@ -519,7 +521,7 @@ int Slave::Loop(void)
             options->geometry.height = h;
             options->displayName = displayName;
             options->suggestedTitle = "Blockbuster Slave";
-            mRenderer = Renderer::CreateRenderer(options, parentWin);
+            mRenderer = new glRenderer(options, parentWin, NULL);
  
             mRenderer->GetXEvent(0, &junkEvent); 
              
@@ -555,11 +557,27 @@ int Slave::Loop(void)
               mRenderer->Move(x, y, 0); // the zero means "force this" 
             }
           }// end "MoveResizeRenderer"
+          else if (token == "CacheInit") {
+            if (messageList.size() != 3) {
+              SendError("Bad CacheInit argument in message: "+message); 
+              continue; 
+            }
+            bool ok = false; 
+            int readerThreads, maxCachedImages;
+            readerThreads = messageList[2].toLong(&ok);
+            if (ok) maxCachedImages = messageList[3].toLong(&ok);
+             if (!ok) {
+              SendError("Bad CacheInit argument in message: "+message); 
+              continue; 
+            }
+             if (!mRenderer) {
+              SendError("CacheInit requested, but there is no renderer."); 
+            } else {
+               mRenderer->InitCache(readerThreads, maxCachedImages); 
+             }          
+          } // end "CacheInit"
           else if (token == "SetFrameList") {
             /* This is the "file load" part of the code, rather misleading */
-            /*we need to destroy image cache/reader threads etc before smBase destructor */
-            mRenderer->DestroyImageCache();
-            mRenderer->mFrameList.reset(); 
 
             message.remove(0, 13); //strip "SetFrameList " from front
             DEBUGMSG((QString("File list is: ")+message)); 

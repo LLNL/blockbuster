@@ -40,7 +40,9 @@
 #include "frames.h"
 #include "../libpng/pngsimple.h"
 #include <libgen.h>
-#include "Renderer.h"
+#include "glRenderer.h"
+#include "x11Renderer.h"
+#include "dmxRenderer.h"
 
 
 // ====================================================================
@@ -103,6 +105,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
 {
   int32_t previousFrame = -1, cueEndFrame = 0;
   uint totalFrameCount = 0, recentFrameCount = 0;
+  bool fullScreen = false, sizeToMovie = false, decorations = false; 
   FrameInfoPtr frameInfo;
   Renderer * renderer = NULL;
   int repeatCount = 0; 
@@ -298,22 +301,31 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           options->geometry.width = width; 
           options->geometry.height = height; 
         
-          if (options->decorations) {
-            options->decorations = !options->fullScreen; 
-          }
-          if (renderer && options->fullScreen != renderer->mFullScreen) {
-            DEBUGMSG("toggle to or from fullscreen mode");           
-            delete renderer; 
-            renderer = NULL; 
-          }
-          
+          decorations = options->decorations && !options->fullScreen; 
+          sizeToMovie = !options->fullScreen;
           if (!renderer) {
-            renderer = Renderer::CreateRenderer(options, 0, gMainWindow);
+            if (options->rendererName == "gltexture") {
+              renderer = new glTextureRenderer(options, 0, gMainWindow);
+            } else if (options->rendererName == "x11") {
+              renderer = new x11Renderer(options, 0, gMainWindow); 
+#ifdef USE_DMX
+            } else if (options->rendererName == "dmx") {
+              renderer = new dmxRenderer(options, 0, gMainWindow);
+#endif  
+            } else {
+              renderer = new glRenderer(options, 0, gMainWindow); 
+            }  
             if (!renderer) {
               ERROR("Could not create a renderer");
               return 1;
-            }
+            }            
+            renderer->InitWindow(options->displayName.toStdString()); 
+            renderer->InitCache(options->readerThreads, 
+                                options->mMaxCachedImages);  
+            renderer->SetFullScreen(options->fullScreen);
+            fullScreen = options->fullScreen; 
           } 
+          
           if (!options->zoomToFit && options->zoom != 0) {
             newZoom = options->zoom; 
             options->zoomToFit = false; 
@@ -335,7 +347,8 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
 
           // renderer->ShowInterface(options->drawInterface);
           renderer->DestroyImageCache();        
-          renderer->SetFrameList(allFrames);
+          renderer->SetFrameList(allFrames, options->readerThreads, 
+                              options->mMaxCachedImages);
           renderer->ReportFrameListChange(allFrames);
           renderer->ReportRateChange(targetFPS); 
           renderer->ReportFrameChange(frameNumber);
@@ -348,9 +361,6 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           previousSwapTime = 0.0; 
           frameInfo =  renderer->GetFrameInfoPtr(0);
           preloadFrames = MIN2(options->preloadFrames, static_cast<int32_t>(allFrames->numStereoFrames()));
-          if (renderer && options->fullScreen != renderer->mFullScreen) {
-            renderer->SetFullScreen(options->fullScreen);
-          }
        }  // END event.mEventType == "MOVIE_OPEN_FILE") || event.mEventType == "MOVIE_OPEN_FILE_NOCHANGE" 
     
         else if (event.mEventType == "MOVIE_SET_STEREO") {
@@ -370,28 +380,28 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         }
         else if (event.mEventType == "MOVIE_SIDECAR_BACKCHANNEL") {       
           gSidecarServer->connectToSidecar(event.mString.c_str()); 
-        }
+        } //end "MOVIE_SIDECAR_BACKCHANNEL"
         else if (event.mEventType == "MOVIE_CUE_PLAY_ON_LOAD") { 
           playDirection = event.mHeight; 
-        }
+        } //end "MOVIE_CUE_BEGIN"
         else if (event.mEventType == "MOVIE_CUE_BEGIN") { 
           cueEndFrame = event.mNumber;  // for now, a cue will be defined to be "executing" until the end frame is reached, then the cue is complete
           if (renderer) renderer->reportMovieCueStart(); 
-        }
+        } //end "MOVIE_CUE_BEGIN"
         else if (event.mEventType == "MOVIE_CUE_END") { 
           /* This event is just the end of the cue data stream, and is
              not related to when the cue is done executing.  
              In fact, the cue is not really playing until now.  
           */ 
           cuePlaying = true;
-        }
+        } //end "MOVIE_CUE_END"
         /* if (event.mEventType == "MOVIE_CUE_MOVIE_NAME" || 
            event.mEventType == "MOVIE_CUE_PLAY_BACKWARD") { 
            break; */
         else if (event.mEventType == "MOVIE_PWD") {
           QString pwd =  ParentDir(QString(frameInfo->mFilename.c_str()));
           gSidecarServer->SendEvent(MovieEvent("MOVIE_PWD", pwd)); 
-        }
+        } //end "MOVIE_PWD"
         else if (event.mEventType == "MOVIE_START_END_FRAMES") {
           /*  Store this new event as the user's new global preference */
           options->startFrame = event.mWidth;
@@ -403,38 +413,40 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           endFrame = options->endFrame;
           if (renderer) renderer->ReportFrameChange(frameNumber); 
           DEBUGMSG("START_END_FRAMES: start %d end %d current %d", startFrame, endFrame, frameNumber); 
-        }
+        } //end 
         else if (event.mEventType == "MOVIE_LOG_TO_FILE") {
           DEBUGMSG("MOVIE_LOG_TO_FILE event: %s", event.mString.c_str()); 
           enableLogging(true, event.mString.c_str());   
-        }
-        /* if (event.mEventType == "MOVIE_MESSAGE") {
-           DEBUGMSG("MOVIE_MESSAGE event: %s", event.mString.c_str()); 
-           }
-        */ 
+        } //end "MOVIE_START_END_FRAMES"
         else if (event.mEventType == "MOVIE_QUIT") {
           done = 1;
-        }
+        } //end "MOVIE_QUIT"
         else if (event.mEventType == "MOVIE_IMAGE_MOVE") {
           xOffset = -event.mX; 
           yOffset = event.mY; 
-        }
+        } //end "MOVIE_IMAGE_MOVE"
         else if (event.mEventType == "MOVIE_FULLSCREEN") {
           if (event.mNumber == 2) {
-            options->fullScreen = !options->fullScreen; 
+            fullScreen = !fullScreen; 
           } else {
-            options->fullScreen = event.mNumber; 
+            fullScreen = event.mNumber; 
           }
-          if(!options->fullScreen) { 
-            options->decorations = true; 
-          } else {
-            options->decorations = false;
-          } 
+ 
+          decorations = !fullScreen;
+
           if (renderer) {
-            renderer->SetFullScreen(options->fullScreen); 
+            renderer->SetFullScreen(fullScreen); 
             swapBuffers = true; 
           }
-        }
+        } //end "MOVIE_FULLSCREEN"
+        else if (event.mEventType == "MOVIE_SIZE_TO_MOVIE") {
+          sizeToMovie = event.mNumber; 
+          if (sizeToMovie) {
+            renderer->Resize(frameInfo->mWidth,
+                             frameInfo->mHeight, 0);
+            swapBuffers = true; 
+          } 
+        } // end "MOVIE_SIZE_TO_MOVIE"
         else if (event.mEventType == "MOVIE_MOVE" ||
                  event.mEventType == "MOVIE_RESIZE" ||
                  event.mEventType == "MOVIE_MOVE_RESIZE") {
@@ -454,7 +466,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           // ====================================
         
           // RESIZE ===========================
-          if (event.mEventType == "MOVIE_RESIZE" || event.mEventType == "MOVIE_MOVE_RESIZE") {
+          if (event.mEventType == "MOVIE_SIZE_TO_MOVIE" || event.mEventType == "MOVIE_RESIZE" || event.mEventType == "MOVIE_MOVE_RESIZE") {
             //DEBUGMSG("RESIZE"); 
             if (event.mWidth == 0) {
               /* if there are frames, use the frame width for the window width 
@@ -497,16 +509,10 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           swapBuffers = true; 
         } // END "MOVIE_MOVE", "MOVIE_RESIZE" OR "MOVIE_MOVE_RESIZE"
         
-        /*  if (event.mEventType == "MOVIE_EXPOSE") {
-            break;
-
-            if (event.mEventType == "MOVIE_NONE") {
-            break; 
-        */ 
         else if (event.mEventType == "MOVIE_SET_PINGPONG") {
           pingpong = event.mNumber;
           if (renderer) renderer->ReportPingPongBehaviorChange(event.mNumber); 
-        }
+        } // END "MOVIE_SET_PINGPONG"
         else if (event.mEventType == "MOVIE_SET_REPEAT") {
           repeatCount = event.mNumber;    
           if (repeatCount == 1) repeatCount = 2; // this repeats once. 
@@ -902,7 +908,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         }
         
         { 
-          MovieSnapshot newSnapshot(event.mEventType, filename, fps, targetFPS, currentZoom, lodBias, renderer->mDoStereo, playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, repeatMsg, pingpong, options->fullScreen, options->zoomToFit, options->noscreensaver, renderer->mHeight, renderer->mWidth, renderer->mXPos, renderer->mYPos, imageHeight, imageWidth, -xOffset, yOffset); 
+          MovieSnapshot newSnapshot(event.mEventType, filename, fps, targetFPS, currentZoom, lodBias, renderer->mDoStereo, playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, repeatMsg, pingpong, fullScreen, sizeToMovie, options->zoomToFit, options->noscreensaver, renderer->mHeight, renderer->mWidth, renderer->mXPos, renderer->mYPos, imageHeight, imageWidth, -xOffset, yOffset); 
 
           if (sendSnapshot || newSnapshot != oldSnapshot) {
             

@@ -11,9 +11,8 @@
 //======================================================================
 class x11Renderer: public Renderer {
  public:
-  x11Renderer( ProgramOptions *opt): 
-    Renderer(opt),
-    mSwapAction(XdbeBackground) {
+  x11Renderer(ProgramOptions *options, qint32 parentWindowID, BlockbusterInterface *gui = NULL): 
+    Renderer(options, parentWindowID, gui), mSwapAction(XdbeBackground) {
     mName = "x11";
     return; 
   }

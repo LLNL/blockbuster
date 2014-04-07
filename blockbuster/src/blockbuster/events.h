@@ -23,11 +23,12 @@
    "MOVIE_LOOP_INITIALIZE" 
    "MOVIE_EXPOSE" // no value
    "MOVIE_RESIZE"  // height and width
-   "MOVIE_FULLSCREEN" // no value
+   "MOVIE_FULLSCREEN" // true/false
+   "MOVIE_SIZE_TO_MOVIE" // true/false
    "MOVIE_IMAGE_MOVE"  move image to new x;y position in canvas 
    "MOVIE_MOVE"  5 move canvas to new x;y position on display 
    "MOVIE_MOVE_RESIZE"   move and resize to new x;y position 
-   "MOVIE_CENTER"
+   "MOVIE_CENTER"  //true/false
    "MOVIE_TOGGLE_CURSOR"
    "MOVIE_NOSCREENSAVER"  Stop screensaver with fake mouse clicks 
    "MOVIE_SET_STEREO" 
@@ -202,7 +203,7 @@ struct MovieSnapshot {
     mZoom(0.0), mZoomToFit(false), mLOD(0), mStereo(false), 
     mPlayStep(0), mStartFrame(1), mEndFrame(1),  mNumFrames(0), 
     mFrameNumber(1),  mRepeat(0),  mPingPong(false), 
-    mFullScreen(false), mNoScreensaver(false), 
+    mFullScreen(false), mSizeToMovie(false), mNoScreensaver(false), 
     mScreenHeight(0), mScreenWidth(0), mScreenXpos(0), mScreenYpos(0), 
     mImageHeight(0), mImageWidth(0), mImageXpos(0),  mImageYpos(0){ return; }
     
@@ -211,7 +212,8 @@ struct MovieSnapshot {
                 float zoom, uint32_t lod, bool stereo, 
                 int32_t playStep,  int32_t startFrame, int32_t endFrame, 
                 int32_t numFrames, int32_t frameNumber,  
-                int32_t repeat,  bool pingpong, bool fullScreen, 
+                int32_t repeat,  bool pingpong, 
+                bool fullScreen, bool sizeToMovie, 
                 bool zoomToFit, 
                 int32_t noScreensaver, 
                 int32_t screenHeight, int32_t screenWidth, 
@@ -225,7 +227,8 @@ struct MovieSnapshot {
     mStartFrame(startFrame), mEndFrame(endFrame),  
     mNumFrames(numFrames), mFrameNumber(frameNumber), 
     mRepeat(repeat), mPingPong(pingpong), 
-    mFullScreen(fullScreen), mNoScreensaver(noScreensaver),
+    mFullScreen(fullScreen), mSizeToMovie(sizeToMovie), 
+    mNoScreensaver(noScreensaver),
     mScreenHeight(screenHeight), mScreenWidth(screenWidth), 
     mScreenXpos(screenXpos), mScreenYpos(screenYpos), 
     mImageHeight(imageHeight),  mImageWidth(imageWidth),
@@ -248,7 +251,7 @@ struct MovieSnapshot {
   string mSnapshotType; //e.g., "MOVIE_SNAPSHOT_ENDFRAME", etc.
   string mFilename; 
   float mFrameRate, mTargetFPS, mZoom;
-  int32_t mZoomToFit, mLOD, mStereo, mPlayStep, mStartFrame, mEndFrame, mNumFrames, mFrameNumber, mRepeat, mPingPong, mFullScreen, mNoScreensaver, mScreenHeight, mScreenWidth, mScreenXpos, mScreenYpos, mImageHeight, mImageWidth, mImageXpos, mImageYpos; 
+  int32_t mZoomToFit, mLOD, mStereo, mPlayStep, mStartFrame, mEndFrame, mNumFrames, mFrameNumber, mRepeat, mPingPong, mFullScreen, mSizeToMovie, mNoScreensaver, mScreenHeight, mScreenWidth, mScreenXpos, mScreenYpos, mImageHeight, mImageWidth, mImageXpos, mImageYpos; 
 };
 
 #endif
