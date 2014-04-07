@@ -338,7 +338,7 @@ int main(int argc, char *argv[])
     usage(argv[0]); 
     exit(3); 
   }
-  for (arg; arg < argc; arg++) {
+  for (; arg < argc; arg++) {
     string moviename = argv[arg]; 
     smdbprintf(0, "\n\nTesting movie: %s\n", moviename.c_str());
     prefs.sm = smBase::openFile(argv[arg], O_RDONLY, prefs.nthreads);
@@ -413,7 +413,7 @@ int main(int argc, char *argv[])
            prefs.dim[0],prefs.dim[1],prefs.pos[0],prefs.pos[1],
            prefs.step[0],prefs.step[1]);
 
-    for (lod; lod <= endLOD; lod++) {
+    for (; lod <= endLOD; lod++) {
       
       float min = 1e+8, max = -1e+8;
       smdbprintf(0, "Starting LOD %d\n", lod); 
