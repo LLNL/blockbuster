@@ -60,7 +60,7 @@ $(OFILES) : % : %.o $(SMLIB) simple_jpeg.o debugutil.o
 	@echo BUILDING $@
 	@echo
 	$(CXX)  $^ -o $@ $(CXXFLAGS) $(LIBS) 
-	if "$(uname -s)" == Linux ]; then \
+	if [ "$(uname -s)" == Linux ]; then \
 		 $(INSTALL_DIR)/bin/patchelf --set-rpath $(INSTALL_DIR)/lib $@ || rm -f $@ ; \
 	fi
 	@echo
