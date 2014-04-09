@@ -104,7 +104,7 @@ void ClampStartEndFrames(FrameListPtr allFrames,
 int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
 {
   int32_t cueEndFrame = 0;
-  uint totalFrameCount = 0, recentFrameCount = 0;
+  uint recentFrameCount = 0;
   FrameInfoPtr frameInfo;
   Renderer * renderer = NULL;
   int drawInterface = options->drawInterface;
@@ -807,10 +807,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         /* Advance to the next frame */
         renderer->AdvanceFrame(); 
         if (renderer->mPlayDirection) {
-          /* Compute next frame number (+/- 1) */
-          renderer->mCurrentFrame = renderer->mCurrentFrame + renderer->mPlayDirection; // let this wrap around, do not fix
           /* Update timing info */
-          totalFrameCount++;
           recentFrameCount++;
         
           endClicks = times(&endTime);
@@ -846,19 +843,6 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
   elapsedTime = (endClicks - startClicks) / (double) Hertz;
   userTime = (endTime.tms_utime - startTime.tms_utime) / (double) Hertz;
   systemTime = (endTime.tms_stime - startTime.tms_stime) / (double) Hertz;
-#if DEBUG
-  INFO(
-       "%.2f frames/sec [%d frames, %.2f elapsed, %d%% user, %d%% system, %d%% blocked]",
-       totalFrameCount / elapsedTime,
-       totalFrameCount,
-       elapsedTime,
-       (int) (userTime * 100.0/elapsedTime + 0.5),
-       (int) (systemTime * 100.0/elapsedTime + 0.5),
-       (int) ((elapsedTime - userTime - systemTime)*100.0/elapsedTime + 0.5)
-       );
-  INFO("Skipped delay count: %d; used delay count: %d",
-       skippedDelayCount, usedDelayCount);
-#endif
   /* Done with the frames */
   return 0; 
 } // end DisplayLoop
