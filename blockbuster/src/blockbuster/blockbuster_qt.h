@@ -50,7 +50,9 @@ class BlockbusterInterface: public QWidget, public Ui::BlockbusterControl  {
   void reportMovieCueStart(void); 
   void reportMovieCueComplete(void); 
   void reportStatusChanged(QString status); 
-  
+  void SetSizeToMovieCheckBox(bool check) {
+    sizeToMovieCheckBox->setChecked(check); 
+  }
   public slots:
   void on_quitButton_clicked();
   void on_openButton_clicked();
@@ -59,6 +61,7 @@ class BlockbusterInterface: public QWidget, public Ui::BlockbusterControl  {
   void on_fullSizeButton_clicked();
   void on_zoomToFitCheckBox_clicked();
   void on_fullScreenCheckBox_clicked();
+  void on_sizeToMovieCheckBox_clicked();
   void on_infoButton_clicked();
   void on_startButton_clicked() ;
   void on_backStepButton_clicked();

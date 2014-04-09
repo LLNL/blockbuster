@@ -295,9 +295,6 @@ struct FrameList {
   // ----------------------------------------------------
   uint32_t numActualFrames(void) const { return mFrames.size(); }
 
-  // ----------------------------------------------------
-  void GetInfo(int &width, int &height, int &depth,
-               int &LOD, float &FPS);
 
   // ----------------------------------------------------
   void append(FrameListPtr other) {

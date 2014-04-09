@@ -29,16 +29,17 @@
 
 // ======================================================================
 void Renderer::Init(ProgramOptions *options) {
-  mHeight = mWidth = mScreenHeight = mScreenWidth = 0; 
-  mXPos = mYPos = mDepth = 0; 
+  mWindowHeight = mWindowWidth = mScreenHeight = mScreenWidth = 0; 
+  mWindowXPos = mWindowYPos = mDepth = 0; 
   //mThreads = mOptions->readerThreads; 
   //mCacheSize = mOptions->mMaxCachedImages; 
-  mGeometry = options->geometry; 
+  mStartGeometry = options->geometry; 
   mDecorations = options->decorations; 
   mFullScreen = options->fullScreen;
   mNoSmallWindows = options->noSmallWindows; 
   mFontName = options->fontName.toStdString(); 
-  
+  mPanX = mPanY = mImageXOffset = mImageYOffset = 0; 
+  mDoPingPong = mPanning = mZooming = false; 
   mVisualInfo = NULL; 
   mFontInfo = NULL; 
   mScreenNumber = mWindow = mIsSubWindow =  mFontHeight = 0; 
@@ -103,8 +104,8 @@ void Renderer::FinishXWindowInit(void) {
   
   /* if geometry is don't care and decorations flag is off -- then set window to max screen extents */
   mScreenWidth = WidthOfScreen(screen);
-  if (mGeometry.width != DONT_CARE) 
-    width = mGeometry.width;
+  if (mStartGeometry.width != DONT_CARE) 
+    width = mStartGeometry.width;
   else {
     if(mDecorations) 
       width = DEFAULT_WIDTH;
@@ -113,8 +114,8 @@ void Renderer::FinishXWindowInit(void) {
   }
   
   mScreenHeight = HeightOfScreen(screen);
-  if (mGeometry.height != DONT_CARE) 
-    height = mGeometry.height;
+  if (mStartGeometry.height != DONT_CARE) 
+    height = mStartGeometry.height;
   else {
     if(mDecorations)
       height = DEFAULT_HEIGHT;
@@ -146,23 +147,23 @@ void Renderer::FinishXWindowInit(void) {
     }
     if (height > HeightOfScreen(screen) - required_y_margin) {
       DEBUGMSG("requested window height %d greater than screen height %d",
-              height, HeightOfScreen(screen));
+               height, HeightOfScreen(screen));
       height = HeightOfScreen(screen) - required_y_margin;
     }
   }
   
   
-  if (mGeometry.x == CENTER)
+  if (mStartGeometry.x == CENTER)
     x = (WidthOfScreen(screen) - width) / 2;
-  else if (mGeometry.x != DONT_CARE)
-    x = mGeometry.x;
+  else if (mStartGeometry.x != DONT_CARE)
+    x = mStartGeometry.x;
   else
     x = 0;
   
-  if (mGeometry.y == CENTER)
+  if (mStartGeometry.y == CENTER)
     y = (HeightOfScreen(screen) - height) / 2;
-  else if (mGeometry.y != DONT_CARE)
-    y = mGeometry.y;
+  else if (mStartGeometry.y != DONT_CARE)
+    y = mStartGeometry.y;
   else
     y = 0;
  
@@ -216,15 +217,15 @@ void Renderer::FinishXWindowInit(void) {
     sizeHints.min_height = height;
   }
 
-  if (mGeometry.x == DONT_CARE) {
+  if (mStartGeometry.x == DONT_CARE) {
     sizeHints.x = 0; 
   } else {
-    sizeHints.x = mGeometry.x;
+    sizeHints.x = mStartGeometry.x;
   }
-  if (mGeometry.y == DONT_CARE) {
+  if (mStartGeometry.y == DONT_CARE) {
     sizeHints.y = 0; 
   } else {
-    sizeHints.y = mGeometry.y;
+    sizeHints.y = mStartGeometry.y;
   }
   sizeHints.flags |= USPosition;
     
@@ -262,10 +263,10 @@ void Renderer::FinishXWindowInit(void) {
   XGetWindowAttributes(mDisplay, mParentWindow, &win_attributes); 
   dbprintf(3, "ParentWindow: X,Y =  %d, %d\n", win_attributes.x, win_attributes.y);
   //SetCanvasAttributes(mWindow); 
-  mWidth = width;
-  mHeight = height;
-  mXPos = x; 
-  mYPos = y; 
+  mWindowWidth = width;
+  mWindowHeight = height;
+  mWindowXPos = x; 
+  mWindowYPos = y; 
   mDepth = mVisualInfo->depth;
   return; 
 }// END CONSTRUCTOR for XWindow
@@ -273,10 +274,10 @@ void Renderer::FinishXWindowInit(void) {
 // ==============================================================
 
 void Renderer::SetFullScreen(bool fullscreen) {
-// Make sure the window manager does not resize to allow for menu bar
+  // Make sure the window manager does not resize to allow for menu bar
 
   mFullScreen = fullscreen; 
-  set_mwm_border(!fullscreen  && mDecorations);
+  EnableDecorations(!fullscreen  && mDecorations);
   Atom wm_state = XInternAtom(mDisplay, "_NET_WM_STATE", False);
   Atom fsAtom = XInternAtom(mDisplay, "_NET_WM_STATE_FULLSCREEN", False);
   
@@ -346,8 +347,9 @@ void Renderer::SetFullScreen(bool fullscreen) {
 /*
  * Helper to remove window decorations
  */
-void Renderer::set_mwm_border(bool onoff )
-{
+void Renderer::EnableDecorations(bool decorate ) {
+  mDecorations = decorate; 
+
 #define PROP_MOTIF_WM_HINTS_ELEMENTS    5
 #define MWM_HINTS_FUNCTIONS     (1L << 0)
 #define MWM_HINTS_DECORATIONS   (1L << 1)
@@ -368,7 +370,7 @@ void Renderer::set_mwm_border(bool onoff )
   
   /* setup the property */
   motif_hints.flags = MWM_HINTS_DECORATIONS;
-  motif_hints.decorations = onoff?1:0;
+  motif_hints.decorations = mDecorations;
   
   /* get the atom for the property */
   prop = XInternAtom(mDisplay, "_MOTIF_WM_HINTS", True );
@@ -390,13 +392,218 @@ void Renderer::set_mwm_border(bool onoff )
   XSync(mDisplay, 0);
   return; 
 }
+// ======================================================================
+void Renderer::SetRepeat(int repeat) {
+  mRepeatCount = repeat;    
+  if (mRepeatCount == 1) mRepeatCount = 2; // this repeats once. 
+  else if (mRepeatCount == 0) mRepeatCount = 1; // this plays once, no repeat
+  if (mRepeatCount) {
+    mDoPingPong = false;
+  }
+  return; 
+}
+
+// ======================================================================
+void Renderer::SetPingPong(bool pingpong) {
+  mDoPingPong = pingpong; 
+  if (mDoPingPong) {
+    mRepeatCount = 0; 
+  }
+  return; 
+}
+
+// ======================================================================
+void Renderer::StartZooming(int32_t mouseY) {   
+  mZoomStartY = mouseY;
+  mZoomBasis = mZoom; 
+  mZooming = true; 
+}
 
 
 // ======================================================================
-void Renderer::SetFrameList(FrameListPtr frameList, int readerThreads, 
-                              int maxCachedImages) {
-  DoStereo(frameList->mStereo); 
+void Renderer::UpdateZooming(int32_t mouseY) {   
+  if (mZooming) {
+    mZoom = mZoomBasis*(1+(float)(mZoomStartY - mouseY)/(mWindowHeight));
+  }
+  return; 
+}
+
+// ======================================================================
+void Renderer::EndZooming(void) {
+  mZooming = false; 
+  mZoomBasis = 0; 
+}
   
+// ======================================================================
+void Renderer::ZoomByFactor(float fact) {
+  SetZoom(mZoom * fact); 
+  if (mZoom < 0.005) mZoom = 0.005; 
+}
+
+// ======================================================================
+void Renderer::SetZoom(float zoom) {
+  mZoom = zoom; 
+  if (mZoom <= 0.0) {
+    ERROR("Bad zoom: %0.3f -- resetting to 1.0", mZoom); 
+    mZoom = 1.0;
+  } 
+  mZooming = mZoomToFit = false; 
+  return; 
+}
+
+// ======================================================================
+void Renderer::SetZoomToFit(bool ztf) {
+  mZoomToFit = ztf; 
+  if (ztf) {
+    EndZooming(); 
+    EndPanning(); 
+    mImageXOffset = mImageYOffset = 0;
+  }
+  return; 
+}
+
+// ======================================================================
+void Renderer::ZoomToFit(void) {
+  if (mZoomToFit) {
+    float xZoom = (float) mWindowWidth / mImageWidth;
+    float yZoom = (float) mWindowHeight / mImageHeight;
+    mZoom = xZoom < yZoom ? xZoom : yZoom;
+    DEBUGMSG("Zoom to Fit: %f", mZoom);
+  }
+  return;  
+}
+
+// ======================================================================
+void Renderer::StartPanning(int32_t mouseX, int32_t mouseY) {   
+  mZoomToFit = false; 
+  mPanX = mPanY = 0; 
+  mPanStartX = mouseX; 
+  mPanStartY = mouseY; 
+  mPanning = true; 
+  return; 
+}
+
+// ======================================================================
+void Renderer::UpdatePanning(int32_t mouseX, int32_t mouseY) {   
+  if (mPanning) {
+    mPanX = static_cast<int>((mPanStartX - mouseX) / mZoom);
+    mPanY = static_cast<int>((mPanStartY - mouseY) / mZoom);
+    dbprintf(2, "UpdatePanning(): Pan = %d, %d\n",  mPanX, mPanY); 
+  } 
+  return; 
+}
+
+// ======================================================================
+void Renderer::EndPanning(void) {
+  if (mPanning) {
+    mImageXOffset += mPanX; 
+    mImageYOffset += mPanY; 
+    dbprintf(2, "EndPanning(): Offset = %d, %d\n", 
+             mImageXOffset, mImageYOffset); 
+  }
+  mPanning = false; 
+  mPanX = mPanY = 0; 
+  return; 
+}
+
+// ======================================================================
+void Renderer::SetImageOffset(int32_t x, int32_t y) {
+  mImageXOffset = x; 
+  mImageYOffset = y; 
+  EndZooming(); 
+  EndPanning(); 
+  return; 
+}
+
+// ======================================================================
+Rectangle Renderer::ComputeROI(void) {
+  Rectangle roi; 
+  /* (x,y) = image coordinate at center of window (renderer) */
+  int x = (mImageWidth / 2) + mImageXOffset + mPanX, 
+    y = (mImageHeight / 2) + mImageYOffset + mPanY;
+  
+  /* Compute image coordinates which correspond to the left,
+   * right, top and bottom edges of the window.
+   */
+  int imgLeft = static_cast<int>(x - (mWindowWidth / 2) / mZoom),
+    imgRight = static_cast<int>(x + (mWindowWidth / 2) / mZoom),
+    imgTop = static_cast<int>(y - (mWindowHeight / 2) / mZoom),
+    imgBottom = static_cast<int>(y + (mWindowHeight / 2) / mZoom);
+  dbprintf(5, "imgLeft = %d, imgRight = %d,imgTop  = %d, imgBottom = %d\n",imgLeft , imgRight, imgTop, imgBottom); 
+  
+  /* Compute region of the image that's visible in the window and
+   * its position destX,destY relative to upper-left corner of window.
+   */
+  /* X axis */
+  roi.width = imgRight - imgLeft;
+  roi.x = imgLeft;
+  if (roi.x < 0) { // left edge of the image is off screen
+    /* clip left */
+    roi.x = 0;
+    roi.width += roi.x; // this is odd. 
+  }
+  if (roi.x + roi.width > mImageWidth) {
+    /* clip right */
+    roi.width = mImageWidth - roi.x;
+  }
+  if (roi.width < 0) {
+    /* check for null image */
+    roi.x = roi.width = 0;
+  }
+  
+  // placement of image on renderer:  mImageXOffset
+  mImageDrawX = static_cast<int>(-imgLeft * mZoom);
+  if (mImageDrawX < 0) {
+    /* left clip */
+    mImageDrawX = 0;
+  }
+  if (mImageDrawX + roi.width * mZoom > mWindowWidth) {
+    /* right clip */
+    roi.width = static_cast<int>((mWindowWidth - mImageDrawX) / mZoom);
+    if (roi.width < 0)
+      roi.width = 0;
+  }
+  
+  /* Y axis */
+  roi.height = imgBottom - imgTop;
+  roi.y = imgTop;
+  if (roi.y < 0) {
+    /* clip top */
+    roi.y = 0;
+    roi.height += roi.y; // huh?  it's 0! 
+  }
+  if (roi.y + roi.height > mImageHeight) {
+    /* clip bottom */
+    roi.height = mImageHeight - roi.y;
+  }
+  if (roi.height < 0) {
+    /* check for null image */
+    roi.y = roi.height = 0;
+  }
+  // placement of image on renderer:  mImageYOffset
+  mImageDrawY = static_cast<int>(-imgTop * mZoom);
+  if (mImageDrawY < 0) {
+    /* top clip */
+    mImageDrawY = 0;
+  }
+  if (mImageDrawY + roi.height * mZoom > mWindowHeight) {
+    /* bottom clip */
+    roi.height = static_cast<int>((mWindowHeight - mImageDrawY ) / mZoom);
+    if (roi.height < 0)
+      roi.height = 0;
+  }
+  
+  dbprintf(5, "roi: %d, %d  %d x %d  dest: %d, %d\n",
+           roi.x, roi.y, roi.width, roi.height, mImageDrawX, mImageDrawY);
+  
+  return roi; 
+}
+
+// ======================================================================
+void Renderer::SetFrameList(FrameListPtr frameList, int readerThreads, 
+                            int maxCachedImages) {
+  DoStereo(frameList->mStereo); 
+
   if (!mCache) {
     mCache.reset(new ImageCache(readerThreads, maxCachedImages, mRequiredImageFormat));
   }
@@ -411,18 +618,92 @@ void Renderer::SetFrameList(FrameListPtr frameList, int readerThreads,
   mCache->ManageFrameList(frameList); 
   mCache->HaveStereoRenderer(mDoStereo); 
   mFrameList = frameList; 
+  mMaxLOD = frameList->mLOD; 
+  mEndFrame = frameList->numStereoFrames()-1;
+  mStartFrame = 0; 
+  mImageHeight = frameList->mHeight; 
+  mImageWidth = frameList->mWidth; 
+
+  if (mBlockbusterInterface) {
+    mBlockbusterInterface->setFrameRange(1, mFrameList->numStereoFrames()); 
+    mBlockbusterInterface->setFrameNumber(1); 
+    QString moviename = mFrameList->getFrame(0)->mFilename.c_str(); 
+    if (moviename.size() > 32) moviename = QString("...") + moviename.right(32); 
+    mBlockbusterInterface->setTitle(QString("Blockbuster Control (%1)").arg(moviename)); 
+    SetTitle(QString("Blockbuster (%1)").arg(moviename)); 
+  }
+
+  return; 
+
 }
 
+// ======================================================================
+void Renderer::SetFrame(int frameNum) {
+  mCurrentFrame = frameNum; 
 
-//=========================================================================
-// BEGIN stuff from Canvas: 
-// ==============================================================
-//============================================================
-/* Saves the specified frame to a file as
- * a compilable Image file. 
- *
- */
+  if (mCurrentFrame > mEndFrame) {    
+    if (mPlayDirection > 0) { 
+      dbprintf(5, "we're playing forward and reached the end of movie\n"); 
+      if (mDoPingPong) {
+        mPlayDirection = -mPlayDirection; 
+        mCurrentFrame = mEndFrame; 
+      } 
+      else {
+        if (mRepeatCount>0) {
+          mRepeatCount --; 
+          
+        }
+        if (mRepeatCount) {
+          mCurrentFrame = mStartFrame; 
+        } else {
+          mCurrentFrame = mEndFrame; 
+          mPlayDirection = 0; 
+        } 
+      }// if not mDoPingPong
+    } else { // we are stopped, or are playing backward, either way, it's not the end of a loop, so just fix the issue, which is probably that the user asked to skip beyond the end of the movie
+      mCurrentFrame = mEndFrame;
+    }
+  }    
+  if (mCurrentFrame < mStartFrame) {
+    if (mPlayDirection < 0) { 
+      dbprintf(5, "we're playing backward and reached the end of movie\n"); 
+      if (mDoPingPong) {
+        mPlayDirection = -mPlayDirection; 
+        mCurrentFrame = mStartFrame; 
+      } 
+      else {
+        if (mRepeatCount > 0) {
+          mRepeatCount --; 
+        }
+        if (mRepeatCount) {
+          mCurrentFrame = mEndFrame; 
+        } else { // time to stop, just stick at the end and don't render
+          mCurrentFrame = mStartFrame; 
+          mPlayDirection = 0; 
+        } 
+      }// end ! mDoPingPong
+    } else { // we are stopped, or are playing forward, either way, it's not the end of a loop, so just fix the issue, which is probably that the user asked to skip beyond the start of the movie
+      mCurrentFrame = mStartFrame;
+    }
+  }
+  dbprintf(5, "SetFrame(%d), new frame is %d\n", frameNum, mCurrentFrame); 
+  return; 
+}
+  
 
+// ======================================================================
+void Renderer::AdvanceFrame(void) {
+  AdvanceFrame(mPlayDirection); 
+  return; 
+}
+
+// ======================================================================
+void Renderer::AdvanceFrame(int numframes) {
+  SetFrame(mCurrentFrame + numframes);
+  return; 
+}
+ 
+// ======================================================================
 void Renderer::WriteImageToFile(int frameNumber)
 {
   ImagePtr image;
@@ -553,99 +834,38 @@ FrameInfoPtr Renderer::GetFrameInfoPtr(int frameNumber)
 
 
 //============================================================
-void Renderer::ReportFrameListChange(FrameListPtr iframeList) {
+/*void Renderer::ReportFrameListChange(FrameListPtr iframeList) {
   mFrameList = iframeList; 
   DEBUGMSG("Renderer::ReportFrameListChange"); 
   if (mBlockbusterInterface) {
-    mBlockbusterInterface->setFrameRange(1, mFrameList->numStereoFrames()); 
-    mBlockbusterInterface->setFrameNumber(1); 
-    QString moviename = mFrameList->getFrame(0)->mFilename.c_str(); 
-    if (moviename.size() > 32) moviename = QString("...") + moviename.right(32); 
-    mBlockbusterInterface->setTitle(QString("Blockbuster Control (%1)").arg(moviename)); 
-    SetTitle(QString("Blockbuster (%1)").arg(moviename)); 
+  mBlockbusterInterface->setFrameRange(1, mFrameList->numStereoFrames()); 
+  mBlockbusterInterface->setFrameNumber(1); 
+  QString moviename = mFrameList->getFrame(0)->mFilename.c_str(); 
+  if (moviename.size() > 32) moviename = QString("...") + moviename.right(32); 
+  mBlockbusterInterface->setTitle(QString("Blockbuster Control (%1)").arg(moviename)); 
+  SetTitle(QString("Blockbuster (%1)").arg(moviename)); 
   }
   return; 
-}
-
+  }
+*/
 //============================================================
-void Renderer::ReportFrameChange(int frameNumber) {
-  DEBUGMSG("Renderer::ReportFrameChange %d", frameNumber); 
+void Renderer::UpdateInterface(void) {
   if (mBlockbusterInterface) {
-    mBlockbusterInterface->setFrameNumber(frameNumber+1); 
+    mBlockbusterInterface->setFrameNumber(mCurrentFrame+1); 
+    mBlockbusterInterface->setLOD(mLOD); 
+    mBlockbusterInterface->reportWindowMoved(mImageXOffset, mImageYOffset); 
+    mBlockbusterInterface->reportWindowResize(mWindowWidth, mWindowHeight); 
+    mBlockbusterInterface->SetSizeToMovieCheckBox(mWindowWidth == mImageWidth && mWindowHeight == mImageHeight); 
+    mBlockbusterInterface->reportMovieMoved(mImageXOffset, mImageYOffset); 
+    mBlockbusterInterface->reportMovieFrameSize(mImageWidth, mImageHeight);
+    mBlockbusterInterface->reportMovieDisplayedSize(mZoom * mImageWidth, mZoom * mImageHeight); 
+    mBlockbusterInterface->setPingPongBehavior(mDoPingPong); 
+    mBlockbusterInterface->setStereo(mDoStereo); 
+    mBlockbusterInterface->setZoom(mZoom); 
+    mBlockbusterInterface->setZoomToFit(mZoomToFit); 
+    mBlockbusterInterface->reportActualFPS(mFPS); 
+    mBlockbusterInterface->setLODRange(0, mMaxLOD); 
   }
-  return; 
-}
-
-//============================================================
-void Renderer::ReportDetailRangeChange(int min, int max) {
-  if (mBlockbusterInterface) {
-    mBlockbusterInterface->setLODRange(min,max); 
-    mBlockbusterInterface->setLOD(1); 
-  }
-  return; 
-}
-
-//============================================================
-void Renderer::ReportDetailChange(int levelOfDetail) {
-  if (mBlockbusterInterface) {
-    mBlockbusterInterface->setLOD(levelOfDetail); 
-  }
-  return; 
-}
-
-//============================================================
-void Renderer::ReportRateRangeChange(float min, float max) {
-  if (mBlockbusterInterface) {
-    mBlockbusterInterface->setFrameRateRange(min,max); 
-  }
-  return; 
-}
-
-//============================================================
-void Renderer::ReportRepeatBehaviorChange(int behavior) {
-  if (mBlockbusterInterface) {
-    mBlockbusterInterface->setRepeatBehavior(behavior); 
-  }
-  return; 
-}
-
-//============================================================
-void Renderer::ReportPingPongBehaviorChange(int behavior) {
-  if (mBlockbusterInterface) {
-    mBlockbusterInterface->setPingPongBehavior(behavior); 
-  }
-  return; 
-}
-
-//============================================================
-void Renderer::ReportRateChange(float rate) {
-  if (mBlockbusterInterface) {
-    mBlockbusterInterface->setFrameRate(rate); 
-  }
-  return; 
-}
-
-//============================================================
-void Renderer::ReportStereoChange(bool stereo) {
-  if (mBlockbusterInterface) {
-    mBlockbusterInterface->setStereo(stereo); 
-  }
-  return; 
-}
-//============================================================
-void Renderer::ReportZoomChange(float zoom) {
-  if (mBlockbusterInterface) {
-    mBlockbusterInterface->setZoom(zoom); 
-  }
-  return; 
-}
-
-//============================================================
-void Renderer::ReportZoomToFitChange(bool ztf) {
-  if (mBlockbusterInterface) {
-    mBlockbusterInterface->setZoomToFit(ztf); 
-  }
-  return; 
 }
 
 //============================================================
@@ -658,53 +878,6 @@ void Renderer::ShowInterface(int on) {
     }
   }
   return; 
-}
-//============================================
-void Renderer::reportWindowMoved(int xpos, int ypos){
-  if (mBlockbusterInterface) {
-    mBlockbusterInterface->reportWindowMoved(xpos, ypos); 
-  }
-  return ;
-}
-
-//============================================
-void Renderer::reportWindowResize(int x, int y){
-  if (mBlockbusterInterface) {
-    mBlockbusterInterface->reportWindowResize(x,y); 
-  }
-  return ;
-} 
-
-//============================================
-void Renderer::reportMovieMoved(int xpos, int ypos){
-  if (mBlockbusterInterface) {
-    mBlockbusterInterface->reportMovieMoved(xpos, ypos); 
-  }
-  return ;
-} 
- 
-//============================================
-void Renderer::reportMovieFrameSize(int x, int y){
-  if (mBlockbusterInterface) {
-    mBlockbusterInterface->reportMovieFrameSize(x,y);
-  }
-  return ;
-} 
-
-//============================================
-void Renderer::reportMovieDisplayedSize(int x, int y){
-  if (mBlockbusterInterface) {
-    mBlockbusterInterface->reportMovieDisplayedSize(x,y); 
-  }
-  return ;
-} 
-
-//============================================
-void Renderer::reportActualFPS(double rate){
-  if (mBlockbusterInterface) {
-    mBlockbusterInterface->reportActualFPS(rate); 
-  }
-  return ;
 }
 
 //============================================
@@ -724,13 +897,6 @@ void Renderer::reportMovieCueComplete(void){
 }
 
 
-/* Possible swap actions: 
-   {"undefined", XdbeUndefined, "back buffer becomes undefined on swap"},
-   -    {"background", XdbeBackground, "back buffer is cleared to window background on swap"},
-   -    {"untouched", XdbeUntouched, "back buffer is contents of front buffer on swap"},
-   -    {"copied", XdbeCopied, "back buffer is held constant on swap"},
-*/ 
-
 //======================================================   
 void Renderer::ShowCursor(bool show) {
   DEBUGMSG("Show cursor: %d\n", show); 
@@ -747,8 +913,7 @@ void Renderer::ShowCursor(bool show) {
     if(blank == None) dbprintf(0, "error: out of memory.\n");
     cursor = XCreatePixmapCursor(mDisplay, blank, blank, &dummy, &dummy, 0, 0);
     XFreePixmap (mDisplay, blank);
-    
-    
+        
     //this makes you the cursor. then set it using this function
     XDefineCursor(mDisplay,  mWindow,  cursor);
   } else {
@@ -779,16 +944,28 @@ void Renderer::Resize(int newWidth, int newHeight, int cameFromX){
   ECHO_FUNCTION(5);
   dbprintf(5, "Renderer::Resize(%d, %d, %d)\n", newWidth, newHeight, cameFromX); 
   if (cameFromX) {
-    mHeight = newHeight; 
-    mWidth = newWidth; 
+    mWindowHeight = newHeight; 
+    mWindowWidth = newWidth; 
     return; 
   }
 
+  if (newWidth == 0) {
+    newWidth = mImageWidth;
+  }
+  if (newHeight == 0)  {
+    newHeight = mImageHeight;
+  }
+  if (newWidth > mScreenWidth) {
+    newWidth = mScreenWidth; 
+  }
+  if (newHeight > mScreenHeight) {
+    newHeight = mScreenHeight; 
+  }
 
   XWindowChanges values;
   unsigned int mask;
   
-  if (mWidth == newWidth && mHeight == newHeight) {
+  if (mWindowWidth == newWidth && mWindowHeight == newHeight) {
     dbprintf(5, "Renderer::Resize -- no change\n"); 
     return;
   }
@@ -804,8 +981,8 @@ void Renderer::Resize(int newWidth, int newHeight, int cameFromX){
   values.height = newHeight;
   mask = CWWidth | CWHeight;
   
-  mWidth = newWidth;
-  mHeight = newHeight;
+  mWindowWidth = newWidth;
+  mWindowHeight = newHeight;
 
   XSizeHints sizeHints;
   long supplied_hints = 0; 
@@ -824,7 +1001,7 @@ void Renderer::Resize(int newWidth, int newHeight, int cameFromX){
     sizeHints.flags = PMinSize;    
     XSetWMNormalHints(mDisplay, mWindow, &sizeHints);    
   } else {
-     dbprintf(5, "PMinSize NOT detected\n"); 
+    dbprintf(5, "PMinSize NOT detected\n"); 
   }
 
   dbprintf(2, "XResizeWindow(%d, %d)\n", newWidth, newHeight); 
@@ -842,15 +1019,16 @@ void Renderer::Resize(int newWidth, int newHeight, int cameFromX){
 void Renderer::Move(int newX, int newY, int cameFromX) {
   ECHO_FUNCTION(5);
   //cerr << "MoveXWindow"<<endl;
+  if (newX != -1) {
+    mWindowXPos = newX; 
+  }
+  if (newY != -1) {
+    mWindowYPos = newY; 
+  }
   if (cameFromX) {
-    mXPos = newX; 
-    mYPos = newY; 
     return; 
   }
   XMoveWindow(mDisplay, mWindow, newX, newY);
-  mXPos = newX;  
-  mYPos = newY; 
-  /* Force sync, in case we get no events (dmx) */
   XSync(mDisplay, 0);
 }
 

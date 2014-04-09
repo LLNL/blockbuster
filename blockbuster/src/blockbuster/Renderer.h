@@ -29,7 +29,7 @@ class Renderer {
 
   
   // ======================================================================
-  Renderer(ProgramOptions *options, qint32 parentWindowID, BlockbusterInterface *gui = NULL): mBlockbusterInterface(gui), mParentWindow(parentWindowID), mDoStereo(false) { 
+  Renderer(ProgramOptions *options, qint32 parentWindowID, BlockbusterInterface *gui = NULL): mBlockbusterInterface(gui), mDoStereo(false), mParentWindow(parentWindowID) { 
     Init(options); 
     return; 
   } 
@@ -63,14 +63,14 @@ class Renderer {
   
   // ======================================================================
   virtual void DoStereo(bool s) {
-    ReportStereoChange(s); 
+    mDoStereo = s;     
     return; 
   }
 
 
   void FinishXWindowInit(void); 
   void SetFullScreen(bool fullscreen) ;
-  void set_mwm_border(bool onoff);
+  void EnableDecorations(bool);
 
   // ======================================================================
   // the following depend on whether DMX is being used: 
@@ -87,44 +87,70 @@ class Renderer {
     return mCache->GetImage(frameNumber, newRegion, levelOfDetail, false); 
   }
   
-  
+  void SetRepeat(int repeats); 
+  void SetPingPong(bool pingpong); 
+  // ======================================================================
+  void StartZooming(int32_t mouseY) ;
+  void UpdateZooming(int32_t mouseY);
+  void EndZooming(void);
+  void ZoomByFactor(float fact);
+  void SetZoom(float zoom);
+  void SetZoomToFit(bool ztf);
+  void ZoomToFit(void);
   
   // ======================================================================
+  void StartPanning(int32_t mouseX, int32_t mouseY);
+  void UpdatePanning(int32_t mouseX, int32_t mouseY);
+  void EndPanning(void);
+  void SetImageOffset(int32_t x, int32_t y); 
+                            
+  // ======================================================================
+  Rectangle ComputeROI(void);
+  
+  // ======================================================================
+  void Render(void) {
+    Render(ComputeROI()); 
+  }
+
+  // ======================================================================
   // The fundamental operation of the Renderer is to render.     
-  void Render(int frameNumber, int /*previousFrame */, 
-              uint32_t preloadFrames, int playDirection, 
-              uint32_t startFrame, uint32_t endFrame,
-              RectanglePtr imageRegion,
-              int destX, int destY, float zoom, int lod) {
+  void Render(Rectangle roi) {
     if (mFrameList->mStereo) {
-      mCache->PreloadHint(preloadFrames*2, playDirection, 
-                          startFrame*2, endFrame*2+1);
+      mCache->PreloadHint(mPreloadFrames*2, mPlayDirection, 
+                          mStartFrame*2, mEndFrame*2+1);
     } else {
-      mCache->PreloadHint(preloadFrames, playDirection, 
-                          startFrame, endFrame);
+      mCache->PreloadHint(mPreloadFrames, mPlayDirection, 
+                          mStartFrame, mEndFrame);
     }
-    RenderActual(frameNumber, imageRegion, destX, destY, zoom, lod); 
-    
+    RenderActual(roi); 
   }
   
   // ======================================================================
   // This is the actual renderer, minus the cache decorations
-  virtual void RenderActual(int frameNumber,
-                            RectanglePtr imageRegion,
-                            int destX, int destY, float zoom, int lod) = 0; 
+  virtual void RenderActual(Rectangle ROI) = 0; 
 
  // ======================================================================
   virtual void SetFrameList(FrameListPtr frameList, int readerThreads, 
                               int maxCachedImages) ;
+
   
-  
+ // ======================================================================
+  void SetFrame(int fnum); 
+
+ // ======================================================================
+  void AdvanceFrame(void); 
+
+ // ======================================================================
+  void AdvanceFrame(int numframes); 
+
+
   /* Describes best image format for the Renderer.  The various FileFormat
    * modules will be told to give us images in this format; if they
    * fail to do so, we'll convert them ourselves (an expensive but
    * functional situation).
    */
   ImageFormat mRequiredImageFormat;
-
+  
   // ==============================================================
   // BEGIN stuff from Canvas: 
   // ==============================================================
@@ -143,48 +169,16 @@ class Renderer {
     return; 
   }
 
-  /* This is called if any module wishes to report an error,
-   * warning, informational, or debug message.  The modules
-   * call through the SYSERROR(), ERROR(), WARNING(), INFO(), 
-   * and DEBUGMSG() macros, but ultimately the message comes to here.
-   */
-  void ReportFrameListChange(const FrameListPtr frameList);
-  void ReportFrameChange(int frameNumber);
-  void ReportDetailRangeChange(int min, int max);
-  void ReportDetailChange(int levelOfDetail);
-  void ReportRateRangeChange(float minimumRate, float maximumRate);
-  void ReportRepeatBehaviorChange(int behavior);
-  void ReportPingPongBehaviorChange(int behavior);
-  void ReportRateChange(float rate);
-  void ReportZoomChange(float zoom);
-  void ReportZoomToFitChange(bool ztf);
-  void ReportStereoChange(bool stereo); 
+  
+  void UpdateInterface(void);
+
   void ShowInterface(int on);
   
-  void reportWindowMoved(int xpos, int ypos); 
-  void reportWindowResize(int x, int y); 
-  void reportMovieMoved(int xpos, int ypos); 
-  void reportMovieFrameSize(int x, int y); 
-  void reportMovieDisplayedSize(int x, int y); 
-  void reportActualFPS(double rate); 
   void reportMovieCueStart(void); 
   void reportMovieCueComplete(void); 
  
  public:
-  int mHeight;
-  int mWidth;
-  int mScreenHeight, mScreenWidth; 
-  int mXPos; 
-  int mYPos; 
-  int mDepth;
-  //int mThreads;
-  //int mCacheSize;
 
-  BlockbusterInterface *mBlockbusterInterface; 
-  
-  FrameListPtr mFrameList;
-   
-  int32_t mPlayDirection, mStartFrame, mEndFrame, mPreloadFrames; 
 
   // ==============================================================
   // END  stuff from Canvas 
@@ -211,6 +205,41 @@ class Renderer {
   void Move(int newX, int newY, int cameFromX);
   void fakeMouseClick(void); 
 
+  int mScreenHeight, mScreenWidth; 
+  int mWindowWidth, mWindowHeight, 
+    mWindowXPos, mWindowYPos, 
+    mImageDrawX, mImageDrawY; // where to draw the image into the window
+  int mImageWidth, mImageHeight;
+
+  // PANNING
+  int  mImageXOffset, mImageYOffset, // offsets from previous panning
+    mPanStartX, mPanStartY, mPanX, mPanY; // current pan before mouse release
+    
+  bool mPanning; // to avoid spurious signals
+
+  // ZOOMING
+  double mZoom, mZoomBasis; 
+  int  mZoomStartY; 
+  bool mZooming; 
+
+  float mFPS; 
+  uint32_t mDepth, mLOD, mMaxLOD;
+  BlockbusterInterface *mBlockbusterInterface; 
+  bool mDoStereo, mDoPingPong, mZoomToFit, 
+    mSizeToMovie, mFullScreen, 
+    mDecorations, mNoSmallWindows;
+  string mFontName; 
+  string mDisplayName; 
+  uint32_t mReaderThreads, mNumCachedImages; 
+  int mRepeatCount; 
+  Rectangle mStartGeometry; 
+  FrameListPtr mFrameList;
+   
+  int32_t mCurrentFrame, mStartFrame, mEndFrame, 
+    mPlayDirection, mPreloadFrames; 
+                                                
+  bool mPlayExit; 
+
   // from WindowInfo struct:  
   Display *mDisplay;
   XVisualInfo *mVisualInfo;
@@ -224,21 +253,13 @@ class Renderer {
   bool mShowCursor; 
   long mOldWidth, mOldHeight, mOldX, mOldY; 
   bool mXSync; 
-  bool mDoStereo; 
   // ==============================================================
   // END  stuff from XWindow 
   // ==============================================================
   QString mName; 
 
-  // ProgramOptions *mOptions; 
-  Rectangle mGeometry;
-  bool mDecorations, mFullScreen, mNoSmallWindows;
-  string mFontName; 
-  string mDisplayName; 
-  uint32_t mReaderThreads, mNumCachedImages; 
-
   ImageCachePtr mCache; // if not using DMX
-  NewImageCachePtr mNewCache; 
+  //  NewImageCachePtr mNewCache; 
 
 
 } ;

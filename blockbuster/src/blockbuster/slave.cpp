@@ -300,12 +300,9 @@ int Slave::Loop(void)
 {
   DEBUGMSG("SlaveLoop (thread %p), mMasterSocket state %d", QThread::currentThread(), mMasterSocket.state()); 
   int argc = 0;
-  int32_t lastImageRendered = -1; 
   gCoreApp = new QApplication(argc, NULL); 
   bool idle = false; 
-  RectanglePtr currentRegion; 
-  qint32 destX = 0,  destY = 0,  lod = 0;
-  float zoom;
+  Rectangle currentRegion; 
   /* contact the master movie player */
   try {
     bool speedTest=false; 
@@ -365,36 +362,23 @@ int Slave::Loop(void)
               continue; 
             }
             //Rectangle src;
-            qint32 imageNum = messageList[1].toLong(); 
-            qint32 region_x = messageList[2].toLong(); 
-            qint32 region_y = messageList[3].toLong(); 
-            qint32 region_width = messageList[4].toLong(); 
-            qint32 region_height = messageList[5].toLong(); 
-            if (!currentRegion || region_x != currentRegion->x ||
-                region_y != currentRegion->y || 
-                region_width != currentRegion->width ||
-                region_height != currentRegion->height) {
-              currentRegion.reset(new Rectangle(region_x, region_y, region_width, region_height)); 
-            }
-                
-            destX = messageList[6].toLong();
-            destY = messageList[7].toLong();
-            lod = messageList[9].toLong();
-            zoom = messageList[8].toFloat();
+            // qint32 imageNum = messageList[1].toLong(); 
+            currentRegion.x = messageList[2].toLong(); 
+            currentRegion.y = messageList[3].toLong(); 
+            currentRegion.width = messageList[4].toLong(); 
+            currentRegion.height = messageList[5].toLong(); 
+            mRenderer->mCurrentFrame = messageList[1].toLong();
+            mRenderer->mImageDrawX = messageList[6].toLong();
+            mRenderer->mImageDrawY = messageList[7].toLong();
+            mRenderer->mLOD = messageList[9].toLong();
+            mRenderer->mZoom = messageList[8].toFloat();
             if (mRenderer->mFrameList) {
-              mRenderer->Render(imageNum, lastImageRendered,  
-                                preload, playStep, 
-                                playFirstFrame, playLastFrame, 
-                                currentRegion, destX, destY, zoom, lod);
-              
-             
-              lastImageRendered = imageNum; 
+              mRenderer->Render(currentRegion);
             }
             else {
               SendError("No frames to render\n");
-              lastImageRendered = -1; 
             }
-            DEBUGMSG(QString("Render %1 complete").arg(imageNum)); 
+            DEBUGMSG(QString("Render %1 complete").arg(mRenderer->mCurrentFrame)); 
           }// end "Render"
           else if (token == "DrawString") {
             if (messageList.size() != 3) {
@@ -457,26 +441,6 @@ int Slave::Loop(void)
 #endif
             /* send ack */
             SendMessage(QString("SwapBuffers complete %1 %2").arg(messageList[1]).arg(messageList[2])); 
-            /*  mRenderer->Preload(lastImageRendered, preload, playDirection, 
-                startFrame, endFrame, &currentRegion, lod); 
-            */
-            /* if (preload && mRenderer && mRenderer->mFrameList) {
-               int32_t i;
-               for (i = 1; i <= preload; i++) {
-               int offset = (playDirection == -1) ? -i : i;
-               int frame = (lastImageRendered + offset);
-               if (frame > endFrame) {
-               frame = startFrame + (frame - endFrame);// preload for loops
-               } 
-               if (frame < startFrame) {
-               frame = endFrame - (startFrame - frame); // for loops
-               } 
-               DEBUGMSG("Preload frame %d", frame); 
-               mRenderer->Preload(frame, &currentRegion, lod);
-               }
-               
-               }
-            */ 
           } // end "SwapBuffers"
           else if (token == "Preload") {
             if (messageList.size() != 2) {
@@ -611,13 +575,9 @@ int Slave::Loop(void)
         NEW CODE:  Behave like DisplayLoop, in that you do not need explicit master control of when to swap the next frame.  Hopefully, this eliminates delays inherent in that model.  
       */ 
       if (0 && playStep) {
-        if (mRenderer && mRenderer->mFrameList) {
-          mRenderer->Render(playFrame, lastImageRendered,  
-                            preload, playStep, 
-                            playFirstFrame, playLastFrame, currentRegion, 
-                            destX, destY, zoom, lod);
+        if (mRenderer) {
+          mRenderer->Render(currentRegion);
         }
-        lastImageRendered = playFrame; 
 #ifdef USE_MPI
         if (mOptions->useMPI) { 
           DEBUGMSG("frame %d, %d:  MPI_Barrier", playFrame, mRenderer); 
@@ -646,15 +606,11 @@ int Slave::Loop(void)
           
           /* render the next frame and advance the counter */
           if (mRenderer && mRenderer->mFrameList) {
-            mRenderer->Render(playFrame, lastImageRendered,  
-                              preload, playStep, 
-                              playFirstFrame, playLastFrame, currentRegion, 
-                              destX, destY, zoom, lod);
+            mRenderer->Render(currentRegion);
           }
-          lastImageRendered = playFrame; 
-          playFrame ++; 
-          if (playFrame > playLastFrame) {
-            playFrame = 0; 
+          mRenderer->mCurrentFrame ++; 
+          if (mRenderer->mCurrentFrame > playLastFrame) {
+            mRenderer->mCurrentFrame = 0; 
           }
 #ifdef USE_MPI
           if (mOptions->useMPI) { 

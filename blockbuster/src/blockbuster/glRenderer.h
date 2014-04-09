@@ -38,9 +38,7 @@ class glRenderer: public Renderer {
   // ======================================================================
   virtual void DrawString(int row, int column, const char *str);
 
-  virtual void RenderActual(int frameNumber,
-                            RectanglePtr imageRegion,
-                            int destX, int destY, float zoom, int lod); 
+  virtual void RenderActual(Rectangle ROI); 
 
   void RenderStereo(int frameNumber,
                     RectanglePtr imageRegion,
@@ -58,7 +56,7 @@ class glRenderer: public Renderer {
   vector<float> timeSamples; 
 } ;
 
-
+ 
 
 // ==================================================================
 // glTextureRenderer
@@ -96,8 +94,7 @@ class glTextureRenderer: public glRenderer {
   virtual void BeginRendererInit(void); 
 
   int32_t MinPowerOf2(int x); 
-  void RenderActual(int frameNumber, RectanglePtr imageRegion,
-                    int destX, int destY, float zoom, int lod);
+  virtual void RenderActual(Rectangle ROI);
   TextureObjectPtr GetTextureObject(int frameNumber);
   void UpdateProjectionAndViewport(int newWidth, int newHeight);
 
@@ -107,5 +104,5 @@ class glTextureRenderer: public glRenderer {
 
 }; 
 
-
+  
 #endif

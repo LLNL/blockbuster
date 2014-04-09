@@ -213,7 +213,7 @@ void BlockbusterInterface::setRepeatBehavior (int behavior){
 //=============================================================
 void BlockbusterInterface::setPingPongBehavior (int behavior){
   mPingPong = behavior; 
-  pingpongCheckBox->setChecked(behavior != 0);   
+  pingpongCheckBox->setChecked(behavior);   
   return; 
 }
 
@@ -225,7 +225,7 @@ void BlockbusterInterface::reportWindowMoved(int xpos, int ypos){
 
 //=============================================================
 void BlockbusterInterface::reportWindowResize(int x, int y){
-  mInfoWindow->windowSizeLabel->setText(QString("%1, %2").arg(x).arg(y)); 
+  mInfoWindow->windowSizeLabel->setText(QString("%1, %2").arg(x).arg(y));   
   return; 
 }
 
@@ -303,7 +303,18 @@ void BlockbusterInterface::on_zoomToFitCheckBox_clicked() {
   mEventQueue.push_back(MovieEvent("MOVIE_ZOOM_TO_FIT", zoomToFitCheckBox->isChecked())); 
 }
 void BlockbusterInterface::on_fullScreenCheckBox_clicked() {
-  mEventQueue.push_back(MovieEvent("MOVIE_FULLSCREEN", fullScreenCheckBox->isChecked()));     
+  mEventQueue.push_back(MovieEvent("MOVIE_FULLSCREEN", fullScreenCheckBox->isChecked()));  
+  if (fullScreenCheckBox->isChecked()) {
+    sizeToMovieCheckBox->setChecked(false); 
+  }
+  return; 
+}
+void BlockbusterInterface::on_sizeToMovieCheckBox_clicked() {
+  mEventQueue.push_back(MovieEvent("MOVIE_SIZE_TO_MOVIE", sizeToMovieCheckBox->isChecked()));     
+  if (sizeToMovieCheckBox->isChecked()) {
+    fullScreenCheckBox->setChecked(false); 
+  }
+  return; 
 }
 void BlockbusterInterface::on_infoButton_clicked() {
   mInfoWindow->show(); 

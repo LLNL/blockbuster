@@ -267,19 +267,18 @@ int dmxRenderer::IsDMXDisplay(Display *dpy) {
 }
 
 //  =============================================================
-void dmxRenderer::RenderActual(int frameNumber,const RectanglePtr imageRegion,
-                               int destX, int destY, float zoom, int lod)
+void dmxRenderer::RenderActual(Rectangle imageRegion)
 {
-  
+  // int frameNumber,const RectanglePtr imageRegion,
+  // int destX, int destY, float zoom, int lod
   ECHO_FUNCTION(5);
   if (!mNumValidWindowInfos) return; 
-  
   int i;
      
 #if 0
   printf("DMX::Render %d, %d  %d x %d  at %d, %d  zoom=%f\n",
-         imageRegion->x, imageRegion->y,
-         imageRegion->width, imageRegion->height,
+         imageRegion.x, imageRegion.y,
+         imageRegion.width, imageRegion.height,
          destX, destY, zoom);
 #endif
   
@@ -314,21 +313,20 @@ void dmxRenderer::RenderActual(int frameNumber,const RectanglePtr imageRegion,
     }
 #endif
     if (mDmxWindowInfos[i].window) {
-      const XRectangle *vis = &mDmxWindowInfos[i].vis;
-      Rectangle newRegion;
       int newDestX, newDestY;
       
-      ClipImageRegion(destX, destY, imageRegion.get(), vis, zoom,
-                      &newDestX, &newDestY, &newRegion);
+      ClipImageRegion(mImageDrawX, mImageDrawY, imageRegion, 
+                      &mDmxWindowInfos[i].vis, mZoom,
+                      &newDestX, &newDestY);
       
-      mActiveSlaves[scrn]->SetCurrentFrame(frameNumber); 
+      mActiveSlaves[scrn]->SetCurrentFrame(mCurrentFrame); 
       mActiveSlaves[scrn]->
         SendMessage(QString("Render %1 %2 %3 %4 %5 %6 %7 %8 %9")
-                    .arg(frameNumber)
-                    .arg(newRegion.x) .arg(newRegion.y)
-                    .arg(newRegion.width) .arg(newRegion.height)
+                    .arg(mCurrentFrame)
+                    .arg(imageRegion.x) .arg(imageRegion.y)
+                    .arg(imageRegion.width) .arg(imageRegion.height)
                     .arg(newDestX) .arg(newDestY)
-                    .arg(zoom).arg(lod));
+                    .arg(mZoom).arg(mLOD));
       
       
     }
@@ -782,23 +780,22 @@ void dmxRenderer::ClearScreenInfos(void) {
  * particular screen.
  */
 void dmxRenderer::ClipImageRegion(int destX, int destY, 
-                                  const Rectangle *imageRegion,
+                                  Rectangle &imageRegion,
                                   const XRectangle *vis, float zoom,
-                                  int *destXout, int *destYout, 
-                                  Rectangle *regionOut) {
+                                  int *destXout, int *destYout) {
   int dx, dy;
   
   /* Compute bounds of the image in mural space */
   int x0 = destX;
   int y0 = destY;
-  int x1 = destX + (int)(imageRegion->width * zoom); /* plus epsilon? */
-  int y1 = destY + (int)(imageRegion->height * zoom);
+  int x1 = destX + (int)(imageRegion.width * zoom); /* plus epsilon? */
+  int y1 = destY + (int)(imageRegion.height * zoom);
   
   /* Bounds of the image that's visible */
-  int ix0 = imageRegion->x;
-  int iy0 = imageRegion->y;
-  int ix1 = imageRegion->x + imageRegion->width;
-  int iy1 = imageRegion->y + imageRegion->height;
+  int ix0 = imageRegion.x;
+  int iy0 = imageRegion.y;
+  int ix1 = imageRegion.x + imageRegion.width;
+  int iy1 = imageRegion.y + imageRegion.height;
   
   /* initial dest position for this tile */
   dx = destX;
@@ -885,26 +882,24 @@ void dmxRenderer::ClipImageRegion(int destX, int destY,
   }
   
   /* OK, finish up with new sub-image rectangle */
-  regionOut->x = ix0;
-  regionOut->y = iy0;
-  regionOut->width = ix1 - ix0;
-  regionOut->height = iy1 - iy0;
+  imageRegion.x = ix0;
+  imageRegion.y = iy0;
+  imageRegion.width = ix1 - ix0;
+  imageRegion.height = iy1 - iy0;
   *destXout = dx;
   *destYout = dy;
   
   /* make sure our values are good */
-  bb_assert(regionOut->x >= 0);
-  bb_assert(regionOut->y >= 0);
-  bb_assert(regionOut->width >= 0);
-  bb_assert(regionOut->height >= 0);
+  bb_assert(imageRegion.x >= 0);
+  bb_assert(imageRegion.y >= 0);
+  bb_assert(imageRegion.width >= 0);
+  bb_assert(imageRegion.height >= 0);
   bb_assert(dx >= 0);
   bb_assert(dy >= 0);
-#if 0
-  printf("  clipped window region: %d, %d .. %d, %d\n", x0, y0, x1, y1);
-  printf("  clipped image region: %d, %d .. %d, %d\n", ix0, iy0, ix1, iy1);
-  printf("  clipped render: %d, %d  %d x %d  at %d, %d  zoom=%f\n",
-         x, y, w, h, dx, dy, zoom);
-#endif
+
+  dbprintf(5, "  clipped window region: %d, %d .. %d, %d\n", x0, y0, x1, y1);
+  dbprintf(5, "  clipped image region: %d, %d .. %d, %d\n", ix0, iy0, ix1, iy1);
+  return; 
 }
 
 //  =============================================================

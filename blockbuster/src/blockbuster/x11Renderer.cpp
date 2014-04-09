@@ -161,8 +161,7 @@ ImagePtr x11Renderer::ScaleImage( ImagePtr image, int srcX, int srcY,
 }
 
 //====================================================================
-void x11Renderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
-                               int destX, int destY, float zoom, int lod){
+void x11Renderer::RenderActual(Rectangle imageRegion){
   ECHO_FUNCTION(5);
   XImage *xImage;
   char *start;
@@ -170,40 +169,41 @@ void x11Renderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
   int lodScale;
   int subWidth, subHeight;
   int localFrameNumber;
-  Rectangle region = *imageRegion;
-  
+  /*int frameNumber, RectanglePtr imageRegion,
+                               int destX, int destY, float zoom, int lod
+  */
 #if 0
   printf("x11::Render %d, %d %d x %d  at %d, %d  z=%f  lod=%d\n",
-         imageRegion->x, imageRegion->y, imageRegion->width, imageRegion->height,
-         destX, destY, zoom, lod);
+         imageRegion.x, imageRegion.y, imageRegion.width, imageRegion.height,
+         mImageDrawX, mImageDrawY, zoom, mLOD);
 #endif
     
   if (mFrameList->mStereo) {
-    localFrameNumber = frameNumber *2; /* we'll display left frame only */
+    localFrameNumber = mCurrentFrame *2; /* we'll display left frame only */
   }
   else {
-    localFrameNumber = frameNumber;
+    localFrameNumber = mCurrentFrame;
   }
   
   /*
    * Compute possibly reduced-resolution image region to display.
    */
-  lodScale = 1 << lod;
-  region.x = imageRegion->x / lodScale;
-  region.y = imageRegion->y / lodScale;
-  region.width = imageRegion->width / lodScale;
-  region.height = imageRegion->height / lodScale;
-  zoom *= (float) lodScale;
+  lodScale = 1 << mLOD;
+  imageRegion.x = imageRegion.x / lodScale;
+  imageRegion.y = imageRegion.y / lodScale;
+  imageRegion.width = imageRegion.width / lodScale;
+  imageRegion.height = imageRegion.height / lodScale;
+  float zoom = mZoom * (float) lodScale;
   
   /* Pull the image from our cache */
-  ImagePtr image = GetImage(localFrameNumber, &region, lod);
+  ImagePtr image = GetImage(localFrameNumber, &imageRegion, mLOD);
   if (!image) {
     /* error has already been reported */
     return;
   }
   
-  bb_assert(region.x + region.width <= static_cast<int32_t>(image->width));
-  bb_assert(region.y + region.height <= static_cast<int32_t>(image->height));
+  bb_assert(imageRegion.x + imageRegion.width <= static_cast<int32_t>(image->width));
+  bb_assert(imageRegion.y + imageRegion.height <= static_cast<int32_t>(image->height));
   bb_assert(image->imageFormat.rowOrder == TOP_TO_BOTTOM);
   
   /* If we have to, rescale the image.  Note that this is rather inefficient
@@ -218,11 +218,11 @@ void x11Renderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
   
   if (zoom != 1.0) {
     
-    subWidth = (int) (region.width * zoom + 0.0);
-    subHeight = (int) (region.height * zoom + 0.0);
+    subWidth = (int) (imageRegion.width * zoom + 0.0);
+    subHeight = (int) (imageRegion.height * zoom + 0.0);
     
-    ImagePtr zoomedImage = ScaleImage(image, region.x, region.y,
-                             region.width, region.height,
+    ImagePtr zoomedImage = ScaleImage(image, imageRegion.x, imageRegion.y,
+                             imageRegion.width, imageRegion.height,
                              subWidth, subHeight);
     
     /* With the image zoomed, we no longer need the image
@@ -236,8 +236,8 @@ void x11Renderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
     }
   }
   else {
-    subWidth = region.width;
-    subHeight = region.height;
+    subWidth = imageRegion.width;
+    subHeight = imageRegion.height;
   }
   
   /*
@@ -247,8 +247,8 @@ void x11Renderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
   stride = ROUND_UP_TO_MULTIPLE(image->width
                              * image->imageFormat.bytesPerPixel, 4);
   if (zoom == 1.0) {
-    start = (char*)image->Data() + region.y * stride
-      + region.x * image->imageFormat.bytesPerPixel;
+    start = (char*)image->Data() + imageRegion.y * stride
+      + imageRegion.x * image->imageFormat.bytesPerPixel;
   }
   else {
     /* we'll draw the whole rescaled image */
@@ -278,7 +278,7 @@ void x11Renderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
             mGC,
             xImage,
             0, 0, /* src_x, src_y */
-            destX, destY,
+            mImageDrawX, mImageDrawY,
             subWidth, subHeight
             );
   
@@ -286,38 +286,38 @@ void x11Renderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
     /* clear unpainted window regions */
     int x, y, w, h;
     /* above */
-    if (destY > 0) {
+    if (mImageDrawY > 0) {
       x = 0;
       y = 0;
-      w = mWidth;
-      h = destY;
+      w = mWindowWidth;
+      h = mImageDrawY;
       XClearArea(mDisplay, mDrawable,
                  x, y, w, h, False);
     }
     /* below */
-    if (destY + (int) (subHeight * zoom) < mHeight) {
+    if (mImageDrawY + (int) (subHeight * zoom) < mWindowHeight) {
       x = 0;
-      y = destY + (int) (subHeight * zoom);
-      w = mWidth;
-      h = mHeight - y;
+      y = mImageDrawY + (int) (subHeight * zoom);
+      w = mWindowWidth;
+      h = mWindowHeight - y;
       XClearArea(mDisplay, mDrawable, 
                  x, y, w, h, False);
     }
     /* left */
-    if (destX > 0) {
+    if (mImageDrawX > 0) {
       x = 0;
-      y = destY;
-      w = destX;
-      h = mHeight - y;
+      y = mImageDrawY;
+      w = mImageDrawX;
+      h = mWindowHeight - y;
       XClearArea(mDisplay, mDrawable,
                  x, y, w, h, False);
     }
     /* right */
-    if (destX + (int) (subWidth * zoom) < mWidth) {
-      x = destX + (int) (subWidth * zoom);
-      y = destY;
-      w = mWidth - x;
-      h = mHeight - y;
+    if (mImageDrawX + (int) (subWidth * zoom) < mWindowWidth) {
+      x = mImageDrawX + (int) (subWidth * zoom);
+      y = mImageDrawY;
+      w = mWindowWidth - x;
+      h = mWindowHeight - y;
       XClearArea(mDisplay, mDrawable, 
                  x, y, w, h, False);
     }

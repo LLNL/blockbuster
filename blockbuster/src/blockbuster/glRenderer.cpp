@@ -118,7 +118,6 @@ void glRenderer::DoStereo(bool doStereo) {
       dbprintf(1, "Disabling Stereo\n"); 
     }
     mDoStereo = doStereo; 
-    ReportStereoChange(doStereo); 
   }
   return; 
 }  
@@ -161,7 +160,7 @@ void glRenderer::DrawString(int row, int column, const char *str)
   const int x = (column + 1) * mFontHeight;
   const int y = (row + 1) * mFontHeight;
   glPushAttrib(GL_CURRENT_BIT);
-  glBitmap(0, 0, 0, 0, x, mHeight - y - 1, NULL);
+  glBitmap(0, 0, 0, 0, x, mWindowHeight - y - 1, NULL);
   glCallLists(strlen(str), GL_UNSIGNED_BYTE, (GLubyte *) str);
   glPopAttrib();
   return; 
@@ -170,17 +169,19 @@ void glRenderer::DrawString(int row, int column, const char *str)
 #define RENDERDEBUG DEBUGMSG
 //=============================================================
 
-void glRenderer::RenderActual(int frameNumber, 
-                              RectanglePtr imageRegion,
-                              int destX, int destY, float zoom, int lod){
+void glRenderer::RenderActual(Rectangle region){
   int lodScale;
   int localFrameNumber;
-  Rectangle region = *imageRegion;
   int saveSkip;
+  /* int frameNumber, 
+                              RectanglePtr imageRegion,
+                              int destX, int destY, float zoom, int lod
+  */
+
   RENDERDEBUG("glRenderer::RenderActual begin, frame %d, %d x %d  at %d, %d  zoom=%f  lod=%d", 
-           frameNumber,
-           imageRegion->width, imageRegion->height,
-           imageRegion->x, imageRegion->y, zoom, lod);
+           mCurrentFrame,
+           region.width, region.height,
+           region.x, region.y, mZoom, mLOD);
 #ifdef RENDER_TIMING
   float t1 = GetExactSecondsDouble(), t2=0; 
 #endif
@@ -195,46 +196,46 @@ void glRenderer::RenderActual(int frameNumber,
   }
     
   if (mFrameList->mStereo) {
-    localFrameNumber = frameNumber *2; 
+    localFrameNumber = mCurrentFrame *2; 
   }
   else {
-    localFrameNumber = frameNumber;
+    localFrameNumber = mCurrentFrame;
   }
 
  
-  lodScale = 1 << lod;
+  lodScale = 1 << mLOD;
 
  
-  int rr = ROUND_UP_TO_MULTIPLE(imageRegion->x,lodScale);
-  if(rr > imageRegion->x) {
+  int rr = ROUND_UP_TO_MULTIPLE(region.x,lodScale);
+  if(rr > region.x) {
     region.x = rr - lodScale;
   }
   region.x /= lodScale;
   
-  rr = ROUND_UP_TO_MULTIPLE(imageRegion->y,lodScale);
-  if(rr > imageRegion->y) {
+  rr = ROUND_UP_TO_MULTIPLE(region.y,lodScale);
+  if(rr > region.y) {
     region.y = rr - lodScale;
   }
   region.y /= lodScale;
   
-  rr = ROUND_UP_TO_MULTIPLE(imageRegion->width,lodScale);
-  if(rr > imageRegion->width) {
+  rr = ROUND_UP_TO_MULTIPLE(region.width,lodScale);
+  if(rr > region.width) {
     region.width = rr - lodScale;
   }
   region.width /= lodScale;
   
-  rr = ROUND_UP_TO_MULTIPLE(imageRegion->height,lodScale);
-  if(rr > imageRegion->height) {
+  rr = ROUND_UP_TO_MULTIPLE(region.height,lodScale);
+  if(rr > region.height) {
     region.height = rr - lodScale;
   }
   
   region.height /= lodScale;
 
-  zoom *= (float) lodScale;
+  float scaledZoom = mZoom * (float) lodScale;
 
 
   RENDERDEBUG("glRenderer::RenderActual Pull the image from our cache "); 
-  ImagePtr image =  mCache->GetImage(localFrameNumber, &region, lod, true), 
+  ImagePtr image =  mCache->GetImage(localFrameNumber, &region, mLOD, true), 
     rightimage;
   if (!image) {
     /* error has already been reported */
@@ -246,7 +247,7 @@ void glRenderer::RenderActual(int frameNumber,
     /* Pull the right hand image from our cache */
     localFrameNumber++;
     RENDERDEBUG("glStereoRenderer::RenderActual Pull the right buffer image from our cache "); 
-    rightimage = mCache->GetImage(localFrameNumber, &region, lod, false);
+    rightimage = mCache->GetImage(localFrameNumber, &region, mLOD, false);
     RENDERDEBUG("Got right buffer image"); 
     if (rightimage == NULL) {
       /* error has already been reported */
@@ -261,21 +262,21 @@ void glRenderer::RenderActual(int frameNumber,
   bb_assert(region.x >= 0);
   bb_assert(region.y >= 0);
 
-  glViewport(0, 0, mWidth, mHeight);
+  glViewport(0, 0, mWindowWidth, mWindowHeight);
   RENDERDEBUG("done with glViewport"); 
 
 
   /* only clear the window if we have to */
   bool needClear = false; 
-  if (destX > 0 || destY > 0 ||
-      region.width * zoom < mWidth ||
-      region.height * zoom < mHeight) {
+  if (mImageDrawX > 0 || mImageDrawY > 0 ||
+      region.width * scaledZoom < mWindowWidth ||
+      region.height * scaledZoom < mWindowHeight) {
     needClear = true; 
     glClearColor(0.0, 0.0, 0.0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
   }
 
-  RENDERDEBUG(QString("Done with glClearColor and glClear.  Frame %1 row order is %2").arg(frameNumber).arg(image->imageFormat.rowOrder)); 
+  RENDERDEBUG(QString("Done with glClearColor and glClear.  Frame %1 row order is %2").arg(mCurrentFrame).arg(image->imageFormat.rowOrder)); 
   
   if (image->imageFormat.rowOrder == BOTTOM_TO_TOP) {
     /*
@@ -283,26 +284,26 @@ void glRenderer::RenderActual(int frameNumber,
      * Yes, this is tricky to understand.  
      * The authors did not bother to explain it, either.  LOL
      */
-    destY = mHeight - static_cast<int32_t>((image->height * zoom) + destY) + static_cast<int32_t>(region.y * zoom);
+    mImageDrawY = mWindowHeight - static_cast<int32_t>((image->height * scaledZoom) + mImageDrawY) + static_cast<int32_t>(region.y * scaledZoom);
     
-    if (destY < 0) {
-      region.y = static_cast<int32_t>(-destY / zoom);
-      destY = 0;
+    if (mImageDrawY < 0) {
+      region.y = static_cast<int32_t>(-mImageDrawY / scaledZoom);
+      mImageDrawY = 0;
     }
     else {
       region.y = 0;
     }
-    glPixelZoom(zoom, zoom);
+    glPixelZoom(scaledZoom, scaledZoom);
   }
   else {    
-    destY = mHeight - destY - 1;
-    glPixelZoom(zoom, -zoom);
+    mImageDrawY = mWindowHeight - mImageDrawY - 1;
+    glPixelZoom(scaledZoom, -scaledZoom);
   }
-  RENDERDEBUG("Done with glPixelZoom. Region %d %d %d %d : LodScale %d : Zoom %f",region.x,region.y,region.width,region.height,lodScale,zoom);
+  RENDERDEBUG("Done with glPixelZoom. Region %d %d %d %d : LodScale %d : Zoom %f",region.x,region.y,region.width,region.height,lodScale,scaledZoom);
   
-  //glRasterPos2i(destX, destY); 
+  //glRasterPos2i(mImageDrawX, mImageDrawY); 
   // use glBitMap to set raster position
-  glBitmap(0, 0, 0, 0, destX, destY, NULL);
+  glBitmap(0, 0, 0, 0, mImageDrawX, mImageDrawY, NULL);
   glPixelStorei(GL_UNPACK_ROW_LENGTH, image->width);
   glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
   glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
@@ -313,7 +314,7 @@ void glRenderer::RenderActual(int frameNumber,
   RENDERDEBUG("glPixelStorei(GL_UNPACK_SKIP_PIXELS,  %d)",  region.x);
   RENDERDEBUG("glPixelStorei(GL_UNPACK_ALIGNMENT,  %d)", mRequiredImageFormat.scanlineByteMultiple);
 
-  RENDERDEBUG("Buffer for frame %d is %dw x %dh, region is %dw x %dh, destX = %d, destY = %d", frameNumber, image->width, image->height, region.width, region.height, destX, destY); 
+  RENDERDEBUG("Buffer for frame %d is %dw x %dh, region is %dw x %dh, mImageDrawX = %d, mImageDrawY = %d", mCurrentFrame, image->width, image->height, region.width, region.height, mImageDrawX, mImageDrawY); 
 
   if (region.width > (int32_t)image->width || region.height > (int32_t)image->height ||
       region.width < 0 || region.height < 0 ||
@@ -329,13 +330,13 @@ void glRenderer::RenderActual(int frameNumber,
   
 
   // move the raster position back to 0,0
-  glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
+  glBitmap(0, 0, 0, 0, -mImageDrawX, -mImageDrawY, NULL);
   RENDERDEBUG("Done with glBitmap"); 
 
   if (mDoStereo) {
       glDrawBuffer(GL_BACK_RIGHT);
             
-      glViewport(0, 0, mWidth, mHeight);
+      glViewport(0, 0, mWindowWidth, mWindowHeight);
       
       if (mFrameList->mStereo && needClear) {
         glClearColor(0.0, 0.0, 0.0, 0);
@@ -345,17 +346,17 @@ void glRenderer::RenderActual(int frameNumber,
       
       if (rightimage->imageFormat.rowOrder == BOTTOM_TO_TOP) {
         
-        glPixelZoom(zoom, zoom);
+        glPixelZoom(scaledZoom, scaledZoom);
         
       }
       else {
         
         DEBUGMSG("Image order is %d\n", rightimage->imageFormat.rowOrder); 
-        /* RasterPos is (0,0).  Offset it by (destX, destY) */
-        glPixelZoom(zoom, -zoom);
+        /* RasterPos is (0,0).  Offset it by (mImageDrawX, mImageDrawY) */
+        glPixelZoom(scaledZoom, -scaledZoom);
       }
       
-      glBitmap(0, 0, 0, 0, destX, destY, NULL);
+      glBitmap(0, 0, 0, 0, mImageDrawX, mImageDrawY, NULL);
       glPixelStorei(GL_UNPACK_ROW_LENGTH, rightimage->width);
       glPixelStorei(GL_UNPACK_SKIP_ROWS, saveSkip);
       glPixelStorei(GL_UNPACK_SKIP_PIXELS, region.x);
@@ -367,8 +368,8 @@ void glRenderer::RenderActual(int frameNumber,
                    rightimage->Data());
       RENDERDEBUG("Done with glDrawPixels for right buffer "); 
       
-      /* Offset raster pos by (-destX, -destY) to put it back to (0,0) */
-      glBitmap(0, 0, 0, 0, -destX, -destY, NULL);
+      /* Offset raster pos by (-mImageDrawX, -mImageDrawY) to put it back to (0,0) */
+      glBitmap(0, 0, 0, 0, -mImageDrawX, -mImageDrawY, NULL);
       RENDERDEBUG("Done with glBitmap for right buffer"); 
       
     }
@@ -499,45 +500,43 @@ TextureObjectPtr glTextureRenderer::GetTextureObject(int frameNumber)
 }
 
 
-void glTextureRenderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
-                                     int destX, int destY, float zoom, int lod) {
+void glTextureRenderer::RenderActual(Rectangle region) {
   GLfloat s0, t0, s1, t1;
   GLfloat x0, y0, x1, y1;
   int32_t lodScale;
   int localFrameNumber;
-  Rectangle region;
-  
+
   RENDERDEBUG("glTextureRenderer::RenderActual begin, frame %d: %d, %d  %d x %d  at %d, %d  zoom=%f  lod=%d",
-              frameNumber, imageRegion->x, imageRegion->y,
-              imageRegion->width, imageRegion->height,
-              destX, destY, zoom, lod);
+              mCurrentFrame, region.x, region.y,
+              region.width, region.height,
+              mImageDrawX, mImageDrawY, mZoom, mLOD);
   
   /*   if (glXMakeCurrent(mDisplay, mWindow, context) == False) {
     WARNING("couldn't make graphics context current before rendering");
     }*/ 
   
-  UpdateProjectionAndViewport(mWidth, mHeight);
+  UpdateProjectionAndViewport(mWindowWidth, mWindowHeight);
   glEnable(GL_TEXTURE_2D);
   
   if (mFrameList->mStereo) {
-    localFrameNumber = frameNumber *2; /* we'll display left frame only */
+    localFrameNumber = mCurrentFrame *2; /* we'll display left frame only */
   }
   else {
-    localFrameNumber = frameNumber;
+    localFrameNumber = mCurrentFrame;
   }
   
   /*
    * Compute possibly reduced-resolution image region to display.
    */
-  lodScale = 1 << lod;
-  region.x = imageRegion->x / lodScale;
-  region.y = imageRegion->y / lodScale;
-  region.width = imageRegion->width / lodScale;
-  region.height = imageRegion->height / lodScale;
-  zoom *= (float) lodScale;
+  lodScale = 1 << mLOD;
+  region.x = region.x / lodScale;
+  region.y = region.y / lodScale;
+  region.width = region.width / lodScale;
+  region.height = region.height / lodScale;
+  float scaledZoom = mZoom * (float) lodScale;
   
   /* Pull the image from our cache */
-  ImagePtr image = mCache->GetImage( localFrameNumber, &region, lod, true);
+  ImagePtr image = mCache->GetImage( localFrameNumber, &region, mLOD, true);
   if (!image) {
     /* error has already been reported */
     return;
@@ -600,7 +599,7 @@ void glTextureRenderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
     
     /* make sure the sub image region is valid */
     if (!texObj->anyLoaded ||
-        !RectContainsRect(&texObj->valid[lod], &region)) {
+        !RectContainsRect(&texObj->valid[mLOD], &region)) {
       /* load the texture data now */
       
       glPixelStorei(GL_UNPACK_ROW_LENGTH, image->width);
@@ -623,22 +622,22 @@ void glTextureRenderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
         region.y = image->height - region.y - region.height;
       }
       
-      glTexSubImage2D(GL_TEXTURE_2D, lod,
+      glTexSubImage2D(GL_TEXTURE_2D, mLOD,
                       region.x, region.y,
                       region.width, region.height,
                       texFormat, GL_UNSIGNED_BYTE,
                       image->Data());
       
       if (texObj->anyLoaded)
-        texObj->valid[lod] = RectUnionRect(&texObj->valid[lod], imageRegion.get());
+        texObj->valid[mLOD] = RectUnionRect(&texObj->valid[mLOD], &region);
       else
-        texObj->valid[lod] = *imageRegion;
+        texObj->valid[mLOD] = region;
       texObj->anyLoaded = GL_TRUE;
     }
     
 	/* Choose active mipmap level */
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, lod);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, lod);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, mLOD);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mLOD);
     
     /* compute texcoords and vertex coords */
     s0 = (float) region.x / (texObj->width / lodScale);
@@ -653,10 +652,10 @@ void glTextureRenderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
       t0 = (float) top / (texObj->height / lodScale);
       t1 = (float) bot / (texObj->height / lodScale);
     }
-    x0 = destX;
-    y0 = destY;
-    x1 = destX + region.width * zoom;
-    y1 = destY + region.height * zoom;
+    x0 = mImageDrawX;
+    y0 = mImageDrawY;
+    x1 = mImageDrawX + region.width * scaledZoom;
+    y1 = mImageDrawY + region.height * scaledZoom;
     
     /* XXX don't clear if the polygon fills the window */
     glClear(GL_COLOR_BUFFER_BIT);
@@ -696,10 +695,10 @@ void glTextureRenderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
                     texFormat, GL_UNSIGNED_BYTE,
                     image->Data());
     /* invalidate valid region, for sake of first path, above */
-    texObj->valid[lod].x = 0;
-    texObj->valid[lod].y = 0;
-    texObj->valid[lod].width = 0;
-    texObj->valid[lod].height = 0;
+    texObj->valid[mLOD].x = 0;
+    texObj->valid[mLOD].y = 0;
+    texObj->valid[mLOD].width = 0;
+    texObj->valid[mLOD].height = 0;
     
     s0 = 0.0;
     t0 = 0.0;
@@ -712,10 +711,10 @@ void glTextureRenderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
       t1 = temp;
     }
     
-    x0 = destX;
-    y0 = destY;
-    x1 = destX + region.width * zoom;
-    y1 = destY + region.height * zoom;
+    x0 = mImageDrawX;
+    y0 = mImageDrawY;
+    x1 = mImageDrawX + region.width * scaledZoom;
+    y1 = mImageDrawY + region.height * scaledZoom;
     
     /* XXX don't clear if the polygon fills the window */
     glClear(GL_COLOR_BUFFER_BIT);
@@ -740,10 +739,10 @@ void glTextureRenderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
     int row, col, width, height;
     
     /* invalidate valid region, for sake of first path, above */
-    texObj->valid[lod].x = 0;
-    texObj->valid[lod].y = 0;
-    texObj->valid[lod].width = 0;
-    texObj->valid[lod].height = 0;
+    texObj->valid[mLOD].x = 0;
+    texObj->valid[mLOD].y = 0;
+    texObj->valid[mLOD].width = 0;
+    texObj->valid[mLOD].height = 0;
     
     glPixelStorei(GL_UNPACK_ROW_LENGTH, image->width);
     glPixelStorei(GL_UNPACK_ALIGNMENT,
@@ -803,10 +802,10 @@ void glTextureRenderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
         }
         
         /* vertex coords */
-        x0 = destX + col * zoom;
-        y0 = destY + row * zoom;
-        x1 = x0 + width * zoom;
-        y1 = y0 + height * zoom;
+        x0 = mImageDrawX + col * scaledZoom;
+        y0 = mImageDrawY + row * scaledZoom;
+        x1 = x0 + width * scaledZoom;
+        y1 = y0 + height * scaledZoom;
         
         /* draw quad */
         glBegin(GL_QUADS);
@@ -823,10 +822,10 @@ void glTextureRenderer::RenderActual(int frameNumber, RectanglePtr imageRegion,
       } /* for col */
     } /* for row */
     
-    texObj->valid[lod].x = 0;
-    texObj->valid[lod].y = 0;
-    texObj->valid[lod].width = 0;
-    texObj->valid[lod].height = 0;
+    texObj->valid[mLOD].x = 0;
+    texObj->valid[mLOD].y = 0;
+    texObj->valid[mLOD].width = 0;
+    texObj->valid[mLOD].height = 0;
   }
   
   /* debug */

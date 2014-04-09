@@ -241,10 +241,7 @@ class dmxRenderer: public QObject, public Renderer {
 
   void DrawString(int row, int col , const char *str); 
   
-  void RenderActual(int frameNumber,
-                    RectanglePtr imageRegion,
-                    int destX, int destY, float zoom, int lod);
-
+  virtual void RenderActual(Rectangle ROI);
 
   virtual void SwapBuffers(void);
  
@@ -298,9 +295,9 @@ class dmxRenderer: public QObject, public Renderer {
 #endif
 
   void ClearScreenInfos(void);
-  void ClipImageRegion(int destX, int destY, const Rectangle *imageRegion,
+  void ClipImageRegion(int destX, int destY,  Rectangle &imageRegion,
                        const XRectangle *vis, float zoom,
-                       int *destXout, int *destYout, Rectangle *regionOut);
+                       int *destXout, int *destYout);
   
  public:
   QTcpServer mSlaveServer;

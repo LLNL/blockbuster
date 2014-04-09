@@ -103,62 +103,39 @@ void ClampStartEndFrames(FrameListPtr allFrames,
  */
 int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
 {
-  int32_t previousFrame = -1, cueEndFrame = 0;
+  int32_t cueEndFrame = 0;
   uint totalFrameCount = 0, recentFrameCount = 0;
-  bool fullScreen = false, sizeToMovie = false, decorations = false; 
   FrameInfoPtr frameInfo;
   Renderer * renderer = NULL;
-  int repeatCount = 0; 
   int drawInterface = options->drawInterface;
   int skippedDelayCount = 0, usedDelayCount = 0;
   int done =0;
   /* Timing information */
   struct tms startTime, endTime;
   clock_t startClicks, endClicks;
-  long Hertz;
   double recentStartTime = GetCurrentTime(), 
     recentEndTime, elapsedTime, userTime, systemTime;
-  double fps = 0.0;
+
   double nextSwapTime = 0.0, previousSwapTime = 0.0;
   float targetFPS = 0.0;
   FrameListPtr allFrames; 
   double noscreensaverStartTime = GetCurrentTime();
 
 
-  bool pingpong = false; // play forward, then backward, then forward, etc
   bool cuePlaying = false;  // when true, status will not change. 
   /* UI / events */
-  int xOffset = 0, yOffset = 0, oldXOffset = 0, oldYOffset = 0; // image position relative to center of canvas
-  int32_t panning = 0, panStartX = 0, panStartY = 0, panDeltaX = 0, panDeltaY = 0;
-  int zooming = 0, zoomStartY = 0, zoomDelta = 0;  // integer zoom for mouse
-  /*int izoom = 0*/  // for mouse zoom
-  float currentZoom = 1.0, newZoom = 1.0, startZoom, oldZoom; // actual zoom factor
-  int lod = 0, maxLOD, baseLOD = 0, lodBias = options->LOD;
   long sleepAmt=1; // for incremental backoff during idle
   /* Region Of Interest of the image */
-  RectanglePtr roi;
-  int destX, destY; // position on canvas to render the image
   
-  int32_t playDirection = 0, 
-    startFrame= options->startFrame, 
-    frameNumber = options->currentFrame,    
-    endFrame = options->endFrame,
-    preloadFrames = options->preloadFrames; 
-
   /* We'll need this for timing */
-  Hertz = sysconf(_SC_CLK_TCK);
+  long Hertz = sysconf(_SC_CLK_TCK);
 
   
   /* Start timing */
   startClicks = times(&startTime);
   recentStartTime = GetCurrentTime();
   
-  if ( options->play != 0 )
-    playDirection = options->play;
   
-  
-  if ( options->zoom != 1.0 )
-    newZoom =options->zoom;
 
 
   deque<MovieEvent>  events; 
@@ -167,11 +144,13 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
   time_t lastheartbeat = time(NULL); 
   MovieSnapshot oldSnapshot; 
 
+  int oldPlay = 0; 
+
   while(! done) {
     // TIMER_PRINT("loop start"); 
     MovieEvent newEvent; 
-    int oldPlay = playDirection;
-
+    if (renderer)  oldPlay = renderer->mPlayDirection;
+ 
     /* Get an event from the renderer or network and process it.
      */   
 #define DEBUG_EVENTS if (0) DEBUGMSG
@@ -196,8 +175,8 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
       }
       DEBUG_EVENTS("renderer->GetXEvent()"); 
       renderer->GetXEvent(0, &newEvent); 
-      if (playDirection && newEvent.mEventType == "MOVIE_GOTO_FRAME" && 
-          newEvent.mNumber == frameNumber+playDirection) {
+      if (renderer->mPlayDirection && newEvent.mEventType == "MOVIE_GOTO_FRAME" && 
+          newEvent.mNumber == renderer->mCurrentFrame+renderer->mPlayDirection) {
         newEvent.mEventType = "MOVIE_NONE"; 
       }   
     }
@@ -272,37 +251,27 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             }          
           } 
           DEBUGMSG("Renderer name: %s", options->rendererName.toStdString().c_str()); 
-          int width, height, depth; 
-          allFrames->GetInfo(width, height, depth, maxLOD, targetFPS);
+          /*int imageWidth, imageHeight, imageDepth; 
+          allFrames->GetInfo(imageWidth, imageHeight, imageDepth,
+          renderer->mMaxLOD, targetFPS);*/ 
           if (options->frameRate != 0.0) {
             targetFPS = options->frameRate; 
             options->frameRate = 0; 
+          } else {
+            targetFPS = allFrames->mTargetFPS;
           }
           
-          startFrame = 0; 
-          endFrame = allFrames->numStereoFrames()-1; 
-          frameNumber = event.mNumber;  
-          options->currentFrame = frameNumber;         
           
           /* Reset our various parameters regarding positions */
-          xOffset = yOffset = 0; 
-          panStartX = panStartY = 0; 
-          panDeltaX = panDeltaY = 0;
-          zoomStartY = 0; zoomDelta = 0;
-          playDirection = 0;
-          panning = 0; 
+         
           
-          if ( options->play != 0 ) {
-            playDirection = options->play;
-            options->play = 0;
-          }
-          
- 
-          options->geometry.width = width; 
-          options->geometry.height = height; 
-        
-          decorations = options->decorations && !options->fullScreen; 
-          sizeToMovie = !options->fullScreen;
+          if (!options->geometry.width) {
+            options->geometry.width = allFrames->mWidth;
+          } 
+          if (!options->geometry.height) {
+            options->geometry.height = allFrames->mHeight; 
+          } 
+
           if (!renderer) {
             if (options->rendererName == "gltexture") {
               renderer = new glTextureRenderer(options, 0, gMainWindow);
@@ -323,44 +292,52 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             renderer->InitCache(options->readerThreads, 
                                 options->mMaxCachedImages);  
             renderer->SetFullScreen(options->fullScreen);
-            fullScreen = options->fullScreen; 
+            renderer->mZoomToFit = options->zoomToFit; 
+            renderer->mPlayExit = options->playExit; 
+            if (!options->zoomToFit && options->zoom != 0) {
+              renderer->mZoom = options->zoom; 
+            }
+            renderer->mFullScreen = options->fullScreen; 
+            renderer->mDecorations = options->decorations && !options->fullScreen; 
+            renderer->mSizeToMovie = !options->fullScreen;
+            renderer->mPlayDirection = (options->play || options->playExit)?1:0;
+            renderer->mPlayExit = options->playExit; 
+            
+            renderer->mStartFrame = options->startFrame; 
+            renderer->mCurrentFrame = options->currentFrame;    
+            renderer->mEndFrame = options->endFrame;
+            renderer->mPreloadFrames = options->preloadFrames; 
           } 
-          
-          if (!options->zoomToFit && options->zoom != 0) {
-            newZoom = options->zoom; 
-            options->zoomToFit = false; 
-            options->zoom = 0.0; 
-          } else {
-            options->zoomToFit = true;
-          }             
-          if (event.mEventType != "MOVIE_OPEN_FILE_NOCHANGE") {
+          else { // pre-existing renderer:
+            renderer->mZoomToFit = true;
+            renderer->mStartFrame = renderer->mCurrentFrame = 0; 
+            renderer->mEndFrame = allFrames->numStereoFrames()-1; 
+            renderer->mPlayDirection = 0; 
+          }   
+          // reset image position and zoom: 
+          renderer->SetImageOffset(0,0); 
+
+         if (event.mEventType != "MOVIE_OPEN_FILE_NOCHANGE") {
             if (options->LOD) {
-              lodBias = options->LOD;
+              renderer->mLOD = options->LOD;
+              options->LOD = 0; 
             } else {
-              lodBias = 0;
+              renderer->mLOD = 0;
             }
             //events.push_front(MovieEvent("MOVIE_MOVE_RESIZE", 0,0,0,0)); 
           } 
-          renderer->ReportRepeatBehaviorChange(options->repeatCount); 
-          repeatCount = options->repeatCount + 1; 
+          renderer->mRepeatCount = options->repeatCount + 1; 
           options->repeatCount = 0; 
 
           // renderer->ShowInterface(options->drawInterface);
           renderer->DestroyImageCache();        
           renderer->SetFrameList(allFrames, options->readerThreads, 
-                              options->mMaxCachedImages);
-          renderer->ReportFrameListChange(allFrames);
-          renderer->ReportRateChange(targetFPS); 
-          renderer->ReportFrameChange(frameNumber);
-          renderer->ReportDetailRangeChange(-maxLOD, maxLOD);
-          renderer->ReportZoomChange(newZoom);
-          renderer->ReportZoomToFitChange(options->zoomToFit);
+                                 options->mMaxCachedImages);
           renderer->DoStereo(allFrames->mStereo);
-          renderer->ReportStereoChange(allFrames->mStereo);
           swapBuffers = true; 
           previousSwapTime = 0.0; 
           frameInfo =  renderer->GetFrameInfoPtr(0);
-          preloadFrames = MIN2(options->preloadFrames, static_cast<int32_t>(allFrames->numStereoFrames()));
+          renderer->mPreloadFrames = MIN2(options->preloadFrames, static_cast<int32_t>(allFrames->numStereoFrames()));
        }  // END event.mEventType == "MOVIE_OPEN_FILE") || event.mEventType == "MOVIE_OPEN_FILE_NOCHANGE" 
     
         else if (event.mEventType == "MOVIE_SET_STEREO") {
@@ -382,7 +359,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           gSidecarServer->connectToSidecar(event.mString.c_str()); 
         } //end "MOVIE_SIDECAR_BACKCHANNEL"
         else if (event.mEventType == "MOVIE_CUE_PLAY_ON_LOAD") { 
-          playDirection = event.mHeight; 
+          renderer->mPlayDirection = event.mHeight; 
         } //end "MOVIE_CUE_BEGIN"
         else if (event.mEventType == "MOVIE_CUE_BEGIN") { 
           cueEndFrame = event.mNumber;  // for now, a cue will be defined to be "executing" until the end frame is reached, then the cue is complete
@@ -403,16 +380,14 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           gSidecarServer->SendEvent(MovieEvent("MOVIE_PWD", pwd)); 
         } //end "MOVIE_PWD"
         else if (event.mEventType == "MOVIE_START_END_FRAMES") {
-          /*  Store this new event as the user's new global preference */
-          options->startFrame = event.mWidth;
-          options->endFrame = event.mHeight; 
+          renderer->mStartFrame = event.mWidth;
+          renderer->mEndFrame = event.mHeight; 
           // apply the start and end frames to the current movie
           // clamp frame values, generate a warning if they are funky
-          ClampStartEndFrames(allFrames, options->startFrame, options->endFrame, frameNumber, true); 
-          startFrame = options->startFrame;
-          endFrame = options->endFrame;
-          if (renderer) renderer->ReportFrameChange(frameNumber); 
-          DEBUGMSG("START_END_FRAMES: start %d end %d current %d", startFrame, endFrame, frameNumber); 
+          ClampStartEndFrames(allFrames, options->startFrame, options->endFrame, renderer->mCurrentFrame, true); 
+          renderer->mStartFrame = options->startFrame;
+          renderer->mEndFrame = options->endFrame;
+          DEBUGMSG("START_END_FRAMES: start %d end %d current %d", renderer->mStartFrame, renderer->mEndFrame, renderer->mCurrentFrame); 
         } //end 
         else if (event.mEventType == "MOVIE_LOG_TO_FILE") {
           DEBUGMSG("MOVIE_LOG_TO_FILE event: %s", event.mString.c_str()); 
@@ -422,26 +397,21 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           done = 1;
         } //end "MOVIE_QUIT"
         else if (event.mEventType == "MOVIE_IMAGE_MOVE") {
-          xOffset = -event.mX; 
-          yOffset = event.mY; 
+          renderer->SetImageOffset(-event.mX, event.mY);        
         } //end "MOVIE_IMAGE_MOVE"
         else if (event.mEventType == "MOVIE_FULLSCREEN") {
-          if (event.mNumber == 2) {
-            fullScreen = !fullScreen; 
-          } else {
-            fullScreen = event.mNumber; 
-          }
- 
-          decorations = !fullScreen;
-
           if (renderer) {
-            renderer->SetFullScreen(fullScreen); 
+            if (event.mNumber == 2) {
+              renderer->SetFullScreen(!renderer->mFullScreen); 
+            } else {
+              renderer->SetFullScreen(event.mNumber); 
+            }
             swapBuffers = true; 
           }
         } //end "MOVIE_FULLSCREEN"
-        else if (event.mEventType == "MOVIE_SIZE_TO_MOVIE") {
-          sizeToMovie = event.mNumber; 
-          if (sizeToMovie) {
+        else if (event.mEventType == "MOVIE_SIZE_TO_MOVIE") {          
+          renderer->mSizeToMovie = event.mNumber; 
+          if (renderer->mSizeToMovie) {
             renderer->Resize(frameInfo->mWidth,
                              frameInfo->mHeight, 0);
             swapBuffers = true; 
@@ -450,169 +420,93 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         else if (event.mEventType == "MOVIE_MOVE" ||
                  event.mEventType == "MOVIE_RESIZE" ||
                  event.mEventType == "MOVIE_MOVE_RESIZE") {
-          // The code below moves, resizes or does both as appropriate.  Doing it this way was easier than making two new functions, so sue me.  
-          // =====================================
-          // MOVE ===========================
           if (event.mEventType == "MOVIE_MOVE" || event.mEventType == "MOVIE_MOVE_RESIZE") {
-            //DEBUGMSG("MOVE"); 
-            if (event.mX == -1) 
-              event.mX = renderer->mXPos;
-            if (event.mY == -1) 
-              event.mY = renderer->mYPos;
             renderer->Move(event.mX, event.mY, event.mNumber);            
           }
-          // END MOVE ===========================
         
-          // ====================================
-        
-          // RESIZE ===========================
-          if (event.mEventType == "MOVIE_SIZE_TO_MOVIE" || event.mEventType == "MOVIE_RESIZE" || event.mEventType == "MOVIE_MOVE_RESIZE") {
-            //DEBUGMSG("RESIZE"); 
-            if (event.mWidth == 0) {
-              /* if there are frames, use the frame width for the window width 
-                 else use the current width */ 
-              if(frameInfo) {
-                event.mWidth = frameInfo->mWidth;
-              } else {
-                if (renderer) {
-                  event.mWidth = renderer->mWidth;
-                } 
-              }
-            }         
-            if (event.mHeight == 0)  {
-              /* if there are frames, use the frame height for the window height 
-                 else use the current height */ 
-              if(frameInfo) {
-                event.mHeight = frameInfo->mHeight;
-              } else {
-                if (renderer) {
-                  event.mHeight = renderer->mHeight;
-                }
-              }
-            }
-            if (event.mWidth > renderer->mScreenWidth) {
-              event.mWidth = renderer->mScreenWidth; 
-            }
-            if (event.mHeight > renderer->mScreenHeight) {
-              event.mHeight = renderer->mScreenHeight; 
-            }
-            if (event.mWidth && event.mHeight) {
-              renderer->mWidth = renderer->mHeight = 0; 
-              renderer->Resize(event.mWidth,
-                               event.mHeight, event.mNumber);
-              /* Set these in case there is no Resize function */
-              renderer->mWidth = event.mWidth;
-              renderer->mHeight = event.mHeight;
-            }
-         }
-          // END RESIZE ===========================
+          if (event.mEventType == "MOVIE_RESIZE" || event.mEventType == "MOVIE_MOVE_RESIZE") {
+            renderer->Resize(event.mWidth,
+                             event.mHeight, event.mNumber);
+            
+          }
           swapBuffers = true; 
         } // END "MOVIE_MOVE", "MOVIE_RESIZE" OR "MOVIE_MOVE_RESIZE"
         
         else if (event.mEventType == "MOVIE_SET_PINGPONG") {
-          pingpong = event.mNumber;
-          if (renderer) renderer->ReportPingPongBehaviorChange(event.mNumber); 
+          if (renderer) renderer->SetPingPong(event.mNumber); 
         } // END "MOVIE_SET_PINGPONG"
         else if (event.mEventType == "MOVIE_SET_REPEAT") {
-          repeatCount = event.mNumber;    
-          if (repeatCount == 1) repeatCount = 2; // this repeats once. 
-          else if (repeatCount == 0) repeatCount = 1; // this plays once, no repeat
-          options->repeatCount = 0; 
-          if (repeatCount) {
-            pingpong = false;
-          }
-          if (renderer) renderer->ReportRepeatBehaviorChange(event.mNumber); 
+          if (renderer) renderer->SetRepeat(event.mNumber); 
         }
         else if (event.mEventType == "MOVIE_PLAY_FORWARD") { 
-          playDirection = 1; 
+          renderer->mPlayDirection = 1; 
         }
         else if (event.mEventType == "MOVIE_PLAY_BACKWARD") { 
-          playDirection = -1; 
+          renderer->mPlayDirection = -1; 
         }
         else if (event.mEventType == "MOVIE_STOP") { 
           DEBUGMSG("Got stop event"); 
-          playDirection = 0; 
+          renderer->mPlayDirection = 0; 
         }
         else if (event.mEventType == "MOVIE_STOP_ERROR") { 
           DEBUGMSG("Got stop error"); 
-          playDirection = 0; 
+          renderer->mPlayDirection = 0; 
           gSidecarServer->SendEvent(MovieEvent("MOVIE_STOP_ERROR", event.mString.c_str()));
         }
         else  if (event.mEventType == "MOVIE_PAUSE") { 
-          playDirection = !playDirection;
+          renderer->mPlayDirection = !renderer->mPlayDirection;
         }
         else if (event.mEventType == "MOVIE_STEP_FORWARD") { 
-          frameNumber++;
+          renderer->AdvanceFrame(1); 
         }
         else if (event.mEventType == "MOVIE_STEP_BACKWARD") { 
-          frameNumber--;
+          renderer->AdvanceFrame(-1); 
         }
         else if (event.mEventType == "MOVIE_SKIP_FORWARD") { 
-          frameNumber += 20; 
+          renderer->AdvanceFrame(20); 
         }
         else if (event.mEventType == "MOVIE_SKIP_BACKWARD") { 
-          frameNumber -= 20; 
+          renderer->AdvanceFrame(-20); 
         }
         else if (event.mEventType == "MOVIE_SECTION_FORWARD") { 
-          frameNumber += MAX2(allFrames->numStereoFrames() / 4, 1);
+          renderer->AdvanceFrame(MAX2(allFrames->numStereoFrames() / 4, 1));
         }
         else if (event.mEventType == "MOVIE_SECTION_BACKWARD") {
-          frameNumber -= MAX2(allFrames->numStereoFrames() / 4, 1);
+          renderer->AdvanceFrame(-MAX2(allFrames->numStereoFrames() / 4, 1));
         }
         
         else if (event.mEventType == "MOVIE_GOTO_START") {
-          frameNumber = startFrame;
+          renderer->SetFrame(0); 
         }
         
         else if (event.mEventType == "MOVIE_GOTO_END") {
-          frameNumber = endFrame;
+          renderer->SetFrame(-1); 
         }
         else if (event.mEventType == "MOVIE_GOTO_FRAME") {
-          frameNumber = event.mNumber;
-          if (frameNumber < 0) {
-            /* special meaning to SideCar: go to the last frame */
-            frameNumber = endFrame;
-          } 
-          if (frameNumber < startFrame) {
-            frameNumber = startFrame; 
-          }
-        }
-        
+          renderer->SetFrame(event.mNumber);
+       }        
         else if (event.mEventType == "MOVIE_ZOOM_TO_FIT") { 
           dbprintf(2, "MOVIE_ZOOM_TO_FIT %d\n", event.mNumber); 
-          options->zoomToFit = event.mNumber;           
+          renderer->SetZoomToFit(event.mNumber);
         }
         else if (event.mEventType == "MOVIE_ZOOM_ONE") {
-          options->zoomToFit = false; 
-          newZoom = 1.0;
-          zooming = 0;       
+          renderer->SetZoom(1.0); 
         }
         else if (event.mEventType == "MOVIE_ZOOM_SET") {
-          if (newZoom <= 0.0) {
-            ERROR("Bad zoom: %0.3f", newZoom); 
-          } else {
-            newZoom = event.mRate;
-            options->zoomToFit = false; 
-          }           
+          renderer->SetZoom(event.mRate); 
         }
         else if (event.mEventType == "MOVIE_ZOOM_UP") {
-          options->zoomToFit = false; 
-          newZoom = 1.2*currentZoom;
-          zooming = 0;
+          renderer->ZoomByFactor(1.2); 
         }
         else if (event.mEventType == "MOVIE_ZOOM_DOWN") {
-         options->zoomToFit = false; 
-          newZoom = 0.8*currentZoom;
-          if (newZoom < 0.05) newZoom = 0.05; 
-          zooming = 0;
+          renderer->ZoomByFactor(0.8); 
         }
         
         else if (event.mEventType == "MOVIE_KEYBOARD_HELP") {
           PrintKeyboardControls();
         } 
         else if (event.mEventType == "MOVIE_CENTER") {
-          xOffset = yOffset = 0;
-          panning = 0;
+          renderer->SetImageOffset(0,0); 
         }
         else if (event.mEventType == "MOVIE_TOGGLE_CURSOR") {
           renderer->ToggleCursor(); 
@@ -622,77 +516,51 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           noscreensaverStartTime = GetCurrentTime();
         } 
         else if (event.mEventType == "MOVIE_MOUSE_PRESS_1") {
-          panning = 1;
-          panStartX = event.mX;
-          panStartY = event.mY;
-          panDeltaX = 0;
-          panDeltaY = 0;
+          renderer->StartPanning(event.mX, event.mY); 
         }
         else if (event.mEventType == "MOVIE_MOUSE_RELEASE_1") {
-          if (panning){ // avoid spurious signals
-            panDeltaX = static_cast<int>((panStartX - event.mX) / currentZoom);
-            panDeltaY = static_cast<int>((panStartY - event.mY) / currentZoom);
-            xOffset += panDeltaX;
-            yOffset += panDeltaY;
-            panDeltaX = 0;
-            panDeltaY = 0;
-            panning = 0;
-          }
+          renderer->UpdatePanning(event.mX, event.mY); 
+          renderer->EndPanning(); 
         }
         else if (event.mEventType == "MOVIE_MOUSE_PRESS_2") {
-          zoomStartY = event.mY;
-          startZoom = currentZoom; 
-          zooming = 1;
+          renderer->StartZooming(event.mY); 
         }
         else if (event.mEventType == "MOVIE_MOUSE_RELEASE_2") {
-          newZoom = startZoom*(1+(float)zoomDelta/(renderer->mHeight));
-          zoomDelta = 0;
-          zooming = 0;
+          renderer->UpdateZooming(event.mY); 
+          renderer->EndZooming(); 
         }
         else if (event.mEventType == "MOVIE_MOUSE_MOVE") {
-          if (panning) {
-            panDeltaX = static_cast<int>((panStartX - event.mX) / currentZoom);
-            panDeltaY = static_cast<int>((panStartY - event.mY) / currentZoom);
-          }
-          else if (zooming) {          
-            zoomDelta = zoomStartY - event.mY;
-            newZoom = startZoom*(1+(float)zoomDelta/(renderer->mHeight));
-          }
+          renderer->UpdatePanning(event.mX, event.mY); 
+          renderer->UpdateZooming(event.mY); 
         }
         else if (event.mEventType == "MOVIE_INCREASE_RATE") {
           targetFPS += 1.0;
-          if (renderer) renderer->ReportRateChange(targetFPS);
-        
         }
         else if (event.mEventType == "MOVIE_DECREASE_RATE") {
           targetFPS -= 1.0;
           if (targetFPS < 0.0) {
             targetFPS = 0.5;
           }
-          if (renderer) renderer->ReportRateChange(targetFPS);
           if (targetFPS < 0.2) {
             targetFPS = 0.2; 
-            if (renderer) renderer->ReportRateChange(targetFPS);
           }
         }
         else if (event.mEventType == "MOVIE_SET_RATE") {
           /* User changed the frame rate slider */
           targetFPS = MAX2(event.mRate, 0.2);
-          if (renderer) renderer->ReportRateChange(targetFPS);
         }
         else if (event.mEventType == "MOVIE_INCREASE_LOD") {
-          lodBias++;
-          if (lodBias > maxLOD) lodBias = maxLOD; 
-          if (renderer) renderer->ReportDetailChange(lodBias);
+          if (renderer->mLOD <= renderer->mMaxLOD) {
+            renderer->mLOD ++; 
+          }
         }
         else if (event.mEventType == "MOVIE_DECREASE_LOD") {
-          lodBias--;
-          if (lodBias < 0) lodBias = 0; 
-          if (renderer) renderer->ReportDetailChange(lodBias);
+          if (renderer->mLOD) {
+            renderer->mLOD--;
+          }
         }
         else if (event.mEventType == "MOVIE_SET_LOD") {
-          lodBias = event.mNumber;
-          if (renderer) renderer->ReportDetailChange(lodBias);
+          renderer->mLOD = event.mNumber;
         }
         /* case "MOVIE_MOUSE_PRESS_"3:
            break;*/ 
@@ -718,7 +586,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         }
        
         else if (event.mEventType == "MOVIE_SAVE_IMAGE") {
-          renderer->WriteImageToFile(frameNumber);
+          renderer->WriteImageToFile(renderer->mCurrentFrame);
         }
         else if (event.mEventType == "MOVIE_SAVE_FRAME") {
           if (frameInfo ) {
@@ -741,7 +609,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
               region.x = region.y = 0; 
               region.width = frameInfo->mWidth; 
               region.height = frameInfo->mHeight; 
-              ImagePtr image = renderer->GetImage(frameNumber,&region,0); 
+              ImagePtr image = renderer->GetImage(renderer->mCurrentFrame,&region,0); 
               int size[3] = {region.width, region.height, 3}; 
               int result = 
                 write_png_file(filename.toAscii().data(), 
@@ -778,21 +646,8 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
       }
       
       //TIMER_PRINT("end switch, frame %d", frameNumber); 
-      if (renderer && frameNumber != previousFrame) {
-        DEBUGMSG("frameNumber changed  to %d after switch", frameNumber); 
-      }
-      /*! check if we have reached the end of a cue */
-      if (cuePlaying && 
-          (!playDirection  || 
-           (!repeatCount && playDirection > 0 && cueEndFrame != -1 && frameNumber > cueEndFrame) || 
-           (!repeatCount && playDirection < 0 && cueEndFrame != -1 && frameNumber < cueEndFrame)) ) {
-        dbprintf(2, QString("Ending cue with playDirection=%1, cueEnd=%2, frameNumber=%3\n").arg(playDirection).arg(cueEndFrame).arg(frameNumber)); 
-        cuePlaying = false; 
-        if (renderer) renderer->reportMovieCueComplete();
-        gSidecarServer->SendEvent(MovieEvent("MOVIE_CUE_COMPLETE")); 
-      }
-      
-      if (event.mEventType == "MOVIE_NONE" && !playDirection) {
+     /*! check if we have reached the end of a cue */
+      if (event.mEventType == "MOVIE_NONE" && !renderer->mPlayDirection) {
         //dbprintf(5, "We have no useful work that we are doing, sleep a bit to prevent hogging CPU for no reason.  Sleeping %ld usec\n", sleepAmt); 
         usleep(sleepAmt); 
         if (sleepAmt < 100*1000)
@@ -805,244 +660,69 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
       }
       else {
         // We are doing something useful -- don't sleep; allow framerate to climb. 
-        // dbprintf(0, "Not sleeping because swapBuffers=%d, eventType=%d, frameNumber=%d, previousFrame=%d\n", swapBuffers, event.mEventType, frameNumber, previousFrame);
+        // dbprintf(0, "Not sleeping because swapBuffers=%d, eventType=%d, frameNumber=%d, swapBuffers, event.mEventType, frameNumber);
         sleepAmt = 1; 
       }
-  
-
-      if (!oldPlay && playDirection) {
-        /* We're starting playback now so reset counters and timers */
-        recentStartTime = GetCurrentTime();
-        recentFrameCount = 0;
-        if (targetFPS > 0.0)
-          nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
-        else
-          nextSwapTime = 0.0;
-      }
+      
       
       //=====================================================================
       // The frame number manipulations above may have advanced
       // or recessed the frame number beyond bounds.  We do the right thing here.
-      if (frameNumber > endFrame) {    
-        if (playDirection > 0) { // we're playing forward and reached the end of movie
-          if (pingpong) {
-            playDirection = -playDirection; 
-            frameNumber = endFrame; 
-          } 
-          else {
-            if (repeatCount>0) {
-              repeatCount --; 
-              if (renderer) renderer->ReportRepeatBehaviorChange(repeatCount);               
-            }
-            if (repeatCount) {
-              frameNumber = startFrame; 
-            } else {
-              frameNumber = endFrame; 
-              playDirection = 0; 
-            } 
-          }// if not pingpong
-        } else { // we are stopped, or are playing backward, either way, it's not the end of a loop, so just fix the issue, which is probably that the user asked to skip beyond the end of the movie
-          frameNumber = endFrame;
-        }
-      }    
-      if (frameNumber < startFrame) {
-        if (playDirection < 0) { // we're playing backward and reached the end of movie
-          if (pingpong) {
-            playDirection = -playDirection; 
-            frameNumber = startFrame; 
-          } 
-          else {
-            if (repeatCount > 0) {
-              repeatCount --; 
-              if (renderer) renderer->ReportRepeatBehaviorChange(repeatCount); 
-            }
-            if (repeatCount) {
-              frameNumber = endFrame; 
-            } else { // time to stop, just stick at the end and don't render
-              frameNumber = startFrame; 
-              playDirection = 0; 
-            } 
-          }// end ! pingpong
-        } else { // we are stopped, or are playing forward, either way, it's not the end of a loop, so just fix the issue, which is probably that the user asked to skip beyond the start of the movie
-          frameNumber = startFrame;
-        }
-      }
       //=====================================================================
       
       if (allFrames && renderer) {
         /* frameInfo = allFrames->frames[frameNumber];  */
-        frameInfo =  renderer->GetFrameInfoPtr(frameNumber); /* wrapper for stereo support */
+        frameInfo =  renderer->GetFrameInfoPtr(renderer->mCurrentFrame); /* wrapper for stereo support */
         
-        if (renderer && options->zoomToFit && (frameInfo || allFrames)) {
-          float width = 0, height = 0;          
-          if (frameInfo) {
-            width = frameInfo->mWidth; 
-            height = frameInfo->mHeight; 
-          } else {
-            width = allFrames->getFrame(0)->mWidth;
-            height = allFrames->getFrame(0)->mHeight;
-          }
-          float xZoom = (float) renderer->mWidth / width;
-          float yZoom = (float) renderer->mHeight / height;
-          newZoom = xZoom < yZoom ? xZoom : yZoom;
-          DEBUGMSG("Zoom to Fit: %f", newZoom);
-          xOffset = yOffset = 0;
+        if (cuePlaying && 
+            (!renderer->mPlayDirection  || 
+             (!renderer->mRepeatCount && renderer->mPlayDirection > 0 && cueEndFrame != -1 && renderer->mCurrentFrame > cueEndFrame) || 
+             (!renderer->mRepeatCount && renderer->mPlayDirection < 0 && cueEndFrame != -1 && renderer->mCurrentFrame < cueEndFrame)) ) {
+          dbprintf(2, QString("Ending cue with playDirection=%1, cueEnd=%2, renderer->mCurrentFrame=%3\n").arg(renderer->mPlayDirection).arg(cueEndFrame).arg(renderer->mCurrentFrame)); 
+          cuePlaying = false; 
+          renderer->reportMovieCueComplete();
+          gSidecarServer->SendEvent(MovieEvent("MOVIE_CUE_COMPLETE")); 
         }
-        if (currentZoom != newZoom) {
-          currentZoom = newZoom;
-          if (renderer) renderer->ReportZoomChange(currentZoom);
-        }      
+
+        renderer->ZoomToFit(); 
       
         string filename("none"); 
         
-        if (static_cast<int32_t>(allFrames->numStereoFrames()) > frameNumber) {
-          filename = allFrames->getFrame(frameNumber)->mFilename; 
+        if (static_cast<int32_t>(allFrames->numStereoFrames()) > renderer->mCurrentFrame) {
+          filename = allFrames->getFrame(renderer->mCurrentFrame)->mFilename; 
         }
         int repeatMsg = 0, imageHeight=0, imageWidth = 0;
-        if (repeatCount < 0) repeatMsg = -1;
-        if (repeatCount > 1) repeatMsg = 1;
-        if (repeatCount == 1 || repeatCount == 0) repeatMsg = 0; 
+        if (renderer->mRepeatCount < 0) repeatMsg = -1;
+        if (renderer->mRepeatCount > 1) repeatMsg = 1;
+        if (renderer->mRepeatCount == 1 || renderer->mRepeatCount == 0) repeatMsg = 0; 
         if (allFrames->numStereoFrames()) {
           imageHeight = allFrames->getFrame(0)->mHeight; 
           imageWidth = allFrames->getFrame(0)->mWidth;
         }
         
-        { 
-          MovieSnapshot newSnapshot(event.mEventType, filename, fps, targetFPS, currentZoom, lodBias, renderer->mDoStereo, playDirection, startFrame, endFrame, allFrames->numStereoFrames(), frameNumber, repeatMsg, pingpong, fullScreen, sizeToMovie, options->zoomToFit, options->noscreensaver, renderer->mHeight, renderer->mWidth, renderer->mXPos, renderer->mYPos, imageHeight, imageWidth, -xOffset, yOffset); 
+        MovieSnapshot newSnapshot(event.mEventType, filename, renderer->mFPS, targetFPS, renderer->mZoom, renderer->mLOD, renderer->mDoStereo, renderer->mPlayDirection, renderer->mStartFrame, renderer->mEndFrame, allFrames->numStereoFrames(), renderer->mCurrentFrame, repeatMsg, renderer->mDoPingPong, renderer->mFullScreen, renderer->mSizeToMovie, renderer->mZoomToFit, options->noscreensaver, renderer->mWindowHeight, renderer->mWindowWidth, renderer->mWindowXPos, renderer->mWindowYPos, imageHeight, imageWidth, -renderer->mImageXOffset, renderer->mImageYOffset); 
+        if (sendSnapshot || newSnapshot != oldSnapshot) {          
+          
+          DEBUGMSG(str(boost::format("Sending snapshot %1%") 
+                       % string(newSnapshot))); 
+          gSidecarServer->SendEvent
+            (MovieEvent("MOVIE_SIDECAR_STATUS", string(newSnapshot).c_str())); 
+          oldSnapshot = newSnapshot; 
+        }
+        
+         
+        /* This is interesting.  If you are zoomed out, you don't need
+           full resolution to view the image, so only load the LOD you need.  
+           This is of dubious value in the modern era.  
+        */ 
+        if (!options->noAutoRes) {
+          uint32_t baseLOD = LODFromZoom(renderer->mZoom);
+          if (baseLOD > renderer->mLOD && baseLOD < frameInfo->mLOD) {
+            renderer->mLOD = baseLOD;
+          }
+        }
+        
 
-          if (sendSnapshot || newSnapshot != oldSnapshot) {
-            
-            if (renderer) {
-              renderer->reportWindowMoved(renderer->mXPos, renderer->mYPos); 
-              renderer->reportWindowResize(renderer->mWidth, renderer->mHeight); 
-              renderer->reportMovieMoved(xOffset, yOffset); 
-              renderer->reportMovieFrameSize(imageWidth, imageHeight); 
-              renderer->reportMovieDisplayedSize
-                (static_cast<int>(newZoom*imageWidth), 
-                 static_cast<int>(newZoom*imageHeight)); 
-            }
-            DEBUGMSG(str(boost::format("Sending snapshot %1%") 
-                         % string(newSnapshot))); 
-            gSidecarServer->SendEvent
-              (MovieEvent("MOVIE_SIDECAR_STATUS", string(newSnapshot).c_str())); 
-            oldSnapshot = newSnapshot; 
-          }
-        }
-        /*
-         * Compute ROI: region of the image that's visible in the window 
-         */
-        {
-          const int imgWidth = frameInfo->mWidth;
-          const int imgHeight = frameInfo->mHeight;
-          const int winWidth = renderer->mWidth;
-          const int winHeight = renderer->mHeight;
-          dbprintf(5, "imgWidth = %d, imgHeight = %d, winWidth = %d, winHeight = %d\n", imgWidth, imgHeight, winWidth, winHeight); 
-          int x, y;
-          int imgLeft, imgRight, imgBottom, imgTop;
-          
-          /* (x,y) = image coordinate at center of window (renderer) */
-          x = (imgWidth / 2) + (xOffset + panDeltaX);
-          y = (imgHeight / 2) + (yOffset + panDeltaY);
-          
-          /* Compute image coordinates which correspond to the left,
-           * right, top and bottom edges of the window.
-           */
-          imgLeft = static_cast<int>(x - (winWidth / 2) / currentZoom);
-          imgRight = static_cast<int>(x + (winWidth / 2) / currentZoom);
-          imgTop = static_cast<int>(y - (winHeight / 2) / currentZoom);
-          imgBottom = static_cast<int>(y + (winHeight / 2) / currentZoom);
-          dbprintf(5, "imgLeft = %d, imgRight = %d,imgTop  = %d, imgBottom = %d\n",imgLeft , imgRight, imgTop, imgBottom); 
-          
-          /* Compute region of the image that's visible in the window and
-           * its position destX,destY relative to upper-left corner of window.
-           */
-          /* X axis */
-          qint32 region_x,region_y,region_width,region_height; 
-          region_width = imgRight - imgLeft;
-          region_x = imgLeft;
-          if (region_x < 0) { // left edge of the image is off screen
-            /* clip left */
-            region_x = 0;
-            region_width += region_x; // this is odd. 
-          }
-          if (region_x + region_width > imgWidth) {
-            /* clip right */
-            region_width = imgWidth - region_x;
-          }
-          if (region_width < 0) {
-            /* check for null image */
-            region_x = region_width = 0;
-          }
-          
-          // placement of image on renderer:  destX
-          destX = static_cast<int>(-imgLeft * currentZoom);
-          if (destX < 0) {
-            /* left clip */
-            destX = 0;
-          }
-          if (destX + region_width * currentZoom > winWidth) {
-            /* right clip */
-            region_width = static_cast<int>((winWidth - destX) / currentZoom);
-            if (region_width < 0)
-              region_width = 0;
-          }
-          
-          /* Y axis */
-          region_height = imgBottom - imgTop;
-          region_y = imgTop;
-          if (region_y < 0) {
-            /* clip top */
-            region_y = 0;
-            region_height += region_y; // huh?  it's 0! 
-          }
-          if (region_y + region_height > imgHeight) {
-            /* clip bottom */
-            region_height = imgHeight - region_y;
-          }
-          if (region_height < 0) {
-            /* check for null image */
-            region_y = region_height = 0;
-          }
-          // placement of image on renderer:  destY
-          destY = static_cast<int>(-imgTop * currentZoom);
-          if (destY < 0) {
-            /* top clip */
-            destY = 0;
-          }
-          if (destY + region_height * currentZoom > winHeight) {
-            /* bottom clip */
-            region_height = static_cast<int>((winHeight - destY) / currentZoom);
-            if (region_height < 0)
-              region_height = 0;
-          }
-          
-          if (!roi || region_y != roi->y || region_x != roi->x || 
-              region_height != roi->height || region_width != roi->width) {
-            roi.reset(new Rectangle(region_x,region_y,region_width,region_height)); 
-          }
-          /*
-            printf("roi: %d, %d  %d x %d  dest: %d, %d\n",
-            roi.x, roi.y, roi.width, roi.height, destX, destY);
-          */
-        }
-        
-        if (lodBias < 0) {
-          lodBias = 0; 
-        }        
-        if ((uint32_t) lodBias > frameInfo->mLOD) {
-          lodBias = maxLOD; 
-        }        
-        if (renderer) renderer->ReportDetailChange(lodBias);
-        
-        if (options->noAutoRes) {
-          baseLOD = 0; 
-        } else {
-          baseLOD = LODFromZoom(currentZoom);
-        }
-        lod = baseLOD > lodBias? baseLOD: lodBias;
-        if ((uint32_t)lod > frameInfo->mLOD) {
-          lod = frameInfo->mLOD;
-        }
         /* Call the renderer to render the desired area of the frame.
          * Most rendereres will refer to their own image caches to load
          * the image and render it.  Some will just send the
@@ -1054,14 +734,13 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
          * the given level of detail.
          */
         
+ 
         DEBUGMSG("before render"); 
-        renderer->Render(frameNumber, previousFrame, 
-                         preloadFrames, playDirection, 
-                         startFrame, endFrame, roi, destX, destY, 
-                         currentZoom, lod);
+        renderer->Render();
         
         DEBUGMSG("after render"); 
         
+       
         /* Print info in upper-left corner */
         /*!
           RDC Note:  this is only done in x11 interface mode, which is going away.  But it might be useful to have a "draw letters on screen" option.  Note that it used OpenGL to do the actual lettering. 
@@ -1069,15 +748,15 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         /*     if (drawInterface && renderer->DrawString != NULL) {
                char str[100];
                int row = 0;
-               sprintf(str, "Frame %d of %d", frameNumber + 1, allFrames->numStereoFrames());
+               sprintf(str, "Frame %d of %d", renderer->mCurrentFrame + 1, allFrames->numStereoFrames());
                renderer->DrawString(row++, 0, str);
                sprintf(str, "Frame Size: %d by %d pixels",
                frameInfo->mWidth, frameInfo->mHeight);
                renderer->DrawString(row++, 0, str);
                sprintf(str, "Position: %d, %d",
-               -(xOffset + panDeltaX), yOffset + panDeltaY);
+               -(renderer->mImageXPos + panDeltaX), renderer->mImageYPos + panDeltaY);
                renderer->DrawString(row++, 0, str);
-               sprintf(str, "Zoom: %5.2f  LOD: %d (%d + %d)", currentZoom, lod, baseLOD, lodBias);
+               sprintf(str, "Zoom: %5.2f  LOD: %d (%d + %d)", renderer->mZoom, lod, baseLOD, renderer->mLOD);
              
                renderer->DrawString(row++, 0, str);
                sprintf(str, "FPS: %5.1f (target %.1f)", fps, targetFPS);
@@ -1085,7 +764,18 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
                }
         */
  
-        if (playDirection) {
+        
+  
+        if (renderer->mPlayDirection) {
+          if (!oldPlay) {
+            /* We're starting playback now so reset counters and timers */
+            recentStartTime = GetCurrentTime();
+            recentFrameCount = 0;
+            if (targetFPS > 0.0)
+              nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
+            else
+              nextSwapTime = 0.0;
+          }
           /* See if we need to introduce a pause to prevent exceeding
            * the target frame rate.
            */
@@ -1102,33 +792,23 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
         }
         DEBUGMSG("Swap buffers"); 
-        renderer->mPreloadFrames = preloadFrames; 
-        renderer->mPlayDirection = playDirection;
-        renderer->mStartFrame = startFrame; 
-        renderer->mEndFrame = endFrame; 
         double beforeSwap = GetCurrentTime(); 
         renderer->SwapBuffers();
         previousSwapTime = GetCurrentTime() - beforeSwap; 
 
-        if (playDirection && options->speedTest) {
+        if (renderer->mPlayDirection && options->speedTest) {
           cerr << "requesting speedTest of slaves" << endl; 
           renderer->DMXSpeedTest(); 
-          playDirection = 0; 
+          renderer->mPlayDirection = 0; 
         }
     
-        if (frameNumber != previousFrame) {
-          if (renderer) renderer->ReportFrameChange(frameNumber);
-        }
-        previousFrame = frameNumber; 
-        oldZoom = currentZoom; 
-        oldXOffset = xOffset;
-        oldYOffset = yOffset;
 
         DEBUGMSG("after swap (swap time was %0.5f ms)", previousSwapTime*1000.0); 
         /* Advance to the next frame */
-        if (playDirection) {
+        renderer->AdvanceFrame(); 
+        if (renderer->mPlayDirection) {
           /* Compute next frame number (+/- 1) */
-          frameNumber = frameNumber + playDirection; // let this wrap around, do not fix
+          renderer->mCurrentFrame = renderer->mCurrentFrame + renderer->mPlayDirection; // let this wrap around, do not fix
           /* Update timing info */
           totalFrameCount++;
           recentFrameCount++;
@@ -1138,9 +818,10 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           recentEndTime = GetCurrentTime();
           elapsedTime = recentEndTime - recentStartTime;
           if (elapsedTime >= 1.0/(options->fpsSampleFrequency)) {
-            fps = (double) recentFrameCount / elapsedTime;
+            renderer->mFPS = (double) recentFrameCount / elapsedTime;
             SuppressMessageDialogs(true); 
-            WARNING("Frame Rate on frame %d: %g fps", frameNumber, fps);
+            WARNING("Frame Rate on frame %d: %g fps",
+                    renderer->mCurrentFrame, renderer->mFPS);
             SuppressMessageDialogs(false); 
             /* reset timing info so we compute FPS over last 2 seconds */
             recentStartTime = GetCurrentTime();
@@ -1149,13 +830,13 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         }
         else {
           recentFrameCount = 0;
-          fps = 0.0;
+          renderer->mFPS = 0.0;
         }
-        if (renderer) renderer->reportActualFPS(fps); 
-        if ( (options->playExit > 0 && frameNumber >= options->playExit) ||
-             (options->playExit == -1 && frameNumber > endFrame-1)) { 
+        if ( (options->playExit > 0 && renderer->mCurrentFrame >= options->playExit) ||
+             (options->playExit == -1 && renderer->mCurrentFrame > renderer->mEndFrame-1)) { 
           events.push_back(MovieEvent("MOVIE_QUIT")); 
         }
+        renderer->UpdateInterface(); 
       }
     }
   }

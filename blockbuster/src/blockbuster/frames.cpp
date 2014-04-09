@@ -327,21 +327,7 @@ ImagePtr FrameInfo::LoadAndConvertImage(ImageFormat *canvasFormat,
 
 
 
-//===============================================================
-void FrameList::GetInfo(int &maxWidth, int &maxHeight, int &maxDepth,
-                        int &maxLOD, float &targetFPS){
-  maxWidth = maxHeight = maxDepth = maxLOD = 0; 
-  for (uint32_t i = 0; i < mFrames.size(); i++) {
-    FrameInfoPtr frameInfoPtr = mFrames[i]; 
-    maxWidth = MAX2((uint32_t)maxWidth, frameInfoPtr->mWidth);
-    maxHeight = MAX2((uint32_t)maxHeight, frameInfoPtr->mHeight);
-    maxDepth = MAX2((uint32_t)maxDepth, frameInfoPtr->mDepth);
-    maxLOD = MAX2((uint32_t)maxLOD, frameInfoPtr->mLOD);
-  }
-  
-  targetFPS = mTargetFPS;
-  return; 
-}
+
 //===============================================================
 
  
