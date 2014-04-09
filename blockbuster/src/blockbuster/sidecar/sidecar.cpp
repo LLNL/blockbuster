@@ -1022,6 +1022,7 @@ void SideCar::noScreensaverCheckBox_stateChanged(int state) {
 //================================================================
 void SideCar::repeatCheckBox_stateChanged(int state) {   
   if (state) mRemoteControl->pingpongCheckBox->setChecked(false); 
+  if (state > 1) state = 1; 
   SendEvent(MovieEvent("MOVIE_SET_REPEAT", state)); 
   return; 
 }

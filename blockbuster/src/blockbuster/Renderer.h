@@ -225,13 +225,14 @@ class Renderer {
   float mFPS; 
   uint32_t mDepth, mLOD, mMaxLOD;
   BlockbusterInterface *mBlockbusterInterface; 
-  bool mDoStereo, mDoPingPong, mZoomToFit, 
+  bool mDoStereo, mZoomToFit, 
     mSizeToMovie, mFullScreen, 
     mDecorations, mNoSmallWindows;
   string mFontName; 
   string mDisplayName; 
   uint32_t mReaderThreads, mNumCachedImages; 
-  int mRepeatCount; 
+  int mNumRepeats; // number of times we will "wrap around" begin or end 
+  bool mDoPingPong; 
   Rectangle mStartGeometry; 
   FrameListPtr mFrameList;
    

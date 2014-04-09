@@ -394,10 +394,8 @@ void Renderer::EnableDecorations(bool decorate ) {
 }
 // ======================================================================
 void Renderer::SetRepeat(int repeat) {
-  mRepeatCount = repeat;    
-  if (mRepeatCount == 1) mRepeatCount = 2; // this repeats once. 
-  else if (mRepeatCount == 0) mRepeatCount = 1; // this plays once, no repeat
-  if (mRepeatCount) {
+  mNumRepeats = repeat;    
+  if (mNumRepeats) {
     mDoPingPong = false;
   }
   return; 
@@ -407,7 +405,7 @@ void Renderer::SetRepeat(int repeat) {
 void Renderer::SetPingPong(bool pingpong) {
   mDoPingPong = pingpong; 
   if (mDoPingPong) {
-    mRepeatCount = 0; 
+    mNumRepeats = 0; 
   }
   return; 
 }
@@ -641,58 +639,52 @@ void Renderer::SetFrameList(FrameListPtr frameList, int readerThreads,
 void Renderer::SetFrame(int frameNum) {
   mCurrentFrame = frameNum; 
 
-  if (mCurrentFrame > mEndFrame) {    
-    if (mPlayDirection > 0) { 
-      dbprintf(5, "we're playing forward and reached the end of movie\n"); 
-      if (mDoPingPong) {
-        mPlayDirection = -mPlayDirection; 
-        mCurrentFrame = mEndFrame; 
-      } 
-      else {
-        if (mRepeatCount>0) {
-          mRepeatCount --; 
-          
-        }
-        if (mRepeatCount) {
-          mCurrentFrame = mStartFrame; 
-        } else {
-          mCurrentFrame = mEndFrame; 
-          mPlayDirection = 0; 
-        } 
-      }// if not mDoPingPong
-    } else { // we are stopped, or are playing backward, either way, it's not the end of a loop, so just fix the issue, which is probably that the user asked to skip beyond the end of the movie
-      mCurrentFrame = mEndFrame;
+  if (mCurrentFrame > mEndFrame || mCurrentFrame < mStartFrame) {  
+    dbprintf(5, "SetFrame: we've gone beyond the end or beginning of movie. \n"); 
+
+    uint32_t wrapFrame = 0, stopFrame = mEndFrame, step = 1; 
+    if (mCurrentFrame < mStartFrame) {
+      wrapFrame = mEndFrame; 
+      stopFrame = 0; 
+      step = -1; 
     }
-  }    
-  if (mCurrentFrame < mStartFrame) {
-    if (mPlayDirection < 0) { 
-      dbprintf(5, "we're playing backward and reached the end of movie\n"); 
-      if (mDoPingPong) {
-        mPlayDirection = -mPlayDirection; 
-        mCurrentFrame = mStartFrame; 
-      } 
-      else {
-        if (mRepeatCount > 0) {
-          mRepeatCount --; 
-        }
-        if (mRepeatCount) {
-          mCurrentFrame = mEndFrame; 
-        } else { // time to stop, just stick at the end and don't render
-          mCurrentFrame = mStartFrame; 
-          mPlayDirection = 0; 
-        } 
-      }// end ! mDoPingPong
-    } else { // we are stopped, or are playing forward, either way, it's not the end of a loop, so just fix the issue, which is probably that the user asked to skip beyond the start of the movie
-      mCurrentFrame = mStartFrame;
+    
+    if (mEndFrame == mStartFrame) {
+      dbprintf(5, "SetFrame: there is only a single movie frame.\n"); 
+      mCurrentFrame = mStartFrame; 
     }
+
+    else if (mDoPingPong) {
+      dbprintf(5, "Turning around due to ping pong behavior.\n"); 
+      mCurrentFrame = stopFrame - step;
+      mPlayDirection = -mPlayDirection; // may be zero if user used "step by one" button
+    } 
+
+    else if (mNumRepeats) {
+      dbprintf(5, "Wrapping around since mNumRepeats is set.\n"); 
+      mCurrentFrame = wrapFrame; 
+      if (mNumRepeats > 0) { // -1 means "forever"
+        mNumRepeats --;   
+        if (mBlockbusterInterface) {
+          mBlockbusterInterface->setRepeatBehavior (mNumRepeats); 
+        }
+      }
+    } 
+
+    else {
+      dbprintf(5, "No repeats or ping pong.  Refusing to increment.\n"); 
+      mCurrentFrame = stopFrame; 
+      mPlayDirection = 0; 
+    } 
   }
   dbprintf(5, "SetFrame(%d), new frame is %d\n", frameNum, mCurrentFrame); 
   return; 
 }
-  
+
 
 // ======================================================================
 void Renderer::AdvanceFrame(void) {
+  
   AdvanceFrame(mPlayDirection); 
   return; 
 }
@@ -834,21 +826,6 @@ FrameInfoPtr Renderer::GetFrameInfoPtr(int frameNumber)
 
 
 //============================================================
-/*void Renderer::ReportFrameListChange(FrameListPtr iframeList) {
-  mFrameList = iframeList; 
-  DEBUGMSG("Renderer::ReportFrameListChange"); 
-  if (mBlockbusterInterface) {
-  mBlockbusterInterface->setFrameRange(1, mFrameList->numStereoFrames()); 
-  mBlockbusterInterface->setFrameNumber(1); 
-  QString moviename = mFrameList->getFrame(0)->mFilename.c_str(); 
-  if (moviename.size() > 32) moviename = QString("...") + moviename.right(32); 
-  mBlockbusterInterface->setTitle(QString("Blockbuster Control (%1)").arg(moviename)); 
-  SetTitle(QString("Blockbuster (%1)").arg(moviename)); 
-  }
-  return; 
-  }
-*/
-//============================================================
 void Renderer::UpdateInterface(void) {
   if (mBlockbusterInterface) {
     mBlockbusterInterface->setFrameNumber(mCurrentFrame+1); 
@@ -860,6 +837,7 @@ void Renderer::UpdateInterface(void) {
     mBlockbusterInterface->reportMovieFrameSize(mImageWidth, mImageHeight);
     mBlockbusterInterface->reportMovieDisplayedSize(mZoom * mImageWidth, mZoom * mImageHeight); 
     mBlockbusterInterface->setPingPongBehavior(mDoPingPong); 
+   mBlockbusterInterface->setRepeatBehavior (mNumRepeats); 
     mBlockbusterInterface->setStereo(mDoStereo); 
     mBlockbusterInterface->setZoom(mZoom); 
     mBlockbusterInterface->setZoomToFit(mZoomToFit); 

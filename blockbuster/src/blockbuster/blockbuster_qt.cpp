@@ -439,6 +439,7 @@ void BlockbusterInterface::on_repeatCheckBox_stateChanged(int state) {
     pingpongCheckBox->setChecked(false); 
   }
   if ( (state && mRepeat) || (!state && !mRepeat)) return; 
+  if (state > 1) state = 1; 
   mEventQueue.push_back(MovieEvent("MOVIE_SET_REPEAT", state)); 
   return; 
 }
