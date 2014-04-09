@@ -454,9 +454,13 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           renderer->mPlayDirection = !renderer->mPlayDirection;
         }
         else if (event.mEventType == "MOVIE_STEP_FORWARD") { 
+          // if this is a reversal, should probably stop playback. 
+          if (renderer->mPlayDirection < 0)  renderer->mPlayDirection = 0;
           renderer->AdvanceFrame(1); 
         }
         else if (event.mEventType == "MOVIE_STEP_BACKWARD") { 
+          // if this is a reversal, should probably stop playback. 
+          if (renderer->mPlayDirection > 0)  renderer->mPlayDirection = 0;
           renderer->AdvanceFrame(-1); 
         }
         else if (event.mEventType == "MOVIE_SKIP_FORWARD") { 
@@ -535,13 +539,16 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         }
         else if (event.mEventType == "MOVIE_DECREASE_RATE") {
           targetFPS -= 1.0;
-          if (targetFPS < 0.0) {
-            targetFPS = 0.5;
-          }
           if (targetFPS < 0.2) {
             targetFPS = 0.2; 
           }
-        }
+           if (targetFPS < 0.0) {
+            targetFPS = 0.5;
+          }
+          if (targetFPS < 2.0) {
+            targetFPS -= 0.25; 
+          }
+       }
         else if (event.mEventType == "MOVIE_SET_RATE") {
           /* User changed the frame rate slider */
           targetFPS = MAX2(event.mRate, 0.2);
