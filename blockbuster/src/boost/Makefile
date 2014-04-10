@@ -40,8 +40,8 @@ all:
 build_boost: $(INSTALL_DIR)/include/boost/random.hpp
 
 $(INSTALL_DIR)/include/boost/random.hpp: boost_$(BOOST_VERSION)/boost/random.hpp
-	rm -f $@  # ensure all libs are newer than headers when done
-	cd boost_$(BOOST_VERSION) && tar -xzf ../process-0.5.tgz && ./bootstrap.sh --with-libraries=atomic,filesystem,thread,regex,system,date_time && ./bjam -j 20 install --prefix=$(INSTALL_DIR)
+	rm -f $(INSTALL_DIR)/include/boost  $(INSTALL_DIR)/lib/libboost* # ensure all libs are newer than headers when done
+	cd boost_$(BOOST_VERSION) && tar -xzf ../process-0.5.tgz && ./bootstrap.sh --with-libraries=atomic,filesystem,thread,regex,system,date_time,program_options && ./bjam -j 20 install --prefix=$(INSTALL_DIR)
 	touch $@
 	@echo '********************' finished with LIB_EVIDENCE $@; echo
 
