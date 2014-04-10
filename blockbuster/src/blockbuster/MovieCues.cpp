@@ -48,7 +48,7 @@ void MovieCue::ReadScript(const MovieScript &iScript) {
     if (pos->mEventType == "MOVIE_CUE_BEGIN") {
       setText(QString(pos->mString.c_str())); 
     }
-    else if (pos->mEventType == "MOVIE_OPEN_FILE_NOCHANGE") {
+    else if (pos->mEventType == "MOVIE_OPEN_FILE") {
       mLoadMovie = true; 
       mMovieName = pos->mString.c_str(); 
       mCurrentFrame = pos->mNumber; 
@@ -143,7 +143,7 @@ void MovieCue::GenerateScript(MovieScript &oScript) const{
     oScript.push_back(MovieEvent("MOVIE_CUE_PLAY_ON_LOAD", mPlayBackward?-1:1));
   }
   if (mLoadMovie && mMovieName != "") {    
-    oScript.push_back(MovieEvent("MOVIE_OPEN_FILE_NOCHANGE", mMovieName, mCurrentFrame));
+    oScript.push_back(MovieEvent("MOVIE_OPEN_FILE", mMovieName, mCurrentFrame));
   }  
   oScript.push_back(MovieEvent("MOVIE_FULLSCREEN", mFullScreen)); 
     

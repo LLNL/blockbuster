@@ -39,12 +39,21 @@ void Renderer::Init(ProgramOptions *options) {
   mNoSmallWindows = options->noSmallWindows; 
   mFontName = options->fontName.toStdString(); 
   mPanX = mPanY = mImageXOffset = mImageYOffset = 0; 
-  mDoPingPong = mPanning = mZooming = false; 
+
+  mDoPingPong = mPanning = mZooming = mNoAutoRes = false; 
   mVisualInfo = NULL; 
   mFontInfo = NULL; 
   mScreenNumber = mWindow = mIsSubWindow =  mFontHeight = 0; 
   mShowCursor = true;  
   mOldWidth = mOldHeight = mOldX = mOldY = -1; 
+  
+  mNextSwapTime = 0.0;
+  mPreviousSwapTime = 0.0;
+  mRecentFrameCount = 0;
+  mRecentStartTime = GetCurrentTime();
+  mSkippedDelayCount = 0;
+  mUsedDelayCount = 0;  
+  mFPSSampleFrequency = 2.0; // 2 samples per second 
   mXSync = false; 
 }
 
@@ -598,29 +607,47 @@ Rectangle Renderer::ComputeROI(void) {
 }
 
 // ======================================================================
+void Renderer::SetPlayDirection(int direction) {
+  if (direction && !mPlayDirection) {
+    /* We're starting playback now so reset counters and timers */
+    mRecentStartTime = GetCurrentTime();
+    mRecentFrameCount = 0;
+    if (mTargetFPS > 0.0)
+      mNextSwapTime = GetCurrentTime() + 1.0 / mTargetFPS;
+    else
+      mNextSwapTime = 0.0;
+  }
+  mPlayDirection = direction; 
+  return; 
+}
+
+// ======================================================================
 void Renderer::SetFrameList(FrameListPtr frameList, int readerThreads, 
                             int maxCachedImages) {
-  DoStereo(frameList->mStereo); 
-
-  if (!mCache) {
-    mCache.reset(new ImageCache(readerThreads, maxCachedImages, mRequiredImageFormat));
-  }
+  mCache.reset(new ImageCache(readerThreads, maxCachedImages, mRequiredImageFormat));  
   if (!mCache) {
     ERROR("could not recreate image cache when changing frame list");
     exit(1); 
   }
   
-  /* Tell the cache to manage the new frame list.  This will
-   * clear everything out of the cache that's already in there.
-   */
+  mFrameList = frameList; 
+  DoStereo(frameList->mStereo); 
+
   mCache->ManageFrameList(frameList); 
   mCache->HaveStereoRenderer(mDoStereo); 
-  mFrameList = frameList; 
+
   mMaxLOD = frameList->mLOD; 
+  mLOD = 0; 
+
   mEndFrame = frameList->numStereoFrames()-1;
   mStartFrame = 0; 
+  mCurrentFrame = 0; 
+
   mImageHeight = frameList->mHeight; 
   mImageWidth = frameList->mWidth; 
+
+  mTargetFPS = frameList->mTargetFPS; 
+  mPreviousSwapTime = 0.0; 
 
   if (mBlockbusterInterface) {
     mBlockbusterInterface->setFrameRange(1, mFrameList->numStereoFrames()); 
@@ -633,6 +660,64 @@ void Renderer::SetFrameList(FrameListPtr frameList, int readerThreads,
 
   return; 
 
+}
+
+// ======================================================================
+void Renderer::Render(void) {
+  Render(ComputeROI()); 
+}
+
+// ======================================================================
+void Renderer::Render(Rectangle roi) {
+  DEBUGMSG("Render begin"); 
+  if (mFrameList->mStereo) {
+    mCache->PreloadHint(mPreloadFrames*2, mPlayDirection, 
+                        mStartFrame*2, mEndFrame*2+1);
+  } else {
+    mCache->PreloadHint(mPreloadFrames, mPlayDirection, 
+                        mStartFrame, mEndFrame);
+  }
+
+  // Reduce LOD if we are zoomed out enough so that pixels are aliased anyway
+  uint32_t saveLOD = mLOD;
+  if (!mNoAutoRes) {
+    uint32_t baseLOD = 0;
+    double zoom = mZoom; 
+    while (zoom <= 0.5 && baseLOD < mMaxLOD) {
+      zoom *= 2.0;
+      baseLOD++;
+    }
+    if (baseLOD > mLOD) {
+      mLOD = baseLOD;
+    }
+  }
+        
+  RenderActual(roi); 
+
+  mLOD = saveLOD; 
+
+  if (mPlayDirection) {
+    /* See if we need to introduce a pause to prevent exceeding
+     * the target frame rate.
+     */
+    double delay = mNextSwapTime - GetCurrentTime();
+    if (delay - mPreviousSwapTime > 0.0) {
+      mUsedDelayCount++;
+      usleep((unsigned long) ((delay - mPreviousSwapTime) * 1000.0 * 1000.0));
+    }
+    else {
+      mSkippedDelayCount++;
+    }
+    /* Compute next targeted swap time */
+    mNextSwapTime = GetCurrentTime() + 1.0 / mTargetFPS;
+  }
+  DEBUGMSG("Swap buffers"); 
+  double beforeSwap = GetCurrentTime(); 
+  SwapBuffers();
+  mPreviousSwapTime = GetCurrentTime() - beforeSwap; 
+  DEBUGMSG("after swap (swap time was %0.5f ms)", mPreviousSwapTime*1000.0); 
+
+  DEBUGMSG("Render end"); 
 }
 
 // ======================================================================
@@ -681,10 +766,34 @@ void Renderer::SetFrame(int frameNum) {
   return; 
 }
 
+// ======================================================================
+void Renderer::SetStartEndFrames(int32_t start, int32_t end) {  
+  mStartFrame = start;
+  mEndFrame = end; 
+  int32_t lastFrame = mCache->NumStereoFrames()-1; 
+  if (mStartFrame < 0) {
+    dbprintf(5, "mStartFrame < 0; set to 0\n"); 
+    mStartFrame = 0; 
+  } else if (mStartFrame > lastFrame) {
+    dbprintf(5, "mStartFrame > lastFrame; set to last frame %d\n", lastFrame); 
+    mStartFrame = lastFrame; 
+  }
+  if (mEndFrame < 0) {
+    dbprintf(5, "mEndFrame < 0; set to last frame %d\n", lastFrame); 
+    mEndFrame = lastFrame; 
+  } 
+  if (mEndFrame < mStartFrame) {
+    dbprintf(5, "mEndFrame < mStartFrame, set mEndFrame = mStartFrame\n"); 
+    mEndFrame = mStartFrame; 
+  }
+
+  DEBUGMSG("START_END_FRAMES: start %d end %d current %d", mStartFrame, mEndFrame, mCurrentFrame); 
+  
+  return ;
+}
 
 // ======================================================================
 void Renderer::AdvanceFrame(void) {
-  
   AdvanceFrame(mPlayDirection); 
   return; 
 }
@@ -692,6 +801,26 @@ void Renderer::AdvanceFrame(void) {
 // ======================================================================
 void Renderer::AdvanceFrame(int numframes) {
   SetFrame(mCurrentFrame + numframes);
+  if (mPlayDirection) {
+    /* Update timing info */
+    mRecentFrameCount++;
+    mRecentEndTime = GetCurrentTime();
+    double elapsedTime = mRecentEndTime - mRecentStartTime;
+    if (elapsedTime >= 1.0/(mFPSSampleFrequency)) {
+      mFPS = (double) mRecentFrameCount / elapsedTime;
+      SuppressMessageDialogs(true); 
+      WARNING("Frame Rate on frame %d: %g fps",
+              mCurrentFrame, mFPS);
+      SuppressMessageDialogs(false); 
+      /* reset timing info for next fps computation */
+      mRecentStartTime = GetCurrentTime();
+      mRecentFrameCount = 0;
+    }
+  }
+  else {
+    mRecentFrameCount = 0;
+    mFPS = 0.0;
+  }
   return; 
 }
  
@@ -808,19 +937,10 @@ void Renderer::WriteImageToFile(int frameNumber)
 //============================================================
 FrameInfoPtr Renderer::GetFrameInfoPtr(int frameNumber)
 {
-  /* Added to support stereo files */
-  /* Assumes we have a valid FrameListPtr */
-  int localFrameNumber = 0;
-
   if(mFrameList->mStereo) {
-	localFrameNumber = frameNumber * 2;
-	
+    return mFrameList->getFrame(frameNumber * 2);
   }
-  else {
-	localFrameNumber = frameNumber;
-  }
-  
-  return mFrameList->getFrame(localFrameNumber);
+  return mFrameList->getFrame(frameNumber);
 }
 
 
@@ -837,7 +957,7 @@ void Renderer::UpdateInterface(void) {
     mBlockbusterInterface->reportMovieFrameSize(mImageWidth, mImageHeight);
     mBlockbusterInterface->reportMovieDisplayedSize(mZoom * mImageWidth, mZoom * mImageHeight); 
     mBlockbusterInterface->setPingPongBehavior(mDoPingPong); 
-   mBlockbusterInterface->setRepeatBehavior (mNumRepeats); 
+    mBlockbusterInterface->setRepeatBehavior (mNumRepeats); 
     mBlockbusterInterface->setStereo(mDoStereo); 
     mBlockbusterInterface->setZoom(mZoom); 
     mBlockbusterInterface->setZoomToFit(mZoomToFit); 

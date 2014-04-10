@@ -205,6 +205,10 @@ class ImageCache {
   void PreloadImage(uint32_t frameNumber, 
                     const Rectangle *region, uint32_t levelOfDetail);
  
+  uint32_t NumStereoFrames(void) {
+    return mFrameList->numStereoFrames();
+  }
+
  protected:
   
   void ClearQueue(deque<ImageCacheJobPtr> &queue); 

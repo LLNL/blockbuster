@@ -327,10 +327,21 @@ void x11Renderer::RenderActual(Rectangle imageRegion){
   xImage->data = NULL;
   XDestroyImage(xImage);
   
-  /* If we haven't zoomed,
-   * we're still using the original image from the cache; we need to
-   * release it so that the image cache knows we're done with it.
-   */
+  /* Print info in upper-left corner */
+  char str[100];
+  int row = 0;
+  sprintf(str, "Frame %d of %d", mCurrentFrame + 1, mEndFrame);
+  DrawString(row++, 0, str);
+  sprintf(str, "Frame Size: %d by %d pixels", mImageWidth, mImageHeight);
+  DrawString(row++, 0, str);
+  sprintf(str, "Position: %d, %d", mImageDrawX,  mImageDrawY);
+  DrawString(row++, 0, str);
+  sprintf(str, "Zoom: %5.2f  LOD: %d", mZoom, mLOD);
+  
+  DrawString(row++, 0, str);
+  sprintf(str, "FPS: %5.1f (target %.1f)", mFPS, mTargetFPS);
+  DrawString(row++, 0, str);
+
   return; 
 }
 

@@ -62,39 +62,6 @@ int LODFromZoom(float zoom)
 
 
 
-// ====================================================================
-void ClampStartEndFrames(FrameListPtr allFrames, 
-						 int32_t &startFrame, 
-						 int32_t &endFrame, 
-						 int32_t &frameNumber, 
-						 bool warn = false) {
-  DEBUGMSG(QString("BEGIN ClampStartEndFrames(%1, %2, %3, %4...").arg(allFrames->getFrame(0)->mFilename.c_str()).arg(startFrame).arg(endFrame).arg(frameNumber)); 
-  if (endFrame <= 0) {
-    endFrame = allFrames->numStereoFrames()-1;
-  }
-  if (startFrame < 0) {
-    startFrame = 0;
-  }
-  if (startFrame > static_cast<int32_t>(allFrames->numStereoFrames()) -1){
-    if (warn) WARNING("startFrame value of %d is greater than number of frames in movie (%d), clamping to last frame", startFrame, allFrames->numStereoFrames()-1); 
-    startFrame = allFrames->numStereoFrames() -1;
-  }
-  if (endFrame > static_cast<int32_t>(allFrames->numStereoFrames()) -1){
-    if (warn) WARNING("endFrame value of %d is greater than number of frames in movie (%d), clamping to last frame", endFrame, allFrames->numStereoFrames()-1); 
-    endFrame = allFrames->numStereoFrames() -1;
-  }
-  if (endFrame < startFrame) {
-    // always warn about this: 
-    WARNING("endFrame value of %d is less than endFrame value (%d), reversing then", endFrame, startFrame);
-    int32_t tmp = endFrame; 
-    endFrame = startFrame; 
-    startFrame = tmp; 
-  }
-  if (frameNumber > endFrame) frameNumber = endFrame; 
-  if (frameNumber < startFrame) frameNumber = startFrame; 
-  DEBUGMSG(QString("END ClampStartEndFrames(%1, %2, %3, %4...").arg(allFrames->getFrame(0)->mFilename.c_str()).arg(startFrame).arg(endFrame).arg(frameNumber)); 
-  return;
-}
 
 // ====================================================================
 /*
@@ -104,20 +71,10 @@ void ClampStartEndFrames(FrameListPtr allFrames,
 int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
 {
   int32_t cueEndFrame = 0;
-  uint recentFrameCount = 0;
   FrameInfoPtr frameInfo;
   Renderer * renderer = NULL;
-  int drawInterface = options->drawInterface;
-  int skippedDelayCount = 0, usedDelayCount = 0;
   int done =0;
   /* Timing information */
-  struct tms startTime, endTime;
-  clock_t startClicks, endClicks;
-  double recentStartTime = GetCurrentTime(), 
-    recentEndTime, elapsedTime, userTime, systemTime;
-
-  double nextSwapTime = 0.0, previousSwapTime = 0.0;
-  float targetFPS = 0.0;
   FrameListPtr allFrames; 
   double noscreensaverStartTime = GetCurrentTime();
 
@@ -125,20 +82,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
   bool cuePlaying = false;  // when true, status will not change. 
   /* UI / events */
   long sleepAmt=1; // for incremental backoff during idle
-  /* Region Of Interest of the image */
   
-  /* We'll need this for timing */
-  long Hertz = sysconf(_SC_CLK_TCK);
-
-  
-  /* Start timing */
-  startClicks = times(&startTime);
-  recentStartTime = GetCurrentTime();
-  
-  
-
-
-  deque<MovieEvent>  events; 
 
 					
   time_t lastheartbeat = time(NULL); 
@@ -146,6 +90,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
 
   int oldPlay = 0; 
 
+  deque<MovieEvent>  events; 
   while(! done) {
     // TIMER_PRINT("loop start"); 
     MovieEvent newEvent; 
@@ -190,7 +135,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
       events.pop_front(); 
 
       bool sendSnapshot = false; 
-             
+      
       if (event.mEventType == "MOVIE_NONE") {
         //DEBUGMSG("GOT EVENT ------- %s", string(event).c_str()); 
         if (script.size()) {
@@ -228,8 +173,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             options->mTraceEventsFile.open(options->mTraceEventsFilename.toStdString().c_str()); 
           }
         }
-        else if (event.mEventType == "MOVIE_OPEN_FILE" ||
-                 event.mEventType == "MOVIE_OPEN_FILE_NOCHANGE") {         
+        else if (event.mEventType == "MOVIE_OPEN_FILE") {         
           DEBUGMSG("Got Open_File command"); 
           QStringList filenames; 
           filenames.append(event.mString.c_str());
@@ -251,13 +195,6 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             }          
           } 
           DEBUGMSG("Renderer name: %s", options->rendererName.toStdString().c_str()); 
-          if (options->frameRate != 0.0) {
-            targetFPS = options->frameRate; 
-            options->frameRate = 0; 
-          } else {
-            targetFPS = allFrames->mTargetFPS;
-          }
-          
           
           /* Reset our various parameters regarding positions */
           if (!options->geometry.width) {
@@ -297,12 +234,10 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
             renderer->mSizeToMovie = !options->fullScreen;
             renderer->mPlayDirection = (options->play || options->playExit)?1:0;
             renderer->mPlayExit = options->playExit; 
-            
-            renderer->mStartFrame = options->startFrame; 
-            renderer->mCurrentFrame = options->currentFrame;    
+            renderer->mFPSSampleFrequency = options->fpsSampleFrequency;
             renderer->mEndFrame = options->endFrame;
             renderer->mPreloadFrames = options->preloadFrames; 
-            renderer->mLOD = 0; 
+            renderer->mNoAutoRes = options->noAutoRes; 
           } 
           else { // pre-existing renderer:
             renderer->mZoomToFit = true;
@@ -314,28 +249,34 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           
           renderer->SetImageOffset(0,0); 
           
+
+          
+          renderer->mNumRepeats = options->repeatCount; 
+          options->repeatCount = 0; 
+
+          renderer->SetFrameList(allFrames, options->readerThreads, 
+                                 options->mMaxCachedImages);
+
           if (options->LOD) {
             renderer->mLOD = options->LOD;
             options->LOD = 0; 
           } 
           
-          if (event.mEventType != "MOVIE_OPEN_FILE_NOCHANGE") {
-            renderer->mLOD = 0;
+          if (options->startFrame >= 0) {
+            renderer->SetStartEndFrames(options->startFrame, 
+                                        options->endFrame); 
+            options->startFrame = -1; 
           }
-          
-          renderer->mNumRepeats = options->repeatCount; 
-          options->repeatCount = 0; 
-          
-          // renderer->ShowInterface(options->drawInterface);
-          renderer->DestroyImageCache();        
-          renderer->SetFrameList(allFrames, options->readerThreads, 
-                                 options->mMaxCachedImages);
-          renderer->DoStereo(allFrames->mStereo);
+
+          if (options->frameRate != 0.0) {
+            renderer->mTargetFPS = options->frameRate; 
+            options->frameRate = 0; 
+          }       
+
           swapBuffers = true; 
-          previousSwapTime = 0.0; 
           frameInfo =  renderer->GetFrameInfoPtr(0);
           renderer->mPreloadFrames = MIN2(options->preloadFrames, static_cast<int32_t>(allFrames->numStereoFrames()));
-        }  // END event.mEventType == "MOVIE_OPEN_FILE") || event.mEventType == "MOVIE_OPEN_FILE_NOCHANGE" 
+        }  // END event.mEventType == "MOVIE_OPEN_FILE"
     
         else if (event.mEventType == "MOVIE_SET_STEREO") {
           renderer->DoStereo(event.mNumber);
@@ -356,7 +297,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           gSidecarServer->connectToSidecar(event.mString.c_str()); 
         } //end "MOVIE_SIDECAR_BACKCHANNEL"
         else if (event.mEventType == "MOVIE_CUE_PLAY_ON_LOAD") { 
-          renderer->mPlayDirection = event.mHeight; 
+          renderer->SetPlayDirection(event.mHeight); 
         } //end "MOVIE_CUE_BEGIN"
         else if (event.mEventType == "MOVIE_CUE_BEGIN") { 
           cueEndFrame = event.mNumber;  // for now, a cue will be defined to be "executing" until the end frame is reached, then the cue is complete
@@ -377,14 +318,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           gSidecarServer->SendEvent(MovieEvent("MOVIE_PWD", pwd)); 
         } //end "MOVIE_PWD"
         else if (event.mEventType == "MOVIE_START_END_FRAMES") {
-          renderer->mStartFrame = event.mWidth;
-          renderer->mEndFrame = event.mHeight; 
-          // apply the start and end frames to the current movie
-          // clamp frame values, generate a warning if they are funky
-          ClampStartEndFrames(allFrames, options->startFrame, options->endFrame, renderer->mCurrentFrame, true); 
-          renderer->mStartFrame = options->startFrame;
-          renderer->mEndFrame = options->endFrame;
-          DEBUGMSG("START_END_FRAMES: start %d end %d current %d", renderer->mStartFrame, renderer->mEndFrame, renderer->mCurrentFrame); 
+          renderer->SetStartEndFrames(event.mWidth, event.mHeight); 
         } //end 
         else if (event.mEventType == "MOVIE_LOG_TO_FILE") {
           DEBUGMSG("MOVIE_LOG_TO_FILE event: %s", event.mString.c_str()); 
@@ -409,8 +343,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         else if (event.mEventType == "MOVIE_SIZE_TO_MOVIE") {          
           renderer->mSizeToMovie = event.mNumber; 
           if (renderer->mSizeToMovie) {
-            renderer->Resize(frameInfo->mWidth,
-                             frameInfo->mHeight, 0);
+            renderer->Resize(0, 0, 0);
             swapBuffers = true; 
           } 
         } // end "MOVIE_SIZE_TO_MOVIE"
@@ -436,31 +369,31 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           if (renderer) renderer->SetRepeat(event.mNumber); 
         }
         else if (event.mEventType == "MOVIE_PLAY_FORWARD") { 
-          renderer->mPlayDirection = 1; 
+          renderer->SetPlayDirection(1); 
         }
         else if (event.mEventType == "MOVIE_PLAY_BACKWARD") { 
-          renderer->mPlayDirection = -1; 
+          renderer->SetPlayDirection(-1); 
         }
         else if (event.mEventType == "MOVIE_STOP") { 
           DEBUGMSG("Got stop event"); 
-          renderer->mPlayDirection = 0; 
+          renderer->SetPlayDirection(0); 
         }
         else if (event.mEventType == "MOVIE_STOP_ERROR") { 
           DEBUGMSG("Got stop error"); 
-          renderer->mPlayDirection = 0; 
+          renderer->SetPlayDirection(0); 
           gSidecarServer->SendEvent(MovieEvent("MOVIE_STOP_ERROR", event.mString.c_str()));
         }
         else  if (event.mEventType == "MOVIE_PAUSE") { 
-          renderer->mPlayDirection = !renderer->mPlayDirection;
+          renderer->SetPlayDirection(!renderer->mPlayDirection);
         }
         else if (event.mEventType == "MOVIE_STEP_FORWARD") { 
           // if this is a reversal, should probably stop playback. 
-          if (renderer->mPlayDirection < 0)  renderer->mPlayDirection = 0;
+          if (renderer->mPlayDirection < 0)  renderer->SetPlayDirection(0); 
           renderer->AdvanceFrame(1); 
         }
         else if (event.mEventType == "MOVIE_STEP_BACKWARD") { 
           // if this is a reversal, should probably stop playback. 
-          if (renderer->mPlayDirection > 0)  renderer->mPlayDirection = 0;
+          if (renderer->mPlayDirection > 0)  renderer->SetPlayDirection(0); 
           renderer->AdvanceFrame(-1); 
         }
         else if (event.mEventType == "MOVIE_SKIP_FORWARD") { 
@@ -535,23 +468,23 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           renderer->UpdateZooming(event.mY); 
         }
         else if (event.mEventType == "MOVIE_INCREASE_RATE") {
-          targetFPS += 1.0;
+          renderer->mTargetFPS += 1.0;
         }
         else if (event.mEventType == "MOVIE_DECREASE_RATE") {
-          targetFPS -= 1.0;
-          if (targetFPS < 0.2) {
-            targetFPS = 0.2; 
+          renderer->mTargetFPS -= 1.0;
+          if (renderer->mTargetFPS < 0.2) {
+            renderer->mTargetFPS = 0.2; 
           }
-           if (targetFPS < 0.0) {
-            targetFPS = 0.5;
+           if (renderer->mTargetFPS < 0.0) {
+            renderer->mTargetFPS = 0.5;
           }
-          if (targetFPS < 2.0) {
-            targetFPS -= 0.25; 
+          if (renderer->mTargetFPS < 2.0) {
+            renderer->mTargetFPS -= 0.25; 
           }
        }
         else if (event.mEventType == "MOVIE_SET_RATE") {
           /* User changed the frame rate slider */
-          targetFPS = MAX2(event.mRate, 0.2);
+          renderer->mTargetFPS = MAX2(event.mRate, 0.2);
         }
         else if (event.mEventType == "MOVIE_INCREASE_LOD") {
           if (renderer->mLOD <= renderer->mMaxLOD) {
@@ -569,11 +502,9 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         /* case "MOVIE_MOUSE_PRESS_"3:
            break;*/ 
         else if (event.mEventType == "MOVIE_SHOW_INTERFACE") {
-          drawInterface = true; 
           renderer->ShowInterface(true);
         }
         else if (event.mEventType == "MOVIE_HIDE_INTERFACE") {
-          drawInterface = false; 
           if (renderer) renderer->ShowInterface(false);        
         }
         else if (event.mEventType == "MOVIE_MOUSE_RELEASE_3" || 
@@ -628,6 +559,10 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           }
         
         } // END event.mEventType == "MOVIE_SAVE_FRAME"
+        else if (event.mEventType == "MOVIE_QUIT") {
+          DEBUGMSG("break from the outer loop"); 
+          break;
+        }
         else {
           cerr << "Warning: unknown event: " << event.mEventType << endl; 
         }
@@ -651,32 +586,14 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
       
       //TIMER_PRINT("end switch, frame %d", frameNumber); 
       /*! check if we have reached the end of a cue */
-      if (event.mEventType == "MOVIE_NONE" && renderer && !renderer->mPlayDirection) {
-        //dbprintf(5, "We have no useful work that we are doing, sleep a bit to prevent hogging CPU for no reason.  Sleeping %ld usec\n", sleepAmt); 
-        usleep(sleepAmt); 
-        if (sleepAmt < 100*1000)
-          sleepAmt *= 2; // sleep more next time
-        continue;
-      }
-      else if (event.mEventType == "MOVIE_QUIT") {
-        DEBUGMSG("break from the outer loop too"); 
-        break;
-      }
-      else {
-        // We are doing something useful -- don't sleep; allow framerate to climb. 
-        // dbprintf(0, "Not sleeping because swapBuffers=%d, eventType=%d, frameNumber=%d, swapBuffers, event.mEventType, frameNumber);
-        sleepAmt = 1; 
-      }
-      
-      
+       
       //=====================================================================
       // The frame number manipulations above may have advanced
       // or recessed the frame number beyond bounds.  We do the right thing here.
       //=====================================================================
       
       if (allFrames && renderer) {
-        /* frameInfo = allFrames->frames[frameNumber];  */
-        frameInfo =  renderer->GetFrameInfoPtr(renderer->mCurrentFrame); /* wrapper for stereo support */
+        frameInfo =  renderer->GetFrameInfoPtr(renderer->mCurrentFrame);
         
         if (cuePlaying && 
             (!renderer->mPlayDirection  || 
@@ -696,7 +613,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
           filename = allFrames->getFrame(renderer->mCurrentFrame)->mFilename; 
         }
         
-        MovieSnapshot newSnapshot(event.mEventType, filename, renderer->mFPS, targetFPS, renderer->mZoom, renderer->mLOD, renderer->mDoStereo, renderer->mPlayDirection, renderer->mStartFrame, renderer->mEndFrame, allFrames->numStereoFrames(), renderer->mCurrentFrame, renderer->mNumRepeats, renderer->mDoPingPong, renderer->mFullScreen, renderer->mSizeToMovie, renderer->mZoomToFit, options->noscreensaver, renderer->mWindowHeight, renderer->mWindowWidth, renderer->mWindowXPos, renderer->mWindowYPos, renderer->mImageHeight, renderer->mImageWidth, -renderer->mImageXOffset, renderer->mImageYOffset); 
+        MovieSnapshot newSnapshot(event.mEventType, filename, renderer->mFPS, renderer->mTargetFPS, renderer->mZoom, renderer->mLOD, renderer->mDoStereo, renderer->mPlayDirection, renderer->mStartFrame, renderer->mEndFrame, allFrames->numStereoFrames(), renderer->mCurrentFrame, renderer->mNumRepeats, renderer->mDoPingPong, renderer->mFullScreen, renderer->mSizeToMovie, renderer->mZoomToFit, options->noscreensaver, renderer->mWindowHeight, renderer->mWindowWidth, renderer->mWindowXPos, renderer->mWindowYPos, renderer->mImageHeight, renderer->mImageWidth, -renderer->mImageXOffset, renderer->mImageYOffset); 
         if (sendSnapshot || newSnapshot != oldSnapshot) {          
           
           DEBUGMSG(str(boost::format("Sending snapshot %1%") 
@@ -707,91 +624,22 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         }
         
          
-        /* This is interesting.  If you are zoomed out, you don't need
-           full resolution to view the image, so only load the LOD you need.  
-           This is of dubious value in the modern era.  
-        */ 
-        if (!options->noAutoRes) {
-          uint32_t baseLOD = LODFromZoom(renderer->mZoom);
-          if (baseLOD > renderer->mLOD && baseLOD < frameInfo->mLOD) {
-            renderer->mLOD = baseLOD;
-          }
+        if (event.mEventType == "MOVIE_NONE" && !renderer->mPlayDirection) {
+          //dbprintf(5, "We have no useful work that we are doing, sleep a bit to prevent hogging CPU for no reason.  Sleeping %ld usec\n", sleepAmt); 
+          usleep(sleepAmt); 
+          if (sleepAmt < 100*1000)
+            sleepAmt *= 2; // sleep more next time
+          continue;
         }
-        
-
-        /* Call the renderer to render the desired area of the frame.
-         * Most rendereres will refer to their own image caches to load
-         * the image and render it.  Some will just send the
-         * request "downstream".
-         *
-         * If we're paused or stopped, render the frame at maximum
-         * level of detail, regardless of what was requested during
-         * playback.  If we're playing forward or backward, then use
-         * the given level of detail.
-         */
-        
- 
-        DEBUGMSG("before render"); 
-        renderer->Render();
-        
-        DEBUGMSG("after render"); 
-        
-       
-        /* Print info in upper-left corner */
-        /*!
-          RDC Note:  this is only done in x11 interface mode, which is going away.  But it might be useful to have a "draw letters on screen" option.  Note that it used OpenGL to do the actual lettering. 
-        */ 
-        /*     if (drawInterface && renderer->DrawString != NULL) {
-               char str[100];
-               int row = 0;
-               sprintf(str, "Frame %d of %d", renderer->mCurrentFrame + 1, allFrames->numStereoFrames());
-               renderer->DrawString(row++, 0, str);
-               sprintf(str, "Frame Size: %d by %d pixels",
-               frameInfo->mWidth, frameInfo->mHeight);
-               renderer->DrawString(row++, 0, str);
-               sprintf(str, "Position: %d, %d",
-               -(renderer->mImageXPos + panDeltaX), renderer->mImageYPos + panDeltaY);
-               renderer->DrawString(row++, 0, str);
-               sprintf(str, "Zoom: %5.2f  LOD: %d (%d + %d)", renderer->mZoom, lod, baseLOD, renderer->mLOD);
-             
-               renderer->DrawString(row++, 0, str);
-               sprintf(str, "FPS: %5.1f (target %.1f)", fps, targetFPS);
-               renderer->DrawString(row++, 0, str);
-               }
-        */
- 
-        
-  
-        if (renderer->mPlayDirection) {
-          if (!oldPlay) {
-            /* We're starting playback now so reset counters and timers */
-            recentStartTime = GetCurrentTime();
-            recentFrameCount = 0;
-            if (targetFPS > 0.0)
-              nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
-            else
-              nextSwapTime = 0.0;
-          }
-          /* See if we need to introduce a pause to prevent exceeding
-           * the target frame rate.
-           */
-          double delay = nextSwapTime - GetCurrentTime();
-          if (delay - previousSwapTime > 0.0) {
-            usedDelayCount++;
-            //delay *= 0.95;  /* an empirical constant */
-            usleep((unsigned long) ((delay - previousSwapTime) * 1000.0 * 1000.0));
-          }
-          else {
-            skippedDelayCount++;
-          }
-          /* Compute next targetted swap time */
-          nextSwapTime = GetCurrentTime() + 1.0 / targetFPS;
+        else {
+          // We are doing something useful -- don't delay Rendering! 
+          // dbprintf(0, "Not sleeping because swapBuffers=%d, eventType=%d, frameNumber=%d, swapBuffers, event.mEventType, frameNumber);
+          sleepAmt = 1; 
         }
-        DEBUGMSG("Swap buffers"); 
-        double beforeSwap = GetCurrentTime(); 
-        renderer->SwapBuffers();
-        previousSwapTime = GetCurrentTime() - beforeSwap; 
-
+      
+        // Call the renderer to render the current frame.
+        renderer->Render();        
+        
         if (renderer->mPlayDirection && options->speedTest) {
           cerr << "requesting speedTest of slaves" << endl; 
           renderer->DMXSpeedTest(); 
@@ -799,34 +647,12 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
         }
     
 
-        DEBUGMSG("after swap (swap time was %0.5f ms)", previousSwapTime*1000.0); 
         /* Advance to the next frame */
         renderer->AdvanceFrame(); 
-        if (renderer->mPlayDirection) {
-          /* Update timing info */
-          recentFrameCount++;
-        
-          endClicks = times(&endTime);
-        
-          recentEndTime = GetCurrentTime();
-          elapsedTime = recentEndTime - recentStartTime;
-          if (elapsedTime >= 1.0/(options->fpsSampleFrequency)) {
-            renderer->mFPS = (double) recentFrameCount / elapsedTime;
-            SuppressMessageDialogs(true); 
-            WARNING("Frame Rate on frame %d: %g fps",
-                    renderer->mCurrentFrame, renderer->mFPS);
-            SuppressMessageDialogs(false); 
-            /* reset timing info so we compute FPS over last 2 seconds */
-            recentStartTime = GetCurrentTime();
-            recentFrameCount = 0;
-          }
-        }
-        else {
-          recentFrameCount = 0;
-          renderer->mFPS = 0.0;
-        }
-        if ( (options->playExit > 0 && renderer->mCurrentFrame >= options->playExit) ||
-             (options->playExit == -1 && renderer->mCurrentFrame > renderer->mEndFrame-1)) { 
+        if ( (options->playExit > 0 && 
+              renderer->mCurrentFrame >= options->playExit) ||
+             (options->playExit == -1 && 
+              renderer->mCurrentFrame > renderer->mEndFrame-1)) { 
           events.push_back(MovieEvent("MOVIE_QUIT")); 
         }
         renderer->UpdateInterface(); 
@@ -834,12 +660,6 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
     }
   }
   if (renderer) delete renderer; 
-  /* Finish our timing information */
-  endClicks = times(&endTime);
-  elapsedTime = (endClicks - startClicks) / (double) Hertz;
-  userTime = (endTime.tms_utime - startTime.tms_utime) / (double) Hertz;
-  systemTime = (endTime.tms_stime - startTime.tms_stime) / (double) Hertz;
-  /* Done with the frames */
   return 0; 
 } // end DisplayLoop
 
