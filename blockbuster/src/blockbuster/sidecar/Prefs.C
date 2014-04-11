@@ -372,11 +372,11 @@ void ConsumeArg(int argnum, int &argc, char *argv[]){
   argv[argnum] = NULL; 
   argc--; 
 }
-void Preferences::GetFromArgs(int &argc, char *argv[], vector<argType>& types) {
+void Preferences::GetFromArgs(int &argc, char *argv[], vector<argType>& argtypes) {
   
   // first, initialize all keys in "types" array to defaults if not already set to some value
-  vector<argType>::iterator argPos = types.begin(), endpos = types.end(); 
-  while (argPos != endpos) {
+  vector<argType>::iterator argPos; 
+  for (argPos = argtypes.begin(); argPos != argtypes.end(); ++argPos) {
     if (mPrefs.find(argPos->mKey) == mPrefs.end()) {      
       if (argPos->mType == "bool") {
         SetBoolValue(argPos->mKey, false); 
@@ -386,22 +386,28 @@ void Preferences::GetFromArgs(int &argc, char *argv[], vector<argType>& types) {
         SetValue(argPos->mKey, 0); 
       }
     }
-    ++argPos; 
   }
        
   // now, go through and parse the argc and argv as command line options.
   errno = 0; 
   int argnum = 0; 
+  string foundflag; 
   while (argnum < argc) {
-    argPos = types.begin(); 
-    while (argPos != endpos) {
-      if (argPos->mFlag == string(argv[argnum])) {
-         break; 
+    for (argPos = argtypes.begin();  
+         argPos != argtypes.end(); 
+         ++argPos) {
+      for (vector<string>::iterator flagpos = argPos->mFlags.begin(); 
+           flagpos != argPos->mFlags.end();
+           flagpos++) {
+        if (*flagpos == string(argv[argnum])) {
+          foundflag = *flagpos;   
+          break; 
+        }
       }
-      ++argPos; 
+      if (foundflag != "") break; 
     }
 
-    if (argPos == endpos) {
+    if (foundflag == "") {
       argnum++; 
     } else {
        // do not increment argnum here as you will simply be consuming args and reducing argc
@@ -411,7 +417,7 @@ void Preferences::GetFromArgs(int &argc, char *argv[], vector<argType>& types) {
         SetBoolValue(argPos->mKey, true); 
       } else {
         if (argnum == argc) {
-          throw string("Flag ")+argPos->mFlag+string(" requires an argument");
+          throw string("Flag ")+foundflag+string(" requires an argument");
         }     
         if (argPos->mType == "string") {
           SetValue(argPos->mKey, string(argv[argnum]));

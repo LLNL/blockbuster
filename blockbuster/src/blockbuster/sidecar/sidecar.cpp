@@ -62,7 +62,7 @@ bool CompareHostProfiles(const HostProfile * h1, const HostProfile * h2) {
 
 //===============================================================
 SideCar::SideCar(QApplication *app, Preferences *prefs, QWidget *parent)
-  : QMainWindow(parent), mApp(app), mPrefs(prefs), mLaunchDialog(NULL), mBlockbusterProcess(NULL), mKeyPressIntercept(NULL), mDoStressTests(false), mState(BB_DISCONNECTED), 
+  : QMainWindow(parent), mPrefs(prefs), mApp(app), mLaunchDialog(NULL), mBlockbusterProcess(NULL), mKeyPressIntercept(NULL), mDoStressTests(false), mState(BB_DISCONNECTED), 
     mBlockbusterSocket(NULL),
     mNextCommandID(1), 
     mCueManager(NULL),
@@ -635,9 +635,9 @@ void SideCar::askLaunchBlockbuster(const MovieCue* iCue, QString moviename, bool
     moviename = ""; 
   }
 
-  BlockbusterLaunchDialog dialog(this, HostField->text(), PortField->text(), moviename, mState, mPrefs->GetValue("rsh").c_str(), gPrefs.GetLongValue("verbose"));
+  BlockbusterLaunchDialog dialog(this, HostField->text(), PortField->text(), moviename, mState, mPrefs->GetValue("rsh").c_str(), mPrefs->GetLongValue("verbose"));
   // restore the last used profile or the default if first launch
-  dialog.trySetProfile(gPrefs.GetValue("SIDECAR_DEFAULT_PROFILE").c_str()); 
+  dialog.trySetProfile(mPrefs->GetValue("SIDECAR_DEFAULT_PROFILE").c_str()); 
 
   setBlockbusterPort(PortField->text()); 
   connect(&mBlockbusterServer, SIGNAL(newConnection()), &dialog, SLOT(blockbusterConnected())); 
@@ -668,7 +668,7 @@ void SideCar::askLaunchBlockbuster(const MovieCue* iCue, QString moviename, bool
     }  
     if (dialog.mCurrentProfile) {
       // save the user's preference as default for next launch.  
-      gPrefs.SetValue("SIDECAR_DEFAULT_PROFILE", dialog.mCurrentProfile->mName.toStdString()); 
+      mPrefs->SetValue("SIDECAR_DEFAULT_PROFILE", dialog.mCurrentProfile->mName.toStdString()); 
     }
   } else {    
     dialog.on_launchButton_clicked(); 
@@ -1699,7 +1699,7 @@ void BlockbusterLaunchDialog::trySetProfile (QString name) {
 
 //=======================================================================
 void BlockbusterLaunchDialog::saveHistory(QComboBox *box, QString filename){
-  filename = QString(gPrefs.GetValue("prefsdir").c_str()) +"/"+ filename;
+  filename = QString(mSidecar->mPrefs->GetValue("prefsdir").c_str()) +"/"+ filename;
   QFile histfile(filename); 
   if (! histfile.open(QIODevice::Truncate | QIODevice::WriteOnly)) {
     dbprintf(5, QString("Could not open file %1 to save history\n").arg(filename)); 
@@ -1980,7 +1980,7 @@ int BlockbusterLaunchDialog::readHostProfileFile(QString filename, bool readonly
 void BlockbusterLaunchDialog::initMovieComboBox(QString initialItem){
   fileNameComboBox->clear(); 
 
-  QString filename = QString(gPrefs.GetValue("prefsdir").c_str()) +"/fileNameComboBox.history";
+  QString filename = QString(mSidecar->mPrefs->GetValue("prefsdir").c_str()) +"/fileNameComboBox.history";
   QFile histfile(filename); 
   if (!histfile.open(QIODevice::ReadOnly)) {
     fileNameComboBox->addItem("/Type/movie/path/here"); 

@@ -205,6 +205,9 @@ class SideCar: public QMainWindow, public Ui::SideCarWindow {
     return; 
   }
   
+ public:
+  Preferences *mPrefs; 
+
  private: 
   void enableMovieActions(bool enabled=true); 
   void enableRemoteControl(bool enabled); 
@@ -212,7 +215,6 @@ class SideCar: public QMainWindow, public Ui::SideCarWindow {
   void checkCaptureKeystrokes(void); 
 
   QApplication *mApp; 
-  Preferences *mPrefs; 
   class BlockbusterLaunchDialog *mLaunchDialog;
   QProcess *mBlockbusterProcess; 
   KeyPressIntercept mKeyPressIntercept; 

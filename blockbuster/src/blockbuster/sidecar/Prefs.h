@@ -17,16 +17,48 @@
 
 #define DOUBLE_FALSE (0.0)
 #define LONG_FALSE  (0)
-
+using namespace boost; 
 //======================================================
 struct argType {
+  argType(string key) {
+    argType(key, "string"); 
+  }
+  argType(string key, string preftype) {
+    mKey = key; 
+    mType = preftype; 
+    mFlags.push_back(str(format("--%1%")%key)); 
+    mFlags.push_back(str(format("-%c")%key[0])); 
+  }  
+  argType(vector<string> flags, string key, string preftype) {
+    mKey = key; 
+    mType = preftype; 
+    mFlags = flags;  
+  }
+  argType(string longflag, string shortflag, string key, string preftype) {
+    mKey = key; 
+    mType = preftype; 
+    mFlags.push_back(longflag); 
+    mFlags.push_back(shortflag); 
+  }
   argType(string flag, string key, string preftype) {
     mKey = key; 
     mType = preftype; 
-    mFlag = flag; 
+    mFlags.push_back(flag); 
   }
-  string mFlag, 
-    mKey, 
+
+  argType(const argType &other) {
+    *this = other; 
+  }
+
+  const argType &operator =(const argType &other) {
+    mKey = other.mKey; 
+    mType = other.mType; 
+    mFlags = other.mFlags; 
+    return *this; 
+  }
+
+  vector<string> mFlags; // aliasable e.g. "--help" and "-h" 
+  string mKey, 
     mType; // "bool", "long", "double", "string"
 };
     
