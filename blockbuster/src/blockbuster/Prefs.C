@@ -59,7 +59,7 @@ bool Preferences::TryGetValue(const string &key,  std::string &outValue) const {
     return false; 
   }
   outValue = GetValue(key, true);    
-  return true; 
+  return (outValue != ""); 
 }
 
 //====================================================
@@ -70,7 +70,7 @@ bool Preferences::TryGetDoubleValue(const string &key, double &outValue) const {
     outValue = DOUBLE_FALSE;
     return false; 
   }
-  return true; 
+  return outValue!= DOUBLE_FALSE; 
 }
 
 //====================================================
@@ -81,7 +81,7 @@ bool Preferences::TryGetLongValue(const string &key, long &outValue) const {
     outValue = LONG_FALSE;
     return false; 
   }
-  return true; 
+  return outValue != LONG_FALSE; 
 }
 
 //====================================================
@@ -276,13 +276,7 @@ void Preferences::ReadFromFile(bool throw_exceptions){
 
 //====================================================
 bool Preferences::KeyValid(string key) {
-  vector<argType>::iterator pos = mValidArgs.begin(), endpos = mValidArgs.end(); 
-  while (pos != endpos) {
-    if (key == pos->mKey) return true; 
-    ++pos; 
-  }
-
-  return false; 
+  return mPrefs.find(key) != mPrefs.end(); 
 }
 
 //====================================================
@@ -360,6 +354,7 @@ void Preferences::SaveToFile(bool createDir, bool clobber){
   return;
 }
 
+// ================================================================== 
 void ConsumeArg(int argnum, int &argc, char *argv[]){
   while (argnum < argc-1) {
     argv[argnum] = argv[argnum+1];
@@ -368,39 +363,33 @@ void ConsumeArg(int argnum, int &argc, char *argv[]){
   argv[argnum] = NULL; 
   argc--; 
 }
-void Preferences::GetFromArgs(int &argc, char *argv[], vector<argType>& argtypes) {
+
+// ================================================================== 
+void Preferences::GetFromArgs(int &argc, char *argv[], vector<argType>& args, bool rejectUnknown) {
   
   // first, initialize all keys in "argtypes" array to defaults if not already set to some value
-  vector<argType>::iterator argPos; 
-  for (argPos = argtypes.begin(); argPos != argtypes.end(); ++argPos) {
-    if (mPrefs.find(argPos->mKey) == mPrefs.end()) {      
-      if (argPos->mType == "bool") {
-        SetValue(argPos->mKey, false); 
-      } else if (argPos->mType == "string") {
-        SetValue(argPos->mKey, string(""));
-      } else if (argPos->mType == "long" || argPos->mType == "double") {
-        SetValue(argPos->mKey, 0); 
-      }
-    }
-  }
-  ParseArgs(argc, argv); 
+  AddArgs(args); 
+  ParseArgs(argc, argv, rejectUnknown); 
   return; 
 }
-       
-void Preferences::ParseArgs(int &argc, char *argv[]) {
+      
+// ================================================================== 
+void Preferences::ParseArgs(int &argc, char *argv[], bool rejectUnknown) {
   // parse the argc and argv as command line options.
   // 
   errno = 0; 
   int argnum = 0; 
   string foundflag; 
   while (argnum < argc) {
-    for (argPos = argtypes.begin();  
-         argPos != argtypes.end(); 
-         ++argPos) {
-      for (vector<string>::iterator flagpos = argPos->mFlags.begin(); 
-           flagpos != argPos->mFlags.end();
+    string currentArg = argv[argnum]; 
+    vector<argType>::iterator validArg; 
+    for (validArg = mValidArgs.begin();  
+         validArg != mValidArgs.end(); 
+         ++validArg) {
+      for (vector<string>::iterator flagpos = validArg->mFlags.begin(); 
+           flagpos != validArg->mFlags.end();
            flagpos++) {
-        if (*flagpos == string(argv[argnum])) {
+        if (*flagpos == currentArg) {
           foundflag = *flagpos;   
           break; 
         }
@@ -409,34 +398,35 @@ void Preferences::ParseArgs(int &argc, char *argv[]) {
     }
 
     if (foundflag == "") {
+      if (rejectUnknown && currentArg[0] == '-') {
+        throw str(format("Unknown argument %s ")%currentArg); 
+      }        
       argnum++; 
     } else {
        // do not increment argnum here as you will simply be consuming args and reducing argc
       ConsumeArg(argnum, argc,argv); 
-    
-      if (argPos->mType == "bool") {
-        SetValue(argPos->mKey, true); 
+      if (validArg->mType == "bool") {
+        SetValue(validArg->mKey, true); 
       } else {
         if (argnum == argc) {
           throw string("Flag ")+foundflag+string(" requires an argument");
         }     
-        if (argPos->mType == "string") {
-          SetValue(argPos->mKey, string(argv[argnum]));
-        } else if (argPos->mType == "long") {
-          SetValue(argPos->mKey, strtol(argv[argnum], NULL, 10));
-          if (errno) {
-            throw string("Could not convert ")+argv[argnum]+string(" to long");
+        string value = argv[argnum];
+        try {
+          if (validArg->mType == "string") {
+            SetValue(validArg->mKey, value);
+          } else if (validArg->mType == "long") {
+            SetValue(validArg->mKey, boost::lexical_cast<long>(value));
+          } else if (validArg->mType == "double") {
+            SetValue(validArg->mKey,  boost::lexical_cast<double>(value)); 
+          } else {
+            throw string("Bad keytype: ")+validArg->mType+string(" for key: ")+validArg->mKey; 
           }
-        } else if (argPos->mType == "double") {
-          SetValue(argPos->mKey, strtod(argv[argnum], NULL) ); 
-          if (errno) {
-            throw string("Could not convert ")+argv[argnum]+string(" to double");
-          }
-        } else {
-          throw string("Bad keytype: ")+argPos->mType+string(" for key: ")+argPos->mKey; 
+        } catch (...) {
+          throw str(format("Could not convert value %s to type %s for flag %s") % value % validArg->mType % foundflag); 
         }
-        ConsumeArg(argnum, argc,argv); 
-      } // end check which arg type it is
+      }// end check which arg type it is
+      ConsumeArg(argnum, argc,argv); 
     } /* end  if (found) */
-  }// end while (argnum < argc)
-}
+  } // end while (argnum < argc)
+} // end ParseArgs()

@@ -133,24 +133,55 @@ class Preferences {
      When done, the options and their arguments will be stripped from argv and argc will be adjusted appropriately.  
   */ 
   
+  //====================================================
   Preferences &AddArg(argType arg) {
-    mValidArgs.push_back(arg); 
+    // first look for duplicates: 
+    for (vector<argType>::iterator argPos = mValidArgs.begin();  
+         argPos != mValidArgs.end(); 
+         ++argPos) {
+      if (arg.mKey == argPos->mKey) {
+        throw str(format("AddArg Error: duplicate key: %s")%arg.mKey);
+      }
+      for (vector<string>::iterator flag = argPos->mFlags.begin(); 
+           flag != argPos->mFlags.end(); flag++) {
+        if (find(arg.mFlags.begin(), arg.mFlags.end(), *flag) != arg.mFlags.end()) {
+          throw str(format("AddArg Error: duplicate flag: %s")%(*flag));
+        }
+      }
+    }
+    // now add a value in Prefs by type
+    if (mPrefs.find(arg.mKey) == mPrefs.end()) {      
+      if (arg.mType == "bool") {
+        SetValue(arg.mKey, false); 
+      } else if (arg.mType == "string") {
+        SetValue(arg.mKey, string(""));
+      } else if (arg.mType == "long" || arg.mType == "double") {
+        SetValue(arg.mKey, 0); 
+      }
+    }
     return *this; 
   }
   
+  //====================================================
   Preferences &AddArgs(std::vector<argType> &args) {
-    mValidArgs = args; 
+    for (vector<argType>::iterator argPos = args.begin(); argPos != args.end(); ++argPos) {
+      AddArg(*argPos); 
+    }
     return *this; 
   }
   
+  //====================================================
+  // for backwards compatibility
   Preferences &SetValidArgs(std::vector<argType> &args) {
     AddArgs(args); 
     return *this; 
   }
   
-  void GetFromArgs(int &argc, char *argv[], vector<argType> &argtypes);
+  //====================================================
+  void GetFromArgs(int &argc, char *argv[], vector<argType> &argtypes, bool rejectUnknown=true);
 
-  void ParseArgs(int &argc, char *argv[]); 
+  //====================================================
+  void ParseArgs(int &argc, char *argv[], bool rejectUnknown=true); 
   //=============================
   // Copy the entire environment variable list into prefs, e.g., if $verbose is 5, then set Prefs["verbose"] to "5"
   void ReadFromEnvironment(void); 
