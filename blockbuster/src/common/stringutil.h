@@ -6,6 +6,7 @@
 #include <vector>
 #include <stdio.h>
 #include <algorithm>
+#include "boost/format.hpp"
 //#include <inttypes.h>
 //#include "RCDebugStream.h"
 
@@ -156,28 +157,13 @@ inline std::string pointerToString(const void *ptr) {
 
 //=====================================================
 template <class T> 
-string doubleArrayToString(const vector<T>  &array) {
-  if (!array.size()) return string("[(empty vector)]"); 
-
-  string value("<");
-  typename vector<T>::const_iterator pos = array.begin(), endpos = array.end();
-  while (pos != endpos) {
-    value += (doubleToString(*pos++));
-    if (pos != endpos) value += ", "; 
-    else value += ">"; 
-  }
-  return value; 
-}
-
-//=====================================================
-template <class T> 
 string arrayToString(const vector<T>  &array) {
   if (!array.size()) return string("[(empty vector)]"); 
 
   string value("<");
   typename vector<T>::const_iterator pos = array.begin(), endpos = array.end(); 
   while (pos != endpos) {
-    value += (string(*pos++));
+    value += str(boost::format("%1%")%(*pos++));
     if (pos == endpos) value += ", "; 
     else value += ">"; 
   }
