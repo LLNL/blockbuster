@@ -81,6 +81,10 @@ string GetSidecarDir(string myname) {
 
 void ParseOptions(int &argc, char *argv[], Preferences &gPrefs) {
 
+  QString prefsdir = QDir::homePath() + "/.sidecar"; 
+  mkdir(prefsdir.toStdString().c_str(), 0777); 
+  gPrefs.SetValue("prefsdir", prefsdir.toStdString()); 
+  gPrefs.SetFile((prefsdir + "/prefs.cnf").toStdString()); 
   gPrefs.SetValue("rsh", "rsh"); 
   gPrefs.SetValue("verbose", 0); 
   gPrefs.SetValue("sidecarDir", GetSidecarDir(argv[0])); 
@@ -109,57 +113,9 @@ void ParseOptions(int &argc, char *argv[], Preferences &gPrefs) {
 int main(int argc, char *argv[]) {
   // Try new argument parsing: 
   // ========================================================
-  options_description general("General options");
-  general.add_options()
-    ("help,h", "Output this menu")
-    ("help-advanced,a", "Output this menu plus advanced options")
-    ("keyhelp,k", "display list of keyboard controls")
-    ("dmx,d", "by default, set the dmx checkbox when running blockbuster")
-    ("movie,m", value<string>(), "arg is either a filename or a string of the form filename[@host].  Launch blockbuster and open the given movie on the given host without playing it.  If not host is given, blockbuster will run locally")
-    ("play,p", value<string>(), "Same as --movie, but play the movie when you load it.")
-    ("rsh,r", value<string>(), "connect to remote hosts using the given command 'arg' instead of rsh (example: --rsh=ssh).  Note that password prompts appear on the command line, not in the GUI. ")
-    ("verbose,v", value<int>(),  "verbosity level (0-5)") ;
-
-  // ========================================================
-  options_description advanced("Advanced options"); 
-  advanced.add_options()
-    ("stresstest,s", "(DEBUGGING ONLY) -- execute each cue numerous times instead of just once when clicked"); 
-
-  // ========================================================
-  options_description positional_desc("Positional"); 
-  positional_desc.add_options()
-    ("cuefile", value<string>(), "Cue file name"); 
-
-  positional_options_description positional_obj_desc; 
-  positional_obj_desc.add("cuefile", 1); 
-
-  
-  // ========================================================
-  options_description visible("Allowed options");
-  visible.add(general); 
-
-  // ========================================================
-  options_description all; 
-  all.add(general).add(advanced).add(positional_desc); 
-
-  variables_map vm;
-  store(command_line_parser(argc, argv).options(all).positional(positional_obj_desc).run(), vm);
-  
-  // ========================================================
   cerr << "sidecar version " << BLOCKBUSTER_VERSION << endl; 
   QApplication app(argc, argv);
-  QString prefsdir = QDir::homePath() + "/.sidecar"; 
-  mkdir(prefsdir.toStdString().c_str(), 0777); 
   Preferences gPrefs; 
-  gPrefs.SetValue("prefsdir", prefsdir.toStdString()); 
-  gPrefs.SetFile((prefsdir + "/prefs.cnf").toStdString()); 
-  SideCar sidecar(&app, &gPrefs);
-  //QStyle *myStyle = new QCleanlooksStyle();
-  QStyle *myStyle = new QPlastiqueStyle();
-  app.setStyle(myStyle); 
-  sidecar.show();
-
-
   try {
     ParseOptions(argc, argv, gPrefs); 
   } catch (string err) {
@@ -182,6 +138,12 @@ int main(int argc, char *argv[]) {
     gPrefs.SetValue("SIDECAR_DEFAULT_PROFILE",  
                     QHostInfo::localHostName().toStdString()); 
   }
+
+  SideCar sidecar(&app, &gPrefs);
+  //QStyle *myStyle = new QCleanlooksStyle();
+  QStyle *myStyle = new QPlastiqueStyle();
+  app.setStyle(myStyle); 
+  sidecar.show();
 
   if (argc > 1) { 
     sidecar.ReadCueFile(argv[1]);

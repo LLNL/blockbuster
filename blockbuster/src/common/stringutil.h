@@ -1,3 +1,5 @@
+/* MODIFIED BY: rcook on Fri Apr 11 11:37:30 PDT 2014 */
+/* VERSION: 1.0 */
 #ifndef TSB_STRING_UTIL_H
 #define TSB_STRING_UTIL_H
 #include <iostream>

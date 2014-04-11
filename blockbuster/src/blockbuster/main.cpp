@@ -53,6 +53,7 @@
 #include "util.h"
 #include "SidecarServer.h"
 #include "smFrame.h"
+#include "Prefs.h"
 
 // global for Qt use: 
 QApplication *gCoreApp=NULL; 
@@ -629,6 +630,10 @@ InterruptHandler(int)
 int main(int argc, char *argv[])
 {
   ProgramOptions *opt = GetGlobalOptions(); 
+  Preferences Prefs; 
+  
+  Prefs.AddArg(argType("help", "bool")); 
+    
   Slave *theSlave; 
   char localSettingsFilename[BLOCKBUSTER_PATH_MAX];
   char homeSettingsFilename[BLOCKBUSTER_PATH_MAX];
@@ -636,7 +641,6 @@ int main(int argc, char *argv[])
   char *envHOME;
   struct stat statBuf;
   int rv, retval = 0;
-  char ** args = argv; 
   
  
   version(); // announce our self
@@ -675,7 +679,7 @@ int main(int argc, char *argv[])
 
 
   /* Grab any options that apply to the whole program */
-  char **newargs = DuplicateArgs(argc, args); 
+  char **newargs = DuplicateArgs(argc, argv); 
   int newargc = argc;
   int dummy =0; 
   // Get Qt rockin'.  This creates the basic Qt object.  

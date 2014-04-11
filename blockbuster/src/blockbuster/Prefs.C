@@ -1,3 +1,5 @@
+/* MODIFIED BY: rcook on Fri Apr 11 11:37:30 PDT 2014 */
+/* VERSION: 1.0 */
 #define NO_BOOST 1
 #include "Prefs.h"
 #include "stringutil.h"
