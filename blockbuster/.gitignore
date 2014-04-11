@@ -24,6 +24,8 @@ src/blockbuster/moc*cpp
 src/blockbuster/qrc*.cpp
 src/blockbuster/sidecar/MovieCues.*
 src/blockbuster/sidecar/common.h
+src/blockbuster/sidecar/Prefs.C
+src/blockbuster/sidecar/Prefs.h
 src/blockbuster/sidecar/events.cpp
 src/blockbuster/sidecar/events.h
 src/blockbuster/sidecar/moc_MovieCues.cpp
