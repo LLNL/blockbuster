@@ -96,6 +96,9 @@ Makefile.qt.include: sidecar.pro $(SOURCES) $(HEADERS)
 %.cpp : ../%.cpp
 	cp $< $@
 
+%.C : ../%.C
+	cp $< $@
+
 %.ui: ../%.ui
 	cp $< $@ 
 
