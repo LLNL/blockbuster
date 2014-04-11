@@ -87,7 +87,7 @@ endif
 
 SOURCES=main.cpp blockbuster_qt.cpp movie.cpp  ../common/timer.C \
 	 pure_C.c frames.cpp  slave.cpp remotecommands.cpp \
-	cache.cpp  common.cpp \
+	cache.cpp  common.cpp Prefs.C \
 	sgi-rgbFrame.cpp convert.cpp smFrame.cpp pngFrame.cpp \
 	splash.cpp pnmFrame.cpp tiffFrame.cpp \
 	libdmx/dmx.c MovieCues.cpp events.cpp ImageCache.cpp  \
@@ -98,7 +98,7 @@ HEADERS= errmsg.h events.h remotecommands.h  ImageCache.h \
 	../common/stringutil.h ../common/timer.h ../config/version.h \
 	MovieCues.h errmsg.h pure_C.h util.h blockbuster_qt.h  \
 	sgi-rgbFrame.h convert.h smFrame.h pathutil.h pngFrame.h \
-	splash.h pnmFrame.h tiffFrame.h \
+	splash.h pnmFrame.h tiffFrame.h Prefs.h \
 	Renderer.h glRenderer.h dmxRenderer.h 
 
 FORMS = MovieCueWidget.ui BlockbusterControl.ui InfoWindow.ui
@@ -132,7 +132,7 @@ $(DEPENDENT_LIBS):
 
 DEPENDENT_LIBS = $(INSTALL_DIR)/lib/libboost_thread.a $(INSTALL_DIR)/lib/libz.a $(INSTALL_DIR)/lib/libsrwpng.a $(INSTALL_DIR)/lib/libjpeg.a  $(INSTALL_DIR)/lib/libpnmrw.a $(INSTALL_DIR)/lib/liblzo2.a $(INSTALL_DIR)/lib/liblzma.a $(INSTALL_DIR)/lib/libtiff.a 
 
-blockbuster.pro :   $(FORMS) 
+blockbuster.pro :   $(FORMS) Makefile
 	echo QMAKE IS \"$(QMAKE)\" and INSTALL_DIR is $(INSTALL_DIR)
 	INSTALL_DIR=$(INSTALL_DIR) $(QMAKE) -project -nopwd -Wall 'LIBS += $(DEPENDENT_LIBS) $(LDFLAGS) -L$(INSTALL_DIR)/lib -L/sw/lib  $(X11_LIBS) $(GL_LIBS) $(PTHREADS_LIBS) -lsmovie  -lsrwpng -ljpeg -llzo2 -lz -llzma -lm  ' "INCLUDEPATH += libdmx ../common ../config $(INSTALL_DIR)/include  $$(echo $(X11_INCLUDES)  | sed -e s/-I//g ) " "MAKEFILE = Makefile.qt.include" "DEFINES +=  NO_BOOST $(MPI_DEFINES) $(USE_DMX) USE_QT $(DEBUG)" "QT += network"  "QT += opengl" "HEADERS = $(HEADERS)" "FORMS += $(FORMS)" "$(DEBUG_QT)"  "RESOURCES += images.qrc"  $(SOURCES)  
 
