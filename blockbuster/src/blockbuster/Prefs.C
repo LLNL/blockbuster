@@ -2,6 +2,7 @@
 #include "Prefs.h"
 #include "stringutil.h"
 #include "errno.h"
+#include <boost/lexical_cast.hpp>
 /* class Preferences
    member functions 
 */
@@ -54,15 +55,19 @@ void Preferences::Reset(void){
 
 //====================================================
 bool Preferences::TryGetValue(const string &key,  std::string &outValue) const {
-  outValue = GetValue(key, false);    
-  if (outValue == "") return false; 
+  if (mPrefs.find(key) == mPrefs.end()) {
+    return false; 
+  }
+  outValue = GetValue(key, true);    
   return true; 
 }
 
 //====================================================
 bool Preferences::TryGetDoubleValue(const string &key, double &outValue) const {
-  outValue = GetDoubleValue(key, false); 
-  if (outValue == DOUBLE_FALSE) { 
+  try {
+    outValue = GetDoubleValue(key, true); 
+  } catch (...) {
+    outValue = DOUBLE_FALSE;
     return false; 
   }
   return true; 
@@ -70,8 +75,10 @@ bool Preferences::TryGetDoubleValue(const string &key, double &outValue) const {
 
 //====================================================
 bool Preferences::TryGetLongValue(const string &key, long &outValue) const {
-  outValue = GetLongValue(key, false);   
-  if (outValue == LONG_FALSE) {
+  try {
+    outValue = GetLongValue(key, true);   
+  } catch(...) {
+    outValue = LONG_FALSE;
     return false; 
   }
   return true; 
@@ -91,41 +98,32 @@ std::string Preferences::GetValue(const std::string &key, bool dothrow) const {
 
 //====================================================
 double Preferences::GetDoubleValue(const string &key, bool dothrow) const {
-  char *endptr;
   string value = GetValue(key, dothrow);
-  double result = strtod(value.c_str(), &endptr);
-  if (endptr == value.c_str()) {
+  try {
+    return boost::lexical_cast<double>(value); 
+  } catch (...) {
     if (dothrow) {
       throw string("Bad key in  Preferences::GetDoubleValue");
-    } else {
-      return DOUBLE_FALSE;
-    }
+    } 
   }
-  return result;  
+  return DOUBLE_FALSE;  
 }
 
 //====================================================
 long Preferences::GetLongValue(const string &key, bool dothrow) const {
-  char *endptr;
   string value = GetValue(key, dothrow);
-  long result = strtol(value.c_str(), &endptr, 10);
-  if (endptr == value.c_str()){
+  try {
+    return boost::lexical_cast<long>(value); 
+  } catch (...) {
     if (dothrow) {
       throw string("Bad key in  Preferences::GetDoubleValue");
-    } else {
-      return LONG_FALSE;
-    }
- }
+    } 
+  }
   
-  return result;  
+  return LONG_FALSE;  
 }
 
 
-//====================================================
-void Preferences::SetValue(const string &key, double value){
-  SetValue(key, doubleToString(value));
-  return;
-}
 
 //====================================================
 /* Look in the environment for new values for previously declared keys */ 
@@ -140,10 +138,8 @@ void Preferences::ReadFromEnvironment(void){
       throw string("Error in environment:  environment string is malformed: \"") + keypair + "\""; 
     }    
     string key = keypair.substr(0, equals), value = keypair.substr(equals+1);
-    //if (mPrefs.find(key) != mPrefs.end()) {
     prefsdebug << "Setting prefs key "<< key<< " to value from environment: " << value << endl; 
     mPrefs[key] = value;
-    //}
     ++envp; 
   }
   return; 
@@ -374,12 +370,12 @@ void ConsumeArg(int argnum, int &argc, char *argv[]){
 }
 void Preferences::GetFromArgs(int &argc, char *argv[], vector<argType>& argtypes) {
   
-  // first, initialize all keys in "types" array to defaults if not already set to some value
+  // first, initialize all keys in "argtypes" array to defaults if not already set to some value
   vector<argType>::iterator argPos; 
   for (argPos = argtypes.begin(); argPos != argtypes.end(); ++argPos) {
     if (mPrefs.find(argPos->mKey) == mPrefs.end()) {      
       if (argPos->mType == "bool") {
-        SetBoolValue(argPos->mKey, false); 
+        SetValue(argPos->mKey, false); 
       } else if (argPos->mType == "string") {
         SetValue(argPos->mKey, string(""));
       } else if (argPos->mType == "long" || argPos->mType == "double") {
@@ -387,8 +383,13 @@ void Preferences::GetFromArgs(int &argc, char *argv[], vector<argType>& argtypes
       }
     }
   }
+  ParseArgs(argc, argv); 
+  return; 
+}
        
-  // now, go through and parse the argc and argv as command line options.
+void Preferences::ParseArgs(int &argc, char *argv[]) {
+  // parse the argc and argv as command line options.
+  // 
   errno = 0; 
   int argnum = 0; 
   string foundflag; 
@@ -414,7 +415,7 @@ void Preferences::GetFromArgs(int &argc, char *argv[], vector<argType>& argtypes
       ConsumeArg(argnum, argc,argv); 
     
       if (argPos->mType == "bool") {
-        SetBoolValue(argPos->mKey, true); 
+        SetValue(argPos->mKey, true); 
       } else {
         if (argnum == argc) {
           throw string("Flag ")+foundflag+string(" requires an argument");

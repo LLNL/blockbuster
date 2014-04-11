@@ -132,9 +132,25 @@ class Preferences {
 
      When done, the options and their arguments will be stripped from argv and argc will be adjusted appropriately.  
   */ 
+  
+  Preferences &AddArg(argType arg) {
+    mValidArgs.push_back(arg); 
+    return *this; 
+  }
+  
+  Preferences &AddArgs(std::vector<argType> &args) {
+    mValidArgs = args; 
+    return *this; 
+  }
+  
+  Preferences &SetValidArgs(std::vector<argType> &args) {
+    AddArgs(args); 
+    return *this; 
+  }
+  
+  void GetFromArgs(int &argc, char *argv[], vector<argType> &argtypes);
 
-  void GetFromArgs(int &argc, char *argv[], vector<argType> &types);
-
+  void ParseArgs(int &argc, char *argv[]); 
   //=============================
   // Copy the entire environment variable list into prefs, e.g., if $verbose is 5, then set Prefs["verbose"] to "5"
   void ReadFromEnvironment(void); 
@@ -159,10 +175,9 @@ class Preferences {
   //========================
   /* values: getting and setting (remember to set dirty bit!) 
      Note that all values are actually saved as strings and are converted, so this is not exactly a high-performance library.  :-) */
-  void SetValue(const std::string &key, const std::string &value) { mPrefs[key]= value;}
-  void SetValue(const std::string &key, double value);
-  void SetBoolValue(const std::string &key, bool value) {
-    SetValue(key, value?string("true"):string("false")); 
+  template <class T>
+  void SetValue(const std::string &key, T value) {
+    mPrefs[key] = str(format("%1%")%value); 
   }
   void DeleteValue(const std::string &key) {
     mPrefs.erase(key); // safe if key does not exist. 
@@ -189,9 +204,6 @@ class Preferences {
     return value == "true" || value == "1" || value == "on"; 
   }
   
-  void SetValidArgs(std::vector<argType> &args) {
-    mValidArgs = args; 
-  }
  protected:
   std::string NextKey(std::ifstream&theFile);
   std::map<std::string, std::string> ReadNextSection(std::ifstream &theFile);
