@@ -25,7 +25,7 @@ if [ "$NOBOOSTLINK" != "YES" ]; then
     done
 fi
 for thing in $INSTALL_DIR/lib/libboost_{atomic,date_time,filesystem,regex,system,thread,program_options}* $INSTALL_DIR/include/boost; do 
-    if [ ! -f $thing ]; then
+    if [ ! -e $thing ]; then
         rm -rf $INSTALL_DIR/include/boost $INSTALL_DIR/lib/libboost_*
         break
     fi
