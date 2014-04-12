@@ -1,4 +1,4 @@
-/* MODIFIED BY: rcook on Fri Apr 11 11:37:30 PDT 2014 */
+/* MODIFIED BY: rcook on Fri Apr 11 18:31:40 PDT 2014 */
 /* VERSION: 1.0 */
 /* This file is an attempt to allow any application to read its preferences into what Randy Frank would call a "mapobj".  I have stolen his idea and hopefully improved it to be more general and more robust, because it no longer relies on pointers to store its information.  In fact, it no longer allows pointers to be stored at all.  The presumption is that this is non-volatile information which can be written to disk.  I don't know of a way yet to pickle C items.  Maybe later I'll change to a binary output format and then allow any data to be captured to disk.  Not today. 
    All values are stored as C++ strings.  Functions which set or get values as other types are merely converting a string to the desired type or vice-versa.
@@ -21,56 +21,46 @@
 #define LONG_FALSE  (0)
 using namespace boost; 
 //======================================================
-struct argType {
-  argType(string key) {
-    argType(key, "string"); 
-  }
-  argType(string key, string preftype) {
-    mKey = key; 
-    mType = preftype; 
-    mFlags.push_back(str(format("--%1%")%key)); 
-    mFlags.push_back(str(format("-%c")%key[0])); 
-  }  
-  argType(vector<string> flags, string key, string preftype) {
-    mKey = key; 
-    mType = preftype; 
-    mFlags = flags;  
-  }
-  argType(string longflag, string shortflag, string key, string preftype) {
-    mKey = key; 
-    mType = preftype; 
-    mFlags.push_back(longflag); 
-    mFlags.push_back(shortflag); 
-  }
-  argType(string flag, string key, string preftype) {
-    mKey = key; 
-    mType = preftype; 
-    mFlags.push_back(flag); 
-  }
+struct ArgType {
 
-  argType(const argType &other) {
-    *this = other; 
-  }
+  ArgType(string key="", int multi=false, string defaultVal="");
 
-  const argType &operator =(const argType &other) {
-    mKey = other.mKey; 
-    mType = other.mType; 
-    mFlags = other.mFlags; 
-    return *this; 
-  }
+  ArgType(string key, string preftype, 
+          int multi=false, string defaultVal="");
+  
+  ArgType(string key, string preftype, vector<string> flags, 
+          int multi=false, string defaultVal="");
+
+  ArgType(string key, string preftype, 
+          string longflag, string shortflag, 
+          int multi=false, string defaultVal="");
+
+  ArgType(string key, string preftype, string flag, 
+          int multi=false, string defaultVal="");
+
+  ArgType(const ArgType &other);
+
+  void Init(string longflag, string shortflag, string key, string preftype, 
+            int multi=false, string defaultVal="");
+
+  const ArgType &operator =(const ArgType &other);
+    
+  operator string();
 
   vector<string> mFlags; // aliasable e.g. "--help" and "-h" 
   string mKey, 
     mType; // "bool", "long", "double", "string"
+  vector<string> mValues; 
+  bool mMultiple; // interpret as bool
 };
-    
+
+  
 //======================================================
 class Preferences {
  public:
   //========================
   //Initialization
   Preferences(){Reset();}
-  Preferences(std::string filename) { Reset(); SetFile(filename);}
   
   /* Merge:  combine this with other.  
      Iff addnew is true, then keys in other but not in this will be added to this
@@ -84,48 +74,28 @@ class Preferences {
 
   void Reset(void); 
   void ClearPrefs(void) { mPrefs.clear();}
-  std::map<std::string, std::string> GetPrefsMap(void) { return mPrefs; }
-
-  //========================
-  operator string() const {
-    string tmp = string("Preferences: \n")
-      + "mFilename: : " + mFilename + "\n" 
-      +  "mPrefs:\n"; 
-    map<string, string>::const_iterator pos = mPrefs.begin(), end = mPrefs.end();
-    while(pos!=end) {
-      tmp +=  " (" + pos->first + ", " + pos->second + ") \n";
-      ++pos;
-    }
-    tmp +=  str(boost::format("_dirty: %1%\n_writtenToDisk: %2%\n")%_dirty%_writtenToDisk); ;
-    return tmp; 
-  }
+  std::map<std::string, ArgType > GetPrefsMap(void) { return mPrefs; }
 
   //========================
   // meta-attributes
-  void SetFile(std::string name){ mFilename = name;}
-  std::string GetFilename(void) { return mFilename;}
 
   // disambiguate self from other prefs in a file:
   void SetLabel(std::string label){ SetValue("prefs_label", label);}
   std::string GetLabel(void) { return GetValue ("prefs_label");}
 
+  bool WriteToJson(string filename, bool createDir=true, bool clobber=true);
+
   //========================
   //saving and restoring from disk
-  void SaveToFile(bool createDir=true, bool clobber=true); //open the file, read and remember previous sections, read and discard my section, read and remember sections after me, then write previous section, my section, and trailing sections, then close the file.  Optionally create the needed directory for the file. 
-  void SaveToFile(string filename, bool createDir=false) {
-    //convenience function
-    SetFile(filename); 
-    SaveToFile(createDir); 
-  }
+  void SaveToFile(string filename, bool createDir=true, bool clobber=true); //open the file, read and remember previous sections, read and discard my section, read and remember sections after me, then write previous section, my section, and trailing sections, then close the file.  Optionally create the needed directory for the file. 
 
-  void ReadFromFile(bool throw_exceptions=false); //open the file, seek past label, read my section, close file
-  void ReadFromFile(string filename, bool throw_exceptions=true) {
-    SetFile(filename); 
-    ReadFromFile(throw_exceptions); 
-  }
+ //====================================================
+  map<string, ArgType> ReadFromJson(string filename); 
+ 
+  void ReadFromFiles(bool throw_exceptions=true); 
   //=============================
-  /* Glean the prefs from the command line.  The "types" argument is a vector of argTypes, which tell the flag, the key to assign, and the type, e.g., 
-     vector<argType> types; 
+  /* Glean the prefs from the command line.  The "types" argument is a vector of ArgTypes, which tell the flag, the key to assign, and the type, e.g., 
+     vector<ArgType> types; 
      types.push_back("-keep", "keep", "bool"); 
      types.push_back("-longflag", "longkey", "long"); 
      types.push_back("-doubleflag", "doublekey", "double"); 
@@ -136,9 +106,9 @@ class Preferences {
   */ 
   
   //====================================================
-  Preferences &AddArg(argType arg) {
+  Preferences &AddArg(ArgType arg) {
     // first look for duplicates: 
-    for (vector<argType>::iterator argPos = mValidArgs.begin();  
+    for (vector<ArgType>::iterator argPos = mValidArgs.begin();  
          argPos != mValidArgs.end(); 
          ++argPos) {
       if (arg.mKey == argPos->mKey) {
@@ -151,22 +121,16 @@ class Preferences {
         }
       }
     }
+  
     // now add a value in Prefs by type
-    if (mPrefs.find(arg.mKey) == mPrefs.end()) {      
-      if (arg.mType == "bool") {
-        SetValue(arg.mKey, false); 
-      } else if (arg.mType == "string") {
-        SetValue(arg.mKey, string(""));
-      } else if (arg.mType == "long" || arg.mType == "double") {
-        SetValue(arg.mKey, 0); 
-      }
-    }
+    mPrefs[arg.mKey] = arg; 
+    
     return *this; 
   }
   
   //====================================================
-  Preferences &AddArgs(std::vector<argType> &args) {
-    for (vector<argType>::iterator argPos = args.begin(); argPos != args.end(); ++argPos) {
+  Preferences &AddArgs(std::vector<ArgType> &args) {
+    for (vector<ArgType>::iterator argPos = args.begin(); argPos != args.end(); ++argPos) {
       AddArg(*argPos); 
     }
     return *this; 
@@ -174,13 +138,13 @@ class Preferences {
   
   //====================================================
   // for backwards compatibility
-  Preferences &SetValidArgs(std::vector<argType> &args) {
+  Preferences &SetValidArgs(std::vector<ArgType> &args) {
     AddArgs(args); 
     return *this; 
   }
   
   //====================================================
-  void GetFromArgs(int &argc, char *argv[], vector<argType> &argtypes, bool rejectUnknown=true);
+  void GetFromArgs(int &argc, char *argv[], vector<ArgType> &argtypes, bool rejectUnknown=true);
 
   //====================================================
   void ParseArgs(int &argc, char *argv[], bool rejectUnknown=true); 
@@ -208,11 +172,20 @@ class Preferences {
   //========================
   /* values: getting and setting (remember to set dirty bit!) 
      Note that all values are actually saved as strings and are converted, so this is not exactly a high-performance library.  :-) */
-  template <class T>
-  void SetValue(const std::string &key, T value) {
-    mPrefs[key] = str(format("%1%")%value); 
+  void SetValue( std::string key, string value) {
+    mPrefs[key] = ArgType(key, "string", "", "", false, str(format("%1%")%value)); 
   }
-  void DeleteValue(const std::string &key) {
+  void SetLongValue( std::string key, long value) {
+    mPrefs[key] = ArgType(key, "long", "", "", false, str(format("%1%")%value)); 
+  }
+  void SetDoubleValue( std::string key, double value) {
+    mPrefs[key] = ArgType(key, "double", "", "", false, str(format("%1%")%value)); 
+  }
+  void SetBoolValue( std::string key, bool value) {
+    
+    mPrefs[key] = ArgType(key, "bool", "", "", false, str(format("%1%")%value)); 
+  }
+  void DeleteValue( std::string key) {
     mPrefs.erase(key); // safe if key does not exist. 
   }
 
@@ -227,8 +200,20 @@ class Preferences {
     The following return 0, or "" if no such key exists or bad vals are generated. If dothrow is true, then  throw an exception for bad vals.
   */ 
   std::string GetValue(const  std::string &key, bool dothrow=false) const;
-  long GetLongValue(const  std::string &key, bool dothrow=false)  const;
+  vector<string> GetValues(const  std::string &key, bool dothrow=false) const;
+
+  template <class T> 
+    T GetValue(const std::string &key, bool dothrow, T &outval) const; 
+
+  template <class T> 
+    vector<T> GetValues(const std::string &key, bool dothrow, vector<T> &outvals) const; 
+
+  long GetLongValue(const std::string &key, bool dothrow=false)  const;
   double GetDoubleValue(const  std::string &key, bool dothrow=false) const;
+
+  vector<long> GetLongValues(const std::string &key, bool dothrow=false)  const;
+  vector<double> GetDoubleValues(const  std::string &key, bool dothrow=false) const;
+
   std::string operator [] (const std::string &key) const { return GetValue(key); }
 
   // special case: never throws;  not being defined is the same as being false
@@ -236,20 +221,21 @@ class Preferences {
     string value = GetValue(key, false); 
     return value == "true" || value == "1" || value == "on"; 
   }
-  
+
+  operator string();
+
  protected:
   std::string NextKey(std::ifstream&theFile);
-  std::map<std::string, std::string> ReadNextSection(std::ifstream &theFile);
+  std::map<std::string, ArgType > ReadNextSection(std::ifstream &theFile);
 
   bool KeyValid(std::string key); //true if key is in mValidArgs
 
-  void SaveSectionToFile(std::ofstream &outfile, std::map<std::string, std::string> &section);
+  void SaveSectionToFile(std::ofstream &outfile, std::map<std::string, ArgType > &section);
 
   // there is no copy constructor, so be sure these shallow copy:
   //vector< pair< string, vector<string> > > mEquivalents; 
-  std::map<std::string, std::string>  mPrefs; 
-  std::string mFilename;
-  std::vector<argType> mValidArgs; // only save these args or look for them in environment etc. if given
+  std::map<std::string, ArgType >  mPrefs; 
+  std::vector<ArgType> mValidArgs; // only save these args or look for them in environment etc. if given
   char _dirty; 
   char _writtenToDisk;
 };

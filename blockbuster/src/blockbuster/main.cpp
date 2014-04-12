@@ -284,7 +284,7 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
    * appropriate help messages.
    */
 
-  int dummy = 0; 
+  /* int dummy = 0; 
   while (argc > 1) {
     DEBUGMSG("Checking arg %s\n", argv[1]); 
 	QString zoomString; 
@@ -487,7 +487,7 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
 	// an unparsed arg means just return the number of args parsed...
 	else break; 
   }
-  
+  */
   // ==================== END ARGUMENT PARSING ======================
 
   if (opt->mDMXStereo) {
@@ -632,7 +632,7 @@ int main(int argc, char *argv[])
   ProgramOptions *opt = GetGlobalOptions(); 
   Preferences Prefs; 
   
-  Prefs.AddArg(argType("help", "bool")); 
+  Prefs.AddArg(ArgType("help", "bool")); 
     
   Slave *theSlave; 
   char localSettingsFilename[BLOCKBUSTER_PATH_MAX];

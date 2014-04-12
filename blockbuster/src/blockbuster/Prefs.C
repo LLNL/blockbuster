@@ -1,10 +1,14 @@
-/* MODIFIED BY: rcook on Fri Apr 11 11:37:30 PDT 2014 */
+/* MODIFIED BY: rcook on Fri Apr 11 18:31:40 PDT 2014 */
 /* VERSION: 1.0 */
 #define NO_BOOST 1
 #include "Prefs.h"
 #include "stringutil.h"
 #include "errno.h"
 #include <boost/lexical_cast.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+using boost::property_tree::ptree; 
+
 /* class Preferences
    member functions 
 */
@@ -22,11 +26,90 @@ static string debugprefs("false");
 #define prefsdebug if (debugprefs != "false") cerr << __FILE__ <<" line "<<__LINE__ << ": "
 
 //====================================================
+ArgType::ArgType(string key, int multi, string defaultVal) {
+  ArgType(key, "string", multi, defaultVal); 
+}
+
+//====================================================
+ArgType::ArgType(string key, string preftype, 
+                 int multi, string defaultVal) {
+  Init(str(format("--%1%")%key), str(format("-%c")%key[0]), key, preftype, multi, defaultVal); 
+  return; 
+}
+  
+//====================================================
+ArgType::ArgType(string key, string preftype, vector<string> flags, 
+                 int multi, string defaultVal) {
+  Init("", "", key, preftype, multi, defaultVal); 
+  mFlags = flags;  
+}
+
+//====================================================
+ArgType::ArgType(string key, string preftype, 
+                 string longflag, string shortflag, 
+                 int multi, string defaultVal) {
+  Init(longflag, shortflag, key, preftype, multi, defaultVal); 
+}
+
+//====================================================
+ArgType::ArgType(string key, string preftype, string flag, 
+                 int multi, string defaultVal) {
+  Init(key, preftype, flag, "", multi, defaultVal); 
+}
+
+//====================================================
+ArgType::ArgType(const ArgType &other) {
+  *this = other; 
+}
+
+//====================================================
+void ArgType::Init(string key, string preftype, 
+                   string longflag, string shortflag,                    
+                   int multi, string defaultVal) {
+  mKey = key; 
+  mType = preftype; 
+  if (longflag != "") {
+    mFlags.push_back(longflag); 
+  }
+  if (shortflag != "") {
+    mFlags.push_back(str(format("-%c")%key[0])); 
+  }
+  mMultiple = multi; 
+  mValues.push_back(defaultVal); 
+}  
+
+//====================================================
+const ArgType &ArgType::operator =(const ArgType &other) {
+  mKey = other.mKey; 
+  mType = other.mType; 
+  mFlags = other.mFlags; 
+  mMultiple = other.mMultiple; 
+  mValues = other.mValues; 
+  return *this; 
+}
+    
+//====================================================
+ArgType::operator string() {
+  string output = str(format("mKey: \"%s\", mMultiple: %d%, mType: \"%s\", mFlags: <")%
+                      mKey % ((int)mMultiple) % mType); 
+  vector<string>::iterator pos = mFlags.begin(); 
+  while (pos != mFlags.end()) {
+    output += str(format("\"%s\"")%(*pos)); 
+    if (++pos == mFlags.end()){
+      output += ">"; 
+    } else {
+      output += ", "; 
+    }
+  }
+  return output; 
+}
+
+//====================================================
 void Preferences::Merge(const Preferences &other, bool addnew, bool overwrite) {
 
   if (!addnew && !overwrite) return; // one must be true for anything to happen
 
-  std::map<string, string>::const_iterator pos = other.mPrefs.begin(), endpos = other.mPrefs.end(), found; 
+  std::map<string, ArgType >::const_iterator pos = other.mPrefs.begin(), endpos = other.mPrefs.end(), found; 
   while (pos != endpos) {
     found = mPrefs.find(pos->first); 
     if ((addnew && found == mPrefs.end()) ||
@@ -41,7 +124,6 @@ void Preferences::Merge(const Preferences &other, bool addnew, bool overwrite) {
 //====================================================
 void Preferences::Reset(void){
   ClearPrefs();
-  mFilename  = "";
 
   char *dbptr = getenv("debugprefs");
   if (dbptr) {
@@ -87,44 +169,94 @@ bool Preferences::TryGetLongValue(const string &key, long &outValue) const {
 }
 
 //====================================================
-std::string Preferences::GetValue(const std::string &key, bool dothrow) const { 
+vector<string> Preferences::GetValues(const std::string &key, bool dothrow) const {
   if (mPrefs.find(key) == mPrefs.end()) {
     if (dothrow) {
       throw string(key+" not found");
     } else {
-      return string("");
+      vector<string> blank(1); 
+      return blank;
     }
   }
-  return mPrefs.find(key)->second;
+  return mPrefs.find(key)->second.mValues;
+}
+
+//====================================================
+string Preferences::GetValue(const std::string &key, bool dothrow) const { 
+  vector<string> values = GetValues(key,dothrow); 
+  return values[0]; 
+}
+
+
+//====================================================
+template <class T> 
+T Preferences::GetValue(const std::string &key, bool dothrow, T &outval) const {
+  string value = GetValue(key, dothrow);
+  try {
+    outval = boost::lexical_cast<T>(value); 
+  } catch (...) {
+    if (dothrow) {
+      throw string("Bad value in  Preferences::GetValue");
+    } 
+  }
+  return outval; 
+}
+
+//====================================================
+template <class T> 
+vector<T> Preferences::GetValues(const std::string &key, bool dothrow, vector<T> &outvals) const {
+  vector<string> values = GetValues(key, dothrow);
+  for ( vector<string>::iterator value = values.begin(); value != values.end(); value++) {
+    try {
+      outvals.push_back( boost::lexical_cast<T>(*value)); 
+    } catch (...) {
+      if (dothrow) {
+        throw string("Bad value in  Preferences::GetValues");
+      } 
+    }
+  }   
+  return outvals; 
 }
 
 //====================================================
 double Preferences::GetDoubleValue(const string &key, bool dothrow) const {
-  string value = GetValue(key, dothrow);
-  try {
-    return boost::lexical_cast<double>(value); 
-  } catch (...) {
-    if (dothrow) {
-      throw string("Bad key in  Preferences::GetDoubleValue");
-    } 
-  }
-  return DOUBLE_FALSE;  
+  double v; 
+  return GetValue(key, dothrow, v); 
+}
+
+//====================================================
+vector<double> Preferences::GetDoubleValues(const string &key, bool dothrow) const {
+  vector<double> v; 
+  return GetValues(key, dothrow, v); 
 }
 
 //====================================================
 long Preferences::GetLongValue(const string &key, bool dothrow) const {
-  string value = GetValue(key, dothrow);
-  try {
-    return boost::lexical_cast<long>(value); 
-  } catch (...) {
-    if (dothrow) {
-      throw string("Bad key in  Preferences::GetDoubleValue");
-    } 
-  }
-  
-  return LONG_FALSE;  
+  long v; 
+  return GetValue(key, dothrow, v); 
 }
 
+//====================================================
+vector<long> Preferences::GetLongValues(const string &key, bool dothrow) const {
+  vector<long> v; 
+  return GetValues(key, dothrow, v); 
+}
+
+//====================================================
+Preferences::operator string() {
+  string output = "Preferences: { \n"; 
+  output += "  mValidArgs: {";
+  for (vector<ArgType>::iterator argpos = mValidArgs.begin(); argpos != mValidArgs.end(); argpos++) {
+    output += str(format("\n    %s")%(string(*argpos))); 
+  }
+  output += "  }\n"; 
+  output += "  mPrefs: {"; 
+  for (map<string,ArgType>:: iterator pref = mPrefs.begin(); pref != mPrefs.end(); pref++) {
+    output += string(pref->second) + "\n"; 
+  }
+  output += "  }\n"; 
+  return output; 
+}
 
 
 //====================================================
@@ -157,9 +289,9 @@ string Preferences::NextKey(ifstream&theFile){
     while (theFile) {
       theFile >> key;     
       if (key.length() && key[0] == '#')     
-	theFile.getline(buf, 2048);
+        theFile.getline(buf, 2048);
       else
-	break;
+        break;
     }
   } catch (...) {
     cerr << "Error in NextKey()" << endl; 
@@ -168,9 +300,90 @@ string Preferences::NextKey(ifstream&theFile){
   return key;
 }
 
+ 
 //====================================================
-map<string, string> Preferences::ReadNextSection(ifstream &theFile){
-  map<string, string> theMap;
+bool Preferences::WriteToJson(string filename, bool createDir, bool clobber) {
+  if (createDir) {
+    string::size_type idx = filename.rfind('/'); 
+    if (idx != string::npos) {
+      string dirname = filename.substr(0, idx); 
+      system((string("mkdir -p ")+dirname).c_str()); 
+    }
+  }
+  ptree saved; 
+  if (!clobber) {
+    ifstream infile(filename.c_str()); 
+    
+    if (infile.is_open()) {
+      return false; // file exists; do not overwrite
+    } 
+  }
+
+  // We can now write our json file
+  ptree pt; 
+  for (map<string, ArgType >::iterator pref = mPrefs.begin(); pref != mPrefs.end(); pref++) {
+    pt.put(str(format("%s.mType")%(pref->second.mKey)), pref->second.mType); 
+    pt.put(str(format("%s.mMultiple")%(pref->second.mKey)), 
+           str(format("%1%")%(pref->second.mType))); 
+    if (pref->second.mFlags.size()) {
+      ptree flags;
+      for (vector<string>::iterator flagval = pref->second.mFlags.begin(); 
+           flagval != pref->second.mFlags.end(); flagval++) {
+        ptree flag; 
+        flag.put("", *flagval); 
+        flags.push_back(make_pair("", flag)); 
+      }
+      pt.add_child(str(format("%s.mFlags")% (pref->second.mKey)), flags); 
+    }
+    if (pref->second.mValues.size()) {
+      ptree values; 
+      for (vector<string>::iterator valueval = pref->second.mValues.begin(); 
+           valueval != pref->second.mValues.end(); valueval++) {
+        ptree value; 
+        value.put("", *valueval); 
+        values.push_back(make_pair("", value)); 
+      }
+      pt.add_child(str(format("%s.mValues")% (pref->second.mKey)), values); 
+    }
+  }
+  write_json(filename, pt); 
+  return true; 
+}
+
+//====================================================
+map<string, ArgType> Preferences::ReadFromJson(string filename) {
+   ptree pt;
+   read_json(filename, pt); 
+   map<string, ArgType> prefs; 
+   if (pt.empty()) {
+     return prefs; 
+   }
+   for (ptree::iterator pos = pt.begin(); pos != pt.end(); pos++) {     
+     ArgType arg(pos->first); 
+     for (ptree::iterator child = pos->second.begin(); child != pos->second.end(); child++) {
+       ptree childtree = child->second;
+       if (child->first == "mType") {
+         arg.mType = childtree.data(); 
+       } else if (child->first == "mMultiple") {
+         arg.mMultiple = lexical_cast<int>(childtree.data()); 
+       } else if (child->first == "mFlags") {
+         for (ptree::iterator flag = childtree.begin(); flag != childtree.end(); flag++) {
+           arg.mFlags.push_back(flag->second.data()); 
+         }
+       } else if (child->first == "mValues") {
+         for (ptree::iterator value = childtree.begin(); value != childtree.end(); value++) {
+           arg.mValues.push_back(value->second.data()); 
+         }
+       }
+     }
+     prefs[arg.mKey] = arg; 
+   }
+   prefs["Filename"] = ArgType("Filename", false, filename); 
+   return prefs; 
+}
+//====================================================
+/*map<string, ArgType> Preferences::ReadNextSection(ifstream &theFile){
+  map<string, ArgType> theMap;
   char buf[2048];
   string key, value; 
   prefsdebug<<"Preferences::ReadNextSection "<<endl;
@@ -180,7 +393,7 @@ map<string, string> Preferences::ReadNextSection(ifstream &theFile){
     cerr << "Error getting first key in prefs"<<endl;
     throw err;
   }   if (!key.size())
-    throw string("Unexpected EOF in prefs");
+        throw string("Unexpected EOF in prefs");
 
   if (key != "BEGINRECORD")
     throw string("Prefs records must begin with BEGINRECORD, not \"")+key+"\"";
@@ -200,8 +413,8 @@ map<string, string> Preferences::ReadNextSection(ifstream &theFile){
     fflush(stdout); 
     if (!gotlabel) {
       if (key != "prefs_label") {
-	// this needs to be the label
-	throw string("Improperly formatted line in file: ")+key  + string(buf);
+        // this needs to be the label
+        throw string("Improperly formatted line in file: ")+key  + string(buf);
       }
       gotlabel=1;
     }
@@ -214,6 +427,7 @@ map<string, string> Preferences::ReadNextSection(ifstream &theFile){
       continue; 
     }
     string::size_type idx = value.find_first_not_of(" \t\n\r");
+    ArgType pref = 
     value = value.substr(idx);
     theMap[key] =value;    
     prefsdebug<< "map["<<key<<"] = \""<<value<<"\""<<endl; 
@@ -224,65 +438,70 @@ map<string, string> Preferences::ReadNextSection(ifstream &theFile){
     throw string("Cannot find valid map in file.");
   return theMap;
 }
-
+*/
 //====================================================
- //open the file, seek past label, read my section, close file
+//open the file, seek past label, read my section, close file
 /* this may optionally throw an exception if it can't be read from the file 
    by default it won't
- */
-void Preferences::ReadFromFile(bool throw_exceptions){
-  ifstream theFile(mFilename.c_str());
-  prefsdebug<<"Preferences::ReadFromFile"<<endl;
-  if (!theFile) {
-    if (throw_exceptions) {
-      throw string("Can't open file for reading: ")+mFilename;
-    }
-    return; 
-  }
-  map<string, string> current;
-  current["prefs_label"] = "!!!??? nothing at all (no match)";
-  string targetlabel;
-  try {
-    targetlabel=GetLabel(); 
-  } catch (...) {
-    cerr << "GetLabel failed in Preferences::ReadFromFile" << endl; 
-    if (throw_exceptions) {
-      throw; 
-    }
-    return; 
-  }
-  while (current["prefs_label"] != targetlabel){
-    try {
-      prefsdebug << "read next section"<<endl;
-      current = ReadNextSection(theFile);
-    }
-    catch(string s){
-      cerr << "Warning: can't read prefs \""<<GetLabel()<<"\" from file "<<mFilename<<endl;
-      cerr << s << endl;
-      if (throw_exceptions){
-        throw s;
+*/
+/*void Preferences::ReadFromFiles(bool throw_exceptions){
+  for (vector<string>::iterator filename = mFilenames.begin(); filename != mFilenames.end(); filename++) {
+    ReadFromJson(filename); 
+    
+    ifstream theFile(filename.c_str());
+    prefsdebug<<"Preferences::ReadFromFile"<<endl;
+    if (!theFile) {
+      if (throw_exceptions) {
+        throw string("Can't open file for reading: ")+mFilename;
       }
-      return;
+      continue; 
     }
-    map<string, string>::iterator pos = current.begin(), endpos = current.end(); 
-    while (pos != endpos) {
-      mPrefs[pos->first] = pos->second; 
-      ++pos; 
+    map<string, string> current;
+    current["prefs_label"] = "!!!??? nothing at all (no match)";
+    string targetlabel;
+    try {
+      targetlabel=GetLabel(); 
+    } catch (...) {
+      cerr << "GetLabel failed in Preferences::ReadFromFile" << endl; 
+      if (throw_exceptions) {
+        throw; 
+      }
+      continue; 
     }
+    while (current["prefs_label"] != targetlabel){
+      try {
+        prefsdebug << "read next section"<<endl;
+        current = ReadNextSection(theFile);
+      }
+      catch(string s){
+        cerr << "Warning: can't read prefs \""<<GetLabel()<<"\" from file "<<mFilename<<endl;
+        cerr << s << endl;
+        if (throw_exceptions){
+          throw s;
+        }
+        continue;
+      }
+      map<string, string>::iterator pos = current.begin(), endpos = current.end(); 
+      while (pos != endpos) {
+        mPrefs[pos->first] = pos->second; 
+        ++pos; 
+      }
+    }
+    prefsdebug << "Finished reading prefs: "<< string(*this) << endl;
+    
+    _dirty = 0;
+    _writtenToDisk = 1;
   }
-  prefsdebug << "Finished reading prefs: "<< string(*this) << endl;
-  _dirty = 0;
-  _writtenToDisk = 1;
   return;
 }
-
+*/
 //====================================================
 bool Preferences::KeyValid(string key) {
   return mPrefs.find(key) != mPrefs.end(); 
 }
 
 //====================================================
-void Preferences::SaveSectionToFile(ofstream &outfile, map<string, string> &section){
+/*void Preferences::SaveSectionToFile(ofstream &outfile, map<string, string> &section){
   outfile <<"BEGINRECORD"<<endl;
   outfile << "prefs_label\t" << section["prefs_label"]<<endl;
   map<string, string>::iterator pos = section.begin();
@@ -302,59 +521,8 @@ void Preferences::SaveSectionToFile(ofstream &outfile, map<string, string> &sect
   outfile << "ENDRECORD" << endl;
   return; 
 }
-  
-//====================================================
-void Preferences::SaveToFile(bool createDir, bool clobber){
-  vector<map<string, string> > saved;
-  map<string, string> current;  
-  map<string, string>::iterator pos;
-  
-  if (createDir) {
-    string::size_type idx = mFilename.rfind('/'); 
-    if (idx != string::npos) {
-      string dirname = mFilename.substr(0, idx); 
-      system((string("mkdir -p ")+dirname).c_str()); 
-    }
-  }
-  char found = 0;
-  if (!clobber) {
-    cerr << "preserving old pref file" << endl; 
-    ifstream infile(mFilename.c_str()); 
-    while (infile){
-      try {
-        current = ReadNextSection(infile);
-        pos = current.find("prefs_label");
-        if (pos!=current.end() && pos->second == GetLabel()) {
-          found = 1;
-          saved.push_back(mPrefs);
-        }
-        else 
-          saved.push_back(current);
-      }
-      catch(...){
-        break;
-      }
-    }
-  }
-   if (!found)
-      saved.push_back(mPrefs);
- 
-  vector<map<string, string> >::iterator outpos = saved.begin();
-  if (outpos == saved.end())
-    throw string("Prefs: Fatal Error: nothing to save!");
-  
-  ofstream outfile(mFilename.c_str());
-  if (!outfile)
-    throw string("Cannot open file for writing: ")+mFilename;
-  
-  while (outpos != saved.end()){
-    SaveSectionToFile(outfile, *outpos);
-    ++outpos;
-  }
-  prefsdebug << "Finished writing prefs."<<endl;
-  mPrefs = current;
-  return;
-}
+*/
+
 
 // ================================================================== 
 void ConsumeArg(int argnum, int &argc, char *argv[]){
@@ -367,7 +535,7 @@ void ConsumeArg(int argnum, int &argc, char *argv[]){
 }
 
 // ================================================================== 
-void Preferences::GetFromArgs(int &argc, char *argv[], vector<argType>& args, bool rejectUnknown) {
+void Preferences::GetFromArgs(int &argc, char *argv[], vector<ArgType>& args, bool rejectUnknown) {
   
   // first, initialize all keys in "argtypes" array to defaults if not already set to some value
   AddArgs(args); 
@@ -384,7 +552,7 @@ void Preferences::ParseArgs(int &argc, char *argv[], bool rejectUnknown) {
   string foundflag; 
   while (argnum < argc) {
     string currentArg = argv[argnum]; 
-    vector<argType>::iterator validArg; 
+    vector<ArgType>::iterator validArg; 
     for (validArg = mValidArgs.begin();  
          validArg != mValidArgs.end(); 
          ++validArg) {
@@ -405,10 +573,10 @@ void Preferences::ParseArgs(int &argc, char *argv[], bool rejectUnknown) {
       }        
       argnum++; 
     } else {
-       // do not increment argnum here as you will simply be consuming args and reducing argc
+      // do not increment argnum here as you will simply be consuming args and reducing argc
       ConsumeArg(argnum, argc,argv); 
       if (validArg->mType == "bool") {
-        SetValue(validArg->mKey, true); 
+        SetBoolValue(validArg->mKey, true); 
       } else {
         if (argnum == argc) {
           throw string("Flag ")+foundflag+string(" requires an argument");
@@ -418,9 +586,9 @@ void Preferences::ParseArgs(int &argc, char *argv[], bool rejectUnknown) {
           if (validArg->mType == "string") {
             SetValue(validArg->mKey, value);
           } else if (validArg->mType == "long") {
-            SetValue(validArg->mKey, boost::lexical_cast<long>(value));
+            SetLongValue(validArg->mKey, boost::lexical_cast<long>(value));
           } else if (validArg->mType == "double") {
-            SetValue(validArg->mKey,  boost::lexical_cast<double>(value)); 
+            SetDoubleValue(validArg->mKey,  boost::lexical_cast<double>(value)); 
           } else {
             throw string("Bad keytype: ")+validArg->mType+string(" for key: ")+validArg->mKey; 
           }

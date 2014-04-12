@@ -82,13 +82,15 @@ string GetSidecarDir(string myname) {
 void ParseOptions(int &argc, char *argv[], Preferences &gPrefs) {
 
   QString prefsdir = QDir::homePath() + "/.sidecar"; 
+  string prefFile = (prefsdir + "/prefs.cnf").toStdString(); 
   mkdir(prefsdir.toStdString().c_str(), 0777); 
   gPrefs.SetValue("prefsdir", prefsdir.toStdString()); 
-  gPrefs.SetFile((prefsdir + "/prefs.cnf").toStdString()); 
+  //gPrefs.SetFile((prefsdir + "/prefs.cnf").toStdString()); 
   gPrefs.SetValue("rsh", "rsh"); 
-  gPrefs.SetValue("verbose", 0); 
+  gPrefs.SetLongValue("verbose", 0); 
   gPrefs.SetValue("sidecarDir", GetSidecarDir(argv[0])); 
-  gPrefs.ReadFromFile(false); 
+  gPrefs.SetValue("PrefsFile", prefFile);  
+  gPrefs.ReadFromJson(prefFile); 
 
   gPrefs.DeleteValue("verbose"); // do not inherit this from previous
   gPrefs.DeleteValue("movie"); // do not inherit this from previous
@@ -96,16 +98,16 @@ void ParseOptions(int &argc, char *argv[], Preferences &gPrefs) {
 
   gPrefs.ReadFromEnvironment(); 
 
-  vector<argType> args; 
-  args.push_back(argType("help", "bool")); 
-  args.push_back(argType("keyhelp", "bool")); 
-  args.push_back(argType("dmx", "bool")); 
-  args.push_back(argType("movie", "string")); 
-  args.push_back(argType("play", "string")); 
-  args.push_back(argType("--profile", "-p", "SIDECAR_DEFAULT_PROFILE", "string")); 
-  args.push_back(argType("rsh", "string")); 
-  args.push_back(argType("stresstest", "bool")); 
-  args.push_back(argType("verbose", "long")); 
+  vector<ArgType> args; 
+  args.push_back(ArgType("help", "bool")); 
+  args.push_back(ArgType("keyhelp", "bool")); 
+  args.push_back(ArgType("dmx", "bool")); 
+  args.push_back(ArgType("movie", "string")); 
+  args.push_back(ArgType("play", "string")); 
+  args.push_back(ArgType("--profile", "-p", "SIDECAR_DEFAULT_PROFILE", "string")); 
+  args.push_back(ArgType("rsh", "string")); 
+  args.push_back(ArgType("stresstest", "bool")); 
+  args.push_back(ArgType("verbose", "long")); 
   gPrefs.SetValidArgs(args); 
   gPrefs.GetFromArgs(argc, argv, args); 
 }
@@ -160,6 +162,6 @@ int main(int argc, char *argv[]) {
   gPrefs.DeleteValue("verbose"); // do not inherit this from previous
   gPrefs.DeleteValue("movie"); // do not inherit this from previous
   gPrefs.DeleteValue("play"); // do not inherit this from previous
-  gPrefs.SaveToFile(true, true); 
+  gPrefs.WriteToJson(gPrefs.GetValue("prefFile"), true, true); 
   return retval; 
 }
