@@ -37,7 +37,7 @@
 #include "sm/smBase.h"
 #include <stdint.h>
 #include <vector>
-#include "../common/timer.h"
+#include "../RC_cpp_lib/timer.h"
 #include "../config/version.h"
 
 struct UserPrefs {

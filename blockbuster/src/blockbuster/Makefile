@@ -24,7 +24,7 @@
 #   Author: Rich Cook
 #
 
-include ../config/config
+include ../config/config 
 
 LDFLAGS += -lboost_regex -lreadline -ltermcap 
 ifeq ($(shell uname),Darwin)
@@ -134,7 +134,7 @@ DEPENDENT_LIBS = $(INSTALL_DIR)/lib/libboost_thread.a $(INSTALL_DIR)/lib/libz.a 
 
 blockbuster.pro :   $(FORMS) Makefile
 	echo QMAKE IS \"$(QMAKE)\" and INSTALL_DIR is $(INSTALL_DIR)
-	INSTALL_DIR=$(INSTALL_DIR) $(QMAKE) -project -nopwd -Wall 'LIBS += $(DEPENDENT_LIBS) $(LDFLAGS) -L$(INSTALL_DIR)/lib -L/sw/lib  $(X11_LIBS) $(GL_LIBS) $(PTHREADS_LIBS) -lsmovie  -lsrwpng -ljpeg -llzo2 -lz -llzma -lm  ' "INCLUDEPATH += libdmx ../common ../config $(INSTALL_DIR)/include  $$(echo $(X11_INCLUDES)  | sed -e s/-I//g ) " "MAKEFILE = Makefile.qt.include" "DEFINES +=  NO_BOOST $(MPI_DEFINES) $(USE_DMX) USE_QT $(DEBUG)" "QT += network"  "QT += opengl" "HEADERS = $(HEADERS)" "FORMS += $(FORMS)" "$(DEBUG_QT)"  "RESOURCES += images.qrc"  $(SOURCES)  
+	INSTALL_DIR=$(INSTALL_DIR) $(QMAKE) -project -nopwd -Wall 'LIBS += $(DEPENDENT_LIBS) $(LDFLAGS) -L$(INSTALL_DIR)/lib -L/sw/lib  $(X11_LIBS) $(GL_LIBS) $(PTHREADS_LIBS) -lsmovie  -lsrwpng -ljpeg -llzo2 -lz -llzma -lm  ' "INCLUDEPATH += libdmx ../common ../RC_cpp_lib ../config $(INSTALL_DIR)/include  $$(echo $(X11_INCLUDES)  | sed -e s/-I//g ) " "MAKEFILE = Makefile.qt.include" "DEFINES +=  NO_BOOST $(MPI_DEFINES) $(USE_DMX) USE_QT $(DEBUG)" "QT += network"  "QT += opengl" "HEADERS = $(HEADERS)" "FORMS += $(FORMS)" "$(DEBUG_QT)"  "RESOURCES += images.qrc"  $(SOURCES)  
 
 qmake-force:
 	$(QMAKE) -Wall 

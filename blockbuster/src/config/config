@@ -13,7 +13,7 @@ export INSTALL_DIR ?= $(shell pwd)/$(SYS_TYPE)
 export RANLIB=ranlib
 export CXX = g++
 export CC = gcc
-export CPPFLAGS += -I. -I../common -I../config -I$(INSTALL_DIR)/include -I$(INSTALL_DIR)/include/lzo $(OPT)
+export CPPFLAGS += -I. -I../common  -I../RC_cpp_lib -I../config -I$(INSTALL_DIR)/include -I$(INSTALL_DIR)/include/lzo $(OPT)
 export LDFLAGS += -L$(INSTALL_DIR)/lib
 export X11_INCLUDES += -I/usr/X11R6/include
 ifeq ($(shell uname),Darwin)

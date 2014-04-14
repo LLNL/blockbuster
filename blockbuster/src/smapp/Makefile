@@ -77,30 +77,44 @@ depend: $(SFILES)
 # DO NOT DELETE
 
 smtag.o: ../sm/sm.h ../sm/smLZO.h ../sm/smBase.h ../sm/smBaseP.h
-smtag.o: ../common/stringutil.h ../common/timer.h ../common/stringutil.h
-smtag.o: ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h ../sm/smRaw.h ../sm/smJPG.h
-smtag.o: debugutil.h
+smtag.o: ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
+smtag.o: ../RC_cpp_lib/stringutil.h ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h
+smtag.o: ../sm/smRaw.h ../sm/smJPG.h debugutil.h
 smquery.o: ../sm/sm.h ../sm/smLZO.h ../sm/smBase.h ../sm/smBaseP.h
-smquery.o: ../common/stringutil.h ../common/timer.h ../common/stringutil.h
-smquery.o: ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h ../sm/smRaw.h
-smquery.o: ../sm/smJPG.h debugutil.h
-smmake.o: ../sm/smRaw.h ../sm/smBase.h ../sm/smBaseP.h ../common/stringutil.h
-smmake.o: ../common/timer.h ../common/stringutil.h ../sm/smRLE.h
-smtest.o: ../sm/smBase.h ../sm/smBaseP.h ../common/stringutil.h
-smtest.o: ../common/timer.h ../common/stringutil.h ../config/version.h
+smquery.o: ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
+smquery.o: ../RC_cpp_lib/stringutil.h ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h
+smquery.o: ../sm/smRaw.h ../sm/smJPG.h debugutil.h
+smmake.o: ../sm/smRaw.h ../sm/smBase.h ../sm/smBaseP.h
+smmake.o: ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
+smmake.o: ../RC_cpp_lib/stringutil.h ../sm/smRLE.h
+smtest.o: ../sm/smBase.h ../sm/smBaseP.h ../RC_cpp_lib/stringutil.h
+smtest.o: ../RC_cpp_lib/timer.h ../RC_cpp_lib/stringutil.h
+smtest.o: ../config/version.h
+ifl2sm.o: ../sm/sm.h ../sm/smLZO.h ../sm/smBase.h ../sm/smBaseP.h
+ifl2sm.o: ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
+ifl2sm.o: ../RC_cpp_lib/stringutil.h ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h
+ifl2sm.o: ../sm/smRaw.h ../sm/smJPG.h
 img2sm.o: ../sm/sm.h ../sm/smLZO.h ../sm/smBase.h ../sm/smBaseP.h
-img2sm.o: ../common/stringutil.h ../common/timer.h ../common/stringutil.h
-img2sm.o: ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h ../sm/smRaw.h ../sm/smJPG.h
-img2sm.o: ../libimage/sgilib.h ../libpnmrw/libpnmrw.h ../libpng/pngsimple.h
-img2sm.o: simple_jpeg.h ../pt/pt.h
-sm2img.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smBaseP.h ../common/stringutil.h
-sm2img.o: ../common/timer.h ../common/stringutil.h ../sm/smGZ.h ../sm/smLZO.h
-sm2img.o: ../sm/smRaw.h ../pt/pt.h ../libimage/sgilib.h
-sm2img.o: ../libpnmrw/libpnmrw.h simple_jpeg.h ../config/version.h
-smcat.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smBaseP.h ../common/stringutil.h
-smcat.o: ../common/timer.h ../common/stringutil.h ../sm/smGZ.h ../sm/smLZO.h
-smcat.o: ../sm/smRaw.h ../sm/smJPG.h ../config/version.h ../pt/pt.h
-smevo.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smBaseP.h ../common/stringutil.h
-smevo.o: ../common/timer.h ../common/stringutil.h ../sm/smGZ.h ../sm/smLZO.h
-smevo.o: ../sm/smRaw.h ../sm/smJPG.h ../config/version.h
+img2sm.o: ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
+img2sm.o: ../RC_cpp_lib/stringutil.h ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h
+img2sm.o: ../sm/smRaw.h ../sm/smJPG.h ../libimage/sgilib.h
+img2sm.o: ../libpnmrw/libpnmrw.h ../libpng/pngsimple.h simple_jpeg.h
+img2sm.o: ../pt/pt.h
+sm2img.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smBaseP.h
+sm2img.o: ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
+sm2img.o: ../RC_cpp_lib/stringutil.h ../sm/smGZ.h ../sm/smLZO.h ../sm/smRaw.h
+sm2img.o: ../pt/pt.h ../libimage/sgilib.h ../libpnmrw/libpnmrw.h
+sm2img.o: simple_jpeg.h ../config/version.h
+rename.o: ../sm/sm.h ../sm/smLZO.h ../sm/smBase.h ../sm/smBaseP.h
+rename.o: ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
+rename.o: ../RC_cpp_lib/stringutil.h ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h
+rename.o: ../sm/smRaw.h ../sm/smJPG.h
+smcat.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smBaseP.h
+smcat.o: ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
+smcat.o: ../RC_cpp_lib/stringutil.h ../sm/smGZ.h ../sm/smLZO.h ../sm/smRaw.h
+smcat.o: ../sm/smJPG.h ../sm/smXZ.h ../config/version.h ../pt/pt.h
+smevo.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smBaseP.h
+smevo.o: ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
+smevo.o: ../RC_cpp_lib/stringutil.h ../sm/smGZ.h ../sm/smLZO.h ../sm/smRaw.h
+smevo.o: ../sm/smJPG.h ../config/version.h
 debugutil.o: debugutil.h

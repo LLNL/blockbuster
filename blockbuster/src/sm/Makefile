@@ -79,23 +79,25 @@ clean:
 
 #use with caution:
 depend: 
-	makedepend -Y. -Y.. $(INCLUDES) $(SRC_FILES)
+	makedepend -Y. -Y.. -Y../RC_cpp_lib $(INCLUDES) $(SRC_FILES) $(HFILES)
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-smBase.o: smBaseP.h smRaw.h smBase.h ../common/stringutil.h ../common/timer.h
-smBase.o: ../common/stringutil.h smRLE.h smGZ.h smXZ.h smLZO.h smJPG.h
-smXZ.o: smXZ.h smBase.h smBaseP.h ../common/stringutil.h ../common/timer.h
-smXZ.o: ../common/stringutil.h
-smRLE.o: smRLE.h smBase.h smBaseP.h ../common/stringutil.h ../common/timer.h
-smRLE.o: ../common/stringutil.h
-smRaw.o: smRaw.h smBase.h smBaseP.h ../common/stringutil.h ../common/timer.h
-smRaw.o: ../common/stringutil.h
-smGZ.o: smGZ.h smBase.h smBaseP.h ../common/stringutil.h ../common/timer.h
-smGZ.o: ../common/stringutil.h
-smLZO.o: smLZO.h smBase.h smBaseP.h ../common/stringutil.h ../common/timer.h
-smLZO.o: ../common/stringutil.h
-smJPG.o: smJPG.h smBase.h smBaseP.h ../common/stringutil.h ../common/timer.h
-smJPG.o: ../common/stringutil.h
+smBase.o: smBaseP.h smRaw.h smBase.h ../RC_cpp_lib/timer.h smRLE.h smGZ.h
+smBase.o: smXZ.h smLZO.h smJPG.h
+smXZ.o: smXZ.h smBase.h smBaseP.h ../RC_cpp_lib/timer.h
+smRLE.o: smRLE.h smBase.h smBaseP.h ../RC_cpp_lib/timer.h
+smRaw.o: smRaw.h smBase.h smBaseP.h ../RC_cpp_lib/timer.h
+smGZ.o: smGZ.h smBase.h smBaseP.h ../RC_cpp_lib/timer.h
+smLZO.o: smLZO.h smBase.h smBaseP.h ../RC_cpp_lib/timer.h
+smJPG.o: smJPG.h smBase.h smBaseP.h ../RC_cpp_lib/timer.h
 smdfc/smdfc.o: smdfc/smdfcP.h smdfc/smdfc.h
-../common/timer.o: ../common/timer.h ../common/stringutil.h
+sm.o: ../sm/smLZO.h smBase.h smBaseP.h ../RC_cpp_lib/timer.h ../sm/smRLE.h
+sm.o: ../sm/smGZ.h ../sm/smXZ.h ../sm/smRaw.h ../sm/smJPG.h
+smBase.o: smBaseP.h smdfc/smdfc.h ../RC_cpp_lib/timer.h
+smXZ.o: smBase.h smBaseP.h ../RC_cpp_lib/timer.h
+smRLE.o: smBase.h smBaseP.h ../RC_cpp_lib/timer.h
+smRaw.o: smBase.h smBaseP.h ../RC_cpp_lib/timer.h
+smGZ.o: smBase.h smBaseP.h ../RC_cpp_lib/timer.h
+smLZO.o: smBase.h smBaseP.h ../RC_cpp_lib/timer.h
+smJPG.o: smBase.h smBaseP.h ../RC_cpp_lib/timer.h

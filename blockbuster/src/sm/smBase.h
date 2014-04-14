@@ -53,7 +53,7 @@
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
-#include "../common/stringutil.h"
+#include "../RC_cpp_lib/stringutil.h"
 #ifndef WIN32
 #include <sys/mman.h>
 #include <unistd.h>
@@ -108,8 +108,8 @@ using std::map;
 
 #ifdef SM_VERBOSE 
 #include <stdarg.h>
-#include "../common/timer.h"
-#include "../common/stringutil.h"
+#include "../RC_cpp_lib/timer.h"
+#include "../RC_cpp_lib/stringutil.h"
 extern void sm_setVerbose(int level);
   
 

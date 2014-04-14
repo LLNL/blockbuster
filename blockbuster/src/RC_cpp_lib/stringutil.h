@@ -1,4 +1,4 @@
-/* MODIFIED BY: rcook on Fri Apr 11 11:37:30 PDT 2014 */
+/* MODIFIED BY: rcook on Fri Apr 11 18:31:40 PDT 2014 */
 /* VERSION: 1.0 */
 #ifndef TSB_STRING_UTIL_H
 #define TSB_STRING_UTIL_H
@@ -9,10 +9,13 @@
 #include <stdio.h>
 #include <algorithm>
 #include "boost/format.hpp"
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/classification.hpp>
 //#include <inttypes.h>
 //#include "RCDebugStream.h"
 
-using namespace std; 
+using namespace std;  
 
 #define errout if (0) cerr
 #define debugout if (0) cerr
@@ -20,18 +23,21 @@ using namespace std;
 //===============================================================
 // New versions of Split from http://stackoverflow.com/questions/236129/how-to-split-a-string
 // The first one splits a string into an existing vector and returns that
-inline std::vector<std::string> &Split(const std::string &s, char delim, std::vector<std::string> &elems) {
+inline std::vector<std::string> Split( std::string s, char delim, std::vector<std::string> &elems) {
+  boost::trim(s);
+  boost::split(elems, s, boost::is_space(), boost::token_compress_on); 
+  /*
   std::stringstream ss(s);
   std::string item;
   while(std::getline(ss, item, delim)) {
     elems.push_back(item);
-  }
+    }*/
   return elems;
 }
 
 
 // This version returns a new string vector
-inline std::vector<std::string> Split(const std::string &s, char delim = ' ') {
+inline std::vector<std::string> Split( std::string s, char delim = ' ') {
     std::vector<std::string> elems;
     return Split(s, delim, elems);
 }
