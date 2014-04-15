@@ -2,10 +2,10 @@
 set -xv 
 
 if [ "$NOBOOSTLINK" != "YES" ]; then 
-    for prefix in $BOOST_DIR /usr/local/tools /usr/local/ /opt/local; do
+    for prefix in $BOOST_DIR /usr/local/tools /usr/local/ /opt/local /sw; do
         for boost in boost ""; do 
             for infix in -nompi -mpi ""; do 
-                for version in -1.54.0 -1.53.0 -1.49.0 ""; do 
+                for version in -1.55.0 -1.54.0 -1.53.0 -1.49.0 ""; do 
                     dir=$prefix/${boost}${infix}${version}
                     libs=$dir/lib/libboost_{atomic,date_time,filesystem,regex,system,thread,program_options}*
                     if ls $libs >/dev/null 2>&1; then 

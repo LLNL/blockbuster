@@ -29,28 +29,25 @@
 #
 include ../config/config
 
-BOOST_VERSION = 1_54_0
+BOOST_VERSION = 1_55_0
 INSTALL_DIR ?= $(shell pwd)
 BOOST_DIR ?= $(shell findboost.sh)
 
-all: 
-	echo $(BOOST_DIR) >  BOOSTDIR
+BOOST_PROOF = $(INSTALL_DIR)/include/boost/random.hpp $(INSTALL_DIR)/lib/libboost_regex.a
 
+all: $(BOOST_PROOF)
 
-build_boost: $(INSTALL_DIR)/include/boost/random.hpp
+$(BOOST_PROOF):
+	if ! trylinkboost.sh; then \
+		INSTALL_DIR=$INSTALL_DIR  make -e build_boost; \
+	fi	
 
-$(INSTALL_DIR)/include/boost/random.hpp: boost_$(BOOST_VERSION)/boost/random.hpp
+build_boost:
 	rm -f $(INSTALL_DIR)/include/boost  $(INSTALL_DIR)/lib/libboost* # ensure all libs are newer than headers when done
+	tar -xzf boost_$(BOOST_VERSION).tar.gz 
 	cd boost_$(BOOST_VERSION) && tar -xzf ../process-0.5.tgz && ./bootstrap.sh --with-libraries=atomic,filesystem,thread,regex,system,date_time,program_options && ./bjam -j 20 install --prefix=$(INSTALL_DIR)
 	touch $@
 	@echo '********************' finished with LIB_EVIDENCE $@; echo
-
-boost_$(BOOST_VERSION)/boost/random.hpp: 
-	if [ ! -f $@ ]; then \
-		tar -xzf boost_$(BOOST_VERSION).tar.gz ; \
-	fi	
-	[ -f $@ ] && touch $@; 
-	@echo '********************' finished with UNTAR_BOOST $@; echo
 
 clean:
 	rm -rf boost_$(BOOST_VERSION) $(INSTALL_DIR)/lib/libboost* $(INSTALL_DIR)/include/boost
