@@ -77,17 +77,17 @@ RELEASE_QT =  CONFIG += release
 DEBUG=
 endif
 
-SOURCES = sidecar_main.cpp sidecar.cpp MovieCues.cpp events.cpp Prefs.C RemoteControl.cpp settings.cpp ../../common/timer.h
-HEADERS = sidecar.h MovieCues.h events.h common.h settings.h Prefs.h
+SOURCES = sidecar_main.cpp sidecar.cpp MovieCues.cpp events.cpp Prefs.C RemoteControl.cpp settings.cpp ./timer.C
+HEADERS = sidecar.h MovieCues.h events.h common.h settings.h Prefs.h ./timer.h stringutil.h
 FORMS = MovieCueWidget.ui BlockbusterControl.ui InfoWindow.ui sidecar.ui blockbusterLaunchDialog.ui
 UI_HEADERS = ui_MovieCueWidget.h ui_BlockbusterControl.h ui_InfoWindow.h ui_sidecar.h ui_blockbusterLaunchDialog.h
 
 # NOTE:  Modify sidecar.pro by hand, to avoid picking up all of ../blockbuster or something .  
 
-Makefile.qt.include: sidecar.pro $(SOURCES) $(HEADERS)
+Makefile.qt.include: sidecar.pro $(SOURCES) $(HEADERS) Makefile
 	$(QMAKE) 
 	../sedfiles.sh -e "s:INSTALLDIR_PLACEHOLDER:$(INSTALL_DIR):" Makefile.qt.include
-	makedepend -fMakefile.qt.include -I../../config -I../../sm -I../../common -Y. -I../../config -Y. $(SOURCES) 
+	makedepend -fMakefile.qt.include -I../../config -I../../sm -I../../common -I../../RC_cpp_lib -Y. -I../../config -Y. $(SOURCES) 
 
 
 %.h : ../%.h
@@ -97,6 +97,12 @@ Makefile.qt.include: sidecar.pro $(SOURCES) $(HEADERS)
 	cp $< $@
 
 %.C : ../%.C
+	cp $< $@
+
+%.h : ../../RC_cpp_lib/%.h
+	cp $< $@
+
+%.C : ../../RC_cpp_lib/%.C
 	cp $< $@
 
 %.ui: ../%.ui

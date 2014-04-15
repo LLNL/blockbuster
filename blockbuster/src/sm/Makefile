@@ -31,8 +31,8 @@
 
 include ../config/config
 export CPPFLAGS += -Ismdfc
-SRC_FILES = smBase.C smXZ.C smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C smdfc/smdfc.c ../common/timer.C
-OFILES = smBase.o smXZ.o smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o smdfc.o ../common/timer.o
+SRC_FILES = smBase.C smXZ.C smRLE.C smRaw.C smGZ.C smLZO.C smJPG.C smdfc/smdfc.c ./timer.C
+OFILES = smBase.o smXZ.o smRLE.o smRaw.o smGZ.o smLZO.o smJPG.o smdfc.o timer.o
 HFILES = sm.h smBase.h smBaseP.h smXZ.h smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h smdfc/smdfc.h
 
 all:  include lib doc
@@ -68,6 +68,9 @@ libsmovie.a: $(OFILES)
 	fi
 	@echo '***********************************************'
 
+./timer.C: ../RC_cpp_lib/timer.C
+	cp $< $@
+
 smdfc.o: smdfc/smdfc.c smdfc/smdfcP.h
 	$(CC) $(CFLAGS) -Ismdfc -c smdfc/smdfc.c
 	$(CXX) $(CFLAGS) -Ismdfc -c smdfc/smdfc.c
@@ -83,21 +86,33 @@ depend:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-smBase.o: smBaseP.h smRaw.h smBase.h ../RC_cpp_lib/timer.h smRLE.h smGZ.h
+smBase.o: ../RC_cpp_lib/stringutil.h smBaseP.h smRaw.h smBase.h
+smBase.o: ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h smRLE.h smGZ.h
 smBase.o: smXZ.h smLZO.h smJPG.h
-smXZ.o: smXZ.h smBase.h smBaseP.h ../RC_cpp_lib/timer.h
-smRLE.o: smRLE.h smBase.h smBaseP.h ../RC_cpp_lib/timer.h
-smRaw.o: smRaw.h smBase.h smBaseP.h ../RC_cpp_lib/timer.h
-smGZ.o: smGZ.h smBase.h smBaseP.h ../RC_cpp_lib/timer.h
-smLZO.o: smLZO.h smBase.h smBaseP.h ../RC_cpp_lib/timer.h
-smJPG.o: smJPG.h smBase.h smBaseP.h ../RC_cpp_lib/timer.h
+smXZ.o: smXZ.h smBase.h smBaseP.h ../RC_cpp_lib/stringutil.h
+smXZ.o: ../RC_cpp_lib/timer.h ../RC_cpp_lib/stringutil.h
+smRLE.o: smRLE.h smBase.h smBaseP.h ../RC_cpp_lib/stringutil.h
+smRLE.o: ../RC_cpp_lib/timer.h ../RC_cpp_lib/stringutil.h
+smRaw.o: smRaw.h smBase.h smBaseP.h ../RC_cpp_lib/stringutil.h
+smRaw.o: ../RC_cpp_lib/timer.h ../RC_cpp_lib/stringutil.h
+smGZ.o: smGZ.h smBase.h smBaseP.h ../RC_cpp_lib/stringutil.h
+smGZ.o: ../RC_cpp_lib/timer.h ../RC_cpp_lib/stringutil.h
+smLZO.o: smLZO.h smBase.h smBaseP.h ../RC_cpp_lib/stringutil.h
+smLZO.o: ../RC_cpp_lib/timer.h ../RC_cpp_lib/stringutil.h
+smJPG.o: smJPG.h smBase.h smBaseP.h ../RC_cpp_lib/stringutil.h
+smJPG.o: ../RC_cpp_lib/timer.h ../RC_cpp_lib/stringutil.h
 smdfc/smdfc.o: smdfc/smdfcP.h smdfc/smdfc.h
-sm.o: ../sm/smLZO.h smBase.h smBaseP.h ../RC_cpp_lib/timer.h ../sm/smRLE.h
-sm.o: ../sm/smGZ.h ../sm/smXZ.h ../sm/smRaw.h ../sm/smJPG.h
-smBase.o: smBaseP.h smdfc/smdfc.h ../RC_cpp_lib/timer.h
-smXZ.o: smBase.h smBaseP.h ../RC_cpp_lib/timer.h
-smRLE.o: smBase.h smBaseP.h ../RC_cpp_lib/timer.h
-smRaw.o: smBase.h smBaseP.h ../RC_cpp_lib/timer.h
-smGZ.o: smBase.h smBaseP.h ../RC_cpp_lib/timer.h
-smLZO.o: smBase.h smBaseP.h ../RC_cpp_lib/timer.h
-smJPG.o: smBase.h smBaseP.h ../RC_cpp_lib/timer.h
+smBase.o: smBaseP.h smdfc/smdfc.h ../RC_cpp_lib/stringutil.h
+smBase.o: ../RC_cpp_lib/timer.h ../RC_cpp_lib/stringutil.h
+smXZ.o: smBase.h smBaseP.h ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
+smXZ.o: ../RC_cpp_lib/stringutil.h
+smRLE.o: smBase.h smBaseP.h ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
+smRLE.o: ../RC_cpp_lib/stringutil.h
+smRaw.o: smBase.h smBaseP.h ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
+smRaw.o: ../RC_cpp_lib/stringutil.h
+smGZ.o: smBase.h smBaseP.h ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
+smGZ.o: ../RC_cpp_lib/stringutil.h
+smLZO.o: smBase.h smBaseP.h ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
+smLZO.o: ../RC_cpp_lib/stringutil.h
+smJPG.o: smBase.h smBaseP.h ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
+smJPG.o: ../RC_cpp_lib/stringutil.h

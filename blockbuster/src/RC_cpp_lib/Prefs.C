@@ -133,7 +133,7 @@ void Preferences::Reset(void){
     debugprefs = dbptr;
     cerr << "enabling debugging of prefs because debugprefs environment variable is set" << endl; 
   }
- 
+
   _dirty = 0;
   _writtenToDisk = 0;
   return;

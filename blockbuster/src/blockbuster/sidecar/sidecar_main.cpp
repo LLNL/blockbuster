@@ -43,10 +43,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <boost/filesystem.hpp> 
-#include <boost/program_options.hpp>
 
 using namespace std; 
-using namespace boost::program_options; 
 
 void usage(void) {
   cerr << "Usage:  sidecar [options] [cuefile]" << endl; 
@@ -89,8 +87,8 @@ void ParseOptions(int &argc, char *argv[], Preferences &gPrefs) {
   gPrefs.SetValue("rsh", "rsh"); 
   gPrefs.SetLongValue("verbose", 0); 
   gPrefs.SetValue("sidecarDir", GetSidecarDir(argv[0])); 
-  gPrefs.SetValue("PrefsFile", prefFile);  
-  gPrefs.ReadFromJson(prefFile); 
+  gPrefs.SetFilename(prefFile);  
+  gPrefs.ReadFromFile(); 
 
   gPrefs.DeleteValue("verbose"); // do not inherit this from previous
   gPrefs.DeleteValue("movie"); // do not inherit this from previous
@@ -99,15 +97,15 @@ void ParseOptions(int &argc, char *argv[], Preferences &gPrefs) {
   gPrefs.ReadFromEnvironment(); 
 
   vector<ArgType> args; 
-  args.push_back(ArgType("help", "bool")); 
-  args.push_back(ArgType("keyhelp", "bool")); 
-  args.push_back(ArgType("dmx", "bool")); 
-  args.push_back(ArgType("movie", "string")); 
-  args.push_back(ArgType("play", "string")); 
-  args.push_back(ArgType("--profile", "-p", "SIDECAR_DEFAULT_PROFILE", "string")); 
-  args.push_back(ArgType("rsh", "string")); 
-  args.push_back(ArgType("stresstest", "bool")); 
-  args.push_back(ArgType("verbose", "long")); 
+  args.push_back(ArgType("help", "bool", true)); 
+  args.push_back(ArgType("keyhelp", "bool", true)); 
+  args.push_back(ArgType("dmx", "bool", true)); 
+  args.push_back(ArgType("movie", "string", true)); 
+  args.push_back(ArgType("play", "string", true)); 
+  args.push_back(ArgType("profile", "--profile", "string", "-p")); 
+  args.push_back(ArgType("rsh", "string", true)); 
+  args.push_back(ArgType("stresstest", "bool", true)); 
+  args.push_back(ArgType("verbose", "long", true)); 
   gPrefs.SetValidArgs(args); 
   gPrefs.GetFromArgs(argc, argv, args); 
 }
@@ -162,6 +160,6 @@ int main(int argc, char *argv[]) {
   gPrefs.DeleteValue("verbose"); // do not inherit this from previous
   gPrefs.DeleteValue("movie"); // do not inherit this from previous
   gPrefs.DeleteValue("play"); // do not inherit this from previous
-  gPrefs.WriteToJson(gPrefs.GetValue("prefFile"), true, true); 
+  gPrefs.SaveToFile(true, true); 
   return retval; 
 }

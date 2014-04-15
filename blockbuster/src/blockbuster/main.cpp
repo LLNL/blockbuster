@@ -632,7 +632,7 @@ int main(int argc, char *argv[])
   ProgramOptions *opt = GetGlobalOptions(); 
   Preferences Prefs; 
   
-  Prefs.AddArg(ArgType("help", "bool")); 
+  Prefs.SetValue("help", false, true); 
     
   Slave *theSlave; 
   char localSettingsFilename[BLOCKBUSTER_PATH_MAX];

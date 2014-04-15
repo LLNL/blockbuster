@@ -96,7 +96,7 @@ class Preferences {
   // meta-attributes
 
 
-  void SetFile(string filename) {
+  void SetFilename(string filename) {
     SetValue("Filename", filename); 
   }
   string GetFilename(void) {
@@ -175,6 +175,7 @@ class Preferences {
   //=============================
   // Copy the entire environment variable list into prefs, e.g., if $verbose is 5, then set Prefs["verbose"] to "5"
   void ReadFromEnvironment(void); 
+
 
   bool hasKey(string key) {
     return mPrefs.find(key) != mPrefs.end();

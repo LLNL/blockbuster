@@ -25,7 +25,7 @@ using namespace std;
 // The first one splits a string into an existing vector and returns that
 inline std::vector<std::string> Split( std::string s, char delim, std::vector<std::string> &elems) {
   boost::trim(s);
-  boost::split(elems, s, boost::is_space(), boost::token_compress_on); 
+  boost::split(elems, s, boost::is_from_range(delim, delim), boost::token_compress_on); 
   /*
   std::stringstream ss(s);
   std::string item;
