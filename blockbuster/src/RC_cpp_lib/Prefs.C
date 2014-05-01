@@ -332,41 +332,48 @@ bool Preferences::SaveToFile(bool createDir, bool clobber) {
 
 //====================================================
 bool Preferences::ReadFromFile(bool throw_exceptions) {
-   try {
-     ptree pt;
-     read_json(GetValue("Filename"), pt); 
-     if (pt.empty()) {
-       return false; 
-     }
-     for (ptree::iterator pos = pt.begin(); pos != pt.end(); pos++) {  
-       string key = pos->first; 
-       ArgType arg(key); 
-       for (ptree::iterator child = pos->second.begin(); child != pos->second.end(); child++) {
-         ptree childtree = child->second;
-         if (child->first == "mType") {
-           arg.mType = childtree.data(); 
-         } else if (child->first == "mMultiple") {
-           arg.mMultiple = lexical_cast<int>(childtree.data()); 
-         } else if (child->first == "mFlags") {
-           for (ptree::iterator flag = childtree.begin(); flag != childtree.end(); flag++) {
-             arg.mFlags.push_back(flag->second.data()); 
-           }
-         } else if (child->first == "mValues") {
-           for (ptree::iterator value = childtree.begin(); value != childtree.end(); value++) {
-             arg.mValues.push_back(value->second.data()); 
-           }
-         }
-       }
-       mPrefs[arg.mKey] = arg; 
-     }
-   } catch (...) {
-     cerr << "Exception in ReadFromFile" << endl;      
-     if (throw_exceptions) {
-       throw; 
-     } 
-     return false; 
-   }
-   return true; 
+  string filename = GetValue("Filename");
+  { 
+    ifstream file(filename.c_str()); 
+    if (!file || !file.is_open())
+      return false; 
+  }
+
+  try {
+    ptree pt;
+    read_json(filename, pt); 
+    if (pt.empty()) {
+      return false; 
+    }
+    for (ptree::iterator pos = pt.begin(); pos != pt.end(); pos++) {  
+      string key = pos->first; 
+      ArgType arg(key); 
+      for (ptree::iterator child = pos->second.begin(); child != pos->second.end(); child++) {
+        ptree childtree = child->second;
+        if (child->first == "mType") {
+          arg.mType = childtree.data(); 
+        } else if (child->first == "mMultiple") {
+          arg.mMultiple = lexical_cast<int>(childtree.data()); 
+        } else if (child->first == "mFlags") {
+          for (ptree::iterator flag = childtree.begin(); flag != childtree.end(); flag++) {
+            arg.mFlags.push_back(flag->second.data()); 
+          }
+        } else if (child->first == "mValues") {
+          for (ptree::iterator value = childtree.begin(); value != childtree.end(); value++) {
+            arg.mValues.push_back(value->second.data()); 
+          }
+        }
+      }
+      mPrefs[arg.mKey] = arg; 
+    }
+  } catch (...) {
+    cerr << "Exception in ReadFromFile" << endl;      
+    if (throw_exceptions) {
+      throw; 
+    } 
+    return false; 
+  }
+  return true; 
 }
 
 

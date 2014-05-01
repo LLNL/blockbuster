@@ -83,9 +83,6 @@ void ParseOptions(int &argc, char *argv[], Preferences &gPrefs) {
   string prefFile = (prefsdir + "/prefs.cnf").toStdString(); 
   mkdir(prefsdir.toStdString().c_str(), 0777); 
   gPrefs.SetValue("prefsdir", prefsdir.toStdString()); 
-  //gPrefs.SetFile((prefsdir + "/prefs.cnf").toStdString()); 
-  gPrefs.SetValue("rsh", "rsh"); 
-  gPrefs.SetLongValue("verbose", 0); 
   gPrefs.SetValue("sidecarDir", GetSidecarDir(argv[0])); 
   gPrefs.SetFilename(prefFile);  
   gPrefs.ReadFromFile(); 
@@ -97,17 +94,16 @@ void ParseOptions(int &argc, char *argv[], Preferences &gPrefs) {
   gPrefs.ReadFromEnvironment(); 
 
   vector<ArgType> args; 
-  args.push_back(StringArg("help", true)); 
-  args.push_back(BoolArg("keyhelp", true)); 
-  args.push_back(BoolArg("dmx", true)); 
-  args.push_back(StringArg("movie", true)); 
-  args.push_back(StringArg("play", true)); 
-  args.push_back(StringArg("profile",true)); 
-  args.push_back(StringArg("rsh", true)); 
-  args.push_back(BoolArg("stresstest", true)); 
-  args.push_back(LongArg("verbose", true, 0)); 
-  gPrefs.SetValidArgs(args); 
-  gPrefs.GetFromArgs(argc, argv, args); 
+  gPrefs.AddArg(StringArg("help", true))
+    .AddArg(BoolArg("keyhelp", true))
+    .AddArg(BoolArg("dmx", true))
+    .AddArg(StringArg("movie", true))
+    .AddArg(StringArg("play", true)) 
+    .AddArg(StringArg("profile",true)) 
+    .AddArg(StringArg("rsh", true))
+    .AddArg(BoolArg("stresstest", true))
+    .AddArg(LongArg("verbose", true, 0)) ;
+  gPrefs.ParseArgs(argc, argv); 
 }
 
 int main(int argc, char *argv[]) {

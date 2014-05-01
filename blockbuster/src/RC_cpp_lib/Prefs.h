@@ -291,7 +291,6 @@ class Preferences {
   void SaveSectionToFile(std::ofstream &outfile, std::map<std::string, ArgType > &section);
 
   // there is no copy constructor, so be sure these shallow copy:
-  //vector< pair< string, vector<string> > > mEquivalents; 
   std::map<std::string, ArgType >  mPrefs; 
   std::vector<ArgType> mValidArgs; // only save these args or look for them in environment etc. if given
   char _dirty; 
