@@ -22,7 +22,13 @@ src/blockbuster/blockbuster
 src/blockbuster/blockbuster.pro
 src/blockbuster/moc*cpp
 src/blockbuster/qrc*.cpp
+src/blockbuster/timer.C
+src/blockbuster/Prefs.C
+src/blockbuster/Prefs.h
 src/blockbuster/sidecar/MovieCues.*
+src/blockbuster/sidecar/stringutil.h
+src/blockbuster/sidecar/timer.h
+src/blockbuster/sidecar/timer.C
 src/blockbuster/sidecar/common.h
 src/blockbuster/sidecar/Prefs.C
 src/blockbuster/sidecar/Prefs.h
@@ -65,6 +71,7 @@ src/pt/pt_rw_read_lock.3
 src/pt/pt_rw_read_unlock.3
 src/pt/pt_rw_write_lock.3
 src/pt/pt_rw_write_unlock.3
+src/sm/timer.C
 src/smapp/ifl2sm
 src/smapp/img2sm
 src/smapp/rename
