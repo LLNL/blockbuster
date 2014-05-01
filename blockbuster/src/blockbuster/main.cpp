@@ -632,8 +632,13 @@ int main(int argc, char *argv[])
   ProgramOptions *opt = GetGlobalOptions(); 
   Preferences Prefs; 
   
-  Prefs.SetValue("help", false, true); 
-    
+  Prefs.AddArg(BoolArg("help", true)); 
+  Prefs.AddArg(LongArg("cachesize",  true, 100)); 
+  Prefs.AddArg(BoolArg("cachedebug").SetFlags("--cachedebug")); 
+  Prefs.AddArg(BoolArg("no-decorations").SetFlags("--no-decorations", "-D")); 
+  Prefs.AddArg(BoolArg("fullscreen", true)); 
+  Prefs.AddArg(StringArg("display", ":0")); 
+  
   Slave *theSlave; 
   char localSettingsFilename[BLOCKBUSTER_PATH_MAX];
   char homeSettingsFilename[BLOCKBUSTER_PATH_MAX];

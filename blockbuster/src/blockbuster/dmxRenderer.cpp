@@ -971,7 +971,7 @@ void DMXSlave::SlaveSocketError(QAbstractSocket::SocketError ){
   //  AddMessageToMovieQueue(MovieEvent("MOVIE_SLAVE_ERROR", mSlaveSocket->errorString())); 
   DEBUGMSG("SlaveSocketError: host %s got error: \"%s\",state: %d", 
            mRemoteHostname.c_str(), 
-           (const char *)mSlaveSocket->errorString().toAscii(), 
+           (const char *)mSlaveSocket->errorString().toStdString().c_str(), 
            (int)mSlaveSocket->state());
   if (!mShouldDisconnect) {
     emit SlaveDisconnect(this); 
@@ -1019,7 +1019,7 @@ int DMXSlave::QueueNetworkEvents(void) {
       emit Error(this, mRemoteHostname.c_str(), msg, true); 
     }
     else {
-      //DEBUGMSG(QString("Unknown message from slave: %1").arg(msg).toAscii()); 
+      //DEBUGMSG(QString("Unknown message from slave: %1").arg(msg).toStdString().c_str()); 
       cerr << QString("Unknown message from slave on host %1: \"%2\"").arg(mRemoteHostname.c_str()).arg(msg).toStdString() << endl; 
     }
   }

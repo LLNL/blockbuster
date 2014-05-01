@@ -1,4 +1,4 @@
-/* MODIFIED BY: rcook on Fri Apr 11 18:31:40 PDT 2014 */
+/* MODIFIED BY: rcook on Wed Apr 30 19:00:51 PDT 2014 */
 /* VERSION: 1.0 */
 #define NO_BOOST 1
 #include "Prefs.h"
@@ -25,59 +25,26 @@ using namespace std;
 static string debugprefs("false"); 
 #define prefsdebug if (debugprefs != "false") cerr << __FILE__ <<" line "<<__LINE__ << ": "
 
+
+
 //====================================================
-ArgType::ArgType(string key,  int autoFlags, int multi, string defaultVal):
-  mKey(key), mType("string"), mMultiple(multi), mValues(1,defaultVal){
-  if (autoFlags) {
-    mFlags.push_back(str(format("--%1%")%key)); 
-    mFlags.push_back(str(format("-%c")%key[0])); 
+ArgType &ArgType::SetFlags(string flag1, string flag2, string flag3) {
+  if (flag1 == "" && flag2 == "" && flag3 == "") {
+    mFlags.push_back(str(format("--%1%")%mKey)); 
+    mFlags.push_back(str(format("-%c")%mKey[0])); 
   }
-  return;
+  if (flag1 != "") {
+    mFlags.push_back(flag1); 
+  }
+  if (flag2 != "") {
+    mFlags.push_back(flag2); 
+  }
+  if (flag3 != "") {
+    mFlags.push_back(flag3); 
+  }
+  return *this; 
+}
  
-}
-
-//====================================================
-ArgType::ArgType(string key, string preftype,  int autoFlags, 
-                 int multi, string defaultVal):
-  mKey(key), mType(preftype), mMultiple(multi), mValues(1,defaultVal) {
-  if (autoFlags) {
-    mFlags.push_back(str(format("--%1%")%key)); 
-    mFlags.push_back(str(format("-%c")%key[0])); 
-  }
-  return; 
-}
-  
-//====================================================
-ArgType::ArgType(string key, string preftype, vector<string> flags, 
-                 int multi, string defaultVal):
-  mKey(key), mType(preftype), mMultiple(multi), 
-  mFlags(flags), mValues(1,defaultVal) {
-  return; 
-}
-
-//====================================================
-ArgType::ArgType(string key, string preftype, 
-                 string flag1, string flag2, 
-                  int multi, string defaultVal):
-  mKey(key), mType(preftype), mMultiple(multi), 
-  mValues(1,defaultVal) {
-  mFlags.push_back(flag1); 
-  mFlags.push_back(flag2); 
-  return; 
-}
-
-//====================================================
-ArgType::ArgType(string key, string preftype, string flag, 
-                 int multi, string defaultVal):
-  mKey(key), mType(preftype), mMultiple(multi), 
-  mFlags(1,flag), mValues(1,defaultVal) {
-  return; 
-}
-
-//====================================================
-ArgType::ArgType(const ArgType &other) {
-  *this = other; 
-}
 
 //====================================================
 const ArgType &ArgType::operator =(const ArgType &other) {
@@ -91,19 +58,26 @@ const ArgType &ArgType::operator =(const ArgType &other) {
     
 //====================================================
 ArgType::operator string() {
-  string output = str(format("mKey: \"%s\", mMultiple: %d, mType: \"%s\", mFlags: ")% mKey % ((int)mMultiple) % mType); 
+  
+  string output = str(format("mKey: \"%s\", mMultiple: %s, mType: \"%s\", mFlags: ")% mKey % (mMultiple?"true":"false") % mType); 
   vector<string>::iterator pos = mFlags.begin(); 
-  if (pos != mFlags.end()) {
-    output += "<"; 
-  }
+  output += "<"; 
   while (pos != mFlags.end()) {
     output += str(format("\"%s\"")%(*pos)); 
-    if (++pos == mFlags.end()){
-      output += ">"; 
-    } else {
+    if (++pos != mFlags.end()){
+      output += ", "; 
+    }  
+  } 
+  output += ">, mValues: "; 
+  pos = mValues.begin(); 
+  output += "<"; 
+  while (pos != mValues.end()) {
+    output += str(format("\"%s\"")%(*pos)); 
+    if (++pos != mValues.end()){
       output += ", "; 
     }
   }
+  output += ">"; 
   return output; 
 }
 

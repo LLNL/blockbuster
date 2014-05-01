@@ -1,4 +1,4 @@
-/* MODIFIED BY: rcook on Fri Apr 11 18:31:40 PDT 2014 */
+/* MODIFIED BY: rcook on Wed Apr 30 19:00:51 PDT 2014 */
 /* VERSION: 1.0 */
 /* This file is an attempt to allow any application to read its preferences into what Randy Frank would call a "mapobj".  I have stolen his idea and hopefully improved it to be more general and more robust, because it no longer relies on pointers to store its information.  In fact, it no longer allows pointers to be stored at all.  The presumption is that this is non-volatile information which can be written to disk.  I don't know of a way yet to pickle C items.  Maybe later I'll change to a binary output format and then allow any data to be captured to disk.  Not today. 
    All values are stored as C++ strings.  Functions which set or get values as other types are merely converting a string to the desired type or vice-versa.
@@ -21,27 +21,32 @@
 #define LONG_FALSE  (0)
 using namespace boost; 
 
-
 //======================================================
 struct ArgType {
 
-  ArgType(string key=""): mKey(key), mType("string") {}
-  ArgType(string key,  int autoFlags, int multi, string defaultVal);
+  ArgType(string key=""): mKey(key), mType("string"), mMultiple(false) { return; }
 
-  ArgType(string key, string preftype,  int autoFlags,  
-          int multi=false, string defaultVal="");
-  
-  ArgType(string key,  string preftype, vector<string> flags, 
-          int multi=false, string defaultVal="");
+  ArgType(string key, string preftype, bool setFlags=false,  string defaultVal=""):
+    mKey(key), mType(preftype), mMultiple(false), mValues(1,defaultVal) { 
+    if (setFlags) SetFlags(); 
+    return; 
+  }
 
-  ArgType(string key, string preftype, 
-          string flag1, string flag2, 
-          int multi=false, string defaultVal="");
+  ArgType(string key, string preftype, vector<string> flags, 
+          string defaultVal="",  bool multi=false):
+    mKey(key), mType(preftype), mMultiple(multi), 
+    mFlags(flags), mValues(1,defaultVal) {
+    return; 
+  }    
 
-  ArgType(string key, string preftype, string flag, 
-          int multi=false, string defaultVal="");
+  ArgType(const ArgType &other) { *this = other; }
 
-  ArgType(const ArgType &other);
+  ArgType &MultiValued(bool multi=true) {
+    mMultiple = multi; 
+    return *this; 
+  }
+
+  ArgType &SetFlags(string flag1="", string flag2="", string flag3=""); 
 
   const ArgType &operator =(const ArgType &other);
     
@@ -64,6 +69,31 @@ struct ArgType {
   vector<string> mFlags; // aliasable e.g. "--help" and "-h" 
   vector<string> mValues; 
 };
+
+//======================================================
+struct BoolArg : public ArgType {
+  BoolArg(string key, bool setFlags=false):
+    ArgType(key, "bool", setFlags, "0") { return; }
+}; 
+
+//======================================================
+struct LongArg: public ArgType {
+  LongArg(string key, bool setFlags=false, long value=0):
+    ArgType(key, "long", setFlags, str(format("%d")%value)) { return; }
+}; 
+
+//======================================================
+struct DoubleArg: public ArgType {
+  DoubleArg(string key, bool setFlags=false, double value=0):
+    ArgType(key, "long", setFlags, str(format("%f")%value)) { return; }
+}; 
+
+//======================================================
+struct StringArg: public ArgType {
+  StringArg(string key, bool setFlags=false, string value=""):
+    ArgType(key, "string", setFlags, value) { return; }
+}; 
+
 
 //======================================================
 typedef  std::map<std::string, ArgType> PrefsMap; 
@@ -197,18 +227,17 @@ class Preferences {
   //========================
   /* values: getting and setting (remember to set dirty bit!) 
      Note that all values are actually saved as strings and are converted, so this is not exactly a high-performance library.  :-) */
-  void SetValue( std::string key, string value, bool autoFlags=false) {
-    mPrefs[key] = ArgType(key, "string", autoFlags, false, value); 
+  void SetValue( std::string key, string value) {
+    mPrefs[key] = StringArg(key, false, value); 
   }
-  void SetLongValue( std::string key, long value, bool autoFlags=false) {
-    mPrefs[key] = ArgType(key, "long", autoFlags, false, str(format("%d")%value)); 
+  void SetLongValue( std::string key, long value) {
+    mPrefs[key] = LongArg(key, false, value); 
   }
-  void SetDoubleValue( std::string key, double value, bool autoFlags=false) {
-    mPrefs[key] = ArgType(key, "double", autoFlags, false, str(format("%f")%value)); 
+  void SetDoubleValue( std::string key, double value) {
+    mPrefs[key] = DoubleArg(key, false, value); 
   }
-  void SetBoolValue( std::string key, bool value, bool autoFlags=false) {
-    
-    mPrefs[key] = ArgType(key, "bool", autoFlags, false, str(format("%d")%((int)value))); 
+  void SetBoolValue( std::string key, bool value) {
+    mPrefs[key] = BoolArg(key, value); 
   }
   void DeleteValue( std::string key) {
     mPrefs.erase(key); // safe if key does not exist. 

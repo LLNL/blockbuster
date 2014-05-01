@@ -138,12 +138,7 @@ blockbuster.pro :   $(FORMS) Makefile $(SOURCES)
 
 qmake-force:
 	$(QMAKE) -Wall 
-	$(call SEDFILES,s~-O2~$(OPT) ~g,Makefile.qt.include)
-	$(call SEDFILES,s~-O1~$(OPT) ~g,Makefile.qt.include)
-	$(call SEDFILES,s~-g ~$(OPT) ~g,Makefile.qt.include)
-	$(call SEDFILES,s/CC.*=.*gcc/CC = $(CC) /g,Makefile.qt.include)
-	$(call SEDFILES,s/CXX.*=.*g++/CXX = $(CXX) /g,Makefile.qt.include)
-	$(call SEDFILES,s/LINK.*=.*g++/LINK = $(CXX) /g,Makefile.qt.include)
+	sed -i -e 's~-O2~$(OPT) ~g' -e 's~-O1~$(OPT) ~g'  -e 's~-g ~$(OPT) ~g' -e 's/CC.*=.*gcc/CC = $(CC) /g' -e 's/CXX.*=.*g++/CXX = $(CXX) /g' -e 's/LINK.*=.*g++/LINK = $(CXX) /g' -e 's/\(-o Prefs.o Prefs.C\)/-Wno-type-limits \1/' Makefile.qt.include
 	echo sm.o: ../sm/smBase.h >> Makefile.qt.include
 
 Makefile.qt.include: blockbuster.pro

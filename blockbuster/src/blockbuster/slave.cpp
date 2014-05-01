@@ -401,7 +401,7 @@ int Slave::Loop(void)
             }
             (*mMasterStream) >> message; 
             DEBUGMSG((QString("string to draw is: ")+message)); 
-            mRenderer->DrawString(row, col, message.toAscii());          
+            mRenderer->DrawString(row, col, message.toStdString().c_str());          
           }// "DrawString"
           else if (token == "SwapBuffers") {
             if (messageList.size() != 7) {
@@ -545,7 +545,7 @@ int Slave::Loop(void)
 
             message.remove(0, 13); //strip "SetFrameList " from front
             DEBUGMSG((QString("File list is: ")+message)); 
-            if (!LoadFrames( message.toAscii()) || !mRenderer->mFrameList->numActualFrames()) {			
+            if (!LoadFrames( message.toStdString().c_str()) || !mRenderer->mFrameList->numActualFrames()) {			
               SendError("No frames could be loaded."); 
             }
             playFirstFrame = 0; 

@@ -1239,10 +1239,10 @@ QTcpSocket  &operator >> (QTcpSocket &iSocket,  MovieCue &iCue){
 
 //======================================================================
 QFile &operator << (QFile &iFile, const MovieCue &iCue){  
-  iFile.write(QString("BEGINCUE CueName=%1 ").arg(iCue.text()).toAscii());
+  iFile.write(QString("BEGINCUE CueName=%1 ").arg(iCue.text()).toStdString().c_str());
   if (iCue.mLoadMovie && iCue.mMovieName != "") {
     iFile.write(QString("LoadMovie=%1 ") 
-                .arg(iCue.mMovieName).toAscii());
+                .arg(iCue.mMovieName).toStdString().c_str());
   }
   iFile.write(str(boost::format("Play=%d Loop=%d Backward=%d Controls=%d CurrentFrame=%d StartFrame=%d EndFrame=%d WindowWidth=%d WindowHeight=%d WindowX=%d WindowY=%d FullScreen=%d SizeToMovie=%d ImageX=%d ImageY=%d LOD=%d Rate=%0.5f Zoom=%0.5f ZoomOne=%d ZoomToFit=%d PingPong=%d NoStereo=%d ENDCUE\n")
                   %(iCue.mPlayMovie)

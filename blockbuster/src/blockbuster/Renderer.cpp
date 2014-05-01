@@ -1033,7 +1033,7 @@ void Renderer::ToggleCursor(void) {
 //======================================================   
 void Renderer::SetTitle(QString title) {
   ECHO_FUNCTION(5);
-  XStoreName(mDisplay, mWindow, title.toAscii().data()); 
+  XStoreName(mDisplay, mWindow, title.toStdString().c_str()); 
   return; 
 }
 

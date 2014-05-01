@@ -97,15 +97,15 @@ void ParseOptions(int &argc, char *argv[], Preferences &gPrefs) {
   gPrefs.ReadFromEnvironment(); 
 
   vector<ArgType> args; 
-  args.push_back(ArgType("help", "bool", true)); 
-  args.push_back(ArgType("keyhelp", "bool", true)); 
-  args.push_back(ArgType("dmx", "bool", true)); 
-  args.push_back(ArgType("movie", "string", true)); 
-  args.push_back(ArgType("play", "string", true)); 
-  args.push_back(ArgType("profile", "--profile", "string", "-p")); 
-  args.push_back(ArgType("rsh", "string", true)); 
-  args.push_back(ArgType("stresstest", "bool", true)); 
-  args.push_back(ArgType("verbose", "long", true)); 
+  args.push_back(StringArg("help", true)); 
+  args.push_back(BoolArg("keyhelp", true)); 
+  args.push_back(BoolArg("dmx", true)); 
+  args.push_back(StringArg("movie", true)); 
+  args.push_back(StringArg("play", true)); 
+  args.push_back(StringArg("profile",true)); 
+  args.push_back(StringArg("rsh", true)); 
+  args.push_back(BoolArg("stresstest", true)); 
+  args.push_back(LongArg("verbose", true, 0)); 
   gPrefs.SetValidArgs(args); 
   gPrefs.GetFromArgs(argc, argv, args); 
 }

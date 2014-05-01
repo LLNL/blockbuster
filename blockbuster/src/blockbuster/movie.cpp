@@ -547,13 +547,13 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
               ImagePtr image = renderer->GetImage(renderer->mCurrentFrame,&region,0); 
               int size[3] = {region.width, region.height, 3}; 
               int result = 
-                write_png_file(filename.toAscii().data(), 
+                write_png_file(const_cast<char*>(filename.toStdString().c_str()), 
                                (unsigned char*)image->Data(), 
                                size);
               if (result == -1) {
-                ERROR("Could not write png file %s.", filename.toAscii().data()); 
+                ERROR("Could not write png file %s.", filename.toStdString().c_str()); 
               } else {
-                WARNING("Successfully wrote png file %s.", filename.toAscii().data()); 
+                WARNING("Successfully wrote png file %s.", filename.toStdString().c_str()); 
               }
             }
           }
