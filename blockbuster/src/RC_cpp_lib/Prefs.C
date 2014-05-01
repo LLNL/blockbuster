@@ -1,4 +1,4 @@
-/* MODIFIED BY: rcook on Wed Apr 30 19:00:51 PDT 2014 */
+/* MODIFIED BY: rcook on Thu May  1 08:51:15 PDT 2014 */
 /* VERSION: 1.0 */
 #define NO_BOOST 1
 #include "Prefs.h"
@@ -335,8 +335,13 @@ bool Preferences::ReadFromFile(bool throw_exceptions) {
   string filename = GetValue("Filename");
   { 
     ifstream file(filename.c_str()); 
-    if (!file || !file.is_open())
+    if (!file || !file.is_open()) {
+      if (throw_exceptions) {
+        throw str(boost::format("Cannot open filename %s")%filename);
+      }
       return false; 
+    }
+    file.close(); // redundant but clear
   }
 
   try {
