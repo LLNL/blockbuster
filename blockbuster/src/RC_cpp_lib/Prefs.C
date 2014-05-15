@@ -1,10 +1,9 @@
-/* MODIFIED BY: rcook on Thu May  1 08:51:15 PDT 2014 */
+/* MODIFIED BY: rcook on Wed May 14 17:32:40 PDT 2014 */
 /* VERSION: 1.0 */
 #define NO_BOOST 1
 #include "Prefs.h"
 #include "stringutil.h"
 #include "errno.h"
-#include <boost/lexical_cast.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 using boost::property_tree::ptree; 
@@ -27,11 +26,24 @@ static string debugprefs("false");
 
 
 
+
+//====================================================
+ArgType &ArgType::SetLongFlag(void) {
+  mFlags.push_back(str(format("--%1%")%mKey)); 
+  return *this; 
+}
+
+//====================================================
+ArgType &ArgType::SetShortFlag(void) {
+  mFlags.push_back(str(format("-%c")%mKey[0])); 
+  return *this; 
+}
+
 //====================================================
 ArgType &ArgType::SetFlags(string flag1, string flag2, string flag3) {
   if (flag1 == "" && flag2 == "" && flag3 == "") {
-    mFlags.push_back(str(format("--%1%")%mKey)); 
-    mFlags.push_back(str(format("-%c")%mKey[0])); 
+    SetLongFlag(); 
+    SetShortFlag(); 
   }
   if (flag1 != "") {
     mFlags.push_back(flag1); 
@@ -59,7 +71,7 @@ const ArgType &ArgType::operator =(const ArgType &other) {
 //====================================================
 ArgType::operator string() {
   
-  string output = str(format("mKey: \"%s\", mMultiple: %s, mType: \"%s\", mFlags: ")% mKey % (mMultiple?"true":"false") % mType); 
+  string output = str(format("mKey: \"%s\", mType: \"%s\", mMultiple: %s, mFlags: ")% mKey % mType % (mMultiple?"true":"false")); 
   vector<string>::iterator pos = mFlags.begin(); 
   output += "<"; 
   while (pos != mFlags.end()) {
@@ -222,8 +234,8 @@ vector<long> Preferences::GetLongValues(const string &key, bool dothrow) const {
 Preferences::operator string()  {
   string output = "Preferences: { \n"; 
   output += "  mValidArgs: {";
-  for (vector<ArgType>::iterator argpos = mValidArgs.begin(); argpos != mValidArgs.end(); argpos++) {
-    output += str(format("\n    %s")%(string(*argpos))); 
+  for (map<string,ArgType>::iterator argpos = mValidArgs.begin(); argpos != mValidArgs.end(); argpos++) {
+    output += str(format("\n    %s")%(string(argpos->second))); 
   }
   output += "  }\n"; 
   output += "  mPrefs: {"; 
@@ -249,7 +261,7 @@ void Preferences::ReadFromEnvironment(void){
     }    
     string key = keypair.substr(0, equals), value = keypair.substr(equals+1);
     prefsdebug << "Setting prefs key "<< key<< " to value from environment: " << value << endl; 
-    mPrefs[key] = value;
+    SetValue(key,value);
     ++envp; 
   }
   return; 
@@ -405,53 +417,52 @@ void Preferences::GetFromArgs(int &argc, char *argv[], vector<ArgType>& args, bo
 void Preferences::ParseArgs(int &argc, char *argv[], bool rejectUnknown) {
   // parse the argc and argv as command line options.
   // 
-  errno = 0; 
-  int argnum = 0; 
-  string foundflag; 
-  while (argnum < argc) {
+  for (int argnum = 1; argnum < argc; ++argnum) {
+    ArgType *validArg = NULL;
     string currentArg = argv[argnum]; 
-    vector<ArgType>::iterator validArg; 
-    for (validArg = mValidArgs.begin();  
-         validArg != mValidArgs.end(); 
-         ++validArg) {
-      for (vector<string>::iterator flagpos = validArg->mFlags.begin(); 
-           flagpos != validArg->mFlags.end();
+    string foundflag; 
+    map<string, ArgType>::iterator argpos; 
+    for (argpos = mValidArgs.begin();  
+         !validArg && argpos != mValidArgs.end(); 
+         ++argpos) {
+      for (vector<string>::iterator flagpos = argpos->second.mFlags.begin(); 
+           !validArg && flagpos != argpos->second.mFlags.end();
            flagpos++) {
         if (*flagpos == currentArg) {
-          foundflag = *flagpos;   
-          break; 
+          validArg = &(argpos->second);   
+          foundflag = *flagpos; 
         }
       }
-      if (foundflag != "") break; 
     }
 
-    if (foundflag == "") {
+    if (!validArg) {
       if (rejectUnknown && currentArg[0] == '-') {
         throw str(format("Unknown argument %s ")%currentArg); 
       }        
-      argnum++; 
     } else {
       // do not increment argnum here as you will simply be consuming args and reducing argc
       ConsumeArg(argnum, argc,argv); 
       if (validArg->mType == "bool") {
-        SetBoolValue(validArg->mKey, true); 
+        SetValue(validArg->mKey, 1); 
       } else {
         if (argnum == argc) {
           throw string("Flag ")+foundflag+string(" requires an argument");
         }     
-        string value = argv[argnum];
+        string arg = argv[argnum];        
         try {
-          if (validArg->mType == "string") {
-            SetValue(validArg->mKey, value);
-          } else if (validArg->mType == "long") {
-            SetLongValue(validArg->mKey, boost::lexical_cast<long>(value));
+          if (validArg->mType == "long") {
+            boost::lexical_cast<long>(arg);
           } else if (validArg->mType == "double") {
-            SetDoubleValue(validArg->mKey,  boost::lexical_cast<double>(value)); 
+            boost::lexical_cast<double>(arg); 
           } else {
             throw string("Bad keytype: ")+validArg->mType+string(" for key: ")+validArg->mKey; 
           }
+          SetValue(validArg->mKey, arg, validArg->mType);
+        } catch (string e) {
+          cerr << e << endl; 
+          throw ; 
         } catch (...) {
-          throw str(format("Could not convert value %s to type %s for flag %s") % value % validArg->mType % foundflag); 
+          throw str(format("Could not convert value %s to type %s for flag %s") % arg % validArg->mType % foundflag); 
         }
       }// end check which arg type it is
       ConsumeArg(argnum, argc,argv); 

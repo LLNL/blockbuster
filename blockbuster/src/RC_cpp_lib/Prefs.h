@@ -1,10 +1,10 @@
-/* MODIFIED BY: rcook on Thu May  1 08:51:15 PDT 2014 */
+/* MODIFIED BY: rcook on Wed May 14 17:32:40 PDT 2014 */
 /* VERSION: 1.0 */
 /* This file is an attempt to allow any application to read its preferences into what Randy Frank would call a "mapobj".  I have stolen his idea and hopefully improved it to be more general and more robust, because it no longer relies on pointers to store its information.  In fact, it no longer allows pointers to be stored at all.  The presumption is that this is non-volatile information which can be written to disk.  I don't know of a way yet to pickle C items.  Maybe later I'll change to a binary output format and then allow any data to be captured to disk.  Not today. 
    All values are stored as C++ strings.  Functions which set or get values as other types are merely converting a string to the desired type or vice-versa.
 
    To do:  multiple Preferences should be able to be written to a single file. 
- */
+*/
 // $Revision: 1.20 $
 #ifndef RCPREFS_H
 #define RCPREFS_H
@@ -16,28 +16,18 @@
 #include <fstream>
 #include "stringutil.h"
 #include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
 
 #define DOUBLE_FALSE (0.0)
 #define LONG_FALSE  (0)
 using namespace boost; 
 
 //======================================================
+
 struct ArgType {
 
-  ArgType(string key=""): mKey(key), mType("string"), mMultiple(false) { return; }
-
-  ArgType(string key, string preftype, bool setFlags=false,  string defaultVal=""):
-    mKey(key), mType(preftype), mMultiple(false), mValues(1,defaultVal) { 
-    if (setFlags) SetFlags(); 
-    return; 
-  }
-
-  ArgType(string key, string preftype, vector<string> flags, 
-          string defaultVal="",  bool multi=false):
-    mKey(key), mType(preftype), mMultiple(multi), 
-    mFlags(flags), mValues(1,defaultVal) {
-    return; 
-  }    
+  ArgType(string key="", string theType=""): 
+    mKey(key), mType(theType), mMultiple(false) {  return; }
 
   ArgType(const ArgType &other) { *this = other; }
 
@@ -45,6 +35,63 @@ struct ArgType {
     mMultiple = multi; 
     return *this; 
   }
+
+
+  template <class T> ArgType &SetValue(T v, string type="") { 
+    mValues.clear(); 
+    return AddValue(v, type); 
+  }
+  
+  //====================================================
+  template <class T> 
+  ArgType &AddValue(T v, string type) { 
+    if (type != "") {
+      if (type != "bool" && type != "long" && type != "double" && type != "string") {
+        throw string("AddValue: Unknown type \"" + type+ "\" given");
+      }
+      mType = type; 
+    }
+    
+    if (mType == "") {
+      // have to guess type from T
+      try {
+        boost::lexical_cast<long>(v);
+        mType = "long"; 
+      } catch (...) {
+        try {
+          boost::lexical_cast<double>(v);
+          mType = "double"; 
+        } catch (...) {
+          mType = "string"; 
+        }
+      }
+    }
+
+    string value; 
+    try {
+      if (mType == "bool") {
+        value = boost::lexical_cast<bool>(v) ? "1" : "0";   
+      } else if (mType == "long") {
+        value = str(format("%ld")%v); 
+      } else if (mType == "double") {
+        value = str(format("%f")%v); 
+      } else if (mType == "string") {
+        value = str(format("%ld")%v); 
+      } 
+    } catch(...) {
+      throw str(format("AddValue: Value \"%1%\" and mType \"%s\" are incompatible")% v % mType); 
+    }
+      
+    mValues.push_back(value);   
+    return *this; 
+  }
+
+ 
+  template <class T> void GetValue (T &v); 
+  
+  ArgType &SetLongFlag(void); 
+
+  ArgType &SetShortFlag(void); 
 
   ArgType &SetFlags(string flag1="", string flag2="", string flag3=""); 
 
@@ -57,42 +104,17 @@ struct ArgType {
   }
   bool operator == (const ArgType &other) {
     return (mKey == other.mKey &&
-            mType == other.mType && 
             mMultiple == other.mMultiple &&
             mFlags == other.mFlags && 
             mValues == other.mValues); 
   }
 
-  string mKey, 
-    mType; // "bool", "long", "double", "string"
-  bool mMultiple; // interpret as bool
+  string mKey; 
+  string mType; // "bool", "long", "double", "string"
+  bool mMultiple; 
   vector<string> mFlags; // aliasable e.g. "--help" and "-h" 
   vector<string> mValues; 
 };
-
-//======================================================
-struct BoolArg : public ArgType {
-  BoolArg(string key, bool setFlags=false):
-    ArgType(key, "bool", setFlags, "0") { return; }
-}; 
-
-//======================================================
-struct LongArg: public ArgType {
-  LongArg(string key, bool setFlags=false, long value=0):
-    ArgType(key, "long", setFlags, str(format("%d")%value)) { return; }
-}; 
-
-//======================================================
-struct DoubleArg: public ArgType {
-  DoubleArg(string key, bool setFlags=false, double value=0):
-    ArgType(key, "long", setFlags, str(format("%f")%value)) { return; }
-}; 
-
-//======================================================
-struct StringArg: public ArgType {
-  StringArg(string key, bool setFlags=false, string value=""):
-    ArgType(key, "string", setFlags, value) { return; }
-}; 
 
 
 //======================================================
@@ -135,7 +157,7 @@ class Preferences {
   //========================
   //saving and restoring from disk
 
- //====================================================
+  //====================================================
   bool ReadFromFile(bool throw_exceptions=true); 
  
   bool SaveToFile(bool createDir=true, bool clobber=true); 
@@ -162,22 +184,22 @@ class Preferences {
   //====================================================
   Preferences &AddArg(ArgType arg) {
     // first look for duplicates: 
-    for (vector<ArgType>::iterator argPos = mValidArgs.begin();  
+    if (mValidArgs.find(arg.mKey) != mValidArgs.end()){
+      throw str(format("AddArg Error: duplicate key: %s")%arg.mKey);
+    }
+    for (map<string,ArgType>::iterator argPos = mValidArgs.begin();  
          argPos != mValidArgs.end(); 
-         ++argPos) {
-      if (arg.mKey == argPos->mKey) {
-        throw str(format("AddArg Error: duplicate key: %s")%arg.mKey);
-      }
-      for (vector<string>::iterator flag = argPos->mFlags.begin(); 
-           flag != argPos->mFlags.end(); flag++) {
+         ++argPos) {      
+      for (vector<string>::iterator flag = argPos->second.mFlags.begin(); 
+           flag != argPos->second.mFlags.end(); flag++) {
         if (find(arg.mFlags.begin(), arg.mFlags.end(), *flag) != arg.mFlags.end()) {
           throw str(format("AddArg Error: duplicate flag: %s")%(*flag));
         }
       }
     }
   
-    // now add a value in Prefs by type
-    mPrefs[arg.mKey] = arg; 
+    // now add a value in mValidArgs by type
+    mValidArgs[arg.mKey] = arg; 
     
     return *this; 
   }
@@ -226,18 +248,10 @@ class Preferences {
 
   //========================
   /* values: getting and setting (remember to set dirty bit!) 
-     Note that all values are actually saved as strings and are converted, so this is not exactly a high-performance library.  :-) */
-  void SetValue( std::string key, string value) {
-    mPrefs[key] = StringArg(key, false, value); 
-  }
-  void SetLongValue( std::string key, long value) {
-    mPrefs[key] = LongArg(key, false, value); 
-  }
-  void SetDoubleValue( std::string key, double value) {
-    mPrefs[key] = DoubleArg(key, false, value); 
-  }
-  void SetBoolValue( std::string key, bool value) {
-    mPrefs[key] = BoolArg(key, value); 
+     Note that all values are actually saved as strings and are converted, so this is not exactly a high-performance library.  :-) */ 
+  template <class T> 
+    void SetValue( std::string key, T value, string type="") {
+    mPrefs[key] = ArgType(key).SetValue<T>(value, type); 
   }
   void DeleteValue( std::string key) {
     mPrefs.erase(key); // safe if key does not exist. 
@@ -286,13 +300,15 @@ class Preferences {
   std::string NextKey(std::ifstream&theFile);
   std::map<std::string, ArgType > ReadNextSection(std::ifstream &theFile);
 
-  bool KeyValid(std::string key); //true if key is in mValidArgs
+  bool KeyValid(std::string key) {//true if key is in mValidArgs
+    return mValidArgs.find(key) != mValidArgs.end(); 
+  }
 
   void SaveSectionToFile(std::ofstream &outfile, std::map<std::string, ArgType > &section);
 
   // there is no copy constructor, so be sure these shallow copy:
   std::map<std::string, ArgType >  mPrefs; 
-  std::vector<ArgType> mValidArgs; // only save these args or look for them in environment etc. if given
+  std::map<std::string, ArgType> mValidArgs; // only save these args or look for them in environment etc. if given
   char _dirty; 
   char _writtenToDisk;
 };
