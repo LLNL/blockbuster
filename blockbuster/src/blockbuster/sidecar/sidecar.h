@@ -42,9 +42,12 @@
 #include <QProcess>
 #include <QHostInfo>
 #include <QTimer>
+#ifndef Q_MOC_RUN
+// See: https://bugreports.qt-project.org/browse/QTBUG-22829
+#include <boost/algorithm/string.hpp>
 #include "Prefs.h"
 #include "../errmsg.h"
-#include <boost/algorithm/string.hpp>
+#endif
 
 extern Preferences gPrefs; 
 

@@ -464,12 +464,12 @@ void dmxRenderer::LaunchSlave(QString hostname) {
          << mMpiScript << mMpiScriptArgs
          << mExecutable;
     if  (mMessageLevelName == "debug") {
-      args << " -messageLevel debug";
+      args << " --messageLevel debug";
     } 
       
-    args  <<  " -slave " <<  QString("%1:%2:mpi").arg(localHostname).arg(mPort)              
+    args  <<  " --slave " <<  QString("%1:%2:mpi").arg(localHostname).arg(mPort)              
       //<< "-u" <<  "x11"  // no reason to have GTK up and it screws up stereo
-          << "-r" << mBackendRendererName ;
+          << "--renderer" << mBackendRendererName ;
     
     INFO(QString("Running command('%1 %2')\n")
          .arg(rshCommand).arg(args.join(" ")));
@@ -484,9 +484,9 @@ void dmxRenderer::LaunchSlave(QString hostname) {
 	// Qt book p 289: 
 	QStringList args; 
 	args << hostname  << mExecutable
-         << "-u" <<  "x11" // no reason to have GTK up and it screws up stereo
-         << "-r" << mBackendRendererName  
-         << "-messageLevel debug -slave" 
+         << "--no-controls" // no reason to have GTK up and it screws up stereo
+         << "--renderer" << mBackendRendererName  
+         << "--messageLevel debug --slave" 
          << QString("%1:%2").arg(localHostname).arg(mPort)
          << QString(" >~/.blockbuster/slave-%1.out 2>&1").arg(localHostname);
 	INFO(QString("Running command('%1 %2')\n")
@@ -497,7 +497,7 @@ void dmxRenderer::LaunchSlave(QString hostname) {
   }
   else if (mSlaveLaunchMethod == "manual") {
 	/* give instructions for manual start-up */
-    dbprintf(0, QString("Here is the command to start blockbuster on host 1:  'blockbuster -s %2:%3 -r %4 -d $DMX_DISPLAY' \n").arg( hostname).arg( localHostname).arg(mPort).arg( mBackendRendererName));
+    dbprintf(0, QString("Here is the command to start blockbuster on host 1:  'blockbuster --slave %2:%3 --renderer %4 --display $DMX_DISPLAY' \n").arg( hostname).arg( localHostname).arg(mPort).arg( mBackendRendererName));
   }
   return ;
 }

@@ -90,32 +90,31 @@ void usage(void) {
   printf("'file' is an optional file name, or a prefix of a set of file names\n");
   printf("\nOptions:\n");
   printf("   Note: substrings are also matched, so -h is the same as -help, but beware of non-unique prefixes!\n");
-  printf("-cachedebug: turn on verbose cache debugging messages (also enabled if verbosity is > 5)\n"); 
-  printf("-cachesize <num> specifies cache limit in frames (you can leave this unset unless you are running out of memory)\n");
-  printf("-DecorationsDisable (or -no-decorations): do not use window manager decorations such as titlebar etc.\n");
-  printf("-display <display> specifies X display\n");
-  printf("-dmxstereo: short for -r dmx -stereo.\n");
-  printf("-font <fontname> specifies X font\n");
-  printf("-framerate (or -Framerate) <rate> sets the initial frame rate target for the movie [30.0 or movie-specified]\n");
-  printf("-fpsSampleFrequency (or -FSF) <rate> sets the number of times per second that FPS is calculated [2.0]\n");
-  printf("-fullscreen: turns off window decorations and goes to full-screen display\n"); 
-  printf("-geometry <geometrystring> specifies X window geometry\n");
-  printf("-help displays this help message\n");
-  printf("-keyhelp:  display list of keyboard controls\n");
-  printf("-log filename: Log all messages to the given file for debugging.\n");
-  printf("-lod num: specifies a starting level of detail for the given movie\n");  
-  printf("-loop <n> See -repeat below.\n");
-  printf("-messageLevel sets the message level, in order of chattiness:  quiet, syserr, error, warning, info, debug\n"); 
-  printf("-no-autores:  normally, you want blockbuster to decrease resolution when the zoom increases.  This flag suppresses this, for testing.\n");
-  printf("-no-controls (or -withoutControls) turns off the control window (if defined for the user interface)\n");
-  printf("-noscreensaver: use fake mouse clicks to defeat screensaver\n");
-  printf("-no-small-windows: disallow resizing of window less than movie size.  Workaround for window manager bug on powerwall.n"); 
-  printf("-no-splash (or -S) suppresses display of splash screen\n");
-  printf("-no-stereo-switch suppresses automatic stereo or mono mode switches based on movie being stereo or mono\n");
-  printf("-play (or -Play) automatically starts the movie after loading\n");
-  printf("-playexit framenum: play one time until frame given, then exit.  Useful for testing.  If framenum == -1, play all the way to end.\n");
-  printf("-preload <num> specifies how many frames to preload\n");
-  printf("-renderer <name> specifies the method used to render images\n");
+  printf("--cachedebug: turn on verbose cache debugging messages (also enabled if verbosity is > 5)\n"); 
+  printf("--cachesize/-c <num> specifies cache limit in frames (you can leave this unset unless you are running out of memory)\n");
+  printf("--DecorationsDisable/-D (or --no-decorations): do not use window manager decorations such as titlebar etc.\n");
+  printf("--display/-d <display> specifies X display\n");
+  printf("--dmxstereo: short for -r dmx --stereo.\n");
+  printf("--font <fontname> specifies X font\n");
+  printf("--Framerate/-F <rate> sets the initial frame rate target for the movie [30.0 or movie-specified]\n");
+  printf("--fpsSampleFrequency <rate> sets the number of times per second that FPS is calculated [2.0]\n");
+  printf("--fullscreen/-f: turns off window decorations and goes to full-screen display\n"); 
+  printf("--geom(etry)/-g <geometrystring> specifies X window geometry\n");
+  printf("--help/-h displays this help message\n");
+  printf("--keyhelp:  display list of keyboard controls\n");
+  printf("--LOD/-L num: specifies a starting level of detail for the given movie\n");  
+  printf("--log/-l filename: Log all messages to the given file for debugging.\n");
+  printf("--loops <n> See -repeat below.\n");
+  printf("--messageLevel sets the message level, in order of chattiness:  quiet, syserr, error, warning, info, debug\n"); 
+  printf("--no-autores:  normally, you want blockbuster to decrease resolution when the zoom increases.  This flag suppresses this, for testing.\n");
+  printf("--no-controls/--withoutControls/-w turns off the control window (if defined for the user interface)\n");
+  printf("--no-screensaver: use fake mouse clicks to defeat screensaver\n");
+  printf("--no-small-windows: disallow resizing of window less than movie size.  Workaround for window manager bug on powerwall.n"); 
+  printf("--no-stereo-switch: suppresses automatic stereo or mono mode switches based on movie being stereo or mono\n");
+  printf("--play/-p automatically starts the movie after loading\n");
+  printf("--playexit framenum: play one time until frame given, then exit.  Useful for testing.  If framenum == -1, play all the way to end.\n");
+  printf("--preload <num> specifies how many frames to preload\n");
+  printf("--renderer/-r <name> specifies the method used to render images\n");
   printf("\tgl: Render using OpenGL glDrawPixels to an X11 window\n");
   printf("\t    (supported in 'gtk', 'x11' user interfaces)\n");
   printf("\tgltexture: Render using OpenGL texture mapping to an X11 window\n");
@@ -127,28 +126,28 @@ void usage(void) {
   printf("\tdmx: Render on back-end using DMX: Use -R to specify  backend renderer\n");
   printf("\t    (supported in 'gtk', 'x11' user interfaces)\n");
   
-  printf("-repeat <n> specifies how many times to repeat (number or 'forever').  So a value of 1 means the movie will play twice and then stop.\n");
-  printf("-replayEvents filename: replay all events from the given event log.\n"); 
-  printf("-stereo: short for -r gl_stereo, unless -dmx is given, in which case it is short for -R gl_stereo.\n");
-  printf("-script filename: run the given blockbuster script\n"); 
-  printf("-threads <num> specifies how many threads to use for reading from disk.\n");
-  printf("-timer: enable timer (makes things very verbose, you probably do not want this)\n"); 
-  printf("-traceEvents: log every event seen by the event loop to a file named \"events.log\".  WARNING:  lots of events occur in a movie.  Logfile will tend to be large. \n"); 
-  printf("-traceEventsFile: Same as -traceEvents but specify the file to write to.\n"); 
-  printf("-verbose num: sets verbosity, with 0=quiet, 1=system, 2=error, 3=warning, 4=info, 5=debug.  Same behavior as -messageLevel but with numbers, basically.\n");
-  printf("-version prints the current blockbuster version\n");
-  printf("-zoom <zoom> sets the initial zoom ['auto' tracks window size,\n");
+  printf("--repeat <n> specifies how many times to repeat (number or 'forever').  So a value of 1 means the movie will play twice and then stop.\n");
+  printf("--replayEvents filename: replay all events from the given event log.\n"); 
+  printf("--stereo: short for -r gl_stereo, unless -dmx is given, in which case it is short for -R gl_stereo.\n");
+  printf("--script filename: run the given blockbuster script\n"); 
+  printf("--threads/-t <num> specifies how many threads to use for reading from disk.\n");
+  printf("--timer: enable timer (makes things very verbose, you probably do not want this)\n"); 
+  printf("--traceEvents: log every event seen by the event loop to a file named \"events.log\".  WARNING:  lots of events occur in a movie.  Logfile will tend to be large. \n"); 
+  printf("--traceEventsFile: Same as -traceEvents but specify the file to write to.\n"); 
+  printf("--verbose/-v num: sets verbosity, with 0=quiet, 1=system, 2=error, 3=warning, 4=info, 5=debug.  Same behavior as -messageLevel but with numbers, basically.\n");
+  printf("--version/-V prints the current blockbuster version\n");
+  printf("--zoom <zoom> sets the initial zoom ['auto' tracks window size,\n");
   printf("                          0 is 'use default'] ['auto']\n");
   
   printf("\nSLAVE OPTIONS\n"); 
-  printf("-backend-renderer <renderer> (or RendererOnBackend <renderer>) specifies the renderer for the backend slaves to use (e.g., gl)\n");
-  printf("-backend-path <renderer> specifies the path to the backend slaves (defaults to \"blockbuster\"\n");
-  printf("-mpi:  Instead of connecting to each backend node and running blockbuster, connect to one backend node and launch $BLOCKBUSTER_MPI_SCRIPT on that host with args given in the string $BLOCKBUSTER_MPI_SCRIPT_ARGS\n");  
-  printf("-mpiscript script argstring:  Same as -mpi, but instead of running $BLOCKBUSTER_MPI_SCRIPT, run \"script\" with args given in \"argstring\"\n"); 
-  printf("-ports <\"ports\"> specifies, in a quoted space-delimited list as a single argument, the port that each slave will use to communicate back to the master\n");
-  printf("-speedTest: DEBUG ONLY: (consider using with -play option) when playing the movie, let the slaves run as fast as they can and stop responding. Does not by itself begin playing the movie.\n");
-  printf("-slave: Run blockbuster as a backend slave\n");
-  
+  printf("--backend-renderer <renderer> specifies the renderer for the backend slaves to use (e.g., gl)\n");
+  printf("--backend-path <renderer> specifies the path to the backend slaves (defaults to \"blockbuster\"\n");
+  printf("--mpi:  Instead of connecting to each backend node and running blockbuster, connect to one backend node and launch $BLOCKBUSTER_MPI_SCRIPT on that host with args given in the string $BLOCKBUSTER_MPI_SCRIPT_ARGS\n");  
+  printf("--mpiscript script argstring:  Same as -mpi, but instead of running $BLOCKBUSTER_MPI_SCRIPT, run \"script\" with args given in \"argstring\"\n"); 
+  printf("--ports <\"ports\"> specifies, in a quoted space-delimited list as a single argument, the port that each slave will use to communicate back to the master\n");
+  /* DO NOT EXPOSE THIS TO USER: 
+  printf("--slave: Run blockbuster as a backend slave\n");
+  */ 
   printf("The following file formats are supported:\n");
   printf("    PNG: Single-frame image in a PNG file\n");
   printf("    PNM: Single-frame image in a PNM (PBM/PGM/PPM) file\n");
@@ -268,11 +267,11 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
 {
   int numProcessors;
   /* defaults */
-  string value = GetSetting(opt->settings, "splashScreen");
+    string value = GetSetting(opt->settings, "splashScreen");
   if (atoi(value.c_str()) == 0) {
     opt->splashScreen = 0;
   }
- 
+  
   /* These depend on the number of processors available;
    * there's not a lot of sense in setting up threads
    * if they'll steal time from the main thread.
@@ -284,41 +283,50 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
    * appropriate help messages.
    */
 
-  /* int dummy = 0; 
+  int dummy = 0; 
   while (argc > 1) {
     DEBUGMSG("Checking arg %s\n", argv[1]); 
 	QString zoomString; 
 	QString geometryString; 
-	if (CHECK_ATOI_ARG("-cachesize", argc, argv,  opt->mMaxCachedImages)) {
+	if (SET_BOOL_ARG("--cachedebug", argc, argv, opt->mCacheDebug, 1)) {
+      continue; 
+    }
+	else if (CHECK_ATOI_ARG("--cachesize", argc, argv,  opt->mMaxCachedImages) ||
+        CHECK_ATOI_ARG("-c", argc, argv,  opt->mMaxCachedImages) ) {
       continue;
     }
-	else if (SET_BOOL_ARG("-cachedebug", argc, argv, opt->mCacheDebug, 1)) {
+	else if (SET_BOOL_ARG("--no-decorations", argc, argv, opt->decorations, 0) ||
+             SET_BOOL_ARG("-D",argc,argv, opt->decorations,0) ||
+             SET_BOOL_ARG("--DecorationsDisable",argc,argv, opt->decorations,0)) {
       continue; 
     }
-	else if (SET_BOOL_ARG("-no-decorations", argc, argv, opt->decorations, 0)) {
+	else if (CHECK_STRING_ARG("--display", argc, argv, opt->displayName) || 
+             CHECK_STRING_ARG("-d", argc, argv, opt->displayName) ) {
+      continue;
+    }
+	else if (SET_BOOL_ARG("--dmxstereo", argc, argv, opt->mDMXStereo, 1)) {
+      opt->rendererName = "dmx"; 
+      continue;
+    }
+	else if (CHECK_STRING_ARG("--font", argc, argv, opt->fontName))  {
+      continue;
+    }
+    else if (CHECK_ATOF_ARG("--Framerate", argc, argv,  opt->frameRate) || 
+             CHECK_ATOF_ARG("-F", argc, argv,  opt->frameRate))   {
       continue; 
     }
-    else if (SET_BOOL_ARG("-DecorationsDisable",argc,argv, opt->decorations,0)) {
+    else if (CHECK_ATOF_ARG("-fpsSampleFrequency", argc, argv,  opt->fpsSampleFrequency))  {
       continue; 
     }
-    else if (SET_BOOL_ARG("-fullscreen", argc, argv, opt->fullScreen, 1)) {
+    else if (SET_BOOL_ARG("--fullscreen", argc, argv, opt->fullScreen, 1) ||
+             SET_BOOL_ARG("-f", argc, argv, opt->fullScreen, 1)) {
       opt->zoomToFit=1;
       opt->decorations = 0; 
 	  continue;
 	} 
-	else if (CHECK_STRING_ARG("-display", argc, argv, opt->displayName)) {
-      continue;
-    }
-	else if (SET_BOOL_ARG("-dmxstereo", argc, argv, opt->mDMXStereo, 1)) {
-      opt->rendererName = "dmx"; 
-      continue;
-    }
-	else if (CHECK_STRING_ARG("-font", argc, argv, opt->fontName)) continue;
-    else if (CHECK_ATOF_ARG("-Framerate", argc, argv,  opt->frameRate) || 
-             CHECK_ATOF_ARG("-framerate", argc, argv,  opt->frameRate)) continue; 
-    else if (CHECK_ATOF_ARG("-fpsSampleFrequency", argc, argv,  opt->fpsSampleFrequency) || 
-             CHECK_ATOF_ARG("-FSF", argc, argv,  opt->fpsSampleFrequency)) continue; 
-    else if (CHECK_STRING_ARG("-geometry", argc, argv, geometryString)) {
+    else if (CHECK_STRING_ARG("--geometry", argc, argv, geometryString) ||
+             CHECK_STRING_ARG("--geom", argc, argv, geometryString) ||
+             CHECK_STRING_ARG("-g", argc, argv, geometryString)) {
 	  unsigned int w = DONT_CARE, h = DONT_CARE;
       int mask = XParseGeometry((const char*)geometryString.toStdString().c_str(),
                                 &opt->geometry.x,
@@ -329,29 +337,33 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
       if ((mask&XNegative) || (mask&YNegative))
         WARNING("Negative positions not yet supported.");
 	}
-	else if (SET_BOOL_ARG("-help", argc, argv, dummy, 1)) {
+	else if (SET_BOOL_ARG("--help", argc, argv, dummy, 1) ||
+             SET_BOOL_ARG("-h", argc, argv, dummy, 1)) {
 	  usage(); 
 	  exit(MOVIE_HELP);	   	
 	}
-	else if (SET_BOOL_ARG("-noscreensaver", argc, argv, opt->noscreensaver, 1)) {
-      continue;
-	}
-	else if (SET_BOOL_ARG("-keyhelp", argc, argv, dummy, 1)) {
+	else if (SET_BOOL_ARG("--keyhelp", argc, argv, dummy, 1)) {
       PrintKeyboardControls(); 
 	  exit(MOVIE_HELP);	   	
 	}
-	else if (CHECK_ATOI_ARG("-lod", argc, argv,  opt->LOD)){
+	else if (CHECK_ATOI_ARG("--LOD", argc, argv, opt->LOD) ||
+             CHECK_ATOI_ARG("-L", argc, argv, opt->LOD)){
       if (opt->LOD > 0) {
         // user thinks LOD 1 is lowest level... 
         opt->LOD--; 
       }
       continue;
     }
-	else if (CHECK_STRING_ARG("-loops", argc, argv,  opt->repeatCountName)) {
-      printf("-loops has been removed; please use -repeat instead.\n"); 
+	else if (CHECK_STRING_ARG("--log", argc, argv, opt->logFile) ||
+             CHECK_STRING_ARG("-l", argc, argv, opt->logFile))  {
+      enableLogging(true, opt->logFile); 
+      continue;
+    }
+    else if (CHECK_STRING_ARG("--loops", argc, argv,  opt->repeatCountName)) {
+      cerr << "--loops is no longer a valid option.  Please use --repeat." << endl; 
       exit(1); 
     }
-	else if (CHECK_STRING_ARG("-messageLevel", argc, argv, opt->messageLevelName))  {
+	else if (CHECK_STRING_ARG("--messageLevel", argc, argv, opt->messageLevelName))  {
       if ((opt->messageLevel = FindMessageLevel(opt->messageLevelName)) == NULL) {
         QString errmsg("no such message level '%1'.  Use -h for help."); 
         ERROR(errmsg.arg( opt->messageLevelName));
@@ -365,76 +377,78 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
       //if (maxMessageLevel == 4) enable_dbprintf(); 
       continue;
     }
-	else if (SET_BOOL_ARG("-no-autores", argc, argv, opt->noAutoRes, 1)) {
+	else if (SET_BOOL_ARG("--no-autores", argc, argv, opt->noAutoRes, 1)) {
       continue; 
     }
 	else if (SET_BOOL_ARG("-withoutControls", argc, argv, opt->drawInterface, 0) || 
-             SET_BOOL_ARG("-no-controls", argc, argv, opt->drawInterface, 0)) continue;
-	else if (SET_BOOL_ARG("-no-small-windows", argc, argv,  opt->noSmallWindows, 1)) {
+             SET_BOOL_ARG("-no-controls", argc, argv, opt->drawInterface, 0)) {
+      continue;
+    }
+	else if (SET_BOOL_ARG("--no-screensaver", argc, argv, opt->noscreensaver, 1)) {
+      continue;
+	}
+	else if (SET_BOOL_ARG("--no-small-windows", argc, argv,  opt->noSmallWindows, 1)) {
       continue; 
     }
-	else if (SET_BOOL_ARG("-no-splash", argc, argv,  opt->splashScreen, 0) || 
-             SET_BOOL_ARG("-SplashDisable",  argc, argv, opt->splashScreen, 0)) 
+	else if (SET_BOOL_ARG("--no-stereo-switch", argc, argv,  opt->stereoSwitchDisable, 1)) 
       continue; 
-	else if (SET_BOOL_ARG("-no-stereo-switch", argc, argv,  opt->stereoSwitchDisable, 1) || 
-             SET_BOOL_ARG("-StereoSwitchDisable",  argc, argv, opt->stereoSwitchDisable, 1)) 
-      continue; 
-	else if (SET_BOOL_ARG("-Play", argc, argv, opt->play, 1)||
-             SET_BOOL_ARG("-play", argc, argv, opt->play, 1)){
+	else if (SET_BOOL_ARG("--play", argc, argv, opt->play, 1)||
+             SET_BOOL_ARG("-p", argc, argv, opt->play, 1)){
       continue; 
     }
-	else if (CHECK_ATOI_ARG("-playexit", argc, argv,  opt->playExit)) {
+	else if (CHECK_ATOI_ARG("--playexit", argc, argv,  opt->playExit)) {
       opt->play = 1; 
       continue;
     }
-    else if (CHECK_ATOI_ARG("-preload", argc, argv,  opt->preloadFrames)) {
+    else if (CHECK_ATOI_ARG("--preload", argc, argv,  opt->preloadFrames)) {
       continue;
     }
      
-	else if (CHECK_STRING_ARG("-renderer", argc, argv, opt->rendererName)) continue;
-	else if (CHECK_STRING_ARG("-repeat", argc, argv,  opt->repeatCountName)) continue;
-	else if (CHECK_STRING_ARG("-replayEvents", argc, argv, opt->mReplayEventsFilename))  {
+	else if (CHECK_STRING_ARG("--renderer", argc, argv, opt->rendererName)) continue;
+	else if (CHECK_STRING_ARG("--repeat", argc, argv,  opt->repeatCountName)) {
+      continue ;   
+    }
+	else if (CHECK_STRING_ARG("--replayEvents", argc, argv, opt->mReplayEventsFilename))  {
       continue;
     }
-	else if (CHECK_STRING_ARG("-sidecar", argc, argv, opt->sidecarHostPort)) {
+	else if (CHECK_STRING_ARG("--sidecar", argc, argv, opt->sidecarHostPort)) {
       gSidecarServer->PromptForConnections(false); 
       continue;
     }
-	else if (CHECK_STRING_ARG("-script", argc, argv, opt->mScript)) 
+	else if (CHECK_STRING_ARG("--script", argc, argv, opt->mScript)) 
       continue;
-	else if (SET_BOOL_ARG("-speedTest", argc, argv,  opt->speedTest, 1)) {
+	else if (SET_BOOL_ARG("--speedTest", argc, argv,  opt->speedTest, 1)) {
       cerr << "speedTest detected, speedTest is " << opt->speedTest << endl; 
       continue;
     }
-    else if (CHECK_ATOI_ARG("-threads", argc, argv, opt->readerThreads)) 
+    else if (CHECK_ATOI_ARG("--threads", argc, argv, opt->readerThreads) ||
+             CHECK_ATOI_ARG("-t", argc, argv, opt->readerThreads)) 
       continue; 
-	else if (SET_BOOL_ARG("-timer", argc, argv, gTimerOn, 1)) continue;
-    else if (SET_BOOL_ARG("-traceEvents", argc, argv, opt->mTraceEvents, 1)) {
+	else if (SET_BOOL_ARG("--timer", argc, argv, gTimerOn, 1)) continue;
+    else if (SET_BOOL_ARG("--traceEvents", argc, argv, opt->mTraceEvents, 1)) {
       if (opt->mTraceEventsFilename == "") {
         opt->mTraceEventsFilename = "events.log"; 
       }
       continue; 
     }
-	else if (CHECK_STRING_ARG("-traceEventsFile", argc, argv, opt->mTraceEventsFilename))  {
+	else if (CHECK_STRING_ARG("--traceEventsFile", argc, argv, opt->mTraceEventsFilename))  {
       opt->mTraceEvents = true; 
       continue;
     }
-	else if (CHECK_ATOI_ARG("-verbose", argc, argv,maxMessageLevel))  {
+	else if (CHECK_ATOI_ARG("--verbose", argc, argv,maxMessageLevel) ||
+             CHECK_ATOI_ARG("-v", argc, argv,maxMessageLevel))  {
       opt->messageLevel = FindMessageLevel(maxMessageLevel);
       set_verbose(maxMessageLevel); 
       sm_setVerbose(maxMessageLevel); 
       continue;
     }
-	else if (CHECK_STRING_ARG("-log", argc, argv, opt->logFile))  {
-      enableLogging(true, opt->logFile); 
-      continue;
-    }
-	else if (SET_BOOL_ARG("-version", argc, argv, dummy, 1)) {
+	else if (SET_BOOL_ARG("--version", argc, argv, dummy, 1)||
+             SET_BOOL_ARG("-V", argc, argv, dummy, 1)) {
 	  version(); 
 	  exit (0); 
 	}
 
-	else if (CHECK_STRING_ARG("-zoom", argc, argv, zoomString)) {
+	else if (CHECK_STRING_ARG("--zoom", argc, argv, zoomString)) {
 	  if (zoomString == "auto" || zoomString == "0" || zoomString == "fit" || zoomString == "fill") {
 		opt->zoomToFit = 1;
 	  }
@@ -445,20 +459,17 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
     }
     //=====================================================
 
-	else if (CHECK_STRING_ARG("-slave", argc, argv, opt->masterHost)) {
-      continue;
-    }
-    else if (CHECK_STRING_ARG("-ports", argc, argv, opt->slavePorts)) {
-      cerr << "-ports is obsolete" << endl;
-      // note MPI is now detected farther down -- search for "hostTokens[2]"  
+	else if (CHECK_STRING_ARG("--slave", argc, argv, opt->masterHost)) {
       continue;
     }
     // SLAVE OPTIONS
-	else if (CHECK_STRING_ARG("-backend-renderer", argc, argv,  opt->backendRendererName) || 
-             CHECK_STRING_ARG("-RendererOnBackend", argc, argv,  opt->backendRendererName)) continue;
-    else if (CHECK_STRING_ARG("-backend-path", argc, argv, opt->executable) || 
-             CHECK_STRING_ARG("-BackendPath", argc, argv, opt->executable)) continue;
-	else if (SET_BOOL_ARG("-mpi", argc, argv, opt->useMPI, 1)){
+	else if (CHECK_STRING_ARG("--backend-renderer", argc, argv,  opt->backendRendererName)) {
+      continue;
+    }
+    else if (CHECK_STRING_ARG("--backend-path", argc, argv, opt->executable)) {
+      continue;
+    }
+	else if (SET_BOOL_ARG("--mpi", argc, argv, opt->useMPI, 1)){
       cerr << "mpi flags given, useMPI is " << opt->useMPI << endl; 
       char *envp = getenv("BLOCKBUSTER_MPI_SCRIPT");
       if (envp) {
@@ -475,7 +486,7 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
 #endif
       continue;
     }
-	else if (CHECK_STRING_ARG("-mpiscript", argc, argv,  opt->mpiScript)) {
+	else if (CHECK_STRING_ARG("--mpiscript", argc, argv,  opt->mpiScript)) {
       opt->mpiScriptArgs = argv[1];      
       ConsumeArg(argc, argv, 1); 
       opt->slaveLaunchMethod = "mpi"; 
@@ -484,10 +495,15 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
 #endif
       continue;
     }
+    else if (CHECK_STRING_ARG("--ports", argc, argv, opt->slavePorts)) {
+      cerr << "-ports is obsolete" << endl;
+      // note MPI is now detected farther down -- search for "hostTokens[2]"  
+      continue;
+    }
 	// an unparsed arg means just return the number of args parsed...
 	else break; 
   }
-  */
+  
   // ==================== END ARGUMENT PARSING ======================
 
   if (opt->mDMXStereo) {
@@ -632,12 +648,12 @@ int main(int argc, char *argv[])
   ProgramOptions *opt = GetGlobalOptions(); 
   Preferences Prefs; 
   
-  Prefs.AddArg(BoolArg("help", true)); 
-  Prefs.AddArg(LongArg("cachesize",  true, 100)); 
-  Prefs.AddArg(BoolArg("cachedebug").SetFlags("--cachedebug")); 
-  Prefs.AddArg(BoolArg("no-decorations").SetFlags("--no-decorations", "-D")); 
-  Prefs.AddArg(BoolArg("fullscreen", true)); 
-  Prefs.AddArg(StringArg("display", ":0")); 
+  Prefs.AddArg(ArgType("help", "bool").SetFlags())
+    .AddArg(ArgType("cachesize").SetValue(100).SetLongFlag())
+    .AddArg(ArgType("cachedebug", "bool").SetLongFlag())
+    .AddArg(ArgType("no-decorations", "bool").SetFlags("--no-decorations", "-D"))
+    .AddArg(ArgType("fullscreen", "bool").SetFlags())
+    .AddArg(ArgType("display").SetValue( ":0").SetFlags()); 
   
   Slave *theSlave; 
   char localSettingsFilename[BLOCKBUSTER_PATH_MAX];
