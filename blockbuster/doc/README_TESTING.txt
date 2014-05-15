@@ -9,21 +9,27 @@ Similarly, do not fix bugs while testing, unless they are catastrophic and testi
 
 Also, a consistent need to deviate from the test procedure could be indicative of a bug in the test procedure itself.  Document that here and continue!  
 
-==============================================================
-# Releasing the new version to the world. 
+============================================================
+SHORT BUT "GOOD" RELEASE TESTING:  
+A.  Duplicate Scott Miller's work flow: 
+1.  Open sidecar with a cuefile as an argument.  
+2.  Create a new cue with a movie name in it.  
+3.  Execute the cue so blockbuster runs on the wall.  
+4.  Size and position the movie to taste, moving to the right frame number and setting up stereo. 
+5.  Take a snapshot and save the cue. 
+6.  Execute the cue to make sure it works.  
 
-1)  Don't forget to modify config/version.h so that blockbuster is announced properly to the world.  
+B.  Run through a cuefile: 
+1.  Open sidecar with a cuefile as argument. 
+2.  Run all the cues in the file.  Watch performance and behavior.  Make sure to observe change between fullscreen/nofullscreen and stereo/mono modes.  Screw with blockbuster, try to go to extremes of wiggling, zooming, panning.  
+3.  Change one cue.  Save the file.  Reopen it.  
 
-2)  Create a new SVN tag using svn copy.  Here is what I did to release version 2.6.3 to the world.  Note that "svn copy" does not work from the lab due to some firewall issues.  
+C.  Exercise blockbuster: 
+1.  Open a movie in blockbuster from the command line, using various arguments.  
+2.  As in B above, screw with blockbuster, try to go to extremes of wiggling, zooming, panning.  
 
-svn copy https://blockbuster.svn.sourceforge.net/svnroot/blockbuster/trunk/blockbuster https://blockbuster.svn.sourceforge.net/svnroot/blockbuster/tags/2.6.3a -m 'release 2.6.3a, hopefully' --username wealthychef
-
-3)  Upload the tarball package to sourceforge.  See https://sourceforge.net/apps/trac/sourceforge/wiki/Release%20files%20for%20download
-Example: 
-
-rsync -avP blockbuster-v2*.tgz wealthychef@frs.sourceforge.net:uploads
-
-4)  After uploading the file, go to http://sourceforge.net/projects/blockbuster, go to the file release management area, and mark the file release as the default for all platforms.  Currently this takes 15 minutes to take effect after upload.  
+LONG AND STRICT VERSION: 
+Start with "SHORT" tests from above, then test:  
 
 ==============================================================
 # New Features and Fields in the GUI
