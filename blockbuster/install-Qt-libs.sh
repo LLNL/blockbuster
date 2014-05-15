@@ -12,9 +12,8 @@ if [ $(uname) == Darwin ]; then
 elif [ $(uname) == Linux ]; then 
     for exe in ${INSTALL_DIR}/bin/blockbuster ${INSTALL_DIR}/bin/sidecar; do 
         cp -f $(ldd $exe | grep -e Qt -e mpi | awk '{print $3}') ${INSTALL_DIR}/lib; 
-        rpath='${ORIGIN}/../lib:'$(chrpath -l $exe | awk ' {print $2}' | sed 's/RPATH=//' | sed 's~[^:]*Trolltech[^:]*~:~' | sed "s:$INSTALL_DIR::"); 
-        rpath=$(echo $rpath | sed 's~::~:~g' ); 
-        rpath='${ORIGIN}/../lib:'
+        #rpath=$(echo '$ORIGIN/../lib:$ORIGIN/../../lib:'$(chrpath -l $exe | awk ' {print $2}' | sed 's/RPATH=//' | sed 's~[^:]*Trolltech[^:]*~:~' | sed "s:$INSTALL_DIR::") |   sed 's~::~:~g' ); 
+        rpath='$ORIGIN/../lib'
         # chrpath -r $rpath $exe ; 
         ${INSTALL_DIR}/bin/patchelf --set-rpath $rpath $exe
     done
