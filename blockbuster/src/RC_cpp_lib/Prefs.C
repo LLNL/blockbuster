@@ -1,4 +1,4 @@
-/* MODIFIED BY: rcook on Wed May 14 17:32:40 PDT 2014 */
+/* MODIFIED BY: rcook on Thu May 15 09:26:02 PDT 2014 */
 /* VERSION: 1.0 */
 #define NO_BOOST 1
 #include "Prefs.h"
@@ -417,7 +417,8 @@ void Preferences::GetFromArgs(int &argc, char *argv[], vector<ArgType>& args, bo
 void Preferences::ParseArgs(int &argc, char *argv[], bool rejectUnknown) {
   // parse the argc and argv as command line options.
   // 
-  for (int argnum = 1; argnum < argc; ++argnum) {
+  int argnum = 1; 
+  while (argnum < argc) { // argc gets decremented by ConsumeArg()
     ArgType *validArg = NULL;
     string currentArg = argv[argnum]; 
     string foundflag; 
