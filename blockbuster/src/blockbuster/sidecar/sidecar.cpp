@@ -1194,7 +1194,7 @@ bool HostProfile::operator <(const HostProfile& other) const {
   retval = (key1 < key2); 
   if (retval) compareResult = ">"; 
   
-  dbprintf(5, QString("%1 %2 %3").arg(key1).arg(compareResult).arg(key2)); 
+  //  dbprintf(5, QString("%1 %2 %3").arg(key1).arg(compareResult).arg(key2)); 
   
   return retval; 
 }
@@ -1211,8 +1211,6 @@ void HostProfile::init(void) {
   mSidecarHost = QHostInfo::localHostName(); 
   mReadOnly = mPlay = mFullScreen = mShowControls = mUseDMX = mMpiFrameSync = false; 
   mAutoSidecarHost = mAutoBlockbusterPath = mNoSmallWindows = true;   
-  // POISON:  antiquated style; deprecated 
-  /* initFromString(QString("%1 localhost 5959 1 /usr/bin/rsh setDisplay=true :0 blockbuster").arg(name), filename, readOnly); */ 
   return; 
 }
 

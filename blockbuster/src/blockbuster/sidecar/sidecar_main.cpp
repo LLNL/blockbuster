@@ -140,8 +140,14 @@ int main(int argc, char *argv[]) {
   app.setStyle(myStyle); 
   sidecar.show();
 
-  if (argc > 1) { 
-    sidecar.ReadCueFile(argv[1]);
+  vector<string> remainingArgs = gPrefs.UnparsedArgs(); 
+  if (remainingArgs.size()) { 
+    if (remainingArgs.size() > 1) {
+      cerr << "Error:  only a single cuefile can be given at a time currently." << endl; 
+      usage(); 
+      exit(1); 
+    }
+    sidecar.ReadCueFile(remainingArgs[0]);
   }
   { 
     string moviename; 
