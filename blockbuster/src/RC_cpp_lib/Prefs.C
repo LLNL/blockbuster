@@ -1,4 +1,4 @@
-/* MODIFIED BY: rcook on Thu May 15 09:26:02 PDT 2014 */
+/* MODIFIED BY: rcook on Thu May 15 17:42:03 PDT 2014 */
 /* VERSION: 1.0 */
 #define NO_BOOST 1
 #include "Prefs.h"
@@ -394,35 +394,26 @@ bool Preferences::ReadFromFile(bool throw_exceptions) {
 }
 
 
-// ================================================================== 
-void ConsumeArg(int argnum, int &argc, char *argv[]){
-  while (argnum < argc-1) {
-    argv[argnum] = argv[argnum+1];
-    ++argnum; 
-  }
-  argv[argnum] = NULL; 
-  argc--; 
-}
 
 // ================================================================== 
-void Preferences::GetFromArgs(int &argc, char *argv[], vector<ArgType>& args, bool rejectUnknown) {
+// Returns a vector of unparsed arguments.  Does not modify argc and argv
+vector<string> Preferences::GetFromArgs(int &argc, char *argv[], vector<ArgType>& args, bool rejectUnknown) {
   
   // first, initialize all keys in "argtypes" array to defaults if not already set to some value
   AddArgs(args); 
-  ParseArgs(argc, argv, rejectUnknown); 
-  return; 
+  return ParseArgs(argc, argv, rejectUnknown); 
 }
       
 // ================================================================== 
-void Preferences::ParseArgs(int &argc, char *argv[], bool rejectUnknown) {
+// Returns a vector of unparsed arguments ("positionals"). 
+vector<string> Preferences::ParseArgs(int &argc, char *argv[], bool rejectUnknown) {
   // parse the argc and argv as command line options.
   // 
-  int argnum = 1; 
-  while (argnum < argc) { // argc gets decremented by ConsumeArg()
+   for (int argnum = 1; argnum < argc; argnum++) { 
     ArgType *validArg = NULL;
     string currentArg = argv[argnum]; 
     string foundflag; 
-    map<string, ArgType>::iterator argpos; 
+    map<string, ArgType>::iterator argpos;     
     for (argpos = mValidArgs.begin();  
          !validArg && argpos != mValidArgs.end(); 
          ++argpos) {
@@ -436,16 +427,12 @@ void Preferences::ParseArgs(int &argc, char *argv[], bool rejectUnknown) {
       }
     }
 
-    if (!validArg) {
-      if (rejectUnknown && currentArg[0] == '-') {
-        throw str(format("Unknown argument %s ")%currentArg); 
-      }        
-    } else {
-      // do not increment argnum here as you will simply be consuming args and reducing argc
-      ConsumeArg(argnum, argc,argv); 
+    if (validArg) {      
       if (validArg->mType == "bool") {
         SetValue(validArg->mKey, 1); 
+        continue; 
       } else {
+        argnum++; 
         if (argnum == argc) {
           throw string("Flag ")+foundflag+string(" requires an argument");
         }     
@@ -465,8 +452,14 @@ void Preferences::ParseArgs(int &argc, char *argv[], bool rejectUnknown) {
         } catch (...) {
           throw str(format("Could not convert value %s to type %s for flag %s") % arg % validArg->mType % foundflag); 
         }
-      }// end check which arg type it is
-      ConsumeArg(argnum, argc,argv); 
+      }
     } /* end  if (found) */
+    else { 
+      if (currentArg[0] == '-' && rejectUnknown) {
+        throw str(format("Unknown argument %s ")%currentArg); 
+      }        
+      mUnparsedArgs.push_back(currentArg); 
+    }      
   } // end while (argnum < argc)
+   return  mUnparsedArgs; 
 } // end ParseArgs()

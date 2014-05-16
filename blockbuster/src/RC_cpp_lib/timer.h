@@ -1,4 +1,4 @@
-/* MODIFIED BY: rcook on Thu May 15 09:26:02 PDT 2014 */
+/* MODIFIED BY: rcook on Thu May 15 17:42:03 PDT 2014 */
 /* VERSION: 1.0 */
 #ifndef TIMER_H
 #define TIMER_H

@@ -1,4 +1,4 @@
-/* MODIFIED BY: rcook on Thu May 15 09:26:02 PDT 2014 */
+/* MODIFIED BY: rcook on Thu May 15 17:42:03 PDT 2014 */
 /* VERSION: 1.0 */
 /* This file is an attempt to allow any application to read its preferences into what Randy Frank would call a "mapobj".  I have stolen his idea and hopefully improved it to be more general and more robust, because it no longer relies on pointers to store its information.  In fact, it no longer allows pointers to be stored at all.  The presumption is that this is non-volatile information which can be written to disk.  I don't know of a way yet to pickle C items.  Maybe later I'll change to a binary output format and then allow any data to be captured to disk.  Not today. 
    All values are stored as C++ strings.  Functions which set or get values as other types are merely converting a string to the desired type or vice-versa.
@@ -220,10 +220,10 @@ class Preferences {
   }
   
   //====================================================
-  void GetFromArgs(int &argc, char *argv[], vector<ArgType> &argtypes, bool rejectUnknown=true);
+  vector<string> GetFromArgs(int &argc, char *argv[], vector<ArgType> &argtypes, bool rejectUnknown=true);
 
   //====================================================
-  void ParseArgs(int &argc, char *argv[], bool rejectUnknown=true); 
+  vector<string> ParseArgs(int &argc, char *argv[], bool rejectUnknown=true); 
   //=============================
   // Copy the entire environment variable list into prefs, e.g., if $verbose is 5, then set Prefs["verbose"] to "5"
   void ReadFromEnvironment(void); 
@@ -296,6 +296,7 @@ class Preferences {
 
   operator string() ;
 
+  vector<string> UnparsedArgs(void) { return mUnparsedArgs; }
  protected:
   std::string NextKey(std::ifstream&theFile);
   std::map<std::string, ArgType > ReadNextSection(std::ifstream &theFile);
@@ -309,6 +310,7 @@ class Preferences {
   // there is no copy constructor, so be sure these shallow copy:
   std::map<std::string, ArgType >  mPrefs; 
   std::map<std::string, ArgType> mValidArgs; // only save these args or look for them in environment etc. if given
+  vector<string> mUnparsedArgs; 
   char _dirty; 
   char _writtenToDisk;
 };
