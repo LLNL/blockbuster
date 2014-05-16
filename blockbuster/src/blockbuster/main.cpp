@@ -315,7 +315,7 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
              CHECK_ATOF_ARG("-F", argc, argv,  opt->frameRate))   {
       continue; 
     }
-    else if (CHECK_ATOF_ARG("-fpsSampleFrequency", argc, argv,  opt->fpsSampleFrequency))  {
+    else if (CHECK_ATOF_ARG("--fpsSampleFrequency", argc, argv,  opt->fpsSampleFrequency))  {
       continue; 
     }
     else if (SET_BOOL_ARG("--fullscreen", argc, argv, opt->fullScreen, 1) ||
@@ -380,8 +380,9 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
 	else if (SET_BOOL_ARG("--no-autores", argc, argv, opt->noAutoRes, 1)) {
       continue; 
     }
-	else if (SET_BOOL_ARG("-withoutControls", argc, argv, opt->drawInterface, 0) || 
-             SET_BOOL_ARG("-no-controls", argc, argv, opt->drawInterface, 0)) {
+	else if (SET_BOOL_ARG("--withoutControls", argc, argv, opt->drawInterface, 0)|| 
+             SET_BOOL_ARG("--no-controls", argc, argv, opt->drawInterface, 0)  || 
+             SET_BOOL_ARG("-w", argc, argv, opt->drawInterface, 0)) {
       continue;
     }
 	else if (SET_BOOL_ARG("--no-screensaver", argc, argv, opt->noscreensaver, 1)) {

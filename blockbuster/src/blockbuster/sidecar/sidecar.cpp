@@ -1547,32 +1547,32 @@ void BlockbusterLaunchDialog::on_launchButton_clicked(){
       .arg(rshCommandField->text())
       .arg(host); 
   }  
-  cmd += blockbusterPathField->text() + QString(" -sidecar %1:%2 -v %3")
+  cmd += blockbusterPathField->text() + QString(" --sidecar %1:%2 -v %3")
     .arg(sidecarHostNameField->text())
     .arg(mBlockbusterPort).arg(verboseField->text()); 
 
   if (playCheckBox->isChecked()) {
-    cmd += " -play "; 
+    cmd += " --play "; 
   } 
   if (fullScreenCheckBox->isChecked()) {
-    cmd += " -D "; 
+    cmd += " --DecorationsDisable "; 
   } 
   if (noScreensaverCheckBox->isChecked()) {
-    cmd += " -noscreensaver "; 
+    cmd += " --no-screensaver "; 
   } 
   if (noSmallWindowsCheckBox->isChecked()) {
-    cmd += " -no-small-windows "; 
+    cmd += " --no-small-windows "; 
   } 
   if (!showControlsCheckBox->isChecked()) {
-    cmd += " -w "; 
+    cmd += " --no-controls "; 
   } 
   if (setDisplayCheckBox->isChecked()) {
-    cmd +=  QString(" -display %1 ")
+    cmd +=  QString(" --display %1 ")
       .arg(blockbusterDisplayField->text()); 
   }
   if (useDMXCheckBox->isChecked()) {
     if (mpiFrameSyncCheckBox->isChecked()) {
-      cmd += " -mpi "; 
+      cmd += " --mpi "; 
     }
     cmd +=  QString(" -r dmx ");
   }

@@ -43,6 +43,7 @@
 #include "glRenderer.h"
 #include "x11Renderer.h"
 #include "dmxRenderer.h"
+#include "SidecarServer.h"  
 
 
 // ====================================================================
@@ -59,7 +60,6 @@ int LODFromZoom(float zoom)
   }
   return lod;
 }
-
 
 
 
@@ -108,7 +108,8 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
     DEBUG_EVENTS("renderer->DMXCheckNetwork()"); 
     if (renderer) renderer->DMXCheckNetwork();
     DEBUG_EVENTS("GetNetworkEvent()"); 
-    if (GetNetworkEvent(&newEvent)) { /* Qt events from e.g. Sidecar */
+    if (gSidecarServer->GetNetworkEvent(&newEvent)) {
+      /* Qt events from e.g. Sidecar */
       events.push_back(newEvent); 
     } 
     newEvent.mEventType = "MOVIE_NONE"; 

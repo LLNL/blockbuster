@@ -475,7 +475,7 @@ void Renderer::ZoomToFit(void) {
     float xZoom = (float) mWindowWidth / mImageWidth;
     float yZoom = (float) mWindowHeight / mImageHeight;
     mZoom = xZoom < yZoom ? xZoom : yZoom;
-    DEBUGMSG("Zoom to Fit: %f", mZoom);
+    //     DEBUGMSG("Zoom to Fit: %f", mZoom);
   }
   return;  
 }

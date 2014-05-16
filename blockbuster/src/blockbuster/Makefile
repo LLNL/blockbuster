@@ -86,7 +86,7 @@ DEBUG=
 endif
 
 SOURCES=main.cpp blockbuster_qt.cpp movie.cpp  ./timer.C \
-	 pure_C.c frames.cpp  slave.cpp remotecommands.cpp \
+	 pure_C.c frames.cpp  slave.cpp  \
 	cache.cpp  common.cpp Prefs.C \
 	sgi-rgbFrame.cpp convert.cpp smFrame.cpp pngFrame.cpp \
 	splash.cpp pnmFrame.cpp tiffFrame.cpp \
@@ -94,7 +94,7 @@ SOURCES=main.cpp blockbuster_qt.cpp movie.cpp  ./timer.C \
 	Renderer.cpp util.cpp settings.cpp errmsg.cpp \
 	Renderer.cpp x11Renderer.cpp glRenderer.cpp dmxRenderer.cpp 
 
-HEADERS= errmsg.h events.h remotecommands.h  ImageCache.h \
+HEADERS= errmsg.h events.h   ImageCache.h \
 	./stringutil.h ./timer.h ../config/version.h \
 	MovieCues.h errmsg.h pure_C.h util.h blockbuster_qt.h  \
 	sgi-rgbFrame.h convert.h smFrame.h pathutil.h pngFrame.h \
