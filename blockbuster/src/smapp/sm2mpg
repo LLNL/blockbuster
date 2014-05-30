@@ -25,7 +25,6 @@ function errexit() {
 stereo=false
 outfps=30
 
-done
 argnum=0
 while [ "$1" != "" ]; do 
    if [ "${1:0:1}" != "-" ]; then 
