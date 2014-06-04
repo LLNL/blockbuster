@@ -6,9 +6,13 @@ fi
 set -x
 
 if [ $(uname) == Darwin ]; then 
-    rm -f ${INSTALL_DIR}/bin/*.app/Contents/PlugIns/*/*dylib*
-    macdeployqt ${INSTALL_DIR}/bin/blockbuster.app -dmg; 
-    macdeployqt ${INSTALL_DIR}/bin/sidecar.app -dmg; 
+    #echo "STOPPING BEFORE $0"
+    #exit 1
+    for app in blockbuster.app sidecar.app; do
+        rm -rf ${INSTALL_DIR}/bin/${app}/Contents/PlugIns/*
+        cp -f ${INSTALL_DIR}/lib/*dylib ${INSTALL_DIR}/bin/$app/Contents/Frameworks/            
+        macdeployqt ${INSTALL_DIR}/bin/$app -dmg 
+    done
 elif [ $(uname) == Linux ]; then 
     for exe in ${INSTALL_DIR}/bin/blockbuster ${INSTALL_DIR}/bin/sidecar; do 
         cp -f $(ldd $exe | grep -e Qt -e mpi | awk '{print $3}') ${INSTALL_DIR}/lib; 
