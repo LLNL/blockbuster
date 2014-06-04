@@ -48,6 +48,10 @@ all: $(sidecar)
 
 FORCE: 
 
+.PHONY: FORCE
+
+.PHONY: all
+
 # QMAKE: allow user to set in environment or have in PATH: 
 QMAKE ?= $(shell which qmake)
 ifeq ($(QMAKE),) 

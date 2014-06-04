@@ -10,6 +10,7 @@
 #ifdef __cplusplus
 #include <QString>
 #include "QThread"
+#include <pthread.h>
 
 extern int gTimerOn; 
 #define TIMER_PRINT(...) if (gTimerOn) DEBUGMSG(__VA_ARGS__)

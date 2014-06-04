@@ -25,7 +25,7 @@
 #include "splash.h"
 #include "SidecarServer.h"
 #include "util.h"
-#include "remotecommands.h"
+// #include "remotecommands.h"
 #include "errmsg.h"
 #include <stdio.h>
 #include <stdlib.h>

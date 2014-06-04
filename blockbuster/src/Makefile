@@ -35,7 +35,7 @@ BUILD-ALL = \
 		echo '***************************************************'; \
 		echo BUILDING dir $$dir; \
 		echo; \
-		if ! cd $(BUILD_ROOT)/$${dir} || ! $(MAKE) $(1);  then \
+		if ! cd $(BUILD_ROOT)/$${dir} || ! $(MAKE)  $(1);  then \
 						echo Make failed in $${dir}; \
 			exit 1; \
 		fi; \
@@ -47,6 +47,8 @@ BUILD-ALL = \
 
 
 all: sidecar
+
+.PHONY: all
 
 sidecar: $(INSTALL_DIR)/bin/sidecar
 

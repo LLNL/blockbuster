@@ -56,6 +56,10 @@ sidecar: $(blockbuster) FORCE
 
 FORCE: 
 
+.PHONY: FORCE
+
+.PHONY: all
+
 # QMAKE: allow user to set in environment or have in PATH: 
 QMAKE ?= $(shell which qmake)
 $(warning QMAKE from environment is $(QMAKE))
@@ -85,7 +89,7 @@ DEBUG_QT =
 DEBUG=
 endif
 
-SOURCES=main.cpp blockbuster_qt.cpp movie.cpp  ./timer.C \
+SOURCES=main.cpp blockbuster_qt.cpp movie.cpp ./timer.C \
 	 pure_C.c frames.cpp  slave.cpp  \
 	cache.cpp  common.cpp Prefs.C \
 	sgi-rgbFrame.cpp convert.cpp smFrame.cpp pngFrame.cpp \
@@ -138,7 +142,7 @@ blockbuster.pro :   $(FORMS) Makefile $(SOURCES)
 
 qmake-force:
 	$(QMAKE) -Wall 
-	sed -i -e 's~-O2~$(OPT) ~g' -e 's~-O1~$(OPT) ~g'  -e 's~-g ~$(OPT) ~g' -e 's/CC.*=.*gcc/CC = $(CC) /g' -e 's/CXX.*=.*g++/CXX = $(CXX) /g' -e 's/LINK.*=.*g++/LINK = $(CXX) /g' -e 's/\(-o Prefs.o Prefs.C\)/-Wno-type-limits \1/' Makefile.qt.include
+	sed -i "" -e 's~-O2~$(OPT) ~g' -e 's~-O1~$(OPT) ~g'  -e 's~-g ~$(OPT) ~g' -e 's/CC.*=.*gcc/CC = $(CC) /g' -e 's/CXX.*=.*g++/CXX = $(CXX) /g' -e 's/LINK.*=.*g++/LINK = $(CXX) /g' -e 's/\(-o Prefs.o Prefs.C\)/-Wno-type-limits \1/' Makefile.qt.include
 	echo sm.o: ../sm/smBase.h >> Makefile.qt.include
 
 Makefile.qt.include: blockbuster.pro
@@ -147,6 +151,8 @@ Makefile.qt.include: blockbuster.pro
 	makedepend -I../config -I../common -I../RC_cpp_lib -fMakefile.qt.include -Y. $(SOURCES)  
 
 .force:
+
+.PHONY : .force
 
 relink: $(DEPENDENT_LIBS)
 	rm -rf $(blockbuster)
@@ -169,8 +175,9 @@ qmake-clean:
 
 project-clean:
 
-./%.C: ../RC_cpp_lib/%.C
-	cp $< $@
+
+%.C: 
+	if [ -f ../RC_cpp_lib/$@ ]; then cp ../RC_cpp_lib/$@ $@; fi 
 
 clean: 
 	rm -f blockbuster blockbuster.pro ui_*.h *.o moc_*
