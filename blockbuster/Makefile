@@ -26,8 +26,11 @@ all:
 test: 
 	./tests/smtoolsTest.py 
 
+src/%: 
+	cd $@ && $(MAKE) -e all
+
 remake: 
-	SYS_TYPE=$(SYS_TYPE) ./remake.sh
+	SYS_TYPE=$(SYS_TYPE) ./remake.sh 
 
 bindist: 
 	rm -rf *dmg $(INSTALL_DIR)/bin/{blockbuster,sidecar}*

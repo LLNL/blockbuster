@@ -10,7 +10,12 @@
 *.app
 ../*/
 linux-basic*tgz
-src/boost/boost_1_54_0
+Darwin*
+blockbuster-install*
+make.log
+output.txt
+src/boost/build_boost
+src/boost/boost_1_55_0
 src/libtiff/tiff-4.0.3/
 src/blockbuster/sidecar/common.h
 .#*
