@@ -5,7 +5,7 @@ function testdir () {
     echo
     dir=$1
     libs=$(ls $dir/lib/libboost_{atomic,date_time,filesystem,regex,system,thread,program_options}*)
-    if ls $libs >/dev/null 2>&1; then 
+    if [ "$libs" != "" ] && ls $libs >/dev/null 2>&1; then 
         if [ "$dir" != "$INSTALL_DIR" ]; then
             rm -rf $INSTALL_DIR/include/boost $INSTALL_DIR/lib/libboost_*
             ln -s $dir/include/boost $INSTALL_DIR/include/boost 
@@ -19,6 +19,7 @@ function testdir () {
                 rm -rf $INSTALL_DIR/include/boost $INSTALL_DIR/lib/libboost_*
                 echo "Something is missing -- keep trying"
                 allgood=false
+                break
             fi
         done
         if $allgood; then 
@@ -31,10 +32,12 @@ function testdir () {
 }
     
 for version in -1.55.0 -1.54.0 -1.53.0 -1.49.0; do 
-    testdir /usr/local/tools/boost-nompi${version}
+    if [ -d /usr/local/tools/boost-nompi${version} ]; then 
+        testdir /usr/local/tools/boost-nompi${version}
+    fi
 done
 
-for prefix in /usr/local /opt/local /sw; do
+for prefix in /usr/local ; do
     testdir $prefix
 done
 

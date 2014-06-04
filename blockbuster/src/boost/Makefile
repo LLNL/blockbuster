@@ -39,13 +39,13 @@ all: $(BOOST_PROOF)
 
 $(BOOST_PROOF):
 	if ! trylinkboost.sh; then \
-		INSTALL_DIR=$INSTALL_DIR  make -e build_boost; \
+		INSTALL_DIR=$(INSTALL_DIR)  $(MAKE) -e build_boost; \
 	fi	
 
 build_boost:
-	rm -f $(INSTALL_DIR)/include/boost  $(INSTALL_DIR)/lib/libboost* # ensure all libs are newer than headers when done
+	rm -f $(INSTALL_DIR)/include/boost  $(INSTALL_DIR)/lib/libboost* 
 	tar -xzf boost_$(BOOST_VERSION).tar.gz 
-	cd boost_$(BOOST_VERSION) && tar -xzf ../process-0.5.tgz && ./bootstrap.sh --with-libraries=atomic,filesystem,thread,regex,system,date_time,program_options && ./bjam -j 20 install --prefix=$(INSTALL_DIR)
+	cd boost_$(BOOST_VERSION) && tar -xzf ../process-0.5.tgz && ./bootstrap.sh --with-libraries=atomic,filesystem,thread,regex,system,date_time,program_options && ./bjam  -j 20 install --prefix=$(INSTALL_DIR)
 	touch $@
 	@echo '********************' finished with LIB_EVIDENCE $@; echo
 
