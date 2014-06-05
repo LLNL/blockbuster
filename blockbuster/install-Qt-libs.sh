@@ -6,12 +6,35 @@ fi
 set -x
 
 if [ $(uname) == Darwin ]; then 
+    :
     #echo "STOPPING BEFORE $0"
     #exit 1
-    for app in blockbuster.app sidecar.app; do
-        rm -rf ${INSTALL_DIR}/bin/${app}/Contents/PlugIns/*
-        cp -f ${INSTALL_DIR}/lib/*dylib ${INSTALL_DIR}/bin/$app/Contents/Frameworks/            
-        macdeployqt ${INSTALL_DIR}/bin/$app -dmg 
+    for name in blockbuster sidecar; do
+        appdir="${INSTALL_DIR}/bin/${name}.app"
+        exe="$appdir"/Contents/MacOS/$name
+        rm -rf "$appdir"/Contents/PlugIns/*
+        mkdir -p "$appdir"/Contents/Frameworks/ 
+        for file in "${INSTALL_DIR}"/lib/*dylib; do
+            cp -f "$file" "$appdir"/Contents/Frameworks/    
+            if [ ! -f "$file" ]; then 
+                exit 1
+            fi
+        done
+        pushd "${INSTALL_DIR}"/lib/
+        for file in *boost*dylib; do 
+            original_path=$(otool -L "$exe" | grep $file | awk '{print $1;}')
+            if [ "$original_path" != "" ]; then 
+                install_name_tool -change "$original_path" "@executable_path/../Frameworks/$file" "$exe"
+            fi
+            if [ x$(otool -L $file | grep libboost_system.dylib | awk '{print $1;}') == xlibboost_system.dylib ]; then
+                install_name_tool -change "libboost_system.dylib" "${INSTALL_DIR}/lib/libboost_system.dylib" "$file"
+            fi
+            install_name_tool -id "$appdir"/Contents/Frameworks/$file $file
+        done
+        
+       # This does not work: 
+        macdeployqt "$appdir" -dmg 
+        # otool -L "$exe"
     done
 elif [ $(uname) == Linux ]; then 
     for exe in ${INSTALL_DIR}/bin/blockbuster ${INSTALL_DIR}/bin/sidecar; do 
