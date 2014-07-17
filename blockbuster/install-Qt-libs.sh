@@ -37,10 +37,11 @@ if [ $(uname) == Darwin ]; then
         # otool -L "$exe"
     done
 elif [ $(uname) == Linux ]; then 
+	set -v
     for exe in ${INSTALL_DIR}/bin/blockbuster ${INSTALL_DIR}/bin/sidecar; do 
-        cp -f $(ldd $exe | grep -e Qt -e mpi | awk '{print $3}') ${INSTALL_DIR}/lib; 
+        cp -f $(ldd $exe | grep -e Qt | awk '{print $3}') ${INSTALL_DIR}/lib; 
         #rpath=$(echo '$ORIGIN/../lib:$ORIGIN/../../lib:'$(chrpath -l $exe | awk ' {print $2}' | sed 's/RPATH=//' | sed 's~[^:]*Trolltech[^:]*~:~' | sed "s:$INSTALL_DIR::") |   sed 's~::~:~g' ); 
-        rpath='$ORIGIN/../lib'
+        rpath='$ORIGIN/../lib':"$(${INSTALL_DIR}/bin/patchelf --print-rpath $exe | sed s~[^:]*qt[^:]*:~:~)"
         # chrpath -r $rpath $exe ; 
         ${INSTALL_DIR}/bin/patchelf --set-rpath $rpath $exe
     done
