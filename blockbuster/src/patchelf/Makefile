@@ -27,15 +27,21 @@
 #
 #	$Id: Makefile,v 1.1 2007/06/13 18:59:35 wealthychef Exp $
 #
+
+PATCHELF_VERSION=0.8
+
 include ../config/config
 
 all: $(INSTALL_DIR)/bin/patchelf
 
-$(INSTALL_DIR)/bin/patchelf:
-	[ -d  patchelf-0.5 ] || tar -xzf patchelf-0.5.tar.gz
-	cd  patchelf-0.5; \
+$(INSTALL_DIR)/bin/patchelf: patchelf-$(PATCHELF_VERSION)/src/patchelf
+	cp $< $@
+
+patchelf-$(PATCHELF_VERSION)/src/patchelf:
+	[ -d  patchelf-$(PATCHELF_VERSION) ] || tar -xzf patchelf-$(PATCHELF_VERSION).tar.gz
+	cd  patchelf-$(PATCHELF_VERSION); \
 	CC="$(CC)" CFLAGS="$(CFLAGS)" ./configure --prefix=$(INSTALL_DIR); \
 		$(MAKE) install
 
 clean:
-	rm -rf patchelf-0.5 $(INSTALL_DIR)/bin/patchelf
+	rm -rf patchelf-$(PATCHELF_VERSION) $(INSTALL_DIR)/bin/patchelf
