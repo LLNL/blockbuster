@@ -23,15 +23,16 @@
 #
 #   Author:
 #
-#	Makefile for libpng (1.2.8)
+#	Makefile for libpng 
 #
 #	$Id: Makefile,v 1.9 2007/11/07 01:31:00 wealthychef Exp $
 #
 include ../config/config
 
 LIBTARGET=$(INSTALL_DIR)/lib/libsrwpng.a
-
-VPATH = libpng-1.2.8
+PNG_VERSION = 1.2.51
+PNG_SHORTVERSION=12
+VPATH = libpng-$(PNG_VERSION)
 
 INSTALL_HEADERS = $(INSTALL_DIR)/include/pngsimple.h $(INSTALL_DIR)/include/png.h $(INSTALL_DIR)/include/pngconf.h 
 
@@ -40,10 +41,10 @@ all: $(LIBTARGET)
 
 #export CPPFLAGS += $(shell if [ $$(uname) == AIX ]; then echo -DPNG_SETJMP_NOT_SUPPORTED; fi)
 #export CFLAGS += $(shell if [ $$(uname) == AIX ]; then echo -DPNG_SETJMP_NOT_SUPPORTED; fi)
-export CPPFLAGS += -Ilibpng-1.2.8
-export CFLAGS += -Ilibpng-1.2.8
+export CPPFLAGS += -Ilibpng-$(PNG_VERSION)
+export CFLAGS += -Ilibpng-$(PNG_VERSION)
 
-BUILD_LIBPNG=libpng-1.2.8/.libs/libpng.a
+BUILT_LIBPNG=libpng-$(PNG_VERSION)/.libs/libpng$(PNG_SHORTVERSION).a
 
 $(LIBTARGET): libsrwpng.a 
 	echo making $@ due to $?
@@ -51,35 +52,35 @@ $(LIBTARGET): libsrwpng.a
 	echo $@ succeeded
 
 # change to srwpng for "simplereadwritepng", to avoid conflicts with other libpng's which might be installed
-libsrwpng.a: libpng-1.2.8/.libs/libpng.a $(INSTALL_HEADERS) pngread.o pngwutil.o simple.o
+libsrwpng.a: $(BUILT_LIBPNG) $(INSTALL_HEADERS) pngread.o pngwutil.o simple.o
 	echo making $@ due to $?
-	cp libpng-1.2.8/.libs/libpng.a .
-	$(AR) rsc libpng.a  pngread.o pngwutil.o simple.o
-	mv libpng.a libsrwpng.a
+	cp $(BUILT_LIBPNG) .
+	$(AR) rsc libpng$(PNG_SHORTVERSION).a  pngread.o pngwutil.o simple.o
+	mv libpng$(PNG_SHORTVERSION).a libsrwpng.a
 	echo $@ succeeded
 
-$(BUILD_LIBPNG): libpng-1.2.8/png.h
+$(BUILT_LIBPNG): libpng-$(PNG_VERSION)/png.h
 	echo making $@ due to $?
-	if [ -d libpng-1.2.8 ]; then rm -rf libpng-1.2.8; fi
-	tar -xvzf libpng-1.2.8.tgz
-	cd libpng-1.2.8 ; \
+	if [ -d libpng-$(PNG_VERSION) ]; then rm -rf libpng-$(PNG_VERSION); fi
+	tar -xzf libpng-$(PNG_VERSION).t*gz
+	cd libpng-$(PNG_VERSION) ; \
 	export CC="$(CC)"; export CFLAGS="$(CFLAGS)"; \
 	export CPPFLAGS="$(CPPFLAGS)"; \
 	./configure --prefix=$(INSTALL_DIR) && \
 	$(MAKE) -j 20 
 	echo $@ succeeded
 
-libpng-1.2.8/png.h libpng-1.2.8/pngconf.h:
-	tar -xvzf libpng-1.2.8.tgz
+libpng-$(PNG_VERSION)/png.h libpng-$(PNG_VERSION)/pngconf.h:
+	tar -xvzf libpng-$(PNG_VERSION).t*gz
 
 $(INSTALL_DIR)/include/pngsimple.h: pngsimple.h 
 	cp $< $@
 
-$(INSTALL_DIR)/include/png.h: libpng-1.2.8/png.h
+$(INSTALL_DIR)/include/png.h: libpng-$(PNG_VERSION)/png.h
 	cp $< $@
 
-$(INSTALL_DIR)/include/pngconf.h: libpng-1.2.8/pngconf.h
+$(INSTALL_DIR)/include/pngconf.h: libpng-$(PNG_VERSION)/pngconf.h
 	cp $< $@
 
 clean:
-	rm -rf libpng-1.2.8 $(LIBTARGET) *.a *.o $(INSTALL_DIR)/include/pngsimple.h
+	rm -rf libpng-$(PNG_VERSION) $(LIBTARGET) *.a *.o $(INSTALL_DIR)/include/pngsimple.h
