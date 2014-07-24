@@ -1,0 +1,12 @@
+Once in a while, you come across a file sequence that stubbornly img2sm will not convert.  
+Recently this happened with a file sequence converted from a batch of postscript files to a sequence of TIFFs.  The resulting TIFFs were grayscale.  No matter what we did, converting to PNG, TIFF, pnm, etc, the files would cause img2sm to either crash or ignore the file format.  
+What finally worked was this from http://www.sfpeter.com/2012/06/converting-grayscale-png-to-rgb-png/:
+
+convert in.png -type TrueColorMatte -define png:color-type=6 out.png
+
+
+As a loop it looks like this: 
+for file in *.png; do 
+	outfile=$(echo $file | sed 's/.png/-fixed.png/)
+	convert $file -type TrueColorMatte -define png:color-type=6 $outfile
+done
