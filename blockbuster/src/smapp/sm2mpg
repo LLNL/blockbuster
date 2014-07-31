@@ -1,5 +1,5 @@
 #!/usr/bin/env bash 
-#set -xv
+# set -xv
 #
 #       Convert an sm file into an MPEG file...
 #
@@ -10,21 +10,29 @@ function usage() {
     echo "If the input movie is stereo, then only the left hand frames (odd frames) are used." 
     echo "OPTIONS:"
     echo "-f/--fps n: set fps in movie to value n"
+	echo "-k/--keep:  keep temp directory" 
     echo "-s/--stereo: interpret the input movie as stereo." 
     echo "-t/--tmpdir name: use the given directory for scratch instead of a random location in /tmp/$USER"    
+}
+
+function runecho () {
+	echo "$@"
+	"$@"
 }
 
 function errexit() {    
     echo '*************************************************'
     echo "ERROR: $1"
     echo '*************************************************'
-    rm -rf ${tmpdir}
+    if ! $keep; then 
+		runecho rm -rf ${tmpdir}
+	fi
     exit 1
 }
 
 stereo=false
 outfps=30
-
+keep=false
 argnum=0
 while [ "$1" != "" ]; do 
    if [ "${1:0:1}" != "-" ]; then 
@@ -41,6 +49,7 @@ while [ "$1" != "" ]; do
     else
        case $1 in
            "-f"|"--fps")    outfps="$2"; shift 2;;
+           "-k"|"--keep")   keep=true; shift 1;;
            "-s"|"--stereo") stereo=true; shift 1;;
            "-t"|"--tmpdir") tmpdir="$2"; shift 2;;
            *)               usage; errexit "Unknown option '$1'";;
@@ -65,17 +74,16 @@ if [ "${infile: -3}" != '.sm' ]; then
     errexit "Please specify an input movie name ending with '.sm'"
 fi
 
+tmpdir=${tmpdir:-/tmp/$USER/sm2mpg.tmp.$RANDOM/}
+runecho mkdir -p $tmpdir || errexit "Cannot make tmp directory $tmpdir"
+
 if [ "${outfile:0:1}" != '/' ]; then 
     outfile=$(pwd)/$outfile
 fi
 if [ "${outfile: -4}" != '.mpg' ]; then 
     errexit "Please specify an output movie name ending with '.mpg'"
 fi
-
 outframebase=_$(basename $outfile | sed 's/.sm//')
-
-tmpdir=${tmpdir:-/tmp/$USER/sm2mpg.tmp.$RANDOM/}
-mkdir -p $tmpdir || errexit "Cannot make tmp directory $tmpdir"
 
 tmp=$(sminfo $infile)
 if echo $tmp | grep Stereo >/dev/null 2>&1; then
@@ -107,47 +115,53 @@ ysize=$(expr $ysize \* 2)
 #
 #       Frames/fps/time...
 #
-outspf=$(python -c "print 1.0/${outfps} ")
-tlen=$(python -c "print ${ninput}*${outspf} ")
-noutput=$(python -c "print int(${tlen}*30.0) ")
+echo "Warning:  assuming the SM movie is made for 30 fps"
+infps=30  # BAD ASSUMPTION!  
+noutput=$(python -c "print ${ninput}/float(${outfps}) * ${infps} ")
 
 #
 #       Extract the frames in YUV format
 #
-echo "Extract the frames in YUV format using img2sm"
-pushd $tmpdir
+echo "Extracting the frames in YUV format using img2sm..."
 
-sm2img  -F yuv -s $skip $infile ${outframebase}_junk_%d || errexit "sm2img failed"
+runecho sm2img  -F yuv -s $skip $infile $tmpdir/${outframebase}_junk_%d || errexit "sm2img failed"
 #
 #       walk the movie duration, linking to the proper
 #       source frame to approximate the desired framerate
 #
+if [ "$noutput" == 0 ]; then 
+	runecho ls $tmpdir
+	errexit "No frames were extracted from the sm, cannot continue!"
+fi
 echo "Linking $noutput frames to approximate the desired framerate ($outfps)"
 linknum=0
 while [ $linknum -lt $noutput ] ; do 
-    echo -e "\rFrame: $linknum out of $noutput\c"
-    t=$(python -c "print ${linknum}/30.0 ")
-    outframe=$(python -c "print int(${t}/${outspf}) * $skip")
-    ln -s ${outframebase}_junk_${outframe}.Y ${outframebase}_junk_ln_${linknum}.Y
-    ln -s ${outframebase}_junk_${outframe}.U ${outframebase}_junk_ln_${linknum}.U
-    ln -s ${outframebase}_junk_${outframe}.V ${outframebase}_junk_ln_${linknum}.V
-    let linknum++
+	echo -e "\rFrame: $linknum out of $noutput\c"
+	t=$(python -c "print ${linknum}/30.0 ")
+	outframe=$(python -c "print int(${t}/${outspf}) * $skip")
+	ln -s $tmpdir/${outframebase}_junk_${outframe}.Y $tmpdir/${outframebase}_junk_ln_${linknum}.Y
+	ln -s $tmpdir/${outframebase}_junk_${outframe}.U $tmpdir/${outframebase}_junk_ln_${linknum}.U
+	ln -s $tmpdir/${outframebase}_junk_${outframe}.V $tmpdir/${outframebase}_junk_ln_${linknum}.V
+	let linknum++
 done
 echo
+
 #
 #       convert to mpeg using LibGen mpeg command
 #
-echo "convert to mpeg using LibGen mpeg command...." 
+echo "Converting frames to mpeg using LibGen mpeg command...." 
 last=$(python -c "print int($noutput - 1)")
-if ! mpeg -a 0 -b $last -h $xsize -v $ysize ${outframebase}_junk_ln_ -s $outfile -PF >mpeg.outlog; then
+
+if ! runecho mpeg -a 0 -b $last -h $xsize -v $ysize $tmpdir/${outframebase}_junk_ln_ -s $outfile -PF >mpeg.outlog; then
     errexit "LibGen mpeg command failed: $(cat mpeg.outlog)"
 fi
 
 #
 #       clean up...
 #
-rm -rf ${tmpdir}
-popd
+if ! $keep; then 
+	runecho rm -rf ${tmpdir}
+fi
 echo "movie $outfile created successfully"
 #
 #	Done!
