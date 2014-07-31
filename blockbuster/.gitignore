@@ -57,12 +57,13 @@ src/blockbuster/ui_MovieCueWidget.h
 src/boost/BOOSTDIR
 src/libjpeg/jpeg-6b/
 src/libpng/libpng-1.2.8/
+src/libpng/libpng-1.2.51/
 src/libtiff/tiff-3.9.1/
 src/lzolib/lzo-2.03/
 src/mpegdir/lex.yy.c
 src/mpegdir/lexer.c
 src/mpegdir/mpeg
-src/patchelf/patchelf-0.5/
+src/patchelf/patchelf-0.8/
 src/pt/CPMANPAGES
 src/pt/pt_gate_destroy.3
 src/pt/pt_gate_init.3
