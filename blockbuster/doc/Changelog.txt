@@ -3,7 +3,8 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 
 ===============================================================================
 VERSION 2.8.6a (git tag blockbuster-v2.8.5a) Fri Apr  4 19:13:55 PDT 2014
--- BUGFIX:  No longer need to replace window when switching between fullscreen and non-fullcreen. 
+-- BUGFIX:  No longer need to replace window when switching between fullscreen and non-fullcreen.
+-- BUGFIX:  
 -- FEATURE: Arguments to sidecar and blockbuster now follow standard convention, e.g. get help with "--help/-h" instead of "-help"
 
 ===============================================================================

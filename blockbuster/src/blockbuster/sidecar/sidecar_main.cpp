@@ -85,7 +85,7 @@ void ParseOptions(int &argc, char *argv[], Preferences &gPrefs) {
   gPrefs.SetValue("prefsdir", prefsdir.toStdString()); 
   gPrefs.SetValue("sidecarDir", GetSidecarDir(argv[0])); 
   gPrefs.SetFilename(prefFile);  
-  gPrefs.ReadFromFile(); 
+  gPrefs.ReadFromFile(false); 
 
   gPrefs.DeleteValue("verbose"); // do not inherit this from previous
   gPrefs.DeleteValue("movie"); // do not inherit this from previous

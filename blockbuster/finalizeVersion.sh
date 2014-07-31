@@ -189,9 +189,24 @@ echo $version > src/config/versionstring.txt || errexit "Could not echo string t
 tagname=blockbuster-v$version
 
 #======================================================
+# Make sure the testing is done for this version. 
+# 
+echo "Have you completed testing of this version?  Please see doc/README_TESTING.txt for the complete procedure.  Type 'h' to see doc/README_TESTING.txt and exit without continuing.  Type 'y' to swear by Zeus that you have followed proper testing."
+
+read answer
+if [ "$answer" == 'h' ]; then 
+	cat doc/README_TESTING.txt
+	exit 0
+elif [ "$answer" != 'y' ]; then 
+	echo "You must either lie or complete testing before using finalizeVersion.sh"
+	exit 1
+fi
+
+#======================================================
 # Update Changelog
+#
 echo "Checking Changelog to make sure you have done your housekeeping..." 
-if ! grep $version doc/Changelog.txt >/dev/null; then 
+if ! versionfound=$(grep $version doc/Changelog.txt); then 
     errexit "Could not find version $version in Changelog.txt.  Please update the Changelog and I will continue."
 fi
 
@@ -293,6 +308,7 @@ echo "Done.  Tarball is $builddir/blockbuster-v${version}.tgz.  To use the new v
 ln -s $builddir/blockbuster-v${version}.tgz $installdir/blockbuster-v${version}.tgz
 
 echo "Built and installed blockbuster-v${version} and made it the test version on LC and auk" | mail -s "blockbuster-v${version} build complete" rcook@llnl.gov
+
 
 exit 0
 
