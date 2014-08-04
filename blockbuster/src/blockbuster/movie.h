@@ -5,5 +5,4 @@
 #define REPEAT_FOREVER (-1)
 int DisplayLoop(/*FrameListPtr &allFrames,*/ struct ProgramOptions *options, vector<struct MovieEvent> script);
 
-
 #endif 

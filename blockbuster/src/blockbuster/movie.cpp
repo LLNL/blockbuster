@@ -146,34 +146,13 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
       }
       if (event.mEventType != "MOVIE_NONE") {        
         DEBUGMSG("GOT EVENT ------- %s", string(event).c_str()); 
-        if (options->mTraceEvents) {
-          if (!options->mTraceEventsFile.is_open() ) {
-            if (options->mTraceEventsFilename == "") {
-              options->mTraceEventsFilename = "events.log"; 
-            }
-            options->mTraceEventsFile.open(options->mTraceEventsFilename.toStdString().c_str()); 
-          }
-          if (!options->mTraceEventsFile.is_open() ) {
-            dbprintf(0, "WARNMNG: Could not open tracefule %s for writing.\n", options->mTraceEventsFilename.toStdString().c_str());
-            options->mTraceEvents = false; 
-          } else {
-            options->mTraceEventsFile << string(event) << endl; 
-            options->mTraceEventsFile.flush(); 
-          }        
-        }
-        if (event.mEventType == "MOVIE_TRACE_EVENTS") {
-          if (options->mTraceEventsFile.is_open() ) {
-            options->mTraceEventsFile.close(); 
-          }
-        
-          options->mTraceEvents = event.mNumber;
-          if (options->mTraceEvents) {
-            if (event.mString != "") {
-              options->mTraceEventsFilename = event.mString.c_str();           
-            }
-            options->mTraceEventsFile.open(options->mTraceEventsFilename.toStdString().c_str()); 
-          }
-        }
+		if (options->mTraceEvents) {
+		  fprintf(options->mTraceEventsFile, (string(event)+"\n").c_str()); 
+		}
+	  
+		if (event.mEventType == "MOVIE_TRACE_EVENTS") {		  
+		  EnableTracing(event.mNumber, event.mString); 
+		}
         else if (event.mEventType == "MOVIE_OPEN_FILE") {         
           DEBUGMSG("Got Open_File command"); 
           QStringList filenames; 

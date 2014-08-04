@@ -12,6 +12,7 @@ struct ProgramOptions *GetGlobalOptions(void);
 
 void ConsumeArg(int &argc, char *argv[], int position); 
 
+
 // =====================================================================
 struct Setting {
   std::string variable, origin, value; 
@@ -45,7 +46,7 @@ struct ProgramOptions {
     messageLevelName("error"), 
 #endif
     messageLevel(NULL),  mCacheDebug(false),     
-    mTraceEvents(false), mTraceEventsFilename("events.log"),
+    mTraceEvents(1),mTraceEventsFile(NULL), 
     //mRenderer(NULL),
     readerThreads(-1), repeatCountName("0"),
     startFrame(0), currentFrame(0), endFrame(-1), repeatCount(0), LOD(0),
@@ -71,9 +72,9 @@ struct ProgramOptions {
   struct MessageLevel *messageLevel;
   int mCacheDebug; 
   QString mReplayEventsFilename;
-  int mTraceEvents; 
-  QString mTraceEventsFilename; 
-  std::ofstream mTraceEventsFile;
+  int mTraceEvents;
+  FILE *mTraceEventsFile; 
+  std::string mTraceEventsFilename; 
   QString logFile;  
   QString mScript; 
   int rendererIndex;

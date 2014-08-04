@@ -5,14 +5,81 @@
 #include "SidecarServer.h"
 #include "util.h"
 #include <iostream>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
+#include <stdio.h>
 #include <fstream>
 #include "QThread"
 #include "QTime"
 #include "QMessageBox"
 #include <boost/format.hpp> 
+#include "settings.h"
 using namespace std; 
 
 
+// ==================================================================
+/* This tracefile stuff gets put here because it seems I/O related.  
+   Kind of didn't know where to stick it actually. 
+*/
+void EnableTracing(bool enable, string filename) {
+  ProgramOptions *opt = GetGlobalOptions(); 
+  opt->mTraceEvents = enable; 
+  opt->mTraceEventsFilename = filename.c_str(); 
+  if (opt->mTraceEvents) {
+	if (opt->mTraceEventsFilename == "") {	  
+	  time_t now = time(0);
+	  tm *ltm = localtime(&now);
+	  char *home = getenv("HOME");
+	  if (home) {
+		opt->mTraceEventsFilename = str(boost::format("%1%/.blockbuster/events.trace")%home).c_str();
+	  }
+	  else {
+		opt->mTraceEventsFilename = tmpnam(NULL);
+	  }
+	  if (FILE *file = fopen(opt->mTraceEventsFilename.c_str(), "r")) {	
+		fclose(file); 
+		// save any existing version of the file in a temp dir:	  
+		char *user = getenv("USER");
+		if (!user) user = (char*) "blockbuster-tmp"; 
+		string dirname = str(boost::format("/tmp/%1%")%user); 
+		if (mkdir (dirname.c_str(), 0777) == -1) {
+		  if (errno != EEXIST) {
+			opt->mTraceEvents = false; 
+			dbprintf(0, "Warning, directory %s could not be created for tracefile.  Error is \"%s\"", dirname.c_str(), strerror(errno));
+			return;
+		  }
+		}
+		string savefilename = str(boost::format("%1%/bbtrace-%2%-%3%-%4%-%5%-%6%-%7%")%dirname%(ltm->tm_year)%(ltm->tm_mon)%(ltm->tm_mday)%(ltm->tm_hour)%(ltm->tm_min)%(ltm->tm_sec));
+		
+		std::ifstream  src(opt->mTraceEventsFilename.c_str());
+		std::ofstream  dst(savefilename.c_str());
+		
+		dst << src.rdbuf();
+		dst.close(); 
+		src.close(); 
+		src.open(savefilename.c_str()); 
+		if (!src.is_open()) {
+		  dbprintf(0, "Warning, old tracefile %s could not be backed up to %s.  Error is \"%s\"\n", opt->mTraceEventsFilename.c_str(),savefilename.c_str(), strerror(errno)); 
+		} 
+		else {
+		  dbprintf(0, "Backed up old tracefile %s to %s.\n", opt->mTraceEventsFilename.c_str(),savefilename.c_str()); 
+		}		
+	  } 
+	}
+	opt->mTraceEventsFile = fopen(opt->mTraceEventsFilename.c_str(), "w"); 
+	if (opt->mTraceEventsFile) {
+	  dbprintf(0, "Tracing events to log file %s\n", opt->mTraceEventsFilename.c_str());
+	}  
+	else {
+	  dbprintf(0, "Warning: could not open log file %s\n", opt->mTraceEventsFilename.c_str());   
+	}
+  }
+  return; 
+}
+
+
+// ==================================================================
 /*!
   For certain tight timings -- generally want this off
 */ 

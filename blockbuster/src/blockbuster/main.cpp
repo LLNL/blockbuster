@@ -54,7 +54,7 @@
 #include "SidecarServer.h"
 #include "smFrame.h"
 #include "Prefs.h"
-
+#include <boost/iostreams/device/file_descriptor.hpp>
 // global for Qt use: 
 QApplication *gCoreApp=NULL; 
 BlockbusterInterface *gMainWindow = NULL; 
@@ -132,8 +132,8 @@ void usage(void) {
   printf("--script filename: run the given blockbuster script\n"); 
   printf("--threads/-t <num> specifies how many threads to use for reading from disk.\n");
   printf("--timer: enable timer (makes things very verbose, you probably do not want this)\n"); 
-  printf("--traceEvents: log every event seen by the event loop to a file named \"events.log\".  WARNING:  lots of events occur in a movie.  Logfile will tend to be large. \n"); 
-  printf("--traceEventsFile: Same as -traceEvents but specify the file to write to.\n"); 
+  printf("--no-trace: Disables logging of events to a \"trace file\" which can be replayed later using --script.  See also --trace-file.\n"); 
+  printf("--trace-file: Secify the trace file to write to, which can be replayed later using --script.  See also --no-trace.\n"); 
   printf("--verbose/-v num: sets verbosity, with 0=quiet, 1=system, 2=error, 3=warning, 4=info, 5=debug.  Same behavior as -messageLevel but with numbers, basically.\n");
   printf("--version/-V prints the current blockbuster version\n");
   printf("--zoom <zoom> sets the initial zoom ['auto' tracks window size,\n");
@@ -176,7 +176,9 @@ void checkarg(int argc, const char *argname) {
 
 
 // =====================================================================
-bool  CHECK_STRING_ARG(const char *flag, int &argc, char *argv[], QString &str)	{
+// OK for string and Qstring arg types
+template <class T> 
+bool  CHECK_STRING_ARG(const char *flag, int &argc, char *argv[], T &t)	{
 
   const char *found = strstr(flag, argv[1]); 
   if (found != flag) return false;
@@ -185,11 +187,12 @@ bool  CHECK_STRING_ARG(const char *flag, int &argc, char *argv[], QString &str)	
   ConsumeArg(argc, argv, 1); 
   DEBUGMSG("Setting string arg to %s\n", argv[1]); 
 
-  str = argv[1];
+  t = argv[1];
   ConsumeArg(argc, argv, 1); 
 
   return true;
 }
+
 
 // =====================================================================
 bool  CHECK_ATOF_ARG(const char *flag, int &argc, char *argv[], float &flt)	{
@@ -426,13 +429,10 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
              CHECK_ATOI_ARG("-t", argc, argv, opt->readerThreads)) 
       continue; 
 	else if (SET_BOOL_ARG("--timer", argc, argv, gTimerOn, 1)) continue;
-    else if (SET_BOOL_ARG("--traceEvents", argc, argv, opt->mTraceEvents, 1)) {
-      if (opt->mTraceEventsFilename == "") {
-        opt->mTraceEventsFilename = "events.log"; 
-      }
-      continue; 
+    else if (SET_BOOL_ARG("--no-trace", argc, argv, opt->mTraceEvents, 0)) {
+	  continue; 
     }
-	else if (CHECK_STRING_ARG("--traceEventsFile", argc, argv, opt->mTraceEventsFilename))  {
+	else if (CHECK_STRING_ARG("--trace-file", argc, argv, opt->mTraceEventsFilename))  {
       opt->mTraceEvents = true; 
       continue;
     }
@@ -600,10 +600,8 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
     opt->repeatCount = opt->repeatCountName.toInt();
   }
     
-  if (opt->mTraceEvents) {
-    dbprintf(1, "Tracing events to log file %s\n", opt->mTraceEventsFilename.toStdString().c_str());
-    opt->mTraceEventsFile.open(opt->mTraceEventsFilename.toStdString().c_str());
-  } 
+  EnableTracing(opt->mTraceEvents, opt->mTraceEventsFilename); 
+  
   return  ; 
 }
 
