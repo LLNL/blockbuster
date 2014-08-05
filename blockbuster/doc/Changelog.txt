@@ -2,7 +2,7 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.6a (git tag blockbuster-v2.8.6a) Tue Aug  5 10:19:24 PDT 2014
+VERSION 2.8.6a (git tag blockbuster-v2.8.6a) Tue Aug  5 10:24:28 PDT 2014
 -- BUGFIX:  No longer need to replace window when switching between fullscreen and non-fullcreen.
 -- BUGFIX:  Improve the packaging of Qt libraries.  
 -- BUGFIX:  sm2mpg "unexpected token" error fixed, and also checked to make sure temp files are properly deleted.  
