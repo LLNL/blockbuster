@@ -130,7 +130,7 @@ int DisplayLoop(ProgramOptions *options, vector<MovieEvent> script)
 
 
     // we now have at least one event, even if it's a 'MOVIE_NONE'
-    while (events.size()) {
+    while (events.size() && !done) {
       bool swapBuffers = false; 
       MovieEvent event = events[0];
       events.pop_front(); 

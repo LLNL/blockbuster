@@ -137,14 +137,18 @@ void MovieCue::GenerateScript(MovieScript &oScript) const{
     oScript.push_back(MovieEvent("MOVIE_HIDE_INTERFACE"));
   } 
 	
-  oScript.push_back(MovieEvent("MOVIE_SET_REPEAT", mRepeatFrames));
-  oScript.push_back(MovieEvent("MOVIE_SET_PINGPONG", mPingPong));
-  if (mPlayMovie) {
-    oScript.push_back(MovieEvent("MOVIE_CUE_PLAY_ON_LOAD", mPlayBackward?-1:1));
-  }
   if (mLoadMovie && mMovieName != "") {    
     oScript.push_back(MovieEvent("MOVIE_OPEN_FILE", mMovieName, mCurrentFrame));
   }  
+
+  if (mPlayMovie) {
+    oScript.push_back(MovieEvent("MOVIE_CUE_PLAY_ON_LOAD", mPlayBackward?-1:1));
+  }
+
+  oScript.push_back(MovieEvent("MOVIE_SET_REPEAT", mRepeatFrames));
+
+  oScript.push_back(MovieEvent("MOVIE_SET_PINGPONG", mPingPong));
+
   oScript.push_back(MovieEvent("MOVIE_FULLSCREEN", mFullScreen)); 
     
   oScript.push_back(MovieEvent("MOVIE_SIZE_TO_MOVIE", mSizeToMovie)); 
