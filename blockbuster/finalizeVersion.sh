@@ -1,5 +1,18 @@
 #!/usr/bin/env bash
+# ==========================================
+logfile=${0}.log
+firsttime=${firsttime:-true}
+if $firsttime; then
+	echo saving output to logfile $logfile
+	firsttime=false exec $0 "$@" |& tee $logfile
+fi
 
+# ==========================================
+function runecho () {
+	echo $@
+	"$@"
+}
+# ==========================================
 function usage() {
     echo "usage: finalizeVersion.h [options] versionstring"
     echo "This script creates a new version, either with or without committing the changes.   It is designed to be run on rzgpu or rzbeast."
@@ -15,6 +28,7 @@ function usage() {
 }
 
 
+# ==========================================
 stagedir=${stagedir:-/nfs/tmp2/rcook/blockbuster}
 tmpdir=$stagedir/install-tmp/finalizeVersion-tmp
 #=================================
@@ -48,6 +62,7 @@ function errexit() {
     echo '*******************************************************'
     echo 
     rm -rf $tmpdir
+	echo logfile is $logfile
     exit ${2:-1}
 }
 
@@ -113,6 +128,7 @@ commitfiles="doc/Changelog.txt src/config/version.h  src/config/versionstring.tx
 if testbool "$commit"; then 
     commitfiles=.
 fi
+echo "Commit files: \"$commitfiles\""
 #=================================
 function sedfilesusage() {
     echo "usage: sedfiles [opts] (expression | -e expression1 -e expression2 ...) files"
@@ -204,6 +220,7 @@ elif [ "$answer" != 'y' ]; then
 	exit 1
 fi
 
+
 #======================================================
 # Update Changelog
 #
@@ -215,8 +232,8 @@ fi
 sedfiles -e "s/VERSION $version.*/VERSION $version (git tag $tagname) $(date)/" doc/Changelog.txt || errexit "Could not place version in doc/Changelog.txt.  Please check the Changelog file for errors."  
 
 #======================================================
-# stage files 
-git add -u $commitfiles || errexit "git add failed"
+echo "stage files"
+runecho git add -u $commitfiles || errexit "git add failed"
 
 if testbool $nopush; then
     echo "Version updated.  No git push will be performed"
@@ -226,13 +243,13 @@ fi
 #======================================================
 # push to remote
 echo "commiting local changes and pushing source to remote..."
-git commit -m  "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)"  || errexit "git commit failed"
-git push origin  || errexit "git push origin failed"
+runecho git commit -m  "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)"  || errexit "git commit failed"
+runecho git push origin  || errexit "git push origin failed"
 
 echo "Creating new tag" 
-git tag -d $tagname 2>/dev/null  # ok to fail
-git tag -a $tagname -m "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)" || errexit "git tag failed"
-git push origin $tagname || errexit "git push origin  $tagname failed"
+runecho git tag -d $tagname 2>/dev/null  # ok to fail
+runecho git tag -a $tagname -m "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)" || errexit "git tag failed"
+runecho git push origin $tagname || errexit "git push origin  $tagname failed"
 
 #======================================================
 # Update and install on LC cluster
@@ -312,6 +329,7 @@ ln -s $builddir/blockbuster-v${version}.tgz $installdir/blockbuster-v${version}.
 
 echo "Built and installed blockbuster-v${version} and made it the test version on LC and auk" | mail -s "blockbuster-v${version} build complete" rcook@llnl.gov
 
+echo logfile is $logfile
 
 exit 0
 
