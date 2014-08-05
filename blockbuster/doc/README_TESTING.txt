@@ -7,10 +7,15 @@ Before testing, go to the Blockbuster sourceforge site and open the bug tracker.
 
 Similarly, do not fix bugs while testing, unless they are catastrophic and testing or installation cannot continue without them.   Do not stop to fix a little bug here and there.  To do so diffuses focus and results in testing not getting completed.  Also, the bug you rush off to fix is  not any more important as others that are waiting to be fixed.  Just document it and continue.
 
+Capture bugs in the testing system located in the tests/ subdirectory of the source.  
+
 Also, a consistent need to deviate from the test procedure could be indicative of a bug in the test procedure itself.  Document that here and continue!  
 
 ============================================================
 SHORT BUT "GOOD" RELEASE TESTING:  
+
+Before doing this, run "make test" to make sure no regressions have cropped up.  
+
 A.  Duplicate Scott Miller's work flow: 
 1.  Open sidecar with a cuefile as an argument.  
 2.  Create a new cue with a movie name in it.  
