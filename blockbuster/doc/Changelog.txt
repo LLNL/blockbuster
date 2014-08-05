@@ -2,13 +2,15 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.6a (git tag blockbuster-v2.8.5a) Fri Apr  4 19:13:55 PDT 2014
+VERSION 2.8.6a (git tag blockbuster-v2.8.6a) Tue Aug  5 09:51:55 PDT 2014
 -- BUGFIX:  No longer need to replace window when switching between fullscreen and non-fullcreen.
 -- BUGFIX:  Improve the packaging of Qt libraries.  
 -- BUGFIX:  sm2mpg "unexpected token" error fixed, and also checked to make sure temp files are properly deleted.  
 -- BUGFIX:  Fixed a regression causing blockbuster to ignore "MOVIE_QUIT" in scripts.  
+-- BUGFIX:  Fixed a bug where "Repeat Forever" was ignored if "Play Movie" was not checked in a cue.  
 -- FEATURE: Arguments to sidecar and blockbuster now follow standard convention, e.g. get help with "--help/-h" instead of "-help"
 -- FEATURE: Some GUI changes in the blockbuster control and the movie cue manager widgets.  
+-- FEATURE: Now make blockbuster tracefiles on by default, save them and make backups for historical purposes into temp directories.
 
 ===============================================================================
 VERSION 2.8.5a (git tag blockbuster-v2.8.5a) Fri Apr  4 19:13:55 PDT 2014
