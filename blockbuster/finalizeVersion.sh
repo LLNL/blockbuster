@@ -9,7 +9,7 @@ function usage() {
     echo " OPTIONS: " 
     echo "-c/--commit: Commit changes to all tracked directories and files before proceeding. Default: only commit version-related files."
     echo "-t/--temp: Just update Changelog and version.h as needed."
-    echo "-f/--final: updates version.h and Changelog, creates a tarball in the current directory with proper naming scheme. " 
+    echo "-f/--final: updates version.h and Changelog, creates a tarball in the current directory with proper naming scheme.  Installs software into /usr/gapps/asciviz/blockbuster/version " 
     echo " -v: set -xv" 
     echo "NOTE: You must give either --temp or --final."
 }
@@ -65,8 +65,10 @@ echo  "qmake is " $(which qmake)
 #========================================
 if [ "${SYS_TYPE}" == chaos_5_x86_64 ] ; then
     remotehost=rzgpu
+	remotesys=chaos_5_x86_64_ib
 elif [ "${SYS_TYPE}" == chaos_5_x86_64_ib ] ; then
     remotehost=pw453
+	remotesys=chaos_5_x86_64
 fi
 if [ "$remotehost" == "" ]; then
     errexit "Unknown SYS_TYPE or non-RZ host.  Please run on an RZ cluster"
@@ -296,7 +298,8 @@ echo INSTALLATION FINISHED
 chmod 700 ${builddir}/installer.sh
 ${builddir}/installer.sh || errexit "installer failed on localhost"
 
-ssh $remotehost "${builddir}/installer.sh" || errexit "installer failed on remotehost"
+# ssh $remotehost "${builddir}/installer.sh" || errexit "installer failed on remotehost"
+ln -s $builddir/$SYS_TYPE $builddir/$remotesys
 
 echo "Creating symlink of new version to /usr/gapps/asciviz/blockbuster/test"
 
