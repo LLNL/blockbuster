@@ -16,14 +16,15 @@ function runecho () {
 function usage() {
     echo "usage: finalizeVersion.h [options] versionstring"
     echo "This script creates a new version, either with or without committing the changes.   It is designed to be run on rzgpu or rzbeast."
+	echo "Example versionstring: \"2.8.6a\"" 
     echo "This means: "
-    echo "updates version.h "
-    echo "greps Changelog to make sure there is an entry there.  Updates the Changelog entry. "
+    echo "1.  Updates src/config/version.h"
+    echo "2.  Greps Changelog to make sure there is an entry there.  Updates the Changelog entry. "
     echo " OPTIONS: " 
     echo "-c/--commit: Commit changes to all tracked directories and files before proceeding. Default: only commit version-related files."
     echo "-t/--temp: Just update Changelog and version.h as needed."
     echo "-f/--final: updates version.h and Changelog, creates a tarball in the current directory with proper naming scheme.  Installs software into /usr/gapps/asciviz/blockbuster/version " 
-    echo " -v: set -xv" 
+    echo " -v: set -xv to make this script painfully chatty" 
     echo "NOTE: You must give either --temp or --final."
 }
 
