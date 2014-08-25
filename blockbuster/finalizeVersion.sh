@@ -211,17 +211,15 @@ tagname=blockbuster-v$version
 #======================================================
 # Make sure the testing is done for this version. 
 # 
-if $firsttime; then 
-	echo "Have you completed testing of this version?  Please see doc/README_TESTING.txt for the complete procedure.  Type 'h' to see doc/README_TESTING.txt and exit without continuing.  Type 'y' to swear by Zeus that you have followed proper testing."
-	
-	read answer
-	if [ "$answer" == 'h' ]; then 
-		cat doc/README_TESTING.txt
-		exit 0
-	elif [ "$answer" != 'y' ]; then 
-		echo "You must either lie or complete testing before using finalizeVersion.sh"
-		exit 1
-	fi
+echo "Have you completed testing of this version?  Please see doc/README_TESTING.txt for the complete procedure.  Type 'h' to see doc/README_TESTING.txt and exit without continuing.  Type 'y' to swear by Zeus that you have followed proper testing."
+
+read answer
+if [ "$answer" == 'h' ]; then 
+	cat doc/README_TESTING.txt
+	exit 0
+elif [ "$answer" != 'y' ]; then 
+	echo "You must either lie or complete testing before using finalizeVersion.sh"
+	exit 1
 fi
 
 
