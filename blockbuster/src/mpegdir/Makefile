@@ -7,7 +7,7 @@
 # The code in mpeg assumes an older version of lex.  To fix this, specify the -l flag to the more modern flex that is installed.  On older lex versions, this will probably break, in which case I'll have to be more creative.  -- Rich Cook 3-9605
 export LEX=flex -l
 
-MFLAGS = -O
+MFLAGS = -g 
 DEFS = system.h globals.h marker.h
 BASELINE =  mpeg.o codec.o huffman.o io.o chendct.o lexer.o marker.o me.o mem.o stat.o stream.o transform.o
 
