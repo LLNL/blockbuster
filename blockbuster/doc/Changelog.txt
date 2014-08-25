@@ -2,7 +2,7 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.6b (git tag blockbuster-v2.8.6b) Mon Aug 25 11:22:29 PDT 2014
+VERSION 2.8.6b (git tag blockbuster-v2.8.6b) Mon Aug 25 11:31:17 PDT 2014
 -- BUGFIX:  Fix bug in sm2mpg that could catastrophically destroy user directories
 -- BUGFIX:  Fix bug in sm2mpg that was preventing proper movie creation.
 -- FEATURE: Add ffmpeg capabilities and customizations of codecs to sm2mpg.  This brings h264 and mjpeg encoding capabilities and avoids crashes in mpeg, which is getting long in the tooth. 
