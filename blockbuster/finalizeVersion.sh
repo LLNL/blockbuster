@@ -249,8 +249,8 @@ runecho git commit -m  "Version $version, automatic checkin by finalizeVersion.s
 runecho git push origin  || errexit "git push origin failed"
 
 echo "Creating new tag" 
-runecho git tag -d $tagname 2>/dev/null  # ok to fail
-runecho git tag -a $tagname -m "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)" || errexit "git tag failed"
+# runecho git tag -d $tagname 2>/dev/null  # ok to fail
+runecho git tag -f $tagname -m "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)" || errexit "git tag failed"
 runecho git push origin $tagname || errexit "git push origin  $tagname failed"
 
 #======================================================
