@@ -318,7 +318,7 @@ chmod 700 ${builddir}/installer.sh
 ${builddir}/installer.sh || errexit "installer failed on localhost"
 
 # ssh $remotehost "${builddir}/installer.sh" || errexit "installer failed on remotehost"
-ln -s $builddir/$SYS_TYPE $builddir/$remotesys
+ln -s $installdir/$SYS_TYPE $installdir/$remotesys
 
 echo "Creating symlink of new version to /usr/gapps/asciviz/blockbuster/test"
 
