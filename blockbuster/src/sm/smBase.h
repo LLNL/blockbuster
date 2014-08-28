@@ -309,6 +309,7 @@ struct SM_MetaData {
   } 
   
 
+  static void WriteJsonError(ostream *s, string &filename); 
   /*!
     Accepts  "tag:value[:type]" where type defaults to ASCII. 
     Automatically recognizes canonical tags and enforces proper type. 
@@ -376,7 +377,7 @@ struct SM_MetaData {
 
   static TagMap CanonicalMetaDataAsMap(bool includePrompts);
   static bool GetMetaDataFromFile(string metadatafile, TagMap &metadatavec);
-  static bool  WriteMetaDataToStream(ofstream &ofile, TagMap &metadatavec);
+  static bool  WriteMetaDataToStream(ostream *ofile, TagMap &metadatavec);
   static string CanonicalOrderMetaDataSummary( TagMap metadatavalues, bool withnums, bool promptForReuse);
   static string MetaDataSummary(const TagMap metadatavalues, bool withnums=false);
   static TagMap GetCanonicalMetaDataValuesFromUser(TagMap &previousMap, bool usePrevious, bool promptForReuse);
@@ -706,7 +707,7 @@ class smBase {
 
   void WriteMetaData(void);
 
-  bool ExportMetaData(ofstream &ofile) {  
+  bool ExportMetaData(ostream *ofile) {  
     if (mMetaData.size()) {
       return SM_MetaData::WriteMetaDataToStream(ofile, mMetaData); 
     }

@@ -2,6 +2,10 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
+VERSION 2.8.7 (git tag blockbuster-v2.8.6b) Mon Aug 25 11:45:09 PDT 2014
+-- FEATURE:  Enable JSON output to handle errors in movies and to write to stdout. This is to prepare for MovieBrowser toolset to come. 
+
+===============================================================================
 VERSION 2.8.6b (git tag blockbuster-v2.8.6b) Mon Aug 25 11:45:09 PDT 2014
 -- BUGFIX:  Fix bug in sm2mpg that could catastrophically destroy user directories
 -- BUGFIX:  Fix bug in sm2mpg that was preventing proper movie creation.

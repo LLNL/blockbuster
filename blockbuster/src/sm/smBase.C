@@ -139,6 +139,20 @@ void SM_MetaData::Init(void) {
 
 // =====================================================================
 /*!
+  For reporting errors
+*/ 
+void SM_MetaData::WriteJsonError(ostream *s, string &filename) {
+  TagMap ErrorMap; 
+  ErrorMap["Name"] = SM_MetaData("Name", filename); 
+  ErrorMap["ERROR"] = SM_MetaData("ERROR", "True"); 
+  ErrorMap["Format"] = SM_MetaData("Format", "Error"); 
+  ErrorMap["Version"] = SM_MetaData("Version", (int64_t)0); 
+  WriteMetaDataToStream(s, ErrorMap); 
+  return ; 
+}
+
+// =====================================================================
+/*!
   string format:  "tag:value:[type]" (type is optional)
 */ 
 void SM_MetaData::SetFromDelimitedString(string s) {
@@ -288,7 +302,7 @@ bool SM_MetaData::GetMetaDataFromFile(string tagfile,  TagMap&mdmap){
 
 
 // =====================================================================
-bool SM_MetaData::WriteMetaDataToStream(ofstream &ofile, TagMap &mdmap) {
+bool SM_MetaData::WriteMetaDataToStream(ostream *ofile, TagMap &mdmap) {
   using boost::property_tree::ptree; 
   ptree pt;
   for (TagMap::iterator pos = mdmap.begin(); pos != mdmap.end(); pos++) {
@@ -304,7 +318,7 @@ bool SM_MetaData::WriteMetaDataToStream(ofstream &ofile, TagMap &mdmap) {
   }    
   bool success = true; 
   try {
-    write_json(ofile, pt);
+    write_json(*ofile, pt);
   } catch (...) {
     success = false; 
   }
@@ -2509,7 +2523,7 @@ void smBase::SetMetaData(string commandLine, string tagfile, bool canonical, str
     if (!tagfile) {
       throw str(boost::format("smBase::SetMetaData Error:  could not open tag file %s for movie %s")% filename %  getName());
     }
-    SM_MetaData::WriteMetaDataToStream(tagfile, moviedata);
+    SM_MetaData::WriteMetaDataToStream(&tagfile, moviedata);
     if (!quiet) {
       cout << "Wrote movie meta data tag file " << filename << endl;
     }

@@ -81,9 +81,11 @@ int main(int argc, char *argv[]) {
 
   TCLAP::SwitchArg andFlag("A", "and", "Program only returns true (0) if all expressions match.  Normally, any matched expression causes a 0 return code.", cmd); 
 
-  TCLAP::SwitchArg exportTagfile("E", "export-tagfile", "Extract a tag file from each movie which can be read with smtag.", cmd); 
+  TCLAP::SwitchArg exportTagfile("E", "export-tagfile", "Extract a (JSON) tag file from each movie which can be read with smtag.", cmd); 
 
-  TCLAP::ValueArg<string> lorenzFileName("L", "lorenz-format", "Export a single JSON file, suitable for Lorenz import, containing tags for all movies.", false, "", "filename", cmd); 
+  TCLAP::ValueArg<string> lorenzFileNameFlag("L", "lorenz-format", "Synonym for -J(q.v..", false, "", "filename", cmd); 
+
+  TCLAP::ValueArg<string> jsonFileNameFlag("J", "json-output", "Export a single JSON file, suitable for Lorenz import, containing tags for all movies.  If the given filename is 'stdout' or '-', then output to stdout.", false, "", "filename", cmd); 
 
   TCLAP::SwitchArg reservedList("", "reserved-tag-list", "List all reserved tags and exit.", cmd); 
 
@@ -143,12 +145,39 @@ int main(int argc, char *argv[]) {
       valuePatterns.push_back(boost::regex(patternStrings[patno])); 
     }
   }  
-  ofstream lorenzFile;
-  if (lorenzFileName.getValue() != "") {
-    lorenzFile.open(lorenzFileName.getValue().c_str()); 
-    if (!lorenzFile.is_open()) {
-      errexit(cmd, str(boost::format("Error:  could not open lorenz file %s for writing") % lorenzFileName.getValue())); 
-    }
+  string jsonFileName = jsonFileNameFlag.getValue(); 
+  if (jsonFileName == "") {
+	jsonFileName = lorenzFileNameFlag.getValue();
+  }
+  if (jsonFileName != "") {
+	stringstream JsonString; 
+	JsonString << "["; 
+	for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {
+	  string filename = movienames.getValue()[fileno]; 
+	  smBase *sm = smBase::openFile(filename.c_str(), O_RDONLY, 1);
+	  if (!sm) {
+		cerr << str(boost::format("WARNING: could not open movie file %s.")% filename) << endl; 
+		SM_MetaData::WriteJsonError(&JsonString, filename); 
+		continue;
+	  }
+	  TagMap moviedata = sm->GetMetaData(); 
+	  if (fileno < movienames.getValue().size()-1) {
+		JsonString << ",\n"; 
+	  }
+      SM_MetaData::WriteMetaDataToStream(&JsonString, moviedata);
+	}
+	JsonString << "]\n"; 
+	if (jsonFileName == "stdout" || 
+		jsonFileName == "-") {
+	  cout << JsonString.str(); 
+	} else {
+	  ofstream jsonFile(jsonFileName.c_str()); 
+	  if (!jsonFile.is_open()) {
+		errexit(cmd, str(boost::format("Error:  could not open JSON file %s for writing") % jsonFileName)); 
+	  }
+	  jsonFile << JsonString.str(); 
+	}
+	exit(0); 
   }
   bool singleTag = (tagPatterns.size() == 1 && valuePatterns.size() == 0); 
   bool matchedAll = true, matchedAny = false; 
@@ -185,23 +214,11 @@ int main(int argc, char *argv[]) {
       if (!tagfile) {
         errexit(cmd, str(boost::format("Error:  could not open tag file %s for movie %s")% filename %  sm->getName())); 
       }
-      SM_MetaData::WriteMetaDataToStream(tagfile, moviedata);
+      SM_MetaData::WriteMetaDataToStream(&tagfile, moviedata);
       if (quiet.getValue()) {
         continue; 
       } else {
         cout << "Wrote movie meta data tag file " << filename << endl; 
-      }
-    }
-    if (lorenzFile.is_open()) {
-      TagMap moviedata = sm->GetMetaData(); 
-      if (fileno) {
-        lorenzFile << ",\n"; 
-      } else {
-        lorenzFile << "[\n"; 
-      }
-      SM_MetaData::WriteMetaDataToStream(lorenzFile, moviedata);
-      if (fileno ==movienames.getValue().size()-1) {
-        lorenzFile << "]\n"; 
       }
     }
       
