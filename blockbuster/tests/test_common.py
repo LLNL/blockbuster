@@ -257,10 +257,16 @@ def RunTestCommand(fullcmd, test, outfile):
         # '        "value": "img2sm steamboat\\/m00006.png steamboat\\/m00007.png steamboat\\/m00009.png --report -C -T steamtag:boats -E img2sm-canonical-tags.sm "'
         # so here is the magic sauce:
         # searchexp = re.compile('\\\\[^ ]*/')
-def RemoveBindirAndDateFromLine(line):
+def RemoveBindirHostAndDateFromLine(line):
     r = re.search('\\\\[^ ]*/', line)
     if r:
         newline = line.replace(r.group(0), 'GENERIC_BINDIR')
+        # dbprint("RemoveBindirFromLine: removing bindir from line.\n'%s' ------> '%s'\n"%(line,newline))
+        line = newline
+
+    r = re.search('Movie Create Host"\W*=\W*"(\w*)"', line)
+    if r:
+        newline = line.replace(r.group(1), 'HOST')
         # dbprint("RemoveBindirFromLine: removing bindir from line.\n'%s' ------> '%s'\n"%(line,newline))
         line = newline
 
@@ -298,19 +304,25 @@ def TagfileDiffs(test):
             return "Cannot open gold standard %s"%standard;
             
         dbprint("Diffing %s and %s\n"%(diff,standard))
-    
+        
         taglines = tagfile.readlines()
         stdlines = stdfile.readlines()
         if len(taglines) != len(stdlines):
             return "Different number of lines in %s than %s"%(diff, standard)
+        inCreateHost = False
+        for lineno in range(len(taglines)):         
+            tagline = RemoveBindirHostAndDateFromLine(taglines[lineno])
+            stdline = RemoveBindirHostAndDateFromLine(stdlines[lineno])
+            # don't compare lines that report value for hosts, because that's different on each machine obviously and not a test failure
+            if "Create Host" in tagline:
+                inCreateHost = True
+            if inCreateHost and '},' in tagline:
+                inCreateHost = False
+            if inCreateHost and '"value"' not in tagline:
+                if tagline != stdline:
+                    return "Mismatched fixed line between tagfile %s and standard %s at line %d:\ntagline: \"%s\"\n -->  \"%s\"\nstdline: \"%s\"\n -->  \"%s\""%(diff, standard, lineno, taglines[lineno], tagline, stdlines[lineno], stdline)
 
-        for lineno in range(len(taglines)):
-            tagline = RemoveBindirAndDateFromLine(taglines[lineno])
-            stdline = RemoveBindirAndDateFromLine(stdlines[lineno])
-            
-            if tagline != stdline:
-                return "Mismatched fixed line between tagfile %s and standard %s at line %d:\ntagline: \"%s\"\n -->  \"%s\"\nstdline: \"%s\"\n -->  \"%s\""%(diff, standard, lineno, taglines[lineno], tagline, stdlines[lineno], stdline)
-    return "SUCCESS"
+        return "SUCCESS"
 
 # ================================================================
 def FrameDiffs(test):

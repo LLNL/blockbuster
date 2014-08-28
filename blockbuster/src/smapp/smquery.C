@@ -155,16 +155,16 @@ int main(int argc, char *argv[]) {
 	for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {
 	  string filename = movienames.getValue()[fileno]; 
 	  smBase *sm = smBase::openFile(filename.c_str(), O_RDONLY, 1);
+	  if (fileno) {
+		JsonString << ",\n"; 
+	  }
 	  if (!sm) {
 		cerr << str(boost::format("WARNING: could not open movie file %s.")% filename) << endl; 
 		SM_MetaData::WriteJsonError(&JsonString, filename); 
-		continue;
+	  } else {
+		TagMap moviedata = sm->GetMetaData(); 
+		SM_MetaData::WriteMetaDataToStream(&JsonString, moviedata);
 	  }
-	  TagMap moviedata = sm->GetMetaData(); 
-	  if (fileno < movienames.getValue().size()-1) {
-		JsonString << ",\n"; 
-	  }
-      SM_MetaData::WriteMetaDataToStream(&JsonString, moviedata);
 	}
 	JsonString << "]\n"; 
 	if (jsonFileName == "stdout" || 

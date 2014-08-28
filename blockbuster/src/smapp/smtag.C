@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
     }
     if (jsonFile) {
       didSomething = true; 
-      *jsonFile << "[\n"; 
+	  *jsonFile << "[\n"; 
       SM_MetaData::WriteMetaDataToStream(jsonFile, tagmap);
       *jsonFile << "]\n"; 
     }
@@ -180,12 +180,19 @@ int main(int argc, char *argv[]) {
     }
   }
   
+  if (jsonFile) {
+	*jsonFile << "[\n"; 
+  }
   for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {  
+	if (jsonFile && fileno) *jsonFile << ",\n"; 
     string moviename = movienames.getValue()[fileno]; 
-  smdbprintf(1, str(boost::format("Opening movie file %1%\n")% moviename).c_str()); 
+	smdbprintf(1, str(boost::format("Opening movie file %1%\n")% moviename).c_str()); 
     smBase *sm = smBase::openFile(moviename.c_str(), O_RDWR, 1);
     if (!sm) {
-    smdbprintf(0,"smtag: Error: Unable to open the file: %s\n", moviename.c_str());
+	  smdbprintf(0,"smtag: Error: Unable to open the file: %s\n", moviename.c_str());
+	  if (jsonFile) {
+		SM_MetaData::WriteJsonError(jsonFile, moviename); 
+	  }
       continue;
     }
   smdbprintf(5, "Before setting metadata, there are %d metadata items\n", sm->mMetaData.size()); 
@@ -246,22 +253,24 @@ int main(int argc, char *argv[]) {
       }
     }
     if (jsonFile) {
-      TagMap moviedata = sm->GetMetaData(); 
-      if (fileno) {
-        *jsonFile << ",\n"; 
-      } else {
-        *jsonFile << "[\n"; 
-      }
+	  TagMap moviedata = sm->GetMetaData(); 
       SM_MetaData::WriteMetaDataToStream(jsonFile, moviedata);
-      if (fileno ==movienames.getValue().size()-1) {
-        *jsonFile << "]\n"; 
-      }
     }
     
     sm->WriteMetaData(); 
     sm->closeFile(); 
-  smdbprintf(1, str(boost::format("All flags applied for movie %1%\n") % moviename).c_str()); 
+	smdbprintf(1, str(boost::format("All flags applied for movie %1%\n") % moviename).c_str()); 
   } // end loop over movienames
+  if (jsonFile) {
+	if (!*jsonFile) {
+	  cerr << "Cannot write to json file at end!\n"; 
+	} else {
+	  cerr << "Writing terminal end bracket" << endl; 
+	  *jsonFile << "]\n"; 
+	  /* If you don't delete this stream, it never flushes */
+	  if (jsonFile != &cout) delete jsonFile; 
+	}
+  }  
   // } // end else (if doing movies instead of tagfile export)
   
   
