@@ -371,15 +371,20 @@ int main(int argc,char **argv)
     dst[1] = src[3];
   }
   else {
+	bool err = false; 
     std::string item;    
     std::stringstream ss(destSize.getValue());
+	char X; 
     try {
-      ss >> dst[0] >> dst[1];
+      ss >> dst[0] >> X >> dst[1];
     } catch (...) {
+	  err = true; 
+	}
+	if (err || (X!='X' && X!='x') || dst[1] < 1) {
       errexit (cmd, str(boost::format("Improperly formatted dest size: %1%")%destSize.getValue())); 
     }
+	smdbprintf(1, "Set size to %d x %d\n", dst[0], dst[1]); 
   }
-  
   
   /* We used to allow tilesizes to be specified in great detail, but it is sufficient now to use same tile size at all mipmaps, since after all the I/O is the same regardless of the level of detail.  
 	Formerly, you could say -tilesizes '512x256,256x128,128x64' and have things go the way you wanted them.  Not worth the hassle but worth noting here.  
