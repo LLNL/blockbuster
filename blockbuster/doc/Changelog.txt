@@ -2,12 +2,8 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.7 (git tag blockbuster-v2.8.6b) Mon Aug 25 11:45:09 PDT 2014
+VERSION 2.8.6c (git tag blockbuster-v2.8.6c) Thu Oct  9 15:22:00 PDT 2014
 -- FEATURE:  Enable JSON output to handle errors in movies and to write to stdout. This is to prepare for MovieBrowser toolset to come. 
--- 
-
-===============================================================================
-VERSION 2.8.6c (git tag blockbuster-v2.8.6b) Mon Aug 25 11:45:09 PDT 2014
 -- BUGFIX:  Fixed bug in parsing of file sizes in smcat. 
 
 ===============================================================================
