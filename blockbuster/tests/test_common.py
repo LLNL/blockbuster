@@ -412,7 +412,7 @@ def RunTestExpect(fullcmd, test, outfile):
 
     child.kill(signal.SIGKILL)
     dbprint("Child output remaining: \"%s\"\n"%str(child.before), outfile)
-    child.close(False)
+    child.close()
     return errmsg
 
 # ================================================================

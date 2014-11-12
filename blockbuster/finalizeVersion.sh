@@ -31,7 +31,7 @@ function usage() {
 
 
 # ==========================================
-stagedir=${stagedir:-/nfs/tmp2/rcook/blockbuster}
+stagedir=${stagedir:-/nfs/tmp2/rcook/blockbuster/staging}
 tmpdir=$stagedir/install-tmp/finalizeVersion-tmp
 #=================================
 # test if a string has nonzero length
@@ -280,7 +280,7 @@ rm -rf $tmpdir
 echo "Installing software..." 
 
 scp $builddir/blockbuster-v${version}.tgz auk61:/viz/blockbuster/tarballs/
-ssh auk61 "set -xv; mkdir -p /viz/blockbuster/${version} && pushd /viz/blockbuster/${version} &&  tar -xzf /viz/blockbuster/tarballs/blockbuster-v${version}.tgz && pushd blockbuster-v${version} && INSTALL_DIR=/viz/blockbuster/${version} make && rm -f /viz/blockbuster/test && ln -s /viz/blockbuster/${version} /viz/blockbuster/test" || errexit "build on auk failed"
+runecho ssh auk61 "set -xv; mkdir -p /viz/blockbuster/${version} && pushd /viz/blockbuster/${version} &&  tar -xzf /viz/blockbuster/tarballs/blockbuster-v${version}.tgz && pushd blockbuster-v${version} && INSTALL_DIR=/viz/blockbuster/${version} make && rm -f /viz/blockbuster/test && ln -s /viz/blockbuster/${version} /viz/blockbuster/test" || errexit "Error: build on auk failed."
 
 
 echo '#!/usr/bin/env bash

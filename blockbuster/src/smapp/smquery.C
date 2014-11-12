@@ -4,6 +4,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/regex.hpp>
+#include <boost/filesystem/operations.hpp>
 #include <sm/sm.h>
 #include <vector>
 #include <fstream>
@@ -183,6 +184,9 @@ int main(int argc, char *argv[]) {
   bool singleTag = (tagPatterns.size() == 1 && valuePatterns.size() == 0); 
   bool matchedAll = true, matchedAny = false; 
 
+  if (exportPosterFrame.getValue()) {
+    matchedAny = true; 
+  }
   // should we print the filename of matches before the match? 
   bool prependFilename = prependFilenameFlag.getValue(); 
   if (movienames.getValue().size() > 1) prependFilename = true;
@@ -206,8 +210,7 @@ int main(int argc, char *argv[]) {
     }
     if (exportTagfile.getValue()) {
       TagMap moviedata = sm->GetMetaData(); 
-      string filename = sm->getName(); 
-      boost::replace_last(filename, ".sm", ".tagfile"); 
+      string filename = boost::filesystem::path(sm->getName()).stem().string(); 
       if (filename == sm->getName()) {
         filename = filename + ".tagfile"; 
       }
@@ -223,7 +226,20 @@ int main(int argc, char *argv[]) {
       }
     }
       
-  smdbprintf(3, "Metadata for %s: (%d entries)\n", filename.c_str(), sm->mMetaData.size()); 
+   smdbprintf(3, "Metadata for %s: (%d entries)\n", filename.c_str(), sm->mMetaData.size()); 
+    if (exportPosterFrame.getValue()) {
+      // export to $(echo $moviename | sed s/.sm/_Poster.png); see movie loop for how this is done  
+       string imgname = boost::filesystem::path(sm->getName()).stem().string();      imgname +="_posterframe.png"; 
+      int64_t frameNum =  sm->getPosterFrame(); 
+      int size[3] = {sm->getWidth(), sm->getHeight(), 3}; 
+      vector<unsigned char> dest(size[0]*size[1]*size[2], 0);
+      sm->getFrame(frameNum, dest.data(), 0, 0); 
+      int result = 
+        write_png_file(const_cast<char*>(imgname.c_str()), 
+                       dest.data(), size);
+      cout << "Wrote poster frame image " << imgname << endl; 
+    }
+   
     int32_t posternum = -1;
     int numMatches = 0; 
      // for long list format:
@@ -290,24 +306,6 @@ int main(int argc, char *argv[]) {
         cout << str(boost::format("%1%: (%2%) %3%:\n") % (smdp->mTag) % (smdp->TypeAsString()) % (smdp->ValueAsString()));
       }
     } 
-    if (exportPosterFrame.getValue()) {
-      // export to $(echo $moviename | sed s/.sm/_Poster.png); see movie loop for how this is done  
-      string imgname = sm->getName(); 
-      boost::erase_last(imgname, ".sm"); 
-      imgname +="_posterframe.png"; 
-      int64_t frameNum =  sm->getPosterFrame(); 
-      int size[3] = {sm->getWidth(), sm->getHeight(), 3}; 
-      vector<unsigned char> dest(size[0]*size[1]*size[2], 0);
-      sm->getFrame(frameNum, dest.data(), 0, 0); 
-      int result = 
-        write_png_file(const_cast<char*>(imgname.c_str()), 
-                       dest.data(), size);
-      cout << "Wrote poster frame image " << imgname << endl; 
-      //getFrame(frameNum, dest, 0, 0); 
-      //smdbprintf(0, "Error: ExportPosterFrame(void) is not implemented yet.\n"); 
-      
-    }
-   
     if (!quiet.getValue() ) {
       if (singleTag && valueMatches.size() == 1) {
         if (prependFilename) {
@@ -315,7 +313,7 @@ int main(int argc, char *argv[]) {
         }
         cout << valueMatches[0] << endl;         
       } else {
-        if (!tagMatches.size()) {
+        if (!tagMatches.size() && !matchedAny) {
           printf( "No tags for movie %s matched.\n", filename.c_str()); 
         }
         if (singleTag && valueMatches.size() > 1) {
