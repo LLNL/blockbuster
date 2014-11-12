@@ -34,8 +34,8 @@
 
 #include "boost/shared_ptr.hpp"
 
+//============================================================
 int SMFrameInfo::LoadImage(ImagePtr image, ImageFormat *, const Rectangle *desiredSub, int levelOfDetail) {
- 
   const uint32_t imgWidth = mWidth >> levelOfDetail;
   const uint32_t imgHeight = mHeight >> levelOfDetail;
   bb_assert(imgWidth > 0);
@@ -73,8 +73,8 @@ int SMFrameInfo::LoadImage(ImagePtr image, ImageFormat *, const Rectangle *desir
 		   image->width, image->height, destStride);
   
   this->mSM->getFrameBlock(this->mFrameNumberInFile, (void *) dest, 
-					   GetCurrentThreadID(), destStride,
-					   size, pos, step, levelOfDetail);
+                           GetCurrentThreadID(), destStride,
+                           size, pos, step, levelOfDetail);
   
   image->loadedRegion.x = desiredSub->x;
   image->loadedRegion.y = desiredSub->y;
@@ -83,6 +83,8 @@ int SMFrameInfo::LoadImage(ImagePtr image, ImageFormat *, const Rectangle *desir
   
   return 1;
 }
+
+
 
 
 #define ORDINAL_SUFFIX(x) (                         \

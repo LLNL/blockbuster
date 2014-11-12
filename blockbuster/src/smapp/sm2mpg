@@ -242,13 +242,13 @@ function linkFrames() {
 	echo
 }
 #=================================================
+verboseflag=
+if $verbose; then 
+	verboseflag="-v 1"
+fi
 if $ffmpeg; then 
 	echo "Extracting temporary frames to PNG using sm2img...." 
-	verboseflag=
-	if $verbose; then 
-		verboseflag=-v
-	fi
-	runecho sm2img $verboseflag -F png -s $skip $infile $tmpdir/${framenamebase}_junk_%d.png || errexit "sm2img failed"
+	runecho sm2img -F png -s $skip $infile $tmpdir/${framenamebase}_junk_%d.png || errexit "sm2img returned nonzero exit status, aborting"
 
 	linkFrames "png"
 
@@ -257,7 +257,7 @@ if $ffmpeg; then
 	
 else
 	echo "Extracting the frames in YUV format using sm2img..."	
-	runecho sm2img  -F yuv -s $skip $infile $tmpdir/${framenamebase}_junk_%d || errexit "sm2img failed"
+	runecho sm2img -F yuv -s $skip $infile $tmpdir/${framenamebase}_junk_%d || errexit "sm2img returned nonzero exit status, aborting"
 	# runecho sm2img  -F png -s $skip $infile $tmpdir/${framenamebase}_junk_%d.png || errexit "sm2img failed"
 
 	linkFrames "Y U V"

@@ -79,9 +79,7 @@ int main(int argc, char *argv[]) {
 
   TCLAP::ValueArg<string> jsonFileNameFlag("J", "json-output", "Export a single JSON file, suitable for Lorenz import, containing tags for all movies.  If the given filename is 'stdout' or '-', then output to stdout.", false, "", "filename", cmd); 
 
-  TCLAP::ValueArg<int> thumbnail("N", "thumbnail", "set frame number of thumbnail", false, -1, "frameNum", cmd); 
-
-  TCLAP::ValueArg<int> thumbres("R", "thumbres", "the X resolution of the thumbnail (Y res will be autoscaled based on X res)", false, 250, "numpixels", cmd); 
+  TCLAP::ValueArg<int> posterframe("P", "poster-frame", "set poster frame number", false, -1, "frameNum", cmd); 
 
   TCLAP::MultiArg<string> taglist("T", "tag", "a name:value[:type] for a tag being set or added.  'type' can be 'ASCII', 'DOUBLE', or 'INT64' and defaults to 'ASCII'.", false, "tagname:value[:type]", cmd); 
 
@@ -220,12 +218,9 @@ int main(int argc, char *argv[]) {
     //sm->SetMetaData(tagmap); 
     
     //--------------------------------------------------
-    if (thumbnail.getValue() != -1)  {
-      sm->SetThumbnailFrame(thumbnail.getValue()); 
-      if (thumbres.getValue() != -1) {
-        sm->SetThumbnailRes(thumbres.getValue()); 
-      }
-    }
+    if (posterframe.getValue() != -1)  {
+      sm->setPosterFrame(posterframe.getValue()); 
+   }
     
     //--------------------------------------------------
   smdbprintf(5, "After setting metadata, there are %d metadata items\n", sm->mMetaData.size()); 

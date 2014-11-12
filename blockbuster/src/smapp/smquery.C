@@ -9,6 +9,7 @@
 #include <fstream>
 #include "version.h"
 #include "debugutil.h"
+#include "../libpng/pngsimple.h"
 using namespace std; 
 
 // =======================================================================
@@ -59,7 +60,7 @@ int main(int argc, char *argv[]) {
 
   TCLAP::SwitchArg canonical("C", "canonical", "List all canonical tags for each movie.  If no movie name is given, simply list all canonical metadata with default values.", cmd); 
 
-  TCLAP::SwitchArg exportThumb("e", "export-thumbnail", "Export thumbnail frame", cmd); 
+  TCLAP::SwitchArg exportPosterFrame("e", "export-poster", "Export poster frame", cmd); 
 
   TCLAP::SwitchArg filenameOnly("f", "only-filename", "Only print the filename of the matching movie(s).", cmd); 
 
@@ -71,7 +72,7 @@ int main(int argc, char *argv[]) {
 
   TCLAP::SwitchArg list("l", "list", "Lists all tags in movie(s) with their values.  Equivalent to -T '.*' -s -i.  This is the default behavior", cmd); 
 
-  TCLAP::SwitchArg thumbnailInfo("n", "thumbnail-info", "print frame number of thumbnail and thumbnail resolution", cmd); 
+  TCLAP::SwitchArg posterInfo("n", "poster-info", "print frame number of poster", cmd); 
 
   TCLAP::SwitchArg quiet("q", "quiet", "Do not echo the tags to stdout.  Just return 0 on successful match. ", cmd); 
 
@@ -115,7 +116,7 @@ int main(int argc, char *argv[]) {
 
   bool matchAll = matchAllFlag.getValue(), singleLine = true; //  = singleLineFlag.getValue(); 
 
-  if (!canonical.getValue() && !thumbnailInfo.getValue() && !exportThumb.getValue() && !tagPatternStrings.getValue().size() && !valuePatternStrings.getValue().size() && !matchAll && !getinfo) {
+  if (!canonical.getValue() && !posterInfo.getValue() && !exportPosterFrame.getValue() && !tagPatternStrings.getValue().size() && !valuePatternStrings.getValue().size() && !matchAll && !getinfo) {
     matchAll = true; 
   }
   if (!movienames.getValue().size()) {
@@ -223,7 +224,7 @@ int main(int argc, char *argv[]) {
     }
       
   smdbprintf(3, "Metadata for %s: (%d entries)\n", filename.c_str(), sm->mMetaData.size()); 
-    int32_t thumbnum = -1, thumbres = -1;
+    int32_t posternum = -1;
     int numMatches = 0; 
      // for long list format:
     vector<string> tagMatches, valueMatches, valueTypes, matchTypes;
@@ -275,23 +276,11 @@ int main(int argc, char *argv[]) {
           valueTypes.push_back(mdtype); 
           matchTypes.push_back(matchtype); 
         }
-     }
-      if (thumbnailInfo.getValue()) {
-        if (mdtag == "SM__thumbframe") {
-          thumbnum = pos->second.mInt64; 
-        smdbprintf(5, "Found thumbnail frame %d\n", thumbnum); 
-        }
-        else if (mdtag == "SM__thumbres") {
-          thumbres = pos->second.mInt64; 
-        smdbprintf(5, "Found thumbnail res %d\n", thumbres); 
-        }
       }
     }
-    if (thumbnailInfo.getValue()) {
-      string res = "UNSET", frame = "UNSET"; 
-      if (thumbnum != -1) frame = str(boost::format("%1%")%thumbnum); 
-      if (thumbres != -1) res = str(boost::format("%1%")%thumbres); 
-      cout << str(boost::format("%1%: thumbnail frame: %2%, res: %3%\n") % filename % frame % res) << endl; 
+    if (posterInfo.getValue()) {
+      int64_t  frame = sm->getPosterFrame(); 
+      cout << str(boost::format("%1%: poster frame: %2%\n") % filename % frame); 
     }
     if (canonical.getValue()) {
       cout << str(boost::format("Canonical tags for movie %s:")% filename) << endl; 
@@ -301,10 +290,24 @@ int main(int argc, char *argv[]) {
         cout << str(boost::format("%1%: (%2%) %3%:\n") % (smdp->mTag) % (smdp->TypeAsString()) % (smdp->ValueAsString()));
       }
     } 
-    if (exportThumb.getValue()) {
-      sm->ExportThumbnail(); 
+    if (exportPosterFrame.getValue()) {
+      // export to $(echo $moviename | sed s/.sm/_Poster.png); see movie loop for how this is done  
+      string imgname = sm->getName(); 
+      boost::erase_last(imgname, ".sm"); 
+      imgname +="_posterframe.png"; 
+      int64_t frameNum =  sm->getPosterFrame(); 
+      int size[3] = {sm->getWidth(), sm->getHeight(), 3}; 
+      vector<unsigned char> dest(size[0]*size[1]*size[2], 0);
+      sm->getFrame(frameNum, dest.data(), 0, 0); 
+      int result = 
+        write_png_file(const_cast<char*>(imgname.c_str()), 
+                       dest.data(), size);
+      cout << "Wrote poster frame image " << imgname << endl; 
+      //getFrame(frameNum, dest, 0, 0); 
+      //smdbprintf(0, "Error: ExportPosterFrame(void) is not implemented yet.\n"); 
+      
     }
-    
+   
     if (!quiet.getValue() ) {
       if (singleTag && valueMatches.size() == 1) {
         if (prependFilename) {

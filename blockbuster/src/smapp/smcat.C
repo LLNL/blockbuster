@@ -141,9 +141,7 @@ int main(int argc,char **argv)
 
   TCLAP::ValueArg<string> delimiter("D", "delimiter", "Sets the delimiter for all -T arguments.",false, ":", "string", cmd);
 
-  TCLAP::ValueArg<int> thumbnail("N", "thumbnail", "set frame number of thumbnail", false, -1, "frameNum", cmd);
-
-  TCLAP::ValueArg<int> thumbres("R", "thumbres", "the X resolution of the thumbnail (Y res will be autoscaled based on X res)", false, 0, "numpixels", cmd);
+  TCLAP::ValueArg<int> posterframe("P", "poster-frame", "set poster frame number", false, -1, "frameNum", cmd);
 
   TCLAP::SwitchArg report("", "report", "After all operations are complete, list all the tags in the file.", cmd);
 
@@ -466,7 +464,7 @@ int main(int argc,char **argv)
       sm->SetMetaData(tm, string("Source movie ")+minfos[i].name + ": "); 
     }
     try {
-      sm->SetMetaData(commandLine, tagfile.getValue(), canonical.getValue(), delimiter.getValue(), taglist.getValue(), thumbnail.getValue(), thumbres.getValue(), exportTagfile.getValue(), quiet.getValue());
+      sm->SetMetaData(commandLine, tagfile.getValue(), canonical.getValue(), delimiter.getValue(), taglist.getValue(), posterframe.getValue(), exportTagfile.getValue(), quiet.getValue());
     } catch (string msg) {
       errexit(msg); 
     }

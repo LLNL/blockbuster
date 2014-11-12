@@ -77,6 +77,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include "boost/date_time/gregorian/gregorian.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"
+#include <boost/algorithm/string/erase.hpp>
 #include <pstream.h>
 
 typedef boost::tokenizer<boost::char_separator<char> >  tokenizer;
@@ -128,7 +129,7 @@ void SM_MetaData::Init(void) {
     mCanonicalMetaData.push_back(SM_MetaData("Sim Cluster", "")); 
     mCanonicalMetaData.push_back(SM_MetaData("Keywords", "")); 
     mCanonicalMetaData.push_back(SM_MetaData("Movie Creator", "")); 
-    mCanonicalMetaData.push_back(SM_MetaData("Movie Create Date", "DATE", "")); 
+    mCanonicalMetaData.push_back(SM_MetaData("Movie Create Date", "DATE", ""));
     mCanonicalMetaData.push_back(SM_MetaData("Movie Create Host", "")); 
     mCanonicalMetaData.push_back(SM_MetaData("Movie Create Command", "")); 
     mCanonicalMetaData.push_back(SM_MetaData(APPLY_ALL_TAG, "no")); 
@@ -2447,6 +2448,7 @@ int smBase::compFrame(void *in, void *out, int *outsizes, int res)
   return compressedSize;
 }
  
+
 //============================================================
 void smBase::SetMetaData(const SM_MetaData &md) {
   mMetaData[md.mTag] = md;  
@@ -2473,7 +2475,7 @@ void smBase::SetMetaData(const TagMap tagmap, string tagPrefix) {
 }
 
 //============================================================
-void smBase::SetMetaData(string commandLine, string tagfile, bool canonical, string delimiter, vector<string> taglist, int thumbnail, int thumbres, bool exportTagfile, bool quiet ) {
+void smBase::SetMetaData(string commandLine, string tagfile, bool canonical, string delimiter, vector<string> taglist, int poster, bool exportTagfile, bool quiet ) {
   
   // populate with reasonable guesses by default:
   TagMap mdmap = SM_MetaData::CanonicalMetaDataAsMap(true);
@@ -2505,12 +2507,9 @@ void smBase::SetMetaData(string commandLine, string tagfile, bool canonical, str
     }
     ++pos;
   }
-  if (thumbnail != -1) {
-    SetThumbnailFrame(thumbnail);
-    if (thumbres != -1) {
-      SetThumbnailRes(thumbres);
-    }
-    smdbprintf(2, "Set thumbnail metadata.\n");
+  if (poster != -1) {
+    setPosterFrame(poster);
+    smdbprintf(2, "Set poster frame in metadata.\n");
   }
   if (exportTagfile) {
     TagMap moviedata = GetMetaData();

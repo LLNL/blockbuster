@@ -670,20 +670,23 @@ class smBase {
   // Add the tag/value pairs from tagvec. 
   //void AddTagValue(string tag, string mdtype, int64_t value); 
 
-  void SetThumbnailFrame(int64_t f){
-    SetMetaData("SM__thumbframe", f); 
-    smdbprintf(1, str(boost::format("Setting thumbnail frame to %1%.\n")%f).c_str()); 
+  void setPosterFrame(int64_t f){
+    SetMetaData("SM__posterframe", f); 
+    smdbprintf(1, str(boost::format("Setting poster frame to %1%.\n")%f).c_str()); 
+  }
+  int64_t getPosterFrame(void) {
+    int64_t frame = -1; 
+    if (mMetaData.find("SM__posterframe") != mMetaData.end()) {
+      frame = mMetaData["SM__posterframe"].mInt64;
+    }
+    if (frame == -1 && mNumFrames > 0) {
+      frame = mNumFrames/2; 
+      SetMetaData("SM__posterframe", frame); 
+    }
+    return frame;
   }
 
-  void SetThumbnailRes(int64_t r){
-    smdbprintf(4, str(boost::format("Setting thumbnail resolution to %1%.\n")%r).c_str()); 
-    SetMetaData("SM__thumbres", r); 
-  }
-
-  void ExportThumbnail(void) {
-    // export to $(echo $moviename | sed s/.sm/_Thumbnail.png); see movie loop for how this is done
-    smdbprintf(0, "Error: ExportThumbnail(void) is not implemented yet.\n"); 
-  }
+  void ExportPosterFrame(void);
 
   void SetMetaDataFromDelimitedString(string s) {
     SM_MetaData md;
@@ -693,7 +696,7 @@ class smBase {
   void SetMetaData(const SM_MetaData &md);
   void SetMetaData(const TagMap mdmap, string tagPrefix="");
   void SetMetaData(vector<SM_MetaData> &mdvec);
-  void SetMetaData(string commandLine, string tagfile, bool canonical, string delimiter, vector<string> taglist, int thumbnail, int thumbres, bool exportTagfile, bool quiet );
+  void SetMetaData(string commandLine, string tagfile, bool canonical, string delimiter, vector<string> taglist, int poster, bool exportTagfile, bool quiet );
 
   template <class T> 
     void SetMetaData(const string tag, const T &value) {
