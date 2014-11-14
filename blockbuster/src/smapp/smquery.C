@@ -55,6 +55,62 @@ void ListReservedTags(void) {
   return; 
 }
 
+
+//===================================================================
+void ExportPosterFrame(smBase *sm) {
+  string imgname = 
+    boost::filesystem::path(sm->getName()).stem().string()
+    + "_posterframe.jpg"; 
+  int64_t frameNum =  sm->getPosterFrame(); 
+  int size[3] = {sm->getWidth(), sm->getHeight(), 3}; 
+  unsigned long numbytes = 2 * size[0]*size[1]*size[2]; // twice as much as needed just for safety, and to fit any metadata that will go in. 
+  unsigned long numbytes_requested = numbytes; 
+  vector<unsigned char> source(numbytes, 0);
+  sm->getFrame(frameNum, source.data(), 0, 0); 
+  
+  struct jpeg_compress_struct cinfo = {0};
+  struct jpeg_error_mgr jerr;
+  JSAMPROW row_ptr[1];
+  int row_stride;
+  
+  cinfo.err = jpeg_std_error(&jerr);
+  jpeg_create_compress(&cinfo);
+  vector<unsigned char> dest(numbytes, 0);
+  unsigned char *buffer = &dest[0]; 
+  jpeg_mem_dest(&cinfo, &buffer, &numbytes);
+  
+  cinfo.image_width = sm->getWidth(); 
+  cinfo.image_height = sm->getHeight(); 
+  cinfo.input_components = 3;
+  cinfo.in_color_space = JCS_RGB;
+  
+  jpeg_set_defaults(&cinfo);
+  jpeg_start_compress(&cinfo, TRUE);
+  row_stride = sm->getWidth() * 3;
+  
+  while (cinfo.next_scanline < cinfo.image_height) {
+    row_ptr[0] = &source[cinfo.next_scanline * row_stride];
+    jpeg_write_scanlines(&cinfo, row_ptr, 1);
+  }
+  
+  jpeg_finish_compress(&cinfo);
+  jpeg_destroy_compress(&cinfo);
+
+  //  cout << str(boost::format("After compressing,  cinfo.dest->free_in_buffer = %1%, numbytes = %2%, numbytes_requested = %5%, with image size %3% x %4%\n ")% (cinfo.dest->free_in_buffer) % numbytes %(sm->getWidth())% (sm->getHeight()) % numbytes_requested);  
+
+  FILE * file = fopen(imgname.c_str(), "w"); 
+  fwrite(buffer, numbytes_requested-numbytes, 1, file); 
+  fclose(file); 
+  
+  /* 
+     int result = 
+     write_png_file(const_cast<char*>(imgname.c_str()), 
+     dest.data(), size);
+  */
+  cout << "Wrote poster frame image " << imgname << endl; 
+  return; 
+}
+
 //===================================================================
 int main(int argc, char *argv[]) {
   TCLAP::CmdLine  cmd(str(boost::format("%1% queries tags in movies.  If only a single tag is queried, only the single value result will be reported without embellishment.")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
@@ -155,7 +211,7 @@ int main(int argc, char *argv[]) {
 	stringstream JsonString; 
 	JsonString << "["; 
 	for (uint fileno = 0; fileno < movienames.getValue().size(); fileno++) {
-	  string filename = movienames.getValue()[fileno]; 
+      string filename = movienames.getValue()[fileno]; 
 	  smBase *sm = smBase::openFile(filename.c_str(), O_RDONLY, 1);
 	  if (fileno) {
 		JsonString << ",\n"; 
@@ -228,16 +284,7 @@ int main(int argc, char *argv[]) {
       
    smdbprintf(3, "Metadata for %s: (%d entries)\n", filename.c_str(), sm->mMetaData.size()); 
     if (exportPosterFrame.getValue()) {
-      // export to $(echo $moviename | sed s/.sm/_Poster.png); see movie loop for how this is done  
-       string imgname = boost::filesystem::path(sm->getName()).stem().string();      imgname +="_posterframe.png"; 
-      int64_t frameNum =  sm->getPosterFrame(); 
-      int size[3] = {sm->getWidth(), sm->getHeight(), 3}; 
-      vector<unsigned char> dest(size[0]*size[1]*size[2], 0);
-      sm->getFrame(frameNum, dest.data(), 0, 0); 
-      int result = 
-        write_png_file(const_cast<char*>(imgname.c_str()), 
-                       dest.data(), size);
-      cout << "Wrote poster frame image " << imgname << endl; 
+      ExportPosterFrame(sm);  
     }
    
     int32_t posternum = -1;
