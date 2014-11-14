@@ -23,7 +23,7 @@
 #
 #   Author: Rich Cook
 #
-#	Makefile for libjpeg 6b 
+#	Makefile for libjpeg 9a 
 #
 #	$Id: Makefile,v 1.3 2009/05/14 02:31:33 wealthychef Exp $
 #
@@ -39,23 +39,17 @@ all: install
 
 FORCE: 
 
-LIBTARGET = jpeg-6b/libjpeg.a
-
 install: $(INSTALL_DIR)/lib/libjpeg.a
 
 FORCE: 
 
-$(INSTALL_DIR)/lib/libjpeg.a: jpeg-6b/libjpeg.a
-	cd jpeg-6b && cp libjpeg.a $(INSTALL_DIR)/lib && \
-	cp *.h $(INSTALL_DIR)/include
-
-jpeg-6b/libjpeg.a:
+$(INSTALL_DIR)/lib/libjpeg.a: 
 	mkdir -p $(DIRS)
-	tar -xvzf jpeg-6b.tgz
-	cd jpeg-6b && CC="$(CC)" CFLAGS="$(CFLAGS)" \
+	tar -xzf jpegsrc.v9a.t*gz
+	cd jpeg-9a && CC="$(CC)" CFLAGS="$(CFLAGS)" \
 	./configure --prefix=$(INSTALL_DIR) && \
 	$(MAKE) -j 20 install 
 
 
 clean:
-	rm -rf jpeg-6b  $(INSTALL_DIR)/lib/libjpeg.a libjpeg.a
+	rm -rf jpeg-9a  $(INSTALL_DIR)/lib/libjpeg.a 
