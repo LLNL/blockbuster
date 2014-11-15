@@ -237,6 +237,33 @@ struct SM_MetaData {
     Set(tag,mdtype,s); 
     return;     
   }
+    
+  bool GetValue(string &outvalue) {
+    if (mType == METADATA_TYPE_ASCII) {
+      outvalue = mAscii; 
+      return true; 
+    }
+    smdbprintf(1, "SM_MetaData::GetValue: Error: tag %s is not ASCII.\n", mTag.c_str()); 
+    return false; 
+  }
+  bool GetValue(double &outvalue) {
+    if (mType == METADATA_TYPE_DOUBLE) {
+      outvalue = mDouble; 
+      return true; 
+    }
+    smdbprintf(1, "SM_MetaData::GetValue: Error: tag %s is not DOUBLE.\n", mTag.c_str()); 
+    return false; 
+  }
+
+  bool GetValue(int64_t &outvalue) {
+    if (mType == METADATA_TYPE_INT64) {
+      outvalue = mInt64; 
+      return true; 
+    }
+    smdbprintf(1, "SM_MetaData::GetValue: Error: tag %s is not INT64.\n", mTag.c_str()); 
+    return false; 
+  }
+        
   
   bool Set(string tag, string mdtype, string s) {  
     smdbprintf(5, "Set(%s, %s, %s)\n", tag.c_str(), mdtype.c_str(), s.c_str());
@@ -706,6 +733,34 @@ class smBase {
   }
 
   TagMap GetMetaData(void) { return mMetaData; }
+    
+  bool GetMetaData(string tag, string &outvalue) {
+    outvalue = "";        
+    if (mMetaData.find(tag) == mMetaData.end()) {    
+      smdbprintf(1, "smBase::GetMetaData: Warning: tag %s not found.\n", tag.c_str()); 
+      return false; 
+    }     
+    return mMetaData[tag].GetValue(outvalue); 
+  }
+
+  bool GetMetaData(string tag, double &outvalue) {
+    outvalue = 0;        
+    if (mMetaData.find(tag) == mMetaData.end()) {    
+      smdbprintf(1, "smBase::GetMetaData: Warning: tag %s not found.\n", tag.c_str()); 
+      return false; 
+    }     
+    return mMetaData[tag].GetValue(outvalue); 
+  }
+
+  bool GetMetaData(string tag, int64_t &outvalue) {
+    outvalue = 0;        
+    if (mMetaData.find(tag) == mMetaData.end()) {    
+      smdbprintf(1, "smBase::GetMetaData: Warning: tag %s not found.\n", tag.c_str()); 
+      return false; 
+    }     
+    return mMetaData[tag].GetValue(outvalue); 
+  }
+
   string MetaDataAsString(string label=""); 
 
   void WriteMetaData(void);
