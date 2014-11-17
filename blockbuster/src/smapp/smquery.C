@@ -69,9 +69,9 @@ void ExportPosterFrame(smBase *sm) {
   // Read the RGB data from the SM movie
   int64_t frameNum =  sm->getPosterFrame(); 
   int size[3] = {sm->getWidth(), sm->getHeight(), 3}; 
-  unsigned long numbytes = 2 * size[0]*size[1]*size[2]; // twice as much as needed just for safety, and to fit any metadata that will go in. 
+  unsigned long numbytes = size[0]*size[1]*size[2]; // twice as much as needed just for safety, and to fit any metadata that will go in. 
   unsigned long numbytes_requested = numbytes; 
-  vector<unsigned char> source(numbytes, 0);
+  vector<unsigned char> source(numbytes*2, 0);
   sm->getFrame(frameNum, source.data(), 0, 0); 
   
   // -------------------------------------------------------------
@@ -104,7 +104,7 @@ void ExportPosterFrame(smBase *sm) {
   jpeg_finish_compress(&cinfo);
   jpeg_destroy_compress(&cinfo);
 
-  smdbprintf(2, str(boost::format("After compressing,  cinfo.dest->free_in_buffer = %1%, numbytes = %2%, numbytes_requested = %5%, with image size %3% x %4%\n ")% (cinfo.dest->free_in_buffer) % numbytes %(sm->getWidth())% (sm->getHeight()) % numbytes_requested).c_str());  
+  smdbprintf(2, str(boost::format("After compressing,  cinfo.dest->free_in_buffer = %1%, numbytes = %2%, numbytes_requested = %5%, with image size %3% x %4%\n ")% (int)(cinfo.dest->free_in_buffer) % numbytes %(sm->getWidth())% (sm->getHeight()) % numbytes_requested).c_str());  
 
   // ---------------------------------------------------------
   // Use Exiv2 library to add Exif metadata to the buffer
@@ -115,22 +115,35 @@ void ExportPosterFrame(smBase *sm) {
 
   Exiv2::ExifData exifData;
   exifData["Exif.Image.ImageDescription"] = title; 
-  
+  exifData["Exif.Photo.UserComment"]
+    = "charset=\"Unicode\" this is a user comment"; 
 
   uint32_t buffersize = numbytes_requested-numbytes; 
-  // create an exiv2 image in memory using the jpeg buffer
-  Exiv2::Image::AutoPtr image = Exiv2::ImageFactory::open(buffer, buffersize);
-  image->setExifData(exifData); 
-  image->writeMetadata(); 
-  buffersize = image->io().size(); 
-  cout << str(boost::format("image class has io size of %1%\n")%buffersize);
-  
-  // ---------------------------------------------------------
-  // Write the buffer, now containing Exif metadata, to disk
-  FILE * file = fopen(imgname.c_str(), "w"); 
-  fwrite(buffer, buffersize, 1, file); 
-  fclose(file); 
 
+  bool inMemory = false; 
+
+  if (inMemory) {
+    // create an exiv2 image in memory using the jpeg buffer
+    Exiv2::Image::AutoPtr image = Exiv2::ImageFactory::open(buffer, buffersize);
+    image->setExifData(exifData); 
+    image->writeMetadata(); 
+    buffersize = image->io().size(); 
+    cout << str(boost::format("image class has io size of %1%\n")%buffersize);
+  
+    // ---------------------------------------------------------
+    // Write the buffer, now containing Exif metadata, to disk
+    FILE * file = fopen(imgname.c_str(), "w"); 
+    fwrite(buffer, buffersize, 1, file); 
+    fclose(file); 
+  } else {
+    FILE * file = fopen(imgname.c_str(), "w"); 
+    fwrite(buffer, buffersize, 1, file); 
+    fclose(file); 
+
+    Exiv2::Image::AutoPtr image = Exiv2::ImageFactory::open(imgname);
+    image->setExifData(exifData); 
+    image->writeMetadata(); 
+  }
   cout << "Wrote poster frame image " << imgname << endl; 
   return; 
 }
