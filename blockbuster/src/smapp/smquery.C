@@ -120,10 +120,11 @@ void ExportPosterFrame(smBase *sm) {
 
   uint32_t buffersize = numbytes_requested-numbytes; 
 
-  bool inMemory = false; 
+  bool inMemory = false; // in-core does not work yet, keep this to false
 
   if (inMemory) {
     // create an exiv2 image in memory using the jpeg buffer
+    // For some reason this does not work yet.  
     Exiv2::Image::AutoPtr image = Exiv2::ImageFactory::open(buffer, buffersize);
     image->setExifData(exifData); 
     image->writeMetadata(); 
