@@ -60,10 +60,13 @@ void ListReservedTags(void) {
 
 
 //===================================================================
-void ExportPosterFrame(smBase *sm) {
+void ExportPosterFrame(string outdir, smBase *sm) {
   string imgname = 
     boost::filesystem::path(sm->getName()).stem().string()
     + "_posterframe.jpg"; 
+  if (outdir != "") {
+    imgname = outdir + "/" + imgname; 
+  }
 
   // ----------------------------------------------------
   // Read the RGB data from the SM movie
@@ -189,6 +192,8 @@ int main(int argc, char *argv[]) {
 
   TCLAP::ValueArg<string> jsonFileNameFlag("J", "json-output", "Export a single JSON file, suitable for Lorenz import, containing tags for all movies.  If the given filename is 'stdout' or '-', then output to stdout.", false, "", "filename", cmd); 
 
+  TCLAP::ValueArg<string> outdirFlag("o", "outdir", "Directory to put output files.  Default is current working directory when filenames are not given.  Also prepended whenever relative filenames are given (e.g. with -J flag).", false, "", "directory name", cmd); 
+
   TCLAP::SwitchArg reservedList("", "reserved-tag-list", "List all reserved tags and exit.", cmd); 
 
   TCLAP::MultiArg<string> tagPatternStrings("T", "Tag", "Regex pattern to match any substring of the tag name being queried.  Thus the pattern 'Duration' is the same as '.*Duration.*'  To match an exact string, use '^' and '$', i.e., \"^pattern$\".  See --reserved-tag-list", false, "regexp", cmd); 
@@ -273,6 +278,9 @@ int main(int argc, char *argv[]) {
 		jsonFileName == "-") {
 	  cout << JsonString.str(); 
 	} else {
+      if (jsonFileName[0] != '/' && outdirFlag.getValue() != "") {
+        jsonFileName = outdirFlag.getValue() + "/" + jsonFileName; 
+      }
 	  ofstream jsonFile(jsonFileName.c_str()); 
 	  if (!jsonFile.is_open()) {
 		errexit(cmd, str(boost::format("Error:  could not open JSON file %s for writing") % jsonFileName)); 
@@ -310,7 +318,10 @@ int main(int argc, char *argv[]) {
     }
     if (exportTagfile.getValue()) {
       TagMap moviedata = sm->GetMetaData(); 
-      string filename = boost::filesystem::path(sm->getName()).stem().string(); 
+      string filename = boost::filesystem::path(sm->getName()).stem().string();
+      if (outdirFlag.getValue() != "") {
+        filename = outdirFlag.getValue() + "/" + filename; 
+      }
       if (filename == sm->getName()) {
         filename = filename + ".tagfile"; 
       }
@@ -328,7 +339,7 @@ int main(int argc, char *argv[]) {
       
    smdbprintf(3, "Metadata for %s: (%d entries)\n", filename.c_str(), sm->mMetaData.size()); 
     if (exportPosterFrame.getValue()) {
-      ExportPosterFrame(sm);  
+      ExportPosterFrame(outdirFlag.getValue(), sm);  
     }
    
     int32_t posternum = -1;
