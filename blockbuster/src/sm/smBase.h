@@ -239,11 +239,11 @@ struct SM_MetaData {
   }
     
   bool GetValue(string &outvalue) {
-    if (mType == METADATA_TYPE_ASCII) {
+    if (mType == METADATA_TYPE_ASCII || mType == METADATA_TYPE_DATE) {
       outvalue = mAscii; 
       return true; 
     }
-    smdbprintf(1, "SM_MetaData::GetValue: Error: tag %s is not ASCII.\n", mTag.c_str()); 
+    smdbprintf(1, "SM_MetaData::GetValue: Error: tag %s is not ASCII or DATE.\n", mTag.c_str()); 
     return false; 
   }
   bool GetValue(double &outvalue) {
@@ -733,9 +733,10 @@ class smBase {
   }
 
   TagMap GetMetaData(void) { return mMetaData; }
-    
+   
+  // ===========================================================
+  /* Do not change outvalue unless data is found.  Allows simpler code in caller */ 
   bool GetMetaData(string tag, string &outvalue) {
-    outvalue = "";        
     if (mMetaData.find(tag) == mMetaData.end()) {    
       smdbprintf(1, "smBase::GetMetaData: Warning: tag %s not found.\n", tag.c_str()); 
       return false; 
@@ -743,8 +744,9 @@ class smBase {
     return mMetaData[tag].GetValue(outvalue); 
   }
 
+  // ===========================================================
+  /* Do not change outvalue unless data is found.  Allows simpler code in caller */ 
   bool GetMetaData(string tag, double &outvalue) {
-    outvalue = 0;        
     if (mMetaData.find(tag) == mMetaData.end()) {    
       smdbprintf(1, "smBase::GetMetaData: Warning: tag %s not found.\n", tag.c_str()); 
       return false; 
@@ -752,8 +754,9 @@ class smBase {
     return mMetaData[tag].GetValue(outvalue); 
   }
 
+  // ===========================================================
+  /* Do not change outvalue unless data is found.  Allows simpler code in caller */ 
   bool GetMetaData(string tag, int64_t &outvalue) {
-    outvalue = 0;        
     if (mMetaData.find(tag) == mMetaData.end()) {    
       smdbprintf(1, "smBase::GetMetaData: Warning: tag %s not found.\n", tag.c_str()); 
       return false; 
@@ -761,10 +764,13 @@ class smBase {
     return mMetaData[tag].GetValue(outvalue); 
   }
 
+  // ===========================================================
   string MetaDataAsString(string label=""); 
 
+  // ===========================================================
   void WriteMetaData(void);
 
+  // ===========================================================
   bool ExportMetaData(ostream *ofile) {  
     if (mMetaData.size()) {
       return SM_MetaData::WriteMetaDataToStream(ofile, mMetaData); 
@@ -772,6 +778,7 @@ class smBase {
     return false; 
   }
 
+  // ===========================================================
   bool ImportMetaData(string filename) {
     if (mMetaData.size() ) {
       smdbprintf(2, "Importing metadata from file %s\n", filename.c_str()); 
@@ -781,6 +788,7 @@ class smBase {
   }
 
   
+  // ===========================================================
   // close a movie
   void closeFile(void);
   void deleteFile(void) { 

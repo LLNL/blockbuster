@@ -108,16 +108,22 @@ void ExportPosterFrame(smBase *sm) {
 
   // ---------------------------------------------------------
   // Use Exiv2 library to add Exif metadata to the buffer
-  string title; 
-  if (!sm->GetMetaData("Title", title)) {
-    title = sm->getName(); 
-  }
-
+  string title = sm->getName(), authors="unknown", description="none", keywords="none", createDate="unknown", science="unknown"; 
+  sm->GetMetaData("Title", title);
+  sm->GetMetaData("Authors", authors); 
+  sm->GetMetaData("Description", description); 
+  sm->GetMetaData("Keywords", keywords); 
+  sm->GetMetaData("Movie Create Date", createDate); 
+  sm->GetMetaData("Science Type", science); 
+    
   Exiv2::ExifData exifData;
-  exifData["Exif.Image.ImageDescription"] = title; 
-  exifData["Exif.Photo.UserComment"]
-    = "charset=\"Unicode\" this is a user comment"; 
-
+  exifData["Exif.Image.XPTitle"] = title; 
+  exifData["Exif.Image.XPAuthor"] = authors; 
+  exifData["Exif.Photo.UserComment"] = description; 
+  exifData["Exif.Image.XPKeywords"] = keywords; 
+  exifData["Exif.Image.DateTimeOriginal"] = createDate; 
+  exifData["Exif.Image.XPSubject"] = science; 
+  
   uint32_t buffersize = numbytes_requested-numbytes; 
 
   bool inMemory = false; // in-core does not work yet, keep this to false
