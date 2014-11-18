@@ -318,12 +318,9 @@ int main(int argc, char *argv[]) {
     }
     if (exportTagfile.getValue()) {
       TagMap moviedata = sm->GetMetaData(); 
-      string filename = boost::filesystem::path(sm->getName()).stem().string();
+      string filename = boost::filesystem::path(sm->getName()).stem().string() + ".json";
       if (outdirFlag.getValue() != "") {
         filename = outdirFlag.getValue() + "/" + filename; 
-      }
-      if (filename == sm->getName()) {
-        filename = filename + ".tagfile"; 
       }
       ofstream tagfile(filename.c_str()); 
       if (!tagfile) {
