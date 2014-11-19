@@ -4,7 +4,7 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 ===============================================================================
 VERSION 2.8.6e (git tag blockbuster-v2.8.6e) Tue Nov 18 14:02:24 PST 2014
 -- FEATURE:  smquery now exports poster frames to jpeg with Exif metadata for use with PhotoFloat image gallery javascript library
--- FEATURE:  'Enable --outdir to smquery to specify location of output json and poster frames'
+-- FEATURE:  Modify smquery to require user specify location of output json and poster frames.  Useful for movie cataloguing tool in progress.  
 
 ===============================================================================
 VERSION 2.8.6d (git tag blockbuster-v2.8.6d) Wed Nov 12 15:55:07 PST 2014

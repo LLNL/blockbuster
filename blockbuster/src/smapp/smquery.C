@@ -13,6 +13,8 @@
 #include "../libpng/pngsimple.h"
 #include <exiv2/exiv2.hpp>
 #include <exiv2/image.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 using namespace std; 
 
@@ -60,13 +62,7 @@ void ListReservedTags(void) {
 
 
 //===================================================================
-void ExportPosterFrame(string outdir, smBase *sm) {
-  string imgname = 
-    boost::filesystem::path(sm->getName()).stem().string()
-    + "_posterframe.jpg"; 
-  if (outdir != "") {
-    imgname = outdir + "/" + imgname; 
-  }
+void ExportPosterFrame(string imgname, smBase *sm) {
 
   // ----------------------------------------------------
   // Read the RGB data from the SM movie
@@ -162,37 +158,35 @@ void ExportPosterFrame(string outdir, smBase *sm) {
 int main(int argc, char *argv[]) {
   TCLAP::CmdLine  cmd(str(boost::format("%1% queries tags in movies.  If only a single tag is queried, only the single value result will be reported without embellishment.")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
 
+  TCLAP::SwitchArg andFlag("A", "and", "Program only returns true (0) if all expressions match.  Normally, any matched expression causes a 0 return code.", cmd); 
+
   TCLAP::SwitchArg canonical("C", "canonical", "List all canonical tags for each movie.  If no movie name is given, simply list all canonical metadata with default values.", cmd); 
 
-  TCLAP::SwitchArg exportPosterFrame("e", "export-poster", "Export poster frame", cmd); 
+  TCLAP::ValueArg<string>  exportPosterFrame("e", "export-poster", "Export poster frame", false, "", "filename", cmd); 
+
+  TCLAP::ValueArg<string> exportTagfile("E", "export-tagfile", "Extract a (JSON) tag file from each movie which can be read with smtag.", false, "", "filename", cmd); 
 
   TCLAP::SwitchArg filenameOnly("f", "only-filename", "Only print the filename of the matching movie(s).", cmd); 
+
+  TCLAP::SwitchArg getinfoFlag("i", "info", "Get old-style \"sminfo\" metadata for movie, such as compression type, number of frames, etc.", cmd); 
+
+  TCLAP::ValueArg<string> jsonFileNameFlag("J", "json-output", "Export a single JSON file, suitable for Lorenz import, containing tags for all movies.  If the given filename is 'stdout' or '-', then output to stdout.", false, "", "filename", cmd); 
+
+  TCLAP::SwitchArg list("l", "list", "Lists all tags in movie(s) with their values.  Equivalent to -T '.*' -s -i.  This is the default behavior", cmd); 
+
+  TCLAP::ValueArg<string> lorenzFileNameFlag("L", "lorenz-format", "Synonym for -J(q.v..", false, "", "filename", cmd); 
+
+  TCLAP::SwitchArg matchAllFlag("", "match-all", "Same as -T '.*', matches all tags.", cmd); 
+
+  TCLAP::SwitchArg posterInfo("n", "poster-number", "print frame number of poster", cmd); 
 
   TCLAP::SwitchArg prependFilenameFlag("p", "prepend-filename", "Print the filename of the matching movie(s) before each match.  Default: false, unless you are querying multiple movies.  See also --dont-prepend-filename", cmd); 
 
   TCLAP::SwitchArg dontPrependFilenameFlag("P", "dont-prepend-filename", "Never print the filename of the matching movie(s) before each match.", cmd); 
 
-  TCLAP::SwitchArg getinfoFlag("i", "info", "Get old-style \"sminfo\" metadata for movie, such as compression type, number of frames, etc.", cmd); 
-
-  TCLAP::SwitchArg list("l", "list", "Lists all tags in movie(s) with their values.  Equivalent to -T '.*' -s -i.  This is the default behavior", cmd); 
-
-  TCLAP::SwitchArg posterInfo("n", "poster-info", "print frame number of poster", cmd); 
-
   TCLAP::SwitchArg quiet("q", "quiet", "Do not echo the tags to stdout.  Just return 0 on successful match. ", cmd); 
 
   TCLAP::ValueArg<int> verbosity("v", "verbosity", "set verbosity (0-5)", false, 0, "int", cmd); 
-
-  TCLAP::SwitchArg matchAllFlag("", "match-all", "Same as -T '.*', matches all tags.", cmd); 
-
-  TCLAP::SwitchArg andFlag("A", "and", "Program only returns true (0) if all expressions match.  Normally, any matched expression causes a 0 return code.", cmd); 
-
-  TCLAP::SwitchArg exportTagfile("E", "export-tagfile", "Extract a (JSON) tag file from each movie which can be read with smtag.", cmd); 
-
-  TCLAP::ValueArg<string> lorenzFileNameFlag("L", "lorenz-format", "Synonym for -J(q.v..", false, "", "filename", cmd); 
-
-  TCLAP::ValueArg<string> jsonFileNameFlag("J", "json-output", "Export a single JSON file, suitable for Lorenz import, containing tags for all movies.  If the given filename is 'stdout' or '-', then output to stdout.", false, "", "filename", cmd); 
-
-  TCLAP::ValueArg<string> outdirFlag("o", "outdir", "Directory to put output files.  Default is current working directory when filenames are not given.  Also prepended whenever relative filenames are given (e.g. with -J flag).", false, "", "directory name", cmd); 
 
   TCLAP::SwitchArg reservedList("", "reserved-tag-list", "List all reserved tags and exit.", cmd); 
 
@@ -222,7 +216,7 @@ int main(int argc, char *argv[]) {
 
   bool matchAll = matchAllFlag.getValue(), singleLine = true; //  = singleLineFlag.getValue(); 
 
-  if (!canonical.getValue() && !posterInfo.getValue() && !exportPosterFrame.getValue() && !tagPatternStrings.getValue().size() && !valuePatternStrings.getValue().size() && !matchAll && !getinfo) {
+  if (!canonical.getValue() && !posterInfo.getValue() && exportPosterFrame.getValue() == "" && !tagPatternStrings.getValue().size() && !valuePatternStrings.getValue().size() && !matchAll && !getinfo) {
     matchAll = true; 
   }
   if (!movienames.getValue().size()) {
@@ -278,9 +272,6 @@ int main(int argc, char *argv[]) {
 		jsonFileName == "-") {
 	  cout << JsonString.str(); 
 	} else {
-      if (jsonFileName[0] != '/' && outdirFlag.getValue() != "") {
-        jsonFileName = outdirFlag.getValue() + "/" + jsonFileName; 
-      }
 	  ofstream jsonFile(jsonFileName.c_str()); 
 	  if (!jsonFile.is_open()) {
 		errexit(cmd, str(boost::format("Error:  could not open JSON file %s for writing") % jsonFileName)); 
@@ -292,9 +283,6 @@ int main(int argc, char *argv[]) {
   bool singleTag = (tagPatterns.size() == 1 && valuePatterns.size() == 0); 
   bool matchedAll = true, matchedAny = false; 
 
-  if (exportPosterFrame.getValue()) {
-    matchedAny = true; 
-  }
   // should we print the filename of matches before the match? 
   bool prependFilename = prependFilenameFlag.getValue(); 
   if (movienames.getValue().size() > 1) prependFilename = true;
@@ -309,19 +297,27 @@ int main(int argc, char *argv[]) {
     string filename = movienames.getValue()[fileno]; 
     smBase *sm = smBase::openFile(filename.c_str(), O_RDONLY, 1);
     if (!sm) {
-      errexit(cmd, str(boost::format("ERROR: could not open movie file %s.")% filename)); 
+      string errmsg = str(boost::format("ERROR: could not open movie file %s.")% filename); 
+      if (exportTagfile.getValue() != "") {
+        using boost::property_tree::ptree; 
+        ptree pt;
+        pt.put("name.type", "ASCII"); 
+        pt.put("name.value", filename); 
+        pt.put("error.type", "ASCII"); 
+        pt.put("error.value", errmsg); 
+        ofstream ofile(exportTagfile.getValue().c_str()); 
+        write_json(ofile, pt);
+      }
+      errexit(cmd, errmsg); 
     }
 
     // Movie info case... (both sminfo and smquery file)
     if (getinfo) {  
       cout << sm->InfoString(verbosity.getValue()) << endl; 
     }
-    if (exportTagfile.getValue()) {
+    if (exportTagfile.getValue() != "") {
       TagMap moviedata = sm->GetMetaData(); 
-      string filename = boost::filesystem::path(sm->getName()).stem().string() + ".json";
-      if (outdirFlag.getValue() != "") {
-        filename = outdirFlag.getValue() + "/" + filename; 
-      }
+      string filename = exportTagfile.getValue();
       ofstream tagfile(filename.c_str()); 
       if (!tagfile) {
         errexit(cmd, str(boost::format("Error:  could not open tag file %s for movie %s")% filename %  sm->getName())); 
@@ -335,8 +331,9 @@ int main(int argc, char *argv[]) {
     }
       
    smdbprintf(3, "Metadata for %s: (%d entries)\n", filename.c_str(), sm->mMetaData.size()); 
-    if (exportPosterFrame.getValue()) {
-      ExportPosterFrame(outdirFlag.getValue(), sm);  
+    if (exportPosterFrame.getValue() != "") {
+      matchedAny = true; 
+      ExportPosterFrame(exportPosterFrame.getValue(), sm);  
     }
    
     int32_t posternum = -1;
