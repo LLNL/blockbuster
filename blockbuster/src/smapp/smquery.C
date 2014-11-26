@@ -98,7 +98,7 @@ void ExportPosterFrame(string imgname, smBase *sm) {
   row_stride = sm->getWidth() * 3;
   
   while (cinfo.next_scanline < cinfo.image_height) {
-    row_ptr[0] = &source[cinfo.next_scanline * row_stride];
+    row_ptr[0] = &source[(cinfo.image_height - cinfo.next_scanline) * row_stride];
     jpeg_write_scanlines(&cinfo, row_ptr, 1);
   }
   
