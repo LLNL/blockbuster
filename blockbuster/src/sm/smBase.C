@@ -1235,7 +1235,7 @@ void smBase::readHeader(void)
 
   smdbprintf(4,"smBase::readHeader(): maximum frame size is %ld\n", maxFrameSize);
   if (maxFrameSize > 1000*1000*1000) {
-    smdbprintf(0,"smBase::readHeader(): WARNING! maximum frame size is %ld.  This seems very suspicious.\n", maxFrameSize);
+    SetError(str(boost::format("smBase::readHeader(): very suspicious maximum frame size %ld")% maxFrameSize));
   }
      
   // bump up the size to the next multiple of the DIO requirements

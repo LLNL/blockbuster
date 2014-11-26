@@ -19,10 +19,12 @@
 using namespace std; 
 
 // =======================================================================
-void errexit(TCLAP::CmdLine &cmd, string msg) {
+void errexit(TCLAP::CmdLine &cmd, string msg, bool usage=true) {
   cerr << endl << "*** ERROR *** : " << msg  << endl<< endl;
-  cmd.getOutput()->usage(cmd); 
-  cerr << endl << "*** ERROR *** : " << msg << endl << endl;
+  if (usage) {
+    cmd.getOutput()->usage(cmd); 
+    cerr << endl << "*** ERROR *** : " << msg << endl << endl;
+  }
   exit(1); 
 }
 
@@ -164,7 +166,7 @@ int main(int argc, char *argv[]) {
 
   TCLAP::ValueArg<string>  exportPosterFrame("e", "export-poster", "Export poster frame", false, "", "filename", cmd); 
 
-  TCLAP::ValueArg<string> exportTagfile("E", "export-tagfile", "Extract a (JSON) tag file from each movie which can be read with smtag.", false, "", "filename", cmd); 
+  TCLAP::ValueArg<string> exportTagfile("E", "export-tagfile", "Extract a (JSON) tag file from each movie which can be read with smtag.  If the given filename is 'stdout' or '-', then output to stdout.", false, "", "filename", cmd); 
 
   TCLAP::SwitchArg filenameOnly("f", "only-filename", "Only print the filename of the matching movie(s).", cmd); 
 
@@ -274,7 +276,7 @@ int main(int argc, char *argv[]) {
 	} else {
 	  ofstream jsonFile(jsonFileName.c_str()); 
 	  if (!jsonFile.is_open()) {
-		errexit(cmd, str(boost::format("Error:  could not open JSON file %s for writing") % jsonFileName)); 
+		errexit(cmd, str(boost::format("Error:  could not open JSON file %s for writing") % jsonFileName), false); 
 	  }
 	  jsonFile << JsonString.str(); 
 	}
@@ -296,33 +298,47 @@ int main(int argc, char *argv[]) {
     }
     string filename = movienames.getValue()[fileno]; 
     smBase *sm = smBase::openFile(filename.c_str(), O_RDONLY, 1);
-    if (!sm) {
-      string errmsg = str(boost::format("ERROR: could not open movie file %s.")% filename); 
-      if (exportTagfile.getValue() != "") {
+    string tagfilename = exportTagfile.getValue();
+    if (!sm || sm->haveError()) {
+      string errmsg; 
+      if (!sm) {
+        errmsg = str(boost::format("ERROR: Movie file %s is missing or corrupt.")% filename); 
+      } else {
+        errmsg = str(boost::format("ERROR: Movie file %s self-reported error while opening: %s")%filename%(sm->errorMessage())); 
+      }
+      if (tagfilename != "") {
         using boost::property_tree::ptree; 
         ptree pt;
         pt.put("name.type", "ASCII"); 
         pt.put("name.value", filename); 
         pt.put("error.type", "ASCII"); 
         pt.put("error.value", errmsg); 
-        ofstream ofile(exportTagfile.getValue().c_str()); 
-        write_json(ofile, pt);
+        if (tagfilename != "stdout" && tagfilename != "-") {
+          ofstream ofile(tagfilename.c_str()); 
+          write_json(ofile, pt);
+        }
+        else {
+          write_json(cout, pt); 
+        }
       }
-      errexit(cmd, errmsg); 
+      errexit(cmd, errmsg, false); 
     }
 
     // Movie info case... (both sminfo and smquery file)
     if (getinfo) {  
       cout << sm->InfoString(verbosity.getValue()) << endl; 
     }
-    if (exportTagfile.getValue() != "") {
+    if (tagfilename != "") {
       TagMap moviedata = sm->GetMetaData(); 
-      string filename = exportTagfile.getValue();
-      ofstream tagfile(filename.c_str()); 
-      if (!tagfile) {
-        errexit(cmd, str(boost::format("Error:  could not open tag file %s for movie %s")% filename %  sm->getName())); 
+      if (tagfilename  != "stdout" && tagfilename != "-") {
+        ofstream tagfile(tagfilename.c_str()); 
+        if (!tagfile) {
+          errexit(cmd, str(boost::format("Error:  could not open tag file %s for movie %s")% filename %  sm->getName()), false); 
+        }
+        SM_MetaData::WriteMetaDataToStream(&tagfile, moviedata);
+      } else {
+        SM_MetaData::WriteMetaDataToStream(&cout, moviedata);
       }
-      SM_MetaData::WriteMetaDataToStream(&tagfile, moviedata);
       if (quiet.getValue()) {
         continue; 
       } else {
