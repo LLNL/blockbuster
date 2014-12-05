@@ -47,7 +47,7 @@ FORCE:
 $(TARGET): 
 	tar -xzf exiv2-0.24.tar.gz
 	cd exiv2-0.24 && CC="$(CC)" CFLAGS="$(CFLAGS)" \
-	./configure --prefix=$(INSTALL_DIR) && \
+	./configure --prefix=$(INSTALL_DIR) --disable-xmp && \
 	$(MAKE) -j 20 install 
 
 
