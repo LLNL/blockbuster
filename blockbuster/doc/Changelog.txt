@@ -2,7 +2,7 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.6e (git tag blockbuster-v2.8.6e) Tue Nov 18 14:02:24 PST 2014
+VERSION 2.8.6e (git tag blockbuster-v2.8.6e) Thu Dec  4 17:59:51 PST 2014
 -- FEATURE:  smquery now exports poster frames to jpeg with Exif metadata for use with PhotoFloat image gallery javascript library
 -- FEATURE:  Modify smquery to require user specify location of output json and poster frames.  Useful for movie cataloguing tool in progress.  
 
