@@ -40,6 +40,7 @@ struct Settings {
    */
 struct ProgramOptions {
   ProgramOptions():
+    mBackgroundColor(3), 
 #ifdef DEBUG
     messageLevelName("debug"),
 #else
@@ -66,7 +67,7 @@ struct ProgramOptions {
     geometry.height = DONT_CARE;
     return;
   }
-    
+  std::vector<float> mBackgroundColor; /* "background" movie color, passed to glClearColor() in glRenderer.cpp */ 
   QString executable; /* path to the backend blockbuster */ 
   QString messageLevelName;
   struct MessageLevel *messageLevel;

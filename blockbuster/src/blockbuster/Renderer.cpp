@@ -46,7 +46,7 @@ void Renderer::Init(ProgramOptions *options) {
   mScreenNumber = mWindow = mIsSubWindow =  mFontHeight = 0; 
   mShowCursor = true;  
   mOldWidth = mOldHeight = mOldX = mOldY = -1; 
-  
+  mBackgroundColor = options->mBackgroundColor; 
   mNextSwapTime = 0.0;
   mPreviousSwapTime = 0.0;
   mRecentFrameCount = 0;

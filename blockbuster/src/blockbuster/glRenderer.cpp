@@ -272,7 +272,7 @@ void glRenderer::RenderActual(Rectangle region){
       region.width * scaledZoom < mWindowWidth ||
       region.height * scaledZoom < mWindowHeight) {
     needClear = true; 
-    glClearColor(0.0, 0.0, 0.0, 0);
+    glClearColor(mBackgroundColor[0], mBackgroundColor[1], mBackgroundColor[2], 0);
     glClear(GL_COLOR_BUFFER_BIT);
   }
 
@@ -339,7 +339,7 @@ void glRenderer::RenderActual(Rectangle region){
       glViewport(0, 0, mWindowWidth, mWindowHeight);
       
       if (mFrameList->mStereo && needClear) {
-        glClearColor(0.0, 0.0, 0.0, 0);
+        glClearColor(mBackgroundColor[0], mBackgroundColor[1], mBackgroundColor[2], 0);
         glClear(GL_COLOR_BUFFER_BIT);
       }
       

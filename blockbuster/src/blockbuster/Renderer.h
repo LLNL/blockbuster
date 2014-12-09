@@ -29,7 +29,7 @@ class Renderer {
 
   
   // ======================================================================
-  Renderer(ProgramOptions *options, qint32 parentWindowID, BlockbusterInterface *gui = NULL): mBlockbusterInterface(gui), mDoStereo(false), mParentWindow(parentWindowID) { 
+  Renderer(ProgramOptions *options, qint32 parentWindowID, BlockbusterInterface *gui = NULL): mBlockbusterInterface(gui), mBackgroundColor(3), mDoStereo(false), mParentWindow(parentWindowID) { 
     Init(options); 
     return; 
   } 
@@ -205,6 +205,7 @@ class Renderer {
     uint32_t mSkippedDelayCount, mUsedDelayCount;
         
     BlockbusterInterface *mBlockbusterInterface; 
+    vector<float>mBackgroundColor; 
     uint32_t mReaderThreads, mNumCachedImages; 
     
     int32_t mCurrentFrame, mStartFrame, mEndFrame, 
@@ -221,7 +222,7 @@ class Renderer {
     FrameListPtr mFrameList;                                                
  
     // from WindowInfo struct:  
-    Display *mDisplay;
+     Display *mDisplay;
     XVisualInfo *mVisualInfo;
     int mScreenNumber;
     Window mWindow;        

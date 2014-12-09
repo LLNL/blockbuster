@@ -167,7 +167,7 @@ void usage(void) {
   Check to make sure there is another pointer in argv to assign or else print out usage and exit
 */ 
 void checkarg(int argc, const char *argname) {
-  if (argc < 2) {
+  if (argc < 3) {
 	fprintf(stderr, "Error: option %s requires an argument.", argname); 
     exit(1); 
   }
@@ -287,6 +287,7 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
    */
 
   int dummy = 0; 
+  string dummyString; 
   while (argc > 1) {
     DEBUGMSG("Checking arg %s\n", argv[1]); 
 	QString zoomString; 
@@ -294,6 +295,54 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
 	if (SET_BOOL_ARG("--cachedebug", argc, argv, opt->mCacheDebug, 1)) {
       continue; 
     }
+    else if (CHECK_STRING_ARG("--bgcolor", argc, argv, dummyString)) {
+      stringstream ss(dummyString);       
+      try { 
+        if (dummyString[0] == '#') { 
+          if (dummyString.size() != 7) {
+             throw  "Bad value"; 
+          }            
+           
+          //handle hex code 
+          int num; 
+          char pound; 
+          ss >> pound >> hex >> num; 
+          if (!num) {
+            throw  "Bad value"; 
+          }
+          opt->mBackgroundColor[0] = (num/0x10000)/255.0; 
+          opt->mBackgroundColor[1] = (num/0x100)/255.0; 
+          opt->mBackgroundColor[2] = (num%0x100)/255.0; 
+          string junk; 
+          ss >> junk; 
+          if (junk != "") {
+            throw  "Bad value"; 
+          }            
+        }
+        else {
+          // Either rgb as 3 floats, or 3 255-based integers
+          string num; 
+          for (int i = 0; i<3; i++) {
+            opt->mBackgroundColor[i] = 0; 
+            ss >> opt->mBackgroundColor[i]; 
+            if (opt->mBackgroundColor[i] == 0 ) {
+              throw  "Bad value"; 
+            }
+               
+            if (opt->mBackgroundColor[i] > 1) {
+              opt->mBackgroundColor[i] /= 255.0; 
+            }
+            if (opt->mBackgroundColor[i] < 0 || opt->mBackgroundColor[i] > 1.0) {
+              cerr << "Value " << i << " of \"" << dummyString << "\" is out of range" << endl; 
+              throw  "Bad value"; 
+            }
+          }
+        }
+      } catch (...) {
+        cerr << "Bad argument for bgcolor: " << dummyString << endl; 
+        exit(1); 
+      }
+    } 
 	else if (CHECK_ATOI_ARG("--cachesize", argc, argv,  opt->mMaxCachedImages) ||
         CHECK_ATOI_ARG("-c", argc, argv,  opt->mMaxCachedImages) ) {
       continue;
