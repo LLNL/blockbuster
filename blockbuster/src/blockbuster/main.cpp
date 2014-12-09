@@ -306,29 +306,23 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
           //handle hex code 
           int num; 
           char pound; 
-          ss >> pound >> hex >> num; 
-          if (!num) {
+          if (!(ss >> pound >> hex >> num)) {
+            cerr <<  str(boost::format("Bad hex value found in color string: \"%s\"\n")%dummyString); 
             throw  "Bad value"; 
           }
           opt->mBackgroundColor[0] = (num/0x10000)/255.0; 
           opt->mBackgroundColor[1] = (num/0x100)/255.0; 
           opt->mBackgroundColor[2] = (num%0x100)/255.0; 
-          string junk; 
-          ss >> junk; 
-          if (junk != "") {
-            throw  "Bad value"; 
-          }            
         }
         else {
           // Either rgb as 3 floats, or 3 255-based integers
           string num; 
           for (int i = 0; i<3; i++) {
             opt->mBackgroundColor[i] = 0; 
-            ss >> opt->mBackgroundColor[i]; 
-            if (opt->mBackgroundColor[i] == 0 ) {
+            if (!(ss >> opt->mBackgroundColor[i])) {
               throw  "Bad value"; 
             }
-               
+            
             if (opt->mBackgroundColor[i] > 1) {
               opt->mBackgroundColor[i] /= 255.0; 
             }
@@ -338,6 +332,11 @@ static void ParseOptions(ProgramOptions *opt, int &argc, char *argv[])
             }
           }
         }
+        string junk; 
+        if (ss>>junk) {
+          cerr <<  str(boost::format("Extra junk \"%s\" found at end of color string \"%s\"\n")%junk%dummyString); 
+          throw  "Bad value"; 
+        }                    
       } catch (...) {
         cerr << "Bad argument for bgcolor: " << dummyString << endl; 
         exit(1); 
