@@ -2,6 +2,11 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
+VERSION 2.8.6f (git tag blockbuster-v2.8.6f) Mon Dec  8 16:51:27 PST 2014
+-- FEATURE:  Created smrecolor tool to change movie colors.  Right now it only supports the -min feature, which specifies a minimum color to replace very dark colors in the movie using ImageMagick's "Lighten" command. 
+-- FEATURE:  Created blockbuster option "--bgcolor" to change the "background" color of a movie from black to any arbitrary RGB value.  Currently useful mainly to match the powerwall "black" to the appropriate shade of gray.   
+
+===============================================================================
 VERSION 2.8.6e (git tag blockbuster-v2.8.6e) Thu Dec  4 18:07:49 PST 2014
 -- FEATURE:  smquery now exports poster frames to jpeg with Exif metadata for use with PhotoFloat image gallery javascript library
 -- FEATURE:  Modify smquery to require user specify location of output json and poster frames.  Useful for movie cataloguing tool in progress.  
