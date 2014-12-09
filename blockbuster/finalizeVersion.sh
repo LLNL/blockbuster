@@ -211,7 +211,7 @@ tagname=blockbuster-v$version
 #======================================================
 # Make sure the testing is done for this version. 
 # 
-if final; then 
+if $final; then 
     echo "Have you completed testing of this version?  Please see doc/README_TESTING.txt for the complete procedure.  Type 'h' to see doc/README_TESTING.txt and exit without continuing.  Type 'y' to swear by Zeus that you have followed proper testing."
     
     read answer
