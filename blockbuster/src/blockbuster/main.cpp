@@ -167,7 +167,7 @@ void usage(void) {
   Check to make sure there is another pointer in argv to assign or else print out usage and exit
 */ 
 void checkarg(int argc, const char *argname) {
-  if (argc < 3) {
+  if (argc < 2) {
 	fprintf(stderr, "Error: option %s requires an argument.", argname); 
     exit(1); 
   }
@@ -183,8 +183,8 @@ bool  CHECK_STRING_ARG(const char *flag, int &argc, char *argv[], T &t)	{
   const char *found = strstr(flag, argv[1]); 
   if (found != flag) return false;
 
-  checkarg(argc, flag); // exits on error-- bad but no time to fix
   ConsumeArg(argc, argv, 1); 
+  checkarg(argc, flag); // exits on error-- bad but no time to fix
   DEBUGMSG("Setting string arg to %s\n", argv[1]); 
 
   t = argv[1];
