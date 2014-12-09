@@ -36,7 +36,7 @@ LIBS = $(LDFLAGS) -L$(INSTALL_DIR)/lib -lsmovie -lptutil  -levomovie $(IFL_LIBS)
 SMLIB = $(INSTALL_DIR)/lib/libsmovie.a $(INSTALL_DIR)/lib/libptutil.a $(INSTALL_DIR)/lib/libsrwpng.a 
 SFILES = smtag.C smquery.C smmake.C smtest.C ifl2sm.C img2sm.C sm2img.C rename.C smcat.C smevo.C debugutil.c
 OFILES = ifl2sm img2sm rename sm2img smcat smevo sminfo smmake smquery smtag  smtest
-TARGETS = $(INSTALL_DIR)/bin/smquery $(INSTALL_DIR)/bin/smtag $(INSTALL_DIR)/bin/smevo  $(INSTALL_DIR)/bin/smmake $(INSTALL_DIR)/bin/smtest $(INSTALL_DIR)/bin/ifl2sm $(INSTALL_DIR)/bin/img2sm $(INSTALL_DIR)/bin/mpg2img $(INSTALL_DIR)/bin/mpg2sm $(INSTALL_DIR)/bin/rename $(INSTALL_DIR)/bin/sm2img $(INSTALL_DIR)/bin/sminfo $(INSTALL_DIR)/bin/smcat $(INSTALL_DIR)/bin/smevo $(INSTALL_DIR)/bin/sm2qt $(INSTALL_DIR)/bin/ps2sm $(INSTALL_DIR)/bin/sm2mpg  manpages
+TARGETS = $(INSTALL_DIR)/bin/smquery $(INSTALL_DIR)/bin/smtag $(INSTALL_DIR)/bin/smevo  $(INSTALL_DIR)/bin/smmake $(INSTALL_DIR)/bin/smtest $(INSTALL_DIR)/bin/ifl2sm $(INSTALL_DIR)/bin/img2sm $(INSTALL_DIR)/bin/mpg2img $(INSTALL_DIR)/bin/mpg2sm $(INSTALL_DIR)/bin/rename $(INSTALL_DIR)/bin/sm2img $(INSTALL_DIR)/bin/sminfo $(INSTALL_DIR)/bin/smcat $(INSTALL_DIR)/bin/smevo $(INSTALL_DIR)/bin/sm2qt $(INSTALL_DIR)/bin/ps2sm $(INSTALL_DIR)/bin/sm2mpg $(INSTALL_DIR)/bin/smrecolor manpages
 CPPFLAGS += -g 
 
 default: 
@@ -45,7 +45,7 @@ default:
 $(INSTALL_DIR)/bin/%: %
 	@echo '***********************************************'
 	@echo INSTALLING $@
-	cp  $? $@
+	cp -p $? $@
 	@echo
 
 $(INSTALL_DIR)/bin/sminfo: smquery
