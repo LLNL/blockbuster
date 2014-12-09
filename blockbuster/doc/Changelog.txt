@@ -2,7 +2,7 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.6f (git tag blockbuster-v2.8.6f) Mon Dec  8 16:51:27 PST 2014
+VERSION 2.8.6f (git tag blockbuster-v2.8.6f) Tue Dec  9 10:16:00 PST 2014
 -- FEATURE:  Created smrecolor tool to change movie colors.  Right now it only supports the -min feature, which specifies a minimum color to replace very dark colors in the movie using ImageMagick's "Lighten" command. 
 -- FEATURE:  Created blockbuster option "--bgcolor" to change the "background" color of a movie from black to any arbitrary RGB value.  Currently useful mainly to match the powerwall "black" to the appropriate shade of gray.   
 
