@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+function usage() {
+	echo 
+    echo "smrecolor usage:  recolor [OPTIONS] infile.sm outfile.sm"
+    echo 
+    echo "OPTIONS:"
+    echo "If no options are given, behavior is same as --min 'gray(20%)'"
+    echo "-d/--debug:        Super chatty.  You probably want --verbose instead of this."
+	echo "-h/--help:         Print this help menu." 
+	echo "-k/--keep:         Keep temp directory" 
+    echo "-m/--min color:    Makes shadows lighter.  'color' is something such as 'gray(20%)' or 'rgb(0,255,0)' or 'rgb(0,20%,0)' or '#00ff00'.  Colors darker than this in the image will be lightened to this color"
+    echo "-t/--tmpdir name:  Use the given directory for scratch instead of a random location in /tmp/$USER"    
+	echo "-v/--verbose:      Be  chatty about what's happening"
+    
+}
+# =========================================
+verbose=false
+function dbecho() {
+	if $verbose; then 
+		echo -e "$@"
+	fi
+}
+
+# =========================================
+function runecho () {
+	if $verbose; then 
+		echo -e "$@"
+	fi
+	"$@"
+}
+
+# =========================================
+function errexit() {    
+    echo '*************************************************'
+    echo "ERROR: $1"
+    echo '*************************************************'
+	CleanupTempdir
+    exit 1
+}
+
+# =========================================
+function CleanupTempdir () {
+    if ! $keep; then 
+		if $delete_tmpdir; then 
+			runecho rm -rf ${tmpdir}
+		else
+			runecho rm -rf ${tmpdir}/${framenamebase}_junk_*
+		fi
+	else 
+		echo "Keeping temp directory $tmpdir"
+	fi	
+}
+
+# ==========================================================
+keep=false
+delete_tmpdir=false  # if tmpdir preexists, then don't delete it after using it
+mincolor='gray(20%)'
+# ===============================================================
+# PARSE OPTIONS
+PROG=`basename $0`
+
+getopt -T > /dev/null
+if [ $? -eq 4 ]; then
+  # GNU enhanced getopt is available
+  ARGS=`getopt --name "$PROG" --long debug,help,keep,min,tmpdir:,verbose --options dhkm:t:v -- "$@"`
+else
+  # Original getopt is available (no long option names, no whitespace, no sorting)
+  ARGS=`getopt ho:v "$@"`
+fi
+if [ $? -ne 0 ]; then
+  echo "$PROG: usage error (use -h for help)" >&2
+  exit 2
+fi
+eval set -- $ARGS
+debug=false
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -d | --debug)    debug=true;;
+        -h | --help)     usage; exit 0;;
+        -k | --keep)     keep=true;;
+        -m | --min)      mincolor="$2"; shift;;
+        -t | --tmpdir)   tmpdir="$2"; shift;;
+        -v | --verbose)  verbose=true;;
+        --)              shift; break;; # end of options
+    esac
+    shift
+done
+
+if $debug; then
+    set -xv
+fi
+
+if [ "$2" == "" ]; then
+    usage
+    errexit "You must give an input and output movie."
+fi
+
+infile=$1
+outfile=$2
+for movie in $infile $outfile; do 
+    if [ "${movie: -3:3}" != ".sm" ]; then 
+        errexit "Movie name $movie must end with '.sm'"
+    fi
+done
+
+# DONE PARSING OPTIONS
+# ============================================================
+
+tmpdir=${tmpdir:-"/tmp/$USER/recolor.tmp.$RANDOM"}
+keep=${keep:-false}
+verbose=${verbose:-false}
+
+mkdir -p $tmpdir || errexit "Cannot make tmpdir $tmpdir"
+
+sminfo_output=$(sminfo $infile)
+#
+#	Grab frame sizes
+#
+xsize=$(echo "$sminfo_output" | grep size | grep 'Level: 0' | awk '{print $5;}') 
+ysize=$(echo "$sminfo_output" | grep size | grep 'Level: 0' | awk '{print $7;}') 
+
+verboseflag=
+if $verbose; then 
+	verboseflag="-v 1"
+fi
+
+dbecho
+echo "Extracting frames from movie $infile..."
+runecho sm2img $verboseflag $infile $tmpdir/${outfile/.sm/}_frame_%05d.png # remove '.sm'
+dbecho
+echo "recoloring frames..." 
+for frame in $tmpdir/${outfile/.sm/}_frame_*png; do     
+    output=$(runecho convert -size ${xsize}x${ysize} "xc:${mincolor}" $frame -compose Lighten -composite ${frame/_frame_/_frame_composite_} 2>&1) 
+    dbecho $output
+    if [[ "$output" == *'unrecognized color'* ]]; then errexit "There was a problem with the convert command: $output"; fi
+done
+dbecho
+echo "Creating final movie output with recolored frames..." 
+runecho img2sm $tmpdir/${outfile/.sm/}_frame_composite_%05d.png $outfile
+
+CleanupTempdir
+
+echo smrecolor is finished
+
