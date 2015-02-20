@@ -4,6 +4,9 @@
 #
 #       Convert an sm file into an MPEG file...
 #
+default_logfile="sm2mpg.log"
+mpeg_framerates="23.976 24.0 25.0 29.97 30.0 50.0 59.94 60.0"
+
 function usage() {
 	echo 
     echo "sm2mpg: usage:"
@@ -11,25 +14,28 @@ function usage() {
     echo "sm2mpg [OPTIONS] infile.sm outfile.{mpg|mp4|mov}"
 	echo
 	echo "FILENAME EXTENSIONS"
-	echo ".mpg extension:  mpeg is used instead of ffmpeg, unless you use -c, -m, or -x options."
-	echo ".mp4 extension:  ffmpeg will encode the movie with H264, unless you use -c or -m option"
-	echo ".mov extension:  ffmpeg will encode the movie with mjpeg unless you use -c or -x option"
+	echo ".mpg extension:    mpeg is used instead of ffmpeg, unless you use -c, -m, or -x options. "
+	echo ".mp4 extension:    ffmpeg will encode the movie with H264, unless you use -c or -m option"
+	echo ".mov extension:    ffmpeg will encode the movie with mjpeg unless you use -c or -x option"
 	echo
     echo "Note: If the input movie is stereo, then only the left hand frames (odd frames) are used." 
 	echo
     echo "OPTIONS:"
-    echo "-c/--codec string: Pass '-c:v string' to ffmpeg, overriding file extension"
-	echo "-d/--debug:        Be insanely verbose and redirect all output to a file"
-    echo "-f/--fps n:        Set fps in output movie to value (default: match input fps) "
-    echo "-F/--infps val:    Use 'val' as FPS for input streaming movie"
-	echo "-h/--help:         Show this menu"
-	echo "-k/--keep:         Keep temp directory" 
-	echo "-m/--mjpeg:        Use mjpeg encoder" 
-    echo "-s/--stereo:       Interpret the input movie as stereo." 
-    echo "-t/--tmpdir name:  Use the given directory for scratch instead of a random location in /tmp/$USER"    
-	echo "-v/--verbose:      Be rather chatty about what's happening"
-	echo "-x/--h264:         Use libx264 encoder" 
+    echo "-b/--bitrate string: Pass '-b:v string' to ffmpeg, setting the bitrate and thus movie size.  Default: '2M'"
+    echo "-c/--codec string:   Pass '-c:v string' to ffmpeg, overriding file extension"
+	echo "-d/--debug:          Be insanely verbose and redirect all output to '$default_logfile' (see --logfile option)"
+    echo "-f/--fps n:          Set frames per second in output movie to value (default: match input movie FPS)."
+	echo "-h/--help:           Show this menu"
+	echo "-k/--keep:           Keep temp directory" 
+	echo "-l/--logfile name:   Redirect all output to logfile 'name'" 
+	echo "-m/--mjpeg:          Use mjpeg encoder" 
+    echo "-q/--quality string: Pass '-q:v string' to ffmpeg, setting the quality.  Default is 18.  For 8-bit h264, 0 is lossless, 51 is worst, and 18 should be a very good choice.  For mjpeg YMMV."
+    echo "-s/--stereo:         Interpret the input movie as stereo." 
+    echo "-t/--tmpdir name:    Use the given directory for scratch instead of a random location in /tmp/$USER"    
+	echo "-v/--verbose:        Be rather chatty about what's happening"
+	echo "-x/--h264:           Use libx264 encoder" 
 	echo
+    echo "Note about changing FPS:  an attempt will be made to conserve ever input movie frame in an FPS conversion.  Thus, changing from 30 FPS to 15 FPS will make your movie duration twice as long in order to have the same number of movie frames.  When converting to .mpg (MPEG-1) movies, due to the limited choice in frame rates, conversion might result in some input frames being irreversibly lost if the ratio of input frames to output frames is fractional.  To avoid this, use a frame rate that evenly divides into the input frame rate if possible."  
 }
 
 # =========================================
@@ -74,11 +80,13 @@ function CleanupTempdir () {
 delete_tmpdir=false # if tmpdir preexists, then don't delete it after using it
 stereo=false
 outfps=
-infps=
 keep=false
 debug=false
 ffmpeg=false
 outcodec=""
+logfile=
+mjpeg_bitrate=
+mjpeg_quality=
 # ==========================================================
 # parse arguments and set variables
 argnum=0
@@ -96,15 +104,16 @@ while [ "$1" != "" ]; do
         shift 1;
     else
        case $1 in
+           "-b"|"--bitrate") mjpeg_bitrate="$2";    shift 2;;
            "-c"|"--codec")   outcodec="$2"; ffmpeg=true
 		                                            shift 2;;
 		   "-d"|"--debug")   debug=true;            shift 1;;
 		   "-f"|"--fps")     outfps="$2";           shift 2;;
-           "-F"|"--infps")   infps="$2";            shift 2;;
            "-h"|"--help")    usage;                 exit 0;; 
            "-k"|"--keep")    keep=true;             shift 1;;
            "-m"|"--mjpeg")   outcodec="mjpeg";  ffmpeg=true
                                                     shift 1;;
+           "-q"|"--quality") mjpeg_quality="$2";    shift 2;;
            "-s"|"--stereo")  stereo=true;           shift 1;;
            "-t"|"--tmpdir")  tmpdir="$2";           shift 2;;
 		   "-v"|"--verbose") verbose=true;          shift 1;;
@@ -114,8 +123,9 @@ while [ "$1" != "" ]; do
        esac
    fi
 done
-if $debug; then 
-	set -xv
+
+if [ "$outfps" -lt 0 ]; then 
+    errexit "output FPS '$outfps' is negative!"
 fi
 
 if [ "$outfile" == "" ]; then 
@@ -123,9 +133,17 @@ if [ "$outfile" == "" ]; then
     errexit "Not enough args" 
 fi    
 
-#
-#       nframes/Stereo
-#
+if $debug; then 
+    echo "DEBUG MODE"
+	set -xv    
+    if [ -z $logfile ]; then
+        logfile=$default_logfile
+    fi
+fi
+if [ ! -z $logfile ]; then 
+    echo "Redirecting output to $logfile"
+    exec >& $logfile
+fi
 
 # arg checking
 if [ "${infile:0:1}" != '/' ]; then 
@@ -167,22 +185,19 @@ if echo "$sminfo_output" | grep Stereo >/dev/null 2>&1; then
     stereo=true
 	dbecho "Detected stereo input movie"
 fi
-if [ "$infps" == "" ] ; then 
-	infps=$(echo "$sminfo_output" | grep FPS | cut -d " " -f2)
-	dbecho "FPS of $infps detected in input movie (see -F flag to change)"
-fi
+infps=$(echo "$sminfo_output" | grep FPS | cut -d " " -f2)
 if [ "$outfps" == "" ]; then 
 	outfps=$infps
 	dbecho "Setting output FPS to $infps to match input movie (see -f flag to change)"
 fi
 
-ninput=$(echo "$sminfo_output" | grep Frames | cut -d " " -f2)
-dbecho "There are $ninput frames in input movie"
+numInputFrames=$(echo "$sminfo_output" | grep Frames | cut -d " " -f2)
+dbecho "There are $numInputFrames frames in input movie"
 skip=1
 if $stereo; then 
     skip=2
-    ninput=$(expr $ninput / 2)
-	dbecho "Doubled the number of input frames because of stereo: nframes is $ninput"
+    numInputFrames=$(expr $numInputFrames / 2)
+	dbecho "Halved the number of input frames because of stereo: nframes is $numInputFrames now"
 fi
 
 #
@@ -200,11 +215,9 @@ dbecho "Output size will be $xsize x $ysize"
 #
 #       Frames/fps/time...
 #
-noutput=$(python -c "print int(${ninput}/float(${outfps}) * ${infps} )")  || errexit "Cannot determine number of output frames"
-dbecho "$noutput frames will be in output"
+numOutframes=$numInputFrames  # this is what is expected for most formats -- for MPEG-1 this will be adjusted as needed to pad later
+dbecho "Will create $numOutframes output frames at $outfps to make movie length of $outmovielength seconds to match input movie length of $movielength"
 
-last=$(python -c "print int($noutput - 1)")
-dbecho "Last frame is $last"
 
 #=================================================
 # helper for extraction, same for mpg and mp4
@@ -220,24 +233,24 @@ function runConvert(){
 	if [ $? != 0 ] || ! [ -s $outfile ] || grep Segmentation $outlog; then
 		errexit "Creation command failed.  Results are in $outlog.  You might try --ffmpeg option"
 	fi
-	runecho rm -f $outlog
+    if ! $keep; then 
+        runecho rm -f $outlog
+    fi
 }
 
 #=================================================
 # helper for linking, same for mpg and mp4
 function linkFrames() {
 	extensions="$1"
-	echo "Linking $noutput frames to approximate the desired framerate ($outfps)"
-	linknum=0
-	while [ $linknum -lt $noutput ] ; do 
-		echo -e "\rFrame: $linknum out of $noutput\c"
-		t=$(python -c "print float(${linknum}*1.001)/${outfps} ")
-		infileFrame=$(python -c "print int(${t} * $infps) * $skip")
-		outfileFrame=${linknum}
+	echo "Creating symlinks to generate the desired number of outframes:  $numOutframes"
+	outputLinkNum=0
+	while [ $outputLinkNum -lt $numOutframes ] ; do 
+		echo -e "\rFrame: $outputLinkNum out of $numOutframes\c"
+		infileFrame=$(python -c "print min(int(float(${outputLinkNum})/$numOutframes * $numInputFrames), $numInputFrames-1)")
 		for ext in $extensions; do 
-			ln -s "$tmpdir/${framenamebase}_junk_${infileFrame}.${ext}" "$tmpdir/${framenamebase}_junk_ln_${outfileFrame}.${ext}"
+			ln -s "$tmpdir/${framenamebase}_junk_${infileFrame}.${ext}" "$tmpdir/${framenamebase}_junk_ln_${outputLinkNum}.${ext}"
 		done
-		let linknum++
+		let outputLinkNum++
 	done
 	echo
 }
@@ -247,15 +260,38 @@ if $verbose; then
 	verboseflag="-v 1"
 fi
 if $ffmpeg; then 
+    #  See https://trac.ffmpeg.org/wiki/Encode/H.264
 	echo "Extracting temporary frames to PNG using sm2img...." 
 	runecho sm2img $verboseflag -F png -s $skip $infile $tmpdir/${framenamebase}_junk_%d.png || errexit "sm2img returned nonzero exit status, aborting"
 
 	linkFrames "png"
 
-	echo "Converting frames to h264 using ffmpeg x264 encoder...." 
-	runConvert "ffmpeg -i $tmpdir/${framenamebase}_junk_ln_%d.png $outcodec -vf scale=${xsize}:${ysize} -r $outfps $outfile"
+    if [ "${outcodec: -4}" == 'x264' ]; then 
+        mjpeg_quality="-crf ${mjpeg_quality:-18}" 
+    else 
+        mjpeg_quality="-q:v ${mjpeg_quality:-18}"
+    fi
+    if [ ! -z $mjpeg_bitrate ]; then 
+        mjpeg_bitrate="-b:v $mjpeg_bitrate"
+    fi
+	echo "Converting frames using ffmpeg $outcodec encoder...." 
+    #To set the frame rate, you must specify the same framerate in and out for image sequence and output movie.  
+	runConvert "ffmpeg -y -framerate $outfps -i $tmpdir/${framenamebase}_junk_ln_%d.png $outcodec -vf scale=${xsize}:${ysize} -framerate $outfps $mjpeg_bitrate $mjpeg_quality $outfile"
 	
-else
+else    
+    # set -vx
+    framerate_index=1; 
+    for mpfr in $mpeg_framerates; do 
+        if [ $(bc <<< "$mpfr == $outfps") == "1" ]; then 
+            break; 
+        fi
+        let framerate_index++
+    done
+    if [ "$framerate_index" == 9 ]; then     
+        framerate_index=5 # 30 fps
+        numOutframes=$(python -c "print int(float(30.0/$outfps) * $numOutframes);")
+        echo "Illegal framerate for mpeg: $outfps.  We will create a 30 fps movie, with $numOutframes frames to simulate $outfps FPS."  
+    fi
 	echo "Extracting the frames in YUV format using sm2img..."	
 	runecho sm2img $verboseflag -F yuv -s $skip $infile $tmpdir/${framenamebase}_junk_%d || errexit "sm2img returned nonzero exit status, aborting"
 	# runecho sm2img  -F png -s $skip $infile $tmpdir/${framenamebase}_junk_%d.png || errexit "sm2img failed"
@@ -264,7 +300,7 @@ else
 	# linkFrames "png"
 	
 	echo "Converting frames to mpeg using LibGen mpeg command...." 
-	runConvert "mpeg  -PF -p $outfps -a 0 -b $last -h $xsize -v $ysize $tmpdir/${framenamebase}_junk_ln_ -s $outfile"
+	runConvert "mpeg  -PF -p $framerate_index  -a 0 -b $(expr $numOutframes - 1) -h $xsize -v $ysize $tmpdir/${framenamebase}_junk_ln_ -s $outfile"
 fi
 
 #=================================================
