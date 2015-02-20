@@ -170,8 +170,7 @@ signals that the program interpreter will read the control algorithms
 from the standard input.
 .TP
 .B -p
-specifies the picture rate by a code directly placed into the stream.
-It must be a number between 0 and 8. (default 5=30Hz).
+specifies the picture rate by a special integer code. Allowed codes:  1 = 23.976, 2 = 24.0, 3 = 25.0, 4 = 29.97, 5 = 30.0, 6 = 50.0, 7 = 59.94, 8 = 60.0  
 .TP
 .B -q
 gives a value for the quantization not in the presence of rate

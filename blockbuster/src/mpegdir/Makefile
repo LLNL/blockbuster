@@ -11,8 +11,13 @@ MFLAGS = -g
 DEFS = system.h globals.h marker.h
 BASELINE =  mpeg.o codec.o huffman.o io.o chendct.o lexer.o marker.o me.o mem.o stat.o stream.o transform.o
 
-install: mpeg
-	cp mpeg $(INSTALL_DIR)/bin
+install: $(INSTALL_DIR)/bin/mpeg $(INSTALL_DIR)/man/man1/mpeg.1
+
+$(INSTALL_DIR)/bin/mpeg: mpeg 
+	cp $< $@ 
+
+$(INSTALL_DIR)/man/man1/mpeg.1: mpeg.1
+	cp $< $@
 
 .c.o:
 	cc $(MFLAGS) -c $*.c 
