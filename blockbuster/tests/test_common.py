@@ -272,7 +272,7 @@ def RemoveBindirHostAndDateFromLine(line):
 
     # Remove the date line, as for tests this changes every time
     # '\D' --> letters  '\d' --> digits
-    r = re.search('.*("\D{3}[ ]+\D{3}[ ]+\d+[ ]+\d\d:\d\d:\d\d[ ]+\d{4}[ ]+\D\DT"$)', line)
+    r = re.search('.*("\D{3}[ ]+\D{3}[ ]+\d+[ ]+\d\d:\d\d:\d\d[ ]+\d{4}\s*\D{,2}T{,1}"\s*$)', line)
     if r:
         newline = line.replace(r.group(1), '"GENERIC-DATESTRING"')
         line = newline
