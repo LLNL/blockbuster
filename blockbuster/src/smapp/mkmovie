@@ -4,14 +4,14 @@
 #
 #       Convert an sm file into an MPEG file...
 #
-default_logfile="sm2mpg.log"
+default_logfile="mkmovie.log"
 mpeg_framerates="23.976 24.0 25.0 29.97 30.0 50.0 59.94 60.0"
 
 function usage() {
 	echo 
-    echo "sm2mpg: usage:"
+    echo "mkmovie: usage:"
 	echo
-    echo "sm2mpg [OPTIONS] infile.sm outfile.{mpg|mp4|mov}"
+    echo "mkmovie [OPTIONS] (infile.sm or images) outfile.{mpg|mp4|mov}"
 	echo
 	echo "FILENAME EXTENSIONS"
 	echo ".mpg extension:    mpeg is used instead of ffmpeg, unless you use -c, -m, or -x options. "
@@ -90,18 +90,11 @@ mjpeg_quality=
 # ==========================================================
 # parse arguments and set variables
 argnum=0
+fileargs=
 while [ "$1" != "" ]; do 
    if [ "${1:0:1}" != "-" ]; then 
-        if [ "$infile" == "" ]; then 
-            infile="$1"
-        elif [ "$outfile" == "" ]; then
-            outfile="$1"
-        else
-            echo "Error: too many arguments"
-            usage
-            exit 1
-        fi
-        shift 1;
+       fileargs="$fileargs $1"
+       shift 1;
     else
        case $1 in
            "-b"|"--bitrate") mjpeg_bitrate="$2";    shift 2;;
@@ -128,6 +121,10 @@ if [ "$outfps" -lt 0 ]; then
     errexit "output FPS '$outfps' is negative!"
 fi
 
+# parse fileargs
+infiles="${fileargs##* }" # removes last token
+outfile="${fileargs% *}" # keeps last token
+
 if [ "$outfile" == "" ]; then 
     usage
     errexit "Not enough args" 
@@ -153,7 +150,7 @@ if [ "${infile: -3}" != '.sm' ]; then
     errexit "Please specify an input movie name ending with '.sm'"
 fi
 
-tmpdir=${tmpdir:-/tmp/$USER/sm2mpg.tmp.$RANDOM/}
+tmpdir=${tmpdir:-/tmp/$USER/mkmovie.tmp.$RANDOM/}
 if [ -e "$tmpdir" ]; then 
 	delete_tmpdir=false
 else
