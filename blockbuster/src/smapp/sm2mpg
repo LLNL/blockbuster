@@ -110,7 +110,7 @@ while [ "$1" != "" ]; do
            "-b"|"--bitrate") bitrate_arg="--bitrate $2";  shift 2;;
            "-c"|"--codec")   codec_arg="--codec $2";      shift 2;;
 		   "-d"|"--debug")   debug=true;                  shift 1;;
-		   "-f"|"--fps")     outfps="--fps $2";           shift 2;;
+		   "-f"|"--fps")     outfps="$2";                 shift 2;;
            "-h"|"--help")    usage;                       exit 0;; 
            "-k"|"--keep")    keep=true;                   shift 1;;
            "-l"|"--logfile") logfile="$1"                 shift 2;;
