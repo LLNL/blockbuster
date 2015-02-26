@@ -2,9 +2,11 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.6g (git tag blockbuster-v2.8.6g) Fri Feb 20 11:31:07 PST 2015
--- FEATURE: Fixed sm2mpg to create higher quality mp4 movies using crf flag
--- FEATURE: Constrain sm2mpg output frame rates for mpeg to match ISO/IEC 13818
+VERSION 2.8.6g (git tag blockbuster-v2.8.6g) Thu Feb 26 11:31:16 PST 2015
+-- FEATURE: Created img2mpg to allow direct creation of MPEG movies from image sequences.  
+-- FEATURE: img2mpg creates higher quality mp4 movies than old sm2mpg
+-- FEATURE: Properly use frame rates for mpeg to match ISO/IEC 13818
+-- FEATURE: sm2mpg uses img2mpg to make its movies, ensuring consistency.
 -- BUGFIX:  sm2mpg now correctly preserves all input frames when FPS is given
 -- BUGFIX:  List allowable mpeg frame rates in mpeg man page 
 -- BUGFIX:  copy mpeg man page to INSTALL_DIR 

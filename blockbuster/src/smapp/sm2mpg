@@ -1,0 +1,226 @@
+#!/usr/bin/env bash 
+#set -xv
+#set -e
+#
+#       Convert an sm file into an MPEG file...
+#
+default_logfile="sm2mpg.log"
+mpeg_framerates="23.976 24.0 25.0 29.97 30.0 50.0 59.94 60.0"
+
+function usage() {
+	echo 
+    echo "sm2mpg: usage:"
+	echo
+    echo "sm2mpg [OPTIONS] infile.sm outfile.{mpg|mp4|mov}"
+	echo
+	echo "FILENAME EXTENSIONS"
+	echo ".mpg extension:    mpeg is used instead of ffmpeg, unless you use -c, -m, or -x options. "
+	echo ".mp4 extension:    ffmpeg will encode the movie with H264, unless you use -c or -m option"
+	echo ".mov extension:    ffmpeg will encode the movie with mjpeg unless you use -c or -x option"
+	echo
+    echo "Note: If the input movie is stereo, then only the left hand frames (odd frames) are used." 
+	echo
+    echo "OPTIONS:"
+    echo "-a/--all:            Extract all frames.  Same as '--skip 1'." 
+    echo "-b/--bitrate string: Pass '-b:v string' to ffmpeg, setting the bitrate and thus movie size.  Default: '2M'"
+    echo "-c/--codec string:   Pass '-c:v string' to ffmpeg, overriding file extension"
+	echo "-d/--debug:          Be insanely verbose and redirect all output to '$default_logfile' (see --logfile option)"
+    echo "-f/--fps n:          Set frames per second in output movie to value (default: match input movie FPS)."
+	echo "-h/--help:           Show this menu"
+	echo "-k/--keep:           Keep temp directory" 
+	echo "-l/--logfile name:   Redirect all output to logfile 'name'" 
+	echo "-m/--mjpeg:          Use mjpeg encoder" 
+    echo "-q/--quality string: Pass '-q:v string' to ffmpeg, setting the quality.  Default is 18.  For 8-bit h264, 0 is lossless, 51 is worst, and 18 should be a very good choice.  For mjpeg YMMV."
+    echo "-s/--stereo:         Interpret the input movie as stereo (i.e. extract only odd numbered frames)." 
+    echo "-S/--skip n:         Extract every nth frame, whether or not movie is stereo." 
+    echo "-t/--tmpdir name:    Use the given directory for scratch instead of a random location in /tmp/$USER"    
+	echo "-v/--verbose:        Be rather chatty about what's happening"
+	echo "-x/--h264:           Use libx264 encoder" 
+	echo
+    echo "Note about changing FPS:  an attempt will be made to conserve every input movie frame in an FPS conversion.  Thus, changing from 30 FPS to 15 FPS will make your movie duration twice as long in order to have the same number of movie frames.  When converting to .mpg (MPEG-1) movies, due to the limited choice in frame rates, conversion might result in some input frames being irreversibly lost if the ratio of input frames to output frames is fractional.  To avoid this, use a frame rate that evenly divides into the input frame rate if possible."  
+}
+
+# =========================================
+verbose=false
+function dbecho() {
+	if $verbose; then 
+		echo -e "$@"
+	fi
+}
+
+# =========================================
+function runecho () {
+	if $verbose; then 
+		echo -e "$@"
+	fi
+	"$@"
+}
+
+# =========================================
+function errexit() {    
+    echo '*************************************************'
+    echo "ERROR: $1"
+    echo '*************************************************'
+	CleanupTempdir
+    exit 1
+}
+
+# =========================================
+function CleanupTempdir () {
+    if ! $keep; then 
+		if $delete_tmpdir; then 
+			runecho rm -rf ${tmpdir}
+		else
+			runecho rm -rf ${tmpdir}/${framenamebase}_junk_*
+		fi
+	else 
+		echo "Keeping temp directory $tmpdir"
+	fi	
+}
+
+# ==========================================================
+delete_tmpdir=false # if tmpdir preexists, then don't delete it after using it
+stereo=false
+outfps=
+keep=false
+debug=false
+infile=
+codec_arg=""
+logfile=
+bitrate_arg=
+quality_arg=
+skip=
+# ==========================================================
+# parse arguments and set variables
+argnum=0
+fileargs=
+while [ "$1" != "" ]; do 
+   if [ "${1:0:1}" != "-" ]; then 
+       if [ -z $infile ]; then 
+           infile="$1"
+       elif [ -z $outfile ]; then 
+           outfile="$1"
+       else
+           errexit "Too many filenames given at \"$1\""
+       fi
+       shift 1;
+    else
+       case $1 in
+           "-a"|"--all")     skip="1";                    shift 1;;           
+           "-b"|"--bitrate") bitrate_arg="--bitrate $2";  shift 2;;
+           "-c"|"--codec")   codec_arg="--codec $2";      shift 2;;
+		   "-d"|"--debug")   debug=true;                  shift 1;;
+		   "-f"|"--fps")     outfps="--fps $2";           shift 2;;
+           "-h"|"--help")    usage;                       exit 0;; 
+           "-k"|"--keep")    keep=true;                   shift 1;;
+           "-l"|"--logfile") logfile="$1"                 shift 2;;
+           "-m"|"--mjpeg")   codec_arg="--codec mjpeg";   shift 1;;
+           "-q"|"--quality") quality_arg="--quality $2";  shift 2;;
+           "-s"|"--stereo")  stereo=true;                 shift 1;;
+           "-S"|"--skip")    skip="$2";                   shift 2;;
+           "-t"|"--tmpdir")  tmpdir="$2";                 shift 2;;
+		   "-v"|"--verbose") verbose=true;                shift 1;;
+		   "-x"|"--x264")    codec_arg="--codec libx264"; shift 1;;
+		   *)    usage;  errexit "Unknown option '$1'";;
+       esac
+   fi
+done
+
+
+if [ "$outfile" == "" ]; then 
+    usage
+    errexit "Not enough args" 
+fi    
+
+if $debug; then 
+    echo "DEBUG MODE"
+	set -xv    
+    if [ -z $logfile ]; then
+        logfile=$default_logfile
+    fi
+fi
+if [ ! -z $logfile ]; then 
+    echo "Redirecting output to $logfile"
+    exec >& $logfile
+fi
+
+# arg checking
+if [ "${infile:0:1}" != '/' ]; then 
+    infile=$(pwd)/$infile
+fi
+
+tmpdir=${tmpdir:-/tmp/$USER/sm2mpg.tmp.$RANDOM/}
+if [ -e "$tmpdir" ]; then 
+	delete_tmpdir=false
+else
+	delete_tmpdir=true
+fi
+runecho mkdir -p $tmpdir || errexit "Cannot make tmp directory $tmpdir"
+
+if [ "${outfile:0:1}" != '/' ]; then 
+    outfile=$(pwd)/$outfile
+fi
+
+if [ "${infile: -3}" != ".sm" ]; then 
+    errexit "Input filename must end with '.sm'"
+fi
+
+framenamebase=_$(basename ${outfile%".sm"})
+
+sminfo_output=$(sminfo $infile)
+if [ -z $skip ]; then 
+    if $stereo || grep Stereo <<< "$sminfo_output" >/dev/null 2>&1; then
+        skip=2
+        dbecho "Detected stereo input movie, extracting only odd frames."
+    else
+        skip=1
+    fi
+fi
+
+fps_arg="--fps ${outfps:-$(echo "$sminfo_output" | grep FPS | cut -d " " -f2)}"
+
+extension="${outfile: -4}" 
+ffmpeg=false
+if [ "$extension" == '.mp4' ] ; then 
+	ffmpeg=true
+	codec_arg=${codec_arg:-"--codec libx264"}
+elif [ "$extension" == '.mov' ] ; then 
+	ffmpeg=true
+	codec_arg=${codec_arg:-"--codec mjpeg"}
+elif [ "$extension" != '.mpg' ] ; then 
+    errexit "Please specify an output movie name ending with '.mpg', '.mov' or '.mp4'"
+fi
+
+if $ffmpeg; then
+    fmt="png"
+    frame_extension=".png"
+    geom=""
+else
+    fmt="yuv"
+    frame_extension=""
+    geom=$(grep 'Level: 0 : size' <<< "$sminfo_output"  | awk '{print "--geom "$5" "$7;}')
+fi
+
+echo "Extracting temporary frames to $fmt using sm2img...." 
+runecho sm2img $verboseflag -F $fmt -s $skip $infile $tmpdir/${framenamebase}_junk_%d$frame_extension || errexit "sm2img returned nonzero exit status, aborting"
+
+# Convert boolean variables to boolean switch arguments.  I.e., 
+# "verbose=true"  --> verbose_arg="--verbose" 
+# "verbose=false" --> verbose_arg=""
+for thing in debug keep verbose ; do 
+    eval "if \$$thing; then ${thing}_arg=\"--$thing\"; else ${thing}_arg=\"\"; fi" 
+done
+
+#if [ "$skip" -gt 1 ]; then 
+#    echo "Renumbering frames to make consecutive"
+#fi
+
+echo "Running img2mpg on the output frames..." 
+img2mpg $bitrate_arg $debug_arg $fps_arg $keep_arg $quality_arg $verbose_arg $codec_arg --skip $skip --tmpdir "$tmpdir" $geom "$tmpdir/${framenamebase}_junk_%d$frame_extension" $outfile
+
+# Note that 
+CleanupTempdir
+
+#
+#	Done!
+#

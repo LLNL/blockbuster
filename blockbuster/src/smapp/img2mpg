@@ -1,0 +1,362 @@
+#!/usr/bin/env bash 
+#set -xv
+#set -e
+#
+#       Convert an sm file into an MPEG file...
+#
+default_logfile="img2mpg.log"
+mpeg_framerates="23.976 24.0 25.0 29.97 30.0 50.0 59.94 60.0"
+
+function usage() {
+	echo 
+    echo "img2mpg: usage:"
+	echo
+    echo "img2mpg [OPTIONS] (images or template) outfile.{mpg|mp4|mov}"
+	echo
+    echo "INPUT IMAGE SPECIFICATION:"
+    echo "You can either give a list of files, or if this list is too long or you otherwise prefer, you can use a filename template such as 'mysequence_%d.png' which uses C-style templating to specify filenames.  The --first, --last, and --step options might be useful in this case as well.  "
+    echo 
+    echo "YUV INPUT FILES:"
+    echo "If a filename in the input sequence ends with no filename extension, then it will be treated as three files, named filename.Y, filename.U, and filename.V.  This applies to each file in a sequence given by a filename template as well, so 'mysequence_%d' is evaluated three interleaved sequences."
+    echo 
+	echo "OUTPUT FILENAME EXTENSION IMPLICATIONS"
+	echo ".mpg extension:    mpeg is used instead of ffmpeg, unless you use -c, -m, or -x options. "
+	echo ".mp4 extension:    ffmpeg will encode the movie with H264, unless you use -c or -m option"
+	echo ".mov extension:    ffmpeg will encode the movie with mjpeg unless you use -c or -x option"
+	echo
+	echo
+    echo "OPTIONS:"
+    echo "-b/--bitrate string: Pass '-b:v string' to ffmpeg, setting the bitrate and thus movie size.  Default: '2M'"
+    echo "-c/--codec string:   Pass '-c:v string' to ffmpeg, overriding file extension"
+	echo "-d/--debug:          Be insanely verbose and redirect all output to '$default_logfile' (see --logfile option)"
+    echo "-f/--fps n:          Set frames per second in output movie to n (default: 30)."
+    echo "-F/--first n:        Specify the nth input file as the first (0 based numbering), or specify minimum value of n used in template."
+    echo "-g/--geom X Y:       Specify the X and Y pixel dimensions of the images.  REQUIRED for YUV format."  
+	echo "-h/--help:           Show this menu"
+	echo "-k/--keep:           Keep temp directory" 
+	echo "-l/--logfile name:   Redirect all output to logfile 'name'" 
+    echo "-L/--last n:         Specify the nth input file as the last (0 based numbering), or specify maximum value of n used in template."
+	echo "-m/--mjpeg:          Use mjpeg encoder" 
+    echo "-q/--quality string: Pass '-q:v string' to ffmpeg, setting the quality.  Default is 18.  For 8-bit h264, 0 is lossless, 51 is worst, and 18 should be a very good choice.  For mjpeg YMMV."
+    echo "-S/--skip n:         Skip every nth input file or advance by n when applying template." 
+    echo "-t/--tmpdir name:    Use the given directory for scratch instead of a random location in /tmp/$USER"    
+	echo "-v/--verbose:        Be rather chatty about what's happening"
+	echo "-x/--h264:           Use libx264 encoder" 
+	echo
+    echo "Note about changing FPS:  an attempt will be made to conserve ever input movie frame in an FPS conversion.  Thus, changing from 30 FPS to 15 FPS will make your movie duration twice as long in order to have the same number of movie frames.  When converting to .mpg (MPEG-1) movies, due to the limited choice in frame rates, conversion might result in some input frames being irreversibly lost if the ratio of input frames to output frames is fractional.  To avoid this, use a frame rate that evenly divides into the input frame rate if possible."  
+}
+
+# =========================================
+verbose=false
+function dbecho() {
+	if $verbose; then 
+		echo -e "$@"
+	fi
+}
+
+# =========================================
+function runecho () {
+	if $verbose; then 
+		echo -e "$@"
+	fi
+	"$@"
+}
+
+# =========================================
+function errexit() {    
+    echo '*************************************************'
+    echo "ERROR: $1"
+    echo '*************************************************'
+	CleanupTempdir
+    exit 1
+}
+
+# =========================================
+function CleanupTempdir () {
+    if ! $keep; then 
+		if $delete_tmpdir; then 
+			runecho rm -rf ${tmpdir}
+		else
+			runecho rm -rf ${tmpdir}/${framenamebase}_junk_*
+		fi
+	else 
+		echo "Keeping temp directory $tmpdir"
+	fi	
+}
+
+# ==========================================================
+delete_tmpdir=false # if tmpdir preexists, then don't delete it after using it
+keep=false
+debug=false
+ffmpeg=false
+outcodec=""
+logfile=
+mjpeg_bitrate=
+mjpeg_quality=
+# ==========================================================
+# parse arguments and set variables
+argnum=0
+fileargs=""
+while [ ! -z $1 ]; do 
+   if [ "${1:0:1}" != "-" ]; then 
+       fileargs="${fileargs} $1"
+       shift 1;
+    else
+       case $1 in
+           "-b"|"--bitrate") mjpeg_bitrate="$2";     shift 2;;
+           "-c"|"--codec")   outcodec="$2"; ffmpeg=true
+		                                             shift 2;;
+		   "-d"|"--debug")   debug=true;             shift 1;;
+		   "-f"|"--fps")     outfps="$2";            shift 2;;
+		   "-F"|"--first")   firstframe="$2";        shift 2;;
+		   "-g"|"--geom")    xsize="$2"; ysize="$3"; shift 3;;
+           "-h"|"--help")    usage;                  exit 0;; 
+           "-k"|"--keep")    keep=true;              shift 1;;
+           "-l"|"--logfile") logfile="$1"            shift 2;;
+		   "-L"|"--last")    lastframe="$2";         shift 2;;
+           "-m"|"--mjpeg")   outcodec="mjpeg";  ffmpeg=true
+                                                     shift 1;;
+           "-q"|"--quality") mjpeg_quality="$2";     shift 2;;
+		   "-S"|"--skip")    skipframe="$2";         shift 2;;
+           "-t"|"--tmpdir")  tmpdir="$2";            shift 2;;
+		   "-v"|"--verbose") verbose=true;           shift 1;;
+		   "-x"|"--x264")    outcodec="libx264";  ffmpeg=true
+                                                     shift 1;;
+		   *)    usage;  errexit "Unknown option '$1'";;
+       esac
+   fi
+done
+
+if $debug; then 
+    echo "DEBUG MODE"
+	set -xv    
+    logfile=${logfile:-$default_logfile}
+fi
+if [ ! -z $logfile ]; then 
+    echo "Redirecting output to $logfile"
+    exec >& $logfile
+fi
+
+# parse fileargs
+
+infiles=(${fileargs% *}) # removes last token
+outfile="${fileargs##* }" # greedily removes first tokens
+
+if [ -z $outfile ]; then 
+    errexit "Not enough arguments.  Please specify input and output files." 
+fi   
+
+# TMPDIR
+tmpdir=${tmpdir:-/tmp/$USER/img2mpg.tmp.$RANDOM/}
+if [ -e "$tmpdir" ]; then 
+	delete_tmpdir=false
+else
+	delete_tmpdir=true
+fi
+runecho mkdir -p $tmpdir || errexit "Cannot make tmp directory $tmpdir"
+
+if [ "${outfile:0:1}" != '/' ]; then 
+    outfile=$(pwd)/$outfile
+fi
+
+extension="${outfile##*.}" # everything after '*.' (SIC -- filename globbing) 
+ffmpeg=false
+if [ "$extension" == 'mp4' ] ; then 
+	ffmpeg=true
+	outcodec=${outcodec:-"libx264"}
+elif [ "$extension" == 'mov' ] ; then 
+	ffmpeg=true
+	outcodec=${outcodec:-"mjpeg"}
+elif [ "$extension" != 'mpg' ] ; then 
+    errexit "Please specify an output movie name ending with '.mpg', '.mov' or '.mp4'"
+fi
+
+outfps=${outfps:-30}
+if [ $(bc <<< "$outfps < 0") == 1 ]; then 
+    errexit "output FPS '$outfps' is negative!"
+fi
+
+if [ ! -z $outcodec ]; then
+	outcodec="-c:v $outcodec"
+fi
+
+
+#
+# Determine number of frames to read and create
+#
+firstframe=${firstframe:-0}
+lastframe=${lastframe:-0}
+skipframe=${skipframe:-1}
+numInputFrames="${#infiles[*]}"
+if [ "$numInputFrames" == 1 ]; then 
+    template="${infiles[0]}"
+    echo "A single input filename was specified.  Interpreting as a filename template." 
+    use_template=true 
+else
+    use_template=false 
+    if [ $lastframe -ge $numInputFrames ]; then 
+        lastframe=$(expr $numInputFrames - 1)
+    fi
+fi
+
+echo "Searching for frames...." 
+numInputFrames=0
+foundlast=-1
+framenum=$firstframe    
+while [[ $lastframe == 0 || $foundlast -lt $lastframe ]]; do 
+    if $use_template; then
+        infile=$(printf $template $framenum)
+    else
+        infile=${infiles[$framenum]}
+    fi
+    if [ -z $firstfile ]; then 
+        firstfile=$infile
+        # Determine input file types and extension
+        extension="${firstfile: -4}"
+        if [[ "${extension:0:1}" != "." || "${#extension}" != 4 ]]; then 
+            yuv=true
+            extension=""
+        else
+            yuv=false
+            extension=".$extension"
+        fi
+    fi        
+    if $yuv &&  ! ls ${infile}.{Y,U,V} >&/dev/null; then 
+        break;   
+    elif ! $yuv && [ ! -e ${infile} ]; then 
+        break
+    fi
+    foundlast=$framenum
+    let framenum+=$skipframe    
+    let numInputFrames++
+done
+
+if [[ $foundlast == -1 ]]; then 
+    errexit "Cannot find first frame $infile in sequence of files"
+fi
+if [[ $lastframe == 0 || $lastframe -gt $foundlast ]]; then 
+    lastframe=$foundlast;
+fi
+
+dbecho "first file = $firstfile, last file = $lastfile,  and skip = $skipframe"
+
+numInputFrames=$(expr $lastframe - $firstframe + 1)
+numOutputFrames=$(bc <<< "($lastframe - $firstframe)/$skipframe + 1")
+
+
+#
+#	Grab frame sizes
+#
+if [ -z $xsize ] || [ -z $ysize ]; then 
+    if $yuv; then 
+        errexit "You must give the X and Y dimensions using --geom for YUV files." 
+    fi
+    dbecho "use identify to find size of first frame..."
+    framesize=$(echo "${frameinfo#* * }" | sed 's/ .*//')
+    xsize=$(bc <<< "${framesize%x*}/2 * 2")
+    ysize=$(bc <<< "${framesize#*x}/2 * 2")
+    dbecho "Output size will be $xsize x $ysize"
+fi 
+#=================================================
+# helper for extraction, same for mpg and mp4
+function runConvert(){
+	cmd="$1"
+	dbecho $cmd
+	outlog=conversion.outlog
+	if ! $verbose; then
+		$cmd >& $outlog 
+	else 
+		$cmd |& tee $outlog 
+	fi
+	if [ $? != 0 ] || ! [ -s $outfile ] || grep Segmentation $outlog; then
+		errexit "Creation command failed.  Results are in $outlog.  You might try --ffmpeg option"
+	fi
+    if ! $keep; then 
+        runecho rm -f $outlog
+    fi
+}
+
+#=================================================
+# Creating symlinks to generate the desired number of outframes
+# 
+function linkFrames() {
+    
+	outputLinkNum=0
+    
+	echo "Creating symlinks to generate the desired number of outframes:  $numOutputFrames"
+	while [ $outputLinkNum -lt $numOutputFrames ] ; do 
+        echo -e "\rFrame: $outputLinkNum out of $numOutputFrames\c"
+        garbage=yes
+        infileFrame=$(python -c "f = min($firstframe + int(float(${outputLinkNum})/($numOutputFrames-1) * $numInputFrames), $lastframe); print f-f%$skipframe;")
+        if $use_template; then 
+            infile=$(printf $template $infileFrame)
+        else
+            infile=${infiles[$infileFrame]}
+        fi
+        if [ "${infile:0:1}" != '/' ]; then 
+            infile=$(pwd)/$infile
+        fi
+        linkname=$(printf "$tmpdir/movielink_%d$extension" $outputLinkNum)
+        if $yuv; then             
+        	for ext in "Y" "U" "V"; do 
+                ln -s "${infile}.${ext}" "${linkname}.${ext}"
+            done
+        else
+            ln -s "${infile}" "${linkname}"
+        fi
+		let outputLinkNum++
+	done
+	echo 
+}
+#=================================================
+
+dbecho "There are $numInputFrames input frames.  We will create $numOutputFrames output frames at $outfps."
+
+if $ffmpeg; then 
+
+    if [ "${outcodec: -4}" == 'x264' ]; then 
+        mjpeg_quality="-crf ${mjpeg_quality:-18}" 
+    else 
+        mjpeg_quality="-q:v ${mjpeg_quality:-18}"
+    fi
+    if [ ! -z $mjpeg_bitrate ]; then 
+        mjpeg_bitrate="-b:v $mjpeg_bitrate"
+    fi
+	echo "Converting frames using ffmpeg $outcodec encoder...." 
+
+    linkFrames 
+    
+    #To set the frame rate, you must specify the same framerate in and out for image sequence and output movie.  
+	runConvert "ffmpeg -y -framerate $outfps -i $tmpdir/movielink_%d${extension} $outcodec -vf scale=${xsize}:${ysize} -framerate $outfps $mjpeg_bitrate $mjpeg_quality $outfile"
+	
+else    
+    # set -vx
+    framerate_index=1; 
+    for mpfr in $mpeg_framerates; do 
+        if [ $(bc <<< "$mpfr == $outfps") == "1" ]; then 
+            break; 
+        fi
+        let framerate_index++
+    done
+    if [ "$framerate_index" == 9 ]; then     
+        framerate_index=5 # 30 fps
+        numOutputFrames=$(python -c "print int(float(30.0/$outfps) * $numOutputFrames);")
+        echo "Illegal framerate for mpeg: $outfps.  We will create a 30 fps movie, with $numOutputFrames frames to simulate $outfps FPS."  
+    fi
+
+	linkFrames 
+	
+	echo "Converting frames to mpeg using LibGen mpeg command...." 
+	runConvert "mpeg  -PF -p $framerate_index  -a 0 -b $(expr $numOutputFrames - 1) -h $xsize -v $ysize $tmpdir/movielink_  -s $outfile"
+fi
+
+#=================================================
+#
+#       clean up...
+#
+CleanupTempdir
+
+echo "movie $outfile created successfully"
+#
+#	Done!
+#

@@ -1,0 +1,46 @@
+'\" "
+'\" ASCI Visualization Project  "
+'\" "
+'\" Lawrence Livermore National Laboratory "
+'\" Information Management and Graphics Group "
+'\" P.O. Box 808, Mail Stop L-561 "
+'\" Livermore, CA 94551-0808 "
+'\" "
+'\" For information about this project see: "
+'\" 	http://www.llnl.gov/sccd/lc/img/  "
+'\" "
+'\" 	or contact: asciviz@llnl.gov "
+'\" "
+'\" For copyright and disclaimer information see: "
+'\"     man llnl_copyright "	
+'\" "
+'\" $Id: sm2mpg.1,v 1.1 2007/06/13 18:59:34 wealthychef Exp $ "
+'\" $Name:  $ "
+'\" "
+.TH sm2mpg 1
+.SH NAME
+sm2mpg - convert a streaming movie (sm)  file into a MPEG movie.
+.SH SYNOPSIS
+sm2mpg sminfile mpegoutfile fps
+.SH DESCRIPTION
+sm2mpg reads the frames from the input sm file and converts
+them into a single MPEG file.  The framerate of the
+MPEG file is set by the FPS parameter.
+.PP
+The command converts a set of files into an mpeg-1, h264, or mjpeg movie file.
+For mpeg-1, it uses the mpeg command, and for the others, it uses ffmpeg.
+It requires enough disk space for all the sm frames to be
+stored as individual files. For usage, please see the output of img2mpg --help.
+.SH SEE ALSO
+sm2mpg(1), sm(4)
+.SH ORIGIN
+.PP
+.RS
+ASCI Visualization Project 
+.RE
+.RS
+Lawrence Livermore National Laboratory
+.RE
+.RS
+Information Management and Graphics Group
+.RE
