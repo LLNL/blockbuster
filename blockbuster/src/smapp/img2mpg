@@ -4,6 +4,7 @@
 #
 #       Convert an sm file into an MPEG file...
 #
+shopt -s extglob 
 default_logfile="img2mpg.log"
 mpeg_framerates="23.976 24.0 25.0 29.97 30.0 50.0 59.94 60.0"
 
@@ -47,9 +48,18 @@ function usage() {
 }
 
 # =========================================
+# usage:  dbecho [-e] args
+# if -e is given, then make it wrap using -e string'\r\c' syntax 
 verbose=false
 function dbecho() {
-	if $verbose; then 
+    # echo dbecho args are "$@"
+    if ! $verbose; then 
+        return
+    fi
+    if [ "$1" == '-e' ]; then 
+        shift
+		echo -en '\r'"$@"
+    else
 		echo -e "$@"
 	fi
 }
@@ -106,7 +116,8 @@ while [ ! -z $1 ]; do
            "-b"|"--bitrate") mjpeg_bitrate="$2";     shift 2;;
            "-c"|"--codec")   outcodec="$2"; ffmpeg=true
 		                                             shift 2;;
-		   "-d"|"--debug")   debug=true;             shift 1;;
+		   "-d"|"--debug")   debug=true; 
+                             verbose=true;           shift 1;;
 		   "-f"|"--fps")     outfps="$2";            shift 2;;
 		   "-F"|"--first")   firstframe="$2";        shift 2;;
 		   "-g"|"--geom")    xsize="$2"; ysize="$3"; shift 3;;
@@ -208,6 +219,9 @@ while [[ $lastframe == 0 || $foundlast -lt $lastframe ]]; do
         infile=$(printf $template $framenum)
     else
         infile=${infiles[$framenum]}
+        if [ -z $infile ]; then 
+            break
+        fi
     fi
     if [ -z $firstfile ]; then 
         firstfile=$infile
@@ -218,18 +232,28 @@ while [[ $lastframe == 0 || $foundlast -lt $lastframe ]]; do
             extension=""
         else
             yuv=false
-            extension=".$extension"
+            extension="$extension"
         fi
     fi        
-    if $yuv &&  ! ls ${infile}.{Y,U,V} >&/dev/null; then 
-        break;   
-    elif ! $yuv && [ ! -e ${infile} ]; then 
-        break
+    if $yuv; then 
+        if ! ls ${infile}.{Y,U,V} >&/dev/null; then 
+            break;   
+        else
+            lastfile=${infile}.Y
+        fi
+    else 
+        if [ ! -e ${infile} ]; then 
+            break
+        else
+            lastfile=${infile}
+        fi
     fi
+    dbecho -e "Found frame $framenum \"$infile\""
     foundlast=$framenum
     let framenum+=$skipframe    
     let numInputFrames++
 done
+dbecho
 
 if [[ $foundlast == -1 ]]; then 
     errexit "Cannot find first frame $infile in sequence of files"
@@ -252,6 +276,7 @@ if [ -z $xsize ] || [ -z $ysize ]; then
         errexit "You must give the X and Y dimensions using --geom for YUV files." 
     fi
     dbecho "use identify to find size of first frame..."
+    frameinfo=$(identify $firstfile)
     framesize=$(echo "${frameinfo#* * }" | sed 's/ .*//')
     xsize=$(bc <<< "${framesize%x*}/2 * 2")
     ysize=$(bc <<< "${framesize#*x}/2 * 2")
