@@ -2,7 +2,7 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.6h (git tag blockbuster-v2.8.6h) Wed Mar 25 16:22:16 PDT 2015
+VERSION 2.8.6h (git tag blockbuster-v2.8.6h) Wed Mar 25 16:31:03 PDT 2015
 -- BUGFIX:  Fix a bug in img2mpg causing input image sizes to be ignored
 -- BUGFIX:  Fix a hanging bug in img2mpg for sequences input without a template
 

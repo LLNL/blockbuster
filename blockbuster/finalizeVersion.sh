@@ -280,9 +280,9 @@ rm -rf $tmpdir
 
 # =============================================================
 echo "Installing software..." 
-
+auksuccess=true
 scp $builddir/blockbuster-v${version}.tgz auk61:/viz/blockbuster/tarballs/
-runecho ssh auk61 "set -xv; mkdir -p /viz/blockbuster/${version} && pushd /viz/blockbuster/${version} &&  tar -xzf /viz/blockbuster/tarballs/blockbuster-v${version}.tgz && pushd blockbuster-v${version} && INSTALL_DIR=/viz/blockbuster/${version} make && rm -f /viz/blockbuster/test && ln -s /viz/blockbuster/${version} /viz/blockbuster/test" || errexit "Error: build on auk failed."
+runecho ssh auk61 "set -xv; mkdir -p /viz/blockbuster/${version} && pushd /viz/blockbuster/${version} &&  tar -xzf /viz/blockbuster/tarballs/blockbuster-v${version}.tgz && pushd blockbuster-v${version} && INSTALL_DIR=/viz/blockbuster/${version} make && rm -f /viz/blockbuster/test && ln -s /viz/blockbuster/${version} /viz/blockbuster/test" || auksuccess=false
 
 
 echo '#!/usr/bin/env bash
@@ -334,6 +334,10 @@ ln -s $builddir/blockbuster-v${version}.tgz $installdir/blockbuster-v${version}.
 echo "Built and installed blockbuster-v${version} and made it the test version on LC and auk" | mail -s "blockbuster-v${version} build complete" rcook@llnl.gov
 
 echo logfile is $logfile
+
+if not $auksuccess; then 
+    echo "Warning:  build on auk failed"
+fi
 
 exit 0
 
