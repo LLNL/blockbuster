@@ -260,13 +260,13 @@ def RunTestCommand(fullcmd, test, outfile):
 def RemoveBindirHostAndDateFromLine(line):
     r = re.search('\\\\[^ ]*/', line)
     if r:
-        newline = line.replace(r.group(0), 'GENERIC_BINDIR')
+        newline = line.replace(r.group(0), 'GENERIC-BINDIR')
         # dbprint("RemoveBindirFromLine: removing bindir from line.\n'%s' ------> '%s'\n"%(line,newline))
         line = newline
 
     r = re.search('Movie Create Host"\W*=\W*"(\w*)"', line)
     if r:
-        newline = line.replace(r.group(1), 'HOST')
+        newline = line.replace(r.group(1), 'GENERIC-HOST')
         # dbprint("RemoveBindirFromLine: removing bindir from line.\n'%s' ------> '%s'\n"%(line,newline))
         line = newline
 
@@ -275,6 +275,13 @@ def RemoveBindirHostAndDateFromLine(line):
     r = re.search('.*("\D{3}[ ]+\D{3}[ ]+\d+[ ]+\d\d:\d\d:\d\d[ ]+\d{4}\s*\D{,2}T{,1}"\s*$)', line)
     if r:
         newline = line.replace(r.group(1), '"GENERIC-DATESTRING"')
+        line = newline
+        
+    # Remove the Movie Creator line, as for tests this is not important
+    # 
+    r = re.search('ASCII.*Movie Creator"\W*=\W*"(.*)"', line)
+    if r:
+        newline = line.replace(r.group(1), '"GENERIC-CREATOR"')
         line = newline
         
     return line
