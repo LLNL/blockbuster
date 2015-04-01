@@ -95,10 +95,13 @@ fi
 temp=false
 final=false
 commit=false
+install=false
 # must give either -temp or -final: 
 for arg in "$@"; do 
     if [ "$arg" == --commit ]  ||  [ "$arg" == -c ] ; then
         commit=true
+    elif [ "$arg" == --install ]  ||  [ "$arg" == -i ] ; then
+        install=true
     elif [ "$arg" == --temp ]  ||  [ "$arg" == -t ] ; then
         temp=true
     elif [ "$arg" == --final ]  ||  [ "$arg" == -f ] ; then
@@ -239,24 +242,8 @@ sedfiles -e "s/VERSION $version.*/VERSION $version (git tag $tagname) $(date)/" 
 echo "stage files"
 runecho git add -u $commitfiles || errexit "git add failed"
 
-if testbool $nopush; then
-    echo "Version updated.  No git push will be performed"
-    exit 0
-fi
-
 #======================================================
-# push to remote
-echo "commiting local changes and pushing source to remote..."
-runecho git commit -m  "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)"  || errexit "git commit failed"
-runecho git push origin  || errexit "git push origin failed"
-
-echo "Creating new tag" 
-# runecho git tag -d $tagname 2>/dev/null  # ok to fail
-runecho git tag -f $tagname -m "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)" || errexit "git tag failed"
-runecho git push origin $tagname || errexit "git push origin  $tagname failed"
-
-#======================================================
-# Update and install on LC cluster
+# Create a tarball for use in installation etc. 
 echo "Creating clean temp directory $tmpdir to work in..." 
 rm -rf $tmpdir
 mkdir -p $tmpdir || errexit "Could not create tmp directory for tarball"
@@ -271,21 +258,17 @@ mkdir -p $installdir $builddir
 
 popd 
 
-echo "Exporting the new tag from git repo..." 
-git archive --prefix=$tagname/ $tagname | gzip > ${builddir}/$tagname.tgz || errexit "Could not export archive of tag $tagname from git repo to $tagname.tgz"
-
-echo "Cleaning up tempdir..." 
-rm -rf $tmpdir
-
 
 # =============================================================
-echo "Installing software..." 
-auksuccess=true
-scp $builddir/blockbuster-v${version}.tgz auk61:/viz/blockbuster/tarballs/
-runecho ssh auk61 "set -xv; mkdir -p /viz/blockbuster/${version} && pushd /viz/blockbuster/${version} &&  tar -xzf /viz/blockbuster/tarballs/blockbuster-v${version}.tgz && pushd blockbuster-v${version} && INSTALL_DIR=/viz/blockbuster/${version} make && rm -f /viz/blockbuster/test && ln -s /viz/blockbuster/${version} /viz/blockbuster/test" || auksuccess=false
-
-
-echo '#!/usr/bin/env bash
+#======================================================
+if $install; then
+    echo "Installing software..." 
+    auksuccess=true
+    scp $builddir/blockbuster-v${version}.tgz auk61:/viz/blockbuster/tarballs/
+    runecho ssh auk61 "set -xv; mkdir -p /viz/blockbuster/${version} && pushd /viz/blockbuster/${version} &&  tar -xzf /viz/blockbuster/tarballs/blockbuster-v${version}.tgz && pushd blockbuster-v${version} && INSTALL_DIR=/viz/blockbuster/${version} make && rm -f /viz/blockbuster/test && ln -s /viz/blockbuster/${version} /viz/blockbuster/test" || auksuccess=false
+    
+    
+    echo '#!/usr/bin/env bash
 . '"$HOME/.profile"'
 export PATH=/usr/local/tools/qt-4.8.4/bin:$PATH
 
@@ -316,27 +299,50 @@ popd
 popd
 echo INSTALLATION FINISHED
 ' > ${builddir}/installer.sh
-chmod 700 ${builddir}/installer.sh
-${builddir}/installer.sh || errexit "installer failed on localhost"
-
+    chmod 700 ${builddir}/installer.sh
+    ${builddir}/installer.sh || errexit "installer failed on localhost"
+    
 # ssh $remotehost "${builddir}/installer.sh" || errexit "installer failed on remotehost"
-ln -s $installdir/$SYS_TYPE $installdir/$remotesys
+    ln -s $installdir/$SYS_TYPE $installdir/$remotesys
+    
+    echo "Creating symlink of new version to /usr/gapps/asciviz/blockbuster/test"
+    
+    pushd /usr/gapps/asciviz/blockbuster/ || errexit "Could not cd to blockbuster public area"
+    rm -f test
+    ln -s $version test
+    popd
+    echo "Done.  Tarball is $builddir/blockbuster-v${version}.tgz.  To use the new version, type \"use asciviz-test\""
+    ln -s $builddir/blockbuster-v${version}.tgz $installdir/blockbuster-v${version}.tgz
+    
+    echo "Built and installed blockbuster-v${version} and made it the test version on LC and auk" | mail -s "blockbuster-v${version} build complete" rcook@llnl.gov
+    
+    echo logfile is $logfile
+    
+    if ! $auksuccess; then 
+        echo "Warning:  build on auk failed"
+    fi
+fi
 
-echo "Creating symlink of new version to /usr/gapps/asciviz/blockbuster/test"
+#======================================================
+# push to remote
+if ! testbool $nopush; then
+    echo "commiting local changes and pushing source to remote..."
+    runecho git commit -m  "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)"  || errexit "git commit failed"
+    runecho git push origin  || errexit "git push origin failed"
+    
+    echo "Creating new tag" 
+# runecho git tag -d $tagname 2>/dev/null  # ok to fail
+    runecho git tag -f $tagname -m "Version $version, automatic checkin by finalizeVersion.sh, by user $(whoami)" || errexit "git tag failed"
+    runecho git push origin $tagname || errexit "git push origin  $tagname failed"
 
-pushd /usr/gapps/asciviz/blockbuster/ || errexit "Could not cd to blockbuster public area"
-rm -f test
-ln -s $version test
-popd
-echo "Done.  Tarball is $builddir/blockbuster-v${version}.tgz.  To use the new version, type \"use asciviz-test\""
-ln -s $builddir/blockbuster-v${version}.tgz $installdir/blockbuster-v${version}.tgz
-
-echo "Built and installed blockbuster-v${version} and made it the test version on LC and auk" | mail -s "blockbuster-v${version} build complete" rcook@llnl.gov
-
-echo logfile is $logfile
-
-if not $auksuccess; then 
-    echo "Warning:  build on auk failed"
+    echo "Exporting the new tag tagname=$tagname from git repo..." 
+    eval git archive --prefix=$tagname/ $tagname | gzip > ${builddir}/$tagname.tgz  ||  errexit "Could not export archive of tag $tagname from git repo to $tagname.tgz"
+    
+    echo "Cleaning up tempdir..." 
+    rm -rf $tmpdir
+    echo "Done.  Source tarball is  ${builddir}/$tagname.tgz"
+else
+    echo "Done.  No tarball was created because nothing was pushed to the repo.  Use the -f flag to create a source tarball and commit all changes."  
 fi
 
 exit 0

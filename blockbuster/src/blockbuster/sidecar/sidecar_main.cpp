@@ -83,7 +83,6 @@ void ParseOptions(int &argc, char *argv[], Preferences &gPrefs) {
   string prefFile = (prefsdir + "/prefs.cnf").toStdString(); 
   mkdir(prefsdir.toStdString().c_str(), 0777); 
   gPrefs.SetValue("prefsdir", prefsdir.toStdString()); 
-  gPrefs.SetValue("sidecarDir", GetSidecarDir(argv[0])); 
   gPrefs.SetFilename(prefFile);  
   gPrefs.ReadFromFile(false); 
 
@@ -91,6 +90,7 @@ void ParseOptions(int &argc, char *argv[], Preferences &gPrefs) {
   gPrefs.DeleteValue("movie"); // do not inherit this from previous
   gPrefs.DeleteValue("play"); // do not inherit this from previous
 
+  gPrefs.SetValue("sidecarDir", GetSidecarDir(argv[0])); 
   gPrefs.ReadFromEnvironment(); 
 
   gPrefs.AddArg(ArgType("help","bool").SetFlags())
