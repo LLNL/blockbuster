@@ -2,6 +2,10 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
+VERSION 2.8.6j (git tag blockbuster-v2.8.6j) Mon Apr 20 15:40:01 PDT 2015
+-- BUGFIX:  img2sm no longer fails when there is only one input image
+
+===============================================================================
 VERSION 2.8.6i (git tag blockbuster-v2.8.6i) Wed Apr  1 17:29:26 PDT 2015
 -- BUGFIX:  sidecar used wrong default path in blockbuster launch dialog
 

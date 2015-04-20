@@ -309,10 +309,15 @@ function linkFrames() {
 	outputLinkNum=0
     
 	echo "Creating symlinks to generate the desired number of outframes:  $numOutputFrames"
+        
 	while [ $outputLinkNum -lt $numOutputFrames ] ; do 
         echo -e "\rFrame: $outputLinkNum out of $numOutputFrames\c"
         garbage=yes
-        infileFrame=$(python -c "f = min($firstframe + int(float(${outputLinkNum})/($numOutputFrames-1) * $numInputFrames), $lastframe); print f-f%$skipframe;")
+        if [ $numOutputFrames == 1 ]; then 
+            infileFrame=$firstframe
+        else
+            infileFrame=$(python -c "f = min($firstframe + int(float(${outputLinkNum})/($numOutputFrames-1) * $numInputFrames), $lastframe); print f-f%$skipframe;")
+        fi
         if $use_template; then 
             infile=$(printf $template $infileFrame)
         else
