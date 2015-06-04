@@ -87,6 +87,18 @@ int main(int argc, char *argv[]) {
 
   TCLAP::ValueArg<int> verbosity("v", "verbosity", "set verbosity (0-5)", false, 0, "int", cmd); 
   
+  TCLAP::ValueArg<string> authors("", "authors", "a string containing the Authors for the movie (as opposed to the person who happened to just run img2mpg with all the movie frames, if they are not the same person).  Same as -T Authors:'quoted authors string'", false, "", "'quoted authors string'", cmd); 
+
+  TCLAP::ValueArg<string> codename("", "codename", "a string containing the Code Name for code that generated the movie, such as 'Miranda'.  Same as -T Code Name:'quoted code name string'", false, "", "'quoted code name string'", cmd); 
+
+  TCLAP::ValueArg<string> description("", "description", "a string containing the Description for the movie.  Same as -T Description:'quoted description string'", false, "", "'quoted description string'", cmd); 
+
+  TCLAP::ValueArg<string> keywords("", "keywords", "a string containing a list of Keywords for the movie.  Same as -T Keywords:'quoted keywords string'", false, "", "'quoted keywords string'", cmd); 
+
+  TCLAP::ValueArg<string> title("", "title", "a string containing the Title for the movie.  Same as -T Title:'quoted title string'", false, "", "'quoted title string'", cmd); 
+
+  TCLAP::ValueArg<string> ucrl("", "ucrl", "a string containing the UCRL for the movie.  Same as -T UCRL:'quoted UCRL string'", false, "", "'quoted UCRL string'", cmd); 
+
   //------------------------------------------------------------
   try {
 	cmd.parse(argc, argv);
@@ -116,6 +128,25 @@ int main(int argc, char *argv[]) {
       tagmap[md.mTag] = md; 
     }
   }
+  if (authors.getValue() != "") {
+    tagmap["Authors"] = SM_MetaData("Authors", authors.getValue()); 
+  }
+  if (codename.getValue() != "") {
+    tagmap["Code Name"] = SM_MetaData("Code Name", codename.getValue()); 
+  }
+  if (description.getValue() != "") {
+    tagmap["Description"] = SM_MetaData("Description", description.getValue()); 
+  }
+  if (keywords.getValue() != "") {
+    tagmap["Keywords"] = SM_MetaData("Keywords", keywords.getValue()); 
+  }
+  if (title.getValue() != "") {
+    tagmap["Title"] = SM_MetaData("Title", title.getValue()); 
+  }
+  if (ucrl.getValue() != "") {
+    tagmap["UCRL"] = SM_MetaData("UCRL", ucrl.getValue()); 
+  }
+
   string jsonFileName = jsonFileNameFlag.getValue(); 
   if (jsonFileName == "") {
 	jsonFileName = lorenzFileNameFlag.getValue(); 

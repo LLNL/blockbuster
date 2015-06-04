@@ -194,6 +194,18 @@ int main(int argc, char *argv[]) {
 
   TCLAP::MultiArg<string> tagPatternStrings("T", "Tag", "Regex pattern to match any substring of the tag name being queried.  Thus the pattern 'Duration' is the same as '.*Duration.*'  To match an exact string, use '^' and '$', i.e., \"^pattern$\".  See --reserved-tag-list", false, "regexp", cmd); 
 
+  TCLAP::SwitchArg authors("", "authors", " Same as -T Authors", cmd); 
+
+  TCLAP::SwitchArg codename("", "codename", "Same as -T Code Name", cmd); 
+
+  TCLAP::SwitchArg description("", "description", "Same as -T Description", cmd); 
+
+  TCLAP::SwitchArg keywords("", "keywords", "Same as -T Keywords, i.e., lists all keywords for this movie.  There is not yet a way to search for a single keyword, sorry.  Ask Rich Cook to implement this if it sounds useful.", cmd); 
+
+  TCLAP::SwitchArg title("", "title", "Same as -T Title", cmd); 
+
+  TCLAP::SwitchArg ucrl("", "ucrl", "Same as -T UCRL", cmd); 
+
   TCLAP::MultiArg<string> valuePatternStrings("V", "Value", "Regex pattern to match the value of any tags being queried", false, "regexp", cmd); 
 
   TCLAP::UnlabeledMultiArg<string> movienames("movienames", "movie name(s)", false, "movie name(s)", cmd); 
@@ -218,7 +230,7 @@ int main(int argc, char *argv[]) {
 
   bool matchAll = matchAllFlag.getValue(), singleLine = true; //  = singleLineFlag.getValue(); 
 
-  if (!canonical.getValue() && !posterInfo.getValue() && exportPosterFrame.getValue() == "" && !tagPatternStrings.getValue().size() && !valuePatternStrings.getValue().size() && !matchAll && !getinfo) {
+  if (!canonical.getValue() && !posterInfo.getValue() && exportPosterFrame.getValue() == "" && !tagPatternStrings.getValue().size() && !valuePatternStrings.getValue().size() && !matchAll && !getinfo && !authors.getValue() && !codename.getValue() && !description.getValue() && !keywords.getValue() && !title.getValue() && !ucrl.getValue()) {
     matchAll = true; 
   }
   if (!movienames.getValue().size()) {
@@ -242,6 +254,12 @@ int main(int argc, char *argv[]) {
     vector<string> patternStrings = tagPatternStrings.getValue(); 
     for (uint patno = 0; patno < patternStrings.size(); patno++) {
       tagPatterns.push_back(boost::regex(patternStrings[patno])); 
+      if (authors.getValue()) tagPatterns.push_back(boost::regex("Authors"));
+      if (codename.getValue()) tagPatterns.push_back(boost::regex("Code Name"));
+      if (description.getValue()) tagPatterns.push_back(boost::regex("Description"));
+      if (keywords.getValue()) tagPatterns.push_back(boost::regex("Keywords"));
+      if (title.getValue()) tagPatterns.push_back(boost::regex("Title"));
+      if (ucrl.getValue()) tagPatterns.push_back(boost::regex("UCRL"));
     }
     patternStrings = valuePatternStrings.getValue(); 
     for (uint patno = 0; patno < patternStrings.size(); patno++) {
