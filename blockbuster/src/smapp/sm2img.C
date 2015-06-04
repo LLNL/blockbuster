@@ -71,8 +71,8 @@ struct Work {
   // int threadNum, numThreads;
   uint32_t frameNum; 
   smBase *sm; 
-  int blockSize[3]; 
-  int blockOffset[2]; 
+  vector<int> dstSize; 
+  vector<int> dstOffset; 
   int lod; 
   string filename; 
   int imageType; 
@@ -93,6 +93,10 @@ int main(int argc,char **argv)
   TCLAP::ValueArg<int> firstFrame("f", "first", "First frame number",false, 0, "integer", cmd); 
   TCLAP::ValueArg<int> lastFrame("l", "last", "Last frame number",false, -1, "integer", cmd); 
   TCLAP::ValueArg<int> frameStep("s", "step", "Frame step size",false, 1, "integer", cmd); 
+  TCLAP::ValueArg<float> destScale("", "dest-scale", "Scale the output frame height and width by the given factor.",false, 1.0, "nonzero floating point number", cmd);   
+
+  TCLAP::ValueArg<string> destSize("", "dest-size", "Set output frame dimensions.  Note: To maintain aspect ratio, see --dest-scale.  Default: input size.  Format: XXXxYYY e.g. '300x500'",false, "", "e.g. '300x500'", cmd);   
+
   TCLAP::ValueArg<int> mipmap("m", "mipmap", "Which mipmap level to extract from",false, 0, "integer", cmd); 
   TCLAP::ValueArg<int> quality("q", "quality", "Jpeg compression quality, from 0-100",false, 75, "integer", cmd); 
   TCLAP::ValueArg<int> threads("t", "threads", "Number of threads to use",false, 4, "integer", cmd); 
@@ -101,15 +105,16 @@ int main(int argc,char **argv)
   region.getValue().expectedElems = 4; 
 
 
-  vector<string> allowedformats; 
-  allowedformats.push_back("tiff"); allowedformats.push_back("TIFF"); 
-  allowedformats.push_back("sgi"); allowedformats.push_back("SGI");  
-  allowedformats.push_back("pnm"); allowedformats.push_back("PNM");  
-  allowedformats.push_back("png"); allowedformats.push_back("PNG");  
-  allowedformats.push_back("jpg"); allowedformats.push_back("JPG");  
-  allowedformats.push_back("yuv"); allowedformats.push_back("YUV"); 
-  TCLAP::ValuesConstraint<string> allowed(allowedformats); 
-  TCLAP::ValueArg<string>format("F", "Format", "Format of output files (use if name does not make this clear)", false, "default", &allowed); 
+  vector<string> formatStrings; 
+  formatStrings.push_back("tiff"); formatStrings.push_back("TIFF"); 
+  formatStrings.push_back("tif");  formatStrings.push_back("TIF"); 
+  formatStrings.push_back("sgi");  formatStrings.push_back("SGI");  
+  formatStrings.push_back("pnm");  formatStrings.push_back("PNM");  
+  formatStrings.push_back("png");  formatStrings.push_back("PNG");  
+  formatStrings.push_back("jpg");  formatStrings.push_back("JPG");  
+  formatStrings.push_back("yuv");  formatStrings.push_back("YUV"); 
+  TCLAP::ValuesConstraint<string>  allowedFormats(formatStrings); 
+  TCLAP::ValueArg<string>format("F", "Format", "Format of output files (use if name does not make this clear)", false, "default", &allowedFormats); 
   cmd.add(format); 
 
 
@@ -128,14 +133,15 @@ int main(int argc,char **argv)
 
   //smBase *sm = NULL; 
   int	originalImageSize[2];
-  int blockSize[3] = {0,0,3}; 
-  int blockOffset[2] = {0,0}; 
+  vector<int> dstSize(3,0); 
+  dstSize[2] = 3; 
+  vector<int> dstOffset(2,0); 
   int argnum; 
   int nThreads=threads.getValue(); 
   int imageType = -1; 
   
   if (region.getValue().valid && region.getValue()[0] != -1) {
-    for (int i=0; i<2; i++) blockSize[i] = region.getValue()[i+2]; 
+    for (int i=0; i<2; i++) dstSize[i] = region.getValue()[i+2]; 
   }
 
   string suffix = format.getValue();
@@ -156,7 +162,7 @@ int main(int argc,char **argv)
   else if (suffix == "jpg" || suffix == "JPG" || 
            suffix == "jpe" || suffix == "JPE")  imageType = 5; 
   else  {
-    cerr << "Warning:  Cannot deduce format from input files.  Using PNG format but leaving filenames unchanged." << endl; 
+    cerr << "Warning:  No output format was given, and cannot deduce format from output filename template.  Using PNG format but leaving filenames unchanged." << endl; 
     imageType = 4;
   }
   
@@ -182,20 +188,20 @@ int main(int argc,char **argv)
   originalImageSize[1] = sm->getHeight(lod);
   
   /* check user inputs for consistency with image size*/
-  if (blockSize[0]+blockOffset[0] > originalImageSize[0]) {
+  if (dstSize[0]+dstOffset[0] > originalImageSize[0]) {
   smdbprintf(0, "Error: X size (%d) + X offset (%d) cannot be greater than image width (%d)\n", 
-            blockSize[0], blockOffset[0], originalImageSize[0]);
+            dstSize[0], dstOffset[0], originalImageSize[0]);
     exit(1);
   }
-  if (blockSize[1]+blockOffset[1] > originalImageSize[1]) {
+  if (dstSize[1]+dstOffset[1] > originalImageSize[1]) {
   smdbprintf(0, "Error: Y size (%d) + Y offset (%d) cannot be greater than image height (%d)\n", 
-            blockSize[1], blockOffset[1], originalImageSize[1]);
+            dstSize[1], dstOffset[1], originalImageSize[1]);
     exit(1);
   }
   
-  if (!blockSize[0] && !blockSize[1]){ /* no size given -- use image size minus offsets*/
-    blockSize[0] = originalImageSize[0] - blockOffset[0];
-    blockSize[1] = originalImageSize[1] - blockOffset[1];
+  if (!dstSize[0] && !dstSize[1]){ /* no size given -- use image size minus offsets*/
+    dstSize[0] = originalImageSize[0] - dstOffset[0];
+    dstSize[1] = originalImageSize[1] - dstOffset[1];
   }
   
   
@@ -232,8 +238,8 @@ int main(int argc,char **argv)
     Work *wrk = new Work; 
     wrk->frameNum = framenum; 
     wrk->sm = sm; 
-    memcpy(wrk->blockSize, blockSize, sizeof(blockSize)); 
-    memcpy(wrk->blockOffset, blockOffset, sizeof(blockOffset)); 
+    wrk->dstSize = dstSize; 
+    wrk->dstOffset = dstOffset; 
     wrk->lod = lod; 
     if (useTemplate) {
       wrk->filename = str(boost::format(frameTemplate.getValue()) % framenum);
@@ -266,14 +272,14 @@ void workproc(void *vp) {
   Work *work = (Work*)vp; 
   int threadnum = pt_pool_threadnum(); 
   //unsigned char *img = gBuffers[threadnum]; 
-  vector<unsigned char> img(3*work->blockSize[0]*work->blockSize[1], 0); 
+  vector<unsigned char> img(3*work->dstSize[0]*work->dstSize[1], 0); 
 
   if (work->verbosity) smdbprintf(0, "Thread %d working on frame %d\n",
                           threadnum, work->frameNum); 
   
   if(work->sm->getVersion() > 1) {
     int destRowStride = 0;
-    work->sm->getFrameBlock(work->frameNum, &img[0], threadnum, destRowStride,&work->blockSize[0],&work->blockOffset[0],NULL,work->lod);
+    work->sm->getFrameBlock(work->frameNum, &img[0], threadnum, destRowStride,&work->dstSize[0],&work->dstOffset[0],NULL,work->lod);
   }
   else {
     work->sm->getFrame(work->frameNum, &img[0], threadnum);
@@ -286,11 +292,11 @@ void workproc(void *vp) {
       if (tif) {
         // Header stuff 
 #ifdef Tru64
-        TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, (uint32)work->blockSize[0]);
-        TIFFSetField(tif, TIFFTAG_IMAGELENGTH, (uint32)work->blockSize[1]);
+        TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, (uint32)work->dstSize[0]);
+        TIFFSetField(tif, TIFFTAG_IMAGELENGTH, (uint32)work->dstSize[1]);
 #else
-        TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, (unsigned int)work->blockSize[0]);
-        TIFFSetField(tif, TIFFTAG_IMAGELENGTH, (unsigned int)work->blockSize[1]);
+        TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, (unsigned int)work->dstSize[0]);
+        TIFFSetField(tif, TIFFTAG_IMAGELENGTH, (unsigned int)work->dstSize[1]);
 #endif
         TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8);
         TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
@@ -303,8 +309,8 @@ void workproc(void *vp) {
         TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, 1);
         TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
         
-        for(y=0;y<work->blockSize[1];y++) {
-          p = &img[0] + (work->blockSize[0]*3)*(work->blockSize[1]-y-1);
+        for(y=0;y<work->dstSize[1];y++) {
+          p = &img[0] + (work->dstSize[0]*3)*(work->dstSize[1]-y-1);
           TIFFWriteScanline(tif,p,y,0);
         }
         TIFFFlushData(tif);
@@ -313,14 +319,14 @@ void workproc(void *vp) {
     }
       break;
     case 1: {  // SGI
-      vector<unsigned short>   buf(work->blockSize[0]+1);
+      vector<unsigned short>   buf(work->dstSize[0]+1);
       libi = sgiOpen((char*)work->filename.c_str(),SGI_WRITE,SGI_COMP_RLE,1,
-                     work->blockSize[0],work->blockSize[1],3);
+                     work->dstSize[0],work->dstSize[1],3);
       if (libi) {
-        for(y=0;y<work->blockSize[1];y++) {
+        for(y=0;y<work->dstSize[1];y++) {
           for(j=0;j<3;j++) {
-            for(x=0;x<work->blockSize[0];x++) {
-              buf[x]=img[(x+(y*work->blockSize[0]))*3+j];
+            for(x=0;x<work->dstSize[0];x++) {
+              buf[x]=img[(x+(y*work->dstSize[0]))*3+j];
             }
             sgiPutRow(libi,&buf[0],y,j);
           }
@@ -334,20 +340,20 @@ void workproc(void *vp) {
       if (fp) {
         xel* xrow;
         xel* xp;
-        xrow = pnm_allocrow( work->blockSize[0] );
-        pnm_writepnminit( fp, work->blockSize[0], work->blockSize[1], 
+        xrow = pnm_allocrow( work->dstSize[0] );
+        pnm_writepnminit( fp, work->dstSize[0], work->dstSize[1], 
                           255, PPM_FORMAT, 0 );
-        for(y=work->blockSize[1]-1;y>=0;y--) {
+        for(y=work->dstSize[1]-1;y>=0;y--) {
           xp = xrow;
-          for(x=0;x<work->blockSize[0];x++) {
+          for(x=0;x<work->dstSize[0];x++) {
             int r1,g1,b1;
-            r1 = img[(x+(y*work->blockSize[0]))*3+0];
-            g1 = img[(x+(y*work->blockSize[0]))*3+1];
-            b1 = img[(x+(y*work->blockSize[0]))*3+2];
+            r1 = img[(x+(y*work->dstSize[0]))*3+0];
+            g1 = img[(x+(y*work->dstSize[0]))*3+1];
+            b1 = img[(x+(y*work->dstSize[0]))*3+2];
             PPM_ASSIGN( *xp, r1, g1, b1 );
             xp++;
           }
-          pnm_writepnmrow( fp, xrow, work->blockSize[0], 
+          pnm_writepnmrow( fp, xrow, work->dstSize[0], 
                            255, PPM_FORMAT, 0 );
         }
         pnm_freerow(xrow);
@@ -356,8 +362,8 @@ void workproc(void *vp) {
     }
       break;
     case 3: {  // YUV
-      int dx = work->blockSize[0] & 0xfffffe;
-      int dy = work->blockSize[1] & 0xfffffe;
+      int dx = work->dstSize[0] & 0xfffffe;
+      int dy = work->dstSize[1] & 0xfffffe;
       unsigned char *buf = (unsigned char *)malloc(
                                                    (unsigned int)(1.6*dx*dy));
       unsigned char *Ybuf = buf;
@@ -366,8 +372,8 @@ void workproc(void *vp) {
       
       /* convert RGB to YUV  */
       unsigned char *p = &img[0];
-      for(y=0;y<work->blockSize[1];y++) {
-        for(x=0;x<work->blockSize[0];x++) {
+      for(y=0;y<work->dstSize[1];y++) {
+        for(x=0;x<work->dstSize[0];x++) {
           float rd=p[0];
           float gd=p[1];
           float bd=p[2];
@@ -392,7 +398,7 @@ void workproc(void *vp) {
       /* pull apart into Y,U,V buffers */
       /* down-sample U/V */
       for(y=0;y<dy;y++) {
-        p = &img[0] + (work->blockSize[1]-y-1)*3*work->blockSize[0];
+        p = &img[0] + (work->dstSize[1]-y-1)*3*work->dstSize[0];
         for(x=0;x<dx;x++) {
           *Ybuf++ = *p++;
           if ((x&1) || (y&1)) {
@@ -431,11 +437,11 @@ void workproc(void *vp) {
     }
       break;
     case 4: {  // PNG
-      write_png_file((char*)work->filename.c_str(), &img[0],work->blockSize);
+      write_png_file((char*)work->filename.c_str(), &img[0], &work->dstSize[0]);
     }
       break;
     case 5: {  // JPEG
-      write_jpeg_image((char*)work->filename.c_str(), &img[0],work->blockSize,work->jqual);
+      write_jpeg_image((char*)work->filename.c_str(), &img[0], &work->dstSize[0], work->jqual);
     }
       break;
     }

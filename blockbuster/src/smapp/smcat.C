@@ -57,31 +57,46 @@
 #include "zlib.h"
 #include <stdarg.h>
 
+#include "pngsimple.h"
+extern "C" {
+#include <tiff.h>
+#include <tiffio.h>
+}
+//undef int32
+
+#include <tclap_utils.h>
+// using namespace TCLAP; 
+#include "libimage/sgilib.h"
+#include "libpnmrw/libpnmrw.h"
+#include "simple_jpeg.h"
+#include "../config/version.h"
+#include <boost/format.hpp>
+
 int		gVerbosity = 0;
 
 
 //===============================================
 // #definsmdbprintf smdbprintf
 /*
-voismdbprintf(int level, const char *fmt, ...) {
+  voismdbprintf(int level, const char *fmt, ...) {
   if (gVerbosity < level) return; 
   // cerr <<  DBPRINTF_PREAMBLE; 
   va_list ap;
   va_start(ap, fmt);
- smdbprintf(0,fmt,ap);
+  smdbprintf(0,fmt,ap);
   va_end(ap);
   return; 
-}
+  }
 */
 // Prototypes 
 void cmdline(char *app);
 
-static void smoothx(unsigned char *image, int dx, int dy);
-static void smoothy(unsigned char *image, int dx, int dy);
+static void smoothx(vector<unsigned char> &image, int dx, int dy);
+static void smoothy(vector<unsigned char> &image, int dx, int dy);
 
-void Sample2d(unsigned char *in,int idx,int idy,unsigned char *out,
-        int odx,int ody,int s_left,int s_top,
-        int s_dx,int s_dy,int filter);
+void Sample2d(vector<unsigned char> &in,int idx,int idy,vector<unsigned char> &out,
+              int odx,int ody,int s_left,int s_top,
+              int s_dx,int s_dy,int filter);
 
 // =======================================================================
 void errexit(string msg) {
@@ -107,25 +122,31 @@ struct MovieInfo{
 };
 
 struct Work {
-	smBase *sm;
-	smBase *insm;
-	int inframe;
-	int outframe;
-	int iScale;
-	int iFilter;
-	int *dst;
-	int *src;
-  unsigned char *buffer;
-  unsigned char *compbuffer;
+  smBase *sm;
+  smBase *insm;
+  string filename; 
+  int imageType; 
+  int jqual; 
+  int verbosity; 
+  int inframe;
+  int outframe;
+  int iScale;
+  int iFilter;
+  vector<int> dstSize;
+  vector<int> dstOffset; 
+  int *src;
+  vector<unsigned char>buffer;
+  vector<unsigned char>compbuffer;
 } ;
 
+void WriteOutputImage(Work *wrk) ; 
 void workproc(void *arg);
 
 int main(int argc,char **argv)
 {
 
  
-  TCLAP::CmdLine  cmd(str(boost::format("%1% concats movies together. ")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
+  TCLAP::CmdLine  cmd(str(boost::format("%1% concats movies together or outputs their frames. ")%argv[0]), ' ', BLOCKBUSTER_VERSION); 
   
   TCLAP::ValueArg<int> verbosity("v", "Verbosity", "Verbosity level",false, 0, "integer", cmd);   
   
@@ -147,6 +168,10 @@ int main(int argc,char **argv)
 
   TCLAP::SwitchArg quiet("q", "quiet", "Do not echo the tags to stdout.  Just return 0 on successful match. ", cmd);
 
+  TCLAP::ValueArg<float> destScale("", "dest-scale", "Scale the output height and width by the given factor.",false, 1.0, "nonzero floating point number", cmd);   
+
+  TCLAP::ValueArg<string> destSize("", "dest-size", "Set output dimensions.  Note: To maintain aspect ratio, see --dest-scale.  Default: input size.  Format: XXXxYYY e.g. '300x500'",false, "", "e.g. '300x500'", cmd);   
+
   TCLAP::ValueArg<int> firstFrameArg("f", "first", "First frame number in each source movie",false, 0, "integer", cmd);
   TCLAP::ValueArg<int> lastFrameArg("l", "last", "Last frame number in each source movie",false, -1, "integer", cmd);
   TCLAP::ValueArg<int> frameStepArg("s", "step", "Frame step size in each source movie",false, 1, "integer", cmd);
@@ -157,43 +182,51 @@ int main(int argc,char **argv)
   TCLAP::ValueArg<int> 
     threads("t","threads","number of threads to use (default: 8)", false,8,"integer",cmd);
 
-  vector<string> allowedcompression;
-  allowedcompression.push_back("gz");
-  allowedcompression.push_back("GZ");
-  allowedcompression.push_back("jpeg");
-  allowedcompression.push_back("JPEG");
-  allowedcompression.push_back("jpg");
-  allowedcompression.push_back("JPG");
-  allowedcompression.push_back("lzma");
-  allowedcompression.push_back("LZMA");
-  allowedcompression.push_back("lzo");
-  allowedcompression.push_back("LZO");
-  allowedcompression.push_back("raw");
-  allowedcompression.push_back("RAW");
-  allowedcompression.push_back("rle");
-  allowedcompression.push_back("RLE");
-  TCLAP::ValuesConstraint<string> *allowed = new TCLAP::ValuesConstraint<string>(allowedcompression);
-  if (!allowed)
-    errexit(cmd, "Cannot create values constraint for compression\n");
+  vector<string> compressionStrings;
+  compressionStrings.push_back("gz");
+  compressionStrings.push_back("GZ");
+  compressionStrings.push_back("jpeg");
+  compressionStrings.push_back("JPEG");
+  compressionStrings.push_back("jpg");
+  compressionStrings.push_back("JPG");
+  compressionStrings.push_back("lzma");
+  compressionStrings.push_back("LZMA");
+  compressionStrings.push_back("lzo");
+  compressionStrings.push_back("LZO");
+  compressionStrings.push_back("raw");
+  compressionStrings.push_back("RAW");
+  compressionStrings.push_back("rle");
+  compressionStrings.push_back("RLE");
+  TCLAP::ValuesConstraint<string> allowedCompression(compressionStrings);
 
-  TCLAP::ValueArg<string>compression("c", "compression", "Compression to use on movie", false, "gz", allowed);
+  TCLAP::ValueArg<string>compression("c", "compression", "Compression to use on movie", false, "gz", &allowedCompression);
   cmd.add(compression);
+
+  vector<string> formatStrings; 
+  formatStrings.push_back("tiff"); formatStrings.push_back("TIFF"); 
+  formatStrings.push_back("tif");  formatStrings.push_back("TIF"); 
+  formatStrings.push_back("sgi");  formatStrings.push_back("SGI");  
+  formatStrings.push_back("pnm");  formatStrings.push_back("PNM");  
+  formatStrings.push_back("png");  formatStrings.push_back("PNG");  
+  formatStrings.push_back("jpg");  formatStrings.push_back("JPG");  
+  formatStrings.push_back("yuv");  formatStrings.push_back("YUV"); 
+  TCLAP::ValuesConstraint<string>  allowedFormats(formatStrings); 
+  TCLAP::ValueArg<string>format("F", "Format", "Format of output files (use if name does not make this clear)", false, "default", &allowedFormats); 
+  cmd.add(format); 
 
   TCLAP::ValueArg<int> jqual("j",  "jqual",  "JPEG quality (0-99, default 75).  Higher is less compressed and higher quality.", false,  75,  "integer (0-99)",  cmd);   
   
   TCLAP::ValueArg<int> mipmaps("", "mipmaps", "Number of levels of detail",false, 1, "integer", cmd);   
   TCLAP::ValueArg<string> tilesizes("",  "tilesizes",  "Pixel size of the tiles within each frame (default: 0 -- no tiling).  Examples: '512' or '512x256'", false,  "0",  "M or MxN",  cmd); 
-  //  TCLAP::ValueArg<int> tilesizes("",  "tilesizes",  "Pixel size of the tiles within each frame (default: 0 -- no tiling).  Examples: '512' or '512,256'", false,  0,  "integer",  cmd); 
   
-  TCLAP::ValueArg<string> destSize("", "dest-size", "Set output frame dimensions. Default: input size.  Format: XXXxYYY e.g. '300x500'",false, "", "e.g. '300x500'", cmd);   
   TCLAP::ValueArg<string> subregion("", "src-subregion", "Select a rectangle of the input by giving region size and offset. Default: all. Format: 'Xoffset Yoffset Xsize Ysize' e.g. '20 50 300 500'",false, "", "'Xoffset Yoffset Xsize Ysize'", cmd);   
   TCLAP::ValueArg<float> fps("r", "framerate", "Store Frames Per Second (FPS) in movie for playback (float).  Might be ignored.",false, 30, "positive floating point number", cmd);   
   
-  // TCLAP::UnlabeledValueArg<string> output("Output-movie", "Name of the movie to create", true, "", "output movie name", cmd); 
   
-  TCLAP::UnlabeledMultiArg<string> movienames("movienames", "Name of the input movie(s) to cat, followed by the name of the movie to create. Syntax for input movies is \"file[@first[@last[@step]]]\", allowing the first, last and frame step to be specified for each input .sm file individually. The default is to take all frames in an input file, stepping by 1.  You can also use --first, --last and --step as global defaults, overridden by the @ syntax if present for any movie..",true, "input movie(s)> <output movie", cmd); 
+  TCLAP::UnlabeledMultiArg<string> filenames("filenames", "Name of the input movie(s) to cat, followed by either the name of the movie to create, or the output image name template. For image frame template, use %d notation, e.g. frame%04d.png yields names like frame0000.png, frame0001.png, etc.   For a single image frame, a template is optional.  Syntax for input movies is \"file[@first[@last[@step]]]\", allowing the first, last and frame step to be specified for each input .sm file individually. The default is to take all frames in an input file, stepping by 1.  You can also use --first, --last and --step as global defaults, overridden by the @ syntax if present for any movie..",true, "input movie(s)> <output movie or image name template", cmd); 
   
   
+  bool bOutputMovie = true; // if false, write out frames
   // save the command line for meta data
   string commandLine;
   for (int i=0; i<argc; i++)
@@ -216,20 +249,44 @@ int main(int argc,char **argv)
     errexit(cmd, "Resolutions must be between 1 and 8."); 
   }
   
-  vector<string> movies = movienames.getValue(); 
+  vector<string> movies = filenames.getValue(); 
   if (movies.size() < 2) {
-    errexit(cmd, "You must supply at least one input movie and one output movie"); 
+    errexit(cmd, "You must supply at least one input movie and one output movie or output frame template"); 
   }
-  string outputMovie = movies[movies.size()-1]; 
+  string outputName = movies[movies.size()-1]; 
   movies.pop_back(); 
 
+  // Check to see if we are dealing with a movie or output images.  
+  int imageType = -1; 
+  string suffix = format.getValue();
+  if (suffix == "default") {
+    string templatestr = outputName; 
+    string::size_type idx = templatestr.rfind('.'); 
+    if (idx == string::npos) {
+      cerr << "Error:  Cannot find a file type suffix in your output template.  Please use -form to tell me what to do if you're not going to give a suffix." << endl; 
+      exit(1); 
+    }
+    suffix = templatestr.substr(idx+1,3); 
+  } 
+  if (suffix != "sm") {    
+    bOutputMovie = false; 
+    if (suffix == "tif" || suffix == "TIF")  imageType = 0; 
+    else if (suffix == "sgi" || suffix == "SGI")  imageType = 1; 
+    else if (suffix == "pnm" || suffix == "PNM")  imageType = 2; 
+    else if (suffix == "yuv" || suffix == "YUV")  imageType = 3; 
+    else if (suffix == "png" || suffix == "PNG")  imageType = 4; 
+    else if (suffix == "jpg" || suffix == "JPG" || 
+             suffix == "jpe" || suffix == "JPE")  imageType = 5; 
+    else  {
+      cerr << "Warning:  No output format was given, and cannot deduce format from output filename template.  Using PNG format but leaving filenames unchanged." << endl; 
+      imageType = 4;
+    }
+  }    
   // ===============================================
   int		iSize[2] = {-1};
   float		fFPS = fps.getValue();
   //  int		i=0,j=0,k=0;
-  smBase 		*sm = NULL;
   void 		*buffer = NULL;
-  void		*pZoom = NULL;
   int		buffer_len = 0;
 
   vector<MovieInfo> minfos; 
@@ -243,13 +300,13 @@ int main(int argc,char **argv)
   gVerbosity = verbosity.getValue(); 
   sm_setVerbose(gVerbosity);  
   /*
-  nminfos = argc-i;
-  input = (inp *)malloc(sizeof(inp)*nminfos);
-  if (!input) exit(1);
+    nminfos = argc-i;
+    input = (inp *)malloc(sizeof(inp)*nminfos);
+    if (!input) exit(1);
   */ 
   TagMap mdata; 
   
-  uint count = 0, n = 0;
+  uint numFrames = 0, n = 0;
   for(vector<string>::iterator pos = movies.begin();pos != movies.end(); ++pos, ++n) {
     MovieInfo minfo;
     vector<string> tokens; 
@@ -287,21 +344,21 @@ int main(int argc,char **argv)
     } else {
       if ((iSize[0] != minfo.sm->getWidth()) ||
           (iSize[1] != minfo.sm->getHeight())) {
-      smdbprintf(0,"Error the file %s has a different framesize\n",minfo.name.c_str());
+        smdbprintf(0,"Error the file %s has a different framesize\n",minfo.name.c_str());
         exit(1);
       }
     }
     /* first/last/step error checking */
     if ((minfo.first < 0) || 
         (minfo.first >= minfo.sm->getNumFrames())) {
-    smdbprintf(0,"Invalid first frame %d for %s\n",
-              minfo.first,minfo.name.c_str());
+      smdbprintf(0,"Invalid first frame %d for %s\n",
+                 minfo.first,minfo.name.c_str());
       exit(1);
     }
     if ((minfo.last < 0) ||
         (minfo.last >= minfo.sm->getNumFrames())) {
-    smdbprintf(0,"Invalid last frame %d for %s\n",
-              minfo.last,minfo.name.c_str());
+      smdbprintf(0,"Invalid last frame %d for %s\n",
+                 minfo.last,minfo.name.c_str());
       exit(1);
     }
     if ((minfo.step == 0) || 
@@ -309,12 +366,12 @@ int main(int argc,char **argv)
          (minfo.last < minfo.first)) ||
         ((minfo.step < 0) && 
          (minfo.last > minfo.first))) {
-    smdbprintf(0,"Invalid first/last/step values (%d/%d/%d)\n",
-              minfo.first,minfo.last,minfo.step);
+      smdbprintf(0,"Invalid first/last/step values (%d/%d/%d)\n",
+                 minfo.first,minfo.last,minfo.step);
       exit(1);
     }
     
-     /* count the frames */
+    /* count the frames */
     minfo.numframes = 0;
     if (minfo.step > 0) {
       for(uint k=minfo.first;k<=minfo.last;
@@ -333,11 +390,11 @@ int main(int argc,char **argv)
              minfo.first,minfo.last,
              minfo.name.c_str(),iSize[0],iSize[1]);
     }
-    count += minfo.numframes;
+    numFrames += minfo.numframes;
     minfos.push_back(minfo); 
   }
   
-    // Ensure the bounds are good...
+  // Ensure the bounds are good...
   int src[4] = {-1}; 
   if (subregion.getValue() == "") {
     src[0] = 0;
@@ -354,19 +411,19 @@ int main(int argc,char **argv)
       errexit (cmd, str(boost::format("Improperly formatted subregion: %1%")%subregion.getValue())); 
     }
     if (src[0] + src[2] > iSize[0]) {
-    smdbprintf(0,"Invalid selection width\n");
+      smdbprintf(0,"Invalid selection width\n");
       exit(1);
     }
     if (src[1] + src[3] > iSize[1]) {
-    smdbprintf(0,"Invalid selection width\n");
+      smdbprintf(0,"Invalid selection width\n");
       exit(1);
     }
   }
   // if no value, dst is equal to the src
-  int dst[2] = {-1}; 
+  vector<int> dstSize(2,-1); 
   if (destSize.getValue() == "") {
-    dst[0] = src[2];
-    dst[1] = src[3];
+    dstSize[0] = src[2] * destScale.getValue();
+    dstSize[1] = src[3] * destScale.getValue();
   }
   else {
 	bool err = false; 
@@ -374,19 +431,19 @@ int main(int argc,char **argv)
     std::stringstream ss(destSize.getValue());
 	char X; 
     try {
-      ss >> dst[0] >> X >> dst[1];
+      ss >> dstSize[0] >> X >> dstSize[1];
     } catch (...) {
 	  err = true; 
 	}
-	if (err || (X!='X' && X!='x') || dst[1] < 1) {
+	if (err || (X!='X' && X!='x') || dstSize[1] < 1) {
       errexit (cmd, str(boost::format("Improperly formatted dest size: %1%")%destSize.getValue())); 
     }
-	smdbprintf(1, "Set size to %d x %d\n", dst[0], dst[1]); 
+	smdbprintf(1, "Set size to %d x %d\n", dstSize[0], dstSize[1]); 
   }
   
   /* We used to allow tilesizes to be specified in great detail, but it is sufficient now to use same tile size at all mipmaps, since after all the I/O is the same regardless of the level of detail.  
-	Formerly, you could say -tilesizes '512x256,256x128,128x64' and have things go the way you wanted them.  Not worth the hassle but worth noting here.  
-   */ 
+     Formerly, you could say -tilesizes '512x256,256x128,128x64' and have things go the way you wanted them.  Not worth the hassle but worth noting here.  
+  */ 
   int xsize=0,ysize=0;
   try {
     xsize = boost::lexical_cast<int32_t>(tilesizes.getValue());
@@ -419,67 +476,83 @@ int main(int argc,char **argv)
     tsizes[n][1] = tsizes[n-1][1];
   }
 
+  // Bad template name?  
+  bool useTemplate = false; 
+  if (!bOutputMovie) {
+    try {
+      string test = str(boost::format(outputName) % 1);
+      useTemplate = true; 
+    } catch(...) {
+      if (numFrames > 1) {
+        smdbprintf(0,"If you are outputting multiple frames, then the output specification must be a C-style sprintf template\n");
+        exit(1);
+      }
+    }
+  }
   // ok, here we go...
   iScale = 0;
-  if (iSize[0] != dst[0]) { iSize[0] = dst[0]; iScale = 1; }
-  if (iSize[1] != dst[1]) { iSize[1] = dst[1]; iScale = 1; }
+  if (iSize[0] != dstSize[0]) { iSize[0] = dstSize[0]; iScale = 1; }
+  if (iSize[1] != dstSize[1]) { iSize[1] = dstSize[1]; iScale = 1; }
   
   // memory for scaling buffer...
-  if (iScale) {
-    pZoom = (void *)malloc(iSize[0]*iSize[1]*3);
-    if (!pZoom) exit(1);
-  }
   
-  // Open the output file...
-  unsigned int *tsizep = NULL; 
-  if(tsizes[0][0]) {
-    tsizep = &tsizes[0][0];
-  }
-  else if (compression.getValue() == "" || compression.getValue() == "gz" || compression.getValue() == "GZ") {
-    if (compression.getValue() == "") {
-    smdbprintf(1, "No compression given; using gzip compression by default.\n"); 
+  /* ============================================================================== */
+  // Open the output movie if we are catting to a movie: 
+  smBase 		*sm = NULL;
+  if (bOutputMovie) {
+    unsigned int *tsizep = NULL; 
+    if(tsizes[0][0]) {
+      tsizep = &tsizes[0][0];
     }
-    sm = new smGZ(outputMovie.c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
-  } else if (compression.getValue() == "raw" || compression.getValue() == "RAW") {
-    sm = new smRaw(outputMovie.c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
-  } else if (compression.getValue() == "rle" || compression.getValue() == "RLE") {
-    sm = new smRLE(outputMovie.c_str(),iSize[0],iSize[1],count, tsizep,nRes, nThreads);
-  } else if (compression.getValue() == "lzo" || compression.getValue() == "LZO") {
-    sm = new smLZO(outputMovie.c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
-  } else if (compression.getValue() == "jpeg" || compression.getValue() == "jpg" || compression.getValue() == "JPEG" || compression.getValue() == "JPG") {
-    sm = new smJPG(outputMovie.c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
-    ((smJPG *)sm)->setQuality(jqual.getValue());
-  } else if (compression.getValue() == "lzma" || compression.getValue() == "LZMA") {
-    sm = new smXZ(outputMovie.c_str(),iSize[0],iSize[1],count,tsizep,nRes, nThreads);
-  } else {
-    errexit(cmd, str(boost::format("Bad encoding type: %1%")%compression.getValue()));
-  }
-  if (!sm) {
-  smdbprintf(0,"Unable to create the file: %s\n", outputMovie.c_str());
-    exit(1);
-  }
-  if (!noMetadata.getValue()) {
-    for(uint i=0;i<minfos.size();i++) {
-      TagMap tm = minfos[i].sm->GetMetaData();
-      sm->SetMetaData(tm, string("Source movie ")+minfos[i].name + ": "); 
+    else if (compression.getValue() == "" || compression.getValue() == "gz" || compression.getValue() == "GZ") {
+      if (compression.getValue() == "") {
+        smdbprintf(1, "No compression given; using gzip compression by default.\n"); 
+      }
+      sm = new smGZ(outputName.c_str(),iSize[0],iSize[1],numFrames,tsizep,nRes, nThreads);
+    } else if (compression.getValue() == "raw" || compression.getValue() == "RAW") {
+      sm = new smRaw(outputName.c_str(),iSize[0],iSize[1],numFrames,tsizep,nRes, nThreads);
+    } else if (compression.getValue() == "rle" || compression.getValue() == "RLE") {
+      sm = new smRLE(outputName.c_str(),iSize[0],iSize[1],numFrames, tsizep,nRes, nThreads);
+    } else if (compression.getValue() == "lzo" || compression.getValue() == "LZO") {
+      sm = new smLZO(outputName.c_str(),iSize[0],iSize[1],numFrames,tsizep,nRes, nThreads);
+    } else if (compression.getValue() == "jpeg" || compression.getValue() == "jpg" || compression.getValue() == "JPEG" || compression.getValue() == "JPG") {
+      sm = new smJPG(outputName.c_str(),iSize[0],iSize[1],numFrames,tsizep,nRes, nThreads);
+      ((smJPG *)sm)->setQuality(jqual.getValue());
+    } else if (compression.getValue() == "lzma" || compression.getValue() == "LZMA") {
+      sm = new smXZ(outputName.c_str(),iSize[0],iSize[1],numFrames,tsizep,nRes, nThreads);
+    } else {
+      errexit(cmd, str(boost::format("Bad encoding type: %1%")%compression.getValue()));
     }
-    try {
-      sm->SetMetaData(commandLine, tagfile.getValue(), canonical.getValue(), delimiter.getValue(), taglist.getValue(), posterframe.getValue(), exportTagfile.getValue(), quiet.getValue());
-    } catch (string msg) {
-      errexit(msg); 
+    if (!sm) {
+      smdbprintf(0,"Unable to create the file: %s\n", outputName.c_str());
+      exit(1);
     }
-  }
-  if (report.getValue()) {
-    cout << sm->InfoString(verbosity.getValue()) << endl;
-    cout << "Tags =============== \n";
-    cout << sm->MetaDataAsString() << endl;
-  }
+    if (!noMetadata.getValue()) {
+      for(uint i=0;i<minfos.size();i++) {
+        TagMap tm = minfos[i].sm->GetMetaData();
+        sm->SetMetaData(tm, string("Source movie ")+minfos[i].name + ": "); 
+      }
+      try {
+        sm->SetMetaData(commandLine, tagfile.getValue(), canonical.getValue(), delimiter.getValue(), taglist.getValue(), posterframe.getValue(), exportTagfile.getValue(), quiet.getValue());
+      } catch (string msg) {
+        errexit(msg); 
+      }
+    }
+    if (report.getValue()) {
+      cout << sm->InfoString(verbosity.getValue()) << endl;
+      cout << "Tags =============== \n";
+      cout << sm->MetaDataAsString() << endl;
+    }
 
-  /* set any flags */
-  if (stereo.getValue()) sm->setStereo(); 
-  sm->setFPS(fps.getValue());
-  sm->startWriteThread(); 
-  
+    /* set any flags */
+    if (stereo.getValue()) sm->setStereo(); 
+    sm->setFPS(fps.getValue());
+    sm->startWriteThread(); 
+  }
+  // End output movie prep
+  /* ============================================================================== */
+
+
   /* init the parallel tools */
   pt_pool_init(pool, nThreads, nThreads*2, 0);
   
@@ -493,36 +566,29 @@ int main(int argc,char **argv)
     }
     for(int fnum = pos->first; fnum <= pos->last; fnum += pos->step) {
       if (gVerbosity) {
-        printf("Working on %d of %d (frame %d)\n",fnum,count, fnum);
+        printf("Working on %d of %d (frame %d)\n",fnum,numFrames, fnum);
       }
-      if (0 && nThreads == 1 
-          /* && (pos->sm->getType() == sm->getType()) && 
-             (iScale == 0) && 
-             (sm->getNumResolutions() == pos->sm->getNumResolutions())*/
-          ) {
-        int	size,res;
-        for(res=0;res<sm->getNumResolutions();res++) {
-          pos->sm->getCompFrame(fnum, 0, NULL, size, res);
-          if (buffer_len < size) {
-            free(buffer);
-            buffer = (void *)malloc(size);
-            buffer_len = size;
-          }
-          pos->sm->getCompFrame(fnum, 0, buffer, size, res);
-          sm->writeCompFrame(outframe, buffer, &size, res);
-        }
-      } else {
-        Work *wrk = new Work;
-        wrk->insm = pos->sm;
-        wrk->sm = sm;
-        wrk->inframe = fnum;
-        wrk->outframe = outframe;
-        wrk->iScale = iScale;
-        wrk->iFilter = filter.getValue();
-        wrk->dst = dst;
-        wrk->src = src;
-        pt_pool_add_work(pool, workproc, wrk);
-      }
+      Work *wrk = new Work;
+      wrk->insm = pos->sm;
+      wrk->sm = sm;
+      wrk->inframe = fnum;
+      wrk->outframe = outframe;
+      wrk->iScale = iScale;
+      wrk->iFilter = filter.getValue();
+      wrk->dstSize = dstSize;
+      wrk->src = src;
+      if (!bOutputMovie) {
+        if (useTemplate) {
+          wrk->filename = str(boost::format(outputName) % outframe);
+        } 
+        else {
+          wrk->filename = outputName; 
+        } 
+        wrk->imageType = imageType; 
+        wrk->jqual = jqual.getValue(); 
+        wrk->verbosity = verbosity.getValue(); 
+      }       
+      pt_pool_add_work(pool, workproc, wrk);
       outframe++;
     }
   }
@@ -542,7 +608,6 @@ int main(int argc,char **argv)
   // delete sm;
   //   for(i=0;i<nminfos;i++) delete input[i].sm;
   // free(input);
-  if (pZoom) free(pZoom);
   if (buffer) free(buffer);
   cout << "smcat successfully created movie " << sm->getName() << endl; 
   exit(0);
@@ -550,143 +615,303 @@ int main(int argc,char **argv)
 
 void workproc(void *arg)
 {
-	Work *wrk = (Work *)arg;
+  Work *work = (Work *)arg;
+  vector<unsigned char> img(3*work->dstSize[0]*work->dstSize[1], 0); 
 
-	int	sizein = 3*wrk->insm->getHeight()*wrk->insm->getWidth();
-	int	sizeout = 3*wrk->sm->getHeight()*wrk->sm->getWidth();
-	int	size;
-	wrk->buffer = new unsigned char[sizein];
-  smdbprintf(3, "created new buffer %p for frame %d\n", 
-             wrk->buffer, wrk->outframe); 
-	wrk->insm->getFrame(wrk->inframe,wrk->buffer, pt_pool_threadnum());
-	if (wrk->iScale) {
-		unsigned char *pZoom = new unsigned char[sizeout];
-		Sample2d(wrk->buffer,
-			 wrk->insm->getWidth(),
-			 wrk->insm->getHeight(),
-			 pZoom,
-			 wrk->dst[0],wrk->dst[1],wrk->src[0],wrk->src[1],
-			 wrk->src[2],wrk->src[3],wrk->iFilter);
-      smdbprintf(4, "workproc deleting new buffer %p, replacing with %p for frame %d\n", wrk->buffer, pZoom, wrk->outframe); 
-		delete wrk->buffer;
-		wrk->buffer = pZoom;
-	}
+  int	sizein = 3*work->insm->getHeight()*work->insm->getWidth();
+  int	sizeout = 3*work->sm->getHeight()*work->sm->getWidth();
+  int	size;
+  work->buffer.resize(sizein);
+  work->insm->getFrame(work->inframe, &work->buffer[0], pt_pool_threadnum());
+  if (work->iScale) {
+    vector<unsigned char>pZoom(sizeout,0);
+    Sample2d(work->buffer, work->insm->getWidth(),work->insm->getHeight(),
+             pZoom, work->dstSize[0],work->dstSize[1],
+             work->src[0],work->src[1],
+             work->src[2],work->src[3], work->iFilter);
+    smdbprintf(4, "workproc resampled work buffer to size %d for frame %d\n", sizeout, work->outframe); 
+    work->buffer = pZoom;
+  }
+  if (work->sm) {
+    work->sm->compressAndBufferFrame(work->outframe, &work->buffer[0]);
+  } else {
+    WriteOutputImage(work); 
+  }
 
-    wrk->sm->compressAndBufferFrame(wrk->outframe,wrk->buffer);
-
-	delete wrk;
+  delete work;
 }
 
-static void smoothx(unsigned char *image, int dx, int dy)
-{
-        register int x,y;
-	int	p1[3],p2[3],p3[3];
+void WriteOutputImage(Work *work) {
 
-/* smooth along X scanlines using 242 kernel */
-        for(y=0;y<dy;y++) {
-                p1[0] = image[(y*dx)*3+0];
-                p1[1] = image[(y*dx)*3+1];
-                p1[2] = image[(y*dx)*3+2];
-
-                p2[0] = image[((y*dx)+1)*3+0];
-                p2[1] = image[((y*dx)+1)*3+1];
-                p2[2] = image[((y*dx)+1)*3+2];
-
-                for(x=1;x<dx-1;x++) {
-                        p3[0] = image[((y*dx)+x+1)*3+0];
-                        p3[1] = image[((y*dx)+x+1)*3+1];
-                        p3[2] = image[((y*dx)+x+1)*3+2];
-
-                        image[((y*dx)+x)*3+0]=((p1[0]*2)+(p2[0]*4)+(p3[0]*2))/8;
-                        image[((y*dx)+x)*3+1]=((p1[1]*2)+(p2[1]*4)+(p3[1]*2))/8;
-                        image[((y*dx)+x)*3+2]=((p1[2]*2)+(p2[2]*4)+(p3[2]*2))/8;
-
-                        p1[0] = p2[0];
-                        p1[1] = p2[1];
-                        p1[2] = p2[2];
-
-                        p2[0] = p3[0];
-                        p2[1] = p3[1];
-                        p2[2] = p3[2];
-                }
+  switch(work->imageType) {
+  case 0: {  // TIFF
+    unsigned char *p;
+    TIFF		*tif = TIFFOpen(work->filename.c_str(),"w");
+    if (tif) {
+      // Header stuff 
+#ifdef Tru64
+      TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, (uint32)work->dstSize[0]);
+      TIFFSetField(tif, TIFFTAG_IMAGELENGTH, (uint32)work->dstSize[1]);
+#else
+      TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, (unsigned int)work->dstSize[0]);
+      TIFFSetField(tif, TIFFTAG_IMAGELENGTH, (unsigned int)work->dstSize[1]);
+#endif
+      TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8);
+      TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+      TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
+      TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+      TIFFSetField(tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
+      TIFFSetField(tif, TIFFTAG_DOCUMENTNAME, work->filename.c_str());
+      TIFFSetField(tif, TIFFTAG_IMAGEDESCRIPTION, "sm2img TIFF image");
+      TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 3);
+      TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, 1);
+      TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+        
+      for(int y=0;y<work->dstSize[1];y++) {
+        p = &work->buffer[0] + (work->dstSize[0]*3)*(work->dstSize[1]-y-1);
+        TIFFWriteScanline(tif,p,y,0);
+      }
+      TIFFFlushData(tif);
+      TIFFClose(tif);
+    }
+  }
+    break;
+  case 1: {  // SGI
+    vector<unsigned short> buf(work->dstSize[0]+1);
+    sgi_t		*libi = sgiOpen((char*)work->filename.c_str(),SGI_WRITE,SGI_COMP_RLE,1,
+                                work->dstSize[0],work->dstSize[1],3);
+    if (libi) {
+      for(int y=0;y<work->dstSize[1];y++) {
+        for(int j=0;j<3;j++) {
+          for(int x=0;x<work->dstSize[0];x++) {
+            buf[x]=work->buffer[(x+(y*work->dstSize[0]))*3+j];
+          }
+          sgiPutRow(libi,&buf[0],y,j);
         }
-        return;
+      }
+      sgiClose(libi);
+    }
+  }
+    break;
+  case 2: {  // PNM
+    FILE *fp = pm_openw((char*)work->filename.c_str());
+    if (fp) {
+      xel* xrow;
+      xel* xp;
+      xrow = pnm_allocrow( work->dstSize[0] );
+      pnm_writepnminit( fp, work->dstSize[0], work->dstSize[1], 
+                        255, PPM_FORMAT, 0 );
+      for(int y=work->dstSize[1]-1;y>=0;y--) {
+        xp = xrow;
+        for(int x=0;x<work->dstSize[0];x++) {
+          int r1,g1,b1;
+          r1 = work->buffer[(x+(y*work->dstSize[0]))*3+0];
+          g1 = work->buffer[(x+(y*work->dstSize[0]))*3+1];
+          b1 = work->buffer[(x+(y*work->dstSize[0]))*3+2];
+          PPM_ASSIGN( *xp, r1, g1, b1 );
+          xp++;
+        }
+        pnm_writepnmrow( fp, xrow, work->dstSize[0], 
+                         255, PPM_FORMAT, 0 );
+      }
+      pnm_freerow(xrow);
+      pm_closew(fp);
+    }
+  }
+    break;
+  case 3: {  // YUV
+    int dx = work->dstSize[0] & 0xfffffe;
+    int dy = work->dstSize[1] & 0xfffffe;
+      
+    /* convert RGB to YUV  */
+    unsigned char *p = &work->buffer[0];
+    for(int y=0;y<work->dstSize[1];y++) {
+      for(int x=0;x<work->dstSize[0];x++) {
+        float rd=p[0];
+        float gd=p[1];
+        float bd=p[2];
+        float yd= 0.2990*rd+0.5870*gd+0.1140*bd;
+        float ud=-0.1687*rd-0.3313*gd+0.5000*bd;
+        float vd= 0.5000*rd-0.4187*gd-0.0813*bd;
+        int   Y=(int)floor(yd+0.5);
+        int   U=(int)floor(ud+128.5);
+        int   V=(int)floor(vd+128.5);
+        if (Y<0)   Y=0;
+        if (Y>255) Y=255;
+        if (U<0)   U=0;
+        if (U>255) U=255;
+        if (V<0)   V=0;
+        if (V>255) V=255;
+        *p++ = Y;
+        *p++ = U;
+        *p++ = V;
+      }
+    }
+      
+    vector<unsigned char> buf(1.5*dx*dy + 1);
+    unsigned char *Ybuf = &buf[0];
+    unsigned char *Ubuf = Ybuf + (dx*dy);
+    unsigned char *Vbuf = Ubuf + (dx*dy)/4;
+    /* pull apart into Y,U,V buffers */
+    /* down-sample U/V */
+    for(int y=0;y<dy;y++) {
+      p = &work->buffer[0] + (work->dstSize[1]-y-1)*3*work->dstSize[0];
+      for(int x=0;x<dx;x++) {
+        *Ybuf++ = *p++;
+        if ((x&1) || (y&1)) {
+          p += 2;
+        } else {
+          *Ubuf++ = *p++;
+          *Vbuf++ = *p++;
+        }
+      }
+    }
+      
+    /* write the 3 files */
+    string yuvname = work->filename + ".Y"; 
+    FILE *fp = fopen(yuvname.c_str(),"wb");
+    if (fp) {
+      fwrite(&buf[0],dx*dy,1,fp);
+      fclose(fp);
+    }
+
+    yuvname = work->filename + ".U"; 
+    fp = fopen(yuvname.c_str(),"wb");
+    if (fp) {
+      fwrite(&buf[dx*dy], dx*dy/4, 1, fp);
+      fclose(fp);
+    }
+
+    yuvname = work->filename + ".V"; 
+    fp = fopen(yuvname.c_str(),"wb");
+    if (fp) {
+      fwrite(&buf[dx*dy/4], dx*dy/4, 1, fp);
+      fclose(fp);
+    }
+  }
+    break;
+  case 4: {  // PNG
+    write_png_file((char*)work->filename.c_str(), &work->buffer[0], &work->dstSize[0]);
+  }
+    break;
+  case 5: {  // JPEG
+    write_jpeg_image((char*)work->filename.c_str(), &work->buffer[0], &work->dstSize[0], work->jqual);
+  }
+    break;
+  }
+  return; 
 }
 
-static void smoothy(unsigned char *image, int dx, int dy)
+static void smoothx(vector<unsigned char> &image, int dx, int dy)
 {
-        register int x,y;
-	int	p1[3],p2[3],p3[3];
-
-/* smooth along Y scanlines using 242 kernel */
-        for(x=0;x<dx;x++) {
-                p1[0] = image[x*3+0];
-                p1[1] = image[x*3+1];
-                p1[2] = image[x*3+2];
-
-                p2[0] = image[(x+dx)*3+0];
-                p2[1] = image[(x+dx)*3+1];
-                p2[2] = image[(x+dx)*3+2];
-
-                for(y=1;y<dy-1;y++) {
-                        p3[0] = image[((y*dx)+x+dx)*3+0];
-                        p3[1] = image[((y*dx)+x+dx)*3+1];
-                        p3[2] = image[((y*dx)+x+dx)*3+2];
-
-                        image[((y*dx)+x)*3+0]=((p1[0]*2)+(p2[0]*4)+(p3[0]*2))/8;
-                        image[((y*dx)+x)*3+1]=((p1[1]*2)+(p2[1]*4)+(p3[1]*2))/8;
-                        image[((y*dx)+x)*3+2]=((p1[2]*2)+(p2[2]*4)+(p3[2]*2))/8;
-
-                        p1[0] = p2[0];
-                        p1[1] = p2[1];
-                        p1[2] = p2[2];
-
-                        p2[0] = p3[0];
-                        p2[1] = p3[1];
-                        p2[2] = p3[2];
-                }
-        }
-        return;
+  register int x,y;
+  int	p1[3],p2[3],p3[3];
+  
+  /* smooth along X scanlines using 242 kernel */
+  for(y=0;y<dy;y++) {
+    p1[0] = image[(y*dx)*3+0];
+    p1[1] = image[(y*dx)*3+1];
+    p1[2] = image[(y*dx)*3+2];
+    
+    p2[0] = image[((y*dx)+1)*3+0];
+    p2[1] = image[((y*dx)+1)*3+1];
+    p2[2] = image[((y*dx)+1)*3+2];
+    
+    for(x=1;x<dx-1;x++) {
+      p3[0] = image[((y*dx)+x+1)*3+0];
+      p3[1] = image[((y*dx)+x+1)*3+1];
+      p3[2] = image[((y*dx)+x+1)*3+2];
+      
+      image[((y*dx)+x)*3+0]=((p1[0]*2)+(p2[0]*4)+(p3[0]*2))/8;
+      image[((y*dx)+x)*3+1]=((p1[1]*2)+(p2[1]*4)+(p3[1]*2))/8;
+      image[((y*dx)+x)*3+2]=((p1[2]*2)+(p2[2]*4)+(p3[2]*2))/8;
+      
+      p1[0] = p2[0];
+      p1[1] = p2[1];
+      p1[2] = p2[2];
+      
+      p2[0] = p3[0];
+      p2[1] = p3[1];
+      p2[2] = p3[2];
+    }
+  }
+  return;
 }
 
-void Sample2d(unsigned char *in,int idx,int idy,
-        unsigned char *out,int odx,int ody,
-        int s_left,int s_top,int s_dx,int s_dy,int filter)
+static void smoothy(vector<unsigned char> &image, int dx, int dy)
 {
-        register double xinc,yinc,xp,yp;
-        register int x,y;
-        register int i,j;
-        register int ptr;
+  register int x,y;
+  int	p1[3],p2[3],p3[3];
+  
+  /* smooth along Y scanlines using 242 kernel */
+  for(x=0;x<dx;x++) {
+    p1[0] = image[x*3+0];
+    p1[1] = image[x*3+1];
+    p1[2] = image[x*3+2];
+    
+    p2[0] = image[(x+dx)*3+0];
+    p2[1] = image[(x+dx)*3+1];
+    p2[2] = image[(x+dx)*3+2];
+    
+    for(y=1;y<dy-1;y++) {
+      p3[0] = image[((y*dx)+x+dx)*3+0];
+      p3[1] = image[((y*dx)+x+dx)*3+1];
+      p3[2] = image[((y*dx)+x+dx)*3+2];
+      
+      image[((y*dx)+x)*3+0]=((p1[0]*2)+(p2[0]*4)+(p3[0]*2))/8;
+      image[((y*dx)+x)*3+1]=((p1[1]*2)+(p2[1]*4)+(p3[1]*2))/8;
+      image[((y*dx)+x)*3+2]=((p1[2]*2)+(p2[2]*4)+(p3[2]*2))/8;
+      
+      p1[0] = p2[0];
+      p1[1] = p2[1];
+      p1[2] = p2[2];
+      
+      p2[0] = p3[0];
+      p2[1] = p3[1];
+      p2[2] = p3[2];
+    }
+  }
+  return;
+}
 
-        xinc = (double)s_dx / (double)odx;
-        yinc = (double)s_dy / (double)ody;
-
-/* prefilter if decimating */
-        if (filter) {
-                if (xinc > 1.0) smoothx(in,idx,idy);
-                if (yinc > 1.0) smoothy(in,idx,idy);
-        }
-/* resample */
-        ptr = 0;
-        yp = s_top;
-        for(y=0; y < ody; y++) {  /* over all scan lines in output image */
-                j = (int)yp;
-                xp = s_left;
-                for(x=0; x < odx; x++) {  /* over all pixel in each scanline of
-output */
-                        i = (int)xp;
-			i = (i+(j*idx))*3;
-                        out[ptr++] = in[i++];
-                        out[ptr++] = in[i++];
-                        out[ptr++] = in[i++];
-                        xp += xinc;
-                }
-                yp += yinc;
-        }
-/* postfilter if magnifing */
-        if (filter) {
-                if (xinc < 1.0) smoothx(out,odx,ody);
-                if (yinc < 1.0) smoothy(out,odx,ody);
-        }
-        return;
+void Sample2d(vector<unsigned char> &in,int idx,int idy,
+              vector<unsigned char> &out,int odx,int ody,
+              int s_left,int s_top,int s_dx,int s_dy,int filter)
+{
+  register double xinc,yinc,xp,yp;
+  register int x,y;
+  register int i,j;
+  register int ptr;
+  
+  xinc = (double)s_dx / (double)odx;
+  yinc = (double)s_dy / (double)ody;
+  
+  /* prefilter if decimating */
+  if (filter) {
+    if (xinc > 1.0) smoothx(in,idx,idy);
+    if (yinc > 1.0) smoothy(in,idx,idy);
+  }
+  /* resample */
+  ptr = 0;
+  yp = s_top;
+  for(y=0; y < ody; y++) {  /* over all scan lines in output image */
+    j = (int)yp;
+    xp = s_left;
+    for(x=0; x < odx; x++) {  /* over all pixel in each scanline of
+                                 output */
+      i = (int)xp;
+      i = (i+(j*idx))*3;
+      out[ptr++] = in[i++];
+      out[ptr++] = in[i++];
+      out[ptr++] = in[i++];
+      xp += xinc;
+    }
+    yp += yinc;
+  }
+  /* postfilter if magnifing */
+  if (filter) {
+    if (xinc < 1.0) smoothx(out,odx,ody);
+    if (yinc < 1.0) smoothy(out,odx,ody);
+  }
+  return;
 }  
