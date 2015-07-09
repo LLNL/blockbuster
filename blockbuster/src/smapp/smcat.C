@@ -91,10 +91,10 @@ int		gVerbosity = 0;
 // Prototypes 
 void cmdline(char *app);
 
-static void smoothx(vector<unsigned char> &image, int dx, int dy);
-static void smoothy(vector<unsigned char> &image, int dx, int dy);
+static void smoothx(unsigned char *image, int dx, int dy);
+static void smoothy(unsigned char *image, int dx, int dy);
 
-void Sample2d(vector<unsigned char> &in,int idx,int idy,vector<unsigned char> &out,
+void Sample2d(unsigned char *in,int idx,int idy,unsigned char *out,
               int odx,int ody,int s_left,int s_top,
               int s_dx,int s_dy,int filter);
 
@@ -135,8 +135,8 @@ struct Work {
   vector<int> dstSize;
   vector<int> dstOffset; 
   int *src;
-  vector<unsigned char>buffer;
-  vector<unsigned char>compbuffer;
+  unsigned char *buffer;
+  unsigned char *compbuffer;
 } ;
 
 void WriteOutputImage(Work *wrk) ; 
@@ -593,43 +593,48 @@ int main(int argc,char **argv)
     }
   }
   pt_pool_destroy(pool,1);
-  sm->stopWriteThread(); 
-  sm->flushFrames(true); 
-  
-  sm->closeFile();
-  
-  if (sm->haveError()) {
-    cout << "Got error in movie creation.  No file is created.\n"; 
-    sm->deleteFile(); 
-    exit(1); 
+  if (sm) {
+    sm->stopWriteThread(); 
+    sm->flushFrames(true); 
+    
+    sm->closeFile();
+    
+    if (sm->haveError()) {
+      cout << "Got error in movie creation.  No file is created.\n"; 
+      sm->deleteFile(); 
+      exit(1); 
+    } 
+    cout << "smcat successfully created movie " << sm->getName() << endl; 
   } 
-
+  else {
+    cout << "smcat successfully created frames " << endl; 
+  }
+    
   /* clean up */
   // delete sm;
   //   for(i=0;i<nminfos;i++) delete input[i].sm;
   // free(input);
   if (buffer) free(buffer);
-  cout << "smcat successfully created movie " << sm->getName() << endl; 
   exit(0);
 }
 
 void workproc(void *arg)
 {
   Work *work = (Work *)arg;
-  vector<unsigned char> img(3*work->dstSize[0]*work->dstSize[1], 0); 
+  int	sizeout = 3*work->dstSize[0]*work->dstSize[1]; 
+  unsigned char * img = new unsigned char[sizeout]; 
 
   int	sizein = 3*work->insm->getHeight()*work->insm->getWidth();
-  int	sizeout = 3*work->sm->getHeight()*work->sm->getWidth();
-  int	size;
-  work->buffer.resize(sizein);
+  work->buffer = new unsigned char[sizein];
   work->insm->getFrame(work->inframe, &work->buffer[0], pt_pool_threadnum());
   if (work->iScale) {
-    vector<unsigned char>pZoom(sizeout,0);
+    unsigned char *pZoom = new unsigned char[sizeout];
     Sample2d(work->buffer, work->insm->getWidth(),work->insm->getHeight(),
              pZoom, work->dstSize[0],work->dstSize[1],
              work->src[0],work->src[1],
              work->src[2],work->src[3], work->iFilter);
     smdbprintf(4, "workproc resampled work buffer to size %d for frame %d\n", sizeout, work->outframe); 
+    delete work->buffer; 
     work->buffer = pZoom;
   }
   if (work->sm) {
@@ -748,7 +753,7 @@ void WriteOutputImage(Work *work) {
       }
     }
       
-    vector<unsigned char> buf(1.5*dx*dy + 1);
+    unsigned char * buf = new unsigned char[(int)(1.5*dx*dy) + 1];
     unsigned char *Ybuf = &buf[0];
     unsigned char *Ubuf = Ybuf + (dx*dy);
     unsigned char *Vbuf = Ubuf + (dx*dy)/4;
@@ -802,7 +807,7 @@ void WriteOutputImage(Work *work) {
   return; 
 }
 
-static void smoothx(vector<unsigned char> &image, int dx, int dy)
+static void smoothx(unsigned char *image, int dx, int dy)
 {
   register int x,y;
   int	p1[3],p2[3],p3[3];
@@ -838,7 +843,7 @@ static void smoothx(vector<unsigned char> &image, int dx, int dy)
   return;
 }
 
-static void smoothy(vector<unsigned char> &image, int dx, int dy)
+static void smoothy(unsigned char *image, int dx, int dy)
 {
   register int x,y;
   int	p1[3],p2[3],p3[3];
@@ -874,8 +879,8 @@ static void smoothy(vector<unsigned char> &image, int dx, int dy)
   return;
 }
 
-void Sample2d(vector<unsigned char> &in,int idx,int idy,
-              vector<unsigned char> &out,int odx,int ody,
+void Sample2d(unsigned char *in,int idx,int idy,
+              unsigned char *out,int odx,int ody,
               int s_left,int s_top,int s_dx,int s_dy,int filter)
 {
   register double xinc,yinc,xp,yp;

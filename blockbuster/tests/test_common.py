@@ -355,7 +355,8 @@ def FrameDiffs(test):
         else:
             outframe = "%s/%s_test_frame.png"%(os.getcwd(), test['name'])
             standard = "%s/standards/%s_standard_frame.png"%(gDatadir, test['name'])
-            fullcmd = "%s/sm2img --first %d --last %d %s %s"%(gBindir, frame, frame, movie, outframe)
+            # fullcmd = "%s/sm2img --first %d --last %d %s %s"%(gBindir, frame, frame, movie, outframe)
+            fullcmd = "%s/smcat --first %d --last %d %s %s"%(gBindir, frame, frame, movie, outframe)
             outfilename = "%s.frame_diff.txt"%outframe
             dbprint("FrameDiffs: outfile is %s\n"%outfilename)
             outfile = open(outfilename, "w")
