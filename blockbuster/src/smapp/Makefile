@@ -34,8 +34,8 @@ include ../config/config
 LIBS = $(LDFLAGS) -L$(INSTALL_DIR)/lib -lsmovie -lptutil  -levomovie $(IFL_LIBS) -lpthread -lm -ltiff -lpnmrw  -lz -llzo2 -llzma -limage -lexiv2 -lm $(GZIP_LIBS) $(TIFF_LIBS) $(PNG_LIBS) $(PNM_LIBS) -ljpeg  -lboost_regex -lboost_filesystem -lboost_thread -lboost_system -lboost_date_time -lreadline -ltermcap
 
 SMLIB = $(INSTALL_DIR)/lib/libsmovie.a $(INSTALL_DIR)/lib/libptutil.a $(INSTALL_DIR)/lib/libsrwpng.a 
-SFILES = smtag.C smquery.C smmake.C smtest.C ifl2sm.C img2sm.C sm2img.C rename.C smcat.C smevo.C debugutil.c
-OFILES = ifl2sm img2sm rename sm2img smcat smevo sminfo smmake smquery smtag  smtest 
+SFILES = smtag.C smquery.C smmake.C smtest.C ifl2sm.C img2sm.C rename.C smcat.C smevo.C debugutil.c
+OFILES = ifl2sm img2sm rename  smcat smevo sminfo smmake smquery smtag  smtest 
 TARGETS = $(INSTALL_DIR)/bin/smquery $(INSTALL_DIR)/bin/smtag $(INSTALL_DIR)/bin/smevo  $(INSTALL_DIR)/bin/smmake $(INSTALL_DIR)/bin/smtest $(INSTALL_DIR)/bin/ifl2sm $(INSTALL_DIR)/bin/img2sm $(INSTALL_DIR)/bin/mpg2img $(INSTALL_DIR)/bin/mpg2sm $(INSTALL_DIR)/bin/rename $(INSTALL_DIR)/bin/sm2img $(INSTALL_DIR)/bin/sminfo $(INSTALL_DIR)/bin/smcat $(INSTALL_DIR)/bin/smevo $(INSTALL_DIR)/bin/sm2qt $(INSTALL_DIR)/bin/ps2sm $(INSTALL_DIR)/bin/sm2mpg $(INSTALL_DIR)/bin/img2mpg  $(INSTALL_DIR)/bin/smrecolor
 CPPFLAGS += -g 
 
@@ -49,6 +49,9 @@ $(INSTALL_DIR)/bin/%: %
 	@echo
 
 $(INSTALL_DIR)/bin/sminfo: smquery
+	rm $@; ln -s $^ $@
+
+$(INSTALL_DIR)/bin/sm2img: $(INSTALL_DIR)/bin/smcat
 	rm $@; ln -s $^ $@
 
 manpages:
@@ -83,7 +86,7 @@ smtag.o: ../sm/smRaw.h ../sm/smJPG.h debugutil.h
 smquery.o: ../sm/sm.h ../sm/smLZO.h ../sm/smBase.h ../sm/smBaseP.h
 smquery.o: ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
 smquery.o: ../RC_cpp_lib/stringutil.h ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h
-smquery.o: ../sm/smRaw.h ../sm/smJPG.h debugutil.h
+smquery.o: ../sm/smRaw.h ../sm/smJPG.h debugutil.h ../libpng/pngsimple.h
 smmake.o: ../sm/smRaw.h ../sm/smBase.h ../sm/smBaseP.h
 smmake.o: ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
 smmake.o: ../RC_cpp_lib/stringutil.h ../sm/smRLE.h
@@ -100,11 +103,6 @@ img2sm.o: ../RC_cpp_lib/stringutil.h ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h
 img2sm.o: ../sm/smRaw.h ../sm/smJPG.h ../libimage/sgilib.h
 img2sm.o: ../libpnmrw/libpnmrw.h ../libpng/pngsimple.h simple_jpeg.h
 img2sm.o: ../pt/pt.h
-sm2img.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smBaseP.h
-sm2img.o: ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
-sm2img.o: ../RC_cpp_lib/stringutil.h ../sm/smGZ.h ../sm/smLZO.h ../sm/smRaw.h
-sm2img.o: ../pt/pt.h ../libimage/sgilib.h ../libpnmrw/libpnmrw.h
-sm2img.o: simple_jpeg.h ../config/version.h
 rename.o: ../sm/sm.h ../sm/smLZO.h ../sm/smBase.h ../sm/smBaseP.h
 rename.o: ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
 rename.o: ../RC_cpp_lib/stringutil.h ../sm/smRLE.h ../sm/smGZ.h ../sm/smXZ.h
@@ -113,6 +111,7 @@ smcat.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smBaseP.h
 smcat.o: ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
 smcat.o: ../RC_cpp_lib/stringutil.h ../sm/smGZ.h ../sm/smLZO.h ../sm/smRaw.h
 smcat.o: ../sm/smJPG.h ../sm/smXZ.h ../config/version.h ../pt/pt.h
+smcat.o: ../libimage/sgilib.h ../libpnmrw/libpnmrw.h simple_jpeg.h
 smevo.o: ../sm/smRLE.h ../sm/smBase.h ../sm/smBaseP.h
 smevo.o: ../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h
 smevo.o: ../RC_cpp_lib/stringutil.h ../sm/smGZ.h ../sm/smLZO.h ../sm/smRaw.h

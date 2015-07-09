@@ -591,7 +591,7 @@ int main(int argc,char **argv)
       pt_pool_add_work(pool, workproc, wrk);
       outframe++;
     }
-  }
+  } 
   pt_pool_destroy(pool,1);
   if (sm) {
     sm->stopWriteThread(); 
@@ -607,7 +607,7 @@ int main(int argc,char **argv)
     cout << "smcat successfully created movie " << sm->getName() << endl; 
   } 
   else {
-    cout << "smcat successfully created frames " << endl; 
+    cout << "smcat successfully created frames" << endl; 
   }
     
   /* clean up */
@@ -918,5 +918,5 @@ void Sample2d(unsigned char *in,int idx,int idy,
     if (xinc < 1.0) smoothx(out,odx,ody);
     if (yinc < 1.0) smoothy(out,odx,ody);
   }
-  return;
+  return; 
 }  

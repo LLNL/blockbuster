@@ -23,11 +23,14 @@ smcat - create a streaming movie (sm) file from a set of input sm files.
 .SH SYNOPSIS
 smcat [options] outfile infile1 [infile2...]
 .SH DESCRIPTION
-smcat creates a new streaming movie (sm) file from frames
-selected from a set of input sm files.  OUTFILE specifies
+smcat creates a new streaming movie (sm) file or set of output images from
+frames selected from a set of input sm files.  OUTFILE specifies either
 the name of the output file (options select the compression
-mechanism for this file) and one or more INFILE files
-specify the source for the movie frames.
+mechanism for this file) OR a C-style \"image template\" consisting 
+of a format specifier such as \"image_%04d.png\" which indicates both
+the image basename \"image_\", the format of the numbering, here a 4-digit
+0-padded number \"%04d\", and an image format \"png\". 
+Finally, one or more INFILE files specify the source(s) for the movie frames.
 The only restriction is that all the frames in all the 
 input files must have the same dimensions (all combinations
 of input compression settings are supported).
@@ -54,76 +57,14 @@ of the frames will be reversed from the order in the
 input file and the 'start' frame must be greater than
 the 'end' frame number.
 .PP
-Options also exist for selecting a subrectangle of pixels
-from a movie and zooming them to any user desired size.
 .SH OPTIONS
-.TP
--rle 
-Selects RLE compression for the output file.  Default: no compression.
-.TP
--gz 
-Selects gzip compression for the output file.  Default: no compression.
-.TP
--lzo 
-Selects LZO compression for the output file.  Default: no compression.
-.TP
--jpg 
-Selects JPG compression for the output file.  Default: no compression.
-.TP
--jqual quality
-Selects the JPG compression quality.  The default is 75 (0 to 100).
-.TP
--dst <dx> <dy>
-Select the output movie size.  The input movie or selection of the
-movie will be scaled to that size.  Default: output size is equal 
-to the input size or the selected rectangle size, if the -src
-option is set.
-.TP
--src <x> <y> <dx> <dy>
-Select a portion of the input frame to cut out (possibly scale) 
-and place into the output file.  This option specifies the lower
-left corder (<x> <y>) and the size of the rectangle in pixels
-(<dx> <dy>).  Note that the lower left corner of a movie is
-considered to be 0,0.  Default: the entire input movie rectangle
-is selected.
-.TP
--FPS fps
-Sets the preferred frames per second for the movie playback.
-The default is 30.0 fps.
-.TP
--filter 
-Enable a smoothing filter for used in image scaling operations.
-.TP
--v
-Enable verbose mode.
-.TP
--stereo
-Specify that the output movie is to be marked as stereo.
-.TP
--mipmap num
-Set the number of mipmip (resolutions) to be stored in the file. The
-default is 1.
-.TP
--tilesizes sizestring
-This option is used to select the size of the tiles used  to
-store the images in the sm file.  The parameter takes the form of
-a comment separated number or pair of numbers, one for each mipmap
-level (see -mipmap).  The tile size for each level can take the
-form XxY or Z, where X is the size of the tile in the x axis
-and Y is the size in the y axis, or Z which specifies square tiles
-of size Z by Z.  An example would be -tilesize 256x128,256 which
-specifies the tiling at the first mipmap level to be 256 be 128
-pixels and the next level to be 256 by 256.  The default is
-a single tile, the same size as the image frame.
-.TP
--threads num
-Set the number of parallel threads to use during compression.  The
-default is 1.
+Options also exist for a variety of behaviors.  For a description, run
+\"smcat -h\" for a full list with descriptions. 
 .PP
 .SH EXAMPLE
 smcat -gz outfile.sm infile1.sm infile2.sm@10@20 infile3.sm@9@0@-1
 .SH SEE ALSO
-xmovie(1), ifl2sm(1), img2sm(1), sm2img(1), sm(4)
+blockbuster(1), ifl2sm(1), img2sm(1), sm(4)
 .SH ORIGIN
 .RS
 ASCI Visualization Project 

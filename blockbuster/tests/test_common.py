@@ -355,6 +355,7 @@ def FrameDiffs(test):
         else:
             outframe = "%s/%s_test_frame.png"%(os.getcwd(), test['name'])
             standard = "%s/standards/%s_standard_frame.png"%(gDatadir, test['name'])
+            # Changed this to test smcat:
             # fullcmd = "%s/sm2img --first %d --last %d %s %s"%(gBindir, frame, frame, movie, outframe)
             fullcmd = "%s/smcat --first %d --last %d %s %s"%(gBindir, frame, frame, movie, outframe)
             outfilename = "%s.frame_diff.txt"%outframe
@@ -363,7 +364,7 @@ def FrameDiffs(test):
             outfile.close()
             outfile = open(outfilename, "r+")
             run_command(fullcmd.split(), outfile)
-            errmsg = CheckOutput(outfile, "Successful completion", "ERROR")
+            errmsg = CheckOutput(outfile, "smcat successfully created frames", "ERROR")
             if errmsg != "SUCCESS":
                 dbprint("ERROR: sm2img failed in FrameDiff(), output is in %s\n"%outfilename)
                 return errmsg
