@@ -246,12 +246,10 @@ rm -rf $tmpdir
 mkdir -p $tmpdir || errexit "Could not create tmp directory for tarball"
 pushd $tmpdir || errexit "Could not cd into new tmp directory!?" 
 
-
 builddir=$stagedir/$version
-installdir=/usr/gapps/asciviz/blockbuster/$version
 echo "Creating fresh build directory $builddir and installation directory $installdir..."
-rm -rf $installdir $builddir
-mkdir -p $installdir $builddir
+rm -rf $builddir
+mkdir -p  $builddir
 
 popd 
 
@@ -264,7 +262,7 @@ if $install; then
     svndir=/g/g0/rcook/current_projects/eris/lclocal/public/blockbuster/branches/blockbuster-${version}
     needinit=false
     if ! [ -d $svndir ]; then 
-        pushd $svndir/..
+        pushd $(dirname $svndir)
         if ! [ -d blockbuster-${version} ]; then 
             echo "Directory $(pwd)/blockbuster-${version} not found.  Creating." 
             if ! svn ls $svnurl >/dev/null 2>&1; then 
@@ -276,9 +274,13 @@ if $install; then
             fi
         fi
         popd
+
         echo "Updating directory $svndir"
-        cp $builddir/blockbuster-v${version}.tgz $(dirname $0)/eris-packagedir-template/* $svndir/ || errexit "Cannot update $svndir with package contents"
-        pushd $svndir
+        cp $(dirname $0)/eris-packagedir-template/* $svndir/ || errexit "Cannot update $svndir with package contents"
+
+        git archive --format tar --prefix=blockbuster-v${version}/ HEAD | gzip > ${svndir}/blockbuster-v${version}.tgz || errexit "Cannot create blockbuster tarball" 
+
+        pushd $svndir   
         sed -i'' "s/_vers=.*/_vers=${version}/" package.conf
         svn add *
         popd
@@ -292,11 +294,10 @@ if $install; then
     fi
 
     auksuccess=true
-    scp $builddir/blockbuster-v${version}.tgz auk61:/viz/blockbuster/tarballs/
+    scp $svndir/blockbuster-v${version}.tgz auk61:/viz/blockbuster/tarballs/
     runecho ssh auk61 "set -xv; mkdir -p /viz/blockbuster/${version} && pushd /viz/blockbuster/${version} &&  tar -xzf /viz/blockbuster/tarballs/blockbuster-v${version}.tgz && pushd blockbuster-v${version} && INSTALL_DIR=/viz/blockbuster/${version} make && rm -f /viz/blockbuster/test && ln -s /viz/blockbuster/${version} /viz/blockbuster/test" || auksuccess=false
     
-    echo "Done.  Tarball is $builddir/blockbuster-v${version}.tgz.  To use the new version, type \"use asciviz-test\""
-    ln -s $builddir/blockbuster-v${version}.tgz $installdir/blockbuster-v${version}.tgz
+    echo "Done.  Tarball is $svndir/blockbuster-v${version}.tgz."
     
     echo "Built and installed blockbuster-v${version} and made it the test version on auk" 
         
