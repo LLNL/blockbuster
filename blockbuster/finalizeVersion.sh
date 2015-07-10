@@ -24,7 +24,7 @@ function usage() {
     echo " OPTIONS: " 
     echo "-c/--commit: Commit changes to all tracked directories and files before proceeding. Default: only commit version-related files."
     echo "-t/--temp: Just update Changelog and version.h as needed."
-    echo "-f/--final: updates version.h and Changelog, creates a tarball in the current directory with proper naming scheme.  Installs software into /usr/gapps/asciviz/blockbuster/version " 
+    echo "-f/--final: updates version.h and Changelog, creates a tarball in the current directory with proper naming scheme.  Installs on auk." 
     echo " -v: set -xv to make this script painfully chatty" 
     echo "NOTE: You must give either --temp or --final."
 }
@@ -95,13 +95,10 @@ fi
 temp=false
 final=false
 commit=false
-install=false
 # must give either -temp or -final: 
 for arg in "$@"; do 
     if [ "$arg" == --commit ]  ||  [ "$arg" == -c ] ; then
         commit=true
-    elif [ "$arg" == --install ]  ||  [ "$arg" == -i ] ; then
-        install=true
     elif [ "$arg" == --temp ]  ||  [ "$arg" == -t ] ; then
         temp=true
     elif [ "$arg" == --final ]  ||  [ "$arg" == -f ] ; then
@@ -263,61 +260,46 @@ popd
 #======================================================
 if $install; then
     echo "Installing software..." 
+    svnurl=https://eris.llnl.gov/svn/lclocal/public/blockbuster/branches/blockbuster-${version}    
+    svndir=/g/g0/rcook/current_projects/eris/lclocal/public/blockbuster/branches/blockbuster-${version}
+    needinit=false
+    if ! [ -d $svndir ]; then 
+        pushd $svndir/..
+        if ! [ -d blockbuster-${version} ]; then 
+            echo "Directory $(pwd)/blockbuster-${version} not found.  Creating." 
+            if ! svn ls $svnurl >/dev/null 2>&1; then 
+                echo "Version $version does not exist in eris repo; creating..."
+                svn mkdir blockbuster-${version}
+                needinit=true
+            else
+                svn update --set-depth=infinity blockbuster-${version}
+            fi
+        fi
+        popd
+        echo "Updating directory $svndir"
+        cp $builddir/blockbuster-v${version}.tgz $(dirname $0)/eris-packagedir-template/* $svndir/ || errexit "Cannot update $svndir with package contents"
+        pushd $svndir
+        sed -i'' "s/_vers=.*/_vers=${version}/" package.conf
+        svn add *
+        popd
+
+        if $needinit; then
+            setTag.sh -i --default=no blockbuster-${version}
+        else
+            setTag.sh -b -c --default=no  blockbuster-${version}
+        fi
+
+    fi
+
     auksuccess=true
     scp $builddir/blockbuster-v${version}.tgz auk61:/viz/blockbuster/tarballs/
     runecho ssh auk61 "set -xv; mkdir -p /viz/blockbuster/${version} && pushd /viz/blockbuster/${version} &&  tar -xzf /viz/blockbuster/tarballs/blockbuster-v${version}.tgz && pushd blockbuster-v${version} && INSTALL_DIR=/viz/blockbuster/${version} make && rm -f /viz/blockbuster/test && ln -s /viz/blockbuster/${version} /viz/blockbuster/test" || auksuccess=false
     
-    
-    echo '#!/usr/bin/env bash
-. '"$HOME/.profile"'
-export PATH=/usr/local/tools/qt-4.8.4/bin:$PATH
-
-function errexit() {
-    echo 
-    echo "*******************************************************"
-    echo "ERROR"
-    echo "ERROR:  $1"
-    echo "ERROR"
-    echo "*******************************************************"
-    echo 
-    rm -rf '"$tmpdir"'
-    exit ${2:-1}
-}
-set -xv 
-rm -rf '"$installdir"'/$SYS_TYPE $builddir/$SYS_TYPE
-mkdir -p '"$builddir"'/$SYS_TYPE
-pushd '"$builddir"'/$SYS_TYPE || errexit "Cannot cd to install directory $SYS_TYPE"
-
-tar -xzf '"$builddir/blockbuster-v${version}"'.tgz || errexit "Cannot untar tarball" 
-
-pushd '"blockbuster-v${version}"' || errexit "Cannot cd to blockbuster source directory" 
-
-INSTALL_DIR='"$installdir"'/$SYS_TYPE make || errexit "Could not make software" 
-
-popd
-
-popd
-echo INSTALLATION FINISHED
-' > ${builddir}/installer.sh
-    chmod 700 ${builddir}/installer.sh
-    ${builddir}/installer.sh || errexit "installer failed on localhost"
-    
-# ssh $remotehost "${builddir}/installer.sh" || errexit "installer failed on remotehost"
-    ln -s $installdir/$SYS_TYPE $installdir/$remotesys
-    
-    echo "Creating symlink of new version to /usr/gapps/asciviz/blockbuster/test"
-    
-    pushd /usr/gapps/asciviz/blockbuster/ || errexit "Could not cd to blockbuster public area"
-    rm -f test
-    ln -s $version test
-    popd
     echo "Done.  Tarball is $builddir/blockbuster-v${version}.tgz.  To use the new version, type \"use asciviz-test\""
     ln -s $builddir/blockbuster-v${version}.tgz $installdir/blockbuster-v${version}.tgz
     
-    echo "Built and installed blockbuster-v${version} and made it the test version on LC and auk" | mail -s "blockbuster-v${version} build complete" rcook@llnl.gov
-    
-    echo logfile is $logfile
-    
+    echo "Built and installed blockbuster-v${version} and made it the test version on auk" 
+        
     if ! $auksuccess; then 
         echo "Warning:  build on auk failed"
     fi
