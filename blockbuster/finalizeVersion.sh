@@ -258,52 +258,53 @@ popd
 #======================================================
 if $install; then
     echo "Installing software..." 
-    svnurl=https://eris.llnl.gov/svn/lclocal/public/blockbuster/branches/blockbuster-${version}    
-    svndir=/g/g0/rcook/current_projects/eris/lclocal/public/blockbuster/branches/blockbuster-${version}
+    svn_url=https://eris.llnl.gov/svn/lclocal/public/blockbuster/branches/blockbuster-${version}  
+    pkgconf_url=https://eris.llnl.gov/svn/crlf-build/lclocal.el/blockbuster-${version}/package.conf
+    svn_dir=/g/g0/rcook/current_projects/eris/lclocal/public/blockbuster/branches/blockbuster-${version}
     needinit=false
-    if ! [ -d $svndir ]; then 
-        pushd $(dirname $svndir)
-        if ! [ -d blockbuster-${version} ]; then 
-            echo "Directory $(pwd)/blockbuster-${version} not found.  Creating." 
-            if ! svn ls $svnurl >/dev/null 2>&1; then 
-                echo "Version $version does not exist in eris repo; creating..."
-                svn mkdir blockbuster-${version}
-                needinit=true
-            else
-                svn update --set-depth=infinity blockbuster-${version}
-            fi
-        fi
-        popd
-
-        echo "Updating directory $svndir"
-        cp $(dirname $0)/eris-packagedir-template/* $svndir/ || errexit "Cannot update $svndir with package contents"
-
-        git archive --format tar --prefix=blockbuster-v${version}/ HEAD | gzip > ${svndir}/blockbuster-v${version}.tgz || errexit "Cannot create blockbuster tarball" 
-
-        pushd $svndir   
-        sed -i'' "s/_vers=.*/_vers=${version}/" package.conf
-        svn add *
-        popd
-
-        if $needinit; then
-            setTag.sh -i --default=no blockbuster-${version}
-        else
-            setTag.sh -b -c --default=no  blockbuster-${version}
-        fi
-
+    if ! svn ls $pkgconf_url >/dev/null 2>&1; then 
+        needinit=true
     fi
-
+    pushd $(dirname $svn_dir)
+    if ! [ -d blockbuster-${version} ]; then 
+        echo "Directory $(pwd)/blockbuster-${version} not found.  Creating." 
+        if ! svn ls $svn_url/package.conf >/dev/null 2>&1; then 
+            echo "Version $version does not exist in eris repo; creating..."
+            svn mkdir blockbuster-${version}
+        else
+            svn update --set-depth=infinity blockbuster-${version}
+        fi
+    fi
+    popd
+    
+    echo "Updating directory $svn_dir"
+    cp $(dirname $0)/eris-packagedir-template/* $svn_dir/ || errexit "Cannot update $svn_dir with package contents"
+    
+    git archive --format tar --prefix=blockbuster-v${version}/ HEAD | gzip > ${svn_dir}/blockbuster-v${version}.tgz || errexit "Cannot create blockbuster tarball" 
+    echo "Tarball is $svn_dir/blockbuster-v${version}.tgz."
+    
+    pushd $svn_dir   
+    sed -i'' "s/_vers=.*/_vers=${version}/" package.conf
+    svn add *
+    popd
+    
+    if $needinit; then
+        setTag.sh -i --default=no blockbuster-${version}
+    else
+        setTag.sh -b -c --default=no  blockbuster-${version} "automatic commit from finalizeVersion.sh" 
+    fi
+    
+    
     auksuccess=true
-    scp $svndir/blockbuster-v${version}.tgz auk61:/viz/blockbuster/tarballs/
-    runecho ssh auk61 "set -xv; mkdir -p /viz/blockbuster/${version} && pushd /viz/blockbuster/${version} &&  tar -xzf /viz/blockbuster/tarballs/blockbuster-v${version}.tgz && pushd blockbuster-v${version} && INSTALL_DIR=/viz/blockbuster/${version} make && rm -f /viz/blockbuster/test && ln -s /viz/blockbuster/${version} /viz/blockbuster/test" || auksuccess=false
+    scp $svn_dir/blockbuster-v${version}.tgz auk61:/viz/blockbuster/tarballs/
+    runecho ssh auk61 "set -xv; rm -rf /viz/blockbuster/${version} && mkdir -p /viz/blockbuster/${version} && tar -C /viz/blockbuster/${version} -xzf /viz/blockbuster/tarballs/blockbuster-v${version}.tgz && pushd /viz/blockbuster/${version}/blockbuster-v${version} && INSTALL_DIR=/viz/blockbuster/${version} make && rm -f /viz/blockbuster/test && ln -s /viz/blockbuster/${version} /viz/blockbuster/test" || auksuccess=false
     
-    echo "Done.  Tarball is $svndir/blockbuster-v${version}.tgz."
-    
-    echo "Built and installed blockbuster-v${version} and made it the test version on auk" 
-        
     if ! $auksuccess; then 
         echo "Warning:  build on auk failed"
+    else
+        echo "Built and installed blockbuster-v${version} and made it the test version on auk" 
     fi
+    
 fi
 
 #======================================================
