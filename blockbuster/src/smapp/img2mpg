@@ -287,7 +287,8 @@ fi
 function runConvert(){
 	cmd="$1"
 	dbecho $cmd
-	outlog=conversion.outlog
+    outfile="${@: -1}"    
+	outlog=conversion-$(basename $outfile).outlog
 	if ! $verbose; then
 		$cmd >& $outlog 
 	else 
@@ -357,7 +358,7 @@ if $ffmpeg; then
     linkFrames 
     
     #To set the frame rate, you must specify the same framerate in and out for image sequence and output movie.  
-	runConvert "ffmpeg -y -framerate $outfps -i $tmpdir/movielink_%d${extension} $outcodec -vf scale=${xsize}:${ysize} -framerate $outfps $mjpeg_bitrate $mjpeg_quality $outfile"
+	runConvert "ffmpeg -y -framerate $outfps -i $tmpdir/movielink_%d${extension} $outcodec -vf scale=${xsize}:${ysize} -framerate $outfps $mjpeg_bitrate $mjpeg_quality $outfile" 
 	
 else    
     # set -vx
@@ -377,7 +378,7 @@ else
 	linkFrames 
 	
 	echo "Converting frames to mpeg using LibGen mpeg command...." 
-	runConvert "mpeg  -PF -p $framerate_index  -a 0 -b $(expr $numOutputFrames - 1) -h $xsize -v $ysize $tmpdir/movielink_  -s $outfile"
+	runConvert "mpeg  -PF -p $framerate_index  -a 0 -b $(expr $numOutputFrames - 1) -h $xsize -v $ysize $tmpdir/movielink_  -s $outfile" 
 fi
 
 #=================================================
