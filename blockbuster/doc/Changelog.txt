@@ -3,6 +3,10 @@ For outstanding bugs, as always, please look at https://sourceforge.net/projects
 
 ===============================================================================
 VERSION 2.8.6k (git tag blockbuster-v2.8.6k) Tue Jul 14 09:49:05 PDT 2015
+-- FEATURE: sm2mpg and img2mpg now use ffmpeg for everything by default.  mpeg is only used for the '.mpeg' extension.  ffmpeg is much more robust. 
+
+===============================================================================
+VERSION 2.8.6k (git tag blockbuster-v2.8.6k) Tue Jul 14 09:49:05 PDT 2015
 -- FEATURE: combine sm2img into smcat to avoid errors arising from code duplication. 
 
 ===============================================================================
