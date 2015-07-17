@@ -14,7 +14,8 @@ function usage() {
     echo "sm2mpg [OPTIONS] infile.sm outfile.{mpg|mp4|mov}"
 	echo
 	echo "FILENAME EXTENSIONS"
-	echo ".mpg extension:    mpeg is used instead of ffmpeg, unless you use -c, -m, or -x options. "
+	echo ".mpeg extension:   mpeg is used instead of ffmpeg, unless you use -c, -m, or -x options. "
+	echo ".mpg extension:    ffmpeg will encode the movie with MPEG-1, unless you use -c or -m option"
 	echo ".mp4 extension:    ffmpeg will encode the movie with H264, unless you use -c or -m option"
 	echo ".mov extension:    ffmpeg will encode the movie with mjpeg unless you use -c or -x option"
 	echo
@@ -126,7 +127,6 @@ while [ "$1" != "" ]; do
    fi
 done
 
-
 if [ "$outfile" == "" ]; then 
     usage
     errexit "Not enough args" 
@@ -144,7 +144,7 @@ if [ ! -z $logfile ]; then
     exec >& $logfile
 fi
 
-# arg checking
+# echo arg checking
 if [ "${infile:0:1}" != '/' ]; then 
     infile=$(pwd)/$infile
 fi
@@ -155,6 +155,7 @@ if [ -e "$tmpdir" ]; then
 else
 	delete_tmpdir=true
 fi
+
 runecho mkdir -p $tmpdir || errexit "Cannot make tmp directory $tmpdir"
 
 if [ "${outfile:0:1}" != '/' ]; then 
@@ -167,7 +168,7 @@ fi
 
 framenamebase=_$(basename ${outfile%".sm"})
 
-sminfo_output=$(sminfo $infile)
+sminfo_output=$(runecho sminfo $infile)
 if [ -z $skip ]; then 
     if $stereo || grep Stereo <<< "$sminfo_output" >/dev/null 2>&1; then
         skip=2
@@ -179,16 +180,19 @@ fi
 
 fps_arg="--fps ${outfps:-$(echo "$sminfo_output" | grep FPS | cut -d " " -f2)}"
 
-extension="${outfile: -4}" 
+extension="${outfile##*.}" # everything after '*.' (SIC -- filename globbing) 
 ffmpeg=false
-if [ "$extension" == '.mp4' ] ; then 
+if [ "$extension" == 'mp4' ] ; then 
 	ffmpeg=true
 	codec_arg=${codec_arg:-"--codec libx264"}
-elif [ "$extension" == '.mov' ] ; then 
+elif [ "$extension" == 'mov' ] ; then 
 	ffmpeg=true
 	codec_arg=${codec_arg:-"--codec mjpeg"}
-elif [ "$extension" != '.mpg' ] ; then 
-    errexit "Please specify an output movie name ending with '.mpg', '.mov' or '.mp4'"
+elif [ "$extension" == 'mpg' ] ; then 
+	ffmpeg=true
+	codec_arg=${codec_arg:-"--codec mpeg1video"}
+elif [ "$extension" != 'mpeg' ] ; then 
+    errexit "Unknown extension \"$extension.\"  Please specify an output movie name ending with '.mpg', '.mpeg', '.mov', or '.mp4'"
 fi
 
 if $ffmpeg; then
@@ -202,6 +206,9 @@ else
 fi
 
 echo "Extracting temporary frames to $fmt using sm2img...." 
+if $verbose; then 
+    verboseflag="-v 3"
+fi
 runecho sm2img $verboseflag -F $fmt -s $skip $infile $tmpdir/${framenamebase}_junk_%d$frame_extension || errexit "sm2img returned nonzero exit status, aborting"
 
 # Convert boolean variables to boolean switch arguments.  I.e., 

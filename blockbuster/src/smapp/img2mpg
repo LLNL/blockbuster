@@ -21,7 +21,8 @@ function usage() {
     echo "If a filename in the input sequence ends with no filename extension, then it will be treated as three files, named filename.Y, filename.U, and filename.V.  This applies to each file in a sequence given by a filename template as well, so 'mysequence_%d' is evaluated three interleaved sequences."
     echo 
 	echo "OUTPUT FILENAME EXTENSION IMPLICATIONS"
-	echo ".mpg extension:    mpeg is used instead of ffmpeg, unless you use -c, -m, or -x options. "
+	echo ".mpeg extension:    mpeg is used instead of ffmpeg, unless you use -c, -m, or -x options. "
+	echo ".mpg extension:   MPEG-1 via ffmpeg, unless you use -c or -m options. "
 	echo ".mp4 extension:    ffmpeg will encode the movie with H264, unless you use -c or -m option"
 	echo ".mov extension:    ffmpeg will encode the movie with mjpeg unless you use -c or -x option"
 	echo
@@ -114,25 +115,27 @@ while [ ! -z $1 ]; do
     else
        case $1 in
            "-b"|"--bitrate") mjpeg_bitrate="$2";     shift 2;;
-           "-c"|"--codec")   outcodec="$2"; ffmpeg=true
-		                                             shift 2;;
+           "-c"|"--codec")   outcodec="$2"; 
+                             ffmpeg=true;            shift 2;;
 		   "-d"|"--debug")   debug=true; 
                              verbose=true;           shift 1;;
 		   "-f"|"--fps")     outfps="$2";            shift 2;;
 		   "-F"|"--first")   firstframe="$2";        shift 2;;
 		   "-g"|"--geom")    xsize="$2"; ysize="$3"; shift 3;;
            "-h"|"--help")    usage;                  exit 0;; 
+           "-j"|"--jpeg")    outcodec="mpeg1video";  
+                             ffmpeg=true;            shift 1;;
            "-k"|"--keep")    keep=true;              shift 1;;
            "-l"|"--logfile") logfile="$1"            shift 2;;
 		   "-L"|"--last")    lastframe="$2";         shift 2;;
-           "-m"|"--mjpeg")   outcodec="mjpeg";  ffmpeg=true
-                                                     shift 1;;
+           "-m"|"--mjpeg")   outcodec="mjpeg";  
+                             ffmpeg=true;            shift 1;;
            "-q"|"--quality") mjpeg_quality="$2";     shift 2;;
 		   "-S"|"--skip")    skipframe="$2";         shift 2;;
            "-t"|"--tmpdir")  tmpdir="$2";            shift 2;;
 		   "-v"|"--verbose") verbose=true;           shift 1;;
-		   "-x"|"--x264")    outcodec="libx264";  ffmpeg=true
-                                                     shift 1;;
+		   "-x"|"--x264")    outcodec="libx264";  
+                             ffmpeg=true;            shift 1;;
 		   *)    usage;  errexit "Unknown option '$1'";;
        esac
    fi
@@ -178,8 +181,11 @@ if [ "$extension" == 'mp4' ] ; then
 elif [ "$extension" == 'mov' ] ; then 
 	ffmpeg=true
 	outcodec=${outcodec:-"mjpeg"}
-elif [ "$extension" != 'mpg' ] ; then 
-    errexit "Please specify an output movie name ending with '.mpg', '.mov' or '.mp4'"
+elif [ "$extension" == 'mpg' ]; then 
+	ffmpeg=true
+	outcodec=${outcodec:-"mpeg1video"}    
+elif [ "$extension" != 'mpeg' ] ; then 
+    errexit "Unknown extension \"$extension\". Please specify an output movie name ending with '.mpg', '.mov', '.mpeg' or '.mp4'"
 fi
 
 outfps=${outfps:-30}
@@ -287,14 +293,14 @@ fi
 function runConvert(){
 	cmd="$1"
 	dbecho $cmd
-    outfile="${@: -1}"    
+    outfile=$(echo $cmd | sed 's/.* //') # last token in $cmd
 	outlog=conversion-$(basename $outfile).outlog
 	if ! $verbose; then
 		$cmd >& $outlog 
 	else 
-		$cmd |& tee $outlog 
+		($cmd || echo "ERROR") |& tee $outlog 
 	fi
-	if [ $? != 0 ] || ! [ -s $outfile ] || grep Segmentation $outlog; then
+	if [ $? != 0 ] || ! [ -s $outfile ] || grep -e ERROR -e Segmentation $outlog; then
 		errexit "Creation command failed.  Results are in $outlog.  You might try --ffmpeg option"
 	fi
     if ! $keep; then 
@@ -376,9 +382,12 @@ else
     fi
 
 	linkFrames 
-	
+	# trim x and y to nearest multiple of 2, since sm2img does this to 
+    # accomodate the YUV format:
 	echo "Converting frames to mpeg using LibGen mpeg command...." 
-	runConvert "mpeg  -PF -p $framerate_index  -a 0 -b $(expr $numOutputFrames - 1) -h $xsize -v $ysize $tmpdir/movielink_  -s $outfile" 
+    # Try ffmpeg here instead...
+    ffmpeg 
+	runConvert "mpeg  -PF -p $framerate_index  -a 0 -b $(expr $numOutputFrames - 1) -h $((xsize - xsize % 2)) -v $((ysize - ysize % 2)) $tmpdir/movielink_  -s $outfile" 
 fi
 
 #=================================================
