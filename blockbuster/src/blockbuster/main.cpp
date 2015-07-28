@@ -756,6 +756,14 @@ int main(int argc, char *argv[])
   ParseOptions(opt, newargc, newargs);
   printargs("After ParseOptions", newargs, newargc); 
 
+  /* put the DISPLAY into the environment for Qt */
+  if (opt->displayName != "") {
+    char buf[2048]; 
+    sprintf(buf, QString("DISPLAY=%1").arg(opt->displayName).toStdString().c_str()); 
+    putenv(buf);
+  }
+  
+  
   gCoreApp = new QApplication(dummy, newargs); 
   if (opt->executable == "") {
     opt->executable = gCoreApp->applicationFilePath(); 
@@ -782,14 +790,6 @@ int main(int argc, char *argv[])
     }
   }
 
-  /* put the DISPLAY into the environment for Qt */
-  if (opt->displayName != "") {
-    char buf[2048]; 
-    sprintf(buf, QString("DISPLAY=%1").arg(opt->displayName).toStdString().c_str()); 
-    putenv(buf);
-  }
-  
-  
   INFO(QString("Using %1 renderer").arg(opt->rendererName));
   
   // set up a connection to sidecar if that's what launched us
