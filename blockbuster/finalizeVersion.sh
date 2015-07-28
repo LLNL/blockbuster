@@ -2,6 +2,7 @@
 # ==========================================
 logfile=${0}.log
 firsttime=${firsttime:-true}
+verbose=false
 if $firsttime; then
 	echo saving output to logfile $logfile
 	firsttime=false exec $0 "$@" |& tee $logfile	
@@ -10,9 +11,10 @@ fi
 
 # ==========================================
 function runecho () {
-	echo $@
-	"$@"
+	echo running $@
+	eval "$@"
 }
+
 # ==========================================
 function usage() {
     echo "usage: finalizeVersion.h [options] versionstring"
@@ -95,6 +97,7 @@ fi
 temp=false
 final=false
 commit=false
+verbose=false
 # must give either -temp or -final: 
 for arg in "$@"; do 
     if [ "$arg" == --commit ]  ||  [ "$arg" == -c ] ; then
@@ -107,7 +110,8 @@ for arg in "$@"; do
         usage
         exit 0
     elif [ "$arg" == --verbose ]  ||  [ "$arg" == -v ] ; then
-        set -xv
+        set -xv;
+        verbose=true; 
     elif [ "${arg:0:1}" == '-' ]; then
         usage
         errexit "Bad argument: $arg"
@@ -193,7 +197,7 @@ function sedfiles () {
 
 #======================================================
 # Update version.h
-if [ x$version = x ]; then 
+if [ -z "$version" ]; then 
     errexit "You need to supply a version number or I'll kill you.  Seriously."
 fi
 
@@ -256,14 +260,14 @@ popd
 
 # =============================================================
 #======================================================
-if $install; then
+if ! $temp; then 
     echo "Installing software..." 
     svn_url=https://eris.llnl.gov/svn/lclocal/public/blockbuster/branches/blockbuster-${version}  
-    pkgconf_url=https://eris.llnl.gov/svn/crlf-build/lclocal.el/blockbuster-${version}/package.conf
+    buildconf_url=https://eris.llnl.gov/svn/crlf-build/lclocal.el6/blockbuster-${version}/build.conf
     svn_dir=/g/g0/rcook/current_projects/eris/lclocal/public/blockbuster/branches/blockbuster-${version}
-    needinit=false
-    if ! svn ls $pkgconf_url >/dev/null 2>&1; then 
-        needinit=true
+    runecho needinit=false
+    if ! runecho svn ls $buildconf_url; then         
+        runecho needinit=true
     fi
     pushd $(dirname $svn_dir)
     if ! [ -d blockbuster-${version} ]; then 
@@ -287,11 +291,13 @@ if $install; then
     sed -i'' "s/_vers=.*/_vers=${version}/" package.conf
     svn add *
     popd
-    
+    if $verbose; then 
+        verboseflag='-v'
+    fi
     if $needinit; then
-        setTag.sh -i --default=no blockbuster-${version}
+        runecho setTag.sh -i $verboseflag --default=no blockbuster-${version}
     else
-        setTag.sh -b -c --default=no  blockbuster-${version} "automatic commit from finalizeVersion.sh" 
+        runecho setTag.sh -b -c $verboseflag --default=no  blockbuster-${version} "automatic commit from finalizeVersion.sh" 
     fi
     
     
