@@ -1542,14 +1542,19 @@ void BlockbusterLaunchDialog::on_launchButton_clicked(){
   statusLabel->setText(QString("Connecting to host %1").arg(hostNameField->text())); 
   // create an ssh/rsh process, connect to the remote host, run blockbuster
   QString cmd, host=hostNameField->text(); 
-  if (host != "localhost") {
+  if (host != "" && host != "localhost") {
+    QString rshcmd = "/usr/bin/rsh"; 
+    if (rshCommandField->text() != "" ) rshcmd = rshCommandField->text();
     cmd += QString("%1 %2 ")
-      .arg(rshCommandField->text())
+      .arg(rshcmd)
       .arg(host); 
   }  
+  QString verboseFlag = verboseField->text(); 
+  if (verboseFlag == "") verboseFlag = "0"; 
+
   cmd += blockbusterPathField->text() + QString(" --sidecar %1:%2 -v %3")
     .arg(sidecarHostNameField->text())
-    .arg(mBlockbusterPort).arg(verboseField->text()); 
+    .arg(mBlockbusterPort).arg(verboseFlag); 
 
   if (playCheckBox->isChecked()) {
     cmd += " --play "; 
@@ -1577,9 +1582,9 @@ void BlockbusterLaunchDialog::on_launchButton_clicked(){
     cmd +=  QString(" -r dmx ");
   }
   
-  if (fileNameComboBox->currentText() != "CUELAUNCH") {
+  if (fileNameComboBox->currentText() != "" && fileNameComboBox->currentText() != "CUELAUNCH") {
     if (host != "localhost") {
-      cmd += QString("\\\"%1\\\"").arg(fileNameComboBox->currentText());//movie name
+      cmd += QString("\"%1\"").arg(fileNameComboBox->currentText());//movie name
       cmd += "\""; 
     } else {
       cmd += (fileNameComboBox->currentText());//movie name
