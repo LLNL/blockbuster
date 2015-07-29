@@ -2,7 +2,12 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.6k (git tag blockbuster-v2.8.6k) Tue Jul 21 11:36:34 PDT 2015
+VERSION 2.8.6l (git tag blockbuster-v2.8.6l) Tue Jul 28 17:06:15 PDT 2015
+-- BUGFIX:  Fixed bug in blockbuster preventing sidecar launches from working because DISPLAY was not being set properly. 
+-- BUGFIX:  Fixed bugs in blockbuster launch dialog for Sidecar that failed to launch when blank fields were seen in the dialog.
+
+===============================================================================
+VERSION 2.8.6k (git tag blockbuster-v2.8.6k) Mon Jul 27 12:14:42 PDT 2015
 -- FEATURE: sm2mpg and img2mpg now use ffmpeg for everything by default.  mpeg is only used for the '.mpeg' extension.  ffmpeg is much more robust. 
 -- FEATURE: combine sm2img into smcat to avoid errors arising from code duplication. 
 
