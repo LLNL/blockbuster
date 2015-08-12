@@ -55,16 +55,16 @@ scp wealthychef@web.sourceforge.net:/home/project-exports/blockbuster/blockbuste
 
 3.  Created collaborators file blockbuster-collaborators.json per the instructions: 
 
- curl -k -H "Authorization: token af3cea7adcd4f093dab4d284a45d956fd2251243" https://api.github.com/repos/wealthychef1/blockbuster/collaborators > blockbuster-collaborators.json 
+ curl -k -H "Authorization: token (MY_OATH_TOKEN_HERE)" https://api.github.com/repos/wealthychef1/blockbuster/collaborators > blockbuster-collaborators.json 
 
 
 4.  Dry Run: 
-./gosf2github.pl --dry-run --repo wealthychef1/blockbuster --token af3cea7adcd4f093dab4d284a45d956fd2251243 --usermap users_sf2gh.json --assignee wealthychef1 --collaborators blockbuster-collaborators.json blockbuster-backup-2015-07-30-181947/bugs.json  
+./gosf2github.pl --dry-run --repo wealthychef1/blockbuster --token (MY_OATH_TOKEN_HERE) --usermap users_sf2gh.json --assignee wealthychef1 --collaborators blockbuster-collaborators.json blockbuster-backup-2015-07-30-181947/bugs.json  
 
 Looks good.  Had to hack the perl script to put -k in the curl line to avoid our certificate problem here, but otherwise straightforward.  
 
 4.  Ultimate command to execute (no --dry-run)
-./gosf2github.pl  --repo wealthychef1/blockbuster --token af3cea7adcd4f093dab4d284a45d956fd2251243 --usermap users_sf2gh.json --assignee wealthychef1 --collaborators blockbuster-collaborators.json blockbuster-backup-2015-07-30-181947/bugs.json  
+./gosf2github.pl  --repo wealthychef1/blockbuster --token (MY_OATH_TOKEN_HERE) --usermap users_sf2gh.json --assignee wealthychef1 --collaborators blockbuster-collaborators.json blockbuster-backup-2015-07-30-181947/bugs.json  
 
 
 Works like a charm!  
