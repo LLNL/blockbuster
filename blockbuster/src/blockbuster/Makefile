@@ -63,7 +63,7 @@ FORCE:
 # QMAKE: allow user to set in environment or have in PATH: 
 QMAKE ?= $(shell which qmake)
 $(warning QMAKE from environment is $(QMAKE))
-ifeq ($(QMAKE),) 
+ifeq ($(QMAKE),)
 # if still no qmake, look in canonical place 
 	CANONICAL=/usr/gapps/asciviz/Trolltech/latest/$(SYS_TYPE)/bin/qmake
 	QMAKE = $(shell [ -x $(CANONICAL) ] && echo $(CANONICAL))

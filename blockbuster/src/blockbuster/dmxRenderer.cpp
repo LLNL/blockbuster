@@ -260,10 +260,9 @@ void  dmxRenderer::DrawString(int row, int column, const char *str) {
 //  =============================================================
 int dmxRenderer::IsDMXDisplay(Display *dpy) {
   ECHO_FUNCTION(5);
-  Bool b;
   int major, event, error;
-  b = XQueryExtension(dpy, "DMX", &major, &event, &error);
-  return (int) b;
+  int b = XQueryExtension(dpy, "DMX", &major, &event, &error);
+  return b;
 }
 
 //  =============================================================

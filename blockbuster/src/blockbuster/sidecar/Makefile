@@ -120,9 +120,9 @@ images: ../images
 	mkdir -p images
 	cp -f ../images/*png images/
 
-ui_%.h: Makefile.qt.include %.ui 
+ui_%.h: %.ui 
 	echo making $@ due to $?
-	make -f Makefile.qt $@
+	uic $< -o $@
 
 $(sidecar): Makefile.qt.include $(UI_HEADERS) $(COPYFILES) FORCE 
 	$(MAKE) -j 20  -f Makefile.qt

@@ -2,15 +2,16 @@
 #define DMXNEWRENDERER_H yes
 #ifdef USE_DMX
 
-#include <QTcpSocket>
 #include "Renderer.h" // not "Renderers.h"
-#include <QProcess>
-#include <QHostInfo>
 #include "events.h"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/Xdbe.h>
 #include <dmxext.h>
+#undef Bool
+#include <QTcpSocket>
+#include <QProcess>
+#include <QHostInfo>
 
 
 //========================================================================

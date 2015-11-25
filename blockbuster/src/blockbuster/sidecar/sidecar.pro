@@ -27,7 +27,7 @@ HEADERS = sidecar.h  Prefs.h RemoteControl.h \
            ../../RC_cpp_lib/stringutil.h \
            ../../RC_cpp_lib/stringutil.h
            
-FORMS = ../BlockbusterControl.ui \
+FORMS += ../BlockbusterControl.ui \
          blockbusterLaunchDialog.ui \
          ../InfoWindow.ui \
          ../MovieCueWidget.ui \
