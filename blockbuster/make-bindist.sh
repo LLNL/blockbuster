@@ -10,7 +10,8 @@ mkdir -p $tmpdir
 version="$(cat src/config/versionstring.txt)"
 
 make noboostlink
-
+. /usr/local/tools/dotkit/init.sh
+use qt
 if [ $(uname) == Linux ]; then 
     for buildarg in dmx nodmx; do 
         if [ $buildarg == never ]; then # we do not do DMX any more
@@ -20,7 +21,9 @@ if [ $(uname) == Linux ]; then
         fi
         export INSTALL_DIR=$tmpdir/$INSTALL_NAME
         mkdir -p $INSTALL_DIR
-        remake.sh $buildarg || errexit "build failed for $INSTALL_DIR"
+        if ! remake.sh $buildarg ; then
+            errexit "build failed for $INSTALL_DIR"
+        fi
         cp -fp bindist-src/README-install.txt bindist-src/install.sh ${INSTALL_DIR}
         tarball=$tmpdir/${INSTALL_NAME}.tgz
         pushd ${INSTALL_DIR}/..
@@ -38,6 +41,7 @@ else
     errexit "Error: Unrecognized uname results: $(uname).  Nothing done."
 fi
 
+unset INSTALL_DIR
+./remake.sh
 make boostlink
-
 exit 0
