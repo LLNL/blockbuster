@@ -2,8 +2,9 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.6m (git tag blockbuster-v2.8.6m) Mon Aug 24 11:46:47 PDT 2015
+VERSION 2.8.7a (git tag blockbuster-v2.8.7a) Tue Nov 24 17:23:44 PST 2015
 -- BUGFIX:  Fixed reversed image width, height in sidecar Info window. 
+-- FEATURE: Tweak build so it works with Qt 5.x
 
 ===============================================================================
 VERSION 2.8.6l (git tag blockbuster-v2.8.6l) Tue Jul 28 17:06:15 PDT 2015
