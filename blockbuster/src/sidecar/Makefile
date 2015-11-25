@@ -138,7 +138,7 @@ ui_%.h: %.ui
 	uic $< -o $@
 
 $(sidecar): Makefile.qt.include $(UI_HEADERS) $(COPYFILES) FORCE 
-	$(MAKE) -j 1  -f Makefile.qt
+	$(MAKE) -j 20  -f Makefile.qt
 	cp -r $(sidecar) $(INSTALL_DIR)/bin/
 
 clean:
