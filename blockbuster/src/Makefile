@@ -25,7 +25,7 @@ export BUILD_ROOT ?= $(shell pwd)
 
 BLOCKBUSTERBUILDDIRS =  boost tclap-1.2.1 Exiv2 xzlib zlib lzolib pt patchelf \
 	sndplay libimage libpnmrw libpng libjpeg libtiff mpegdir \
-	evolib sm smapp blockbuster
+	evolib sm smapp blockbuster sidecar
 
 
 BUILD-ALL = \

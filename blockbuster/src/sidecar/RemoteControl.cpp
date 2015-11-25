@@ -1,5 +1,5 @@
 #include "RemoteControl.h"
-#include "../errmsg.h"
+#include "errmsg.h"
 
 #define BLOCK_APPLY(widget, cmd)                 \
   widget->blockSignals(true);  \

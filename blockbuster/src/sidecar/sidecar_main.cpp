@@ -32,12 +32,12 @@
 #include "sidecar.h"
 #include "QApplication" 
 #include "QDir"
-#include <QCleanlooksStyle>
-#include <QPlastiqueStyle>
+// #include <QCleanlooksStyle>
+//#include <QPlastiqueStyle>
 #include <QHostInfo>
 #include "settings.h"
 #include "common.h"
-#include "../../config/version.h"
+#include "version.h"
 #include "Prefs.h"
 #include <string>
 #include <sys/stat.h>
@@ -136,8 +136,8 @@ int main(int argc, char *argv[]) {
 
   SideCar sidecar(&app, &gPrefs);
   //QStyle *myStyle = new QCleanlooksStyle();
-  QStyle *myStyle = new QPlastiqueStyle();
-  app.setStyle(myStyle); 
+  //QStyle *myStyle = new QPlastiqueStyle();
+  //app.setStyle(myStyle); 
   sidecar.show();
 
   vector<string> remainingArgs = gPrefs.UnparsedArgs(); 

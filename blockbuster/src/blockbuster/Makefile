@@ -49,10 +49,7 @@ endif
 
 blockbuster_srun = $(INSTALL_DIR)/bin/blockbuster_srun.sh $(GPROF_HELPER)
 
-all: $(blockbuster) sidecar $(blockbuster_srun) 
-
-sidecar: $(blockbuster) FORCE
-	cd sidecar && $(MAKE) all
+all: $(blockbuster) $(blockbuster_srun) 
 
 FORCE: 
 
@@ -89,20 +86,20 @@ DEBUG_QT =
 DEBUG=
 endif
 
-SOURCES=main.cpp blockbuster_qt.cpp movie.cpp ./timer.C \
+SOURCES=main.cpp blockbuster_qt.cpp movie.cpp timer.C \
 	 pure_C.c frames.cpp  slave.cpp  \
 	cache.cpp  common.cpp Prefs.C \
 	sgi-rgbFrame.cpp convert.cpp smFrame.cpp pngFrame.cpp \
 	splash.cpp pnmFrame.cpp tiffFrame.cpp \
-	libdmx/dmx.c ./MovieCues.cpp events.cpp ImageCache.cpp  \
+	libdmx/dmx.c MovieCues.cpp events.cpp ImageCache.cpp  \
 	Renderer.cpp util.cpp settings.cpp errmsg.cpp \
 	Renderer.cpp x11Renderer.cpp glRenderer.cpp dmxRenderer.cpp 
 
 HEADERS= errmsg.h events.h   ImageCache.h \
-	./stringutil.h ./timer.h ../config/version.h \
+	../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h ../config/version.h \
 	MovieCues.h errmsg.h pure_C.h util.h blockbuster_qt.h  \
-	sgi-rgbFrame.h convert.h smFrame.h pathutil.h pngFrame.h \
-	splash.h pnmFrame.h tiffFrame.h Prefs.h \
+	sgi-rgbFrame.h convert.h smFrame.h ../RC_cpp_lib/pathutil.h pngFrame.h \
+	splash.h pnmFrame.h tiffFrame.h ../RC_cpp_lib/Prefs.h \
 	Renderer.h glRenderer.h dmxRenderer.h 
 
 FORMS = MovieCueWidget.ui BlockbusterControl.ui InfoWindow.ui
@@ -136,7 +133,7 @@ $(DEPENDENT_LIBS):
 
 DEPENDENT_LIBS = $(INSTALL_DIR)/lib/libboost_thread.a $(INSTALL_DIR)/lib/libz.a $(INSTALL_DIR)/lib/libsrwpng.a $(INSTALL_DIR)/lib/libjpeg.a  $(INSTALL_DIR)/lib/libpnmrw.a $(INSTALL_DIR)/lib/liblzo2.a $(INSTALL_DIR)/lib/liblzma.a $(INSTALL_DIR)/lib/libtiff.a 
 
-blockbuster.pro :   $(FORMS) Makefile $(SOURCES)
+blockbuster.pro :   $(FORMS) $(SOURCES) $(HEADERS)  Makefile
 	echo QMAKE IS \"$(QMAKE)\" and INSTALL_DIR is $(INSTALL_DIR)
 	INSTALL_DIR=$(INSTALL_DIR) $(QMAKE) -project -nopwd -Wall 'LIBS += $(DEPENDENT_LIBS) $(LDFLAGS) -L$(INSTALL_DIR)/lib -L/sw/lib  $(X11_LIBS) $(GL_LIBS) $(PTHREADS_LIBS) -lsmovie  -lsrwpng -ljpeg -llzo2 -lz -llzma -lm  ' "INCLUDEPATH += libdmx ../common ../RC_cpp_lib ../config $(INSTALL_DIR)/include  $$(echo $(X11_INCLUDES)  | sed -e s/-I//g ) " "MAKEFILE = Makefile.qt.include" "DEFINES +=  NO_BOOST $(MPI_DEFINES) $(USE_DMX) USE_QT $(DEBUG)" "QT += network"  "QT += opengl" "HEADERS = $(HEADERS)" "FORMS += $(FORMS)" "$(DEBUG_QT)"  "RESOURCES += images.qrc"  $(SOURCES)  
 
@@ -165,6 +162,7 @@ $(blockbuster): relink Makefile.qt.include  .force
 $(blockbuster_srun): blockbuster_srun.sh 
 	cp $< $@
 
+
 project: blockbuster.pro 
 
 qmake-clean: 
@@ -176,11 +174,10 @@ qmake-clean:
 project-clean:
 
 
-%.C: 
-	if [ -f ../RC_cpp_lib/$@ ]; then cp ../RC_cpp_lib/$@ $@; fi 
+%.C: ../RC_cpp_lib/%.C
+	cp $< $@
 
 clean: 
 	rm -f blockbuster blockbuster.pro ui_*.h *.o moc_*
 	rm -f libdmx/*.{o,a}
-	cd sidecar && $(MAKE) clean
 

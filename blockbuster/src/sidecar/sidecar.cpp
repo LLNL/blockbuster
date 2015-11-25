@@ -849,8 +849,8 @@ void SideCar::on_actionGo_To_End_triggered(){
 void SideCar::on_actionGo_To_Frame_triggered() {
   bool ok; 
   uint32_t frameNum =  QInputDialog::
-    getInteger(this, tr("Go To Frame"),
-               tr("Frame Number:"), 0, 0, 2147483647, 1, &ok);
+    getInt(this, tr("Go To Frame"),
+           tr("Frame Number:"), 0, 0, 2147483647, 1, &ok);
   if (ok) {
     MovieEvent event("MOVIE_GOTO_FRAME"); 
     event.mNumber = frameNum-1;

@@ -46,7 +46,7 @@
 // See: https://bugreports.qt-project.org/browse/QTBUG-22829
 #include <boost/algorithm/string.hpp>
 #include "Prefs.h"
-#include "../errmsg.h"
+#include "errmsg.h"
 #endif
 
 extern Preferences gPrefs; 
