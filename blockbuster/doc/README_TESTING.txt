@@ -1,4 +1,8 @@
 LLNL Note:  Be sure to test against actual cuefiles on both OCF and SCF, as some bugs do crop up on SCF that don't appear on OCF.  
+2015-11-25 Python 2.7.10, the default, does not have zip support and this blows up the tests.  Until this is fixed, you must do this:
+
+use python-2.7.7
+make test
 
 ==============================================================
 # Be strict in the test procedure!  Document bugs during testing. 
