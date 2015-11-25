@@ -379,9 +379,9 @@ def FrameDiffs(test):
             diff = ImageChops.difference(img,gold)
             for t in diff.getextrema():
                 if t[0] or t[1]:
-                    return "FrameDiffs(): Images %s and %s differ."%(outframe, standard)
+                    return "FrameDiffs(): Images %s and %s differ.  diff.getextrema: %s"%(outframe, standard, diff.getextrema())
         except:
-            dbprint("Caught error \"%s\"\n" % sys.exc_info()[0])
+            dbprint("Caught error \"%s\" with value \"%s\"\n" % (sys.exc_info()[0], sys.exc_info()[1]))
             return "FrameDiffs(): Got exception trying to diff images %s and %s."%(outframe, standard)
         
         dbprint ("FrameDiffs():  output image matches gold standard.\n")
