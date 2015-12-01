@@ -26,6 +26,8 @@
 
 include ../config/config 
 
+BBSRCDIR=$(shell pwd)
+
 LDFLAGS += -lboost_regex -lreadline -ltermcap 
 ifeq ($(shell uname),Darwin)
 	blockbuster = blockbuster.app
@@ -87,13 +89,13 @@ DEBUG=
 endif
 
 SOURCES=main.cpp blockbuster_qt.cpp movie.cpp timer.C \
-	 pure_C.c frames.cpp  slave.cpp  \
+	 pure_C.c frames.cpp  \
 	cache.cpp  common.cpp Prefs.C \
 	sgi-rgbFrame.cpp convert.cpp smFrame.cpp pngFrame.cpp \
 	splash.cpp pnmFrame.cpp tiffFrame.cpp \
 	libdmx/dmx.c MovieCues.cpp events.cpp ImageCache.cpp  \
 	Renderer.cpp util.cpp settings.cpp errmsg.cpp \
-	Renderer.cpp x11Renderer.cpp glRenderer.cpp dmxRenderer.cpp 
+	SidecarServer.cpp x11Renderer.cpp glRenderer.cpp dmxRenderer.cpp slave.cpp  
 
 HEADERS= errmsg.h events.h   ImageCache.h \
 	../RC_cpp_lib/stringutil.h ../RC_cpp_lib/timer.h ../config/version.h \
@@ -135,10 +137,10 @@ DEPENDENT_LIBS = $(INSTALL_DIR)/lib/libboost_thread.a $(INSTALL_DIR)/lib/libz.a 
 
 blockbuster.pro :   $(FORMS) $(SOURCES) $(HEADERS)  Makefile
 	echo QMAKE IS \"$(QMAKE)\" and INSTALL_DIR is $(INSTALL_DIR)
-	INSTALL_DIR=$(INSTALL_DIR) $(QMAKE) -project -nopwd -Wall 'LIBS += $(DEPENDENT_LIBS) $(LDFLAGS) -L$(INSTALL_DIR)/lib -L/sw/lib  $(X11_LIBS) $(GL_LIBS) $(PTHREADS_LIBS) -lsmovie  -lsrwpng -ljpeg -llzo2 -lz -llzma -lm  ' "INCLUDEPATH += libdmx ../common ../RC_cpp_lib ../config $(INSTALL_DIR)/include  $$(echo $(X11_INCLUDES)  | sed -e s/-I//g ) " "MAKEFILE = Makefile.qt.include" "DEFINES +=  NO_BOOST $(MPI_DEFINES) $(USE_DMX) USE_QT $(DEBUG)" "QT += network"  "QT += opengl" "HEADERS = $(HEADERS)" "FORMS += $(FORMS)" "$(DEBUG_QT)"  "RESOURCES += images.qrc"  $(SOURCES)  
+	INSTALL_DIR=$(INSTALL_DIR) $(QMAKE) -project -d -nopwd -Wall 'LIBS += $(DEPENDENT_LIBS) $(LDFLAGS) -L$(INSTALL_DIR)/lib -L/sw/lib  $(X11_LIBS) $(GL_LIBS) $(PTHREADS_LIBS) -lsmovie  -lsrwpng -ljpeg -llzo2 -lz -llzma -lm  ' "INCLUDEPATH += libdmx ../common ../RC_cpp_lib ../config $(INSTALL_DIR)/include  $$(echo $(X11_INCLUDES)  | sed -e s/-I//g ) " "MAKEFILE = Makefile.qt.include" "DEFINES +=  NO_BOOST $(MPI_DEFINES) $(USE_DMX) USE_QT $(DEBUG)" "QT += network"  "QT += opengl" "HEADERS = $(HEADERS)" "FORMS += $(FORMS)" "$(DEBUG_QT)"  "RESOURCES += images.qrc"  $(SOURCES)  
 
 qmake-force:
-	$(QMAKE) -Wall 
+	$(QMAKE) -Wall -d
 	if [ $$(uname -s) == "Darwin" ]; then inplace='""'; fi; sed -i $$inplace -e 's~-O2~$(OPT) ~g' -e 's~-O1~$(OPT) ~g'  -e 's~-g ~$(OPT) ~g' -e 's/CC.*=.*gcc/CC = $(CC) /g' -e 's/CXX.*=.*g++/CXX = $(CXX) /g' -e 's/LINK.*=.*g++/LINK = $(CXX) /g' -e 's/\(-o Prefs.o Prefs.C\)/-Wno-type-limits \1/' Makefile.qt.include
 	echo sm.o: ../sm/smBase.h >> Makefile.qt.include
 
@@ -174,7 +176,7 @@ qmake-clean:
 project-clean:
 
 
-%.C: ../RC_cpp_lib/%.C
+$(SOURCES): %.C: ../RC_cpp_lib/%.C
 	cp $< $@
 
 clean: 

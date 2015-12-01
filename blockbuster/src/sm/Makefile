@@ -37,7 +37,8 @@ HFILES = sm.h smBase.h smBaseP.h smXZ.h smRLE.h smRaw.h smGZ.h smLZO.h smJPG.h s
 
 all:  include lib doc
 
-lib: $(INSTALL_DIR)/lib/libsmovie.a
+lib: 
+	make -j 10 $(INSTALL_DIR)/lib/libsmovie.a
 
 $(INSTALL_DIR)/lib/libsmovie.a:  libsmovie.a 
 	$(call MAKE-INSTALL-DIRS)
