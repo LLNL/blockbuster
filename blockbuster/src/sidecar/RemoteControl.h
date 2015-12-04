@@ -138,7 +138,7 @@ class RemoteControl: public QWidget, public Ui::BlockbusterControl {
     frameSlider->setTracking(state); 
   }
 
-  void on_loopCheckBox_stateChanged(int state) {
+  void on_repeatCheckBox_stateChanged(int state) {
     foreverCheckBox->setEnabled(state); 
   }
  protected:
