@@ -60,7 +60,7 @@ FORCE:
 .PHONY: all
 
 # QMAKE: allow user to set in environment or have in PATH: 
-QMAKE ?= $(shell which qmake)
+QMAKE ?= $(shell which qmake-5.4.2 || which qmake)
 $(warning QMAKE from environment is $(QMAKE))
 ifeq ($(QMAKE),)
 # if still no qmake, look in canonical place 
@@ -72,6 +72,7 @@ ifeq ($(QMAKE),)
 	QMAKE = QMAKE_NOT_FOUND
 endif
 $(warning QMAKE is $(QMAKE))
+QBINDIR = $(shell dirname $(QMAKE))
 
 # no matter what, this is a good idea:
 # export OPT += -g -Wl,-rpath,$(shell cat $(INSTALL_DIR)/lib/BOOST_DIR)/lib
@@ -109,6 +110,7 @@ FORMS = MovieCueWidget.ui BlockbusterControl.ui InfoWindow.ui
 UI_HEADERS = ui_MovieCueWidget.h ui_BlockbusterControl.h ui_InfoWindow.h
 
 LIBDMX = libdmx/libdmx.a 
+
 
 iotest: iotest.C
 	$(CXX) iotest.C -g -o iotest

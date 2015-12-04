@@ -55,7 +55,7 @@ FORCE:
 .PHONY: all
 
 # QMAKE: allow user to set in environment or have in PATH: 
-QMAKE ?= $(shell which qmake)
+QMAKE ?= $(shell which qmake-5.4.2 || which qmake)
 ifeq ($(QMAKE),) 
 # if still no qmake, look in canonical place 
 	CANONICAL=/usr/gapps/asciviz/Trolltech/4.4.0/$(SYS_TYPE)/bin/qmake
