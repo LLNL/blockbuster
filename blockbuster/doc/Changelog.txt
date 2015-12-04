@@ -2,9 +2,10 @@ CHANGELOG FOR BLOCKBUSTER
 For outstanding bugs, as always, please look at https://sourceforge.net/projects/blockbuster/.  To report blockbuster bugs, you can go to the sourceforge website or send email to rcook@llnl.gov.  
 
 ===============================================================================
-VERSION 2.8.7a (git tag blockbuster-v2.8.7a) Wed Nov 25 14:19:37 PST 2015
+VERSION 2.8.7a (git tag blockbuster-v2.8.7a) Thu Dec  3 16:14:49 PST 2015
+-- BUGFIX:  Eliminated "No matching signal for on_loopCheckBox_stateChanged"
 -- BUGFIX:  Fixed reversed image width, height in sidecar Info window. 
--- FEATURE: Tweak build so it works with Qt 5.x
+-- FEATURE: Tweak build so it preferentially builds with Qt 5.x
 
 ===============================================================================
 VERSION 2.8.6l (git tag blockbuster-v2.8.6l) Tue Jul 28 17:06:15 PDT 2015
