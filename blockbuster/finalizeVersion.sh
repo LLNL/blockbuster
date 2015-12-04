@@ -3,6 +3,8 @@
 logfile=${0}.log
 firsttime=${firsttime:-true}
 verbose=false
+src_dir=$(cd dirname $0; pwd)
+
 if $firsttime; then
 	echo saving output to logfile $logfile
 	firsttime=false exec $0 "$@" |& tee $logfile	
@@ -201,7 +203,7 @@ if [ -z "$version" ]; then
     errexit "You need to supply a version number or I'll kill you.  Seriously."
 fi
 
-cd $(dirname $0)
+cd $src_dir
 [ -e src/config/version.h ] || errexit "This script needs to be located in the top of the source directory to work right. " 
 
 echo "Setting version in src/config/version.h..." 
@@ -264,33 +266,39 @@ if ! $temp; then
     echo "Installing software..." 
     svn_url=https://eris.llnl.gov/svn/lclocal/public/blockbuster/branches/blockbuster-${version}  
     buildconf_url=https://eris.llnl.gov/svn/crlf-build/lclocal.el6/blockbuster-${version}/build.conf
-    svn_dir=/g/g0/rcook/current_projects/eris/lclocal/public/blockbuster/branches/blockbuster-${version}
+    svn_branch_dir=/g/g0/rcook/current_projects/eris/lclocal/public/blockbuster/branches
+    svn_dir=${svn_branch_dir}/blockbuster-${version}
     runecho needinit=false
-    if ! runecho svn ls $buildconf_url; then         
-        runecho needinit=true
-    fi
-    pushd $(dirname $svn_dir)
-    if ! [ -d blockbuster-${version} ]; then 
+    if ! runecho svn ls $buildconf_url; then       
+        echo "I think we need to initialize the eris repo, since I do not see $buildconf_url.  Am I right? (y/n)"        
+        read answer
+        if [ "$answer" == "y" ]; then 
+            runecho needinit=true
+        else
+            errexit "I will exit now.  Something is wrong if I think we need to initialize but you disagree.  Please debug this." 
+        fi
+    fi    
+    
+    if ! [ -d $svn_dir ]; then 
+        pushd $svn_branch_dir
         echo "Directory $(pwd)/blockbuster-${version} not found.  Creating." 
         if ! svn ls $svn_url/package.conf >/dev/null 2>&1; then 
             echo "Version $version does not exist in eris repo; creating..."
             svn mkdir blockbuster-${version}
+            cp $src_dir/eris-packagedir-template/* $svn_dir/ || errexit "Cannot update $svn_dir with package contents"
+            sed -i'' "s/_vers=.*/_vers=${version}/" package.conf
+            svn add *
         else
             svn update --set-depth=infinity blockbuster-${version}
         fi
+        popd 
     fi
-    popd
     
     echo "Updating directory $svn_dir"
-    cp $(dirname $0)/eris-packagedir-template/* $svn_dir/ || errexit "Cannot update $svn_dir with package contents"
     
     git archive --format tar --prefix=blockbuster-v${version}/ HEAD | gzip > ${svn_dir}/blockbuster-v${version}.tgz || errexit "Cannot create blockbuster tarball" 
     echo "Tarball is $svn_dir/blockbuster-v${version}.tgz."
     
-    pushd $svn_dir   
-    sed -i'' "s/_vers=.*/_vers=${version}/" package.conf
-    svn add *
-    popd
     if $verbose; then 
         verboseflag='-v'
     fi

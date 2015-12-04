@@ -33,19 +33,7 @@ src/blockbuster/qrc*.cpp
 src/blockbuster/timer.C
 src/blockbuster/Prefs.C
 src/blockbuster/Prefs.h
-src/blockbuster/sidecar/MovieCues.*
-src/blockbuster/sidecar/stringutil.h
-src/blockbuster/sidecar/timer.h
-src/blockbuster/sidecar/timer.C
-src/blockbuster/sidecar/common.h
-src/blockbuster/sidecar/Prefs.C
-src/blockbuster/sidecar/Prefs.h
-src/blockbuster/sidecar/events.cpp
-src/blockbuster/sidecar/events.h
-src/blockbuster/sidecar/qrc_images.cpp
-src/blockbuster/sidecar/settings.cpp
-src/blockbuster/sidecar/settings.h
-src/blockbuster/sidecar/sidecar
+rm -fr src/sidecar/{MovieCues,stringutil,timer,common,Prefs,events,settings,qrc_images,BlockbusterControl,InfoWindow,Lockables,MovieCueWidget,common,errmsg,images,util}*
 # The following files are generated from corresponding *.ui files:
 moc_*.cpp
 ui_*.h
