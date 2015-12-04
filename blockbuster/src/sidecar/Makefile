@@ -83,64 +83,54 @@ DEBUG=
 endif
 
 LDFLAGS +=  -ltermcap -lsmovie  -lsrwpng -ljpeg -llzo2 -lz -llzma -lm -lboost_filesystem -lboost_system -lboost_regex -lreadline
+ifeq ($(shell uname),Darwin)
+	blockbuster = blockbuster.app
+	X11_LIBS += -lXext -lXtst -lXinerama
+	GPROF_HELPER=
+else
+	X11_LIBS +=  -lXtst -lXinerama
+	blockbuster = blockbuster 
+	GPROF_HELPER=$(INSTALL_DIR)/lib/gprof-helper.so
+endif
 
-SOURCES = common.cpp events.cpp errmsg.cpp util.cpp sidecar_main.cpp settings.cpp MovieCues.cpp Prefs.C RemoteControl.cpp timer.C sidecar.cpp
-HEADERS = sidecar.h  ../RC_cpp_lib/Prefs.h RemoteControl.h common.h errmsg.h Lockables.h MovieCues.h settings.h ../sm/smBase.h ../RC_cpp_lib/stringutil.h 
-FORMS = BlockbusterControl.ui blockbusterLaunchDialog.ui InfoWindow.ui MovieCueWidget.ui sidecar.ui
-UI_HEADERS = ui_MovieCueWidget.h ui_BlockbusterControl.h ui_InfoWindow.h ui_sidecar.h ui_blockbusterLaunchDialog.h
+BB_OFILES = ../blockbuster/events.o ../blockbuster/errmsg.o ../blockbuster/util.o sidecar_main.o ../blockbuster/settings.o ../blockbuster/MovieCues.o ../blockbuster/common.o ../blockbuster/moc_MovieCues.o  
+CPP_LIB_OFILES = ../RC_cpp_lib/Prefs.o ../RC_cpp_lib/timer.o
+
+SOURCES = RemoteControl.cpp sidecar.cpp 
+HEADERS = sidecar.h  
+BBFORMS = ../blockbuster/BlockbusterControl.ui ../blockbuster/MovieCueWidget.ui ../blockbuster/InfoWindow.ui 
+FORMS = sidecar.ui blockbusterLaunchDialog.ui 
+UI_HEADERS = ../blockbuster/ui_MovieCueWidget.h ../blockbuster/ui_BlockbusterControl.h ../blockbuster/ui_InfoWindow.h ui_sidecar.h ui_blockbusterLaunchDialog.h
 
 # NOTE:  Modify sidecar.pro by hand, to avoid picking up all of ../blockbuster or something .  
 
 qmake-force:
 	$(QMAKE) -Wall 
 	if [ $$(uname -s) == "Darwin" ]; then inplace='""'; fi; sed -i $$inplace -e 's~-O2~$(OPT) ~g' -e 's~-O1~$(OPT) ~g'  -e 's~-g ~$(OPT) ~g' -e 's/CC.*=.*gcc/CC = $(CC) /g' -e 's/CXX.*=.*g++/CXX = $(CXX) /g' -e 's/LINK.*=.*g++/LINK = $(CXX) /g' -e 's/\(-o Prefs.o Prefs.C\)/-Wno-type-limits \1/' Makefile.qt.include
-	echo sm.o: ../sm/smBase.h >> Makefile.qt.include
 
 Makefile.qt.include: sidecar.pro 
 	echo running qmake because $@
 	$(MAKE) qmake-force
-	makedepend -I../config -I../common -I../RC_cpp_lib -fMakefile.qt.include -Y. $(SOURCES)  
+	makedepend -I../config -I../common -I../RC_cpp_lib -I../blockbuster -I../blockbuster/libdmx -fMakefile.qt.include -Y. $(SOURCES)  
 
-sidecar.pro: $(SOURCES) $(HEADERS) $(FORMS) Makefile images.qrc images
+sidecar.pro: $(SOURCES) $(HEADERS) $(FORMS) $(BB_OFILES) $(CPP_LIB_OFILES) Makefile ../blockbuster/images.qrc 
 	echo QMAKE IS \"$(QMAKE)\" and INSTALL_DIR is $(INSTALL_DIR)
-	INSTALL_DIR=$(INSTALL_DIR) $(QMAKE) -project -nopwd -Wall 'LIBS += $(DEPENDENT_LIBS) $(LDFLAGS) -L$(INSTALL_DIR)/lib -L/sw/lib  $(X11_LIBS) $(GL_LIBS) $(PTHREADS_LIBS)  ' "INCLUDEPATH += libdmx ../common  ../RC_cpp_lib ../blockbuster ../config $(INSTALL_DIR)/include  $$(echo $(X11_INCLUDES)  | sed -e s/-I//g ) " "MAKEFILE = Makefile.qt.include" "DEFINES +=  NO_BOOST $(MPI_DEFINES) $(USE_DMX) USE_QT $(DEBUG)" "QT += network opengl widgets" "HEADERS = $(HEADERS)" "FORMS += $(FORMS)" "$(DEBUG_QT)"  "RESOURCES += images.qrc"  $(SOURCES)  
+	INSTALL_DIR=$(INSTALL_DIR) $(QMAKE) -project -nopwd -Wall 'LIBS += $(BB_OFILES) $(CPP_LIB_OFILES) $(DEPENDENT_LIBS) $(LDFLAGS) -L$(INSTALL_DIR)/lib -L/sw/lib  $(X11_LIBS) $(GL_LIBS) $(PTHREADS_LIBS)  ' "INCLUDEPATH += libdmx ../common  ../RC_cpp_lib ../blockbuster ../blockbuster/libdmx ../config $(INSTALL_DIR)/include  $$(echo $(X11_INCLUDES)  | sed -e s/-I//g ) " "MAKEFILE = Makefile.qt.include" "DEFINES +=  NO_BOOST $(MPI_DEFINES) $(USE_DMX) USE_QT $(DEBUG)" "QT += network opengl widgets" "HEADERS = $(HEADERS)" "FORMS += $(FORMS)" "$(DEBUG_QT)"  "RESOURCES += ../blockbuster/images.qrc"  $(SOURCES)  
 	echo contents of sidecar.pro are $$(cat sidecar.pro)
 
 
-%.h :$(SOURCE_ROOT)/blockbuster/%.h
-	cp $< $@
-
-%.cpp : $(SOURCE_ROOT)/blockbuster/%.cpp
-	cp $< $@
-
-./%.C : $(SOURCE_ROOT)/blockbuster/%.C
-	cp $< $@
-
-%.h : $(SOURCE_ROOT)/RC_cpp_lib/%.h
-	cp $< $@
-
-%.C : $(SOURCE_ROOT)/RC_cpp_lib/%.C
-	cp $< $@
-
-%.ui: $(SOURCE_ROOT)/blockbuster/%.ui
-	cp $< $@ 
-
-# this is the images directory and images.qrc:
-images.qrc: $(SOURCE_ROOT)/blockbuster/images.qrc
-	cp  $< $@
-
-images: $(SOURCE_ROOT)/blockbuster/images
-	mkdir -p images
-	cp -f $(SOURCE_ROOT)/blockbuster/images/*png images/
 
 ui_%.h: %.ui 
 	echo making $@ due to $?
 	uic $< -o $@
 
-$(sidecar): Makefile.qt.include $(UI_HEADERS) $(COPYFILES) FORCE 
+$(CPP_LIB_OFILES) : %.o : %.C
+	g++ -c -o $@ $<
+
+$(sidecar): Makefile.qt.include $(UI_HEADERS) FORCE 
 	$(MAKE) -j 20  -f Makefile.qt
 	cp -r $(sidecar) $(INSTALL_DIR)/bin/
 
 clean:
-	rm -rf sidecar  ui_*.h Makefile.qt.include moc_*cpp *.o $(xxCOPYFILES)
+	rm -rf sidecar  ui_*.h Makefile.qt.include moc_*cpp *.o 
 
