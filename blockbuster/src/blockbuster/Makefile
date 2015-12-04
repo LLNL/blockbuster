@@ -89,9 +89,10 @@ DEBUG_QT =
 DEBUG=
 endif
 
-SOURCES=main.cpp blockbuster_qt.cpp movie.cpp timer.C \
-	 pure_C.c frames.cpp  \
-	cache.cpp  common.cpp Prefs.C \
+CPP_LIB_OFILES = ../RC_cpp_lib/Prefs.o ../RC_cpp_lib/timer.o
+
+SOURCES=main.cpp blockbuster_qt.cpp movie.cpp \
+	 pure_C.c frames.cpp  cache.cpp  common.cpp \
 	sgi-rgbFrame.cpp convert.cpp smFrame.cpp pngFrame.cpp \
 	splash.cpp pnmFrame.cpp tiffFrame.cpp \
 	libdmx/dmx.c MovieCues.cpp events.cpp ImageCache.cpp  \
@@ -139,7 +140,7 @@ DEPENDENT_LIBS = $(INSTALL_DIR)/lib/libboost_thread.a $(INSTALL_DIR)/lib/libz.a 
 
 blockbuster.pro :   $(FORMS) $(SOURCES) $(HEADERS)  Makefile
 	echo QMAKE IS \"$(QMAKE)\" and INSTALL_DIR is $(INSTALL_DIR)
-	INSTALL_DIR=$(INSTALL_DIR) $(QMAKE) -project  -nopwd -Wall 'LIBS += $(DEPENDENT_LIBS) $(LDFLAGS) -L$(INSTALL_DIR)/lib -L/sw/lib  $(X11_LIBS) $(GL_LIBS) $(PTHREADS_LIBS) -lsmovie  -lsrwpng -ljpeg -llzo2 -lz -llzma -lm  ' "INCLUDEPATH += libdmx ../common ../RC_cpp_lib ../config $(INSTALL_DIR)/include  $$(echo $(X11_INCLUDES)  | sed -e s/-I//g ) " "MAKEFILE = Makefile.qt.include" "DEFINES +=  NO_BOOST $(MPI_DEFINES) $(USE_DMX) USE_QT $(DEBUG)" "QT += network"  "QT += opengl" "HEADERS = $(HEADERS)" "FORMS += $(FORMS)" "$(DEBUG_QT)"  "RESOURCES += images.qrc"  $(SOURCES)  
+	INSTALL_DIR=$(INSTALL_DIR) $(QMAKE) -project  -nopwd -Wall 'LIBS += $(CPP_LIB_OFILES) $(DEPENDENT_LIBS) $(LDFLAGS) -L$(INSTALL_DIR)/lib -L/sw/lib  $(X11_LIBS) $(GL_LIBS) $(PTHREADS_LIBS) -lsmovie  -lsrwpng -ljpeg -llzo2 -lz -llzma -lm  ' "INCLUDEPATH += libdmx ../common ../RC_cpp_lib ../config $(INSTALL_DIR)/include  $$(echo $(X11_INCLUDES)  | sed -e s/-I//g ) " "MAKEFILE = Makefile.qt.include" "DEFINES +=  NO_BOOST $(MPI_DEFINES) $(USE_DMX) USE_QT $(DEBUG)" "QT += network"  "QT += opengl" "HEADERS = $(HEADERS)" "FORMS += $(FORMS)" "$(DEBUG_QT)"  "RESOURCES += images.qrc"  $(SOURCES)  
 
 qmake-force:
 	$(QMAKE) -Wall 
@@ -166,6 +167,8 @@ $(blockbuster): relink Makefile.qt.include  .force
 $(blockbuster_srun): blockbuster_srun.sh 
 	cp $< $@
 
+$(CPP_LIB_OFILES) : %.o : %.C
+	g++ -c -o $@ $<
 
 project: blockbuster.pro 
 
@@ -177,9 +180,6 @@ qmake-clean:
 
 project-clean:
 
-
-$(SOURCES): %.C: ../RC_cpp_lib/%.C
-	cp $< $@
 
 clean: 
 	rm -f blockbuster blockbuster.pro ui_*.h *.o moc_*

@@ -30,20 +30,16 @@ src/blockbuster/blockbuster
 src/blockbuster/blockbuster.pro
 src/blockbuster/moc*cpp
 src/blockbuster/qrc*.cpp
-src/blockbuster/timer.C
-src/blockbuster/Prefs.C
-src/blockbuster/Prefs.h
+src/sidecar/qrc_images.cpp
+src/sidecar/sidecar
 rm -fr src/sidecar/{MovieCues,stringutil,timer,common,Prefs,events,settings,qrc_images,BlockbusterControl,InfoWindow,Lockables,MovieCueWidget,common,errmsg,images,util}*
 # The following files are generated from corresponding *.ui files:
 moc_*.cpp
 ui_*.h
-blockbusterLaunchDialog.cpp
+build.log
 blockbusterLaunchDialog.h
-BlockbusterControl.cpp
 BlockbusterControl.h
-InfoWindow.cpp
 InfoWindow.h
-MovieCueWidget.cpp
 MovieCueWidget.h
 src/boost/BOOSTDIR
 exiv2-*/
