@@ -1,5 +1,1 @@
-The blockbuster project has moved to github, as we have found sourceforge to be too unreliable for our purposes.  
-The new repository is at https://github.com/wealthychef1/blockbuster
-
-All files and issues on sourceforge are being migrated and will no longer exist on sourceforge, soon. 
-Apologies for any inconvenience. 
+Blockbuster is a  movie player designed for playing movies in the "Streaming Movie" format on large power walls.  It includes a Sidecar component for controlling the movie player from a remote workstation, and for executing "movie cues" to facilitate one-click execution of a planned series of movie transitions, window placements, and other actions that might occur during a presentation.  
